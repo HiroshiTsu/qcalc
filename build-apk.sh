@@ -21,13 +21,20 @@ rm -rf "$B"
 mkdir -p "$B/stage/lib/arm64-v8a" "$OUT"
 
 # ---- resources and manifest (app/res-debug overrides the app name)
-make_manifest "$DEBUG_PACKAGE" "$B/AndroidManifest.xml"
+# The manifest gets the package of the Java code, so ".MainActivity" means
+# io.github.hiroshitsu.qcalc.MainActivity. aapt2 then renames the package to ….qcalc.debug and
+# writes the class names out in full, as Gradle does for applicationIdSuffix. (Writing ….debug into
+# the manifest directly would make Android look for ….qcalc.debug.MainActivity, which does not exist.)
+make_manifest "$PACKAGE" "$B/AndroidManifest.xml"
 aapt2 compile --dir "$A/res" -o "$B/res.zip"
 aapt2 compile --dir "$A/res-debug" -o "$B/res-debug.zip"
 aapt2 link -o "$B/app-unsigned.apk" -I "$AAPT2_JAR" --manifest "$B/AndroidManifest.xml" -A "$A/assets" \
+  --rename-manifest-package "$DEBUG_PACKAGE" \
   --min-sdk-version $MIN_SDK --target-sdk-version $TARGET_SDK \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME-debug" \
   "$B/res.zip" -R "$B/res-debug.zip" --auto-add-overlay
+aapt2 dump badging "$B/app-unsigned.apk" 2>/dev/null | grep -q "^launchable-activity: name='$PACKAGE.MainActivity'" \
+  || { echo "manifest: the launcher activity is not $PACKAGE.MainActivity"; exit 1; }
 
 # ---- Java -> dex, engine in lib/ (Android installs it as a file that can be run)
 build_dex "$B"
