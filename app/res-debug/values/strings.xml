@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android Studio のデバッグ版だけで使う名前（正式版と並べて入れたときに見分けるため） -->
+<resources>
+    <string name="app_name">QCalc (debug)</string>
+</resources>

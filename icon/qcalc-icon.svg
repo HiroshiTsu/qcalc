@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- QCalc icon: a "Q" whose tail is an "=" sign. 108 x 108 like an adaptive icon;
+     the part that is always visible is the circle of radius 33 around the centre. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2F6BF0"/>
+      <stop offset="1" stop-color="#1A47B8"/>
+    </linearGradient>
+  </defs>
+  <rect id="background" x="0" y="0" width="108" height="108" fill="url(#bg)"/>
+  <g id="glyph" fill="none" stroke="#FFFFFF" stroke-linecap="round">
+    <circle cx="52.5" cy="52.5" r="18.5" stroke-width="7.5"/>
+    <line x1="63.88" y1="57.38" x2="76.61" y2="70.11" stroke-width="4.4"/>
+    <line x1="57.38" y1="63.88" x2="70.11" y2="76.61" stroke-width="4.4"/>
+  </g>
+</svg>

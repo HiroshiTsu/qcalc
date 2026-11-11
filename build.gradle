@@ -1,0 +1,7 @@
+plugins {
+    id 'com.android.application' version '8.11.1' apply false
+}
+
+// build/ is used by build-engine.sh, build-apk.sh and build-aab.sh (the engine build alone is a few hundred MB).
+// Keep Gradle's own files of the root project out of it.
+layout.buildDirectory.set(file('build-gradle'))

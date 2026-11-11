@@ -1,0 +1,17 @@
+// Android Studio（Gradle）用の設定。シェルスクリプトでのビルド（build-apk.sh・build-aab.sh）とは別に、同じソースを使います。
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = 'QCalc'
+include ':app'

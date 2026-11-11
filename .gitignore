@@ -1,0 +1,27 @@
+# Gradle / Android Studio
+.gradle/
+/build-gradle/
+/app/build/
+/local.properties
+.idea/
+*.iml
+.kotlin/
+/captures/
+
+# shell-script build (fetch-sources.sh, build-engine.sh, build-apk.sh)
+/build/
+/prefix/
+/src/
+/dl/
+/out/
+/tools/
+/sdk/
+/bridge/qalc-engine
+/bridge/qalc-engine-native
+*.log
+
+# signing key and its passwords: never publish
+/signing/
+/keystore.properties
+*.keystore
+*.jks

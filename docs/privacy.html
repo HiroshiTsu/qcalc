@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>QCalc プライバシーポリシー / Privacy Policy</title>
+<style>
+  :root { --bg: #ffffff; --text: #1d2433; --muted: #5b6475; --line: #dde2ea; --accent: #2459d9; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #121418; --text: #e6e9ef; --muted: #a3abb9; --line: #2e333d; --accent: #7aa5ff; } }
+  html { background: var(--bg); }
+  body { margin: 0 auto; max-width: 760px; padding: 24px 16px 48px; background: var(--bg); color: var(--text);
+         font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Noto Sans CJK JP", Meiryo, sans-serif;
+         line-height: 1.75; font-size: 16px; }
+  h1 { font-size: 1.6em; line-height: 1.35; margin: 0 0 4px; }
+  h2 { font-size: 1.15em; margin: 1.8em 0 .4em; padding-top: .6em; border-top: 1px solid var(--line); }
+  .meta { color: var(--muted); font-size: .92em; }
+  ul { padding-left: 1.3em; }
+  li { margin: .2em 0; }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .92em; }
+  .lang { margin: 8px 0 0; font-size: .92em; }
+  hr { border: 0; border-top: 2px solid var(--line); margin: 48px 0 24px; }
+</style>
+</head>
+<body>
+
+<h1>QCalc プライバシーポリシー</h1>
+<p class="meta">制定日：2026年11月11日</p>
+<p class="lang"><a href="#en">English version below</a></p>
+
+<p>このプライバシーポリシーは、Android 用の電卓アプリ「QCalc」（パッケージ名 <code>io.github.hiroshitsu.qcalc</code>、以下「本アプリ」）が、利用者の情報をどのように扱うかを説明するものです。本アプリは個人の開発者（HiroshiTsu）が作成・公開しています。</p>
+
+<h2>1. 集める情報</h2>
+<p>本アプリは、利用者の個人情報や端末の情報を集めません。開発者や第三者に送ることもありません。</p>
+<ul>
+  <li>アカウント登録やログインはありません。</li>
+  <li>広告、アクセス解析、クラッシュ報告などの外部サービスは使っていません。</li>
+  <li>位置情報、連絡先、写真、カメラ、マイクなどにはアクセスしません。</li>
+</ul>
+
+<h2>2. インターネットの使用（為替レートの取得）</h2>
+<p>本アプリがインターネットに接続するのは、通貨換算に使う為替レートのファイルをダウンロードするときだけです。ダウンロードは、メニューの「為替レートの更新」を使ったとき、または設定「為替レートを自動更新」が有効な場合に（前回の更新から7日以上たったとき）行います。接続先は次のサーバーです。</p>
+<ul>
+  <li>欧州中央銀行（<code>www.ecb.europa.eu</code>）：主要通貨の為替レート</li>
+  <li>Coinbase（<code>api.coinbase.com</code>）：ビットコインの価格</li>
+  <li>jsDelivr（<code>cdn.jsdelivr.net</code>）と、その予備の <code>latest.currency-api.pages.dev</code>：その他の通貨の為替レート（currency-api）</li>
+</ul>
+<p>これらのサーバーには公開されているファイルを要求するだけで、計算の内容や個人情報は送りません。ただし、インターネット通信の仕組み上、接続先のサーバーには端末の IP アドレスと、アプリ名とバージョンを示す情報（User-Agent）が伝わります。これらの扱いは、各サービスのプライバシーポリシーに従います。通信はすべて暗号化（HTTPS）されています。自動更新は設定で止めることができます。</p>
+
+<h2>3. 端末に保存する情報</h2>
+<p>本アプリは、次の情報を端末内のアプリ専用の領域に保存します。これらが開発者に送られることはありません。</p>
+<ul>
+  <li>計算の履歴と、入力途中の式</li>
+  <li>設定</li>
+  <li>利用者が定義した変数と関数</li>
+  <li>ダウンロードした為替レート</li>
+</ul>
+<p>履歴はメニューの「履歴を消去」で消せます。すべての情報は、本アプリをアンインストールするか、Android の設定でアプリのデータを削除すると消えます。</p>
+<p>端末で Android のバックアップが有効になっている場合、これらの情報は Android の機能によって、利用者ご自身の Google アカウントにバックアップされることがあります。開発者がバックアップにアクセスすることはできません。</p>
+
+<h2>4. 権限</h2>
+<ul>
+  <li>インターネット（<code>INTERNET</code>）：為替レートのダウンロードに使います。</li>
+  <li>バイブレーション（<code>VIBRATE</code>）：キーを押したときの振動に使います（設定で止められます）。</li>
+</ul>
+
+<h2>5. お子様のプライバシー</h2>
+<p>本アプリは、年齢にかかわらず、どの利用者からも個人情報を集めません。</p>
+
+<h2>6. このポリシーの変更</h2>
+<p>このポリシーを変更するときは、このページを更新し、上の制定日の下に改定日を記載します。</p>
+
+<h2>7. お問い合わせ</h2>
+<p>本アプリとこのポリシーについてのお問い合わせは、次の連絡先までお願いします。</p>
+<ul>
+  <li>メール：<a href="mailto:hiroshitsu.apps@gmail.com">hiroshitsu.apps@gmail.com</a></li>
+  <li>GitHub：<a href="https://github.com/HiroshiTsu/qcalc/issues">https://github.com/HiroshiTsu/qcalc/issues</a></li>
+</ul>
+
+<hr>
+
+<h1 id="en" lang="en">QCalc Privacy Policy</h1>
+<div lang="en">
+<p class="meta">Effective date: November 11, 2026</p>
+
+<p>This privacy policy explains how QCalc (package name <code>io.github.hiroshitsu.qcalc</code>, "the app"), a calculator app for Android, handles information. The app is developed and published by an individual developer (HiroshiTsu).</p>
+
+<h2>1. Information we collect</h2>
+<p>The app does not collect any personal information or device information, and it does not send any such information to the developer or to third parties.</p>
+<ul>
+  <li>There are no accounts or sign-in.</li>
+  <li>The app uses no advertising, analytics, crash reporting or other third-party services.</li>
+  <li>The app does not access location, contacts, photos, the camera or the microphone.</li>
+</ul>
+
+<h2>2. Internet use (exchange rates)</h2>
+<p>The app connects to the internet only to download exchange-rate files for currency conversion: when you use "為替レートの更新" (update exchange rates) in the menu, or, if the setting "為替レートを自動更新" (update exchange rates automatically) is on, when the rates are more than 7 days old. It connects to these servers:</p>
+<ul>
+  <li>European Central Bank (<code>www.ecb.europa.eu</code>): rates of the major currencies</li>
+  <li>Coinbase (<code>api.coinbase.com</code>): the price of Bitcoin</li>
+  <li>jsDelivr (<code>cdn.jsdelivr.net</code>) and its backup <code>latest.currency-api.pages.dev</code>: rates of other currencies (currency-api)</li>
+</ul>
+<p>The app only requests public files from these servers; it sends no calculations and no personal information. As with any internet connection, the servers receive the device's IP address and a User-Agent string naming the app and its version; their handling is governed by each service's own privacy policy. All connections are encrypted (HTTPS). Automatic updates can be turned off in the settings.</p>
+
+<h2>3. Information stored on the device</h2>
+<p>The app stores the following in its private storage on the device. None of it is sent to the developer.</p>
+<ul>
+  <li>Calculation history and the expression being typed</li>
+  <li>Settings</li>
+  <li>Variables and functions you define</li>
+  <li>Downloaded exchange rates</li>
+</ul>
+<p>You can delete the history with "履歴を消去" (clear history) in the menu. All of this data is deleted when you uninstall the app or clear its data in Android's settings.</p>
+<p>If Android backup is turned on for your device, Android may back up this data to your own Google account. The developer has no access to these backups.</p>
+
+<h2>4. Permissions</h2>
+<ul>
+  <li>Internet (<code>INTERNET</code>): to download exchange rates.</li>
+  <li>Vibration (<code>VIBRATE</code>): for key-press feedback (can be turned off in the settings).</li>
+</ul>
+
+<h2>5. Children's privacy</h2>
+<p>The app does not collect personal information from anyone, of any age.</p>
+
+<h2>6. Changes to this policy</h2>
+<p>If this policy changes, this page will be updated and the date of the change will be shown below the effective date.</p>
+
+<h2>7. Contact</h2>
+<p>For questions about the app or this policy, please contact:</p>
+<ul>
+  <li>Email: <a href="mailto:hiroshitsu.apps@gmail.com">hiroshitsu.apps@gmail.com</a></li>
+  <li>GitHub: <a href="https://github.com/HiroshiTsu/qcalc/issues">https://github.com/HiroshiTsu/qcalc/issues</a></li>
+</ul>
+</div>
+
+</body>
+</html>

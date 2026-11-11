@@ -1,0 +1,98 @@
+// QCalc の Gradle ビルド（Android Studio 用）。
+// ソースの場所は build-apk.sh と同じです（app/src、app/res、app/assets、app/jniLibs）。
+plugins {
+    id 'com.android.application'
+}
+
+// 版は version.properties から読みます（build-apk.sh・build-aab.sh と共通）。
+def appVersion = new Properties()
+rootProject.file('version.properties').withInputStream { appVersion.load(it) }
+
+// release の署名（任意）：Google Play のアップロード鍵。keystore.properties.example を
+// keystore.properties にコピーして書き込みます。keystore.properties と鍵は公開しないでください（.gitignore で除外）。
+def keystoreFile = rootProject.file('keystore.properties')
+def keystore = new Properties()
+if (keystoreFile.exists()) {
+    keystoreFile.withInputStream { keystore.load(it) }
+}
+
+android {
+    namespace = 'io.github.hiroshitsu.qcalc'
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = 'io.github.hiroshitsu.qcalc'
+        minSdk = 24
+        // Google Play requires 36 for new apps and updates (from August 31, 2026).
+        // MainActivity keeps the page clear of the system bars (Android 15+) and handles back (Android 13+).
+        targetSdk = 36
+        versionCode = appVersion.getProperty('VERSION_CODE').trim().toInteger()
+        versionName = appVersion.getProperty('VERSION_NAME').trim()
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['assets']
+            // The engine: a static arm64 executable named like a library, so that Android
+            // installs it into nativeLibraryDir, where an app may start programs.
+            jniLibs.srcDirs = ['jniLibs']
+        }
+        debug {
+            // the debug build is named "QCalc (debug)"
+            res.srcDirs = ['res-debug']
+        }
+    }
+
+    signingConfigs {
+        if (keystoreFile.exists()) {
+            release {
+                storeFile = rootProject.file(keystore.getProperty('storeFile'))
+                storePassword = keystore.getProperty('storePassword')
+                keyAlias = keystore.getProperty('keyAlias')
+                keyPassword = keystore.getProperty('keyPassword')
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            // A different package name: the debug build installs beside the signed app and
+            // neither replaces it nor touches its history and settings.
+            applicationIdSuffix = '.debug'
+            versionNameSuffix = '-debug'
+        }
+        release {
+            minifyEnabled = false
+            if (keystoreFile.exists()) {
+                signingConfig = signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    packaging {
+        jniLibs {
+            // Store the engine compressed and let Android extract it when installing
+            // (the manifest has android:extractNativeLibs="true"; the engine is run as a program).
+            // This must also hold for the APKs Google Play makes from a bundle; check a bundle made
+            // here with `bundletool dump config` (uncompressNativeLibraries must not be enabled).
+            useLegacyPackaging = true
+            // It is already stripped.
+            keepDebugSymbols.add('**/libqalcengine.so')
+        }
+    }
+
+    lint {
+        abortOnError = false
+    }
+}

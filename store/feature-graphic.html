@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { width: 1024px; height: 500px; overflow: hidden; font-family: "Noto Sans CJK JP", sans-serif; }
+  .fg {
+    position: relative; width: 1024px; height: 500px; overflow: hidden;
+    background: linear-gradient(135deg, #2F6BF0 0%, #2459D9 45%, #1A47B8 100%);
+    color: #fff;
+  }
+  /* a large faint "Q" ring in the background */
+  .ring { position: absolute; right: -150px; top: -170px; width: 640px; height: 640px; opacity: .10; }
+  .left { position: absolute; left: 64px; top: 0; bottom: 0; width: 470px; display: flex; flex-direction: column; justify-content: center; }
+  .brand { display: flex; align-items: center; gap: 22px; }
+  .brand svg { width: 104px; height: 104px; flex: none; }
+  .name { font-size: 82px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+  .tag { margin-top: 30px; font-size: 34px; font-weight: 700; line-height: 1.35; }
+  .feat { margin-top: 18px; font-size: 21px; font-weight: 500; line-height: 1.6; color: rgba(255,255,255,.88); }
+  .cards { position: absolute; left: 566px; top: 46px; width: 400px; }
+  .card {
+    background: rgba(255,255,255,.96); color: #1d2433; border-radius: 18px;
+    padding: 12px 20px 13px; margin-bottom: 14px; text-align: right;
+    box-shadow: 0 10px 28px rgba(8, 24, 80, .28);
+  }
+  .card:nth-child(2) { margin-left: -34px; margin-right: 34px; }
+  .card:nth-child(4) { margin-left: -34px; margin-right: 34px; }
+  .e { font-size: 17px; color: #667085; font-family: "DejaVu Sans Mono", monospace; }
+  .r { font-size: 27px; font-weight: 700; margin-top: 2px; white-space: nowrap; }
+</style></head>
+<body>
+<div class="fg">
+  <div class="left">
+    <div class="brand">
+      <svg viewBox="18 18 72 72"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B78FF"/><stop offset="1" stop-color="#1D4DC4"/></linearGradient></defs>
+        <rect x="18" y="18" width="72" height="72" rx="16" fill="url(#bg)" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/>
+        <g fill="none" stroke="#fff" stroke-linecap="round"><circle cx="52.5" cy="52.5" r="18.5" stroke-width="7.5"/><line x1="63.88" y1="57.38" x2="76.61" y2="70.11" stroke-width="4.4"/><line x1="57.38" y1="63.88" x2="70.11" y2="76.61" stroke-width="4.4"/></g></svg>
+      <div class="name">QCalc</div>
+    </div>
+    <div class="tag">式のまま計算できる<br>多機能電卓</div>
+    <div class="feat">単位変換・通貨換算・方程式・微積分<br>2D/3D グラフ・最大 1000 桁の高精度計算</div>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="e">60 mph to km/h</div><div class="r">= 96.56064 km/h</div></div>
+    <div class="card"><div class="e">solve(x^2 − 5x + 6)</div><div class="r">= [3&nbsp;&nbsp;2]</div></div>
+    <div class="card"><div class="e">integrate(x^2 sin(x), 0, pi)</div><div class="r">= π² − 4 ≈ 5.869604401</div></div>
+    <div class="card"><div class="e">255 to hex</div><div class="r">= 0xFF</div></div>
+  </div>
+</div>
+</body></html>
