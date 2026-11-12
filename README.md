@@ -4,35 +4,44 @@
 
 QCalc is a multi-function calculator for Android. You type an expression the way you would write it, and QCalc evaluates it with **libqalculate 5.13.2**, the calculation engine of the open-source calculator [Qalculate!](https://qalculate.github.io/), used without modification.
 
-The app's user interface is in Japanese. QCalc is not an official Qalculate! app; it is made by an individual developer who is not affiliated with the Qalculate! project.
+The app is in English and Japanese: it starts in English, and "Language / 言語" in the menu switches it to Japanese. QCalc is not an official Qalculate! app; it is made by an individual developer who is not affiliated with the Qalculate! project.
 
 <p>
-<img src="store/screenshots/phone-1-main.png" width="200" alt="Calculator screen">
-<img src="store/screenshots/phone-3-graph-3d.png" width="200" alt="3D graph">
-<img src="store/screenshots/phone-8-dark.png" width="200" alt="Dark mode">
+<img src="store/screenshots-en/phone-1-main.png" width="200" alt="Calculator screen">
+<img src="store/screenshots-en/phone-3-graph-3d.png" width="200" alt="3D graph">
+<img src="store/screenshots-en/phone-8-dark.png" width="200" alt="Dark mode">
 </p>
 
 ## Features
 
 - Type expressions such as `60 mph to km/h`, `100 USD to JPY`, `solve(x^2 − 5x + 6 = 0)` or `integrate(x^2 sin(x), 0, pi)`; the result is shown while you type.
 - Unit conversion, currency conversion, equations, derivatives and integrals, matrices, complex numbers, binary, octal and hexadecimal numbers, dates, uncertainty propagation, and high-precision arithmetic with up to 200,000 digits
-- Four keypads: 123, functions (関数), calculus (解析: `diff`, `integrate`, `limit`, `sum`, `dsolve`) and matrices (行列: entering `[1, 2; 3, 4]`, determinant, inverse, transpose and more). Matrix results are shown as tables.
+- Four keypads: 123, Functions, Calculus (`diff`, `integrate`, `limit`, `sum`, `dsolve`) and Matrix (entering `[1, 2; 3, 4]`, determinant, inverse, transpose and more). Matrix results are shown as tables.
 - Traditional Japanese units (坪 tsubo, 反 tan, 寸 sun, 尺 shaku, 間 ken, 里 ri, 合 gō, 升 shō, 匁 monme, 貫 kan), for example `30 坪 to m²`. libqalculate does not have these units; QCalc adds them when the engine starts, together with the matrix trace `trace()`.
 - 2D graphs (y = f(x)) and 3D graphs (surfaces z = f(x, y) that you rotate and zoom with your fingers)
-- Built-in examples and instructions (tap an example to try it). The lists of functions, units and constants can also be searched in Japanese.
-- User-defined variables and functions, calculation history, undo for a cleared expression or a deleted history item, three text sizes, dark mode
+- Built-in examples and instructions (tap an example to try it). The lists of functions, units and constants can be searched (in Japanese too).
+- User-defined variables and functions, calculation history, undo for a cleared expression or a deleted history item, three text sizes, seven color themes, dark mode
+- Export of the history as a CSV file (UTF-8 with a byte order mark, so that Excel reads it correctly)
 - No personal data is collected, and there are no ads ([privacy policy](https://hiroshitsu.github.io/qcalc/privacy.html)).
 - Requirements: Android 7.0 or later on a 64-bit ARM (arm64) device
+
+## QCalc Pro
+
+QCalc Pro is a one-time purchase in Google Play (the one-time product `qcalc_pro`) that unlocks a precision above 1000 digits, 3D graphs, the color themes, exporting the history, and the Pro features of later versions. Everything else stays free.
+
+- The purchase is made with the Google Play Billing Library (`app/src-billing/PlayBilling.java`). It is built only with Gradle and `qcalc.billing=true` (see `app/build.gradle`); `build-apk.sh` and `build-aab.sh` leave it out.
+- **A build without the library cannot sell Pro, so it locks nothing**: every feature is free, as in the versions before Pro. The test build (`.debug`) has Pro unlocked, and the Pro panel can lock it to show the app as without Pro.
+- People who used QCalc before Pro began keep the Pro features for free (`Pro.java`).
 
 ## How it works
 
 - **User interface**: an HTML/CSS/JavaScript page (`app/assets/`) shown in a WebView. It calls the Java side through a JavaScript interface named `QalcNative`.
-- **Java** (`app/src/`): `MainActivity` hosts the WebView. `Engine` runs the calculation engine as a child process and gives every request a deadline; an engine that does not answer in time is killed and started again. `RatesUpdater` downloads exchange rates from the same sources the official Qalculate! uses. `StateStore` saves the history, the settings and the expression being typed in the app's private storage.
+- **Java** (`app/src/`): `MainActivity` hosts the WebView. `Engine` runs the calculation engine as a child process and gives every request a deadline; an engine that does not answer in time is killed and started again. `RatesUpdater` downloads exchange rates from the same sources the official Qalculate! uses. `StateStore` saves the history, the settings and the expression being typed in the app's private storage. `Pro` keeps the state of QCalc Pro.
 - **Calculation engine** (`bridge/qalc-engine.cc` and libqalculate): a static arm64 executable built with zig. It is packaged as a native library (`libqalcengine.so`) so that Android extracts it at install time and the app can start it. The app and the engine exchange one JSON object per line over standard input and output (commands such as `calc`, `plot`, `plot3d`, `catalog` and `define_var`).
 
 ## Design documents
 
-The design document set is in [design/](design/). An English overview summarizes the whole set; the seven full documents are in Japanese.
+The design document set is in [design/](design/). An English overview summarizes the whole set; the seven full documents are in Japanese (English versions are being prepared).
 
 - [Design overview (English)](design/00-overview-en.pdf)
 - [Overview](design/00-overview.pdf) (概要, Japanese)
@@ -48,7 +57,8 @@ The design document set is in [design/](design/). An English overview summarizes
 | Path | Contents |
 | --- | --- |
 | `bridge/qalc-engine.cc` | A small program that calls libqalculate (it talks to the app with one JSON object per line) |
-| `app/AndroidManifest.xml`, `app/src/` | The Java code of the app (WebView, starting and supervising the engine, downloading exchange rates, saving the history and settings) |
+| `app/AndroidManifest.xml`, `app/src/` | The Java code of the app (WebView, starting and supervising the engine, downloading exchange rates, saving the history and settings, QCalc Pro) |
+| `app/src-billing/` | The purchase of QCalc Pro with the Google Play Billing Library (only in Gradle builds with `qcalc.billing=true`) |
 | `app/res/`, `app/res-debug/` | App name, theme and launcher icons (`res-debug` holds the name of the test build, "QCalc (debug)") |
 | `app/assets/` | The user interface (HTML / CSS / JavaScript). `licenses.js` holds the license texts of the bundled software |
 | `app/jniLibs/arm64-v8a/libqalcengine.so` | The prebuilt calculation engine (an arm64 executable; `build-engine.sh` rebuilds it) |
@@ -63,7 +73,7 @@ The design document set is in [design/](design/). An English overview summarizes
 | `settings.gradle`, `build.gradle`, `app/build.gradle`, `gradle.properties`, `gradle/wrapper/` | Settings for Android Studio (Gradle) |
 | `keystore.properties.example` | A template for signing release builds in Android Studio |
 | `icon/` | The icon source (`qcalc-icon.svg`) and a script that makes the icons of every size in `app/res` |
-| `store/` | Texts (in Japanese) and images for the Google Play store listing |
+| `store/` | Texts (`listing-en.md` in English, `listing-ja.md` in Japanese) and images (`screenshots-en/`, `screenshots/`) for the Google Play store listing |
 | `docs/` | The pages published with GitHub Pages (the app's home page and the privacy policy) |
 | `design/` | The design document set (PDF) |
 
@@ -132,6 +142,8 @@ Notes:
 
 QCalc is free software under the GNU General Public License, version 2 or later ([LICENSE](LICENSE)). libqalculate is also licensed under GPL v2 or later.
 
-The engine also contains GMP (LGPL v3 or later, or GPL v2 or later), MPFR (LGPL v3 or later), libxml2 (MIT), the musl libc bundled with zig (MIT), LLVM libc++ / libc++abi / libunwind (Apache License 2.0 with LLVM Exceptions) and compiler_rt (MIT). Because MPFR is LGPL v3 or later, the engine as a whole is distributed under the terms of the GNU GPL v3 or later. The sources are in `third_party/`, and the full license texts can be read in the app under "このアプリについて" (About this app) → "オープンソースライセンス" (Open source licenses).
+As a special exception, the copyright holder of QCalc's own code (everything in this repository that is not in `third_party/`) gives permission to link it with the Google Play Billing Library and the libraries it needs, and to distribute the result, without the GPL applying to those libraries. Any other software that is GPL-licensed, such as libqalculate, is not covered by this exception; QCalc's app code does not link libqalculate, which runs as a separate program (the engine).
+
+The engine also contains GMP (LGPL v3 or later, or GPL v2 or later), MPFR (LGPL v3 or later), libxml2 (MIT), the musl libc bundled with zig (MIT), LLVM libc++ / libc++abi / libunwind (Apache License 2.0 with LLVM Exceptions) and compiler_rt (MIT). Because MPFR is LGPL v3 or later, the engine as a whole is distributed under the terms of the GNU GPL v3 or later. The sources are in `third_party/`, and the full license texts can be read in the app under "About this app" → "Open source licenses".
 
 The icon was made for QCalc and is different from the Qalculate! icon.

@@ -16,21 +16,31 @@
 - 日本の単位（坪・反・寸・尺・間・里・合・升・匁・貫）も使えます（例：`30 坪 to m²`）。libqalculate にはない単位で、QCalc が計算エンジンの起動時に追加しています。行列のトレース `trace()` も同じように追加しています。
 - 2D グラフ（y = f(x)）と 3D グラフ（z = f(x, y) の曲面、指で回転・拡大）
 - 式の例と使い方をアプリ内に収録（タップして試せます）。関数・単位・定数の一覧は日本語でも検索できます。
-- 自分で定義する変数と関数、計算履歴、消した式や履歴を「元に戻す」、文字の大きさの変更、ダークモード
+- 自分で定義する変数と関数、計算履歴、消した式や履歴を「元に戻す」、文字の大きさの変更、配色テーマ（7 色）、ダークモード
+- 計算履歴を CSV ファイルに書き出し（Excel でも文字化けしないよう、BOM 付きの UTF-8）
+- 画面は英語と日本語。最初は英語で表示され、メニューの「Language / 言語」で日本語に切り替えられます
 - 個人情報を集めません。広告もありません（[プライバシーポリシー](https://hiroshitsu.github.io/qcalc/privacy.html)）。
 - 対応端末：Android 7.0 以降、arm64（64 ビット ARM）
 
 QCalc は Qalculate! の公式アプリではなく、Qalculate! の開発者とは関係のない個人が作っています。
 
+## QCalc Pro
+
+QCalc Pro は Google Play での買い切りの購入（1 回限りのアイテム `qcalc_pro`）で、1000 桁を超える有効桁数、3D グラフ、配色テーマ、履歴の書き出しと、今後のバージョンで増える Pro 機能が使えるようになります。そのほかの機能は無料のままです。
+
+- 購入は Google Play Billing Library で行います（`app/src-billing/PlayBilling.java`）。これは Gradle で `qcalc.billing=true` にしたときだけビルドに入ります（`app/build.gradle`）。`build-apk.sh`・`build-aab.sh` では入りません。
+- **ライブラリの入っていないビルドでは Pro を買えないため、何も制限しません**（Pro 以前と同じく、すべての機能を無料で使えます）。テスト版（`.debug`）は最初から Pro が有効で、Pro の画面で無効にして、無料版の見え方を確かめられます。
+- Pro が始まる前から QCalc を使っている人は、Pro の機能を無料のまま使えます（`Pro.java`）。
+
 ## 仕組み
 
 - **画面**：HTML・CSS・JavaScript のページ（`app/assets/`）を WebView で表示しています。Java 側は `QalcNative` という名前の JavaScript インターフェースで呼び出します。
-- **Java**（`app/src/`）：`MainActivity` が WebView を持ちます。`Engine` は計算エンジンを子プロセスとして動かし、要求ごとに制限時間を設けます。時間内に答えないエンジンは止めて、起動し直します。`RatesUpdater` は、公式の Qalculate! と同じ取得元から為替レートをダウンロードします。`StateStore` は、履歴・設定・入力中の式をアプリ専用の領域に保存します。
+- **Java**（`app/src/`）：`MainActivity` が WebView を持ちます。`Engine` は計算エンジンを子プロセスとして動かし、要求ごとに制限時間を設けます。時間内に答えないエンジンは止めて、起動し直します。`RatesUpdater` は、公式の Qalculate! と同じ取得元から為替レートをダウンロードします。`StateStore` は、履歴・設定・入力中の式をアプリ専用の領域に保存します。`Pro` は QCalc Pro の状態を管理します。
 - **計算エンジン**（`bridge/qalc-engine.cc` と libqalculate）：zig でビルドした arm64 の静的な実行ファイルです。インストール時に Android がファイルとして取り出し、アプリから起動できるように、ネイティブライブラリ（`libqalcengine.so`）の形でアプリに入れています。アプリとエンジンは、標準入出力で 1 行に 1 件の JSON をやりとりします（`calc`、`plot`、`plot3d`、`catalog`、`define_var` などの命令）。
 
 ## 設計書・マニュアル
 
-設計書一式（PDF）は [design/](design/) にあります。英語の概要のほかは、日本語です。
+設計書一式（PDF）は [design/](design/) にあります。英語の概要のほかは日本語です（英語版を準備中です）。
 
 - [概要](design/00-overview.pdf)
 - [1. 要件定義書](design/01-requirements.pdf)
@@ -46,7 +56,8 @@ QCalc は Qalculate! の公式アプリではなく、Qalculate! の開発者と
 | パス | 内容 |
 | --- | --- |
 | `bridge/qalc-engine.cc` | libqalculate を呼び出す小さなプログラム（1 行 1 件の JSON でアプリとやりとり） |
-| `app/AndroidManifest.xml`, `app/src/` | Android 側の Java コード（WebView、エンジンの起動と監視、為替レートの取得、履歴などの保存） |
+| `app/AndroidManifest.xml`, `app/src/` | Android 側の Java コード（WebView、エンジンの起動と監視、為替レートの取得、履歴などの保存、QCalc Pro） |
+| `app/src-billing/` | Google Play Billing Library を使う QCalc Pro の購入（Gradle で `qcalc.billing=true` のときだけ） |
 | `app/res/`, `app/res-debug/` | アプリ名、テーマ、ランチャーのアイコン（`res-debug` はテスト版の名前「QCalc (debug)」） |
 | `app/assets/` | 画面（HTML / CSS / JavaScript）。`licenses.js` はアプリに組み込んだソフトウェアのライセンス文 |
 | `app/jniLibs/arm64-v8a/libqalcengine.so` | ビルド済みの計算エンジン（arm64 の実行ファイル。`build-engine.sh` で作り直せます） |
@@ -61,7 +72,7 @@ QCalc は Qalculate! の公式アプリではなく、Qalculate! の開発者と
 | `settings.gradle`, `build.gradle`, `app/build.gradle`, `gradle.properties`, `gradle/wrapper/` | Android Studio（Gradle）用の設定 |
 | `keystore.properties.example` | Android Studio で release に署名するときの設定の見本 |
 | `icon/` | アイコンの元（`qcalc-icon.svg`）と、`app/res` の各サイズのアイコンを作るスクリプト |
-| `store/` | Google Play のストア掲載用の文章と画像 |
+| `store/` | Google Play のストア掲載用の文章（英語 `listing-en.md`、日本語 `listing-ja.md`）と画像（`screenshots-en/`、`screenshots/`） |
 | `docs/` | GitHub Pages で公開するページ（紹介ページとプライバシーポリシー） |
 | `design/` | 設計書一式（PDF）：概要、要件定義書、基本設計書、詳細設計書、操作マニュアル、ビルド・保守マニュアル、テスト仕様書・結果、英語の概要 |
 
@@ -129,6 +140,8 @@ QCalc は Google Play アプリ署名を使います。アプリに署名する�
 ## ライセンス
 
 QCalc は GNU General Public License v2 以降（[LICENSE](LICENSE)）のフリーソフトウェアです。libqalculate も GPL v2 以降です。
+
+特別な例外として、QCalc 自身のコード（このリポジトリの `third_party/` 以外）の著作権者は、これを Google Play Billing Library とそれが必要とするライブラリにリンクし、その結果を配布することを、それらのライブラリに GPL を適用せずに許可します。libqalculate など、ほかの GPL のソフトウェアはこの例外の対象ではありません。QCalc のアプリのコードは libqalculate にリンクしておらず、libqalculate は別のプログラム（計算エンジン）として動きます。
 
 計算エンジンには、GMP（LGPL v3 以降 または GPL v2 以降）、MPFR（LGPL v3 以降）、libxml2（MIT）、zig に同梱の musl libc（MIT）、LLVM libc++ / libc++abi / libunwind（Apache License 2.0 with LLVM Exceptions）、compiler_rt（MIT）も組み込んでいます。MPFR が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。これらのソースは `third_party/` にあり、ライセンスの全文はアプリの「このアプリについて」→「オープンソースライセンス」で読めます。
 

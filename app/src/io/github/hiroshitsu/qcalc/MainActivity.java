@@ -1,6 +1,7 @@
 package io.github.hiroshitsu.qcalc;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -37,10 +38,18 @@ import android.window.OnBackInvokedDispatcher;
 
 import org.json.JSONObject;
 
+import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.util.regex.Pattern;
+
 public class MainActivity extends Activity {
 
     private static final String TAG = "QCalc";
     private static final String START_PAGE = "file:///android_asset/index.html";
+    private static final int REQUEST_SAVE = 1;
+    /** File names the page may suggest for a saved file (QCalc-history-20261112.csv). */
+    private static final Pattern FILE_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,99}");
+    private static final int MAX_SAVE = 16 * 1024 * 1024;
 
     /** When the page's renderer last went away (to stop a crash loop). */
     private static long lastRendererGone;
@@ -56,13 +65,25 @@ public class MainActivity extends Activity {
     private final Engine.EventListener events = new Engine.EventListener() {
         @Override
         public void onEvent(String json) {
-            runScript("window.QalcBridge && QalcBridge.receiveEvent && QalcBridge.receiveEvent(" + JSONObject.quote(json) + ")");
+            sendEvent(json);
         }
     };
+    /** QCalc Pro (the purchase in Google Play, see Pro.java). */
+    private Pro pro;
+    /** The text of a file being saved, while the system's file picker is open. */
+    private String pendingSave;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // first: on its first start a build with billing looks for the data of older versions
+        pro = new Pro(this, new Pro.Listener() {
+            @Override
+            public void changed(String eventJson) {
+                sendEvent(eventJson);
+            }
+        });
+        pro.start();
         Engine.get(this).warmUp();
         setUpWindow();
         try {
@@ -70,8 +91,10 @@ public class MainActivity extends Activity {
         } catch (RuntimeException e) {
             // the system WebView is missing, disabled or being updated
             Log.e(TAG, "WebView", e);
-            showMessage("画面の表示に必要な「Android System WebView」を利用できません。"
-                    + "Play ストアで更新するか、設定アプリで有効にしてから、もう一度開いてください。");
+            showMessage(tr("QCalc needs Android System WebView, which is not available. "
+                    + "Update it in the Play Store or turn it on in the Settings app, then open QCalc again.",
+                    "画面の表示に必要な「Android System WebView」を利用できません。"
+                    + "Play ストアで更新するか、設定アプリで有効にしてから、もう一度開いてください。"));
             return;
         }
         WebSettings s = web.getSettings();
@@ -102,7 +125,8 @@ public class MainActivity extends Activity {
                 long now = SystemClock.elapsedRealtime();
                 boolean again = lastRendererGone != 0 && now - lastRendererGone < 15000;
                 lastRendererGone = now;
-                if (again) showMessage("画面の表示が繰り返し停止しました。アプリを閉じて、もう一度開いてください。");
+                if (again) showMessage(tr("The screen stopped again and again. Close the app and open it again.",
+                        "画面の表示が繰り返し停止しました。アプリを閉じて、もう一度開いてください。"));
                 else recreate();
                 return true;
             }
@@ -171,6 +195,19 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * The text in the language of the app: Japanese when it is chosen in the page's settings
+     * ("Language / 言語", saved by the page as qalc.settings), otherwise English.
+     */
+    private String tr(String en, String ja) {
+        try {
+            String s = StateStore.load(this, "qalc.settings");
+            if (s != null && "ja".equals(new JSONObject(s).optString("lang"))) return ja;
+        } catch (Exception ignored) {
+        }
+        return en;
+    }
+
     private void showMessage(String text) {
         TextView t = new TextView(this);
         t.setText(text);
@@ -225,6 +262,8 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (web != null) web.onResume();
+        // a purchase may have been made or completed outside the app (a pending payment, a promo code)
+        if (pro != null) pro.refresh();
     }
 
     @Override
@@ -240,6 +279,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         destroyed = true;
         Engine.get(this).clearEventListener(events);
+        if (pro != null) pro.end();
         WebView w = web;
         web = null;
         if (w != null) {
@@ -326,6 +366,52 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** The system's file picker for saving a file has closed: write the file (on a background thread). */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_SAVE) return;
+        final String text = pendingSave;
+        pendingSave = null;
+        final Uri uri = data != null ? data.getData() : null;
+        if (resultCode != RESULT_OK || uri == null) {
+            sendEvent("{\"event\":\"saved\",\"ok\":false,\"cancelled\":true}");
+            return;
+        }
+        if (text == null) {
+            // the app was closed while the file picker was open
+            sendEvent("{\"event\":\"saved\",\"ok\":false,\"error\":\"Could not save the file\"}");
+            return;
+        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean ok = false;
+                try {
+                    OutputStream out = getContentResolver().openOutputStream(uri, "wt");
+                    if (out != null) {
+                        try {
+                            out.write(text.getBytes(Charset.forName("UTF-8")));
+                            ok = true;
+                        } finally {
+                            out.close();
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "save", e);
+                    ok = false;
+                }
+                sendEvent(ok ? "{\"event\":\"saved\",\"ok\":true}"
+                        : "{\"event\":\"saved\",\"ok\":false,\"error\":\"Could not save the file\"}");
+            }
+        }, "qalc-save").start();
+    }
+
+    /** Hands an event (one JSON object) to the page: engine events, QCalc Pro, saved files. */
+    private void sendEvent(String json) {
+        runScript("window.QalcBridge && QalcBridge.receiveEvent && QalcBridge.receiveEvent(" + JSONObject.quote(json) + ")");
+    }
+
     /** Hands an engine response (one JSON line) to the page; the page parses it. */
     private void deliver(String json) {
         runScript("window.QalcBridge && QalcBridge.receiveText(" + JSONObject.quote(json) + ")");
@@ -362,7 +448,7 @@ public class MainActivity extends Activity {
                     try {
                         r = RatesUpdater.update(Engine.get(MainActivity.this), id, versionName());
                     } catch (RuntimeException e) {
-                        r = "{\"id\":" + id + ",\"ok\":false,\"error\":\"為替レートの更新に失敗しました\"}";
+                        r = "{\"id\":" + id + ",\"ok\":false,\"error\":\"Could not update the exchange rates\"}";
                     }
                     deliver(r);
                 }
@@ -395,11 +481,11 @@ public class MainActivity extends Activity {
                         if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("QCalc", text));
                     } catch (RuntimeException e) {
                         // the system passes the text in one transaction of at most about 1 MB
-                        Toast.makeText(MainActivity.this, "長すぎてコピーできませんでした", Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, tr("Too long to copy", "長すぎてコピーできませんでした"), Toast.LENGTH_LONG).show();
                         return;
                     }
                     // Android 13 and later show their own confirmation
-                    if (Build.VERSION.SDK_INT < 33) Toast.makeText(MainActivity.this, "コピーしました", Toast.LENGTH_SHORT).show();
+                    if (Build.VERSION.SDK_INT < 33) Toast.makeText(MainActivity.this, tr("Copied", "コピーしました"), Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -423,6 +509,68 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     openExternal(url);
+                }
+            });
+        }
+
+        /** QCalc Pro: {billing, pro, legacy, price, state} (see Pro.info()). */
+        @JavascriptInterface
+        public String proInfo() {
+            return pro != null ? pro.info() : "{\"billing\":\"none\"}";
+        }
+
+        @JavascriptInterface
+        public void buyPro() {
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (pro != null && !destroyed) pro.buy(MainActivity.this);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void restorePro() {
+            if (pro != null) pro.restore();
+        }
+
+        @JavascriptInterface
+        public void refreshPro() {
+            if (pro != null) pro.refresh();
+        }
+
+        /** Test builds only: see the app with or without Pro. */
+        @JavascriptInterface
+        public void setTestPro(boolean unlocked) {
+            if (pro != null) pro.setTestUnlocked(unlocked);
+        }
+
+        /**
+         * Saves a text file where the user chooses (the system's file picker); the result comes
+         * as a "saved" event. Only CSV files with a plain name, as the page makes them.
+         */
+        @JavascriptInterface
+        public void saveFile(final String name, String mime, final String text) {
+            if (name == null || text == null || !FILE_NAME.matcher(name).matches() || !"text/csv".equals(mime)
+                    || text.length() > MAX_SAVE) {
+                sendEvent("{\"event\":\"saved\",\"ok\":false,\"error\":\"Could not save the file\"}");
+                return;
+            }
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (destroyed) return;
+                    Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("text/csv");
+                    i.putExtra(Intent.EXTRA_TITLE, name);
+                    pendingSave = text;
+                    try {
+                        startActivityForResult(i, REQUEST_SAVE);
+                    } catch (ActivityNotFoundException e) {
+                        pendingSave = null;
+                        sendEvent("{\"event\":\"saved\",\"ok\":false,\"error\":\"Could not save the file\"}");
+                    }
                 }
             });
         }

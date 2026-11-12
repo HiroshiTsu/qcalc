@@ -35,6 +35,9 @@ make_manifest() {
 }
 
 # build_dex <work dir>  ->  <work dir>/classes.dex
+# Only app/src: app/src-billing (the purchase of QCalc Pro) needs the Google Play Billing Library and
+# is built by Gradle with qcalc.billing=true (app/build.gradle). Without it Pro cannot be bought, and
+# the app locks nothing (Pro.java).
 build_dex() {
   mkdir -p "$1/classes"
   find "$A/src" -name '*.java' -print0 | xargs -0 javac -encoding UTF-8 -source 8 -target 8 \

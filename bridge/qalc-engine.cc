@@ -80,7 +80,7 @@ static void write_line(const string &s) {
 // so that the app does not resend the same request to a fresh engine.
 static void on_terminate() {
 	if(out_mutex.try_lock()) {
-		string s = "{\"id\":" + wd_id + ",\"ok\":false,\"error\":\"計算に必要なメモリが不足しました\",\"restart\":true}\n";
+		string s = "{\"id\":" + wd_id + ",\"ok\":false,\"error\":\"Not enough memory for the calculation\",\"restart\":true}\n";
 		fwrite(s.data(), 1, s.size(), proto);
 		fflush(proto);
 	}
@@ -372,6 +372,26 @@ static bool truncate_utf8(string &s, size_t max_bytes) {
 	s.resize(n);
 	s += "…";
 	return true;
+}
+
+// The end of a long text: at most max_bytes, starting at the beginning of a character.
+static string utf8_tail(const string &s, size_t max_bytes) {
+	if(s.size() <= max_bytes) return s;
+	size_t from = s.size() - max_bytes;
+	while(from < s.size() && ((unsigned char) s[from] & 0xC0) == 0x80) from++;
+	return s.substr(from);
+}
+
+// How many characters (code points) and how many decimal digits a UTF-8 text has.
+static size_t utf8_chars(const string &s) {
+	size_t n = 0;
+	for(size_t i = 0; i < s.size(); i++) if(((unsigned char) s[i] & 0xC0) != 0x80) n++;
+	return n;
+}
+static size_t count_digits(const string &s) {
+	size_t n = 0;
+	for(size_t i = 0; i < s.size(); i++) if(s[i] >= '0' && s[i] <= '9') n++;
+	return n;
 }
 
 // A value as text that can be typed back into an expression: decimal, or a fraction when a
@@ -822,11 +842,14 @@ static string cmd_calc(const JVal &req, JOut &out) {
 	string expr = req.str("expr");
 	int timeout = req.integer("timeout", 3000, 100, 120000);
 	int max_chars = req.integer("max_chars", 200000, 100, 10000000);
+	// A result longer than max_chars is cut. With tail_chars (the live preview) its end is kept
+	// too, so that the beginning and the end can be shown, with "chars" and "digits" of the whole.
+	int tail_chars = req.integer("tail_chars", 0, 0, 1000000);
 	bool store = req.boolean("store", false);
 	bool preview = req.boolean("preview", !store);
 	Opts op = make_opts(req.get("opts"));
 	CALCULATOR->clearMessages();
-	if(too_deeply_nested(expr)) return "式の入れ子が深すぎます";
+	if(too_deeply_nested(expr)) return "The expression is nested too deeply";
 	string uexpr = CALCULATOR->unlocalizeExpression(expr, op.eo.parse_options);
 	// A live preview must not change anything: while "a = a + 1" is being typed it would
 	// otherwise run again after every key press. It runs when "=" is pressed.
@@ -854,11 +877,25 @@ static string cmd_calc(const JVal &req, JOut &out) {
 	string msgs = collect_messages();
 	if(store && r.have_value && !r.timed_out) store_ans(r.value);
 	if(r.forced) restart_after_reply = true;  // libqalculate state is not safe after a forced thread cancel
-	bool truncated = truncate_utf8(r.result, (size_t) max_chars);
+	string tail;
+	size_t full_chars = 0, full_digits = 0, head_bytes = (size_t) max_chars;
+	if(r.result.size() > (size_t) max_chars) {
+		full_chars = utf8_chars(r.result);
+		full_digits = count_digits(r.result);
+		if(tail_chars > 0 && tail_chars * 2 <= max_chars) {
+			tail = utf8_tail(r.result, (size_t) tail_chars);
+			head_bytes = (size_t) (max_chars - tail_chars);
+		}
+	}
+	bool truncated = truncate_utf8(r.result, head_bytes);
 	truncate_utf8(r.parsed, 2000);
 	out.str("result", r.result).str("parsed", r.parsed).boolean("approx", r.approx)
-	   .boolean("comparison", r.comparison).boolean("timeout", r.timed_out).boolean("truncated", truncated)
-	   .raw("messages", msgs);
+	   .boolean("comparison", r.comparison).boolean("timeout", r.timed_out).boolean("truncated", truncated);
+	if(truncated) {
+		out.num("chars", (double) full_chars).num("digits", (double) full_digits);
+		if(!tail.empty()) out.str("tail", tail);
+	}
+	out.raw("messages", msgs);
 	return "";
 }
 
@@ -936,7 +973,7 @@ static string read_long_numbers(const string &s, vector<KnownVariable*> &vars) {
 static string cmd_set_ans(const JVal &req, JOut &out) {
 	string expr = req.str("expr");
 	if(expr.empty()) return "expr missing";
-	if(too_deeply_nested(expr)) return "式の入れ子が深すぎます";
+	if(too_deeply_nested(expr)) return "The expression is nested too deeply";
 	EvaluationOptions eo = default_user_evaluation_options;
 	eo.parse_options.comma_as_separator = false;
 	int save_prec = CALCULATOR->getPrecision();
@@ -1341,11 +1378,11 @@ static string cmd_define(const JVal &req, JOut &out, bool is_function) {
 	string title = req.str("title");
 	remove_blank_ends(name);
 	remove_blank_ends(value);
-	if(name.empty() || value.empty()) return "名前と内容を入力してください";
+	if(name.empty() || value.empty()) return "Enter a name and a value";
 	CALCULATOR->clearMessages();
 	EvaluationOptions eo = default_user_evaluation_options;
 	eo.parse_options.comma_as_separator = false;
-	if(too_deeply_nested(value)) return "式の入れ子が深すぎます";
+	if(too_deeply_nested(value)) return "The expression is nested too deeply";
 	{
 		// refuse a value that libqalculate cannot read ("5 +* 3", "sin(")
 		MathStructure mtest;
@@ -1355,17 +1392,17 @@ static string cmd_define(const JVal &req, JOut &out, bool is_function) {
 			if(problem.empty() && (m->type() == MESSAGE_ERROR || m->type() == MESSAGE_WARNING)) problem = m->message();
 		}
 		CALCULATOR->clearMessages();
-		if(!problem.empty()) return "内容を確認してください（" + problem + "）";
+		if(!problem.empty()) return "Check the value (" + problem + ")";
 	}
 	if(is_function) {
-		if(!CALCULATOR->functionNameIsValid(name)) return "関数名に使えない文字が含まれています";
+		if(!CALCULATOR->functionNameIsValid(name)) return "The function name contains characters that cannot be used";
 		// functions have their own name space (a function "g" does not hide the unit g)
 		MathFunction *existing = CALCULATOR->getActiveFunction(name, true);
-		if(existing && (!existing->isLocal() || existing->subtype() != SUBTYPE_USER_FUNCTION)) return "「" + name + "」は組み込みの名前なので使えません";
+		if(existing && (!existing->isLocal() || existing->subtype() != SUBTYPE_USER_FUNCTION)) return "\"" + name + "\" is a built-in name and cannot be used";
 		// same conversion as qalc's "function" command: 2x, πx, 2×x−y, √x ... -> \x, \y, \z
 		string formula = value;
 		fix_user_function_expression(formula, eo);
-		if(CALCULATOR->hasToExpression(formula, false, eo)) return "関数の式に「to」は使えません";
+		if(CALCULATOR->hasToExpression(formula, false, eo)) return "\"to\" cannot be used in the expression of a function";
 		if(existing) {
 			((UserFunction*) existing)->setFormula(formula);
 			if(!title.empty()) existing->setTitle(title);
@@ -1373,10 +1410,10 @@ static string cmd_define(const JVal &req, JOut &out, bool is_function) {
 			CALCULATOR->addFunction(new UserFunction("User functions", name, formula, true, -1, title));
 		}
 	} else {
-		if(!CALCULATOR->variableNameIsValid(name)) return "変数名に使えない文字が含まれています";
+		if(!CALCULATOR->variableNameIsValid(name)) return "The variable name contains characters that cannot be used";
 		ExpressionItem *existing = CALCULATOR->getActiveVariable(name, true);
 		if(!existing) existing = CALCULATOR->getActiveUnit(name, true);
-		if(existing && (!existing->isLocal() || existing->type() != TYPE_VARIABLE || !((Variable*) existing)->isKnown())) return "「" + name + "」は組み込みの名前なので使えません";
+		if(existing && (!existing->isLocal() || existing->type() != TYPE_VARIABLE || !((Variable*) existing)->isKnown())) return "\"" + name + "\" is a built-in name and cannot be used";
 		string expr = CALCULATOR->unlocalizeExpression(value, eo.parse_options);
 		if(existing) {
 			((KnownVariable*) existing)->set(expr);
@@ -1395,7 +1432,7 @@ static string cmd_delete(const JVal &req, JOut &out) {
 	string name = req.str("name");
 	string kind = req.str("kind", "variable");
 	ExpressionItem *item = kind == "function" ? (ExpressionItem*) CALCULATOR->getActiveFunction(name) : (ExpressionItem*) CALCULATOR->getActiveVariable(name);
-	if(!item || !item->isLocal()) return "ユーザー定義の「" + name + "」が見つかりません";
+	if(!item || !item->isLocal()) return "There is no user definition \"" + name + "\"";
 	item->destroy();
 	bool saved = save_definitions();
 	out.boolean("saved", saved);
@@ -1444,16 +1481,16 @@ static string cmd_user_defs(JOut &out) {
 // short names such as "ken", "go" or "tan" could be meant as something else in an expression.
 static void add_japanese_units() {
 	static const struct { const char *name, *latin, *title, *base; int exp; const char *relation, *description; } defs[] = {
-		{"坪", "tsubo", "坪（つぼ・tsubo）", "m", 2, "400/121", "面積。1 坪 = 1 間 × 1 間 = 400/121 m²（約 3.3058 m²）"},
-		{"反", "", "反（たん）", "m", 2, "120000/121", "面積。1 反 = 300 坪（約 991.74 m²）"},
-		{"寸", "", "寸（すん）", "m", 1, "1/33", "長さ。1 寸 = 1/10 尺（約 3.0303 cm）"},
-		{"尺", "", "尺（しゃく）", "m", 1, "10/33", "長さ。1 尺 = 10/33 m（約 30.303 cm）"},
-		{"間", "", "間（けん）", "m", 1, "20/11", "長さ。1 間 = 6 尺（約 1.8182 m）"},
-		{"里", "", "里（り）", "m", 1, "43200/11", "長さ。1 里 = 36 町 = 2160 間（約 3.9273 km）"},
-		{"合", "", "合（ごう）", "L", 1, "2401/13310", "体積。1 合 = 1/10 升（約 180.39 mL）"},
-		{"升", "", "升（しょう）", "L", 1, "2401/1331", "体積。1 升 = 2401/1331 L（約 1.8039 L）"},
-		{"匁", "", "匁（もんめ）", "g", 1, "15/4", "質量。1 匁 = 3.75 g"},
-		{"貫", "", "貫（かん）", "g", 1, "3750", "質量。1 貫 = 1000 匁 = 3.75 kg"},
+		{"坪", "tsubo", "Tsubo (坪)", "m", 2, "400/121", "Area. 1 tsubo = 1 ken × 1 ken = 400/121 m² (about 3.3058 m²)"},
+		{"反", "", "Tan (反)", "m", 2, "120000/121", "Area. 1 tan = 300 tsubo (about 991.74 m²)"},
+		{"寸", "", "Sun (寸)", "m", 1, "1/33", "Length. 1 sun = 1/10 shaku (about 3.0303 cm)"},
+		{"尺", "", "Shaku (尺)", "m", 1, "10/33", "Length. 1 shaku = 10/33 m (about 30.303 cm)"},
+		{"間", "", "Ken (間)", "m", 1, "20/11", "Length. 1 ken = 6 shaku (about 1.8182 m)"},
+		{"里", "", "Ri (里)", "m", 1, "43200/11", "Length. 1 ri = 36 chō = 2160 ken (about 3.9273 km)"},
+		{"合", "", "Gō (合)", "L", 1, "2401/13310", "Volume. 1 gō = 1/10 shō (about 180.39 mL)"},
+		{"升", "", "Shō (升)", "L", 1, "2401/1331", "Volume. 1 shō = 2401/1331 L (about 1.8039 L)"},
+		{"匁", "", "Monme (匁)", "g", 1, "15/4", "Mass. 1 monme = 3.75 g"},
+		{"貫", "", "Kan (貫)", "g", 1, "3750", "Mass. 1 kan = 1000 monme = 3.75 kg"},
 	};
 	for(size_t i = 0; i < sizeof(defs) / sizeof(defs[0]); i++) {
 		Unit *base = CALCULATOR->getActiveUnit(defs[i].base);
@@ -1470,7 +1507,7 @@ static void add_japanese_units() {
 // (not to libqalculate, and not saved to the user's files).
 class TraceFunction : public MathFunction {
   public:
-	TraceFunction() : MathFunction("trace", 1, 1, "Matrices & Vectors", "Trace", "正方行列の対角成分の和（トレース）。Sum of the diagonal elements of a square matrix.") {
+	TraceFunction() : MathFunction("trace", 1, 1, "Matrices & Vectors", "Trace", "Sum of the diagonal elements of a square matrix.") {
 		MatrixArgument *marg = new MatrixArgument("Matrix");
 		marg->setSquareDemanded(true);
 		setArgumentDefinition(1, marg);

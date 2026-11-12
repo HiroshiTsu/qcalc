@@ -58,18 +58,18 @@ final class RatesUpdater {
             }
             JSONObject reload = new JSONObject(engine.call("{\"id\":-3,\"cmd\":\"rates_reload\"}"));
             if (updated > 0 && !reload.optBoolean("loaded", false)) {
-                throw new IOException("計算エンジンが新しいレートを読み込めませんでした");
+                throw new IOException("The calculation engine could not load the new rates");
             }
             result.put("ok", updated > 0);
             result.put("updated", updated);
             result.put("total", sources.length());
             result.put("failed", failed);
             result.put("time", reload.optDouble("time", 0));
-            if (updated == 0) result.put("error", "為替レートをダウンロードできませんでした。通信状態を確認してください。");
+            if (updated == 0) result.put("error", "Could not download the exchange rates. Check the network connection.");
         } catch (Exception e) {
             try {
                 result.put("ok", false);
-                result.put("error", "為替レートの更新に失敗しました（" + (e.getMessage() != null ? e.getMessage() : e.toString()) + "）");
+                result.put("error", "Could not update the exchange rates (" + (e.getMessage() != null ? e.getMessage() : e.toString()) + ")");
             } catch (Exception ignored) {
             }
         }

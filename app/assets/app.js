@@ -41,6 +41,13 @@
       try { localStorage.setItem(k, text); } catch (e) { /* storage full or blocked */ }
     }
   };
+  // The language of the user interface: English (the default) or Japanese, chosen with the setting
+  // "Language / 言語". It is read once when the page starts; choosing another one reloads the page.
+  const LANG = (store.get('qalc.settings', {}) || {}).lang === 'ja' ? 'ja' : 'en';
+  const JA = LANG === 'ja';
+  // the text in the language of the user interface
+  const tr = (en, ja) => (JA ? ja : en);
+  document.documentElement.lang = LANG;
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
   function vibrate() { if (S.haptics && navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { } } }
 
@@ -49,7 +56,7 @@
   const own = (table, key) => (Object.prototype.hasOwnProperty.call(table, key) ? table[key] : undefined);
 
   let toastTimer;
-  // A short message. With `action` ([label, function]) it also has a button, for example "元に戻す".
+  // A short message. With `action` ([label, function]) it also has a button, for example "Undo".
   function toast(msg, ms, action) {
     const t = $('#toast');
     t.textContent = msg;
@@ -65,7 +72,7 @@
   }
   function copyText(text) {
     if (window.QalcNative && QalcNative.copy) QalcNative.copy(text);
-    else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast('コピーしました'));
+    else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast(tr('Copied', 'コピーしました')));
   }
   function openUrl(url) {
     if (window.QalcNative && QalcNative.openUrl) QalcNative.openUrl(url);
@@ -79,11 +86,11 @@
     function post(id, msg) {
       if (window.QalcNative) window.QalcNative.send(msg);
       else if (window.QalcDev) window.QalcDev.send(msg);
-      else setTimeout(() => receive({ id, ok: false, error: '計算エンジンに接続できません' }), 0);
+      else setTimeout(() => receive({ id, ok: false, error: tr('Cannot connect to the calculation engine', '計算エンジンに接続できません') }), 0);
     }
     // Last resort if a reply never comes (the app itself gives up much earlier and restarts the engine).
     function backstop(id, ms) {
-      setTimeout(() => receive({ id, ok: false, code: 'timeout', error: '計算エンジンから応答がありません' }), ms);
+      setTimeout(() => receive({ id, ok: false, code: 'timeout', error: tr('No reply from the calculation engine', '計算エンジンから応答がありません') }), ms);
     }
     function send(cmd, params) {
       return new Promise((resolve) => {
@@ -102,7 +109,7 @@
         backstop(id, 300000);
         if (window.QalcNative) window.QalcNative.updateRates(id);
         else if (window.QalcDev) window.QalcDev.updateRates(id);
-        else receive({ id, ok: false, error: '為替レートを更新できません' });
+        else receive({ id, ok: false, error: tr('Cannot update the exchange rates', '為替レートを更新できません') });
       });
     }
     function receive(r) {
@@ -116,7 +123,7 @@
       if (r && typeof r === 'object') { receive(r); return; }
       // unreadable response: fail the oldest waiting request so the screen does not hang
       const first = pending.keys().next();
-      if (!first.done) receive({ id: first.value, ok: false, error: '計算エンジンの応答を読み取れませんでした' });
+      if (!first.done) receive({ id: first.value, ok: false, error: tr('Could not read the reply of the calculation engine', '計算エンジンの応答を読み取れませんでした') });
     }
     // event lines from the engine, for example the exact text of a new "ans"
     let onEvent = null;
@@ -136,9 +143,9 @@
     angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: false, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
-    text_size: 'normal'
+    text_size: 'normal', lang: 'en', theme: 'blue'
   };
-  // size of the text in the history, the input field and the preview (setting "文字の大きさ")
+  // size of the text in the history, the input field and the preview (setting "Text size")
   const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
   function textScale() { return own(TEXT_SCALE, S.text_size) || 1; }
   function applyTextSize() {
@@ -147,34 +154,64 @@
   }
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
   function saveSettings() { store.set('qalc.settings', S); }
+
+  // ---------------------------------------------------------------- Pro
+  // QCalc Pro is a one-time purchase in Google Play. It unlocks a precision above
+  // FREE_MAX_PRECISION digits, 3D graphs, the color themes and exporting the history (and the Pro
+  // features of later versions). The app reports the state with QalcNative.proInfo():
+  //   billing  'play'   Pro can be bought in Google Play
+  //            'debug'  a test build: Pro is unlocked (it can be locked for testing in the Pro panel)
+  //            'none'   a build without Google Play Billing: Pro cannot be bought, so nothing is locked
+  //   pro      true when Pro is unlocked; legacy: unlocked because QCalc was used before Pro began
+  //   price    the price from Google Play ("¥300"); state 'pending' while a payment is processed
+  // The highest precision is the engine's limit (MAX_PRECISION in qalc-engine.cc).
+  const MAX_PRECISION = 200000, FREE_MAX_PRECISION = 1000;
+  let PRO = readPro();
+  function readPro() {
+    let o = null;
+    try {
+      if (window.QalcNative && QalcNative.proInfo) o = JSON.parse(QalcNative.proInfo());
+      else if (window.QalcDev && QalcDev.proInfo) o = QalcDev.proInfo();
+    } catch (e) { o = null; }
+    return o && typeof o === 'object' ? o : { billing: 'none' };
+  }
+  function proOffered() { return PRO.billing === 'play' || PRO.billing === 'debug'; }
+  function hasPro() { return !proOffered() || PRO.pro === true; }
+  function maxPrecision() { return hasPro() ? MAX_PRECISION : FREE_MAX_PRECISION; }
   function engineOpts() {
     return {
-      angle: S.angle, approx: S.approx, fraction: S.fraction, precision: Number(S.precision) || 10,
+      angle: S.angle, approx: S.approx, fraction: S.fraction, precision: Math.min(Number(S.precision) || 10, maxPrecision()),
       max_decimals: Number(S.max_decimals), base: Number(S.base), notation: S.notation, units: S.units,
       mixed_units: !!S.mixed_units, complex: S.complex, grouping: !!S.grouping, structuring: S.structuring
     };
   }
   const ANGLE_LABEL = { rad: 'RAD', deg: 'DEG', gra: 'GRA' };
-  const APPROX_LABEL = { auto: '自動', exact: '厳密', approx: '近似' };
-  const BASE_LABEL = { 10: '10進', 16: '16進', 2: '2進', 8: '8進', 12: '12進', '-1': 'ローマ' };
+  const APPROX_LABEL = { auto: tr('AUTO', '自動'), exact: tr('EXACT', '厳密'), approx: tr('APPROX', '近似') };
+  const BASE_LABEL = { 10: tr('DEC', '10進'), 16: tr('HEX', '16進'), 2: tr('BIN', '2進'), 8: tr('OCT', '8進'), 12: tr('DUO', '12進'), '-1': tr('ROMAN', 'ローマ') };
+  const BASE_NAME = {
+    10: tr('decimal', '10進数'), 16: tr('hexadecimal', '16進数'), 2: tr('binary', '2進数'), 8: tr('octal', '8進数'),
+    12: tr('duodecimal', '12進数'), '-1': tr('Roman numerals', 'ローマ数字')
+  };
 
   // ------------------------------------------------------------ history
-  // Long results: a result is shown and kept in full (the engine sends up to MAX_RESULT bytes of
-  // UTF-8: a complex number with 200000-digit parts, or 200000 digits with digit grouping). The
-  // newest results are kept in full until the history adds up to HISTORY_BUDGET characters; older
-  // long results keep only their first SHORT_RESULT characters and "…", so that the saved history
-  // stays small. A result can be inserted into an expression up to MAX_INPUT characters.
-  const MAX_RESULT = 450000, HISTORY_BUDGET = 1000000, SHORT_RESULT = 2000, MAX_INPUT = 20000;
+  // Long results: a result is shown and kept in full, in the preview as in the history (the engine
+  // sends up to MAX_RESULT bytes of UTF-8: a complex number with 200000-digit parts, or 200000
+  // digits with digit grouping). A longer result (100000! has 456,574 digits) is shown as its
+  // beginning, "…" and its last TAIL_RESULT bytes. The newest results are kept in full until the
+  // history adds up to HISTORY_BUDGET characters; older long results keep only their first
+  // SHORT_RESULT characters and "…", so that the saved history stays small. A result can be
+  // inserted into an expression up to MAX_INPUT characters.
+  const MAX_RESULT = 450000, TAIL_RESULT = 20000, HISTORY_BUDGET = 1000000, SHORT_RESULT = 2000, MAX_INPUT = 20000;
   function fitHistory() {
     let used = 0;
     for (let i = history.length - 1; i >= 0; i--) {
       const h = history[i];
       if (!h || typeof h !== 'object') continue;
       if (used >= HISTORY_BUDGET) {
-        if (typeof h.result === 'string' && h.result.length > SHORT_RESULT + 1) { h.result = h.result.slice(0, SHORT_RESULT) + '…'; h.cut = true; }
+        if (typeof h.result === 'string' && h.result.length > SHORT_RESULT + 1) { h.result = h.result.slice(0, SHORT_RESULT) + '…'; h.cut = true; delete h.tail; }
         if (typeof h.input === 'string' && h.input.length > SHORT_RESULT) { delete h.input; h.big = true; }
       }
-      used += String(h.result || '').length + String(h.input || '').length + String(h.expr || '').length;
+      used += String(h.result || '').length + String(h.tail || '').length + String(h.input || '').length + String(h.expr || '').length;
     }
   }
   let history = store.get('qalc.history', []);
@@ -218,9 +255,9 @@
     calc: [
       ['d/dx', { ins: 'diff()', back: 1 }], ['d²/dx²', { ins: 'diff(, x, 2)', back: 7, cls: 'fn sm' }], ['∂/∂y', { ins: 'diff(, y)', back: 4 }], ['⌫', { act: 'del', cls: 'ctl', repeat: true }], ['AC', { act: 'clear', cls: 'ctl' }],
       ['∫', { ins: 'integrate()', back: 1 }], ['∫ₐᵇ', { ins: 'integrate(, 0, 1)', back: 7, html: '∫<sub>a</sub><sup>b</sup>' }], ['lim', { ins: 'limit(, 0)', back: 4 }], ['Σ', { ins: 'sum(, 1, 10)', back: 8 }], ['Π', { ins: 'product(, 1, 10)', back: 8 }],
-      ['dsolve', { ins: 'dsolve(diff(y, x) = )', back: 1, cls: 'fn sm' }], ['極値', { ins: 'extremum()', back: 1 }], ['solve', { ins: 'solve()', back: 1 }], ['∞', { ins: '∞' }], ['y', { ins: 'y' }],
+      ['dsolve', { ins: 'dsolve(diff(y, x) = )', back: 1, cls: 'fn sm' }], [tr('max/min', '極値'), { ins: 'extremum()', back: 1, cls: tr('fn sm', undefined) }], ['solve', { ins: 'solve()', back: 1 }], ['∞', { ins: '∞' }], ['y', { ins: 'y' }],
       ['(', { ins: '(' }], [')', { ins: ')' }], ['xʸ', { ins: '^', op: true, cls: 'op' }], ['√', { ins: '√()', back: 1, cls: 'op' }], ['π', { ins: 'π', cls: 'op' }],
-      ['sin', { ins: 'sin()', back: 1 }], ['ln', { ins: 'ln()', back: 1 }], ['e', { ins: 'e' }], ['ほか…', { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
+      ['sin', { ins: 'sin()', back: 1 }], ['ln', { ins: 'ln()', back: 1 }], ['e', { ins: 'e' }], [tr('more…', 'ほか…'), { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
     ],
     // matrices and vectors: [1, 2; 3, 4] is typed without leaving the page (digits, brackets, ";"
     // between rows; the "," between elements is in the row of keys above)
@@ -229,20 +266,22 @@
       ['7'], ['8'], ['9'], ['det', { ins: 'det()', back: 1 }], ['Aᵀ', { ins: 'transpose()', back: 1, html: 'A<sup>T</sup>' }],
       ['4'], ['5'], ['6'], ['A⁻¹', { ins: '^(−1)', op: true }], ['×', { ins: '×', op: true, cls: 'op' }],
       ['1'], ['2'], ['3'], ['−', { ins: '−', cls: 'op' }], ['+', { ins: '+', op: true, cls: 'op' }],
-      ['0'], ['.'], ['Iₙ', { ins: 'identity()', back: 1, html: 'I<sub>n</sub>' }], ['ほか…', { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
+      ['0'], ['.'], ['Iₙ', { ins: 'identity()', back: 1, html: 'I<sub>n</sub>' }], [tr('more…', 'ほか…'), { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
     ]
   };
-  // the pages of the keypad: [id, label of the tab, name for screen readers, category of the function list for "ほか…"]
+  // the pages of the keypad: [id, label of the tab, name for screen readers, category of the function list for "more…"]
   const PAGE_TABS = [
-    ['num', '123', '数字と四則演算のキー', ''], ['fn', '関数', '関数のキー', ''],
-    ['calc', '解析', '解析（微分・積分・極限）のキー', 'Calculus'], ['mat', '行列', '行列・ベクトルのキー', 'Matrices & Vectors']
+    ['num', '123', tr('Digit and arithmetic keys', '数字と四則演算のキー'), ''], ['fn', tr('Functions', '関数'), tr('Function keys', '関数のキー'), ''],
+    ['calc', tr('Calculus', '解析'), tr('Calculus keys (derivatives, integrals, limits)', '解析（微分・積分・極限）のキー'), 'Calculus'],
+    ['mat', tr('Matrix', '行列'), tr('Matrix and vector keys', '行列・ベクトルのキー'), 'Matrices & Vectors']
   ];
   const TOOLBAR = [
-    ['x', { ins: 'x' }], [',', { ins: ', ' }], ['a=b', { ins: ' = ', title: '等号（方程式の = を入力）' }], ['→', { ins: ' to ', op: true, title: '単位・進数の変換' }],
+    ['x', { ins: 'x' }], [',', { ins: ', ' }], ['a=b', { ins: ' = ', title: tr('Equals sign (for equations)', '等号（方程式の = を入力）') }], ['→', { ins: ' to ', op: true, title: tr('Convert units or number bases (to)', '単位・進数の変換') }],
     ['ans', { ins: 'ans' }], ['⌨', { act: 'kbd', id: 'k-kbd' }], ['◀', { act: 'left', repeat: true }], ['▶', { act: 'right', repeat: true }]
   ];
   let page = 'num';
-  const KEY_NAMES = {
+  // names of the keys for screen readers
+  const KEY_NAMES = JA ? {
     '⌫': '1文字削除', 'AC': 'すべて消去', '◀': 'カーソルを左へ', '▶': 'カーソルを右へ', '⌨': 'キーボードで入力',
     'xʸ': 'べき乗', '√': '平方根', '∛': '立方根', 'E': '×10のべき乗', '÷': '割る', '×': '掛ける', '−': '引く',
     '+': '足す', '=': '計算する', 'π': '円周率パイ', 'x²': '2乗', 'x⁻¹': '逆数', 'n!': '階乗', '|x|': '絶対値',
@@ -252,6 +291,17 @@
     '極値': '極値', 'solve': '方程式を解く', '∞': '無限大', 'ほか…': 'ほかの関数を一覧から選ぶ',
     '[': '左角かっこ（行列の始まり）', ']': '右角かっこ（行列の終わり）', ';': 'セミコロン（行列の行の区切り）',
     'det': '行列式', 'Aᵀ': '転置行列', 'A⁻¹': '逆行列', 'Iₙ': '単位行列'
+  } : {
+    '⌫': 'Backspace', 'AC': 'Clear all', '◀': 'Cursor left', '▶': 'Cursor right', '⌨': 'Type with the keyboard',
+    'xʸ': 'Power', '√': 'Square root', '∛': 'Cube root', 'E': 'Times ten to the power', '÷': 'Divide', '×': 'Multiply', '−': 'Minus',
+    '+': 'Plus', '=': 'Calculate', 'π': 'Pi', 'x²': 'Square', 'x⁻¹': 'Reciprocal', 'n!': 'Factorial', '|x|': 'Absolute value',
+    'eˣ': 'e to the power', '∫': 'Integral', 'd/dx': 'Derivative', 'Σ': 'Sum', ',': 'Comma',
+    '°': 'Degrees', '%': 'Percent', '(': 'Left parenthesis', ')': 'Right parenthesis', '.': 'Decimal point',
+    'd²/dx²': 'Second derivative', '∂/∂y': 'Partial derivative with respect to y', '∫ₐᵇ': 'Definite integral', 'lim': 'Limit',
+    'Π': 'Product', 'dsolve': 'Solve a differential equation', 'max/min': 'Extremum (maximum or minimum)', 'solve': 'Solve an equation',
+    '∞': 'Infinity', 'more…': 'Choose another function from the list',
+    '[': 'Left bracket (start of a matrix)', ']': 'Right bracket (end of a matrix)', ';': 'Semicolon (end of a matrix row)',
+    'det': 'Determinant', 'Aᵀ': 'Transpose', 'A⁻¹': 'Inverse matrix', 'Iₙ': 'Identity matrix'
   };
 
   function makeKey(def, inToolbar) {
@@ -334,7 +384,7 @@
   }
 
   // ================================================== expression editing
-  // ---- "元に戻す" for an expression that was cleared (AC) or replaced (history, examples)
+  // ---- "Undo" for an expression that was cleared (AC) or replaced (history, examples)
   const undoEl = $('#undo');
   let undoText = null;
   function offerUndo(prev) {
@@ -414,7 +464,7 @@
         break;
       case 'eq': commit(); break;
       case 'more': {
-        // "ほか…": the function list, showing the functions of this page's field
+        // "more…": the function list, showing the functions of this page's field
         const tab = PAGE_TABS.find((t) => t[0] === page);
         openCatalog('functions', tab && tab[3]);
         break;
@@ -531,27 +581,45 @@
     const raw = exprEl.value.trim();
     if (!raw) { showPreview(null); return; }
     previewBusy = true;
-    const r = await Bridge.send('calc', { expr: normalizeExpr(raw), opts: engineOpts(), timeout: 1500, max_chars: 6000 });
+    const r = await Bridge.send('calc', { expr: normalizeExpr(raw), opts: engineOpts(), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
     previewBusy = false;
     if (exprEl.value.trim() === raw && !committing) showPreview(r);
     if (previewAgain) { previewAgain = false; runPreview(); }
   }
-  // Result text as shown: digit groups with commas (the Japanese convention; the engine uses
-  // thin spaces), dates without the quotes the engine puts around them.
-  function displayText(t) {
+  // Result text as shown: dates without the quotes the engine puts around them, and digit groups.
+  // With "Digit grouping" the engine separates the groups with narrow spaces (U+202F in numbers of
+  // up to 20 characters, U+2009 in longer ones), in the decimals too, and puts U+202F between a
+  // number and its unit. The groups before the decimal point are shown with commas (1,234,567);
+  // the decimals and the space before a unit stay as they are (3.141 592 654, 12.345 km).
+  // inDecimals: the text continues the decimals of a number (the end of a shortened preview).
+  function displayText(t, inDecimals) {
     if (!t) return '';
-    t = t.replace(/\u202f/g, ',');
+    if (t.indexOf('\u202f') >= 0 || t.indexOf('\u2009') >= 0) {
+      t = t.replace(/[\d\u202f\u2009.]+/g, (tok, at) => {
+        if (inDecimals && at === 0) return tok;
+        const dot = tok.indexOf('.');
+        const int = dot < 0 ? tok : tok.slice(0, dot);
+        return int.replace(/(\d)[\u202f\u2009](?=\d)/g, '$1,') + (dot < 0 ? '' : tok.slice(dot));
+      });
+    }
     const d = /^"(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?)"$/.exec(t);
     return d ? d[1].replace('T', ' ') : t;
   }
-  function displayResult(h) {
+  // A result as shown, without "= ". One that was too long has its beginning, "…" and its end.
+  function shownText(h) {
     const t = displayText(h.result);
+    if (typeof h.tail !== 'string' || !h.tail) return t;
+    const head = t.replace(/…$/, '');
+    return head + ' … ' + displayText(h.tail, /\.[\d\u202f\u2009]*$/.test(head));
+  }
+  function displayResult(h) {
+    const t = shownText(h);
     if (h.cmp) return t;
     return (h.approx && t.indexOf('≈') < 0 ? '≈ ' : '= ') + t;
   }
   function resultText(r) {
     if (!r || !r.result) return '';
-    return displayResult({ result: r.result, approx: r.approx, cmp: r.comparison });
+    return displayResult({ result: r.result, tail: r.tail, approx: r.approx, cmp: r.comparison });
   }
   // ---- matrices in results
   // The engine prints a matrix on one line, "[1  2; 3  4]": rows separated by "; " and the elements
@@ -611,8 +679,8 @@
       node.append(grid);
     }
   }
-  // The engine's messages are in English (libqalculate has no Japanese translation);
-  // the common ones are shown in Japanese.
+  // The engine's messages are in English (libqalculate has no Japanese translation). In Japanese,
+  // the common ones are translated, and so are the messages of the app's own Java code and engine.
   const MESSAGES_JA = [
     [/^It has been (\d+) days? since the exchange rates last were updated\.?$/, (m, d) => '為替レートが ' + d + ' 日間更新されていません（メニュー →「為替レートの更新」）'],
     [/^Misplaced operator\(s\) "(.+)" ignored\.?$/, (m, o) => '余分な演算子「' + o + '」を無視しました'],
@@ -647,8 +715,41 @@
       (m, r, c) => '行列の積は、左の行列の列の数（' + c + '）と右の行列の行の数（' + r + '）が同じでなければ計算できません'],
     [/^Argument (\d+), (.+), in (.+)\(\) must be a square matrix\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は正方行列（行と列の数が同じ行列）でなければなりません'],
     [/^(.+)\(\) requires that all matrices\/vectors have the same dimensions\.?$/, (m, f) => f + '() に渡す行列・ベクトルは、すべて同じ大きさでなければなりません'],
+    // the app's Java code (Engine.java, RatesUpdater.java, MainActivity.java)
+    [/^Communication with the calculation engine failed \((.*)\)$/, (m, e) => '計算エンジンとのやりとりに失敗しました（' + e + '）'],
+    [/^Could not start the calculation engine \((.*)\)$/, (m, e) => '計算エンジンを起動できませんでした（' + e + '）'],
+    [/^The request is not valid$/, () => '要求の形式が正しくありません'],
+    [/^The calculation was stopped$/, () => '計算を中止しました'],
+    [/^The calculation took too long and was stopped$/, () => '時間がかかりすぎたため計算を中止しました'],
+    [/^The calculation engine stopped unexpectedly\. Try a simpler expression\.$/, () => '計算エンジンが異常終了しました。式を簡単にしてお試しください'],
+    [/^Could not update the exchange rates$/, () => '為替レートの更新に失敗しました'],
+    [/^Could not update the exchange rates \((.*)\)$/, (m, e) => '為替レートの更新に失敗しました（' + localMessage(e) + '）'],
+    [/^Could not download the exchange rates\. Check the network connection\.$/, () => '為替レートをダウンロードできませんでした。通信状態を確認してください。'],
+    [/^The calculation engine could not load the new rates$/, () => '計算エンジンが新しいレートを読み込めませんでした'],
+    // the engine's own messages (qalc-engine.cc)
+    [/^Not enough memory for the calculation$/, () => '計算に必要なメモリが不足しました'],
+    [/^The expression is nested too deeply$/, () => '式の入れ子が深すぎます'],
+    [/^Enter a name and a value$/, () => '名前と内容を入力してください'],
+    [/^Check the value \((.*)\)$/, (m, p) => '内容を確認してください（' + localMessage(p) + '）'],
+    [/^The function name contains characters that cannot be used$/, () => '関数名に使えない文字が含まれています'],
+    [/^The variable name contains characters that cannot be used$/, () => '変数名に使えない文字が含まれています'],
+    [/^"(.+)" is a built-in name and cannot be used$/, (m, n) => '「' + n + '」は組み込みの名前なので使えません'],
+    [/^"to" cannot be used in the expression of a function$/, () => '関数の式に「to」は使えません'],
+    [/^There is no user definition "(.+)"$/, (m, n) => 'ユーザー定義の「' + n + '」が見つかりません'],
+    [/^Google Play is not available on this device$/, () => 'この端末では Google Play を利用できません'],
+    [/^Could not connect to Google Play\. Try again later\.$/, () => 'Google Play に接続できませんでした。しばらくしてから、もう一度お試しください。'],
+    [/^QCalc Pro cannot be bought right now$/, () => '現在 QCalc Pro を購入できません'],
+    [/^No purchase of QCalc Pro was found$/, () => 'QCalc Pro の購入が見つかりませんでした'],
+    [/^The purchase could not be completed \((.*)\)$/, (m, c) => '購入を完了できませんでした（' + c + '）'],
+    [/^The payment is pending\. QCalc Pro will be unlocked when it is complete\.$/, () => '支払いの手続き中です。完了すると QCalc Pro が使えるようになります。'],
+    [/^Could not save the file$/, () => 'ファイルを保存できませんでした'],
+    [/^The middle of this long result is not shown \(([\d,]+) digits\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 桁）'],
+    [/^The middle of this long result is not shown \(([\d,]+) characters\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 文字）'],
+    [/^The middle of this long result is not shown$/, () => '長い結果のため、途中を省略しています'],
   ];
-  function jaMessage(text) {
+  // a message of the engine or of the app's Java code, in the language of the user interface
+  function localMessage(text) {
+    if (!JA || typeof text !== 'string') return text;
     for (const [re, f] of MESSAGES_JA) {
       const m = re.exec(text);
       if (m) return f(...m);
@@ -659,18 +760,28 @@
     msgEl.textContent = '';
     msgEl.className = 'msg';
     if (!r) { parsedEl.textContent = ''; previewEl.textContent = ''; return; }
-    if (!r.ok) { previewEl.textContent = ''; msgEl.textContent = r.error || ''; msgEl.className = 'msg error'; return; }
+    if (!r.ok) { previewEl.textContent = ''; msgEl.textContent = localMessage(r.error) || ''; msgEl.className = 'msg error'; return; }
     parsedEl.textContent = r.parsed || '';
     const err = (r.messages || []).find((m) => m.type === 'error');
-    if (r.deferred) previewEl.textContent = '＝ を押すと実行します（定義など）';
+    if (r.deferred) previewEl.textContent = tr('Press = to run it (definitions are not previewed)', '＝ を押すと実行します（定義など）');
     else if (r.timeout) previewEl.textContent = '…';
-    else if (err) { previewEl.textContent = ''; msgEl.textContent = jaMessage(err.text); msgEl.className = 'msg error'; }
+    else if (err) { previewEl.textContent = ''; msgEl.textContent = localMessage(err.text); msgEl.className = 'msg error'; }
     else {
       showResult(previewEl, resultText(r));
       fitMatrices(previewEl);
       const warn = (r.messages || []).find((m) => m.type === 'warning');
-      if (warn) msgEl.textContent = jaMessage(warn.text);
+      const notes = [];
+      if (warn) notes.push(localMessage(warn.text));
+      if (r.truncated) notes.push(localMessage(cutMessage(r)));
+      if (notes.length) { msgEl.textContent = notes.join(' '); if (!warn) msgEl.className = 'msg note'; }
     }
+  }
+  // "The middle of this long result is not shown (456,574 digits)", for a result longer than MAX_RESULT
+  function cutMessage(r) {
+    const digits = Number(r.digits) || 0, chars = Number(r.chars) || 0;
+    const n = (x) => String(x).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const size = digits && digits >= chars * 0.6 ? ' (' + n(digits) + ' digits)' : chars ? ' (' + n(chars) + ' characters)' : '';
+    return 'The middle of this long result is not shown' + size;
   }
 
   // ============================================================ commit
@@ -678,27 +789,27 @@
   async function commit() {
     const raw = exprEl.value.trim();
     if (!raw || committing) return;
-    if (!engineReady) { toast('計算エンジンを準備中です'); return; }
+    if (!engineReady) { toast(tr('The calculation engine is starting', '計算エンジンを準備中です')); return; }
     const expr = normalizeExpr(raw);
     committing = true;
     clearTimeout(previewTimer);
-    previewEl.textContent = '計算中…';
-    busyTimer = setTimeout(() => { if (committing) previewEl.textContent = '計算中…（ここをタップで中止）'; }, 1200);
-    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 20000, store: true, max_chars: MAX_RESULT });
+    previewEl.textContent = tr('Calculating…', '計算中…');
+    busyTimer = setTimeout(() => { if (committing) previewEl.textContent = tr('Calculating… (tap here to stop)', '計算中…（ここをタップで中止）'); }, 1200);
+    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 20000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
     committing = false;
     clearTimeout(busyTimer);
     clearInterval(cancelTimer);
     if (!r.ok) {
       previewEl.textContent = '';
-      msgEl.textContent = r.code === 'cancelled' ? '計算を中止しました' : (r.error || '計算できませんでした');
+      msgEl.textContent = r.code === 'cancelled' ? tr('The calculation was stopped', '計算を中止しました') : (localMessage(r.error) || tr('Could not calculate', '計算できませんでした'));
       msgEl.className = 'msg error';
       return;
     }
-    if (r.timeout) { previewEl.textContent = ''; msgEl.textContent = '時間がかかりすぎたため計算を中止しました'; msgEl.className = 'msg error'; return; }
+    if (r.timeout) { previewEl.textContent = ''; msgEl.textContent = tr('The calculation took too long and was stopped', '時間がかかりすぎたため計算を中止しました'); msgEl.className = 'msg error'; return; }
     if (!r.result) {
       const err = (r.messages || []).find((m) => m.type === 'error');
       previewEl.textContent = '';
-      msgEl.textContent = err ? jaMessage(err.text) : '式を確認してください';
+      msgEl.textContent = err ? localMessage(err.text) : tr('Check the expression', '式を確認してください');
       msgEl.className = 'msg error';
       return;
     }
@@ -706,7 +817,11 @@
       expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base),
       msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3), t: Date.now()
     };
-    if (r.truncated) entry.cut = true; // longer than MAX_RESULT: the engine ended it with "…"
+    if (r.truncated) { // longer than MAX_RESULT: the engine ended it with "…" and sent its end
+      entry.cut = true;
+      if (typeof r.tail === 'string' && r.tail) entry.tail = r.tail;
+      entry.msgs.push({ type: 'warning', text: cutMessage(r) });
+    }
     if (earlyInputs.has(r.id)) { setInput(entry, earlyInputs.get(r.id)); earlyInputs.delete(r.id); }
     else {
       sessionEntries.set(r.id, entry);
@@ -738,6 +853,8 @@
   // The engine reports the exact text of each new ans after the result (see qalc-engine.cc).
   const sessionEntries = new Map(), earlyInputs = new Map();
   Bridge.setEventHandler((ev) => {
+    if (ev.event === 'pro') { proChanged(ev); return; }
+    if (ev.event === 'saved') { fileSaved(ev); return; }
     if (ev.event !== 'ans') return;
     const h = sessionEntries.get(ev.id);
     if (h) { sessionEntries.delete(ev.id); setInput(h, ev.input); saveHistory(); return; }
@@ -747,15 +864,15 @@
   // screen readers hear only the newest result (and only the beginning of a long one)
   function announce(h) {
     const st = $('#status');
-    if (st) st.textContent = clip(h.expr, 200) + '、' + clip(displayResult(h), 200);
+    if (st) st.textContent = clip(h.expr, 200) + tr(', ', '、') + clip(displayResult(h), 200);
   }
 
-  // "計算中…（ここをタップで中止）". The engine handles one request at a time, so a preview that was
+  // "Calculating… (tap here to stop)". The engine handles one request at a time, so a preview that was
   // still running may be the one that gets stopped; the request is repeated until this calculation ends.
   let cancelTimer = null;
   previewEl.addEventListener('click', () => {
     if (!committing || !window.QalcNative || !QalcNative.cancel) return;
-    previewEl.textContent = '中止しています…';
+    previewEl.textContent = tr('Stopping…', '中止しています…');
     QalcNative.cancel();
     clearInterval(cancelTimer);
     cancelTimer = setInterval(() => { if (committing) QalcNative.cancel(); else clearInterval(cancelTimer); }, 400);
@@ -795,11 +912,11 @@
     } else {
       t = firstPart(t);
     }
-    return wrapValue(t.replace(/\u202f/g, ''));
+    return wrapValue(t.replace(/[\u202f\u2009]/g, ''));
   }
   function insertResult(h) {
     const t = insertText(h);
-    if (t === null) { toast('この結果はそのまま挿入できません（ans キーで使えます）', 2600); return; }
+    if (t === null) { toast(tr('This result is too long to insert (use the ans key)', 'この結果はそのまま挿入できません（ans キーで使えます）'), 2600); return; }
     insert(t, 0, false);
   }
   function renderHistory(scroll) {
@@ -809,10 +926,10 @@
       const chips = el('div', { class: 'ex-chips' });
       for (const x of STARTERS) chips.append(tapButton({ class: 'ex-chip', text: x }, () => { setExpr(x); focusExpr(); }));
       histEl.append(el('div', { class: 'empty' },
-        el('div', { class: 'empty-t', html: '式を入力して <b>=</b> を押すと、ここに結果が残ります' }),
-        el('div', { text: '結果をタップで式に挿入、長押しでコピーできます。' }),
-        el('div', { class: 'empty-try', text: '例をタップして試す' }), chips,
-        tapButton({ class: 'btn', text: '式の例・使い方を見る' }, () => openExamples())));
+        el('div', { class: 'empty-t', html: tr('Type an expression and press <b>=</b>: the results stay here', '式を入力して <b>=</b> を押すと、ここに結果が残ります') }),
+        el('div', { text: tr('Tap a result to insert it into the expression, or touch and hold it to copy it.', '結果をタップで式に挿入、長押しでコピーできます。') }),
+        el('div', { class: 'empty-try', text: tr('Tap an example to try it', '例をタップして試す') }), chips,
+        tapButton({ class: 'btn', text: tr('Examples and tips', '式の例・使い方を見る') }, () => openExamples())));
       histEl.scrollTop = 0; // read from the top (results are followed at the bottom)
       histPinned = false;
       return;
@@ -822,7 +939,7 @@
       const res = el('div', { class: 'h-res' });
       showResult(res, displayResult(h));
       const item = el('div', { class: 'h-item' }, el('div', { class: 'h-expr', text: h.expr }), res);
-      for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: jaMessage(m.text) }));
+      for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
       bindLongPress(item, () => historyMenu(i), (target) => {
         if (target.closest('.h-expr')) setExpr(h.expr);
         else insertResult(h);
@@ -879,10 +996,10 @@
   async function historyMenu(i) {
     const h = history[i];
     const a = await sheet(clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300), [
-      ['copy-res', '結果をコピー'], ['copy-expr', '式をコピー'], ['edit', '式を編集'],
-      ['ins-ans', '結果を式に挿入'], ['del', 'この行を削除', 'danger']
+      ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
+      ['ins-ans', tr('Insert result', '結果を式に挿入')], ['del', tr('Delete this line', 'この行を削除'), 'danger']
     ]);
-    if (a === 'copy-res') copyText(displayText(h.result));
+    if (a === 'copy-res') copyText(shownText(h));
     else if (a === 'copy-expr') copyText(h.expr);
     else if (a === 'edit') setExpr(h.expr);
     else if (a === 'ins-ans') insertResult(h);
@@ -890,7 +1007,7 @@
       if (history[i] !== h) return; // the history changed while the menu was open
       history.splice(i, 1);
       historyChanged();
-      toast('1 行を削除しました', 5000, ['元に戻す', () => {
+      toast(tr('Line deleted', '1 行を削除しました'), 5000, [tr('Undo', '元に戻す'), () => {
         history.splice(Math.min(i, history.length), 0, h);
         if (history.length > 300) history = history.slice(-300);
         historyChanged();
@@ -921,7 +1038,7 @@
       for (const [key, label, cls] of actions) {
         sh.append(el('button', { class: cls || '', text: label, onclick: () => closeSheet(key) }));
       }
-      sh.append(el('button', { text: 'キャンセル', onclick: () => closeSheet(null) }));
+      sh.append(el('button', { text: tr('Cancel', 'キャンセル'), onclick: () => closeSheet(null) }));
       sheetResolve = resolve;
       $('#scrim').classList.add('show', 'over-panels');
       sh.classList.add('open');
@@ -942,26 +1059,33 @@
   }
 
   const MENU = [
-    ['examples', '💡', '式の例・使い方'],
-    ['functions', 'ƒ', '関数の一覧'],
-    ['units', '㎏', '単位・通貨の一覧'],
-    ['variables', 'π', '変数・定数の一覧'],
-    ['plot', '📈', 'グラフ'],
-    ['defs', '✎', 'ユーザー定義の変数・関数'],
-    ['rates', '¥', '為替レートの更新'],
+    ['examples', '💡', tr('Examples and tips', '式の例・使い方')],
+    ['functions', 'ƒ', tr('Functions', '関数の一覧')],
+    ['units', '㎏', tr('Units and currencies', '単位・通貨の一覧')],
+    ['variables', 'π', tr('Variables and constants', '変数・定数の一覧')],
+    ['plot', '📈', tr('Graph', 'グラフ')],
+    ['defs', '✎', tr('User-defined variables and functions', 'ユーザー定義の変数・関数')],
+    ['rates', tr('$', '¥'), tr('Update exchange rates', '為替レートの更新')],
     null,
-    ['settings', '⚙', '設定'],
-    ['clear', '🗑', '履歴を消去'],
-    ['about', 'ⓘ', 'このアプリについて']
+    ['pro', '⭐', 'QCalc Pro', { when: proOffered }],
+    ['settings', '⚙', tr('Settings', '設定')],
+    ['language', '🌐', 'Language / 言語'],
+    ['export', '📤', tr('Export history (CSV)', '履歴を書き出す（CSV）'), { pro: true }],
+    ['clear', '🗑', tr('Clear history', '履歴を消去')],
+    ['about', 'ⓘ', tr('About this app', 'このアプリについて')]
   ];
   function buildDrawer() {
     const d = $('#drawer');
     d.append(el('div', { class: 'head' }, el('div', { class: 'name', text: 'QCalc' }),
-      el('div', { class: 'sub', id: 'drawer-sub', text: '計算エンジン libqalculate' })));
+      el('div', { class: 'sub', id: 'drawer-sub', text: tr('Calculation engine libqalculate', '計算エンジン libqalculate') })));
     for (const m of MENU) {
       if (!m) { d.append(el('hr')); continue; }
+      const o = m[3] || {};
+      if (o.when && !o.when()) continue;
+      const label = el('span', { text: m[2] });
+      if (o.pro) label.dataset.pro = '';
       d.append(el('button', { onclick: () => { closeDrawer(); menuAction(m[0]); } },
-        el('span', { class: 'ico', text: m[1] }), el('span', { text: m[2] })));
+        el('span', { class: 'ico', text: m[1] }), label));
     }
   }
   function openDrawer() { $('#drawer').classList.add('open'); $('#drawer').inert = false; $('#scrim').classList.add('show'); }
@@ -984,13 +1108,16 @@
     else if (k === 'settings') openSettings();
     else if (k === 'about') openAbout();
     else if (k === 'examples') openExamples();
+    else if (k === 'language') chooseLanguage();
+    else if (k === 'pro') openPro();
+    else if (k === 'export') exportHistory();
     else if (k === 'clear') {
-      if (!history.length) { toast('履歴はありません', 1400); return; }
-      if (!(await confirmSheet('計算履歴をすべて消去しますか？', '消去する'))) return;
+      if (!history.length) { toast(tr('The history is empty', '履歴はありません'), 1400); return; }
+      if (!(await confirmSheet(tr('Clear the whole history?', '計算履歴をすべて消去しますか？'), tr('Clear', '消去する')))) return;
       const old = history;
       history = [];
       historyChanged();
-      toast('履歴を消去しました', 6000, ['元に戻す', () => {
+      toast(tr('History cleared', '履歴を消去しました'), 6000, [tr('Undo', '元に戻す'), () => {
         history = old.concat(history).slice(-300); // with anything calculated in the meantime
         historyChanged();
         histEl.scrollTop = histEl.scrollHeight;
@@ -1006,7 +1133,7 @@
     if (!p) {
       const body = el('div', { class: 'panel-body' });
       const bar = el('div', { class: 'panel-bar' },
-        el('button', { class: 'icon-btn', 'aria-label': '戻る', onclick: () => closePanel(), html: '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' }),
+        el('button', { class: 'icon-btn', 'aria-label': tr('Back', '戻る'), onclick: () => closePanel(), html: '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' }),
         el('div', { class: 'ptitle', text: title }));
       p = { node: el('section', { class: 'panel' }, bar, body), body, bar };
       document.body.append(p.node);
@@ -1031,114 +1158,116 @@
   // ---------------------------------------------------------- examples
   // Expressions to try: tapping one puts it into the input field (the preview then shows the result).
   // They are written as the on-screen keys write them (×, −, π); a phone keyboard's * and - work too.
-  const STARTERS = ['60 mph to km/h', '100 USD to JPY', 'solve(x^2 − 5x + 6 = 0)', 'diff(x^3)'];
+  const STARTERS = JA ? ['60 mph to km/h', '100 USD to JPY', 'solve(x^2 − 5x + 6 = 0)', 'diff(x^3)']
+    : ['60 mph to km/h', '100 USD to EUR', 'solve(x^2 − 5x + 6 = 0)', 'diff(x^3)'];
+  // [title, [[expression, note], ...]]; a few expressions differ by language (the currencies)
   const EXAMPLES = [
-    ['基本の計算', [
-      ['1/3 + 1/4', '分数は分数のまま計算（小数も並べて表示）'],
-      ['2^10', 'べき乗（xʸ キー）'],
-      ['√(2) × √(8)', '平方根（√ キー）。結果は厳密に 4'],
-      ['20!', '階乗（fn → n!）'],
-      ['2400 × 15%', 'パーセント'],
-      ['sin(30°)', '角度に ° を付けると、設定が RAD でも度で計算'],
-      ['e^(i × π)', '複素数（i は虚数単位）'],
-      ['(3 + 4i) × (1 − 2i)', '複素数の計算（abs は絶対値、arg は偏角）'],
-      ['1000000 / 7 to fraction', '結果を分数で表示']
+    [tr('Basics', '基本の計算'), [
+      ['1/3 + 1/4', tr('Fractions stay fractions (the decimal is shown too)', '分数は分数のまま計算（小数も並べて表示）')],
+      ['2^10', tr('Powers (xʸ key)', 'べき乗（xʸ キー）')],
+      ['√(2) × √(8)', tr('Square roots (√ key). The result is exactly 4', '平方根（√ キー）。結果は厳密に 4')],
+      ['20!', tr('Factorial (Functions → n!)', '階乗（fn → n!）')],
+      ['2400 × 15%', tr('Percent', 'パーセント')],
+      ['sin(30°)', tr('With °, the angle is in degrees even in RAD mode', '角度に ° を付けると、設定が RAD でも度で計算')],
+      ['e^(i × π)', tr('Complex numbers (i is the imaginary unit)', '複素数（i は虚数単位）')],
+      ['(3 + 4i) × (1 − 2i)', tr('Complex arithmetic (abs: absolute value, arg: argument)', '複素数の計算（abs は絶対値、arg は偏角）')],
+      ['1000000 / 7 to fraction', tr('Show the result as a fraction', '結果を分数で表示')]
     ]],
-    ['単位の変換', [
-      ['5 km to mi', '長さ。「to」は → キーで入力'],
-      ['170 cm to ft', '身長をフィートとインチで'],
-      ['60 mph to km/h', '速さ'],
-      ['100 °F to °C', '温度'],
-      ['30 坪 to m²', '坪を平方メートルに（単位の一覧に「日本の単位」があります）'],
-      ['1.5 h + 45 min', '単位の付いた値どうしの計算'],
-      ['80 kg × 9.8 m/s² to N', '単位ごと計算して、別の単位で表示'],
-      ['500 GB / (20 MB/s) to h', '時間の見積もり']
+    [tr('Unit conversion', '単位の変換'), [
+      ['5 km to mi', tr('Length. Type "to" with the → key', '長さ。「to」は → キーで入力')],
+      ['170 cm to ft', tr('Height in feet and inches', '身長をフィートとインチで')],
+      ['60 mph to km/h', tr('Speed', '速さ')],
+      ['100 °F to °C', tr('Temperature', '温度')],
+      ['30 坪 to m²', tr('Traditional Japanese units: tsubo to square metres (see "Japanese Units" in the unit list)', '坪を平方メートルに（単位の一覧に「日本の単位」があります）')],
+      ['1.5 h + 45 min', tr('Arithmetic with units', '単位の付いた値どうしの計算')],
+      ['80 kg × 9.8 m/s² to N', tr('Calculate with units and show the result in another unit', '単位ごと計算して、別の単位で表示')],
+      ['500 GB / (20 MB/s) to h', tr('Estimate a duration', '時間の見積もり')]
     ]],
-    ['通貨の換算', [
-      ['100 USD to JPY', 'ドルを円に（レートは「為替レートの更新」で最新に）'],
-      ['50 EUR to JPY', 'ユーロを円に'],
-      ['10000 JPY to USD', '円をドルに'],
-      ['1 BTC to JPY', 'ビットコイン']
+    [tr('Currency conversion', '通貨の換算'), [
+      [tr('100 USD to EUR', '100 USD to JPY'), tr('Dollars to euros (get the latest rates with "Update exchange rates")', 'ドルを円に（レートは「為替レートの更新」で最新に）')],
+      [tr('50 EUR to GBP', '50 EUR to JPY'), tr('Euros to pounds', 'ユーロを円に')],
+      ['10000 JPY to USD', tr('Yen to dollars', '円をドルに')],
+      [tr('1 BTC to USD', '1 BTC to JPY'), tr('Bitcoin', 'ビットコイン')]
     ]],
-    ['方程式', [
-      ['solve(x^2 − 5x + 6 = 0)', '方程式を解く'],
-      ['x^2 = 16', '等式をそのまま入力しても解ける'],
-      ['multisolve([x + y = 5, x − y = 1], [x, y])', '連立方程式'],
-      ['3x + 2 > 11', '不等式']
+    [tr('Equations', '方程式'), [
+      ['solve(x^2 − 5x + 6 = 0)', tr('Solve an equation', '方程式を解く')],
+      ['x^2 = 16', tr('An equation typed as it is gets solved too', '等式をそのまま入力しても解ける')],
+      ['multisolve([x + y = 5, x − y = 1], [x, y])', tr('Simultaneous equations', '連立方程式')],
+      ['3x + 2 > 11', tr('Inequalities', '不等式')]
     ]],
-    ['微分', [
-      ['diff(x^3 + 2x)', '微分（「解析」のキー → d/dx）'],
-      ['diff(x^2 × sin(x))', '積の微分。結果は式のまま表示'],
-      ['diff(x^5, x, 2)', '2 階微分（3 つ目が階数。d²/dx² キー）'],
-      ['diff(x^2 × y^3, y)', '偏微分（y で微分。∂/∂y キー）'],
-      ['diff(x^3, x, 1, 2)', 'x = 2 での微分係数（4 つ目が x の値）'],
-      ['extremum(x^3 − 3x)', '極値をとる x（極値 キー）']
+    [tr('Derivatives', '微分'), [
+      ['diff(x^3 + 2x)', tr('Derivative (Calculus keys → d/dx)', '微分（「解析」のキー → d/dx）')],
+      ['diff(x^2 × sin(x))', tr('Product rule. The result is shown as an expression', '積の微分。結果は式のまま表示')],
+      ['diff(x^5, x, 2)', tr('Second derivative (the third argument is the order; d²/dx² key)', '2 階微分（3 つ目が階数。d²/dx² キー）')],
+      ['diff(x^2 × y^3, y)', tr('Partial derivative with respect to y (∂/∂y key)', '偏微分（y で微分。∂/∂y キー）')],
+      ['diff(x^3, x, 1, 2)', tr('The derivative at x = 2 (the fourth argument is the value of x)', 'x = 2 での微分係数（4 つ目が x の値）')],
+      ['extremum(x^3 − 3x)', tr('The x of the extrema (max/min key)', '極値をとる x（極値 キー）')]
     ]],
-    ['積分', [
-      ['integrate(1/x)', '不定積分（∫ キー）。C は積分定数'],
-      ['integrate(x^2 × sin(x), 0, π)', '定積分（∫ₐᵇ キー）。下端、上端の順'],
-      ['integrate(e^(−x^2), −∞, ∞)', '広義積分（∞ キー）。ガウス積分'],
-      ['integrate(integrate(x × y, 0, 1, x), 0, 2, y)', '重積分（4 つ目が積分する変数）'],
-      ['integrate(√(1 − x^2), −1, 1)', '半円の面積。結果は厳密に π/2'],
-      ['romberg(sin(x)/x, 1, 2)', '数値積分（ロンバーグ法）']
+    [tr('Integrals', '積分'), [
+      ['integrate(1/x)', tr('Indefinite integral (∫ key). C is the constant of integration', '不定積分（∫ キー）。C は積分定数')],
+      ['integrate(x^2 × sin(x), 0, π)', tr('Definite integral (∫ₐᵇ key): lower limit, then upper limit', '定積分（∫ₐᵇ キー）。下端、上端の順')],
+      ['integrate(e^(−x^2), −∞, ∞)', tr('Improper integral (∞ key): the Gaussian integral', '広義積分（∞ キー）。ガウス積分')],
+      ['integrate(integrate(x × y, 0, 1, x), 0, 2, y)', tr('Double integral (the fourth argument is the variable)', '重積分（4 つ目が積分する変数）')],
+      ['integrate(√(1 − x^2), −1, 1)', tr('Area of a half circle. The result is exactly π/2', '半円の面積。結果は厳密に π/2')],
+      ['romberg(sin(x)/x, 1, 2)', tr('Numerical integration (Romberg method)', '数値積分（ロンバーグ法）')]
     ]],
-    ['極限・級数・微分方程式', [
-      ['limit(sin(x)/x, 0)', '極限（lim キー）'],
-      ['limit((1 + 1/x)^x, ∞)', '無限大での極限'],
-      ['limit(1/x, 0, x, 1)', '右からの極限（最後の 1 が右側、−1 が左側）'],
-      ['sum(x^2, 1, 10)', '総和（Σ キー）。x = 1 から 10 まで'],
-      ['product(x, 1, 5)', '総乗（Π キー）'],
-      ['dsolve(diff(y, x) = −2y, 5)', '微分方程式 y′ = −2y、y(0) = 5（dsolve キー）'],
-      ['newtonsolve(cos(x) = x, 1)', '方程式の数値解（ニュートン法、初期値 1）']
+    [tr('Limits, series and differential equations', '極限・級数・微分方程式'), [
+      ['limit(sin(x)/x, 0)', tr('Limit (lim key)', '極限（lim キー）')],
+      ['limit((1 + 1/x)^x, ∞)', tr('Limit at infinity', '無限大での極限')],
+      ['limit(1/x, 0, x, 1)', tr('Limit from the right (the last 1 means from the right, −1 from the left)', '右からの極限（最後の 1 が右側、−1 が左側）')],
+      ['sum(x^2, 1, 10)', tr('Sum (Σ key) from x = 1 to 10', '総和（Σ キー）。x = 1 から 10 まで')],
+      ['product(x, 1, 5)', tr('Product (Π key)', '総乗（Π キー）')],
+      ['dsolve(diff(y, x) = −2y, 5)', tr('Differential equation y′ = −2y with y(0) = 5 (dsolve key)', '微分方程式 y′ = −2y、y(0) = 5（dsolve キー）')],
+      ['newtonsolve(cos(x) = x, 1)', tr("Numerical solution (Newton's method, starting at 1)", '方程式の数値解（ニュートン法、初期値 1）')]
     ]],
-    ['行列', [
-      ['[1, 2; 3, 4] × [5, 6; 7, 8]', '行列の積。「行列」のキーで入力（; が行の区切り）'],
-      ['[1, 2; 3, 4]^−1', '逆行列（A⁻¹ キー）'],
-      ['det([1, 2, 3; 4, 5, 6; 7, 8, 10])', '行列式（det キー）'],
-      ['transpose([1, 2, 3; 4, 5, 6])', '転置行列（Aᵀ キー）'],
-      ['[2, 1; 1, 3]^−1 × [3; 5]', '連立一次方程式 A x = b を解く'],
-      ['rref([2, 1, 3; 1, 3, 5])', '行基本変形（行簡約階段形）'],
-      ['rk([1, 2; 2, 4])', '階数（ランク）。trace はトレース'],
-      ['solve(det([2, 1; 1, 2] − x × identity(2)) = 0)', '固有値（固有方程式を解く）']
+    [tr('Matrices', '行列'), [
+      ['[1, 2; 3, 4] × [5, 6; 7, 8]', tr('Matrix product. Type matrices with the Matrix keys (";" ends a row)', '行列の積。「行列」のキーで入力（; が行の区切り）')],
+      ['[1, 2; 3, 4]^−1', tr('Inverse (A⁻¹ key)', '逆行列（A⁻¹ キー）')],
+      ['det([1, 2, 3; 4, 5, 6; 7, 8, 10])', tr('Determinant (det key)', '行列式（det キー）')],
+      ['transpose([1, 2, 3; 4, 5, 6])', tr('Transpose (Aᵀ key)', '転置行列（Aᵀ キー）')],
+      ['[2, 1; 1, 3]^−1 × [3; 5]', tr('Solve the linear system A x = b', '連立一次方程式 A x = b を解く')],
+      ['rref([2, 1, 3; 1, 3, 5])', tr('Reduced row echelon form', '行基本変形（行簡約階段形）')],
+      ['rk([1, 2; 2, 4])', tr('Rank (trace gives the trace)', '階数（ランク）。trace はトレース')],
+      ['solve(det([2, 1; 1, 2] − x × identity(2)) = 0)', tr('Eigenvalues (solve the characteristic equation)', '固有値（固有方程式を解く）')]
     ]],
-    ['ベクトル', [
-      ['dot([1, 2, 3], [4, 5, 6])', '内積'],
-      ['cross([1, 0, 0], [0, 1, 0])', '外積'],
-      ['norm([3, 4])', '長さ（ノルム）'],
-      ['[1, 2, 3] + 2 × [4, 5, 6]', '和とスカラー倍']
+    [tr('Vectors', 'ベクトル'), [
+      ['dot([1, 2, 3], [4, 5, 6])', tr('Dot product', '内積')],
+      ['cross([1, 0, 0], [0, 1, 0])', tr('Cross product', '外積')],
+      ['norm([3, 4])', tr('Length (norm)', '長さ（ノルム）')],
+      ['[1, 2, 3] + 2 × [4, 5, 6]', tr('Sum and scalar multiple', '和とスカラー倍')]
     ]],
-    ['進数・整数', [
-      ['255 to hex', '16進数に（to bin、to oct も）'],
-      ['0xFF + 0b1010', '16進数と2進数をまぜて計算'],
-      ['2026 to roman', 'ローマ数字'],
-      ['factor(360)', '素因数分解'],
-      ['gcd(84, 36)', '最大公約数（lcm は最小公倍数）']
+    [tr('Number bases and integers', '進数・整数'), [
+      ['255 to hex', tr('To hexadecimal (to bin and to oct too)', '16進数に（to bin、to oct も）')],
+      ['0xFF + 0b1010', tr('Mix hexadecimal and binary', '16進数と2進数をまぜて計算')],
+      ['2026 to roman', tr('Roman numerals', 'ローマ数字')],
+      ['factor(360)', tr('Prime factorization', '素因数分解')],
+      ['gcd(84, 36)', tr('Greatest common divisor (lcm: least common multiple)', '最大公約数（lcm は最小公倍数）')]
     ]],
-    ['日付', [
-      ['today + 100 days', '100 日後の日付'],
-      ['days(today, "2027-01-01")', '2 つの日付の間の日数'],
-      ['"2026-12-25" − 3 weeks', '日付から期間を引く']
+    [tr('Dates', '日付'), [
+      ['today + 100 days', tr('The date 100 days from today', '100 日後の日付')],
+      ['days(today, "2027-01-01")', tr('Days between two dates', '2 つの日付の間の日数')],
+      ['"2026-12-25" − 3 weeks', tr('Subtract a period from a date', '日付から期間を引く')]
     ]],
-    ['統計・誤差・定数', [
-      ['mean(3, 5, 8, 12)', '平均（median は中央値、stdev は標準偏差）'],
-      ['(5 ± 0.2) m × (3 ± 0.1) m', '誤差（不確かさ）の伝わり方'],
-      ['1 g × c^2 to kWh', '物理定数（c は光速）'],
-      ['planck × 500 THz to eV', 'プランク定数を使った計算'],
-      ['gamma(1/2)', 'ガンマ関数（zeta、erf、besselj などの特殊関数も使えます）']
+    [tr('Statistics, uncertainty and constants', '統計・誤差・定数'), [
+      ['mean(3, 5, 8, 12)', tr('Mean (median: median, stdev: standard deviation)', '平均（median は中央値、stdev は標準偏差）')],
+      ['(5 ± 0.2) m × (3 ± 0.1) m', tr('Propagation of uncertainty', '誤差（不確かさ）の伝わり方')],
+      ['1 g × c^2 to kWh', tr('Physical constants (c is the speed of light)', '物理定数（c は光速）')],
+      ['planck × 500 THz to eV', tr('With the Planck constant', 'プランク定数を使った計算')],
+      ['gamma(1/2)', tr('Gamma function (special functions such as zeta, erf and besselj too)', 'ガンマ関数（zeta、erf、besselj などの特殊関数も使えます）')]
     ]]
   ];
   const TIPS = [
-    '入力している間に結果が下に表示されます。= を押すと確定して、履歴に残ります。',
-    '履歴の結果をタップすると式に挿入、式をタップするともう一度編集、長押しでコピーや削除ができます。',
-    '→ キーは「to」（単位・通貨・進数の変換）です。例：5 km → mi',
-    'キーは「123」「関数」「解析」「行列」のタブで切り替えます。⌨ キーでスマホのキーボードも使えます。',
-    '「解析」には微分・積分・極限・総和・微分方程式、「行列」には行列の入力と行列式・逆行列などのキーがあります。「ほか…」でその分野の関数の一覧が開きます。',
-    '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)',
-    '行列は [1, 2; 3, 4] のように、要素を「,」、行を「;」で区切って入力します。結果の行列は履歴に表の形で表示されます。',
-    '上の「RAD」「自動」「10進」をタップすると、角度の単位、厳密・近似、結果の進数が切り替わります。',
-    '関数・単位・定数は、メニューの一覧から日本語でも探せます（例：「積分」「マイル」「光速」）。',
-    'グラフはメニューの「グラフ」から。y = f(x) の 2D と、z = f(x, y) の 3D が描けます。diff(x^3 − 3x) のように、微分や積分の式もそのまま描けます。',
-    'AC で消した式は、すぐ後に出る「元に戻す」で戻せます。'
+    tr('The result is shown below while you type. Press = to confirm it and keep it in the history.', '入力している間に結果が下に表示されます。= を押すと確定して、履歴に残ります。'),
+    tr('Tap a result in the history to insert it, tap an expression to edit it again, or touch and hold to copy or delete.', '履歴の結果をタップすると式に挿入、式をタップするともう一度編集、長押しでコピーや削除ができます。'),
+    tr('The → key types "to" (conversion of units, currencies and number bases). Example: 5 km → mi', '→ キーは「to」（単位・通貨・進数の変換）です。例：5 km → mi'),
+    tr('Switch the keys with the tabs 123, Functions, Calculus and Matrix. The ⌨ key opens the phone keyboard.', 'キーは「123」「関数」「解析」「行列」のタブで切り替えます。⌨ キーでスマホのキーボードも使えます。'),
+    tr('Calculus has keys for derivatives, integrals, limits, sums and differential equations; Matrix has keys to type matrices and for determinants, inverses and more. "more…" opens the list of the functions of that field.', '「解析」には微分・積分・極限・総和・微分方程式、「行列」には行列の入力と行列式・逆行列などのキーがあります。「ほか…」でその分野の関数の一覧が開きます。'),
+    tr('Type the "=" of an equation with the a=b key (the large = key calculates). Example: solve(x^2 = 16)', '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)'),
+    tr('Type a matrix as [1, 2; 3, 4]: "," between the elements and ";" between the rows. Matrix results are shown as tables in the history.', '行列は [1, 2; 3, 4] のように、要素を「,」、行を「;」で区切って入力します。結果の行列は履歴に表の形で表示されます。'),
+    tr('Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.', '上の「RAD」「自動」「10進」をタップすると、角度の単位、厳密・近似、結果の進数が切り替わります。'),
+    tr('Find functions, units and constants in the lists in the menu (search by name or description, for example "integral", "mile" or "speed of light").', '関数・単位・定数は、メニューの一覧から日本語でも探せます（例：「積分」「マイル」「光速」）。'),
+    tr('Draw graphs with "Graph" in the menu: 2D graphs of y = f(x) and 3D graphs of z = f(x, y). Expressions with derivatives or integrals such as diff(x^3 − 3x) can be drawn as they are.', 'グラフはメニューの「グラフ」から。y = f(x) の 2D と、z = f(x, y) の 3D が描けます。diff(x^3 − 3x) のように、微分や積分の式もそのまま描けます。'),
+    tr('An expression cleared with AC comes back with "Undo", which appears right after.', 'AC で消した式は、すぐ後に出る「元に戻す」で戻せます。')
   ];
   function useExample(text) {
     while (panelStack.length) closePanel();
@@ -1146,8 +1275,8 @@
     focusExpr();
   }
   function openExamples() {
-    return panel('examples', '式の例・使い方', (p) => {
-      p.body.append(el('div', { class: 'section-title', text: '式の例（タップすると入力欄に入ります）' }));
+    return panel('examples', tr('Examples and tips', '式の例・使い方'), (p) => {
+      p.body.append(el('div', { class: 'section-title', text: tr('Examples (tap one to put it in the input field)', '式の例（タップすると入力欄に入ります）') }));
       for (const [group, rows] of EXAMPLES) {
         const box = el('div', { class: 'card ex-group' }, el('div', { class: 'ex-title', text: group }));
         for (const [text, note] of rows) {
@@ -1156,9 +1285,9 @@
         }
         p.body.append(box);
       }
-      p.body.append(el('div', { class: 'section-title', text: '使い方のヒント' }),
+      p.body.append(el('div', { class: 'section-title', text: tr('Tips', '使い方のヒント') }),
         el('div', { class: 'card' }, el('ul', { class: 'tips' }, ...TIPS.map((t) => el('li', { text: t })))),
-        el('div', { class: 'form-hint', text: '式の書き方は Qalculate! と同じです。使える関数は「関数の一覧」、単位と通貨は「単位・通貨の一覧」にあります。' }));
+        el('div', { class: 'form-hint', text: tr('Expressions are written as in Qalculate!. See "Functions" in the menu for the functions, and "Units and currencies" for the units and currencies.', '式の書き方は Qalculate! と同じです。使える関数は「関数の一覧」、単位と通貨は「単位・通貨の一覧」にあります。') }));
     });
   }
 
@@ -1171,19 +1300,35 @@
     const hidden = HIDDEN_ITEMS[kind] || [];
     const items = r.items.filter((it) => hidden.indexOf(it.name) < 0);
     // Japanese names: shown beside the English title and used by the search
-    const names = kind === 'functions' ? FUNC_JA : kind === 'variables' ? VAR_JA : JA_NAMES;
+    const names = !JA ? {} : kind === 'functions' ? FUNC_JA : kind === 'variables' ? VAR_JA : JA_NAMES;
     for (const it of items) {
-      it._cat = it.category || 'その他';
+      it._cat = it.category || tr('Other', 'その他');
       it._top = it._cat.split('/')[0];
       it._ja = own(names, it.name) || (kind === 'units' && own(names, it.abbr)) || '';
-      const ja = it._ja + ' ' + it._cat.split('/').map((c) => own(CATEGORY_JA, c) || '').join(' ');
+      // the Japanese units have English titles and descriptions in the engine
+      const jt = JA && kind === 'units' ? own(JA_UNIT_TEXT, it.name) : undefined;
+      if (jt) { it.title = jt[0]; it.description = jt[1]; }
+      const ja = !JA ? '' : it._ja + ' ' + it._cat.split('/').map((c) => own(CATEGORY_JA, c) || '').join(' ');
       it._q = [it.name, it.abbr, it.display, it.title, it.description, it._cat, ja].join(' ').toLowerCase();
     }
     items.sort((a, b) => (a.title || a.name).localeCompare(b.title || b.name));
     catalogs[kind] = items;
     return items;
   }
-  const CATALOG_TITLE = { functions: '関数の一覧', units: '単位・通貨の一覧', variables: '変数・定数の一覧' };
+  const CATALOG_TITLE = { functions: tr('Functions', '関数の一覧'), units: tr('Units and currencies', '単位・通貨の一覧'), variables: tr('Variables and constants', '変数・定数の一覧') };
+  // titles and descriptions of the traditional Japanese units in Japanese (the engine has them in English)
+  const JA_UNIT_TEXT = {
+    '坪': ['坪（つぼ・tsubo）', '面積。1 坪 = 1 間 × 1 間 = 400/121 m²（約 3.3058 m²）'],
+    '反': ['反（たん）', '面積。1 反 = 300 坪（約 991.74 m²）'],
+    '寸': ['寸（すん）', '長さ。1 寸 = 1/10 尺（約 3.0303 cm）'],
+    '尺': ['尺（しゃく）', '長さ。1 尺 = 10/33 m（約 30.303 cm）'],
+    '間': ['間（けん）', '長さ。1 間 = 6 尺（約 1.8182 m）'],
+    '里': ['里（り）', '長さ。1 里 = 36 町 = 2160 間（約 3.9273 km）'],
+    '合': ['合（ごう）', '体積。1 合 = 1/10 升（約 180.39 mL）'],
+    '升': ['升（しょう）', '体積。1 升 = 2401/1331 L（約 1.8039 L）'],
+    '匁': ['匁（もんめ）', '質量。1 匁 = 3.75 g'],
+    '貫': ['貫（かん）', '質量。1 貫 = 1000 匁 = 3.75 kg']
+  };
   // not available in this build (no gnuplot, no files or commands from expressions)
   const HIDDEN_ITEMS = { functions: ['plot', 'command', 'load', 'export'], variables: ['uptime'] };
   const CATEGORY_JA = {
@@ -1295,7 +1440,7 @@
   };
   function openCatalog(kind, cat) {
     const p = panel('cat-' + kind, CATALOG_TITLE[kind], (p) => {
-      const search = el('input', { class: 'search', type: 'search', placeholder: '検索（名前・説明）', autocomplete: 'off' });
+      const search = el('input', { class: 'search', type: 'search', placeholder: tr('Search (name, description)', '検索（名前・説明）'), autocomplete: 'off' });
       const cats = el('div', { class: 'cats' });
       const count = el('div', { class: 'count' });
       const list = el('div');
@@ -1318,11 +1463,11 @@
           const ranks = new Map(shown.map((it) => [it, rank(it)]));
           shown.sort((x, y) => ranks.get(x) - ranks.get(y));
         }
-        count.textContent = shown.length + ' 件';
+        count.textContent = tr(shown.length + (shown.length === 1 ? ' item' : ' items'), shown.length + ' 件');
         list.textContent = '';
         const frag = document.createDocumentFragment();
         for (const it of shown.slice(0, 400)) frag.append(catalogRow(kind, it));
-        if (shown.length > 400) frag.append(el('div', { class: 'card muted', text: '先頭の 400 件を表示しています。検索で絞り込んでください。' }));
+        if (shown.length > 400) frag.append(el('div', { class: 'card muted', text: tr('Showing the first 400 items. Search to narrow them down.', '先頭の 400 件を表示しています。検索で絞り込んでください。') }));
         list.append(frag);
         for (const b of cats.children) {
           const on = b.dataset.cat === p.state.cat;
@@ -1335,7 +1480,7 @@
         }
       };
       search.addEventListener('input', debounce(() => { p.state.q = search.value; render(); }, 150));
-      // show one category from the start (the "ほか…" key of the 解析 and 行列 key pages)
+      // show one category from the start (the "more…" key of the Calculus and Matrix key pages)
       p.setCategory = (c) => {
         p.state.cat = c; p.state.q = ''; search.value = '';
         p.body.scrollTop = 0;
@@ -1344,15 +1489,15 @@
       const load = () => { list.textContent = ''; list.append(el('div', { class: 'spinner' })); loadCatalog(kind).then(show).catch(failed); };
       const failed = (e) => {
         list.textContent = '';
-        list.append(el('div', { class: 'card muted', text: '一覧を読み込めませんでした（' + e.message + '）' }),
-          el('button', { class: 'btn primary', text: 'もう一度読み込む', onclick: load }));
+        list.append(el('div', { class: 'card muted', text: tr('Could not load the list (', '一覧を読み込めませんでした（') + e.message + tr(')', '）') }),
+          el('button', { class: 'btn primary', text: tr('Try again', 'もう一度読み込む'), onclick: load }));
       };
       const show = (items) => {
         cats.textContent = '';
         const tops = Array.from(new Set(items.map((i) => i._top))).sort((a, b) => a.localeCompare(b));
         if (p.state.cat && tops.indexOf(p.state.cat) < 0) p.state.cat = '';
-        cats.append(el('button', { 'data-cat': '', text: 'すべて', onclick: () => { p.state.cat = ''; render(); } }));
-        for (const t of tops) cats.append(el('button', { 'data-cat': t, text: own(CATEGORY_JA, t) || t, onclick: () => { p.state.cat = t; render(); } }));
+        cats.append(el('button', { 'data-cat': '', text: tr('All', 'すべて'), onclick: () => { p.state.cat = ''; render(); } }));
+        for (const t of tops) cats.append(el('button', { 'data-cat': t, text: (JA && own(CATEGORY_JA, t)) || t, onclick: () => { p.state.cat = t; render(); } }));
         render();
       };
       load();
@@ -1366,20 +1511,20 @@
       el('div', { class: 't' }, it.title || it.name, it._ja ? el('span', { class: 'ja', text: it._ja.split(' ')[0] }) : null), acts));
     if (kind === 'functions') {
       row.append(el('div', { class: 'n', text: it.syntax }));
-      acts.append(el('button', { class: 'btn primary', text: '挿入', onclick: (e) => { e.stopPropagation(); useItem(it.name + '()', 1); } }));
+      acts.append(el('button', { class: 'btn primary', text: tr('Insert', '挿入'), onclick: (e) => { e.stopPropagation(); useItem(it.name + '()', 1); } }));
     } else if (kind === 'units') {
       // "abbr" is the text the engine has checked to be read as this unit (km, km/h, kW·h, $, °C);
       // the internal names of composite units (km_c, km_p_h) are not shown
       const text = it.abbr || it.name;
       const names = it.composite || text === it.name ? text : text + '  (' + it.name + ')';
       row.append(el('div', { class: 'n', text: names + (it.display && it.display !== text ? '  ' + it.display : '') }));
-      acts.append(el('button', { class: 'btn', text: '変換', onclick: (e) => { e.stopPropagation(); useItem(' to ' + text, 0); } }));
-      if (it.insert !== false) acts.append(el('button', { class: 'btn primary', text: '挿入', onclick: (e) => { e.stopPropagation(); useItem(text, 0); } }));
+      acts.append(el('button', { class: 'btn', text: tr('Convert', '変換'), onclick: (e) => { e.stopPropagation(); useItem(' to ' + text, 0); } }));
+      if (it.insert !== false) acts.append(el('button', { class: 'btn primary', text: tr('Insert', '挿入'), onclick: (e) => { e.stopPropagation(); useItem(text, 0); } }));
     } else {
       row.append(el('div', { class: 'n', text: it.name + (it.display && it.display !== it.name ? '  (' + it.display + ')' : '') + (it.value ? '  = ' + it.value : '') }));
-      acts.append(el('button', { class: 'btn primary', text: '挿入', onclick: (e) => { e.stopPropagation(); useItem(it.name, 0); } }));
+      acts.append(el('button', { class: 'btn primary', text: tr('Insert', '挿入'), onclick: (e) => { e.stopPropagation(); useItem(it.name, 0); } }));
     }
-    row.append(el('div', { class: 'c', text: it._cat.split('/').map((c) => own(CATEGORY_JA, c) || c).join(' / ') }));
+    row.append(el('div', { class: 'c', text: it._cat.split('/').map((c) => (JA && own(CATEGORY_JA, c)) || c).join(' / ') }));
     if (it.description) row.append(el('div', { class: 'd', text: it.description }));
     row.addEventListener('click', () => row.classList.toggle('expanded'));
     return row;
@@ -1394,12 +1539,13 @@
   const COLORS = ['#2563eb', '#e11d48', '#059669', '#d97706', '#7c3aed', '#0891b2'];
   const P = { series: [], view: null, dataX: null, exprs: [] };
   function openPlot() {
-    const p = panel('plot', 'グラフ', (p) => {
+    const p = panel('plot', tr('Graph', 'グラフ'), (p) => {
       // 2D (y = f(x)) and 3D (z = f(x, y)); the last one used is shown
-      const b2 = el('button', { text: '2D　y = f(x)' }), b3 = el('button', { text: '3D　z = f(x, y)' });
+      const b2 = el('button', { text: tr('2D  y = f(x)', '2D　y = f(x)') }), b3 = el('button', { text: tr('3D  z = f(x, y)', '3D　z = f(x, y)') });
       const f2 = el('div', { class: 'plot-mode' }), f3 = build3d();
       let started2d = false;
       const setMode = (m) => {
+        if (m === '3d' && !hasPro()) m = '2d';
         store.set('qalc.plot.mode', m);
         b2.classList.toggle('on', m === '2d'); b3.classList.toggle('on', m === '3d');
         b2.setAttribute('aria-pressed', String(m === '2d')); b3.setAttribute('aria-pressed', String(m === '3d'));
@@ -1408,21 +1554,25 @@
         if (started2d) { draw(); return; }
         started2d = true;
         if (store.get('qalc.plot.ok', true)) setTimeout(() => compute(normalizeExpr(xmin.value), normalizeExpr(xmax.value)), 260);
-        else msg.textContent = '「描画」を押すとグラフを描きます';
+        else msg.textContent = tr('Press "Draw" to draw the graph', '「描画」を押すとグラフを描きます');
       };
       b2.addEventListener('click', () => setMode('2d'));
-      b3.addEventListener('click', () => setMode('3d'));
-      const ta = el('textarea', { rows: 2, placeholder: '関数（1行に1つ、変数は x）', spellcheck: 'false', autocapitalize: 'off' });
+      b3.dataset.pro = '';
+      b3.addEventListener('click', () => {
+        if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です')); return; }
+        setMode('3d');
+      });
+      const ta = el('textarea', { rows: 2, placeholder: tr('Functions (one per line, variable x)', '関数（1行に1つ、変数は x）'), spellcheck: 'false', autocapitalize: 'off' });
       ta.value = store.get('qalc.plot.exprs', 'sin(x)\nx^2/10');
       const xmin = el('input', { value: store.get('qalc.plot.min', '-10'), inputmode: 'text', autocapitalize: 'off' });
       const xmax = el('input', { value: store.get('qalc.plot.max', '10'), inputmode: 'text', autocapitalize: 'off' });
-      const go = el('button', { class: 'btn primary', text: '描画' });
-      const canvas = el('canvas', { role: 'img', 'aria-label': '2D グラフ' });
+      const go = el('button', { class: 'btn primary', text: tr('Draw', '描画') });
+      const canvas = el('canvas', { role: 'img', 'aria-label': tr('2D graph', '2D グラフ') });
       const tip = el('div', { class: 'plot-tip', 'aria-live': 'polite' });
       const ctl = el('div', { class: 'plot-ctl' },
-        el('button', { text: '＋', 'aria-label': '拡大', onclick: () => zoom(0.5) }),
-        el('button', { text: '－', 'aria-label': '縮小', onclick: () => zoom(2) }),
-        el('button', { text: '⟲', 'aria-label': '入力した範囲に戻す', onclick: () => {
+        el('button', { text: '＋', 'aria-label': tr('Zoom in', '拡大'), onclick: () => zoom(0.5) }),
+        el('button', { text: '－', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom(2) }),
+        el('button', { text: '⟲', 'aria-label': tr('Back to the entered range', '入力した範囲に戻す'), onclick: () => {
           P.view = null; P.mark = null; P.tip.style.display = 'none';
           compute(normalizeExpr(xmin.value), normalizeExpr(xmax.value));
         } }));
@@ -1430,10 +1580,10 @@
       const legend = el('div', { class: 'legend' });
       const msg = el('div', { class: 'form-hint' });
       f2.append(el('div', { class: 'plot-form' }, ta,
-        el('div', { class: 'plot-range' }, el('span', { text: 'x：' }), xmin, el('span', { text: '〜' }), xmax, go)),
+        el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr('to', '〜') }), xmax, go)),
       wrap, legend, msg,
-      el('div', { class: 'form-hint', text: 'ドラッグで移動、2本指で拡大・縮小、タップで座標を表示します。式に使える関数は計算画面と同じです。' }));
-      p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': 'グラフの種類' }, b2, b3), f2, f3);
+      el('div', { class: 'form-hint', text: tr('Drag to move, pinch to zoom, tap to show the coordinates. The functions are the same as on the calculator.', 'ドラッグで移動、2本指で拡大・縮小、タップで座標を表示します。式に使える関数は計算画面と同じです。') }));
+      p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Type of graph', 'グラフの種類') }, b2, b3), f2, f3);
       P.canvas = canvas; P.tip = tip; P.legend = legend; P.msg = msg; P.wrap = wrap;
       go.addEventListener('click', () => {
         store.set('qalc.plot.exprs', ta.value); store.set('qalc.plot.min', xmin.value); store.set('qalc.plot.max', xmax.value);
@@ -1452,19 +1602,19 @@
   }
   async function compute(min, max, keepView) {
     if (!P.exprs.length) return;
-    P.msg.textContent = '計算中…';
+    P.msg.textContent = tr('Calculating…', '計算中…');
     const r = await Bridge.send('plot', { exprs: P.exprs, min: String(min), max: String(max), steps: 600, var: 'x', opts: engineOpts(), timeout: 12000 });
-    if (!r.ok) { P.msg.textContent = r.error === 'invalid range' ? 'x の範囲を確認してください' : (r.error || 'グラフを計算できませんでした'); return; }
-    if (!Array.isArray(r.series)) { P.msg.textContent = '時間がかかりすぎたため計算を中止しました'; return; }
+    if (!r.ok) { P.msg.textContent = r.error === 'invalid range' ? tr('Check the range of x', 'x の範囲を確認してください') : (localMessage(r.error) || tr('Could not calculate the graph', 'グラフを計算できませんでした')); return; }
+    if (!Array.isArray(r.series)) { P.msg.textContent = tr('The calculation took too long and was stopped', '時間がかかりすぎたため計算を中止しました'); return; }
     P.series = r.series.map((s, i) => ({ expr: P.exprs[i], x: s.x, y: s.y, color: COLORS[i % COLORS.length] }));
     const err = (r.messages || []).find((m) => m.type === 'error');
-    P.msg.textContent = err ? jaMessage(err.text) : '';
+    P.msg.textContent = err ? localMessage(err.text) : '';
     let x0 = Infinity, x1 = -Infinity;
     for (const s of P.series) for (const x of s.x) { if (x < x0) x0 = x; if (x > x1) x1 = x; }
     P.dataX = isFinite(x0) ? [x0, x1] : null;
     if (!keepView) P.view = null;
     P.legend.textContent = '';
-    for (const s of P.series) P.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.y.some((v) => v !== null) ? '' : '（値なし）') }));
+    for (const s of P.series) P.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.y.some((v) => v !== null) ? '' : tr(' (no values)', '（値なし）')) }));
     store.set('qalc.plot.ok', false);
     draw();
     store.set('qalc.plot.ok', true);
@@ -1596,7 +1746,7 @@
     const v = P.view;
     const mx = cx !== undefined ? cx : (v.x0 + v.x1) / 2, my = cy !== undefined ? cy : (v.y0 + v.y1) / 2;
     const nv = { x0: mx + (v.x0 - mx) * f, x1: mx + (v.x1 - mx) * f, y0: my + (v.y0 - my) * f, y1: my + (v.y1 - my) * f };
-    if (!viewOk(nv)) { toast('これ以上は拡大・縮小できません', 1400); return; }
+    if (!viewOk(nv)) { toast(tr('Cannot zoom any further', 'これ以上は拡大・縮小できません'), 1400); return; }
     P.view = nv;
     P.mark = null; P.tip.style.display = 'none';
     draw();
@@ -1675,7 +1825,7 @@
     }
     if (!best || best.dist > 0.02) { P.mark = null; P.tip.style.display = 'none'; draw(); return; }
     P.mark = best;
-    P.tip.textContent = best.expr + '：x = ' + Number(best.x.toPrecision(10)) + ', y = ' + Number(best.y.toPrecision(10));
+    P.tip.textContent = best.expr + tr(':  x = ', '：x = ') + Number(best.x.toPrecision(10)) + ', y = ' + Number(best.y.toPrecision(10));
     P.tip.style.display = 'block';
     draw();
   }
@@ -1695,22 +1845,22 @@
   }
   const hexRgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
   function build3d() {
-    const ta = el('textarea', { rows: 2, placeholder: '関数（1行に1つ、最大4つ。変数は x と y）', spellcheck: 'false', autocapitalize: 'off' });
+    const ta = el('textarea', { rows: 2, placeholder: tr('Functions (one per line, up to 4, variables x and y)', '関数（1行に1つ、最大4つ。変数は x と y）'), spellcheck: 'false', autocapitalize: 'off' });
     ta.value = store.get('qalc.plot3d.exprs', 'sin(x) cos(y)');
     const input = (key, def) => el('input', { value: store.get(key, def), inputmode: 'text', autocapitalize: 'off' });
     const xmin = input('qalc.plot3d.xmin', '-5'), xmax = input('qalc.plot3d.xmax', '5');
     const ymin = input('qalc.plot3d.ymin', '-5'), ymax = input('qalc.plot3d.ymax', '5');
-    const res = el('select', { 'aria-label': '細かさ' },
-      el('option', { value: '25', text: '粗い（25×25）' }), el('option', { value: '41', text: '標準（41×41）' }), el('option', { value: '61', text: '細かい（61×61）' }));
+    const res = el('select', { 'aria-label': tr('Grid', '細かさ') },
+      el('option', { value: '25', text: tr('Coarse (25×25)', '粗い（25×25）') }), el('option', { value: '41', text: tr('Normal (41×41)', '標準（41×41）') }), el('option', { value: '61', text: tr('Fine (61×61)', '細かい（61×61）') }));
     res.value = String(store.get('qalc.plot3d.res', '41'));
     if (!res.value) res.value = '41';
-    const go = el('button', { class: 'btn primary', text: '描画' });
-    const canvas = el('canvas', { role: 'img', 'aria-label': '3D グラフ' });
+    const go = el('button', { class: 'btn primary', text: tr('Draw', '描画') });
+    const canvas = el('canvas', { role: 'img', 'aria-label': tr('3D graph', '3D グラフ') });
     const tip = el('div', { class: 'plot-tip', 'aria-live': 'polite' });
     const ctl = el('div', { class: 'plot-ctl' },
-      el('button', { text: '＋', 'aria-label': '拡大', onclick: () => zoom3d(1.25) }),
-      el('button', { text: '－', 'aria-label': '縮小', onclick: () => zoom3d(0.8) }),
-      el('button', { text: '⟲', 'aria-label': '向きと大きさを戻す', onclick: () => { Object.assign(Q3, VIEW3D); clearMark3d(); draw3d(); } }));
+      el('button', { text: '＋', 'aria-label': tr('Zoom in', '拡大'), onclick: () => zoom3d(1.25) }),
+      el('button', { text: '－', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom3d(0.8) }),
+      el('button', { text: '⟲', 'aria-label': tr('Reset the view', '向きと大きさを戻す'), onclick: () => { Object.assign(Q3, VIEW3D); clearMark3d(); draw3d(); } }));
     const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
     const legend = el('div', { class: 'legend' });
     const msg = el('div', { class: 'form-hint' });
@@ -1734,16 +1884,16 @@
       Q3.started = true;
       read();
       if (store.get('qalc.plot3d.ok', true)) setTimeout(compute3d, 260);
-      else msg.textContent = '「描画」を押すとグラフを描きます';
+      else msg.textContent = tr('Press "Draw" to draw the graph', '「描画」を押すとグラフを描きます');
     };
     return el('div', { class: 'plot-mode' },
       el('div', { class: 'plot-form' }, ta,
         el('div', { class: 'ranges3d' },
-          el('div', { class: 'plot-range' }, el('span', { text: 'x：' }), xmin, el('span', { text: '〜' }), xmax),
-          el('div', { class: 'plot-range' }, el('span', { text: 'y：' }), ymin, el('span', { text: '〜' }), ymax)),
-        el('div', { class: 'plot-range' }, el('span', { text: '細かさ：' }), res, go)),
+          el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr('to', '〜') }), xmax),
+          el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr('to', '〜') }), ymax)),
+        el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
       wrap, legend, msg,
-      el('div', { class: 'form-hint', text: 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。' }));
+      el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
   function zRange3d(vals) {
@@ -1758,15 +1908,15 @@
     return [lo, hi];
   }
   async function compute3d() {
-    if (!Q3.exprs.length) { Q3.msg.textContent = '関数を入力してください'; return; }
-    Q3.msg.textContent = '計算中…';
+    if (!Q3.exprs.length) { Q3.msg.textContent = tr('Enter a function', '関数を入力してください'); return; }
+    Q3.msg.textContent = tr('Calculating…', '計算中…');
     const [x0, x1, y0, y1] = Q3.range;
     const r = await Bridge.send('plot3d', { exprs: Q3.exprs, xmin: x0 || '-5', xmax: x1 || '5', ymin: y0 || '-5', ymax: y1 || '5', nx: Q3.res, ny: Q3.res, opts: engineOpts(), timeout: 15000 });
     if (!r.ok) {
-      Q3.msg.textContent = r.error === 'invalid x range' ? 'x の範囲を確認してください' : r.error === 'invalid y range' ? 'y の範囲を確認してください' : (r.error || 'グラフを計算できませんでした');
+      Q3.msg.textContent = r.error === 'invalid x range' ? tr('Check the range of x', 'x の範囲を確認してください') : r.error === 'invalid y range' ? tr('Check the range of y', 'y の範囲を確認してください') : (localMessage(r.error) || tr('Could not calculate the graph', 'グラフを計算できませんでした'));
       return;
     }
-    if (!Array.isArray(r.series) || !Array.isArray(r.x) || !Array.isArray(r.y)) { Q3.msg.textContent = '時間がかかりすぎたため計算を中止しました'; return; }
+    if (!Array.isArray(r.series) || !Array.isArray(r.x) || !Array.isArray(r.y)) { Q3.msg.textContent = tr('The calculation took too long and was stopped', '時間がかかりすぎたため計算を中止しました'); return; }
     const nx = r.x.length, ny = r.y.length, vals = [];
     const series = r.series.map((s, i) => {
       const z = new Float64Array(nx * ny);
@@ -1782,15 +1932,15 @@
     Q3.data = { xs: r.x, ys: r.y, nx, ny, series, z0, z1 };
     clearMark3d();
     const err = (r.messages || []).find((m) => m.type === 'error');
-    Q3.msg.textContent = err ? jaMessage(err.text)
-      : series.some((s) => !s.complete) ? '時間がかかりすぎたため、途中までしか計算できませんでした'
-      : vals.length ? '' : '実数の値がありません（x と y の範囲を確認してください）';
+    Q3.msg.textContent = err ? localMessage(err.text)
+      : series.some((s) => !s.complete) ? tr('The calculation took too long: only part of the graph was calculated', '時間がかかりすぎたため、途中までしか計算できませんでした')
+      : vals.length ? '' : tr('There are no real values (check the ranges of x and y)', '実数の値がありません（x と y の範囲を確認してください）');
     Q3.legend.textContent = '';
     if (series.length === 1 && vals.length) {
       const step = niceStep(z1 - z0, 4);
-      Q3.legend.append(el('span', { class: 'zbar' }, series[0].expr + '　z：' + fmt(z0, step / 10), el('i'), fmt(z1, step / 10)));
+      Q3.legend.append(el('span', { class: 'zbar' }, series[0].expr + tr('   z: ', '　z：') + fmt(z0, step / 10), el('i'), fmt(z1, step / 10)));
     } else {
-      for (const s of series) Q3.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.z.some((v) => v === v) ? '' : '（値なし）') }));
+      for (const s of series) Q3.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
     }
     store.set('qalc.plot3d.ok', false);
     draw3d();
@@ -1938,7 +2088,7 @@
     if (!best) { clearMark3d(); draw3d(); return; }
     Q3.mark = best;
     const i = best.k % D.nx, j = Math.floor(best.k / D.nx), num = (v) => Number(v.toPrecision(10));
-    Q3.tip.textContent = best.s.expr + '：x = ' + num(D.xs[i]) + ', y = ' + num(D.ys[j]) + ', z = ' + num(best.s.z[best.k]);
+    Q3.tip.textContent = best.s.expr + tr(':  x = ', '：x = ') + num(D.xs[i]) + ', y = ' + num(D.ys[j]) + ', z = ' + num(best.s.z[best.k]);
     Q3.tip.style.display = 'block';
     draw3d();
   }
@@ -1987,45 +2137,45 @@
 
   // ----------------------------------------------------- user definitions
   function openDefs() {
-    const p = panel('defs', 'ユーザー定義の変数・関数', (p) => {
+    const p = panel('defs', tr('User-defined variables and functions', 'ユーザー定義の変数・関数'), (p) => {
       const list = el('div');
-      const vName = el('input', { placeholder: '例：r', autocapitalize: 'off' });
-      const vVal = el('input', { placeholder: '例：5 cm、2*pi', autocapitalize: 'off' });
-      const fName = el('input', { placeholder: '例：hyp', autocapitalize: 'off' });
-      const fExpr = el('input', { placeholder: '例：pi*x^2（引数は x, y, z）', autocapitalize: 'off' });
-      const addVar = el('button', { class: 'btn primary', text: '変数を保存' });
-      const addFn = el('button', { class: 'btn primary', text: '関数を保存' });
+      const vName = el('input', { placeholder: tr('e.g. r', '例：r'), autocapitalize: 'off' });
+      const vVal = el('input', { placeholder: tr('e.g. 5 cm, 2*pi', '例：5 cm、2*pi'), autocapitalize: 'off' });
+      const fName = el('input', { placeholder: tr('e.g. hyp', '例：hyp'), autocapitalize: 'off' });
+      const fExpr = el('input', { placeholder: tr('e.g. pi*x^2 (arguments x, y, z)', '例：pi*x^2（引数は x, y, z）'), autocapitalize: 'off' });
+      const addVar = el('button', { class: 'btn primary', text: tr('Save variable', '変数を保存') });
+      const addFn = el('button', { class: 'btn primary', text: tr('Save function', '関数を保存') });
       p.body.append(
-        el('div', { class: 'section-title', text: '保存済み' }), list,
-        el('div', { class: 'section-title', text: '変数を追加・変更' }),
-        el('div', { class: 'form-row' }, el('label', { text: '名前' }), vName),
-        el('div', { class: 'form-row' }, el('label', { text: '値（式も可）' }), vVal), addVar,
-        el('div', { class: 'section-title', text: '関数を追加・変更' }),
-        el('div', { class: 'form-row' }, el('label', { text: '名前' }), fName),
-        el('div', { class: 'form-row' }, el('label', { text: '式' }), fExpr,
-          el('div', { class: 'form-hint', text: '引数は x, y, z で書きます。例：「hyp」に sqrt(x^2 + y^2) を保存すると hyp(3, 4) = 5。' })), addFn);
+        el('div', { class: 'section-title', text: tr('Saved', '保存済み') }), list,
+        el('div', { class: 'section-title', text: tr('Add or change a variable', '変数を追加・変更') }),
+        el('div', { class: 'form-row' }, el('label', { text: tr('Name', '名前') }), vName),
+        el('div', { class: 'form-row' }, el('label', { text: tr('Value (an expression is fine)', '値（式も可）') }), vVal), addVar,
+        el('div', { class: 'section-title', text: tr('Add or change a function', '関数を追加・変更') }),
+        el('div', { class: 'form-row' }, el('label', { text: tr('Name', '名前') }), fName),
+        el('div', { class: 'form-row' }, el('label', { text: tr('Expression', '式') }), fExpr,
+          el('div', { class: 'form-hint', text: tr('Write the arguments as x, y and z. Example: save sqrt(x^2 + y^2) as "hyp", and hyp(3, 4) = 5.', '引数は x, y, z で書きます。例：「hyp」に sqrt(x^2 + y^2) を保存すると hyp(3, 4) = 5。') })), addFn);
       const refresh = async () => {
         list.textContent = '';
         const r = await Bridge.send('user_defs');
-        if (!r.ok) { list.textContent = r.error; return; }
-        if (!r.variables.length && !r.functions.length) list.append(el('div', { class: 'card muted', text: 'まだありません。' }));
+        if (!r.ok) { list.textContent = localMessage(r.error); return; }
+        if (!r.variables.length && !r.functions.length) list.append(el('div', { class: 'card muted', text: tr('None yet.', 'まだありません。') }));
         const row = (kind, name, body) => el('div', { class: 'item' }, el('div', { class: 'row1' },
           el('div', { class: 't' }, el('span', { class: 'mono', text: kind === 'function' ? name + '()' : name }), el('div', { class: 'n', text: body })),
           el('div', { class: 'acts' },
-            el('button', { class: 'btn', text: '挿入', onclick: () => useItem(kind === 'function' ? name + '()' : name, kind === 'function' ? 1 : 0) }),
-            el('button', { class: 'btn danger', text: '削除', onclick: async () => {
-              if (!(await confirmSheet('「' + name + '」を削除しますか？', '削除する'))) return;
+            el('button', { class: 'btn', text: tr('Insert', '挿入'), onclick: () => useItem(kind === 'function' ? name + '()' : name, kind === 'function' ? 1 : 0) }),
+            el('button', { class: 'btn danger', text: tr('Delete', '削除'), onclick: async () => {
+              if (!(await confirmSheet(tr('Delete "' + name + '"?', '「' + name + '」を削除しますか？'), tr('Delete', '削除する')))) return;
               const d = await Bridge.send('delete_def', { kind, name });
-              if (!d.ok) toast(d.error); else { invalidateCatalogs(); refresh(); }
+              if (!d.ok) toast(localMessage(d.error)); else { invalidateCatalogs(); refresh(); }
             } }))));
-        for (const v of r.variables) list.append(row('variable', v.name, '= ' + v.value + (v.temporary ? '（一時的：アプリを閉じると消えます）' : '')));
+        for (const v of r.variables) list.append(row('variable', v.name, '= ' + v.value + (v.temporary ? tr(' (temporary: gone when the app is closed)', '（一時的：アプリを閉じると消えます）') : '')));
         for (const f of r.functions) list.append(row('function', f.name, f.expr));
       };
       const save = async (cmd, params, clear) => {
         const r = await Bridge.send(cmd, params);
-        if (!r.ok) { toast(r.error); return; }
+        if (!r.ok) { toast(localMessage(r.error)); return; }
         const err = (r.messages || []).find((m) => m.type === 'error');
-        toast(err ? jaMessage(err.text) : (r.saved === false ? '設定しましたが、ファイルに保存できませんでした' : '保存しました'));
+        toast(err ? localMessage(err.text) : (r.saved === false ? tr('Set, but it could not be saved to a file', '設定しましたが、ファイルに保存できませんでした') : tr('Saved', '保存しました')));
         clear.forEach((i) => { i.value = ''; });
         invalidateCatalogs();
         refresh();
@@ -2051,28 +2201,33 @@
   // ------------------------------------------------------- exchange rates
   let ratesTime = 0;
   function fmtTime(sec) {
-    if (!sec) return '不明';
+    if (!sec) return tr('unknown', '不明');
     const d = new Date(sec * 1000);
     const pad = (n) => String(n).padStart(2, '0');
+    if (!JA) return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
   function openRates() {
-    const p = panel('rates', '為替レートの更新', (p) => {
+    const p = panel('rates', tr('Update exchange rates', '為替レートの更新'), (p) => {
       const info = el('div', { class: 'card' });
-      const btn = el('button', { class: 'btn primary', text: '今すぐ更新' });
+      const btn = el('button', { class: 'btn primary', text: tr('Update now', '今すぐ更新') });
       const result = el('div', { class: 'form-hint' });
       p.body.append(info, btn, result,
-        el('div', { class: 'card muted', style: 'margin-top:14px', html: '通貨の換算（例：<span class="mono">100 USD to JPY</span>）には、公式の Qalculate! と同じ取得元（欧州中央銀行、Coinbase など）のレートを使います。更新にはインターネット接続が必要です。' }));
-      const show = () => { info.innerHTML = ''; info.append(el('div', { text: '最終更新：' + fmtTime(ratesTime) })); };
+        el('div', { class: 'card muted', style: 'margin-top:14px', html: tr('Currency conversion (for example <span class="mono">100 USD to EUR</span>) uses rates from the same sources as the official Qalculate! (the European Central Bank, Coinbase and others). Updating needs an internet connection.', '通貨の換算（例：<span class="mono">100 USD to JPY</span>）には、公式の Qalculate! と同じ取得元（欧州中央銀行、Coinbase など）のレートを使います。更新にはインターネット接続が必要です。') }));
+      const show = () => { info.innerHTML = ''; info.append(el('div', { text: tr('Last updated: ', '最終更新：') + fmtTime(ratesTime) })); };
       btn.addEventListener('click', async () => {
         btn.disabled = true;
-        result.textContent = 'ダウンロード中…';
+        result.textContent = tr('Downloading…', 'ダウンロード中…');
         const r = await Bridge.updateRates();
         btn.disabled = false;
         if (r.time) ratesTime = r.time;
         show();
-        if (r.ok) result.textContent = r.updated + ' / ' + r.total + ' 件の取得元から更新しました。' + (r.failed && r.failed.length ? '（取得できなかったもの：' + r.failed.join('、') + '）' : '');
-        else result.textContent = r.error || '更新できませんでした';
+        if (r.ok) {
+          const failed = r.failed && r.failed.length ? r.failed : null;
+          result.textContent = JA
+            ? r.updated + ' / ' + r.total + ' 件の取得元から更新しました。' + (failed ? '（取得できなかったもの：' + failed.join('、') + '）' : '')
+            : 'Updated from ' + r.updated + ' of ' + r.total + ' sources.' + (failed ? ' (Not available: ' + failed.join(', ') + ')' : '');
+        } else result.textContent = localMessage(r.error) || tr('Could not update', '更新できませんでした');
         if (r.ok) { invalidateCatalogs(); exprChanged(); }
       });
       p.show = show;
@@ -2082,35 +2237,44 @@
   }
 
   // ------------------------------------------------------------ settings
-  // the highest precision (the same as the engine's limit, MAX_PRECISION in qalc-engine.cc)
-  const MAX_PRECISION = 200000;
+  // color themes (QCalc Pro): the colors of the keys and the highlights (style.css)
+  const THEMES = [['blue', tr('Blue', 'ブルー')], ['green', tr('Green', 'グリーン')], ['teal', tr('Teal', 'ティール')],
+    ['purple', tr('Purple', 'パープル')], ['rose', tr('Rose', 'ローズ')], ['orange', tr('Orange', 'オレンジ')], ['graphite', tr('Graphite', 'グラファイト')]];
   const SETTINGS = [
-    ['計算', [
-      ['angle', '角度の単位', [['rad', 'ラジアン'], ['deg', '度'], ['gra', 'グラード']]],
-      ['approx', '厳密計算と近似', [['auto', '自動（厳密値と近似値）'], ['exact', '常に厳密'], ['approx', '常に近似（小数）']], '自動では √2 や π を含む結果に近似値も並べて表示します'],
-      ['structuring', '式の整理', [['simplify', '簡約'], ['factorize', '因数分解'], ['expand', '展開']]],
-      ['complex', '複素数の形式', [['rect', 'a + bi'], ['exp', '指数形式'], ['polar', '極形式'], ['cis', 'cis 形式']]],
-      ['units', '単位の自動変換', [['optimal', '最適な単位'], ['si', 'SI 単位で最適'], ['base', '基本単位'], ['none', 'しない']]],
-      ['mixed_units', '複合単位で表示（3 ft + 2 in など）', 'bool']
+    [tr('Language', '言語'), [
+      ['lang', 'Language / 言語', [['en', 'English'], ['ja', '日本語']]]
     ]],
-    ['表示', [
-      ['fraction', '分数の表示', [['auto', '自動'], ['decimal', '小数'], ['exact', '小数（厳密なときだけ）'], ['fraction', '分数'], ['combined', '帯分数']]],
-      ['precision', '有効桁数', 'number', '計算の精度（2〜200000桁、既定 10）。大きくするほど計算に時間がかかります'],
-      ['max_decimals', '小数点以下の最大桁数', [['-1', '制限なし'], ['0', '0'], ['2', '2'], ['4', '4'], ['6', '6'], ['8', '8'], ['10', '10']]],
-      ['base', '結果の進数', [['10', '10進数'], ['16', '16進数'], ['2', '2進数'], ['8', '8進数'], ['12', '12進数'], ['-1', 'ローマ数字']]],
-      ['notation', '指数表記', [['auto', '自動'], ['sci', '科学表記（1000 以上などで指数）'], ['eng', '工学表記（指数は 3 の倍数）'], ['pure', '常に指数表記'], ['none', '使わない（全桁を表示）']], '「使わない」にすると大きな整数も全桁を表示します'],
-      ['grouping', '3桁ごとに区切る', 'bool'],
-      ['text_size', '文字の大きさ', [['normal', '標準'], ['large', '大きめ'], ['xlarge', '特大']], '履歴・入力欄・結果の文字の大きさ']
+    [tr('Calculation', '計算'), [
+      ['angle', tr('Angle unit', '角度の単位'), [['rad', tr('Radians', 'ラジアン')], ['deg', tr('Degrees', '度')], ['gra', tr('Gradians', 'グラード')]]],
+      ['approx', tr('Exact or approximate', '厳密計算と近似'), [['auto', tr('Automatic (exact and approximate)', '自動（厳密値と近似値）')], ['exact', tr('Always exact', '常に厳密')], ['approx', tr('Always approximate (decimals)', '常に近似（小数）')]],
+        tr('Automatic also shows an approximate value for results with √2, π and the like', '自動では √2 や π を含む結果に近似値も並べて表示します')],
+      ['structuring', tr('Simplification', '式の整理'), [['simplify', tr('Simplify', '簡約')], ['factorize', tr('Factorize', '因数分解')], ['expand', tr('Expand', '展開')]]],
+      ['complex', tr('Complex number form', '複素数の形式'), [['rect', 'a + bi'], ['exp', tr('Exponential', '指数形式')], ['polar', tr('Polar', '極形式')], ['cis', tr('cis', 'cis 形式')]]],
+      ['units', tr('Automatic unit conversion', '単位の自動変換'), [['optimal', tr('Best unit', '最適な単位')], ['si', tr('Best SI unit', 'SI 単位で最適')], ['base', tr('Base units', '基本単位')], ['none', tr('None', 'しない')]]],
+      ['mixed_units', tr('Mixed units (3 ft + 2 in and the like)', '複合単位で表示（3 ft + 2 in など）'), 'bool']
     ]],
-    ['操作', [
-      ['preview', '入力中に結果を表示', 'bool'],
-      ['auto_rates', '為替レートを自動更新（7日ごと）', 'bool'],
-      ['auto_ans', '空欄で演算子を押すと ans から続ける', 'bool'],
-      ['haptics', 'キーを押したときに振動', 'bool']
+    [tr('Display', '表示'), [
+      ['fraction', tr('Fractions', '分数の表示'), [['auto', tr('Automatic', '自動')], ['decimal', tr('Decimal', '小数')], ['exact', tr('Decimal (when exact)', '小数（厳密なときだけ）')], ['fraction', tr('Fraction', '分数')], ['combined', tr('Mixed fraction', '帯分数')]]],
+      ['precision', tr('Precision (significant digits)', '有効桁数'), 'number', proOffered()
+        ? tr('2 to 200000 digits (default 10; above 1000 with QCalc Pro). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 10。1000 桁を超えるには QCalc Pro）。大きくするほど計算に時間がかかります')
+        : tr('2 to 200000 digits (default 10). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 10）。大きくするほど計算に時間がかかります')],
+      ['max_decimals', tr('Maximum decimal places', '小数点以下の最大桁数'), [['-1', tr('No limit', '制限なし')], ['0', '0'], ['2', '2'], ['4', '4'], ['6', '6'], ['8', '8'], ['10', '10']]],
+      ['base', tr('Number base of results', '結果の進数'), [['10', tr('Decimal', '10進数')], ['16', tr('Hexadecimal', '16進数')], ['2', tr('Binary', '2進数')], ['8', tr('Octal', '8進数')], ['12', tr('Duodecimal', '12進数')], ['-1', tr('Roman numerals', 'ローマ数字')]]],
+      ['notation', tr('Exponential notation', '指数表記'), [['auto', tr('Automatic', '自動')], ['sci', tr('Scientific (exponent from about 1000)', '科学表記（1000 以上などで指数）')], ['eng', tr('Engineering (exponent a multiple of 3)', '工学表記（指数は 3 の倍数）')], ['pure', tr('Always', '常に指数表記')], ['none', tr('Never (all digits)', '使わない（全桁を表示）')]],
+        tr('"Never" shows all digits of large integers too', '「使わない」にすると大きな整数も全桁を表示します')],
+      ['grouping', tr('Digit grouping (1,000)', '3桁ごとに区切る'), 'bool'],
+      ['text_size', tr('Text size', '文字の大きさ'), [['normal', tr('Normal', '標準')], ['large', tr('Large', '大きめ')], ['xlarge', tr('Extra large', '特大')]], tr('Text in the history, the input field and the result', '履歴・入力欄・結果の文字の大きさ')],
+      ['theme', tr('Color theme', '配色テーマ'), THEMES, tr('The color of the keys and the highlights, in the light and the dark theme', 'キーや強調表示の色（ライト・ダークの両方）')]
+    ]],
+    [tr('Input', '操作'), [
+      ['preview', tr('Show the result while typing', '入力中に結果を表示'), 'bool'],
+      ['auto_rates', tr('Update exchange rates automatically (every 7 days)', '為替レートを自動更新（7日ごと）'), 'bool'],
+      ['auto_ans', tr('An operator in an empty field continues from ans', '空欄で演算子を押すと ans から続ける'), 'bool'],
+      ['haptics', tr('Vibrate when a key is pressed', 'キーを押したときに振動'), 'bool']
     ]]
   ];
   function openSettings() {
-    const p = panel('settings', '設定', (p) => {
+    const p = panel('settings', tr('Settings', '設定'), (p) => {
       for (const [group, rows] of SETTINGS) {
         p.body.append(el('div', { class: 'section-title', text: group }));
         for (const [key, label, type, sub] of rows) {
@@ -2120,28 +2284,41 @@
             input.checked = !!S[key];
             input.addEventListener('change', () => { S[key] = input.checked; settingsChanged(); });
           } else if (type === 'number') {
-            input = el('input', { type: 'number', min: 2, max: MAX_PRECISION, inputmode: 'numeric' });
+            input = el('input', { type: 'number', min: 2, max: maxPrecision(), inputmode: 'numeric' });
             input.value = S[key];
-            input.addEventListener('change', () => { const n = Math.max(2, Math.min(MAX_PRECISION, parseInt(input.value, 10) || 10)); S[key] = n; input.value = n; settingsChanged(); });
+            input.addEventListener('change', () => {
+              let n = Math.max(2, Math.min(MAX_PRECISION, parseInt(input.value, 10) || 10));
+              const locked = n > maxPrecision();
+              if (locked) n = maxPrecision();
+              S[key] = n; input.value = n; settingsChanged();
+              if (locked) proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'));
+            });
           } else {
             input = el('select');
             for (const [v, t] of type) input.append(el('option', { value: v, text: t }));
-            input.value = String(S[key]);
+            input.value = String(own(S, key));
             input.addEventListener('change', () => {
               const v = input.value;
+              if (key === 'theme' && v !== 'blue' && !hasPro()) {
+                input.value = 'blue'; S.theme = 'blue'; settingsChanged();
+                proPrompt(tr('Color themes are a QCalc Pro feature', '配色テーマは QCalc Pro の機能です'));
+                return;
+              }
               S[key] = (key === 'base' || key === 'max_decimals') ? Number(v) : v;
               settingsChanged();
             });
           }
+          const name = el('div', { text: label });
+          if (key === 'theme' || key === 'precision') name.dataset.pro = '';
           p.body.append(el('label', { class: 'setting' },
-            el('div', { class: 'lbl' }, el('div', { text: label }), sub ? el('div', { class: 's', text: sub }) : null), input));
+            el('div', { class: 'lbl' }, name, sub ? el('div', { class: 's', text: sub }) : null), input));
           (p.inputs = p.inputs || {})[key] = input;
         }
       }
       p.body.append(el('div', { class: 'section-title', text: '' }),
-        el('button', { class: 'btn', text: '設定を初期値に戻す', onclick: async () => {
-          if (!(await confirmSheet('設定を初期値に戻しますか？', '戻す'))) return;
-          S = Object.assign({}, DEFAULTS); settingsChanged();
+        el('button', { class: 'btn', text: tr('Reset all settings', '設定を初期値に戻す'), onclick: async () => {
+          if (!(await confirmSheet(tr('Reset all settings to their defaults?', '設定を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
+          S = Object.assign({}, DEFAULTS, { lang: LANG }); settingsChanged(); // the language stays
           for (const k of Object.keys(p.inputs)) { const i = p.inputs[k]; if (i.type === 'checkbox') i.checked = !!S[k]; else i.value = String(S[k]); }
         } }));
     });
@@ -2149,14 +2326,16 @@
   }
   function settingsChanged() {
     saveSettings();
+    if (S.lang !== LANG) { setLanguage(S.lang); return; }
     updateChips();
     applyTextSize();
+    applyTheme();
     exprChanged();
   }
   function updateChips() {
     $('#chip-angle').textContent = ANGLE_LABEL[S.angle] || 'RAD';
-    $('#chip-approx').textContent = APPROX_LABEL[S.approx] || '自動';
-    $('#chip-base').textContent = BASE_LABEL[String(S.base)] || (S.base + '進');
+    $('#chip-approx').textContent = APPROX_LABEL[S.approx] || APPROX_LABEL.auto;
+    $('#chip-base').textContent = BASE_LABEL[String(S.base)] || String(S.base);
   }
   function cycle(key, values) {
     const i = values.indexOf(String(S[key]));
@@ -2166,36 +2345,39 @@
     if (panels.settings && panels.settings.inputs) panels.settings.inputs[key].value = String(S[key]);
   }
   for (const id of ['#chip-angle', '#chip-approx', '#chip-base']) $(id).addEventListener('pointerdown', (e) => e.preventDefault());
-  $('#chip-angle').addEventListener('click', () => { vibrate(); cycle('angle', ['rad', 'deg', 'gra']); toast('角度：' + { rad: 'ラジアン', deg: '度', gra: 'グラード' }[S.angle], 1200); });
-  $('#chip-approx').addEventListener('click', () => { vibrate(); cycle('approx', ['auto', 'exact', 'approx']); toast({ auto: '厳密値と近似値を自動で表示', exact: '常に厳密に計算', approx: '常に近似（小数）で計算' }[S.approx], 1400); });
-  $('#chip-base').addEventListener('click', () => { vibrate(); cycle('base', ['10', '16', '2', '8']); toast('結果を ' + BASE_LABEL[String(S.base)] + '数で表示', 1200); });
+  $('#chip-angle').addEventListener('click', () => { vibrate(); cycle('angle', ['rad', 'deg', 'gra']); toast(tr('Angle: ', '角度：') + { rad: tr('radians', 'ラジアン'), deg: tr('degrees', '度'), gra: tr('gradians', 'グラード') }[S.angle], 1200); });
+  $('#chip-approx').addEventListener('click', () => { vibrate(); cycle('approx', ['auto', 'exact', 'approx']); toast({ auto: tr('Exact and approximate values, automatically', '厳密値と近似値を自動で表示'), exact: tr('Always exact', '常に厳密に計算'), approx: tr('Always approximate (decimals)', '常に近似（小数）で計算') }[S.approx], 1400); });
+  $('#chip-base').addEventListener('click', () => { vibrate(); cycle('base', ['10', '16', '2', '8']); toast(tr('Results in ' + BASE_NAME[String(S.base)], '結果を ' + BASE_NAME[String(S.base)] + 'で表示'), 1200); });
 
   // --------------------------------------------------------------- about
   let engineName = '';
   const PRIVACY_URL = 'https://hiroshitsu.github.io/qcalc/privacy.html';
   const SOURCE_URL = 'https://github.com/HiroshiTsu/qcalc';
   function openAbout() {
-    const p = panel('about', 'このアプリについて', (p) => {
+    const p = panel('about', tr('About this app', 'このアプリについて'), (p) => {
       let app = {};
       try { app = JSON.parse(window.QalcNative ? QalcNative.appInfo() : '{}'); } catch (e) { }
       p.body.append(
         el('div', { class: 'card' },
           el('div', { style: 'font-weight:700;font-size:17px', text: 'QCalc' }),
-          el('div', { class: 'muted', text: 'バージョン ' + (app.version || '') + ' ／ 計算エンジン ' + (engineName || 'libqalculate') }),
-          el('div', { class: 'muted', text: (app.device || '') + (app.android ? '（Android ' + app.android + '）' : '') })),
-        el('div', { class: 'card', html:
+          el('div', { class: 'muted', text: tr('Version ', 'バージョン ') + (app.version || '') + tr(' / engine ', ' ／ 計算エンジン ') + (engineName || 'libqalculate') }),
+          el('div', { class: 'muted', text: (app.device || '') + (app.android ? tr(' (Android ', '（Android ') + app.android + tr(')', '）') : '') })),
+        el('div', { class: 'card', html: tr(
+          'All calculations are done by <b>libqalculate</b>, the calculation engine of the open-source calculator Qalculate!. QCalc builds its official source code for Android (arm64) and adds a user interface for phones. It is not made by the developers of Qalculate!.<br><br>' +
+          'Expressions are written in the same way as in Qalculate!.',
           '計算はすべて、オープンソースの電卓 Qalculate! の計算エンジン <b>libqalculate</b> が行います。QCalc は、その公式ソースコードを Android（arm64）向けにビルドして組み込んだ、スマホ向けの電卓です。Qalculate! の開発者が作ったアプリではありません。<br><br>' +
-          '式の書き方は Qalculate! と同じです。' },
-          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: '式の例・使い方を見る', onclick: (e) => { e.preventDefault(); openExamples(); } }))),
-        el('div', { class: 'card', html:
-          '<b>プライバシー</b><br>QCalc は個人情報を集めず、どこにも送りません。インターネットを使うのは為替レートの取得（欧州中央銀行など 3 か所からのダウンロード）だけで、そのときもあなたの情報は送りません。計算の履歴や設定は端末の中に保存し、開発者に送ることはありません。' },
-          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: 'プライバシーポリシー', onclick: (e) => { e.preventDefault(); openUrl(PRIVACY_URL); } }))),
+          '式の書き方は Qalculate! と同じです。') },
+          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Examples and tips', '式の例・使い方を見る'), onclick: (e) => { e.preventDefault(); openExamples(); } }))),
+        el('div', { class: 'card', html: tr(
+          '<b>Privacy</b><br>QCalc collects no personal data and sends nothing anywhere. It uses the internet only to download exchange rates (from three sources such as the European Central Bank), and sends no information about you then either. The history and the settings are kept on your device and are never sent to the developer.',
+          '<b>プライバシー</b><br>QCalc は個人情報を集めず、どこにも送りません。インターネットを使うのは為替レートの取得（欧州中央銀行など 3 か所からのダウンロード）だけで、そのときもあなたの情報は送りません。計算の履歴や設定は端末の中に保存し、開発者に送ることはありません。') },
+          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Privacy policy', 'プライバシーポリシー'), onclick: (e) => { e.preventDefault(); openUrl(PRIVACY_URL); } }))),
         el('div', { class: 'card' },
-          el('div', { text: 'ライセンス：GNU GPL v2 以降（libqalculate と同じ）' }),
-          el('div', { class: 'muted', style: 'font-size:13px', text: '計算エンジンには GMP・MPFR・libxml2 なども組み込んでいます。MPFR が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。' }),
-          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: 'オープンソースライセンス', onclick: (e) => { e.preventDefault(); openLicenses(); } })),
-          el('div', {}, el('a', { href: '#', text: 'QCalc のソースコード（GitHub）', onclick: (e) => { e.preventDefault(); openUrl(SOURCE_URL); } })),
-          el('div', {}, el('a', { href: '#', text: 'Qalculate! 公式サイト', onclick: (e) => { e.preventDefault(); openUrl('https://qalculate.github.io/'); } })))
+          el('div', { text: tr('License: GNU GPL v2 or later (the same as libqalculate)', 'ライセンス：GNU GPL v2 以降（libqalculate と同じ）') }),
+          el('div', { class: 'muted', style: 'font-size:13px', text: tr('The calculation engine also contains GMP, MPFR, libxml2 and more. Because MPFR is LGPL v3 or later, the engine as a whole is distributed under the GNU GPL v3 or later.', '計算エンジンには GMP・MPFR・libxml2 なども組み込んでいます。MPFR が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。') }),
+          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Open source licenses', 'オープンソースライセンス'), onclick: (e) => { e.preventDefault(); openLicenses(); } })),
+          el('div', {}, el('a', { href: '#', text: tr('QCalc source code (GitHub)', 'QCalc のソースコード（GitHub）'), onclick: (e) => { e.preventDefault(); openUrl(SOURCE_URL); } })),
+          el('div', {}, el('a', { href: '#', text: tr('Qalculate! website', 'Qalculate! 公式サイト'), onclick: (e) => { e.preventDefault(); openUrl('https://qalculate.github.io/'); } })))
       );
     });
     return p;
@@ -2212,28 +2394,147 @@
     });
   }
   function openLicenses() {
-    return panel('licenses', 'オープンソースライセンス', (p) => {
-      const hint = el('div', { class: 'form-hint', text: '読み込み中…' });
+    return panel('licenses', tr('Open source licenses', 'オープンソースライセンス'), (p) => {
+      const hint = el('div', { class: 'form-hint', text: tr('Loading…', '読み込み中…') });
       p.body.append(hint);
       loadLicenses().then((L) => {
         hint.remove();
-        p.body.append(el('div', { class: 'card', text: 'QCalc には、次のオープンソースソフトウェアが含まれています。各ソフトウェアのライセンス全文は、名前の下の項目をタップすると表示されます。QCalc と計算エンジンの完全なソースコードは GitHub で公開しています。' }));
+        p.body.append(el('div', { class: 'card', text: tr('QCalc contains the following open source software. Tap an item under a name to read the full license text. The complete source code of QCalc and of its calculation engine is published on GitHub.', 'QCalc には、次のオープンソースソフトウェアが含まれています。各ソフトウェアのライセンス全文は、名前の下の項目をタップすると表示されます。QCalc と計算エンジンの完全なソースコードは GitHub で公開しています。') }));
         for (const c of L.components) {
           const card = el('div', { class: 'card lic' },
-            el('div', { style: 'font-weight:700', text: c.name + (c.version ? ' ' + c.version : '') }),
-            el('div', { class: 'muted', text: c.license }),
+            el('div', { style: 'font-weight:700', text: c.name + (c.version ? ' ' + ((JA && c.version_ja) || c.version) : '') }),
+            el('div', { class: 'muted', text: (JA && c.license_ja) || c.license }),
             c.copyright ? el('div', { class: 'muted', style: 'font-size:12px', text: c.copyright }) : null,
             c.url ? el('div', { style: 'font-size:13px' }, el('a', { href: '#', text: c.url, onclick: (e) => { e.preventDefault(); openUrl(c.url); } })) : null);
           for (const t of c.texts) {
             const pre = el('pre', { class: 'lic-text' });
-            const d = el('details', {}, el('summary', { text: L.titles[t] }), pre);
+            const d = el('details', {}, el('summary', { text: (JA && L.titles_ja && L.titles_ja[t]) || L.titles[t] }), pre);
             d.addEventListener('toggle', () => { if (d.open && !pre.textContent) pre.textContent = L.texts[t]; });
             card.append(d);
           }
           p.body.append(card);
         }
-      }).catch(() => { hint.textContent = 'ライセンス文を読み込めませんでした。'; });
+      }).catch(() => { hint.textContent = tr('Could not load the license texts.', 'ライセンス文を読み込めませんでした。'); });
     });
+  }
+
+  // ----------------------------------------------------------------- Pro
+  async function proPrompt(what) {
+    const k = await sheet(what, [['pro', tr('About QCalc Pro', 'QCalc Pro について'), 'accent']]);
+    if (k === 'pro') openPro();
+  }
+  const PRO_FEATURES = [
+    ['🎯', tr('High precision', '高精度'), tr('Up to 200000 significant digits (free: up to 1000)', '有効桁数は最大 200000 桁（無料版は 1000 桁まで）')],
+    ['🧊', tr('3D graphs', '3D グラフ'), tr('Surfaces z = f(x, y) that you can turn with a finger', '指で回せる曲面 z = f(x, y)')],
+    ['🎨', tr('Color themes', '配色テーマ'), tr('Seven colors for the keys and the highlights, in the light and the dark theme', 'キーや強調表示を 7 色から選べます（ライト・ダークの両方）')],
+    ['📤', tr('Export the history', '履歴の書き出し'), tr('Save the history as a CSV file that spreadsheets can open', '履歴を CSV ファイルに保存（表計算ソフトで開けます）')],
+    ['✨', tr('Future Pro features', '今後の Pro 機能'), tr('The Pro features of later updates, at no extra cost', '今後のアップデートで増える Pro 機能も、追加料金なしで使えます')]
+  ];
+  function openPro() {
+    const p = panel('pro', 'QCalc Pro', (p) => { p.refresh = () => { p.body.textContent = ''; fillPro(p.body); }; });
+    p.refresh();
+    // the price and the purchases again (a purchase may have been made outside the app)
+    if (window.QalcNative && QalcNative.refreshPro) QalcNative.refreshPro();
+    return p;
+  }
+  function fillPro(body) {
+    const card = el('div', { class: 'card pro-state' });
+    if (PRO.pro) {
+      card.append(el('div', { class: 'pro-title', text: tr('✓ QCalc Pro is unlocked', '✓ QCalc Pro が使えます') }),
+        el('div', { class: 'muted', text: PRO.legacy
+          ? tr('It is free for you, because you used QCalc before QCalc Pro began. Thank you!', 'QCalc Pro が始まる前から QCalc を使っていただいているので、無料で使えます。ありがとうございます！')
+          : PRO.billing === 'debug' ? tr('Unlocked in this test build.', 'このテスト版では最初から使えます。')
+            : tr('Thank you for your purchase!', 'ご購入ありがとうございます！') }));
+    } else {
+      card.append(el('div', { class: 'pro-title', text: tr('Unlock all features with a one-time purchase', '1 回の購入で、すべての機能が使えます') }),
+        el('div', { class: 'muted', text: tr('No subscription and no ads. The purchase belongs to your Google account, so it also works on your other devices.', 'サブスクリプションも広告もありません。購入は Google アカウントに記録されるので、ほかの端末でも使えます。') }));
+      if (PRO.state === 'pending') card.append(el('div', { class: 'form-hint', text: tr('Your payment is being processed. QCalc Pro will be unlocked when it is complete.', '支払いの手続き中です。完了すると QCalc Pro が使えるようになります。') }));
+      card.append(el('button', { class: 'btn primary pro-buy', text: PRO.price ? tr('Buy QCalc Pro (' + PRO.price + ')', 'QCalc Pro を購入（' + PRO.price + '）') : tr('Buy QCalc Pro', 'QCalc Pro を購入'), onclick: buyPro }),
+        el('button', { class: 'btn pro-restore', text: tr('Restore a purchase', '購入を復元'), onclick: restorePro }));
+    }
+    body.append(card);
+    const list = el('div', { class: 'card' });
+    for (const [ico, name, desc] of PRO_FEATURES) {
+      list.append(el('div', { class: 'pro-feat' }, el('span', { class: 'ico', text: ico }),
+        el('div', {}, el('div', { class: 'n', text: name }), el('div', { class: 'muted', text: desc }))));
+    }
+    body.append(list, el('div', { class: 'form-hint', text: tr('Everything else in QCalc stays free.', 'そのほかの機能は、すべて無料のまま使えます。') }));
+    if (PRO.billing === 'debug') {
+      // test builds: see the app as without Pro
+      const box = el('input', { type: 'checkbox' });
+      box.checked = !!PRO.pro;
+      box.addEventListener('change', () => {
+        if (window.QalcNative && QalcNative.setTestPro) QalcNative.setTestPro(box.checked);
+        else if (window.QalcDev && QalcDev.setTestPro) QalcDev.setTestPro(box.checked);
+      });
+      body.append(el('div', { class: 'section-title', text: tr('Test build', 'テスト版') }),
+        el('label', { class: 'setting' }, el('div', { class: 'lbl' }, el('div', { text: tr('Pro unlocked (for testing)', 'Pro を有効にする（テスト用）') })), box));
+    }
+  }
+  function buyPro() {
+    if (window.QalcNative && QalcNative.buyPro) QalcNative.buyPro();
+    else if (window.QalcDev && QalcDev.buyPro) QalcDev.buyPro();
+  }
+  function restorePro() {
+    toast(tr('Checking your purchases…', '購入を確認しています…'), 1500);
+    if (window.QalcNative && QalcNative.restorePro) QalcNative.restorePro();
+    else if (window.QalcDev && QalcDev.restorePro) QalcDev.restorePro();
+  }
+  // the app reports a change: unlocked, a price, a pending payment or a message
+  function proChanged(ev) {
+    const before = hasPro();
+    PRO = readPro();
+    applyTheme();
+    if (panels.settings && panels.settings.inputs && panels.settings.inputs.precision) panels.settings.inputs.precision.max = maxPrecision();
+    if (!before && hasPro()) toast(tr('QCalc Pro is unlocked. Thank you!', 'QCalc Pro が使えるようになりました。ありがとうございます！'), 4000);
+    else if (ev && typeof ev.message === 'string' && ev.message) toast(localMessage(ev.message), 4500);
+    if (panels.pro && panels.pro.refresh) panels.pro.refresh();
+    if (before !== hasPro() && exprEl.value.trim()) exprChanged(); // the precision may be different
+  }
+
+  // -------------------------------------------------------------- export
+  // The history as a CSV file (UTF-8 with a byte order mark, which Excel needs to read it as UTF-8):
+  // date and time, expression, result as shown, and the value as a plain number when it is one.
+  function historyCsv() {
+    const cell = (v, guard) => {
+      let t = String(v == null ? '' : v);
+      if (guard && /^[=+\-@\t\r]/.test(t)) t = "'" + t; // not read as a formula by spreadsheets
+      return '"' + t.replace(/"/g, '""') + '"';
+    };
+    const z = (n) => String(n).padStart(2, '0');
+    const when = (t) => { const d = new Date(t); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); };
+    const rows = [[tr('Date', '日時'), tr('Expression', '式'), tr('Result', '結果'), tr('Number', '数値')].map((x) => cell(x)).join(',')];
+    for (const h of history) {
+      if (!h || typeof h !== 'object' || typeof h.expr !== 'string') continue;
+      const shown = displayResult(h).replace(/^= /, '');
+      rows.push([h.t ? when(h.t) : '', cell(h.expr, true), cell(shown, true), plainNumber(h)].map((x, i) => (i === 1 || i === 2 ? x : cell(x))).join(','));
+    }
+    return '\ufeff' + rows.join('\r\n') + '\r\n';
+  }
+  // The value of a decimal result as a number that spreadsheets read ("-0.6666666667"), or "".
+  function plainNumber(h) {
+    if (typeof h.result !== 'string' || h.cmp || h.cut || Number(h.base) !== 10) return '';
+    const t = h.result.split(/ [≈=] /).pop().replace(/[\u202f\u2009]/g, '').replace(/−/g, '-');
+    return /^-?\d+(?:\.\d+)?(?:E-?\d+)?$/.test(t) ? t : '';
+  }
+  function exportHistory() {
+    if (!hasPro()) { proPrompt(tr('Exporting the history is a QCalc Pro feature', '履歴の書き出しは QCalc Pro の機能です')); return; }
+    if (!history.length) { toast(tr('The history is empty', '履歴はありません'), 1400); return; }
+    const d = new Date(), z = (n) => String(n).padStart(2, '0');
+    const name = 'QCalc-history-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.csv';
+    const csv = historyCsv();
+    // the app asks where to save the file (Android's file picker) and reports with a "saved" event
+    if (window.QalcNative && QalcNative.saveFile) { QalcNative.saveFile(name, 'text/csv', csv); return; }
+    const a = el('a', { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), download: name });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    fileSaved({ ok: true });
+  }
+  function fileSaved(ev) {
+    if (ev.ok) toast(tr('History exported', '履歴を書き出しました'), 2000);
+    else if (!ev.cancelled) toast(localMessage(ev.error) || tr('Could not save the file', 'ファイルを保存できませんでした'), 3500);
   }
 
   // ---------------------------------------------------------- back/pause
@@ -2253,7 +2554,12 @@
   function applyTheme() {
     let dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     try { if (window.QalcNative) dark = !!JSON.parse(QalcNative.appInfo()).dark; } catch (e) { }
-    document.documentElement.classList.toggle('dark', dark);
+    const root = document.documentElement;
+    root.classList.toggle('dark', dark);
+    // the color theme (QCalc Pro); blue is the default of style.css
+    const theme = hasPro() && THEMES.some(([v]) => v === S.theme) && S.theme !== 'blue' ? S.theme : '';
+    if (theme) root.dataset.theme = theme; else delete root.dataset.theme;
+    root.classList.toggle('pro-locked', !hasPro()); // "PRO" marks on the locked features
   }
   // update exchange rates in the background when they are older than 7 days (at most every 6 hours)
   async function autoUpdateRates() {
@@ -2267,11 +2573,39 @@
     if (r && r.ok) {
       if (r.time) ratesTime = r.time;
       invalidateCatalogs();
-      toast('為替レートを最新に更新しました', 1800);
+      toast(tr('Exchange rates updated', '為替レートを最新に更新しました'), 1800);
       if (exprEl.value.trim()) exprChanged();
     }
   }
+  // the texts of index.html are in English; in Japanese they are replaced at start
+  function localizeStatic() {
+    if (!JA) return;
+    const set = (sel, attr, text) => { const e = $(sel); if (e) e.setAttribute(attr, text); };
+    set('#btn-menu', 'aria-label', 'メニュー');
+    set('#chip-angle', 'title', '角度の単位');
+    set('#chip-approx', 'title', '厳密計算・近似');
+    set('#chip-base', 'title', '結果の進数');
+    set('#history', 'aria-label', '計算の履歴');
+    set('#expr', 'placeholder', '式を入力');
+    set('#pages', 'aria-label', 'キーの種類');
+    set('#drawer', 'aria-label', 'メニュー');
+    undoEl.textContent = '↶ 元に戻す';
+  }
+  // "Language / 言語" in the menu and in the settings: the page is loaded again in the new language
+  async function chooseLanguage() {
+    const k = await sheet('Language / 言語', [['en', (JA ? '' : '✓ ') + 'English'], ['ja', (JA ? '✓ ' : '') + '日本語']]);
+    if (k) setLanguage(k);
+  }
+  function setLanguage(lang) {
+    if (lang !== 'en' && lang !== 'ja') return;
+    S.lang = lang;
+    saveSettings();
+    if (lang === LANG) return;
+    window.qalcPause(); // the history and the expression being typed
+    location.reload();
+  }
   async function boot() {
+    localizeStatic();
     applyTheme();
     applyTextSize();
     buildDrawer();
@@ -2288,11 +2622,11 @@
     startEngine();
   }
   async function startEngine() {
-    previewEl.textContent = '計算エンジンを準備中…';
+    previewEl.textContent = tr('Starting the calculation engine…', '計算エンジンを準備中…');
     const r = await Bridge.send('init');
     previewEl.textContent = '';
     if (!r.ok) {
-      msgEl.textContent = (r.error || '計算エンジンを起動できませんでした') + '（ここをタップすると、もう一度試します）';
+      msgEl.textContent = (localMessage(r.error) || tr('Could not start the calculation engine', '計算エンジンを起動できませんでした')) + tr(' (tap here to try again)', '（ここをタップすると、もう一度試します）');
       msgEl.className = 'msg error';
       msgEl.onclick = () => { msgEl.onclick = null; msgEl.textContent = ''; msgEl.className = 'msg'; startEngine(); };
       return;
@@ -2302,12 +2636,12 @@
       const t = insertText(history[history.length - 1]);
       if (t) Bridge.send('set_ans', { expr: t });
     }
-    if (r.defs_error) toast('保存されていたユーザー定義のファイルが読めなかったため、別の場所に移しました', 5000);
+    if (r.defs_error) toast(tr('The saved user definitions could not be read, so their file was moved aside', '保存されていたユーザー定義のファイルが読めなかったため、別の場所に移しました'), 5000);
     engineName = r.engine || '';
     ratesTime = r.rates_time || 0;
     autoUpdateRates();
     const sub = $('#drawer-sub');
-    if (sub) sub.textContent = '計算エンジン ' + engineName;
+    if (sub) sub.textContent = tr('Calculation engine ', '計算エンジン ') + engineName;
     if (exprEl.value.trim()) exprChanged();
   }
   boot();

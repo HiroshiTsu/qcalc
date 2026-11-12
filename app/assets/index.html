@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -10,39 +10,39 @@
 <body>
 <div id="app">
   <header class="bar">
-    <button class="icon-btn" id="btn-menu" aria-label="メニュー">
+    <button class="icon-btn" id="btn-menu" aria-label="Menu">
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
     </button>
     <div class="title">QCalc</div>
     <div class="chips">
-      <button class="chip" id="chip-angle" title="角度の単位"></button>
-      <button class="chip" id="chip-approx" title="厳密計算・近似"></button>
-      <button class="chip" id="chip-base" title="結果の進数"></button>
+      <button class="chip" id="chip-angle" title="Angle unit"></button>
+      <button class="chip" id="chip-approx" title="Exact or approximate"></button>
+      <button class="chip" id="chip-base" title="Number base of results"></button>
     </div>
   </header>
 
-  <main id="history" class="history" aria-label="計算の履歴"></main>
+  <main id="history" class="history" aria-label="History"></main>
   <div id="status" class="sr-only" role="status" aria-live="polite"></div>
 
   <section class="entry">
     <div class="parsed-row">
       <div id="parsed" class="parsed"></div>
-      <button id="undo" class="undo" hidden>↶ 元に戻す</button>
+      <button id="undo" class="undo" hidden>↶ Undo</button>
     </div>
-    <textarea id="expr" rows="1" inputmode="none" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="式を入力"></textarea>
+    <textarea id="expr" rows="1" inputmode="none" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Enter an expression"></textarea>
     <div id="preview" class="preview"></div>
     <div id="msg" class="msg"></div>
   </section>
 
   <section class="keypad" id="keypad">
     <div class="toolbar" id="toolbar"></div>
-    <div class="pages" id="pages" role="tablist" aria-label="キーの種類"></div>
+    <div class="pages" id="pages" role="tablist" aria-label="Keys"></div>
     <div class="grid" id="grid" role="group"></div>
   </section>
 </div>
 
 <div id="scrim" class="scrim"></div>
-<nav id="drawer" class="drawer" aria-label="メニュー" inert></nav>
+<nav id="drawer" class="drawer" aria-label="Menu" inert></nav>
 <div id="sheet" class="sheet" role="dialog" inert></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 

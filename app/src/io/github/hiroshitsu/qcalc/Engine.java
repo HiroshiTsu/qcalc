@@ -117,7 +117,7 @@ final class Engine {
                 try {
                     response = call(request);
                 } catch (RuntimeException e) {
-                    response = error(null, "計算エンジンとのやりとりに失敗しました（" + e + "）", "engine");
+                    response = error(null, "Communication with the calculation engine failed (" + e + ")", "engine");
                 }
                 callback.done(response);
             }
@@ -140,7 +140,7 @@ final class Engine {
     /** Sends one request and waits for its response line. Safe to call from any background thread. */
     synchronized String call(String request) {
         if (request == null || request.indexOf('\n') >= 0 || request.indexOf('\r') >= 0) {
-            return error(null, "要求の形式が正しくありません", "bad_request");
+            return error(null, "The request is not valid", "bad_request");
         }
         Object id;
         long budget = DEFAULT_TIMEOUT_MS;
@@ -152,7 +152,7 @@ final class Engine {
             int n = exprs != null ? Math.max(1, exprs.length()) : 1;
             if (requestTimeout > 0) budget = requestTimeout * n + GRACE_MS;
         } catch (Exception e) {
-            return error(null, "要求の形式が正しくありません", "bad_request");
+            return error(null, "The request is not valid", "bad_request");
         }
 
         String lastError = "";
@@ -170,20 +170,20 @@ final class Engine {
                     return line;
                 }
                 stop();
-                if (cancelled) return error(id, "計算を中止しました", "cancelled");
-                if (line == null) return error(id, "時間がかかりすぎたため計算を中止しました", "timeout");
+                if (cancelled) return error(id, "The calculation was stopped", "cancelled");
+                if (line == null) return error(id, "The calculation took too long and was stopped", "timeout");
                 // The engine ended while working on this request. It is not sent again:
                 // the same request would most likely end the new engine too.
-                return error(id, "計算エンジンが異常終了しました。式を簡単にしてお試しください", "crash");
+                return error(id, "The calculation engine stopped unexpectedly. Try a simpler expression.", "crash");
             } catch (IOException e) {
                 stop();
-                if (cancelled) return error(id, "計算を中止しました", "cancelled");
+                if (cancelled) return error(id, "The calculation was stopped", "cancelled");
                 lastError = e.getMessage() != null ? e.getMessage() : e.toString();
-                if (sent) return error(id, "計算エンジンとの通信に失敗しました（" + lastError + "）", "engine");
+                if (sent) return error(id, "Communication with the calculation engine failed (" + lastError + ")", "engine");
                 // writing failed: the engine had already exited; start it again and send once more
             }
         }
-        return error(id, "計算エンジンを起動できませんでした（" + lastError + "）", "engine");
+        return error(id, "Could not start the calculation engine (" + lastError + ")", "engine");
     }
 
     private void write(String request) throws IOException {

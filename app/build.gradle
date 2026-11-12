@@ -10,6 +10,12 @@ rootProject.file('version.properties').withInputStream { appVersion.load(it) }
 
 // Signing of release builds (optional): the upload key for Google Play. Copy keystore.properties.example
 // to keystore.properties and fill it in. Never publish keystore.properties or the key (both are in .gitignore).
+// QCalc Pro (the purchase in Google Play): with qcalc.billing=true (in gradle.properties, or
+// ./gradlew -Pqcalc.billing=true …) the app includes app/src-billing (PlayBilling.java) and the
+// Google Play Billing Library, and Pro can be bought. Without it Pro cannot be bought and nothing
+// is locked (see app/src/…/Pro.java).
+def withBilling = (findProperty('qcalc.billing') ?: 'false').toString().toBoolean()
+
 def keystoreFile = rootProject.file('keystore.properties')
 def keystore = new Properties()
 if (keystoreFile.exists()) {
@@ -33,7 +39,7 @@ android {
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
-            java.srcDirs = ['src']
+            java.srcDirs = withBilling ? ['src', 'src-billing'] : ['src']
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
             // The engine: a static arm64 executable named like a library, so that Android
@@ -94,5 +100,12 @@ android {
 
     lint {
         abortOnError = false
+    }
+}
+
+dependencies {
+    if (withBilling) {
+        // Google Play requires version 8 or later (from August 31, 2026)
+        implementation 'com.android.billingclient:billing:8.3.0'
     }
 }

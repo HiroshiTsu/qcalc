@@ -4,7 +4,8 @@ window.QCALC_LICENSES = {
   {
    "name": "QCalc",
    "version": "",
-   "license": "GNU GPL v2 以降",
+   "license": "GNU GPL v2 or later",
+   "license_ja": "GNU GPL v2 以降",
    "copyright": "Copyright (C) 2026 HiroshiTsu",
    "url": "https://github.com/HiroshiTsu/qcalc",
    "texts": [
@@ -14,7 +15,8 @@ window.QCALC_LICENSES = {
   {
    "name": "libqalculate",
    "version": "5.13.2",
-   "license": "GNU GPL v2 以降",
+   "license": "GNU GPL v2 or later",
+   "license_ja": "GNU GPL v2 以降",
    "copyright": "Copyright (C) 2003-2007, 2008, 2016-2024 Hanna Knutsson",
    "url": "https://github.com/Qalculate/libqalculate",
    "texts": [
@@ -24,7 +26,8 @@ window.QCALC_LICENSES = {
   {
    "name": "GNU MP (GMP)",
    "version": "6.3.0",
-   "license": "GNU LGPL v3 以降、または GNU GPL v2 以降",
+   "license": "GNU LGPL v3 or later, or GNU GPL v2 or later",
+   "license_ja": "GNU LGPL v3 以降、または GNU GPL v2 以降",
    "copyright": "Copyright 1991, 1993-1997, 1999-2016, 2020, 2021 Free Software Foundation, Inc.",
    "url": "https://gmplib.org/",
    "texts": [
@@ -36,7 +39,8 @@ window.QCALC_LICENSES = {
   {
    "name": "GNU MPFR",
    "version": "4.2.2",
-   "license": "GNU LGPL v3 以降",
+   "license": "GNU LGPL v3 or later",
+   "license_ja": "GNU LGPL v3 以降",
    "copyright": "Copyright 1999-2025 Free Software Foundation, Inc.",
    "url": "https://www.mpfr.org/",
    "texts": [
@@ -47,7 +51,8 @@ window.QCALC_LICENSES = {
   {
    "name": "libxml2",
    "version": "2.15.4",
-   "license": "MIT ライセンス",
+   "license": "MIT License",
+   "license_ja": "MIT ライセンス",
    "copyright": "Copyright (C) 1998-2012 Daniel Veillard. Copyright (C) The Libxml2 Contributors.",
    "url": "https://gitlab.gnome.org/GNOME/libxml2",
    "texts": [
@@ -56,8 +61,10 @@ window.QCALC_LICENSES = {
   },
   {
    "name": "musl libc",
-   "version": "（Zig 0.17.1 に同梱）",
-   "license": "MIT ライセンス",
+   "version": "(from Zig 0.17.1)",
+   "version_ja": "（Zig 0.17.1 に同梱）",
+   "license": "MIT License",
+   "license_ja": "MIT ライセンス",
    "copyright": "Copyright © 2005-2020 Rich Felker, et al.",
    "url": "https://musl.libc.org/",
    "texts": [
@@ -66,7 +73,8 @@ window.QCALC_LICENSES = {
   },
   {
    "name": "LLVM libc++ / libc++abi / libunwind",
-   "version": "（Zig 0.17.1 に同梱）",
+   "version": "(from Zig 0.17.1)",
+   "version_ja": "（Zig 0.17.1 に同梱）",
    "license": "Apache License v2.0 with LLVM Exceptions",
    "copyright": "LLVM Project contributors",
    "url": "https://llvm.org/",
@@ -77,7 +85,8 @@ window.QCALC_LICENSES = {
   {
    "name": "Zig compiler_rt",
    "version": "0.17.1",
-   "license": "MIT ライセンス",
+   "license": "MIT License",
+   "license_ja": "MIT ライセンス",
    "copyright": "Copyright (c) Zig contributors",
    "url": "https://ziglang.org/",
    "texts": [
@@ -89,9 +98,14 @@ window.QCALC_LICENSES = {
   "gpl2": "GNU General Public License v2",
   "gpl3": "GNU General Public License v3",
   "lgpl3": "GNU Lesser General Public License v3",
+  "libxml2": "libxml2 license (MIT)",
+  "musl": "musl license (MIT)",
+  "llvm": "Apache License v2.0 with LLVM Exceptions",
+  "zig": "Zig license (MIT)"
+ },
+ "titles_ja": {
   "libxml2": "libxml2 のライセンス（MIT）",
   "musl": "musl のライセンス（MIT）",
-  "llvm": "Apache License v2.0 with LLVM Exceptions",
   "zig": "Zig のライセンス（MIT）"
  },
  "texts": {
