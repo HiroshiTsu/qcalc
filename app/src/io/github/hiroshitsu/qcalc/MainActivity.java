@@ -391,7 +391,13 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                    if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("QCalc", text));
+                    try {
+                        if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("QCalc", text));
+                    } catch (RuntimeException e) {
+                        // the system passes the text in one transaction of at most about 1 MB
+                        Toast.makeText(MainActivity.this, "長すぎてコピーできませんでした", Toast.LENGTH_LONG).show();
+                        return;
+                    }
                     // Android 13 and later show their own confirmation
                     if (Build.VERSION.SDK_INT < 33) Toast.makeText(MainActivity.this, "コピーしました", Toast.LENGTH_SHORT).show();
                 }

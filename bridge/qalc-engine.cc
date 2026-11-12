@@ -398,6 +398,13 @@ static string print_input(const MathStructure &value) {
 	return m.print(po);
 }
 
+// Highest precision (significant digits) the app can ask for: as high as works well on Android.
+// Up to it pi, e, sqrt(2), sin(1), ln(2) take a few seconds at most, and a result of a real
+// number (200000 digits, about 270000 characters with digit grouping) can still be copied:
+// Android passes the clipboard text in one transaction of at most about 1 MB (UTF-16). Higher
+// precisions make results that cannot be copied and calculations that exceed the time limits.
+static const int MAX_PRECISION = 200000;
+
 struct Opts {
 	EvaluationOptions eo;
 	PrintOptions po;
@@ -461,7 +468,7 @@ static Opts make_opts(const JVal *o) {
 		if(base == -1 || (base >= 2 && base <= 36)) po.base = base;
 		int ibase = o->integer("input_base", 10, -100, 100);
 		if(ibase >= 2 && ibase <= 36) eo.parse_options.base = ibase;
-		prec = o->integer("precision", 10, 2, 1000);
+		prec = o->integer("precision", 10, 2, MAX_PRECISION);
 		int maxdec = o->integer("max_decimals", -1, -1, 1000);
 		if(maxdec >= 0) { po.use_max_decimals = true; po.max_decimals = maxdec; }
 		string units = o->str("units", "optimal");
@@ -484,7 +491,7 @@ static Opts make_opts(const JVal *o) {
 		if(!o->boolean("mixed_units", true)) eo.mixed_units_conversion = MIXED_UNITS_CONVERSION_NONE;
 	}
 	if(prec < 2) prec = 2;
-	if(prec > 1000) prec = 1000;
+	if(prec > MAX_PRECISION) prec = MAX_PRECISION;
 	if(CALCULATOR->getPrecision() != prec) CALCULATOR->setPrecision(prec);
 	return r;
 }
@@ -855,16 +862,98 @@ static string cmd_calc(const JVal &req, JOut &out) {
 	return "";
 }
 
-// Restore "ans" (the app saves its value and gives it back to a new engine process).
+// The longest run of decimal digits in a text (how many digits a value was printed with).
+static int longest_digit_run(const string &s) {
+	int best = 0, n = 0;
+	for(size_t i = 0; i < s.size(); i++) {
+		if(s[i] >= '0' && s[i] <= '9') {if(++n > best) best = n;}
+		else n = 0;
+	}
+	return best;
+}
+
+static bool is_digit(char c) { return c >= '0' && c <= '9'; }
+static bool continues_name(char c) { return is_digit(c) || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || c == '.' || (unsigned char) c >= 0x80; }
+
+// libqalculate reads a number one digit at a time, in time that grows with the square of its
+// length: a saved ans of 200000 digits ("interval(3.14159…, 3.14159…)", 400000 characters) took
+// 3.4 s on a PC. Decimal numbers of LONG_NUMBER digits or more are therefore read here with GMP
+// (exactly, as libqalculate reads them: digits / 10^decimals × 10^exponent) and put into the
+// expression as temporary variables, which are deleted again after the calculation.
+static const size_t LONG_NUMBER = 2000;
+static string read_long_numbers(const string &s, vector<KnownVariable*> &vars) {
+	string out;
+	size_t i = 0, n = s.size();
+	while(i < n) {
+		if(!is_digit(s[i]) || (i > 0 && continues_name(s[i - 1]))) {out += s[i++]; continue;}
+		size_t j = i;
+		while(j < n && is_digit(s[j])) j++;
+		size_t int_end = j, frac_start = j, frac_end = j;
+		if(j < n && s[j] == '.') {
+			frac_start = ++j;
+			while(j < n && is_digit(s[j])) j++;
+			frac_end = j;
+		}
+		long exp10 = 0;
+		if(j < n && s[j] == 'E') {
+			size_t k = j + 1;
+			bool neg = false;
+			if(k < n && (s[k] == '-' || s[k] == '+')) {neg = s[k] == '-'; k++;}
+			size_t k2 = k;
+			while(k2 < n && is_digit(s[k2])) k2++;
+			if(k2 > k && k2 - k < 10) {exp10 = strtol(s.substr(k, k2 - k).c_str(), NULL, 10); if(neg) exp10 = -exp10; j = k2;}
+		}
+		size_t ndigits = (int_end - i) + (frac_end - frac_start);
+		if(ndigits < LONG_NUMBER || (j < n && continues_name(s[j]))) {out += s.substr(i, j - i); i = j; continue;}
+		string digits = s.substr(i, int_end - i) + s.substr(frac_start, frac_end - frac_start);
+		long e = exp10 - (long) (frac_end - frac_start);
+		mpz_t p;
+		mpq_t q;
+		mpz_init(p);
+		mpq_init(q);
+		mpz_set_str(mpq_numref(q), digits.c_str(), 10);
+		mpz_ui_pow_ui(p, 10, (unsigned long) (e < 0 ? -e : e));
+		if(e >= 0) mpz_mul(mpq_numref(q), mpq_numref(q), p);
+		else mpz_set(mpq_denref(q), p);
+		mpq_canonicalize(q);
+		Number nr;
+		nr.setInternal(q);
+		mpq_clear(q);
+		mpz_clear(p);
+		KnownVariable *v = new KnownVariable("", "qcalc_long_number_" + i2s((long) vars.size()), MathStructure(nr), "", false, true);
+		CALCULATOR->addVariable(v);
+		vars.push_back(v);
+		out += v->referenceName();
+		i = j;
+	}
+	return out;
+}
+
+// Restore "ans" (the app saves its value and gives it back to a new engine process). An
+// approximate value is saved with all its digits ("interval(3.14159…, 3.14159…)"); it is read
+// with at least that many digits of precision, otherwise the restored ans would keep only
+// about 38 of them (a new engine starts with precision 10).
 static string cmd_set_ans(const JVal &req, JOut &out) {
 	string expr = req.str("expr");
 	if(expr.empty()) return "expr missing";
 	if(too_deeply_nested(expr)) return "式の入れ子が深すぎます";
 	EvaluationOptions eo = default_user_evaluation_options;
 	eo.parse_options.comma_as_separator = false;
+	int save_prec = CALCULATOR->getPrecision();
+	int need = longest_digit_run(expr) + 10;
+	if(need > MAX_PRECISION + 10) need = MAX_PRECISION + 10;
+	if(need > save_prec) CALCULATOR->setPrecision(need);
+	vector<KnownVariable*> vars;
+	string fast = read_long_numbers(expr, vars);
 	MathStructure m;
-	bool ok = CALCULATOR->calculate(&m, expr, 3000, eo) && !m.isAborted();
+	bool ok = CALCULATOR->calculate(&m, fast, 15000, eo) && !m.isAborted();
+	for(size_t i = 0; ok && i < vars.size(); i++) {
+		// the value must not keep a reference to the temporary variables
+		if(m.contains(MathStructure(vars[i]), true)) ok = false;
+	}
 	if(ok) vans[0]->set(m);
+	for(size_t i = 0; i < vars.size(); i++) vars[i]->destroy();
+	if(CALCULATOR->getPrecision() != save_prec) CALCULATOR->setPrecision(save_prec);
 	CALCULATOR->clearMessages();
 	out.boolean("set", ok);
 	return "";
@@ -890,7 +979,7 @@ static string cmd_plot(const JVal &req, JOut &out) {
 	EvaluationOptions eo = op.eo;
 	eo.approximation = APPROXIMATION_APPROXIMATE;
 	CALCULATOR->clearMessages();
-	// the points are sent as doubles: do not compute them with up to 1000 digits
+	// the points are sent as doubles: do not compute them with up to 100000 digits
 	int save_prec = CALCULATOR->getPrecision();
 	if(save_prec > 20) CALCULATOR->setPrecision(20);
 	long t0 = now_ms();
@@ -970,7 +1059,7 @@ static string cmd_plot3d(const JVal &req, JOut &out) {
 	eo.allow_complex = true;
 	eo.parse_options.read_precision = DONT_READ_PRECISION;
 	CALCULATOR->clearMessages();
-	// the points are sent as doubles: do not compute them with up to 1000 digits
+	// the points are sent as doubles: do not compute them with up to 100000 digits
 	int save_prec = CALCULATOR->getPrecision();
 	if(save_prec > 20) CALCULATOR->setPrecision(20);
 	long t0 = now_ms();

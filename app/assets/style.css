@@ -156,6 +156,9 @@ input, select, textarea { font: inherit; color: inherit; }
   word-break: break-all;
   white-space: pre-wrap;
   font-variant-numeric: tabular-nums;
+  /* a very long result scrolls inside the box; --res-max is 70 % of the history's height (app.js) */
+  max-height: var(--res-max, 45vh);
+  overflow-y: auto;
 }
 .h-msg { font-size: calc(12px * var(--fs)); margin-top: 3px; text-align: right; }
 /* a matrix in a result, drawn as a grid between brackets */
@@ -617,7 +620,8 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 .sheet.open { transform: none; }
 .sheet .stitle {
-  color: var(--muted); font-size: 13px; padding: 8px 12px 10px; word-break: break-all; white-space: pre-wrap;
+  /* no padding at the bottom: the clamped lines are cut at the edge of the padding */
+  color: var(--muted); font-size: 13px; padding: 8px 12px 0; margin-bottom: 10px; word-break: break-all; white-space: pre-wrap;
   display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
 }
 .sheet button {

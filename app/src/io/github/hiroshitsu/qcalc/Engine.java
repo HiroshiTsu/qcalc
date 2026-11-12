@@ -50,7 +50,11 @@ final class Engine {
      */
     private static final long GRACE_MS = 10000;
     private static final long DEFAULT_TIMEOUT_MS = 30000;
-    private static final int MAX_SAVED_ANSWER = 100000;
+    /**
+     * Longest "ans" value that is kept. An approximate result with 200000 digits (the highest
+     * precision) is saved as "interval(lower, upper)", about 400000 characters.
+     */
+    private static final int MAX_SAVED_ANSWER = 500000;
 
     private static Engine instance;
 
@@ -304,7 +308,7 @@ final class Engine {
                 r.put("cmd", "set_ans");
                 r.put("expr", ans);
                 write(r.toString());
-                await(-1, 10000);
+                await(-1, 20000); // the engine allows set_ans 15 s (a long value is slow to read)
             } catch (Exception ignored) {
             }
         }

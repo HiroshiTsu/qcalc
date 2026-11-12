@@ -15,7 +15,7 @@ The app's user interface is in Japanese. QCalc is not an official Qalculate! app
 ## Features
 
 - Type expressions such as `60 mph to km/h`, `100 USD to JPY`, `solve(x^2 − 5x + 6 = 0)` or `integrate(x^2 sin(x), 0, pi)`; the result is shown while you type.
-- Unit conversion, currency conversion, equations, derivatives and integrals, matrices, complex numbers, binary, octal and hexadecimal numbers, dates, uncertainty propagation, and high-precision arithmetic with up to 1000 digits
+- Unit conversion, currency conversion, equations, derivatives and integrals, matrices, complex numbers, binary, octal and hexadecimal numbers, dates, uncertainty propagation, and high-precision arithmetic with up to 200,000 digits
 - Four keypads: 123, functions (関数), calculus (解析: `diff`, `integrate`, `limit`, `sum`, `dsolve`) and matrices (行列: entering `[1, 2; 3, 4]`, determinant, inverse, transpose and more). Matrix results are shown as tables.
 - Traditional Japanese units (坪 tsubo, 反 tan, 寸 sun, 尺 shaku, 間 ken, 里 ri, 合 gō, 升 shō, 匁 monme, 貫 kan), for example `30 坪 to m²`. libqalculate does not have these units; QCalc adds them when the engine starts, together with the matrix trace `trace()`.
 - 2D graphs (y = f(x)) and 3D graphs (surfaces z = f(x, y) that you rotate and zoom with your fingers)

@@ -159,8 +159,30 @@
   const BASE_LABEL = { 10: '10進', 16: '16進', 2: '2進', 8: '8進', 12: '12進', '-1': 'ローマ' };
 
   // ------------------------------------------------------------ history
+  // Long results: a result is shown and kept in full (the engine sends up to MAX_RESULT bytes of
+  // UTF-8: a complex number with 200000-digit parts, or 200000 digits with digit grouping). The
+  // newest results are kept in full until the history adds up to HISTORY_BUDGET characters; older
+  // long results keep only their first SHORT_RESULT characters and "…", so that the saved history
+  // stays small. A result can be inserted into an expression up to MAX_INPUT characters.
+  const MAX_RESULT = 450000, HISTORY_BUDGET = 1000000, SHORT_RESULT = 2000, MAX_INPUT = 20000;
+  function fitHistory() {
+    let used = 0;
+    for (let i = history.length - 1; i >= 0; i--) {
+      const h = history[i];
+      if (!h || typeof h !== 'object') continue;
+      if (used >= HISTORY_BUDGET) {
+        if (typeof h.result === 'string' && h.result.length > SHORT_RESULT + 1) { h.result = h.result.slice(0, SHORT_RESULT) + '…'; h.cut = true; }
+        if (typeof h.input === 'string' && h.input.length > SHORT_RESULT) { delete h.input; h.big = true; }
+      }
+      used += String(h.result || '').length + String(h.input || '').length + String(h.expr || '').length;
+    }
+  }
   let history = store.get('qalc.history', []);
+  if (!Array.isArray(history)) history = [];
+  fitHistory();
   const saveHistory = debounce(() => store.set('qalc.history', history.slice(-300)), 300);
+  // the beginning of a long text, for titles and announcements
+  function clip(t, n) { t = String(t || ''); return t.length > n ? t.slice(0, n) + '…' : t; }
 
   // ---------------------------------------------------------- elements
   const exprEl = $('#expr');
@@ -662,7 +684,7 @@
     clearTimeout(previewTimer);
     previewEl.textContent = '計算中…';
     busyTimer = setTimeout(() => { if (committing) previewEl.textContent = '計算中…（ここをタップで中止）'; }, 1200);
-    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 20000, store: true, max_chars: 200000 });
+    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 20000, store: true, max_chars: MAX_RESULT });
     committing = false;
     clearTimeout(busyTimer);
     clearInterval(cancelTimer);
@@ -680,14 +702,19 @@
       msgEl.className = 'msg error';
       return;
     }
-    const entry = capEntry({
+    const entry = {
       expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base),
       msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3), t: Date.now()
-    });
+    };
+    if (r.truncated) entry.cut = true; // longer than MAX_RESULT: the engine ended it with "…"
     if (earlyInputs.has(r.id)) { setInput(entry, earlyInputs.get(r.id)); earlyInputs.delete(r.id); }
-    sessionEntries.set(r.id, entry);
+    else {
+      sessionEntries.set(r.id, entry);
+      if (sessionEntries.size > 20) sessionEntries.delete(sessionEntries.keys().next().value);
+    }
     history.push(entry);
     if (history.length > 300) history = history.slice(-300);
+    fitHistory();
     saveHistory();
     dropUndo();
     if (exprEl.value.trim() === raw) {
@@ -703,18 +730,9 @@
     announce(entry);
   }
 
-  // Very long results are kept shorter in the saved history (storage is limited).
-  const MAX_SAVED_RESULT = 20000;
-  function capEntry(h) {
-    if (h.result && h.result.length > MAX_SAVED_RESULT) {
-      h.result = h.result.slice(0, MAX_SAVED_RESULT) + '…';
-      h.cut = true;
-    }
-    return h;
-  }
   function setInput(h, input) {
     if (typeof input !== 'string' || !input) return;
-    if (input.length > MAX_SAVED_RESULT) h.big = true;
+    if (input.length > MAX_INPUT) h.big = true;
     else h.input = input;
   }
   // The engine reports the exact text of each new ans after the result (see qalc-engine.cc).
@@ -722,14 +740,14 @@
   Bridge.setEventHandler((ev) => {
     if (ev.event !== 'ans') return;
     const h = sessionEntries.get(ev.id);
-    if (h) { setInput(h, ev.input); saveHistory(); return; }
+    if (h) { sessionEntries.delete(ev.id); setInput(h, ev.input); saveHistory(); return; }
     earlyInputs.set(ev.id, ev.input);
     if (earlyInputs.size > 20) earlyInputs.delete(earlyInputs.keys().next().value);
   });
-  // screen readers hear only the newest result, not the whole history again
+  // screen readers hear only the newest result (and only the beginning of a long one)
   function announce(h) {
     const st = $('#status');
-    if (st) st.textContent = h.expr + '、' + displayResult(h);
+    if (st) st.textContent = clip(h.expr, 200) + '、' + clip(displayResult(h), 200);
   }
 
   // "計算中…（ここをタップで中止）". The engine handles one request at a time, so a preview that was
@@ -815,6 +833,15 @@
     fitMatrices(histEl);
     if (scroll) { histEl.scrollTop = histEl.scrollHeight; histPinned = true; }
   }
+  // A very long result (thousands of digits) scrolls inside a box at most 70 % as high as the
+  // history, so that the history can still be scrolled past it (.h-res in style.css).
+  function fitResultBox() {
+    const hh = histEl.clientHeight;
+    if (hh > 0) document.documentElement.style.setProperty('--res-max', Math.max(96, Math.round(hh * 0.7)) + 'px');
+  }
+  if (window.ResizeObserver) new ResizeObserver(fitResultBox).observe(histEl);
+  else window.addEventListener('resize', fitResultBox);
+  fitResultBox();
   // A matrix that is wider than the place it is shown in gets smaller characters (down to 60 %);
   // if it is still too wide it can be moved sideways.
   function fitMatrices(root) {
@@ -851,7 +878,7 @@
   }
   async function historyMenu(i) {
     const h = history[i];
-    const a = await sheet(h.expr + '\n' + h.result, [
+    const a = await sheet(clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300), [
       ['copy-res', '結果をコピー'], ['copy-expr', '式をコピー'], ['edit', '式を編集'],
       ['ins-ans', '結果を式に挿入'], ['del', 'この行を削除', 'danger']
     ]);
@@ -871,6 +898,7 @@
     }
   }
   function historyChanged() {
+    fitHistory();
     saveHistory();
     renderHistory(false);
   }
@@ -2054,6 +2082,8 @@
   }
 
   // ------------------------------------------------------------ settings
+  // the highest precision (the same as the engine's limit, MAX_PRECISION in qalc-engine.cc)
+  const MAX_PRECISION = 200000;
   const SETTINGS = [
     ['計算', [
       ['angle', '角度の単位', [['rad', 'ラジアン'], ['deg', '度'], ['gra', 'グラード']]],
@@ -2065,7 +2095,7 @@
     ]],
     ['表示', [
       ['fraction', '分数の表示', [['auto', '自動'], ['decimal', '小数'], ['exact', '小数（厳密なときだけ）'], ['fraction', '分数'], ['combined', '帯分数']]],
-      ['precision', '有効桁数', 'number', '計算の精度（2〜1000桁、既定 10）'],
+      ['precision', '有効桁数', 'number', '計算の精度（2〜200000桁、既定 10）。大きくするほど計算に時間がかかります'],
       ['max_decimals', '小数点以下の最大桁数', [['-1', '制限なし'], ['0', '0'], ['2', '2'], ['4', '4'], ['6', '6'], ['8', '8'], ['10', '10']]],
       ['base', '結果の進数', [['10', '10進数'], ['16', '16進数'], ['2', '2進数'], ['8', '8進数'], ['12', '12進数'], ['-1', 'ローマ数字']]],
       ['notation', '指数表記', [['auto', '自動'], ['sci', '科学表記（1000 以上などで指数）'], ['eng', '工学表記（指数は 3 の倍数）'], ['pure', '常に指数表記'], ['none', '使わない（全桁を表示）']], '「使わない」にすると大きな整数も全桁を表示します'],
@@ -2090,9 +2120,9 @@
             input.checked = !!S[key];
             input.addEventListener('change', () => { S[key] = input.checked; settingsChanged(); });
           } else if (type === 'number') {
-            input = el('input', { type: 'number', min: 2, max: 1000, inputmode: 'numeric' });
+            input = el('input', { type: 'number', min: 2, max: MAX_PRECISION, inputmode: 'numeric' });
             input.value = S[key];
-            input.addEventListener('change', () => { const n = Math.max(2, Math.min(1000, parseInt(input.value, 10) || 10)); S[key] = n; input.value = n; settingsChanged(); });
+            input.addEventListener('change', () => { const n = Math.max(2, Math.min(MAX_PRECISION, parseInt(input.value, 10) || 10)); S[key] = n; input.value = n; settingsChanged(); });
           } else {
             input = el('select');
             for (const [v, t] of type) input.append(el('option', { value: v, text: t }));
