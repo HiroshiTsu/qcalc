@@ -41,16 +41,17 @@ QCalc Pro is a one-time purchase in Google Play (the one-time product `qcalc_pro
 
 ## Design documents
 
-The design document set is in [design/](design/). An English overview summarizes the whole set; the seven full documents are in Japanese (English versions are being prepared).
+The design document set is in [design/](design/), in English and in Japanese with the same content (PDF, A4). Start with the overview.
 
-- [Design overview (English)](design/00-overview-en.pdf)
-- [Overview](design/00-overview.pdf) (概要, Japanese)
-- [1. Requirements definition](design/01-requirements.pdf) (要件定義書, Japanese)
-- [2. Basic design](design/02-basic-design.pdf) (基本設計書, Japanese)
-- [3. Detailed design](design/03-detailed-design.pdf) (詳細設計書, Japanese)
-- [4. User manual](design/04-user-manual.pdf) (操作マニュアル, Japanese)
-- [5. Build and maintenance manual](design/05-build-and-maintenance.pdf) (ビルド・保守マニュアル, Japanese)
-- [6. Test specification and results](design/06-test-specification.pdf) (テスト仕様書・結果, Japanese)
+| Document | English | Japanese |
+| --- | --- | --- |
+| Overview | [00-overview-en.pdf](design/00-overview-en.pdf) | [00-overview.pdf](design/00-overview.pdf) (概要) |
+| 1. Requirements definition | [01-requirements-en.pdf](design/01-requirements-en.pdf) | [01-requirements.pdf](design/01-requirements.pdf) (要件定義書) |
+| 2. Basic design | [02-basic-design-en.pdf](design/02-basic-design-en.pdf) | [02-basic-design.pdf](design/02-basic-design.pdf) (基本設計書) |
+| 3. Detailed design | [03-detailed-design-en.pdf](design/03-detailed-design-en.pdf) | [03-detailed-design.pdf](design/03-detailed-design.pdf) (詳細設計書) |
+| 4. User manual | [04-user-manual-en.pdf](design/04-user-manual-en.pdf) | [04-user-manual.pdf](design/04-user-manual.pdf) (操作マニュアル) |
+| 5. Build and maintenance manual | [05-build-and-maintenance-en.pdf](design/05-build-and-maintenance-en.pdf) | [05-build-and-maintenance.pdf](design/05-build-and-maintenance.pdf) (ビルド・保守マニュアル) |
+| 6. Test specification and results | [06-test-specification-en.pdf](design/06-test-specification-en.pdf) | [06-test-specification.pdf](design/06-test-specification.pdf) (テスト仕様書・結果) |
 
 ## Repository contents
 
@@ -75,7 +76,7 @@ The design document set is in [design/](design/). An English overview summarizes
 | `icon/` | The icon source (`qcalc-icon.svg`) and a script that makes the icons of every size in `app/res` |
 | `store/` | Texts (`listing-en.md` in English, `listing-ja.md` in Japanese) and images (`screenshots-en/`, `screenshots/`) for the Google Play store listing |
 | `docs/` | The pages published with GitHub Pages (the app's home page and the privacy policy) |
-| `design/` | The design document set (PDF) |
+| `design/` | The design document set in English and Japanese (PDF) |
 
 ## Build environment (tested on Ubuntu 24.04)
 

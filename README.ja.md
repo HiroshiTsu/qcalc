@@ -40,16 +40,17 @@ QCalc Pro は Google Play での買い切りの購入（1 回限りのアイテ�
 
 ## 設計書・マニュアル
 
-設計書一式（PDF）は [design/](design/) にあります。英語の概要のほかは日本語です（英語版を準備中です）。
+設計書一式（PDF、A4）は [design/](design/) にあります。日本語と英語の 2 通りで、内容は同じです。まず概要をご覧ください。
 
-- [概要](design/00-overview.pdf)
-- [1. 要件定義書](design/01-requirements.pdf)
-- [2. 基本設計書](design/02-basic-design.pdf)
-- [3. 詳細設計書](design/03-detailed-design.pdf)
-- [4. 操作マニュアル](design/04-user-manual.pdf)
-- [5. ビルド・保守マニュアル](design/05-build-and-maintenance.pdf)
-- [6. テスト仕様書・結果](design/06-test-specification.pdf)
-- [Design overview（英語の概要）](design/00-overview-en.pdf)
+| 文書 | 日本語 | 英語 |
+| --- | --- | --- |
+| 概要 | [00-overview.pdf](design/00-overview.pdf) | [00-overview-en.pdf](design/00-overview-en.pdf) |
+| 1. 要件定義書 | [01-requirements.pdf](design/01-requirements.pdf) | [01-requirements-en.pdf](design/01-requirements-en.pdf) |
+| 2. 基本設計書 | [02-basic-design.pdf](design/02-basic-design.pdf) | [02-basic-design-en.pdf](design/02-basic-design-en.pdf) |
+| 3. 詳細設計書 | [03-detailed-design.pdf](design/03-detailed-design.pdf) | [03-detailed-design-en.pdf](design/03-detailed-design-en.pdf) |
+| 4. 操作マニュアル | [04-user-manual.pdf](design/04-user-manual.pdf) | [04-user-manual-en.pdf](design/04-user-manual-en.pdf) |
+| 5. ビルド・保守マニュアル | [05-build-and-maintenance.pdf](design/05-build-and-maintenance.pdf) | [05-build-and-maintenance-en.pdf](design/05-build-and-maintenance-en.pdf) |
+| 6. テスト仕様書・結果 | [06-test-specification.pdf](design/06-test-specification.pdf) | [06-test-specification-en.pdf](design/06-test-specification-en.pdf) |
 
 ## 中身
 
@@ -74,7 +75,7 @@ QCalc Pro は Google Play での買い切りの購入（1 回限りのアイテ�
 | `icon/` | アイコンの元（`qcalc-icon.svg`）と、`app/res` の各サイズのアイコンを作るスクリプト |
 | `store/` | Google Play のストア掲載用の文章（英語 `listing-en.md`、日本語 `listing-ja.md`）と画像（`screenshots-en/`、`screenshots/`） |
 | `docs/` | GitHub Pages で公開するページ（紹介ページとプライバシーポリシー） |
-| `design/` | 設計書一式（PDF）：概要、要件定義書、基本設計書、詳細設計書、操作マニュアル、ビルド・保守マニュアル、テスト仕様書・結果、英語の概要 |
+| `design/` | 設計書一式（PDF。日本語と英語）：概要、要件定義書、基本設計書、詳細設計書、操作マニュアル、ビルド・保守マニュアル、テスト仕様書・結果 |
 
 ## ビルド環境（Ubuntu 24.04 で確認）
 
