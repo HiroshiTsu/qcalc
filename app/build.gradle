@@ -1,15 +1,15 @@
-// QCalc の Gradle ビルド（Android Studio 用）。
-// ソースの場所は build-apk.sh と同じです（app/src、app/res、app/assets、app/jniLibs）。
+// The Gradle build of QCalc (for Android Studio).
+// The sources are in the same places as for build-apk.sh (app/src, app/res, app/assets, app/jniLibs).
 plugins {
     id 'com.android.application'
 }
 
-// 版は version.properties から読みます（build-apk.sh・build-aab.sh と共通）。
+// The version is read from version.properties (shared with build-apk.sh and build-aab.sh).
 def appVersion = new Properties()
 rootProject.file('version.properties').withInputStream { appVersion.load(it) }
 
-// release の署名（任意）：Google Play のアップロード鍵。keystore.properties.example を
-// keystore.properties にコピーして書き込みます。keystore.properties と鍵は公開しないでください（.gitignore で除外）。
+// Signing of release builds (optional): the upload key for Google Play. Copy keystore.properties.example
+// to keystore.properties and fill it in. Never publish keystore.properties or the key (both are in .gitignore).
 def keystoreFile = rootProject.file('keystore.properties')
 def keystore = new Properties()
 if (keystoreFile.exists()) {

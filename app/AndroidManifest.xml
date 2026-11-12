@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- パッケージ名（io.github.hiroshitsu.qcalc）は app/build.gradle の namespace で決まります。
-     build-apk.sh と build-aab.sh は、ビルドのときに package 属性を補います。 -->
+<!-- The package name (io.github.hiroshitsu.qcalc) is set by the namespace in app/build.gradle.
+     build-apk.sh and build-aab.sh add the package attribute when they build. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />

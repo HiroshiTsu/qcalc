@@ -1,4 +1,4 @@
-// Android Studio（Gradle）用の設定。シェルスクリプトでのビルド（build-apk.sh・build-aab.sh）とは別に、同じソースを使います。
+// Settings for Android Studio (Gradle). It builds the same sources as the shell scripts (build-apk.sh, build-aab.sh), separately from them.
 pluginManagement {
     repositories {
         google()

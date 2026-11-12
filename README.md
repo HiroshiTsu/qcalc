@@ -1,64 +1,73 @@
 # QCalc
 
-式のまま計算できる、Android 用の多機能電卓です。計算には、オープンソースの電卓 [Qalculate!](https://qalculate.github.io/) の計算エンジン **libqalculate 5.13.2** をそのまま使っています。
+**English** | [日本語](README.ja.md)
 
-*QCalc is a calculator app for Android built on libqalculate, the calculation engine of Qalculate!. It is not an official Qalculate! app. The user interface is in Japanese.*
+QCalc is a multi-function calculator for Android. You type an expression the way you would write it, and QCalc evaluates it with **libqalculate 5.13.2**, the calculation engine of the open-source calculator [Qalculate!](https://qalculate.github.io/), used without modification.
+
+The app's user interface is in Japanese. QCalc is not an official Qalculate! app; it is made by an individual developer who is not affiliated with the Qalculate! project.
 
 <p>
-<img src="store/screenshots/phone-1-main.png" width="200" alt="計算画面">
-<img src="store/screenshots/phone-3-graph-3d.png" width="200" alt="3D グラフ">
-<img src="store/screenshots/phone-8-dark.png" width="200" alt="ダークモード">
+<img src="store/screenshots/phone-1-main.png" width="200" alt="Calculator screen">
+<img src="store/screenshots/phone-3-graph-3d.png" width="200" alt="3D graph">
+<img src="store/screenshots/phone-8-dark.png" width="200" alt="Dark mode">
 </p>
 
-- `60 mph to km/h`、`100 USD to JPY`、`solve(x^2 − 5x + 6 = 0)`、`integrate(x^2 sin(x), 0, pi)` のように、式をそのまま入力して計算できます。
-- 単位変換、通貨換算、方程式、微分・積分、行列、複素数、2・8・16 進数、日付、誤差の伝播、最大 1000 桁の高精度計算
-- キーは「123」「関数」「解析」「行列」の 4 種類。「解析」は微分・積分・極限・総和・微分方程式（`diff`、`integrate`、`limit`、`sum`、`dsolve`）、「行列」は `[1, 2; 3, 4]` の入力と行列式・逆行列・転置などのキーです。行列の結果は表の形で表示します。
-- 日本の単位（坪・反・寸・尺・間・里・合・升・匁・貫）も使えます（例：`30 坪 to m²`）。libqalculate にはない単位で、QCalc が計算エンジンの起動時に追加しています。行列のトレース `trace()` も同じように追加しています。
-- 2D グラフ（y = f(x)）と 3D グラフ（z = f(x, y) の曲面、指で回転・拡大）
-- 式の例と使い方をアプリ内に収録（タップして試せます）。関数・単位・定数の一覧は日本語でも検索できます。
-- 自分で定義する変数と関数、計算履歴、消した式や履歴を「元に戻す」、文字の大きさの変更、ダークモード
-- 個人情報を集めません。広告もありません（[プライバシーポリシー](https://hiroshitsu.github.io/qcalc/privacy.html)）。
-- 対応端末：Android 7.0 以降、arm64（64 ビット ARM）
+## Features
 
-QCalc は Qalculate! の公式アプリではなく、Qalculate! の開発者とは関係のない個人が作っています。
+- Type expressions such as `60 mph to km/h`, `100 USD to JPY`, `solve(x^2 − 5x + 6 = 0)` or `integrate(x^2 sin(x), 0, pi)`; the result is shown while you type.
+- Unit conversion, currency conversion, equations, derivatives and integrals, matrices, complex numbers, binary, octal and hexadecimal numbers, dates, uncertainty propagation, and high-precision arithmetic with up to 1000 digits
+- Four keypads: 123, functions (関数), calculus (解析: `diff`, `integrate`, `limit`, `sum`, `dsolve`) and matrices (行列: entering `[1, 2; 3, 4]`, determinant, inverse, transpose and more). Matrix results are shown as tables.
+- Traditional Japanese units (坪 tsubo, 反 tan, 寸 sun, 尺 shaku, 間 ken, 里 ri, 合 gō, 升 shō, 匁 monme, 貫 kan), for example `30 坪 to m²`. libqalculate does not have these units; QCalc adds them when the engine starts, together with the matrix trace `trace()`.
+- 2D graphs (y = f(x)) and 3D graphs (surfaces z = f(x, y) that you rotate and zoom with your fingers)
+- Built-in examples and instructions (tap an example to try it). The lists of functions, units and constants can also be searched in Japanese.
+- User-defined variables and functions, calculation history, undo for a cleared expression or a deleted history item, three text sizes, dark mode
+- No personal data is collected, and there are no ads ([privacy policy](https://hiroshitsu.github.io/qcalc/privacy.html)).
+- Requirements: Android 7.0 or later on a 64-bit ARM (arm64) device
 
-## 設計書・マニュアル
+## How it works
 
-設計書一式（PDF）は [design/](design/) にあります。
+- **User interface**: an HTML/CSS/JavaScript page (`app/assets/`) shown in a WebView. It calls the Java side through a JavaScript interface named `QalcNative`.
+- **Java** (`app/src/`): `MainActivity` hosts the WebView. `Engine` runs the calculation engine as a child process and gives every request a deadline; an engine that does not answer in time is killed and started again. `RatesUpdater` downloads exchange rates from the same sources the official Qalculate! uses. `StateStore` saves the history, the settings and the expression being typed in the app's private storage.
+- **Calculation engine** (`bridge/qalc-engine.cc` and libqalculate): a static arm64 executable built with zig. It is packaged as a native library (`libqalcengine.so`) so that Android extracts it at install time and the app can start it. The app and the engine exchange one JSON object per line over standard input and output (commands such as `calc`, `plot`, `plot3d`, `catalog` and `define_var`).
 
-- [概要](design/00-overview.pdf)
-- [1. 要件定義書](design/01-requirements.pdf)
-- [2. 基本設計書](design/02-basic-design.pdf)
-- [3. 詳細設計書](design/03-detailed-design.pdf)
-- [4. 操作マニュアル](design/04-user-manual.pdf)
-- [5. ビルド・保守マニュアル](design/05-build-and-maintenance.pdf)
-- [6. テスト仕様書・結果](design/06-test-specification.pdf)
+## Design documents
 
-## 中身
+The design document set is in [design/](design/). An English overview summarizes the whole set; the seven full documents are in Japanese.
 
-| パス | 内容 |
+- [Design overview (English)](design/00-overview-en.pdf)
+- [Overview](design/00-overview.pdf) (概要, Japanese)
+- [1. Requirements definition](design/01-requirements.pdf) (要件定義書, Japanese)
+- [2. Basic design](design/02-basic-design.pdf) (基本設計書, Japanese)
+- [3. Detailed design](design/03-detailed-design.pdf) (詳細設計書, Japanese)
+- [4. User manual](design/04-user-manual.pdf) (操作マニュアル, Japanese)
+- [5. Build and maintenance manual](design/05-build-and-maintenance.pdf) (ビルド・保守マニュアル, Japanese)
+- [6. Test specification and results](design/06-test-specification.pdf) (テスト仕様書・結果, Japanese)
+
+## Repository contents
+
+| Path | Contents |
 | --- | --- |
-| `bridge/qalc-engine.cc` | libqalculate を呼び出す小さなプログラム（1 行 1 件の JSON でアプリとやりとり） |
-| `app/AndroidManifest.xml`, `app/src/` | Android 側の Java コード（WebView、エンジンの起動と監視、為替レートの取得、履歴などの保存） |
-| `app/res/`, `app/res-debug/` | アプリ名、テーマ、ランチャーのアイコン（`res-debug` はテスト版の名前「QCalc (debug)」） |
-| `app/assets/` | 画面（HTML / CSS / JavaScript）。`licenses.js` はアプリに組み込んだソフトウェアのライセンス文 |
-| `app/jniLibs/arm64-v8a/libqalcengine.so` | ビルド済みの計算エンジン（arm64 の実行ファイル。`build-engine.sh` で作り直せます） |
-| `third_party/` | エンジンに組み込んだ libqalculate・GMP・MPFR・libxml2 のソース（[説明](third_party/README.md)） |
-| `fetch-sources.sh` | `third_party/` のソースを `src/` に展開 |
-| `build-engine.sh` | エンジンを arm64 向けに静的ビルド（zig を使用。Android NDK は不要） |
-| `build-common.sh` | `build-apk.sh` と `build-aab.sh` の共通部分（Android SDK の場所、Java のコンパイルなど） |
-| `build-apk.sh` | テスト用 APK（パッケージ名 `io.github.hiroshitsu.qcalc.debug`）を作る |
-| `build-aab.sh` | Google Play に出す App Bundle（`.aab`）を作り、アップロード鍵で署名する |
-| `make-licenses.py` | `app/assets/licenses.js` を作る（ライブラリの版を変えたとき） |
-| `version.properties` | アプリの版（スクリプトと Android Studio の両方がここから読みます） |
-| `settings.gradle`, `build.gradle`, `app/build.gradle`, `gradle.properties`, `gradle/wrapper/` | Android Studio（Gradle）用の設定 |
-| `keystore.properties.example` | Android Studio で release に署名するときの設定の見本 |
-| `icon/` | アイコンの元（`qcalc-icon.svg`）と、`app/res` の各サイズのアイコンを作るスクリプト |
-| `store/` | Google Play のストア掲載用の文章と画像 |
-| `docs/` | GitHub Pages で公開するページ（紹介ページとプライバシーポリシー） |
-| `design/` | 設計書一式（PDF）：概要、要件定義書、基本設計書、詳細設計書、操作マニュアル、ビルド・保守マニュアル、テスト仕様書・結果 |
+| `bridge/qalc-engine.cc` | A small program that calls libqalculate (it talks to the app with one JSON object per line) |
+| `app/AndroidManifest.xml`, `app/src/` | The Java code of the app (WebView, starting and supervising the engine, downloading exchange rates, saving the history and settings) |
+| `app/res/`, `app/res-debug/` | App name, theme and launcher icons (`res-debug` holds the name of the test build, "QCalc (debug)") |
+| `app/assets/` | The user interface (HTML / CSS / JavaScript). `licenses.js` holds the license texts of the bundled software |
+| `app/jniLibs/arm64-v8a/libqalcengine.so` | The prebuilt calculation engine (an arm64 executable; `build-engine.sh` rebuilds it) |
+| `third_party/` | Source archives of libqalculate, GMP, MPFR and libxml2, which are built into the engine ([details](third_party/README.md)) |
+| `fetch-sources.sh` | Extracts the sources in `third_party/` into `src/` |
+| `build-engine.sh` | Builds the engine statically for arm64 (with zig; the Android NDK is not needed) |
+| `build-common.sh` | The parts shared by `build-apk.sh` and `build-aab.sh` (location of the Android SDK, Java compilation and so on) |
+| `build-apk.sh` | Builds the test APK (package name `io.github.hiroshitsu.qcalc.debug`) |
+| `build-aab.sh` | Builds the App Bundle (`.aab`) for Google Play and signs it with the upload key |
+| `make-licenses.py` | Generates `app/assets/licenses.js` (run it after changing the version of a library) |
+| `version.properties` | The app version (read by the scripts and by Android Studio) |
+| `settings.gradle`, `build.gradle`, `app/build.gradle`, `gradle.properties`, `gradle/wrapper/` | Settings for Android Studio (Gradle) |
+| `keystore.properties.example` | A template for signing release builds in Android Studio |
+| `icon/` | The icon source (`qcalc-icon.svg`) and a script that makes the icons of every size in `app/res` |
+| `store/` | Texts (in Japanese) and images for the Google Play store listing |
+| `docs/` | The pages published with GitHub Pages (the app's home page and the privacy policy) |
+| `design/` | The design document set (PDF) |
 
-## ビルド環境（Ubuntu 24.04 で確認）
+## Build environment (tested on Ubuntu 24.04)
 
 ```
 sudo apt install build-essential autoconf automake libtool intltool autopoint gettext pkg-config \
@@ -66,63 +75,63 @@ sudo apt install build-essential autoconf automake libtool intltool autopoint ge
 pip install ziglang==0.17.1
 ```
 
-Android SDK の platform ファイルも必要です（このリポジトリには入っていません）。Android Studio の SDK Manager か `sdkmanager "platforms;android-36" "platforms;android-34"` で入れてください。スクリプトは `$ANDROID_HOME`（なければ `~/Android/Sdk`）の下を探します。別の場所にあるときは `ANDROID_JAR`（API 36 の android.jar、Java のコンパイル用）と `AAPT2_JAR`（API 34 の android.jar、Ubuntu の aapt2 は API 35 以降を読めないため）で指定します。
+The Android SDK platform files are also needed (they are not in this repository). Install them with the SDK Manager of Android Studio or with `sdkmanager "platforms;android-36" "platforms;android-34"`. The scripts look under `$ANDROID_HOME` (or `~/Android/Sdk` when it is not set). If the files are somewhere else, set `ANDROID_JAR` (the android.jar of API 36, used to compile the Java code) and `AAPT2_JAR` (the android.jar of API 34, because the aapt2 of Ubuntu cannot read API 35 or later).
 
-アイコンを作り直すとき（`icon/make-icons.sh`）だけ、`librsvg2-bin` と `imagemagick` も必要です。
+`librsvg2-bin` and `imagemagick` are needed only to rebuild the icons (`icon/make-icons.sh`).
 
-## ビルド
+## Build
 
-計算エンジンはビルド済みのものが `app/jniLibs` に入っているので、画面や Java だけを直すときはエンジンのビルドは不要です。
+The prebuilt engine is already in `app/jniLibs`, so you do not need to build the engine when you change only the user interface or the Java code.
 
 ```
-./fetch-sources.sh     # third_party/ のソースを src/ に展開
-./build-engine.sh      # libqalculate などを arm64 向けにビルドし、エンジンを app/jniLibs にコピー
-./build-apk.sh         # テスト用 APK：out/QCalc-<版>-debug.apk
-./build-aab.sh         # Google Play 用：out/QCalc-<版>.aab
+./fetch-sources.sh     # extract the sources in third_party/ into src/
+./build-engine.sh      # build libqalculate and the rest for arm64 and copy the engine to app/jniLibs
+./build-apk.sh         # test APK: out/QCalc-<version>-debug.apk
+./build-aab.sh         # for Google Play: out/QCalc-<version>.aab
 ```
 
-- テスト用 APK は `io.github.hiroshitsu.qcalc.debug`・「QCalc (debug)」という別アプリとして入るので、Google Play 版と並べて使えます。署名にはテスト用の鍵 `signing/qcalc-debug.keystore`（初回に自動で作成）を使います。
-- Google Play に新しい版を出すときは、`version.properties` の `VERSION_CODE` を必ず前より大きくしてください。
+- The test APK installs as a separate app, `io.github.hiroshitsu.qcalc.debug` ("QCalc (debug)"), so it can be used next to the Google Play version. It is signed with a test key, `signing/qcalc-debug.keystore`, which is created on the first build.
+- Before publishing a new version on Google Play, always make `VERSION_CODE` in `version.properties` larger than before.
 
-エンジンの動作確認（任意。PC 上で arm64 を模擬実行）：
+To try the engine on a PC (optional; it runs the arm64 program under emulation):
 
 ```
 echo '{"id":1,"cmd":"calc","expr":"integrate(x^2 sin(x), 0, pi)"}' | QALCULATE_USER_DIR=/tmp/q qemu-aarch64-static bridge/qalc-engine
 echo '{"id":2,"cmd":"plot3d","exprs":["sin(x) cos(y)"],"nx":5,"ny":5}' | QALCULATE_USER_DIR=/tmp/q qemu-aarch64-static bridge/qalc-engine
 ```
 
-## libqalculate との違い
+## Differences from libqalculate
 
-libqalculate のソースは変更していません（`third_party/` のものをそのままビルドします）。計算の結果は公式の `qalc` と同じです。次の 3 点だけ、`bridge/qalc-engine.cc` が実行中の計算エンジンに足しています。
+The source of libqalculate is not changed (the archive in `third_party/` is built as it is), so the results are the same as those of the official `qalc`. `bridge/qalc-engine.cc` adds only these three things to the running engine:
 
-- 日本の単位（坪・反・寸・尺・間・里・合・升・匁・貫）
-- 行列のトレース `trace()`（libqalculate には `det()` や `rk()` はありますが、トレースがありません）
-- libqalculate 5.13.2 では、無限大を端にもつ定積分（例：`integrate(e^(−x^2), −∞, ∞)`）を一度計算すると、そのあとの警告やエラー（「ゼロで割っています」など）が表示されなくなります（`qalc` でも同じです）。QCalc では、計算のたびにこの状態を元に戻しているので、警告は表示されます。
+- Traditional Japanese units (坪, 反, 寸, 尺, 間, 里, 合, 升, 匁, 貫)
+- The matrix trace `trace()` (libqalculate has `det()` and `rk()`, but no trace)
+- In libqalculate 5.13.2, after a definite integral with an infinite bound (for example `integrate(e^(−x^2), −∞, ∞)`) has been calculated, later warnings and errors (such as division by zero) are no longer shown (`qalc` behaves the same way). QCalc resets this state for every calculation, so the warnings are shown.
 
-## 署名と Google Play
+## Signing and Google Play
 
-QCalc は Google Play アプリ署名を使います。アプリに署名する鍵は Google が管理し、開発者は **アップロード鍵** で署名した `.aab` を Play Console にアップロードします。
+QCalc uses Play App Signing: Google manages the key that signs the app, and the developer uploads `.aab` files signed with an **upload key** to the Play Console.
 
-- `build-aab.sh` は `signing/qcalc-upload.jks`（別名 `upload`）で署名します。パスワードは環境変数 `QCALC_UPLOAD_PASS` か、ファイル `signing/qcalc-upload.pass` から読みます。
-- **アップロード鍵とパスワードは公開しないでください**（`signing/` は `.gitignore` で除外しています）。なくした・漏れたときは、Play Console からアップロード鍵の再設定を申請できます。
-- `build-aab.sh` は App Bundle の設定（BundleConfig）で「ネイティブライブラリを圧縮しない」最適化を無効にしています。計算エンジンはライブラリではなくプログラムとして起動するため、インストール時にファイルとして取り出される必要があるからです（`android:extractNativeLibs="true"`）。
+- `build-aab.sh` signs with `signing/qcalc-upload.jks` (alias `upload`). The password is read from the environment variable `QCALC_UPLOAD_PASS` or from the file `signing/qcalc-upload.pass`.
+- **Never publish the upload key or its password** (`signing/` is excluded in `.gitignore`). If the key is lost or leaked, you can request an upload key reset in the Play Console.
+- `build-aab.sh` turns off the "uncompressed native libraries" optimization in the bundle configuration (BundleConfig). The engine is started as a program, not loaded as a library, so it must be extracted as a file at install time (`android:extractNativeLibs="true"`).
 
-## Android Studio で開く
+## Opening the project in Android Studio
 
-1. Android Studio で「Open」を選び、このフォルダ（`settings.gradle` があるフォルダ）を開きます。Android Gradle Plugin 8.11.1、Gradle 8.13、compileSdk 36 を使います。
-2. スマホを USB デバッグでつないで実行（▶）すると、デバッグ版（`io.github.hiroshitsu.qcalc.debug`）が入ります。
-3. Google Play 用には、Build メニューの「Generate Signed App Bundle or APK…」で Android App Bundle を選び、アップロード鍵を指定して release を作ります。`keystore.properties.example` を `keystore.properties` にコピーして書き込んでおくと、release に自動で署名されます（このファイルも公開しないでください）。
+1. In Android Studio, choose "Open" and open this folder (the one that contains `settings.gradle`). The project uses Android Gradle Plugin 8.11.1, Gradle 8.13 and compileSdk 36.
+2. Connect a phone with USB debugging and run the app (▶) to install the debug build (`io.github.hiroshitsu.qcalc.debug`).
+3. For Google Play, choose "Generate Signed App Bundle or APK…" in the Build menu, select Android App Bundle, and give the upload key to build the release. If you copy `keystore.properties.example` to `keystore.properties` and fill it in, release builds are signed automatically (do not publish this file either).
 
-注意：
+Notes:
 
-- Android Studio は計算エンジンを作りません。`app/jniLibs/arm64-v8a/libqalcengine.so` をそのまま入れます。`bridge/qalc-engine.cc` や libqalculate を変えたときは、Linux（Windows では WSL）で `./build-engine.sh` を実行してください。
-- Gradle の設定は、Gradle と Android SDK をダウンロードできない環境で作ったため、Android Studio でのビルドはまだ確かめていません。Gradle で作った `.aab` を使うときは、`bundletool dump config --bundle=app-release.aab` で `uncompressNativeLibraries` が有効になっていない（`"enabled": true` がない）ことを確かめてください。
-- `gradlew` は入っていません（Android Studio では不要です）。
+- Android Studio does not build the engine; it packages `app/jniLibs/arm64-v8a/libqalcengine.so` as it is. After changing `bridge/qalc-engine.cc` or libqalculate, run `./build-engine.sh` on Linux (WSL on Windows).
+- The Gradle files were written in an environment that could not download Gradle or the Android SDK, so the Android Studio build has not been tested yet. If you use an `.aab` built with Gradle, check with `bundletool dump config --bundle=app-release.aab` that `uncompressNativeLibraries` is not enabled (there is no `"enabled": true`).
+- `gradlew` is not included (Android Studio does not need it).
 
-## ライセンス
+## License
 
-QCalc は GNU General Public License v2 以降（[LICENSE](LICENSE)）のフリーソフトウェアです。libqalculate も GPL v2 以降です。
+QCalc is free software under the GNU General Public License, version 2 or later ([LICENSE](LICENSE)). libqalculate is also licensed under GPL v2 or later.
 
-計算エンジンには、GMP（LGPL v3 以降 または GPL v2 以降）、MPFR（LGPL v3 以降）、libxml2（MIT）、zig に同梱の musl libc（MIT）、LLVM libc++ / libc++abi / libunwind（Apache License 2.0 with LLVM Exceptions）、compiler_rt（MIT）も組み込んでいます。MPFR が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。これらのソースは `third_party/` にあり、ライセンスの全文はアプリの「このアプリについて」→「オープンソースライセンス」で読めます。
+The engine also contains GMP (LGPL v3 or later, or GPL v2 or later), MPFR (LGPL v3 or later), libxml2 (MIT), the musl libc bundled with zig (MIT), LLVM libc++ / libc++abi / libunwind (Apache License 2.0 with LLVM Exceptions) and compiler_rt (MIT). Because MPFR is LGPL v3 or later, the engine as a whole is distributed under the terms of the GNU GPL v3 or later. The sources are in `third_party/`, and the full license texts can be read in the app under "このアプリについて" (About this app) → "オープンソースライセンス" (Open source licenses).
 
-アイコンは QCalc のために作ったもので、Qalculate! のアイコンとは別のものです。
+The icon was made for QCalc and is different from the Qalculate! icon.

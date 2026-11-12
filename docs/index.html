@@ -20,6 +20,8 @@
   a { color: var(--accent); }
   ul { padding-left: 1.3em; }
   code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .92em; }
+  .lang { margin: 12px 0 0; font-size: .92em; }
+  hr { border: 0; border-top: 2px solid var(--line); margin: 48px 0 24px; }
 </style>
 </head>
 <body>
@@ -30,6 +32,7 @@
     <p class="sub">式のまま計算できる、Android 用の多機能電卓</p>
   </div>
 </header>
+<p class="lang"><a href="#en">English</a></p>
 
 <p>QCalc は、オープンソースの電卓「<a href="https://qalculate.github.io/">Qalculate!</a>」の計算エンジン libqalculate を組み込んだ Android アプリです。<code>60 mph to km/h</code>、<code>solve(x^2 − 5x + 6 = 0)</code>、<code>integrate(x^2 sin(x), 0, pi)</code> のように、式をそのまま入力して計算できます。単位変換、通貨換算、方程式、微積分、行列、複素数、進数、日付、誤差の伝播、2D・3D グラフ、最大 1000 桁の高精度計算に対応しています。</p>
 <p>QCalc は Qalculate! の公式アプリではなく、Qalculate! の開発者とは関係のない個人が作っています。</p>
@@ -45,5 +48,27 @@
 
 <h2>ライセンス</h2>
 <p>QCalc は GNU General Public License v2 以降のフリーソフトウェアです。計算エンジンに組み込んだ GMP・MPFR・libxml2 などのライセンスは、アプリの「このアプリについて」→「オープンソースライセンス」で確認できます。</p>
+
+<hr>
+
+<div id="en" lang="en">
+<h1>QCalc</h1>
+<p class="sub">A multi-function calculator for Android: type an expression the way you would write it</p>
+
+<p>QCalc is an Android app built on libqalculate, the calculation engine of the open-source calculator <a href="https://qalculate.github.io/">Qalculate!</a>. You can type expressions such as <code>60 mph to km/h</code>, <code>solve(x^2 − 5x + 6 = 0)</code> or <code>integrate(x^2 sin(x), 0, pi)</code>. It handles unit conversion, currency conversion, equations, calculus, matrices, complex numbers, number bases, dates, uncertainty propagation, 2D and 3D graphs, and high-precision arithmetic with up to 1000 digits. The app's user interface is in Japanese.</p>
+<p>QCalc is not an official Qalculate! app; it is made by an individual developer who is not affiliated with the Qalculate! project.</p>
+
+<h2>Links</h2>
+<ul>
+  <li><a href="privacy.html#en">Privacy policy</a></li>
+  <li><a href="https://github.com/HiroshiTsu/qcalc/blob/main/design/00-overview-en.pdf">Design overview (English, PDF)</a></li>
+  <li><a href="https://github.com/HiroshiTsu/qcalc/tree/main/design">Design documents (PDF, in Japanese)</a></li>
+  <li><a href="https://github.com/HiroshiTsu/qcalc">Source code (GitHub)</a></li>
+  <li><a href="https://github.com/HiroshiTsu/qcalc/issues">Bug reports and questions (GitHub Issues)</a></li>
+</ul>
+
+<h2>License</h2>
+<p>QCalc is free software under the GNU General Public License, version 2 or later. The licenses of GMP, MPFR, libxml2 and the other software in the calculation engine can be read in the app under "このアプリについて" (About this app) → "オープンソースライセンス" (Open source licenses).</p>
+</div>
 </body>
 </html>
