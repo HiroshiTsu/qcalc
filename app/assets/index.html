@@ -25,7 +25,10 @@
   <div id="status" class="sr-only" role="status" aria-live="polite"></div>
 
   <section class="entry">
-    <div id="parsed" class="parsed"></div>
+    <div class="parsed-row">
+      <div id="parsed" class="parsed"></div>
+      <button id="undo" class="undo" hidden>↶ 元に戻す</button>
+    </div>
     <textarea id="expr" rows="1" inputmode="none" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="式を入力"></textarea>
     <div id="preview" class="preview"></div>
     <div id="msg" class="msg"></div>
@@ -33,14 +36,15 @@
 
   <section class="keypad" id="keypad">
     <div class="toolbar" id="toolbar"></div>
-    <div class="grid" id="grid"></div>
+    <div class="pages" id="pages" role="tablist" aria-label="キーの種類"></div>
+    <div class="grid" id="grid" role="group"></div>
   </section>
 </div>
 
 <div id="scrim" class="scrim"></div>
 <nav id="drawer" class="drawer" aria-label="メニュー" inert></nav>
 <div id="sheet" class="sheet" role="dialog" inert></div>
-<div id="toast" class="toast"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="app.js"></script>
 </body>

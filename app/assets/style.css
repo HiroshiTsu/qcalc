@@ -23,7 +23,10 @@
   --plot-grid: #e8ebf0;
   --plot-axis: #8a93a5;
   color-scheme: light;
+  --fs: 1; /* setting "文字の大きさ": history, input field and preview */
 }
+:root[data-text-size="large"] { --fs: 1.18; }
+:root[data-text-size="xlarge"] { --fs: 1.38; }
 :root.dark {
   --bg: #121418;
   --surface: #1c1f26;
@@ -112,13 +115,28 @@ input, select, textarea { font: inherit; color: inherit; }
   padding: 8px 14px 4px;
   -webkit-overflow-scrolling: touch;
 }
+/* the first screen: short enough to be seen whole above the keypad on a small phone */
 .history .empty {
   color: var(--muted);
   text-align: center;
-  margin-top: 18%;
-  line-height: 1.8;
-  font-size: 14px;
+  margin: 6px 0 8px;
+  line-height: 1.55;
+  font-size: 13px;
 }
+.empty .empty-t { color: var(--text); font-size: 14.5px; font-weight: 600; }
+.empty .empty-try { margin-top: 8px; font-size: 12.5px; }
+.ex-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 4px 0 10px; }
+.ex-chip {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--accent);
+  border-radius: 18px;
+  padding: 6px 12px;
+  min-height: 36px;
+  font-size: 13px;
+  font-family: ui-monospace, "Roboto Mono", "Noto Sans Mono", monospace;
+}
+.ex-chip:active { background: var(--surface-2); }
 .h-item {
   padding: 8px 4px 10px;
   border-bottom: 1px solid var(--line);
@@ -127,19 +145,36 @@ input, select, textarea { font: inherit; color: inherit; }
 .h-item:active { background: var(--surface-2); }
 .h-expr {
   color: var(--muted);
-  font-size: 15px;
+  font-size: calc(15px * var(--fs));
   word-break: break-all;
   white-space: pre-wrap;
 }
 .h-res {
-  font-size: 22px;
+  font-size: calc(22px * var(--fs));
   font-weight: 600;
   margin-top: 2px;
   word-break: break-all;
   white-space: pre-wrap;
   font-variant-numeric: tabular-nums;
 }
-.h-msg { font-size: 12px; margin-top: 3px; text-align: right; }
+.h-msg { font-size: calc(12px * var(--fs)); margin-top: 3px; text-align: right; }
+/* a matrix in a result, drawn as a grid between brackets */
+.mx {
+  display: inline-grid;
+  gap: .15em .9em; /* in em: a wide matrix is made smaller as a whole (fitMatrices in app.js) */
+  vertical-align: middle;
+  text-align: right;
+  white-space: nowrap;
+  word-break: normal;
+  font-size: .84em;
+  margin: 3px 4px;
+  padding: .15em .5em;
+  max-width: 100%;
+  overflow-x: auto;
+  border: solid currentColor;
+  border-width: 0 2px;
+  border-radius: 7px;
+}
 .h-msg.error { color: var(--danger); }
 .h-msg.warning { color: var(--warn); }
 
@@ -150,9 +185,24 @@ input, select, textarea { font: inherit; color: inherit; }
   border-top: 1px solid var(--line);
   padding: 6px 14px 6px;
 }
+.parsed-row { display: flex; align-items: center; gap: 8px; min-height: 18px; }
+.undo {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--accent);
+  border-radius: 15px;
+  padding: 3px 12px;
+  min-height: 30px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.undo:active { background: var(--key-press); }
 .parsed {
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 18px;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
@@ -165,7 +215,7 @@ input, select, textarea { font: inherit; color: inherit; }
   border: 0;
   outline: none;
   background: transparent;
-  font-size: 26px;
+  font-size: calc(26px * var(--fs));
   line-height: 1.25;
   padding: 2px 0;
   max-height: 3.9em;
@@ -180,14 +230,14 @@ input, select, textarea { font: inherit; color: inherit; }
   max-height: 4.6em; /* a very long result scrolls instead of pushing the keypad off the screen */
   overflow-y: auto;
   overscroll-behavior: contain;
-  font-size: 18px;
+  font-size: calc(18px * var(--fs));
   color: var(--muted);
   text-align: right;
   word-break: break-all;
   white-space: pre-wrap;
   font-variant-numeric: tabular-nums;
 }
-.msg { font-size: 12px; color: var(--warn); text-align: right; min-height: 0; max-height: 3.2em; overflow-y: auto; }
+.msg { font-size: calc(12px * var(--fs)); color: var(--warn); text-align: right; min-height: 0; max-height: 3.2em; overflow-y: auto; }
 .msg.error { color: var(--danger); }
 
 /* ---------------------------------------------------------------- keypad */
@@ -201,19 +251,42 @@ input, select, textarea { font: inherit; color: inherit; }
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 5px;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
+/* the pages of the keypad: 123 / 関数 / 解析 / 行列 */
+.pages {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  margin-bottom: 5px;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--key-fn);
+}
+.ptab {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  height: 27px;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 0;
+  touch-action: none;
+}
+.ptab.on { background: var(--accent); color: var(--accent-text); }
+.ptab.pressed { filter: brightness(.9); }
 .grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 7px;
+  gap: 6px;
 }
 .key {
   border: 0;
   border-radius: 14px;
   background: var(--key-num);
   box-shadow: var(--shadow);
-  height: 54px;
+  height: 52px;
   font-size: 22px;
   font-weight: 500;
   touch-action: none; /* keys handle their own presses; no scrolling or double-tap zoom */
@@ -223,6 +296,9 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 .toolbar .key { height: 38px; font-size: 15px; border-radius: 10px; background: var(--key-fn); font-weight: 600; }
 .key.fn { background: var(--key-fn); font-size: 17px; }
+.key.sm { font-size: 14px; }
+.key sub, .key sup { font-size: .62em; line-height: 0; }
+.key > span { white-space: nowrap; }
 .key.op { background: var(--key-op); color: var(--key-op-text); font-size: 25px; }
 .key.ctl { background: var(--key-ctl); color: var(--key-ctl-text); font-size: 19px; font-weight: 700; }
 .key.eq { background: var(--accent); color: var(--accent-text); font-size: 26px; font-weight: 700; }
@@ -231,7 +307,7 @@ input, select, textarea { font: inherit; color: inherit; }
 :root.dark .key.pressed { filter: brightness(1.35); }
 .key small { font-size: .75em; }
 /* typing with the phone keyboard: hide the on-screen keypad (the toolbar stays for switching back) */
-.kbd .grid { display: none; }
+.kbd .grid, .kbd .pages { display: none; }
 .kbd .toolbar { margin-bottom: 0; }
 
 /* ---------------------------------------------------------------- drawer */
@@ -336,6 +412,7 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 .item .row1 { display: flex; align-items: flex-start; gap: 8px; }
 .item .t { font-weight: 600; flex: 1; font-size: 15px; }
+.item .t .ja { font-weight: 500; font-size: 13.5px; color: var(--muted); margin-left: 8px; }
 .item .n { font-family: ui-monospace, "Roboto Mono", "Noto Sans Mono", monospace; font-size: 13px; color: var(--accent); margin-top: 3px; word-break: break-all; }
 .item .c { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 .item .d {
@@ -417,6 +494,23 @@ input, select, textarea { font: inherit; color: inherit; }
   background: var(--surface-2);
   border-radius: 8px;
 }
+/* examples and tips */
+.ex-group { padding: 6px 6px 4px; }
+.ex-title { font-weight: 700; font-size: 14px; padding: 6px 8px 4px; }
+.ex-row {
+  display: block; width: 100%;
+  border: 0; border-top: 1px solid var(--line);
+  background: transparent;
+  text-align: left;
+  padding: 9px 8px;
+  min-height: 48px;
+  border-radius: 0;
+}
+.ex-row:active { background: var(--surface-2); }
+.ex-row .ex-expr { display: block; color: var(--accent); font-size: 15px; word-break: break-all; }
+.ex-row .ex-note { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; line-height: 1.45; }
+.tips { margin: 0; padding-left: 1.2em; }
+.tips li { margin: 4px 0; line-height: 1.6; }
 .muted { color: var(--muted); }
 .mono { font-family: ui-monospace, "Roboto Mono", "Noto Sans Mono", monospace; }
 
@@ -544,6 +638,7 @@ input, select, textarea { font: inherit; color: inherit; }
   padding: 10px 16px;
   border-radius: 12px;
   font-size: 14px;
+  width: max-content;
   max-width: 86vw;
   text-align: center;
   opacity: 0; pointer-events: none;
@@ -551,6 +646,16 @@ input, select, textarea { font: inherit; color: inherit; }
   z-index: 60;
 }
 .toast.show { opacity: 1; }
+.toast.with-action { display: flex; align-items: center; gap: 6px; text-align: left; padding: 6px 8px 6px 16px; }
+.toast.show.with-action { pointer-events: auto; }
+.toast button {
+  flex: 0 0 auto;
+  border: 0; background: transparent;
+  color: #8ab4ff;
+  font-size: 14px; font-weight: 700;
+  padding: 8px 10px; min-height: 40px;
+  white-space: nowrap;
+}
 .spinner {
   width: 22px; height: 22px;
   border: 3px solid var(--line);
@@ -564,6 +669,8 @@ input, select, textarea { font: inherit; color: inherit; }
 @media (max-height: 640px) {
   .key { height: 46px; }
   .toolbar .key { height: 34px; }
+  .ptab { height: 24px; }
+  .pages { margin-bottom: 5px; }
 }
 /* phone in landscape: history and entry on the left, keypad on the right */
 @media (orientation: landscape) and (max-height: 560px) {
@@ -579,6 +686,8 @@ input, select, textarea { font: inherit; color: inherit; }
   .grid { flex: 1; grid-auto-rows: 1fr; gap: 5px; }
   .key { height: auto; min-height: 0; font-size: 18px; }
   .toolbar .key { height: 30px; }
+  .ptab { height: 22px; font-size: 12.5px; }
+  .pages { margin-bottom: 5px; }
   .plot-wrap { height: 70vh; }
   .ranges3d { display: flex; gap: 14px; }
   .ranges3d .plot-range { flex: 1; min-width: 0; }

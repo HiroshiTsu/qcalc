@@ -331,7 +331,22 @@ static void mkdirs(const string &path) {
 	}
 }
 
+// libqalculate 5.13.2 leaves one beginTemporaryStopMessages() open when it has solved a definite
+// integral with an infinite limit (MathStructure::integrate(), the containsInfinity() branch
+// returns without endTemporaryStopMessages()). From then on every warning and error would be held
+// back for the rest of the session, in qalc as well: "integrate(e^(−x^2), −∞, ∞)", then "1/0"
+// shows no "Division by zero". No stop is meant to be open between two commands or when the
+// messages of a command are collected, so stops that are still open are closed here.
+// release: hand the messages that were held back to the message list (they belong to the
+// calculation that has just finished) instead of dropping them.
+static void close_message_stops(bool release) {
+	for(int i = 0; i < 100000; i++) {
+		if(CALCULATOR->endTemporaryStopMessages(NULL, NULL, release ? MESSAGE_ERROR + 1 : -1) < 0) break;
+	}
+}
+
 static string collect_messages() {
+	close_message_stops(true);
 	string out = "[";
 	bool first = true;
 	for(CalculatorMessage *m = CALCULATOR->message(); m; m = CALCULATOR->nextMessage()) {
@@ -623,7 +638,9 @@ static void calculate_once(string str, int msecs, EvaluationOptions evalops, Pri
 			MathStructure mexact;
 			mexact.setUndefined();
 			if((!do_calendars || !mstruct.isDateTime()) && !do_bases && auto_approx != AUTOMATIC_APPROXIMATION_OFF && (auto_approx == AUTOMATIC_APPROXIMATION_DUAL || printops.base == BASE_DECIMAL) && now_ms() - t0 < msecs / 3) {
-				calculate_dual_exact(mexact, &mstruct, str, &parsed_struct, evalops, auto_approx, 0, -1);
+				// 5: as qalc does. In automatic mode an exact form that is a sum of more than 5 terms
+				// (or very large) is not shown in front of the approximate result.
+				calculate_dual_exact(mexact, &mstruct, str, &parsed_struct, evalops, auto_approx, 0, 5);
 				if(CALCULATOR->aborted()) mexact.setUndefined();
 			}
 			if(do_factors) {
@@ -1065,6 +1082,50 @@ static string function_syntax(MathFunction *f) {
 	return s;
 }
 
+// The text that the unit list inserts into an expression. Composite units (km, km/h, kW·h, GB, …)
+// are listed under internal names (km_c, km_p_h, kW_h, Gbyte_c) that the parser does not read as
+// that unit, so their printed form is used instead, as Qalculate!'s own unit list does. Every text
+// is checked: it must read back as the same unit ("Ha/e" would be Hartree divided by Euler's e).
+// Returns false if the unit has no such text; it can then only be the target of a conversion.
+static bool reads_back_as(const string &text, Unit *u, const EvaluationOptions &eo) {
+	CALCULATOR->beginTemporaryStopMessages();
+	MathStructure a = CALCULATOR->calculate("3 " + text, eo);
+	MathStructure b(3, 1, 0);
+	b.multiply(u);
+	a = CALCULATOR->convertToBaseUnits(a, eo);
+	a.eval(eo);
+	b = CALCULATOR->convertToBaseUnits(b, eo);
+	b.eval(eo);
+	CALCULATOR->endTemporaryStopMessages();
+	return a.equals(b, true);
+}
+static bool unit_input_text(Unit *u, string &text) {
+	// Texts that were found to work are remembered. A failure is tried again the next time: it
+	// may have been caused by a variable of the user that hid a unit ("m = 3").
+	static std::map<string, string> cache;
+	std::map<string, string>::const_iterator it = cache.find(u->referenceName());
+	if(it != cache.end()) { text = it->second; return true; }
+	EvaluationOptions eo = default_user_evaluation_options;
+	eo.parse_options.comma_as_separator = false;
+	eo.parse_options.unknowns_enabled = false;
+	if(u->subtype() == SUBTYPE_COMPOSITE_UNIT) {
+		PrintOptions po = default_print_options;
+		po.use_unicode_signs = true;
+		po.abbreviate_names = true;
+		po.use_unit_prefixes = true;
+		text = ((CompositeUnit*) u)->print(po, false, 0, true, false);
+	} else {
+		text = u->preferredInputName(true, false).name;
+	}
+	// (currencies are not tried: their names are plain codes or symbols, and the first use of a
+	// currency gives the warning about old exchange rates, which must not be used up here)
+	bool ok = u->isCurrency() || reads_back_as(text, u, eo);
+	if(!ok && text != u->referenceName() && reads_back_as(u->referenceName(), u, eo)) { text = u->referenceName(); ok = true; }
+	if(ok) cache[u->referenceName()] = text;
+	else text = u->referenceName();
+	return ok;
+}
+
 static string cmd_catalog(const JVal &req, JOut &out) {
 	string kind = req.str("kind", "functions");
 	string items = "[";
@@ -1100,10 +1161,15 @@ static string cmd_catalog(const JVal &req, JOut &out) {
 			if(!first) items += ",";
 			first = false;
 			JOut it;
-			it.str("name", u->referenceName()).str("abbr", u->preferredInputName(true, false).name)
-			  .str("display", u->preferredDisplayName(true, true).name).str("title", u->title(true))
+			string text;
+			bool can_insert = unit_input_text(u, text);
+			bool composite = u->subtype() == SUBTYPE_COMPOSITE_UNIT;
+			// "abbr" is what the list shows and inserts; "name" (the reference name) always works after "to"
+			it.str("name", u->referenceName()).str("abbr", text)
+			  .str("display", composite ? text : u->preferredDisplayName(true, true).name).str("title", u->title(true))
 			  .str("category", u->category()).str("description", u->description())
-			  .boolean("currency", u->isCurrency()).boolean("local", u->isLocal());
+			  .boolean("currency", u->isCurrency()).boolean("local", u->isLocal())
+			  .boolean("composite", composite).boolean("insert", can_insert);
 			items += it.done();
 		}
 	} else {
@@ -1282,6 +1348,63 @@ static string cmd_user_defs(JOut &out) {
 	return "";
 }
 
+// Traditional Japanese units, which libqalculate's unit table does not have: "30 坪 to m²".
+// They are added to the running calculator (not to libqalculate, and not saved to the user's
+// files). The values are the exact ones of the Japanese Weights and Measures Act of 1891:
+// 1 尺 = 10/33 m, 1 升 = 2401/1331 L, 1 貫 = 3.75 kg. Only 坪 also has a Latin name (tsubo);
+// short names such as "ken", "go" or "tan" could be meant as something else in an expression.
+static void add_japanese_units() {
+	static const struct { const char *name, *latin, *title, *base; int exp; const char *relation, *description; } defs[] = {
+		{"坪", "tsubo", "坪（つぼ・tsubo）", "m", 2, "400/121", "面積。1 坪 = 1 間 × 1 間 = 400/121 m²（約 3.3058 m²）"},
+		{"反", "", "反（たん）", "m", 2, "120000/121", "面積。1 反 = 300 坪（約 991.74 m²）"},
+		{"寸", "", "寸（すん）", "m", 1, "1/33", "長さ。1 寸 = 1/10 尺（約 3.0303 cm）"},
+		{"尺", "", "尺（しゃく）", "m", 1, "10/33", "長さ。1 尺 = 10/33 m（約 30.303 cm）"},
+		{"間", "", "間（けん）", "m", 1, "20/11", "長さ。1 間 = 6 尺（約 1.8182 m）"},
+		{"里", "", "里（り）", "m", 1, "43200/11", "長さ。1 里 = 36 町 = 2160 間（約 3.9273 km）"},
+		{"合", "", "合（ごう）", "L", 1, "2401/13310", "体積。1 合 = 1/10 升（約 180.39 mL）"},
+		{"升", "", "升（しょう）", "L", 1, "2401/1331", "体積。1 升 = 2401/1331 L（約 1.8039 L）"},
+		{"匁", "", "匁（もんめ）", "g", 1, "15/4", "質量。1 匁 = 3.75 g"},
+		{"貫", "", "貫（かん）", "g", 1, "3750", "質量。1 貫 = 1000 匁 = 3.75 kg"},
+	};
+	for(size_t i = 0; i < sizeof(defs) / sizeof(defs[0]); i++) {
+		Unit *base = CALCULATOR->getActiveUnit(defs[i].base);
+		if(!base || CALCULATOR->getActiveUnit(defs[i].name) || CALCULATOR->getActiveVariable(defs[i].name)) continue;
+		AliasUnit *u = new AliasUnit("Japanese Units", defs[i].name, "", defs[i].latin, defs[i].title, base, defs[i].relation, defs[i].exp, "", false, false, true);
+		u->setDescription(defs[i].description);
+		u->setChanged(false);
+		CALCULATOR->addUnit(u);
+	}
+}
+
+// trace(): the sum of the diagonal elements of a square matrix. libqalculate has det(), adj(),
+// rk(), cofactor() … but no trace. Like the Japanese units it is added to the running calculator
+// (not to libqalculate, and not saved to the user's files).
+class TraceFunction : public MathFunction {
+  public:
+	TraceFunction() : MathFunction("trace", 1, 1, "Matrices & Vectors", "Trace", "正方行列の対角成分の和（トレース）。Sum of the diagonal elements of a square matrix.") {
+		MatrixArgument *marg = new MatrixArgument("Matrix");
+		marg->setSquareDemanded(true);
+		setArgumentDefinition(1, marg);
+	}
+	TraceFunction(const TraceFunction *function) {set(function);}
+	ExpressionItem *copy() const {return new TraceFunction(this);}
+	int calculate(MathStructure &mstruct, const MathStructure &vargs, const EvaluationOptions &eo) {
+		const MathStructure &m = vargs[0];
+		if(!m.isMatrix() || m.rows() != m.columns()) return 0;
+		mstruct.clear();
+		for(size_t i = 0; i < m.size(); i++) {
+			if(CALCULATOR->aborted()) return 0;
+			mstruct.calculateAdd(m[i][i], eo);
+		}
+		return 1;
+	}
+};
+static void add_matrix_functions() {
+	if(CALCULATOR->getActiveFunction("trace")) return;
+	MathFunction *f = CALCULATOR->addFunction(new TraceFunction());
+	if(f) f->setChanged(false);
+}
+
 // --------------------------------------------------------------------- main
 int main() {
 	new Calculator(true);
@@ -1289,6 +1412,8 @@ int main() {
 	mkdirs(getLocalDataDir());
 	CALCULATOR->loadExchangeRates();
 	CALCULATOR->loadGlobalDefinitions();
+	add_japanese_units();
+	add_matrix_functions();
 	check_local_definitions();
 	CALCULATOR->loadLocalDefinitions();
 	CALCULATOR->clearMessages();
@@ -1341,6 +1466,7 @@ int main() {
 			}
 			string err;
 			JOut body;
+			close_message_stops(false);
 			try {
 				if(cmd == "calc") err = cmd_calc(req, body);
 				else if(cmd == "set_ans") err = cmd_set_ans(req, body);

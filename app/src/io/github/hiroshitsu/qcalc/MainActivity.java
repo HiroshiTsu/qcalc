@@ -316,6 +316,16 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** The app's version name (for example "1.1.0"), or "" if it cannot be read. */
+    private String versionName() {
+        try {
+            PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+            return pi.versionName != null ? pi.versionName : "";
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     /** Hands an engine response (one JSON line) to the page; the page parses it. */
     private void deliver(String json) {
         runScript("window.QalcBridge && QalcBridge.receiveText(" + JSONObject.quote(json) + ")");
@@ -350,7 +360,7 @@ public class MainActivity extends Activity {
                 public void run() {
                     String r;
                     try {
-                        r = RatesUpdater.update(Engine.get(MainActivity.this), id);
+                        r = RatesUpdater.update(Engine.get(MainActivity.this), id, versionName());
                     } catch (RuntimeException e) {
                         r = "{\"id\":" + id + ",\"ok\":false,\"error\":\"為替レートの更新に失敗しました\"}";
                     }
@@ -392,8 +402,7 @@ public class MainActivity extends Activity {
         public String appInfo() {
             JSONObject o = new JSONObject();
             try {
-                PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
-                o.put("version", pi.versionName);
+                o.put("version", versionName());
                 o.put("android", Build.VERSION.RELEASE);
                 o.put("device", Build.MANUFACTURER + " " + Build.MODEL);
                 o.put("dark", isDark());

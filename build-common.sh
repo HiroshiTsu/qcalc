@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Shared by build-apk.sh and build-aab.sh (not run directly).
 # Compiles the Java code to classes.dex and prepares the manifest.
 #

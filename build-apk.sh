@@ -33,8 +33,12 @@ aapt2 link -o "$B/app-unsigned.apk" -I "$AAPT2_JAR" --manifest "$B/AndroidManife
   --min-sdk-version $MIN_SDK --target-sdk-version $TARGET_SDK \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME-debug" \
   "$B/res.zip" -R "$B/res-debug.zip" --auto-add-overlay
-aapt2 dump badging "$B/app-unsigned.apk" 2>/dev/null | grep -q "^launchable-activity: name='$PACKAGE.MainActivity'" \
-  || { echo "manifest: the launcher activity is not $PACKAGE.MainActivity"; exit 1; }
+# (the output is taken as a whole: "aapt2 … | grep -q" could end aapt2 early, which pipefail reports as a failure)
+badging=$(aapt2 dump badging "$B/app-unsigned.apk" 2>/dev/null)
+case "$badging" in
+  *"launchable-activity: name='$PACKAGE.MainActivity'"*) ;;
+  *) echo "manifest: the launcher activity is not $PACKAGE.MainActivity"; exit 1 ;;
+esac
 
 # ---- Java -> dex, engine in lib/ (Android installs it as a file that can be run)
 build_dex "$B"

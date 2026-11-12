@@ -44,13 +44,24 @@
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
   function vibrate() { if (S.haptics && navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { } } }
 
+  // a value from a table whose keys come from outside (names of functions, variables, units):
+  // never something inherited from Object.prototype (a user variable may be called "constructor")
+  const own = (table, key) => (Object.prototype.hasOwnProperty.call(table, key) ? table[key] : undefined);
+
   let toastTimer;
-  function toast(msg, ms) {
+  // A short message. With `action` ([label, function]) it also has a button, for example "元に戻す".
+  function toast(msg, ms, action) {
     const t = $('#toast');
     t.textContent = msg;
+    t.classList.toggle('with-action', !!action);
+    if (action) t.append(el('button', { text: action[0], onclick: () => { hideToast(); action[1](); } }));
     t.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), ms || 2200);
+    toastTimer = setTimeout(hideToast, ms || 2200);
+  }
+  function hideToast() {
+    clearTimeout(toastTimer);
+    $('#toast').classList.remove('show'); // "with-action" stays for the fade-out; only a shown toast can be tapped
   }
   function copyText(text) {
     if (window.QalcNative && QalcNative.copy) QalcNative.copy(text);
@@ -124,8 +135,16 @@
   const DEFAULTS = {
     angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
-    grouping: false, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true
+    grouping: false, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
+    text_size: 'normal'
   };
+  // size of the text in the history, the input field and the preview (setting "文字の大きさ")
+  const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
+  function textScale() { return own(TEXT_SCALE, S.text_size) || 1; }
+  function applyTextSize() {
+    document.documentElement.dataset.textSize = own(TEXT_SCALE, S.text_size) ? S.text_size : 'normal';
+    autosize();
+  }
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
   function saveSettings() { store.set('qalc.settings', S); }
   function engineOpts() {
@@ -153,7 +172,7 @@
   // input box, the phone keyboard), unless the history has been scrolled up to read older results.
   let histPinned = true;
   histEl.addEventListener('scroll', () => { histPinned = histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight < 24; }, { passive: true });
-  if (window.ResizeObserver) new ResizeObserver(() => { if (histPinned) histEl.scrollTop = histEl.scrollHeight; }).observe(histEl);
+  if (window.ResizeObserver) new ResizeObserver(() => { fitMatrices(histEl); if (histPinned) histEl.scrollTop = histEl.scrollHeight; }).observe(histEl);
 
   // ============================================================ keypad
   const PAGES = {
@@ -170,10 +189,34 @@
       ['x²', { ins: '^2', op: true }], ['x⁻¹', { ins: '^(−1)', op: true }], ['∛', { ins: 'cbrt()', back: 1 }], ['eˣ', { ins: 'exp()', back: 1 }], ['n!', { ins: '!', op: true }],
       ['|x|', { ins: 'abs()', back: 1 }], ['e', { ins: 'e' }], ['i', { ins: 'i' }], ['°', { ins: '°' }], ['mod', { ins: ' mod ' }],
       ['solve', { ins: 'solve()', back: 1 }], ['∫', { ins: 'integrate()', back: 1 }], ['d/dx', { ins: 'diff()', back: 1 }], ['Σ', { ins: 'sum()', back: 1 }], ['=', { act: 'eq', cls: 'eq' }]
+    ],
+    // analysis: derivatives, integrals, limits, sums and products, differential equations.
+    // A template such as integrate(, 0, 1) shows where the limits go; the caret is put where the
+    // function is typed ("back" characters before the end).
+    calc: [
+      ['d/dx', { ins: 'diff()', back: 1 }], ['d²/dx²', { ins: 'diff(, x, 2)', back: 7, cls: 'fn sm' }], ['∂/∂y', { ins: 'diff(, y)', back: 4 }], ['⌫', { act: 'del', cls: 'ctl', repeat: true }], ['AC', { act: 'clear', cls: 'ctl' }],
+      ['∫', { ins: 'integrate()', back: 1 }], ['∫ₐᵇ', { ins: 'integrate(, 0, 1)', back: 7, html: '∫<sub>a</sub><sup>b</sup>' }], ['lim', { ins: 'limit(, 0)', back: 4 }], ['Σ', { ins: 'sum(, 1, 10)', back: 8 }], ['Π', { ins: 'product(, 1, 10)', back: 8 }],
+      ['dsolve', { ins: 'dsolve(diff(y, x) = )', back: 1, cls: 'fn sm' }], ['極値', { ins: 'extremum()', back: 1 }], ['solve', { ins: 'solve()', back: 1 }], ['∞', { ins: '∞' }], ['y', { ins: 'y' }],
+      ['(', { ins: '(' }], [')', { ins: ')' }], ['xʸ', { ins: '^', op: true, cls: 'op' }], ['√', { ins: '√()', back: 1, cls: 'op' }], ['π', { ins: 'π', cls: 'op' }],
+      ['sin', { ins: 'sin()', back: 1 }], ['ln', { ins: 'ln()', back: 1 }], ['e', { ins: 'e' }], ['ほか…', { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
+    ],
+    // matrices and vectors: [1, 2; 3, 4] is typed without leaving the page (digits, brackets, ";"
+    // between rows; the "," between elements is in the row of keys above)
+    mat: [
+      ['[', { ins: '[' }], [']', { ins: ']' }], [';', { ins: '; ' }], ['⌫', { act: 'del', cls: 'ctl', repeat: true }], ['AC', { act: 'clear', cls: 'ctl' }],
+      ['7'], ['8'], ['9'], ['det', { ins: 'det()', back: 1 }], ['Aᵀ', { ins: 'transpose()', back: 1, html: 'A<sup>T</sup>' }],
+      ['4'], ['5'], ['6'], ['A⁻¹', { ins: '^(−1)', op: true }], ['×', { ins: '×', op: true, cls: 'op' }],
+      ['1'], ['2'], ['3'], ['−', { ins: '−', cls: 'op' }], ['+', { ins: '+', op: true, cls: 'op' }],
+      ['0'], ['.'], ['Iₙ', { ins: 'identity()', back: 1, html: 'I<sub>n</sub>' }], ['ほか…', { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
     ]
   };
+  // the pages of the keypad: [id, label of the tab, name for screen readers, category of the function list for "ほか…"]
+  const PAGE_TABS = [
+    ['num', '123', '数字と四則演算のキー', ''], ['fn', '関数', '関数のキー', ''],
+    ['calc', '解析', '解析（微分・積分・極限）のキー', 'Calculus'], ['mat', '行列', '行列・ベクトルのキー', 'Matrices & Vectors']
+  ];
   const TOOLBAR = [
-    ['fn', { act: 'page', id: 'k-page' }], ['x', { ins: 'x' }], [',', { ins: ', ' }], ['→', { ins: ' to ', op: true, title: '単位・進数の変換' }],
+    ['x', { ins: 'x' }], [',', { ins: ', ' }], ['a=b', { ins: ' = ', title: '等号（方程式の = を入力）' }], ['→', { ins: ' to ', op: true, title: '単位・進数の変換' }],
     ['ans', { ins: 'ans' }], ['⌨', { act: 'kbd', id: 'k-kbd' }], ['◀', { act: 'left', repeat: true }], ['▶', { act: 'right', repeat: true }]
   ];
   let page = 'num';
@@ -181,8 +224,12 @@
     '⌫': '1文字削除', 'AC': 'すべて消去', '◀': 'カーソルを左へ', '▶': 'カーソルを右へ', '⌨': 'キーボードで入力',
     'xʸ': 'べき乗', '√': '平方根', '∛': '立方根', 'E': '×10のべき乗', '÷': '割る', '×': '掛ける', '−': '引く',
     '+': '足す', '=': '計算する', 'π': '円周率パイ', 'x²': '2乗', 'x⁻¹': '逆数', 'n!': '階乗', '|x|': '絶対値',
-    'eˣ': 'eのべき乗', '∫': '積分', 'd/dx': '微分', 'Σ': '総和', 'fn': '関数キーに切り替え', ',': 'カンマ',
-    '°': '度', '%': 'パーセント', '(': '左かっこ', ')': '右かっこ', '.': '小数点'
+    'eˣ': 'eのべき乗', '∫': '積分', 'd/dx': '微分', 'Σ': '総和', ',': 'カンマ',
+    '°': '度', '%': 'パーセント', '(': '左かっこ', ')': '右かっこ', '.': '小数点',
+    'd²/dx²': '2階微分', '∂/∂y': 'yで偏微分', '∫ₐᵇ': '定積分', 'lim': '極限', 'Π': '総乗', 'dsolve': '微分方程式を解く',
+    '極値': '極値', 'solve': '方程式を解く', '∞': '無限大', 'ほか…': 'ほかの関数を一覧から選ぶ',
+    '[': '左角かっこ（行列の始まり）', ']': '右角かっこ（行列の終わり）', ';': 'セミコロン（行列の行の区切り）',
+    'det': '行列式', 'Aᵀ': '転置行列', 'A⁻¹': '逆行列', 'Iₙ': '単位行列'
   };
 
   function makeKey(def, inToolbar) {
@@ -192,6 +239,7 @@
     else if (!inToolbar && !/^[0-9.]$/.test(label)) cls += ' fn';
     const b = el('button', { class: cls, id: o.id, title: o.title, 'aria-label': o.title || KEY_NAMES[label] || label });
     if (o.small) b.append(el('small', { text: o.label }));
+    else if (o.html) b.innerHTML = '<span>' + o.html + '</span>'; // a fixed label with <sub>/<sup>, from the tables above
     else b.textContent = o.label || label;
     const run = () => {
       vibrate();
@@ -232,23 +280,73 @@
     const tb = $('#toolbar');
     tb.textContent = '';
     for (const d of TOOLBAR) tb.append(makeKey(d, true));
+    const tabs = $('#pages');
+    tabs.textContent = '';
+    for (const [id, label, name] of PAGE_TABS) {
+      const b = el('button', { class: 'ptab', id: 'tab-' + id, role: 'tab', 'aria-label': name, text: label });
+      bindPress(b, () => { vibrate(); setPage(id); });
+      tabs.append(b);
+    }
+    renderPage();
+    updateToolbar();
+  }
+  function setPage(id) {
+    if (page === id || !PAGES[id]) return;
+    page = id;
     renderPage();
     updateToolbar();
   }
   function renderPage() {
     const g = $('#grid');
+    g.setAttribute('aria-label', (PAGE_TABS.find((t) => t[0] === page) || [])[2] || '');
     g.textContent = '';
     for (const d of PAGES[page]) g.append(makeKey(d, false));
   }
   function updateToolbar() {
-    const p = $('#k-page');
-    if (p) { p.textContent = page === 'fn' ? '123' : 'fn'; p.classList.toggle('on', page === 'fn'); }
+    for (const [id] of PAGE_TABS) {
+      const b = $('#tab-' + id);
+      if (b) { b.classList.toggle('on', id === page); b.setAttribute('aria-selected', String(id === page)); }
+    }
     const k = $('#k-kbd');
     if (k) k.classList.toggle('on', exprEl.inputMode === 'text');
   }
 
   // ================================================== expression editing
+  // ---- "元に戻す" for an expression that was cleared (AC) or replaced (history, examples)
+  const undoEl = $('#undo');
+  let undoText = null;
+  function offerUndo(prev) {
+    if (!prev || !prev.trim()) return;
+    undoText = prev;
+    undoEl.hidden = false;
+  }
+  function dropUndo() {
+    if (undoText === null) return;
+    undoText = null;
+    undoEl.hidden = true;
+  }
+  undoEl.addEventListener('pointerdown', (e) => e.preventDefault()); // keep the caret in the field
+  undoEl.addEventListener('click', () => {
+    if (undoText === null) return;
+    const t = undoText;
+    dropUndo();
+    vibrate();
+    exprEl.value = t;
+    exprEl.setSelectionRange(t.length, t.length);
+    exprChanged();
+    focusExpr();
+  });
+  // Replaces the whole expression (a history entry, an example). What was typed can be brought back.
+  function setExpr(text) {
+    const prev = exprEl.value;
+    exprEl.value = text;
+    exprEl.setSelectionRange(text.length, text.length);
+    if (prev.trim() && prev !== text) offerUndo(prev);
+    exprChanged();
+  }
+
   function insert(text, back, isOp) {
+    dropUndo();
     const v = exprEl.value;
     let s = exprEl.selectionStart, e = exprEl.selectionEnd;
     if (s === undefined || s === null) { s = e = v.length; }
@@ -256,9 +354,9 @@
       text = 'ans' + text;
     }
     const sel = v.slice(s, e);
-    if (sel && /\(\)$/.test(text)) {
-      // wrap the selection: sin() + "2" -> sin(2)
-      text = text.slice(0, -1) + sel + ')';
+    if (sel && back) {
+      // wrap the selection: sin() + "2" -> sin(2), integrate(, 0, 1) + "x^2" -> integrate(x^2, 0, 1)
+      text = text.slice(0, text.length - back) + sel + text.slice(text.length - back);
       back = 0;
     }
     exprEl.value = v.slice(0, s) + text + v.slice(e);
@@ -271,13 +369,16 @@
     const s = exprEl.selectionStart, e = exprEl.selectionEnd;
     switch (a) {
       case 'del':
+        if (v) dropUndo();
         if (s !== e) { exprEl.value = v.slice(0, s) + v.slice(e); exprEl.setSelectionRange(s, s); }
         else if (s > 0) {
-          // delete a whole surrogate pair or a whole "name(" when the caret is right after it
+          // delete a whole surrogate pair, or a whole template that is still empty when the caret
+          // is right after its "name(":  sin(|)  integrate(|, 0, 1)  diff(|, x, 2)
           let n = 1;
           const before = v.slice(0, s);
           const m = before.match(/(?:[\p{L}_][\p{L}\p{N}_]*|[√∛∜])\($/u);
-          if (m && v[s] === ')') { n = m[0].length; exprEl.value = v.slice(0, s - n) + v.slice(s + 1); exprEl.setSelectionRange(s - n, s - n); break; }
+          const rest = m && /^(?:, [^(),;[\]]*)*\)/.exec(v.slice(s));
+          if (rest) { n = m[0].length; exprEl.value = v.slice(0, s - n) + v.slice(s + rest[0].length); exprEl.setSelectionRange(s - n, s - n); exprChanged(); break; }
           if (/[\uDC00-\uDFFF]/.test(v[s - 1] || '')) n = 2;
           exprEl.value = v.slice(0, s - n) + v.slice(e);
           exprEl.setSelectionRange(s - n, s - n);
@@ -285,15 +386,17 @@
         exprChanged();
         break;
       case 'clear':
+        offerUndo(v); // AC is next to ⌫: a long expression cleared by mistake can be brought back
         exprEl.value = '';
         exprChanged();
         break;
       case 'eq': commit(); break;
-      case 'page':
-        page = page === 'num' ? 'fn' : 'num';
-        renderPage();
-        updateToolbar();
+      case 'more': {
+        // "ほか…": the function list, showing the functions of this page's field
+        const tab = PAGE_TABS.find((t) => t[0] === page);
+        openCatalog('functions', tab && tab[3]);
         break;
+      }
       case 'kbd': toggleKeyboard(); break;
       case 'left': {
         // a selection collapses to its start; otherwise one character back (a surrogate pair counts as one)
@@ -337,6 +440,7 @@
     if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') { e.preventDefault(); commit(); }
   });
   exprEl.addEventListener('input', (e) => {
+    dropUndo();
     if (!e.isComposing) normalizeField();
     if (/[\r\n]/.test(exprEl.value)) {
       const hadEnd = /[\r\n]\s*$/.test(exprEl.value);
@@ -355,9 +459,9 @@
 
   function autosize() {
     exprEl.style.height = 'auto';
-    const h = exprEl.scrollHeight;
-    exprEl.style.height = Math.min(h, 110) + 'px';
-    exprEl.style.overflowY = h > 110 ? 'auto' : 'hidden';
+    const h = exprEl.scrollHeight, max = Math.round(110 * textScale());
+    exprEl.style.height = Math.min(h, max) + 'px';
+    exprEl.style.overflowY = h > max ? 'auto' : 'hidden';
   }
   function focusExpr() {
     // with inputmode="none" this only shows the caret, not the system keyboard
@@ -427,6 +531,64 @@
     if (!r || !r.result) return '';
     return displayResult({ result: r.result, approx: r.approx, cmp: r.comparison });
   }
+  // ---- matrices in results
+  // The engine prints a matrix on one line, "[1  2; 3  4]": rows separated by "; " and the elements
+  // of a row by two spaces (an element that is more than a number or a name is in parentheses).
+  // In the history and in the preview a matrix with two or more rows is drawn as a grid. Only
+  // the display changes: copying and inserting a result use its text.
+  // Returns the text cut into strings and { rows: [[element, …], …], text } objects.
+  function splitMatrices(text) {
+    if (text.length > 20000 || text.indexOf('[') < 0 || text.indexOf(';') < 0) return [text];
+    const parts = [], n = text.length;
+    let from = 0, i = 0, tries = 0;
+    while (i < n) {
+      const c = text[i];
+      if (c === '"') { const q = text.indexOf('"', i + 1); if (q < 0) break; i = q + 1; continue; }
+      if (c !== '[' || ++tries > 200) { i++; continue; }
+      const rows = [];
+      let row = [], cell = '', depth = 0, j = i + 1, closed = false;
+      for (; j < n; j++) {
+        const d = text[j];
+        if (d === '"') { const q = text.indexOf('"', j + 1); if (q < 0) break; cell += text.slice(j, q + 1); j = q; continue; }
+        if (d === '(' || d === '[') depth++;
+        else if (d === ')' || d === ']') {
+          if (depth === 0) { closed = d === ']'; break; }
+          depth--;
+        } else if (depth === 0 && d === ';') {
+          row.push(cell); rows.push(row); row = []; cell = '';
+          if (text[j + 1] === ' ') j++;
+          continue;
+        } else if (depth === 0 && d === ' ' && text[j + 1] === ' ') {
+          row.push(cell); cell = ''; j++;
+          continue;
+        }
+        cell += d;
+      }
+      row.push(cell); rows.push(row);
+      const cols = rows[0].length;
+      if (closed && rows.length >= 2 && rows.length * cols <= 400 && rows.every((r) => r.length === cols && r.every((x) => x.trim() !== ''))) {
+        if (i > from) parts.push(text.slice(from, i));
+        parts.push({ rows: rows.map((r) => r.map((x) => x.trim())), text: text.slice(i, j + 1) });
+        i = from = j + 1;
+      } else {
+        i++;
+      }
+    }
+    if (from < n) parts.push(text.slice(from));
+    return parts;
+  }
+  function showResult(node, text) {
+    const parts = splitMatrices(text);
+    if (parts.every((x) => typeof x === 'string')) { node.textContent = text; return; }
+    node.textContent = '';
+    for (const part of parts) {
+      if (typeof part === 'string') { node.append(part); continue; }
+      const grid = el('span', { class: 'mx', role: 'img', 'aria-label': part.text });
+      grid.style.gridTemplateColumns = 'repeat(' + part.rows[0].length + ', auto)';
+      for (const r of part.rows) for (const x of r) grid.append(el('span', { text: x }));
+      node.append(grid);
+    }
+  }
   // The engine's messages are in English (libqalculate has no Japanese translation);
   // the common ones are shown in Japanese.
   const MESSAGES_JA = [
@@ -444,6 +606,25 @@
     [/^No unknown variable\/symbol was found\.?$/, () => '解く対象の未知数（変数）が見つかりません'],
     [/^Conversion of only part of an expression is not supported.*$/, () => '式の一部だけを変換することはできません'],
     [/^Unable to find a solution\.?$/, () => '解が見つかりませんでした'],
+    // analysis
+    [/^Unable to integrate the expression\.?$/, () => 'この式は積分できませんでした'],
+    [/^Unable to integrate the expression exactly\.?$/, () => 'この式は厳密には積分できませんでした'],
+    [/^Unable to find limit\.?$/, () => '極限を求められませんでした'],
+    [/^No differential equation found\.?$/, () => '微分方程式が見つかりません（例：dsolve(diff(y, x) = y)）'],
+    [/^Unable to solve differential equation\.?$/, () => 'この微分方程式は解けませんでした'],
+    [/^To avoid division by zero, the following must be true: (.+)\.$/, (m, c) => 'ゼロで割らないための条件：' + c],
+    [/^Was unable to isolate (.+) with the current assumptions\. The assumed (?:type and )?sign was therefore temporarily set as unknown\.?$/,
+      (m, x) => x + ' を実数として求められなかったため、その仮定を外して解きました（複素数の解を含むことがあります）'],
+    [/^Was unable to completely isolate (.+)\.$/, (m, x) => x + ' について完全には解けませんでした'],
+    [/^Was unable to isolate (.+)\.$/, (m, x) => x + ' について解けませんでした'],
+    // matrices and vectors
+    [/^Inverse of singular matrix\.?$/, () => '逆行列がありません（行列式が 0 の行列です）'],
+    [/^Please use the cross\(\), dot\(\), and hadamard\(\) functions for vector multiplication\.?$/,
+      () => 'ベクトルどうしの積は、cross()（外積）、dot()（内積）、hadamard()（要素ごとの積）を使ってください'],
+    [/^The second matrix must have as many rows \(was (\d+)\) as the first has columns \(was (\d+)\) for matrix multiplication\.?$/,
+      (m, r, c) => '行列の積は、左の行列の列の数（' + c + '）と右の行列の行の数（' + r + '）が同じでなければ計算できません'],
+    [/^Argument (\d+), (.+), in (.+)\(\) must be a square matrix\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は正方行列（行と列の数が同じ行列）でなければなりません'],
+    [/^(.+)\(\) requires that all matrices\/vectors have the same dimensions\.?$/, (m, f) => f + '() に渡す行列・ベクトルは、すべて同じ大きさでなければなりません'],
   ];
   function jaMessage(text) {
     for (const [re, f] of MESSAGES_JA) {
@@ -463,7 +644,8 @@
     else if (r.timeout) previewEl.textContent = '…';
     else if (err) { previewEl.textContent = ''; msgEl.textContent = jaMessage(err.text); msgEl.className = 'msg error'; }
     else {
-      previewEl.textContent = resultText(r);
+      showResult(previewEl, resultText(r));
+      fitMatrices(previewEl);
       const warn = (r.messages || []).find((m) => m.type === 'warning');
       if (warn) msgEl.textContent = jaMessage(warn.text);
     }
@@ -483,6 +665,7 @@
     const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 20000, store: true, max_chars: 200000 });
     committing = false;
     clearTimeout(busyTimer);
+    clearInterval(cancelTimer);
     if (!r.ok) {
       previewEl.textContent = '';
       msgEl.textContent = r.code === 'cancelled' ? '計算を中止しました' : (r.error || '計算できませんでした');
@@ -506,6 +689,7 @@
     history.push(entry);
     if (history.length > 300) history = history.slice(-300);
     saveHistory();
+    dropUndo();
     if (exprEl.value.trim() === raw) {
       exprEl.value = '';
       showPreview(null);
@@ -548,8 +732,15 @@
     if (st) st.textContent = h.expr + '、' + displayResult(h);
   }
 
+  // "計算中…（ここをタップで中止）". The engine handles one request at a time, so a preview that was
+  // still running may be the one that gets stopped; the request is repeated until this calculation ends.
+  let cancelTimer = null;
   previewEl.addEventListener('click', () => {
-    if (committing && window.QalcNative && QalcNative.cancel) { QalcNative.cancel(); previewEl.textContent = '中止しています…'; }
+    if (!committing || !window.QalcNative || !QalcNative.cancel) return;
+    previewEl.textContent = '中止しています…';
+    QalcNative.cancel();
+    clearInterval(cancelTimer);
+    cancelTimer = setInterval(() => { if (committing) QalcNative.cancel(); else clearInterval(cancelTimer); }, 400);
   });
 
   // ============================================================ history
@@ -596,23 +787,45 @@
   function renderHistory(scroll) {
     histEl.textContent = '';
     if (!history.length) {
-      histEl.append(el('div', { class: 'empty', html: '式を入力して <b>=</b> を押すと<br>ここに結果が残ります。<br>結果をタップすると式に挿入、<br>長押しでコピーなどができます。' }));
+      // nothing calculated yet: say what to do and offer a few examples to try
+      const chips = el('div', { class: 'ex-chips' });
+      for (const x of STARTERS) chips.append(tapButton({ class: 'ex-chip', text: x }, () => { setExpr(x); focusExpr(); }));
+      histEl.append(el('div', { class: 'empty' },
+        el('div', { class: 'empty-t', html: '式を入力して <b>=</b> を押すと、ここに結果が残ります' }),
+        el('div', { text: '結果をタップで式に挿入、長押しでコピーできます。' }),
+        el('div', { class: 'empty-try', text: '例をタップして試す' }), chips,
+        tapButton({ class: 'btn', text: '式の例・使い方を見る' }, () => openExamples())));
+      histEl.scrollTop = 0; // read from the top (results are followed at the bottom)
+      histPinned = false;
       return;
     }
     for (let i = 0; i < history.length; i++) {
       const h = history[i];
-      const item = el('div', { class: 'h-item' },
-        el('div', { class: 'h-expr', text: h.expr }),
-        el('div', { class: 'h-res', text: displayResult(h) }));
+      const res = el('div', { class: 'h-res' });
+      showResult(res, displayResult(h));
+      const item = el('div', { class: 'h-item' }, el('div', { class: 'h-expr', text: h.expr }), res);
       for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: jaMessage(m.text) }));
       bindLongPress(item, () => historyMenu(i), (target) => {
-        if (target.closest('.h-expr')) { exprEl.value = h.expr; exprEl.setSelectionRange(h.expr.length, h.expr.length); exprChanged(); }
+        if (target.closest('.h-expr')) setExpr(h.expr);
         else insertResult(h);
         focusExpr();
       });
       histEl.append(item);
     }
-    if (scroll) histEl.scrollTop = histEl.scrollHeight;
+    fitMatrices(histEl);
+    if (scroll) { histEl.scrollTop = histEl.scrollHeight; histPinned = true; }
+  }
+  // A matrix that is wider than the place it is shown in gets smaller characters (down to 60 %);
+  // if it is still too wide it can be moved sideways.
+  function fitMatrices(root) {
+    for (const g of root.querySelectorAll('.mx')) {
+      g.style.fontSize = '';
+      let scale = 1;
+      for (let i = 0; i < 4 && scale > 0.6 && g.clientWidth > 0 && g.scrollWidth > g.clientWidth + 1; i++) {
+        scale = Math.max(0.6, scale * g.clientWidth / g.scrollWidth - 0.01);
+        g.style.fontSize = (0.84 * scale).toFixed(3) + 'em'; // 0.84em is the size in style.css
+      }
+    }
   }
   function bindLongPress(node, onLong, onTap) {
     let timer = null, sx = 0, sy = 0, long = false;
@@ -644,9 +857,29 @@
     ]);
     if (a === 'copy-res') copyText(displayText(h.result));
     else if (a === 'copy-expr') copyText(h.expr);
-    else if (a === 'edit') { exprEl.value = h.expr; exprEl.setSelectionRange(h.expr.length, h.expr.length); exprChanged(); }
+    else if (a === 'edit') setExpr(h.expr);
     else if (a === 'ins-ans') insertResult(h);
-    else if (a === 'del') { history.splice(i, 1); saveHistory(); renderHistory(false); }
+    else if (a === 'del') {
+      if (history[i] !== h) return; // the history changed while the menu was open
+      history.splice(i, 1);
+      historyChanged();
+      toast('1 行を削除しました', 5000, ['元に戻す', () => {
+        history.splice(Math.min(i, history.length), 0, h);
+        if (history.length > 300) history = history.slice(-300);
+        historyChanged();
+      }]);
+    }
+  }
+  function historyChanged() {
+    saveHistory();
+    renderHistory(false);
+  }
+  // a button that does not take the focus (and with it the caret) away from the expression field
+  function tapButton(attrs, run) {
+    const b = el('button', attrs);
+    b.addEventListener('pointerdown', (e) => e.preventDefault());
+    b.addEventListener('click', () => { vibrate(); run(); });
+    return b;
   }
 
   // ========================================================= sheet/menu
@@ -681,6 +914,7 @@
   }
 
   const MENU = [
+    ['examples', '💡', '式の例・使い方'],
     ['functions', 'ƒ', '関数の一覧'],
     ['units', '㎏', '単位・通貨の一覧'],
     ['variables', 'π', '変数・定数の一覧'],
@@ -721,8 +955,18 @@
     else if (k === 'rates') openRates();
     else if (k === 'settings') openSettings();
     else if (k === 'about') openAbout();
+    else if (k === 'examples') openExamples();
     else if (k === 'clear') {
-      if (await confirmSheet('計算履歴をすべて消去しますか？', '消去する')) { history = []; saveHistory(); renderHistory(false); }
+      if (!history.length) { toast('履歴はありません', 1400); return; }
+      if (!(await confirmSheet('計算履歴をすべて消去しますか？', '消去する'))) return;
+      const old = history;
+      history = [];
+      historyChanged();
+      toast('履歴を消去しました', 6000, ['元に戻す', () => {
+        history = old.concat(history).slice(-300); // with anything calculated in the meantime
+        historyChanged();
+        histEl.scrollTop = histEl.scrollHeight;
+      }]);
     }
   }
 
@@ -756,6 +1000,140 @@
     return true;
   }
 
+  // ---------------------------------------------------------- examples
+  // Expressions to try: tapping one puts it into the input field (the preview then shows the result).
+  // They are written as the on-screen keys write them (×, −, π); a phone keyboard's * and - work too.
+  const STARTERS = ['60 mph to km/h', '100 USD to JPY', 'solve(x^2 − 5x + 6 = 0)', 'diff(x^3)'];
+  const EXAMPLES = [
+    ['基本の計算', [
+      ['1/3 + 1/4', '分数は分数のまま計算（小数も並べて表示）'],
+      ['2^10', 'べき乗（xʸ キー）'],
+      ['√(2) × √(8)', '平方根（√ キー）。結果は厳密に 4'],
+      ['20!', '階乗（fn → n!）'],
+      ['2400 × 15%', 'パーセント'],
+      ['sin(30°)', '角度に ° を付けると、設定が RAD でも度で計算'],
+      ['e^(i × π)', '複素数（i は虚数単位）'],
+      ['(3 + 4i) × (1 − 2i)', '複素数の計算（abs は絶対値、arg は偏角）'],
+      ['1000000 / 7 to fraction', '結果を分数で表示']
+    ]],
+    ['単位の変換', [
+      ['5 km to mi', '長さ。「to」は → キーで入力'],
+      ['170 cm to ft', '身長をフィートとインチで'],
+      ['60 mph to km/h', '速さ'],
+      ['100 °F to °C', '温度'],
+      ['30 坪 to m²', '坪を平方メートルに（単位の一覧に「日本の単位」があります）'],
+      ['1.5 h + 45 min', '単位の付いた値どうしの計算'],
+      ['80 kg × 9.8 m/s² to N', '単位ごと計算して、別の単位で表示'],
+      ['500 GB / (20 MB/s) to h', '時間の見積もり']
+    ]],
+    ['通貨の換算', [
+      ['100 USD to JPY', 'ドルを円に（レートは「為替レートの更新」で最新に）'],
+      ['50 EUR to JPY', 'ユーロを円に'],
+      ['10000 JPY to USD', '円をドルに'],
+      ['1 BTC to JPY', 'ビットコイン']
+    ]],
+    ['方程式', [
+      ['solve(x^2 − 5x + 6 = 0)', '方程式を解く'],
+      ['x^2 = 16', '等式をそのまま入力しても解ける'],
+      ['multisolve([x + y = 5, x − y = 1], [x, y])', '連立方程式'],
+      ['3x + 2 > 11', '不等式']
+    ]],
+    ['微分', [
+      ['diff(x^3 + 2x)', '微分（「解析」のキー → d/dx）'],
+      ['diff(x^2 × sin(x))', '積の微分。結果は式のまま表示'],
+      ['diff(x^5, x, 2)', '2 階微分（3 つ目が階数。d²/dx² キー）'],
+      ['diff(x^2 × y^3, y)', '偏微分（y で微分。∂/∂y キー）'],
+      ['diff(x^3, x, 1, 2)', 'x = 2 での微分係数（4 つ目が x の値）'],
+      ['extremum(x^3 − 3x)', '極値をとる x（極値 キー）']
+    ]],
+    ['積分', [
+      ['integrate(1/x)', '不定積分（∫ キー）。C は積分定数'],
+      ['integrate(x^2 × sin(x), 0, π)', '定積分（∫ₐᵇ キー）。下端、上端の順'],
+      ['integrate(e^(−x^2), −∞, ∞)', '広義積分（∞ キー）。ガウス積分'],
+      ['integrate(integrate(x × y, 0, 1, x), 0, 2, y)', '重積分（4 つ目が積分する変数）'],
+      ['integrate(√(1 − x^2), −1, 1)', '半円の面積。結果は厳密に π/2'],
+      ['romberg(sin(x)/x, 1, 2)', '数値積分（ロンバーグ法）']
+    ]],
+    ['極限・級数・微分方程式', [
+      ['limit(sin(x)/x, 0)', '極限（lim キー）'],
+      ['limit((1 + 1/x)^x, ∞)', '無限大での極限'],
+      ['limit(1/x, 0, x, 1)', '右からの極限（最後の 1 が右側、−1 が左側）'],
+      ['sum(x^2, 1, 10)', '総和（Σ キー）。x = 1 から 10 まで'],
+      ['product(x, 1, 5)', '総乗（Π キー）'],
+      ['dsolve(diff(y, x) = −2y, 5)', '微分方程式 y′ = −2y、y(0) = 5（dsolve キー）'],
+      ['newtonsolve(cos(x) = x, 1)', '方程式の数値解（ニュートン法、初期値 1）']
+    ]],
+    ['行列', [
+      ['[1, 2; 3, 4] × [5, 6; 7, 8]', '行列の積。「行列」のキーで入力（; が行の区切り）'],
+      ['[1, 2; 3, 4]^−1', '逆行列（A⁻¹ キー）'],
+      ['det([1, 2, 3; 4, 5, 6; 7, 8, 10])', '行列式（det キー）'],
+      ['transpose([1, 2, 3; 4, 5, 6])', '転置行列（Aᵀ キー）'],
+      ['[2, 1; 1, 3]^−1 × [3; 5]', '連立一次方程式 A x = b を解く'],
+      ['rref([2, 1, 3; 1, 3, 5])', '行基本変形（行簡約階段形）'],
+      ['rk([1, 2; 2, 4])', '階数（ランク）。trace はトレース'],
+      ['solve(det([2, 1; 1, 2] − x × identity(2)) = 0)', '固有値（固有方程式を解く）']
+    ]],
+    ['ベクトル', [
+      ['dot([1, 2, 3], [4, 5, 6])', '内積'],
+      ['cross([1, 0, 0], [0, 1, 0])', '外積'],
+      ['norm([3, 4])', '長さ（ノルム）'],
+      ['[1, 2, 3] + 2 × [4, 5, 6]', '和とスカラー倍']
+    ]],
+    ['進数・整数', [
+      ['255 to hex', '16進数に（to bin、to oct も）'],
+      ['0xFF + 0b1010', '16進数と2進数をまぜて計算'],
+      ['2026 to roman', 'ローマ数字'],
+      ['factor(360)', '素因数分解'],
+      ['gcd(84, 36)', '最大公約数（lcm は最小公倍数）']
+    ]],
+    ['日付', [
+      ['today + 100 days', '100 日後の日付'],
+      ['days(today, "2027-01-01")', '2 つの日付の間の日数'],
+      ['"2026-12-25" − 3 weeks', '日付から期間を引く']
+    ]],
+    ['統計・誤差・定数', [
+      ['mean(3, 5, 8, 12)', '平均（median は中央値、stdev は標準偏差）'],
+      ['(5 ± 0.2) m × (3 ± 0.1) m', '誤差（不確かさ）の伝わり方'],
+      ['1 g × c^2 to kWh', '物理定数（c は光速）'],
+      ['planck × 500 THz to eV', 'プランク定数を使った計算'],
+      ['gamma(1/2)', 'ガンマ関数（zeta、erf、besselj などの特殊関数も使えます）']
+    ]]
+  ];
+  const TIPS = [
+    '入力している間に結果が下に表示されます。= を押すと確定して、履歴に残ります。',
+    '履歴の結果をタップすると式に挿入、式をタップするともう一度編集、長押しでコピーや削除ができます。',
+    '→ キーは「to」（単位・通貨・進数の変換）です。例：5 km → mi',
+    'キーは「123」「関数」「解析」「行列」のタブで切り替えます。⌨ キーでスマホのキーボードも使えます。',
+    '「解析」には微分・積分・極限・総和・微分方程式、「行列」には行列の入力と行列式・逆行列などのキーがあります。「ほか…」でその分野の関数の一覧が開きます。',
+    '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)',
+    '行列は [1, 2; 3, 4] のように、要素を「,」、行を「;」で区切って入力します。結果の行列は履歴に表の形で表示されます。',
+    '上の「RAD」「自動」「10進」をタップすると、角度の単位、厳密・近似、結果の進数が切り替わります。',
+    '関数・単位・定数は、メニューの一覧から日本語でも探せます（例：「積分」「マイル」「光速」）。',
+    'グラフはメニューの「グラフ」から。y = f(x) の 2D と、z = f(x, y) の 3D が描けます。diff(x^3 − 3x) のように、微分や積分の式もそのまま描けます。',
+    'AC で消した式は、すぐ後に出る「元に戻す」で戻せます。'
+  ];
+  function useExample(text) {
+    while (panelStack.length) closePanel();
+    setExpr(text);
+    focusExpr();
+  }
+  function openExamples() {
+    return panel('examples', '式の例・使い方', (p) => {
+      p.body.append(el('div', { class: 'section-title', text: '式の例（タップすると入力欄に入ります）' }));
+      for (const [group, rows] of EXAMPLES) {
+        const box = el('div', { class: 'card ex-group' }, el('div', { class: 'ex-title', text: group }));
+        for (const [text, note] of rows) {
+          box.append(el('button', { class: 'ex-row', onclick: () => useExample(text) },
+            el('span', { class: 'mono ex-expr', text }), el('span', { class: 'ex-note', text: note })));
+        }
+        p.body.append(box);
+      }
+      p.body.append(el('div', { class: 'section-title', text: '使い方のヒント' }),
+        el('div', { class: 'card' }, el('ul', { class: 'tips' }, ...TIPS.map((t) => el('li', { text: t })))),
+        el('div', { class: 'form-hint', text: '式の書き方は Qalculate! と同じです。使える関数は「関数の一覧」、単位と通貨は「単位・通貨の一覧」にあります。' }));
+    });
+  }
+
   // ---------------------------------------------------------- catalogs
   const catalogs = {};
   async function loadCatalog(kind) {
@@ -764,12 +1142,14 @@
     if (!r.ok) throw new Error(r.error || 'catalog');
     const hidden = HIDDEN_ITEMS[kind] || [];
     const items = r.items.filter((it) => hidden.indexOf(it.name) < 0);
+    // Japanese names: shown beside the English title and used by the search
+    const names = kind === 'functions' ? FUNC_JA : kind === 'variables' ? VAR_JA : JA_NAMES;
     for (const it of items) {
       it._cat = it.category || 'その他';
       it._top = it._cat.split('/')[0];
-      const ja = (JA_NAMES[it.abbr] || JA_NAMES[it.name] || '') + ' ' + (CATEGORY_JA[it._top] || '');
+      it._ja = own(names, it.name) || (kind === 'units' && own(names, it.abbr)) || '';
+      const ja = it._ja + ' ' + it._cat.split('/').map((c) => own(CATEGORY_JA, c) || '').join(' ');
       it._q = [it.name, it.abbr, it.display, it.title, it.description, it._cat, ja].join(' ').toLowerCase();
-      it._ja = JA_NAMES[it.abbr] || JA_NAMES[it.name] || '';
     }
     items.sort((a, b) => (a.title || a.name).localeCompare(b.title || b.name));
     catalogs[kind] = items;
@@ -790,22 +1170,102 @@
     'Statistics': '統計', 'Trigonometry': '三角関数', 'Special Functions': '特殊関数', 'Step Functions': 'ステップ関数',
     'Utilities': 'ユーティリティ', 'Unit Conversion': '単位変換', 'Data Sets': 'データセット', 'Physics': '物理',
     'Constants': '定数', 'Large Numbers': '大きな数', 'Small Numbers': '小さな数', 'Unknowns': '未知数',
-    'User variables': 'ユーザー定義', 'User functions': 'ユーザー定義', 'Temporary': '一時的'
+    'User variables': 'ユーザー定義', 'User functions': 'ユーザー定義', 'Temporary': '一時的',
+    'Japanese Units': '日本の単位', 'Typography': '活字', 'Substance': '物質量', 'Basic Constants': '基本の定数',
+    'Physical Constants': '物理定数', 'Special Numbers': '特別な数', 'Traditional Numbers': '昔からの数え方'
   };
+  // Japanese names of units and currencies, by the engine's name or abbreviation of the unit:
+  // the first word is shown beside the English title, all words are found by the search
   const JA_NAMES = {
-    JPY: '円 日本円', USD: 'ドル 米ドル アメリカドル', EUR: 'ユーロ', GBP: 'ポンド 英ポンド', CNY: '元 人民元 中国',
+    JPY: '円 日本円', USD: 'ドル 米ドル アメリカドル', EUR: 'ユーロ', GBP: 'ポンド 英ポンド イギリス', CNY: '元 人民元 中国',
     KRW: 'ウォン 韓国', TWD: '台湾ドル', HKD: '香港ドル', AUD: '豪ドル オーストラリアドル', CAD: 'カナダドル',
     CHF: 'スイスフラン', BTC: 'ビットコイン', PEN: 'ソル ペルー', BRL: 'レアル ブラジル', INR: 'ルピー インド',
     THB: 'バーツ タイ', VND: 'ドン ベトナム', PHP: 'ペソ フィリピン', MXN: 'ペソ メキシコ', SGD: 'シンガポールドル',
     NZD: 'ニュージーランドドル', RUB: 'ルーブル ロシア', IDR: 'ルピア インドネシア', MYR: 'リンギット マレーシア',
-    m: 'メートル', km: 'キロメートル', cm: 'センチメートル', mm: 'ミリメートル', ft: 'フィート', in: 'インチ',
-    yd: 'ヤード', mi: 'マイル', nmi: '海里', g: 'グラム', kg: 'キログラム', t: 'トン', lb: 'ポンド', oz: 'オンス',
-    s: '秒', min: '分', h: '時間', d: '日', wk: '週', yr: '年', L: 'リットル', a: 'アール', ha: 'ヘクタール',
-    mph: 'マイル毎時', kph: 'キロメートル毎時', '°C': '摂氏 度', '°F': '華氏', K: 'ケルビン', J: 'ジュール',
-    cal: 'カロリー', W: 'ワット', V: 'ボルト', A: 'アンペア', N: 'ニュートン', Pa: 'パスカル', atm: '気圧',
-    Hz: 'ヘルツ', B: 'バイト', bit: 'ビット', tsubo: '坪', ri: '里', shaku: '尺', sun: '寸', ken: '間', go: '合', sho: '升'
+    SEK: 'クローナ スウェーデン', NOK: 'クローネ ノルウェー', DKK: 'クローネ デンマーク', CZK: 'コルナ チェコ',
+    PLN: 'ズロチ ポーランド', HUF: 'フォリント ハンガリー', TRY: 'リラ トルコ', ILS: 'シェケル イスラエル', ZAR: 'ランド 南アフリカ',
+    m: 'メートル', km_c: 'キロメートル', cm_c: 'センチメートル', mm_c: 'ミリメートル', um_c: 'マイクロメートル', nm_c: 'ナノメートル',
+    in: 'インチ', ft: 'フィート', yd: 'ヤード', mi: 'マイル', nmi: '海里', au: '天文単位', ly: '光年', pc: 'パーセク',
+    sqm: '平方メートル', sqkm: '平方キロメートル', a: 'アール', ha: 'ヘクタール', acre: 'エーカー', sqft: '平方フィート',
+    cum: '立方メートル', L: 'リットル', ml_c: 'ミリリットル', dl_c: 'デシリットル', cucm: '立方センチメートル cc', gal: 'ガロン',
+    cup: 'カップ', tsp: '小さじ', tbsp: '大さじ', bbl: 'バレル',
+    g: 'グラム', kg_c: 'キログラム', t: 'トン', lb: 'ポンド', oz: 'オンス', carat: 'カラット',
+    s: '秒', min: '分', h: '時間', d: '日', week: '週', month: '月', year: '年',
+    m_p_s: 'メートル毎秒 秒速', km_p_h: 'キロメートル毎時 時速', mph: 'マイル毎時', knot: 'ノット',
+    oC: '摂氏 セルシウス度', oF: '華氏', K: 'ケルビン',
+    J: 'ジュール', kJ_c: 'キロジュール', cal: 'カロリー', kcal_c: 'キロカロリー', W_h: 'ワット時', kW_h: 'キロワット時', eV: '電子ボルト',
+    W: 'ワット', hp: '馬力', N: 'ニュートン', Pa: 'パスカル', bar: 'バール', atm: '気圧', mmHg: '水銀柱ミリメートル',
+    V: 'ボルト', A: 'アンペア', ohm: 'オーム', F: 'ファラド', C: 'クーロン', Hz: 'ヘルツ', T: 'テスラ',
+    bit: 'ビット', B: 'バイト', kbyte_c: 'キロバイト', Mbyte_c: 'メガバイト', Gbyte_c: 'ギガバイト', Tbyte_c: 'テラバイト',
+    rad: 'ラジアン', deg: '度', gra: 'グラード', rpm: '回転毎分', lx: 'ルクス', lm: 'ルーメン', cd: 'カンデラ', mol: 'モル',
+    Bq: 'ベクレル', Sv: 'シーベルト', Gy: 'グレイ', dB: 'デシベル', km_p_l: 'キロメートル毎リットル 燃費', pt: 'ポイント'
   };
-  function openCatalog(kind) {
+  // functions and variables (constants): the first word is shown, all words are found by the search
+  const FUNC_JA = {
+    solve: '方程式を解く', multisolve: '連立方程式を解く', solve2: '2元連立方程式を解く', dsolve: '微分方程式を解く',
+    newtonsolve: 'ニュートン法で解く', secantsolve: '割線法で解く', sum: '総和 シグマ', product: '総乗',
+    diff: '微分', integrate: '積分', limit: '極限', extremum: '極値', romberg: '数値積分（ロンバーグ法）',
+    sqrt: '平方根 ルート', cbrt: '立方根', root: 'n乗根', sq: '2乗', exp: '指数関数', ln: '自然対数', log: '対数（底を指定）',
+    log2: '2を底とする対数', log10: '常用対数', exp2: '2のべき乗', exp10: '10のべき乗',
+    sin: '正弦 サイン', cos: '余弦 コサイン', tan: '正接 タンジェント', arcsin: '逆正弦 アークサイン', arccos: '逆余弦 アークコサイン',
+    arctan: '逆正接 アークタンジェント', sinh: '双曲線正弦', cosh: '双曲線余弦', tanh: '双曲線正接', arsinh: '逆双曲線正弦',
+    arcosh: '逆双曲線余弦', artanh: '逆双曲線正接', atan2: '逆正接（2引数）', sec: '正割', csc: '余割', cot: '余接', sinc: 'sinc関数',
+    factorial: '階乗', factorial2: '二重階乗', binomial: '二項係数', perm: '順列', comb: '組合せ', derangements: '完全順列',
+    re: '実部', im: '虚部', arg: '偏角', conj: '共役複素数', abs: '絶対値',
+    gcd: '最大公約数', lcm: '最小公倍数', divisors: '約数', factor: '因数分解 素因数分解', fibonacci: 'フィボナッチ数',
+    totient: 'オイラーのトーシェント関数', bernoulli: 'ベルヌーイ数', digitSum: '各桁の和', sgn: '符号', rem: '余り（剰余）', mod: '剰余（mod）',
+    powmod: 'べき剰余', parallel: '並列和（並列抵抗）', numerator: '分子', denominator: '分母', div: '整数の割り算（商）', neg: '符号反転',
+    even: '偶数かどうか', odd: '奇数かどうか', isprime: '素数かどうか', primes: '素数の一覧', nextprime: '次の素数', prevprime: '前の素数',
+    nthprime: 'n番目の素数', primePi: '素数の個数', round: '四捨五入 丸め', floor: '切り捨て', ceil: '切り上げ', trunc: '0の方向へ切り捨て',
+    int: '整数部分', frac: '小数部分', clip: '範囲に収める', base: '進数を指定して読む', bin: '2進数として読む', oct: '8進数として読む',
+    dec: '10進数として読む', hex: '16進数として読む', roman: 'ローマ数字として読む', coeff: '係数', degree: '多項式の次数',
+    det: '行列式', inv: '逆行列', transpose: '転置行列', identity: '単位行列', rank: '順位', rk: '行列の階数（ランク）', adj: '余因子行列',
+    cofactor: '余因子', rref: '行簡約階段形', dot: '内積', cross: '外積', norm: 'ノルム（長さ）', magnitude: '大きさ', vector: 'ベクトルを作る',
+    matrix: '行列を作る', rows: '行数', columns: '列数', element: '要素を取り出す', dimension: '要素数', sort: '並べ替え', unique: '重複を除く',
+    count: '出現回数', trace: 'トレース（対角成分の和） 跡', permanent: 'パーマネント', kron: 'クロネッカー積', multiply: '要素ごとの積（アダマール積）',
+    divide: '要素ごとの商', pow: '要素ごとのべき乗', row: '行を取り出す', column: '列を取り出す', part: '行列の一部を取り出す',
+    horzcat: '行列を横につなぐ', vertcat: '行列を縦につなぐ', reshape: '行列の形を変える', triple_product: 'スカラー三重積',
+    genvector: 'ベクトルを生成', colon: '等間隔の数のベクトル', entrywise: '要素ごとに関数を適用',
+    multilimit: '多変数の極限', Si: '正弦積分', Ci: '余弦積分', Ei: '指数積分', li: '対数積分', erfc: '相補誤差関数',
+    digamma: 'ディガンマ関数', igamma: '不完全ガンマ関数（上側）', gammainc: '不完全ガンマ関数（下側）',
+    fresnels: 'フレネル積分 S', fresnelc: 'フレネル積分 C',
+    total: '合計', mean: '平均', median: '中央値', mode: '最頻値', min: '最小値', max: '最大値', range: '範囲（最大と最小の差）',
+    number: 'データの個数', stdev: '標準偏差（標本）', stdevp: '標準偏差（母集団）', var: '分散（標本）', varp: '分散（母集団）',
+    stderr: '標準誤差', percentile: 'パーセンタイル', quartile: '四分位数', harmmean: '調和平均', geomean: '幾何平均',
+    rms: '二乗平均平方根', cov: '共分散', pearson: '相関係数（ピアソン）', spearman: '順位相関係数（スピアマン）',
+    normdist: '正規分布', binomdist: '二項分布', poisson: 'ポアソン分布', tdist: 't分布', chisqdist: 'カイ二乗分布',
+    rand: '乱数', randnorm: '正規乱数', randbetween: '整数の乱数（範囲を指定）', linearfit: '直線の当てはめ（回帰）',
+    date: '日付を作る', days: '日数の差', weekday: '曜日', week: '週番号', month: '月', day: '日', year: '年', yearday: '年内の通算日',
+    timestamp: 'UNIX時刻にする', stamptodate: 'UNIX時刻を日付にする', addDays: '日数を加える', addMonths: '月数を加える', addYears: '年数を加える',
+    daysInMonth: 'その月の日数', lunarphase: '月の位相（月齢）',
+    pmt: 'ローンの返済額', fv: '将来価値', pv: '現在価値', compound: '複利', rate: '投資の利率', nper: '投資の期間数',
+    effect: '実効年利率', nominal: '名目年利率',
+    hypot: '斜辺の長さ', circle: '円の面積', circumference: '円周', sphere: '球の体積', sphere_sa: '球の表面積', cylinder: '円柱の体積',
+    cone: '円錐の体積', cube: '立方体の体積', rect: '長方形の面積', square: '正方形の面積', triangle: '三角形の面積', trapezoid: '台形の面積',
+    pyramid: '角錐の体積',
+    gamma: 'ガンマ関数', beta: 'ベータ関数', zeta: 'ゼータ関数', erf: '誤差関数', besselj: 'ベッセル関数（第1種）', lambertw: 'ランベルトのW関数',
+    heaviside: 'ヘビサイドの階段関数', dirac: 'ディラックのデルタ関数',
+    if: '条件で分ける', for: '繰り返し', xor: 'ビットごとの排他的論理和', shift: 'ビットシフト', bitcmp: 'ビット反転',
+    uncertainty: '不確かさ（誤差）', interval: '区間', len: '文字数', char: '文字コードから文字', code: '文字コード', concatenate: '文字列の連結',
+    bmi: 'BMI（体格指数）', geodistance: '2地点間の距離（緯度・経度）', save: '変数・関数として保存', nounit: '単位を取り除く'
+  };
+  const VAR_JA = {
+    pi: '円周率 パイ', e: '自然対数の底 ネイピア数', i: '虚数単位', golden: '黄金比', euler: 'オイラーの定数', tau: 'タウ（2π）',
+    pythagoras: 'ピタゴラスの定数（√2）', catalan: 'カタランの定数', apery: 'アペリーの定数',
+    c: '光速', planck: 'プランク定数', planck2pi: '換算プランク定数（ディラック定数）', newtonian_constant: '万有引力定数',
+    standard_gravity: '標準重力加速度', avogadro: 'アボガドロ定数', boltzmann: 'ボルツマン定数', gas_constant: '気体定数',
+    faraday: 'ファラデー定数', stefan: 'シュテファン＝ボルツマン定数', elementary_charge: '電気素量', electric_constant: '真空の誘電率',
+    magnetic_constant: '真空の透磁率', coulombs_constant: 'クーロン定数', fine_structure: '微細構造定数', rydberg: 'リュードベリ定数',
+    bohr_radius: 'ボーア半径', electron_mass: '電子の質量', proton_mass: '陽子の質量', neutron_mass: '中性子の質量',
+    atomic_mass_constant: '原子質量定数',
+    today: '今日', yesterday: '昨日', tomorrow: '明日', now: '現在の日時',
+    ans: '直前の答え', ans2: '2つ前の答え', ans3: '3つ前の答え', ans4: '4つ前の答え', ans5: '5つ前の答え',
+    plus_infinity: '正の無限大', minus_infinity: '負の無限大', undefined: '未定義', true: '真', false: '偽',
+    percent: 'パーセント（百分率）', permille: 'パーミル（千分率）', ppm: '百万分率', ppb: '十億分率',
+    hundred: '百', thousand: '千', million: '百万', billion: '十億', trillion: '一兆', dozen: 'ダース（12）', gross: 'グロス（144）',
+    googol: 'グーゴル（10の100乗）', x: '未知数', y: '未知数', z: '未知数', n: '未知数（整数）', precision: '有効桁数'
+  };
+  function openCatalog(kind, cat) {
     const p = panel('cat-' + kind, CATALOG_TITLE[kind], (p) => {
       const search = el('input', { class: 'search', type: 'search', placeholder: '検索（名前・説明）', autocomplete: 'off' });
       const cats = el('div', { class: 'cats' });
@@ -817,15 +1277,42 @@
         const items = catalogs[kind] || [];
         const q = p.state.q.trim().toLowerCase();
         const shown = items.filter((it) => (!p.state.cat || it._top === p.state.cat) && (!q || it._q.indexOf(q) >= 0));
+        // best matches first: the name itself, then names and titles that start with or contain
+        // the words, then what was only found in a description or a category (the sort is stable)
+        if (q) {
+          const rank = (it) => {
+            const name = String(it.name || '').toLowerCase(), abbr = String(it.abbr || '').toLowerCase();
+            const title = String(it.title || '').toLowerCase(), ja = it._ja.toLowerCase();
+            if (name === q || abbr === q || ja.split(' ').indexOf(q) >= 0) return 0;
+            if (name.indexOf(q) === 0 || title.indexOf(q) === 0 || ja.indexOf(q) >= 0) return 1;
+            return title.indexOf(q) >= 0 || name.indexOf(q) >= 0 ? 2 : 3;
+          };
+          const ranks = new Map(shown.map((it) => [it, rank(it)]));
+          shown.sort((x, y) => ranks.get(x) - ranks.get(y));
+        }
         count.textContent = shown.length + ' 件';
         list.textContent = '';
         const frag = document.createDocumentFragment();
         for (const it of shown.slice(0, 400)) frag.append(catalogRow(kind, it));
         if (shown.length > 400) frag.append(el('div', { class: 'card muted', text: '先頭の 400 件を表示しています。検索で絞り込んでください。' }));
         list.append(frag);
-        for (const b of cats.children) b.classList.toggle('on', b.dataset.cat === p.state.cat);
+        for (const b of cats.children) {
+          const on = b.dataset.cat === p.state.cat;
+          b.classList.toggle('on', on);
+          // the row of categories scrolls sideways: keep the chosen one in view
+          if (on) {
+            const cr = cats.getBoundingClientRect(), br = b.getBoundingClientRect();
+            if (br.left < cr.left || br.right > cr.right) cats.scrollLeft += br.left - cr.left - (cr.width - br.width) / 2;
+          }
+        }
       };
       search.addEventListener('input', debounce(() => { p.state.q = search.value; render(); }, 150));
+      // show one category from the start (the "ほか…" key of the 解析 and 行列 key pages)
+      p.setCategory = (c) => {
+        p.state.cat = c; p.state.q = ''; search.value = '';
+        p.body.scrollTop = 0;
+        if (catalogs[kind]) render();
+      };
       const load = () => { list.textContent = ''; list.append(el('div', { class: 'spinner' })); loadCatalog(kind).then(show).catch(failed); };
       const failed = (e) => {
         list.textContent = '';
@@ -837,29 +1324,34 @@
         const tops = Array.from(new Set(items.map((i) => i._top))).sort((a, b) => a.localeCompare(b));
         if (p.state.cat && tops.indexOf(p.state.cat) < 0) p.state.cat = '';
         cats.append(el('button', { 'data-cat': '', text: 'すべて', onclick: () => { p.state.cat = ''; render(); } }));
-        for (const t of tops) cats.append(el('button', { 'data-cat': t, text: CATEGORY_JA[t] || t, onclick: () => { p.state.cat = t; render(); } }));
+        for (const t of tops) cats.append(el('button', { 'data-cat': t, text: own(CATEGORY_JA, t) || t, onclick: () => { p.state.cat = t; render(); } }));
         render();
       };
       load();
     });
+    if (cat) p.setCategory(cat);
     return p;
   }
   function catalogRow(kind, it) {
     const acts = el('div', { class: 'acts' });
-    const row = el('div', { class: 'item' }, el('div', { class: 'row1' }, el('div', { class: 't', text: it.title || it.name }), acts));
+    const row = el('div', { class: 'item' }, el('div', { class: 'row1' },
+      el('div', { class: 't' }, it.title || it.name, it._ja ? el('span', { class: 'ja', text: it._ja.split(' ')[0] }) : null), acts));
     if (kind === 'functions') {
       row.append(el('div', { class: 'n', text: it.syntax }));
       acts.append(el('button', { class: 'btn primary', text: '挿入', onclick: (e) => { e.stopPropagation(); useItem(it.name + '()', 1); } }));
     } else if (kind === 'units') {
-      const names = it.abbr && it.abbr !== it.name ? it.abbr + '  (' + it.name + ')' : it.name;
-      row.append(el('div', { class: 'n', text: names + (it.display && it.display !== it.abbr ? '  ' + it.display : '') }));
-      acts.append(el('button', { class: 'btn', text: '変換', onclick: (e) => { e.stopPropagation(); useItem(' to ' + (it.abbr || it.name), 0); } }));
-      acts.append(el('button', { class: 'btn primary', text: '挿入', onclick: (e) => { e.stopPropagation(); useItem(it.abbr || it.name, 0); } }));
+      // "abbr" is the text the engine has checked to be read as this unit (km, km/h, kW·h, $, °C);
+      // the internal names of composite units (km_c, km_p_h) are not shown
+      const text = it.abbr || it.name;
+      const names = it.composite || text === it.name ? text : text + '  (' + it.name + ')';
+      row.append(el('div', { class: 'n', text: names + (it.display && it.display !== text ? '  ' + it.display : '') }));
+      acts.append(el('button', { class: 'btn', text: '変換', onclick: (e) => { e.stopPropagation(); useItem(' to ' + text, 0); } }));
+      if (it.insert !== false) acts.append(el('button', { class: 'btn primary', text: '挿入', onclick: (e) => { e.stopPropagation(); useItem(text, 0); } }));
     } else {
       row.append(el('div', { class: 'n', text: it.name + (it.display && it.display !== it.name ? '  (' + it.display + ')' : '') + (it.value ? '  = ' + it.value : '') }));
       acts.append(el('button', { class: 'btn primary', text: '挿入', onclick: (e) => { e.stopPropagation(); useItem(it.name, 0); } }));
     }
-    row.append(el('div', { class: 'c', text: it._cat.split('/').map((c) => CATEGORY_JA[c] || c).join(' / ') + (it._ja ? '　' + it._ja.split(' ')[0] : '') }));
+    row.append(el('div', { class: 'c', text: it._cat.split('/').map((c) => own(CATEGORY_JA, c) || c).join(' / ') }));
     if (it.description) row.append(el('div', { class: 'd', text: it.description }));
     row.addEventListener('click', () => row.classList.toggle('expanded'));
     return row;
@@ -920,6 +1412,7 @@
         document.activeElement && document.activeElement.blur();
         P.exprs = ta.value.split('\n').map(normalizeExpr).filter(Boolean).slice(0, 6);
         P.view = null;
+        P.mark = null; P.tip.style.display = 'none'; // the point that was tapped belongs to the graph before
         compute(normalizeExpr(xmin.value), normalizeExpr(xmax.value));
       });
       setupPlotGestures(wrap);
@@ -1576,7 +2069,8 @@
       ['max_decimals', '小数点以下の最大桁数', [['-1', '制限なし'], ['0', '0'], ['2', '2'], ['4', '4'], ['6', '6'], ['8', '8'], ['10', '10']]],
       ['base', '結果の進数', [['10', '10進数'], ['16', '16進数'], ['2', '2進数'], ['8', '8進数'], ['12', '12進数'], ['-1', 'ローマ数字']]],
       ['notation', '指数表記', [['auto', '自動'], ['sci', '科学表記（1000 以上などで指数）'], ['eng', '工学表記（指数は 3 の倍数）'], ['pure', '常に指数表記'], ['none', '使わない（全桁を表示）']], '「使わない」にすると大きな整数も全桁を表示します'],
-      ['grouping', '3桁ごとに区切る', 'bool']
+      ['grouping', '3桁ごとに区切る', 'bool'],
+      ['text_size', '文字の大きさ', [['normal', '標準'], ['large', '大きめ'], ['xlarge', '特大']], '履歴・入力欄・結果の文字の大きさ']
     ]],
     ['操作', [
       ['preview', '入力中に結果を表示', 'bool'],
@@ -1626,6 +2120,7 @@
   function settingsChanged() {
     saveSettings();
     updateChips();
+    applyTextSize();
     exprChanged();
   }
   function updateChips() {
@@ -1660,16 +2155,8 @@
           el('div', { class: 'muted', text: (app.device || '') + (app.android ? '（Android ' + app.android + '）' : '') })),
         el('div', { class: 'card', html:
           '計算はすべて、オープンソースの電卓 Qalculate! の計算エンジン <b>libqalculate</b> が行います。QCalc は、その公式ソースコードを Android（arm64）向けにビルドして組み込んだ、スマホ向けの電卓です。Qalculate! の開発者が作ったアプリではありません。<br><br>' +
-          '式の書き方は Qalculate! と同じです。例：<br>' +
-          '<span class="mono">5 km to mi</span>（単位変換）<br>' +
-          '<span class="mono">100 USD to JPY</span>（通貨）<br>' +
-          '<span class="mono">solve(x^2 − 5x + 6 = 0)</span>（方程式）<br>' +
-          '<span class="mono">integrate(x^2 sin(x), 0, pi)</span>（積分）<br>' +
-          '<span class="mono">diff(x^3)</span>（微分）<br>' +
-          '<span class="mono">[[1,2],[3,4]]^−1</span>（逆行列）<br>' +
-          '<span class="mono">255 to hex</span>（進数）<br>' +
-          '<span class="mono">today + 100 days</span>（日付）<br>' +
-          '<span class="mono">(5 ± 0.2) m × (3 ± 0.1) m</span>（誤差の伝播）' }),
+          '式の書き方は Qalculate! と同じです。' },
+          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: '式の例・使い方を見る', onclick: (e) => { e.preventDefault(); openExamples(); } }))),
         el('div', { class: 'card', html:
           '<b>プライバシー</b><br>QCalc は個人情報を集めず、どこにも送りません。インターネットを使うのは為替レートの取得（欧州中央銀行など 3 か所からのダウンロード）だけで、そのときもあなたの情報は送りません。計算の履歴や設定は端末の中に保存し、開発者に送ることはありません。' },
           el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: 'プライバシーポリシー', onclick: (e) => { e.preventDefault(); openUrl(PRIVACY_URL); } }))),
@@ -1756,6 +2243,7 @@
   }
   async function boot() {
     applyTheme();
+    applyTextSize();
     buildDrawer();
     buildKeypad();
     updateChips();

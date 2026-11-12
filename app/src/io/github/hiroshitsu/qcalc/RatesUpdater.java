@@ -23,8 +23,12 @@ final class RatesUpdater {
     private RatesUpdater() {
     }
 
-    /** Synchronized: an automatic and a manual update must not write the same files at once. */
-    static synchronized String update(Engine engine, int id) {
+    /**
+     * Synchronized: an automatic and a manual update must not write the same files at once.
+     * appVersion (for example "1.1.0") is sent to the servers in the User-Agent header.
+     */
+    static synchronized String update(Engine engine, int id, String appVersion) {
+        String userAgent = "QCalc/" + cleanVersion(appVersion) + " (Android; libqalculate 5.13.2)";
         JSONObject result = new JSONObject();
         try {
             result.put("id", id);
@@ -40,7 +44,7 @@ final class RatesUpdater {
                 boolean ok = false;
                 for (String url : urls) {
                     try {
-                        byte[] data = download(url);
+                        byte[] data = download(url, userAgent);
                         if (isValid(index, new String(data, "UTF-8"))) {
                             writeAtomically(new File(src.getString("file")), data);
                             ok = true;
@@ -101,12 +105,24 @@ final class RatesUpdater {
         }
     }
 
-    private static byte[] download(String address) throws IOException {
+    /** Only letters, digits, dots and hyphens of the version name; "0" if there is none. */
+    private static String cleanVersion(String v) {
+        StringBuilder b = new StringBuilder();
+        if (v != null) {
+            for (int i = 0; i < v.length() && b.length() < 32; i++) {
+                char c = v.charAt(i);
+                if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '.' || c == '-') b.append(c);
+            }
+        }
+        return b.length() > 0 ? b.toString() : "0";
+    }
+
+    private static byte[] download(String address, String userAgent) throws IOException {
         HttpURLConnection c = (HttpURLConnection) new URL(address).openConnection();
         c.setConnectTimeout(15000);
         c.setReadTimeout(20000);
         c.setInstanceFollowRedirects(true);
-        c.setRequestProperty("User-Agent", "QCalc/1.0 (Android; libqalculate 5.13.2)");
+        c.setRequestProperty("User-Agent", userAgent);
         try {
             if (c.getResponseCode() != 200) throw new IOException("HTTP " + c.getResponseCode());
             InputStream in = c.getInputStream();
