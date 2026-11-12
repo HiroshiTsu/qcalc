@@ -196,16 +196,12 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * The text in the language of the app: Japanese when it is chosen in the page's settings
-     * ("Language / 言語", saved by the page as qalc.settings), otherwise English.
+     * The text in the language of the app: Japanese when the user chose it in the page
+     * ("Language / 言語", saved by the page as qalc.lang, the JSON text "ja"), otherwise English.
      */
     private String tr(String en, String ja) {
-        try {
-            String s = StateStore.load(this, "qalc.settings");
-            if (s != null && "ja".equals(new JSONObject(s).optString("lang"))) return ja;
-        } catch (Exception ignored) {
-        }
-        return en;
+        String s = StateStore.load(this, "qalc.lang");
+        return s != null && "\"ja\"".equals(s.trim()) ? ja : en;
     }
 
     private void showMessage(String text) {

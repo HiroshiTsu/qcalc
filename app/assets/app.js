@@ -41,9 +41,12 @@
       try { localStorage.setItem(k, text); } catch (e) { /* storage full or blocked */ }
     }
   };
-  // The language of the user interface: English (the default) or Japanese, chosen with the setting
-  // "Language / 言語". It is read once when the page starts; choosing another one reloads the page.
-  const LANG = (store.get('qalc.settings', {}) || {}).lang === 'ja' ? 'ja' : 'en';
+  // The language of the user interface: English (the default) or Japanese. Only a language the user
+  // chose with "Language / 言語" (in the menu or the settings) is kept, as qalc.lang. The language
+  // that test builds of 1.3.0 saved with the other settings (qalc.settings) is not used, so that the
+  // app starts in English unless Japanese was chosen. It is read once when the page starts;
+  // choosing another language reloads the page.
+  const LANG = store.get('qalc.lang', 'en') === 'ja' ? 'ja' : 'en';
   const JA = LANG === 'ja';
   // the text in the language of the user interface
   const tr = (en, ja) => (JA ? ja : en);
@@ -153,6 +156,7 @@
     autosize();
   }
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
+  S.lang = LANG; // the language in use (qalc.lang), whatever qalc.settings says
   function saveSettings() { store.set('qalc.settings', S); }
 
   // ---------------------------------------------------------------- Pro
@@ -2351,7 +2355,7 @@
 
   // --------------------------------------------------------------- about
   let engineName = '';
-  const PRIVACY_URL = 'https://hiroshitsu.github.io/qcalc/privacy.html';
+  const PRIVACY_URL = 'https://hiroshitsu.github.io/qcalc/privacy.html' + (JA ? '#ja' : ''); // English first, then Japanese
   const SOURCE_URL = 'https://github.com/HiroshiTsu/qcalc';
   function openAbout() {
     const p = panel('about', tr('About this app', 'このアプリについて'), (p) => {
@@ -2598,6 +2602,7 @@
   }
   function setLanguage(lang) {
     if (lang !== 'en' && lang !== 'ja') return;
+    store.set('qalc.lang', lang); // the user's own choice (see LANG)
     S.lang = lang;
     saveSettings();
     if (lang === LANG) return;
