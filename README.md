@@ -22,6 +22,18 @@
 
 QCalc は Qalculate! の公式アプリではなく、Qalculate! の開発者とは関係のない個人が作っています。
 
+## 設計書・マニュアル
+
+設計書一式（PDF）は [design/](design/) にあります。
+
+- [概要](design/00-overview.pdf)
+- [1. 要件定義書](design/01-requirements.pdf)
+- [2. 基本設計書](design/02-basic-design.pdf)
+- [3. 詳細設計書](design/03-detailed-design.pdf)
+- [4. 操作マニュアル](design/04-user-manual.pdf)
+- [5. ビルド・保守マニュアル](design/05-build-and-maintenance.pdf)
+- [6. テスト仕様書・結果](design/06-test-specification.pdf)
+
 ## 中身
 
 | パス | 内容 |
@@ -44,6 +56,7 @@ QCalc は Qalculate! の公式アプリではなく、Qalculate! の開発者と
 | `icon/` | アイコンの元（`qcalc-icon.svg`）と、`app/res` の各サイズのアイコンを作るスクリプト |
 | `store/` | Google Play のストア掲載用の文章と画像 |
 | `docs/` | GitHub Pages で公開するページ（紹介ページとプライバシーポリシー） |
+| `design/` | 設計書一式（PDF）：概要、要件定義書、基本設計書、詳細設計書、操作マニュアル、ビルド・保守マニュアル、テスト仕様書・結果 |
 
 ## ビルド環境（Ubuntu 24.04 で確認）
 
