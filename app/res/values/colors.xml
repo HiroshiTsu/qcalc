@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- background of the adaptive launcher icon (middle of the gradient in icon/qcalc-icon.svg) -->
-    <color name="ic_launcher_background">#2459D9</color>
-</resources>

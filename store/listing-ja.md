@@ -6,6 +6,8 @@ Play Console の「ストアでの表示」→「メインのストアの掲載�
 1.3.0 からアプリは最初に英語で表示されるため、掲載情報の**デフォルトの言語は英語（米国、en-US）**にし
 （listing-en.md）、この日本語の文章は「翻訳を管理」で追加する**日本語（ja-JP）の翻訳**として登録します。
 スクリーンショットは日本語の掲載情報には store/screenshots/、英語には store/screenshots-en/ を使います。
+フィーチャー グラフィック（1024 × 500）は、日本語には store/feature-graphic-ja.png、英語には store/feature-graphic-en.png を使います。
+アプリのアイコンは store/icon-512.png（512 × 512）で、どちらの言語にも同じものを使います。
 
 ## アプリ名
 

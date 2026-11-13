@@ -73,7 +73,7 @@ QCalc Pro は Google Play での買い切りの購入（1 回限りのアイテ�
 | `version.properties` | アプリの版（スクリプトと Android Studio の両方がここから読みます） |
 | `settings.gradle`, `build.gradle`, `app/build.gradle`, `gradle.properties`, `gradle/wrapper/` | Android Studio（Gradle）用の設定 |
 | `keystore.properties.example` | Android Studio で release に署名するときの設定の見本 |
-| `icon/` | アイコンの元（`qcalc-icon.svg`）と、`app/res` の各サイズのアイコンを作るスクリプト |
+| `icon/` | アイコン：元の絵（カラーの `qcalc-icon.svg` と単色の `qcalc-icon-mono.svg`）、それを描くスクリプト（`draw-icon.py`）、`app/res` の各サイズのアイコンを作るスクリプト（`make-icons.sh`） |
 | `store/` | Google Play のストア掲載用の文章（英語 `listing-en.md`、日本語 `listing-ja.md`）と画像（`screenshots-en/`、`screenshots/`） |
 | `docs/` | GitHub Pages で公開するページ（紹介ページとプライバシーポリシー） |
 | `design/` | 設計書一式（PDF。日本語と英語）：概要、要件定義書、基本設計書、詳細設計書、操作マニュアル、ビルド・保守マニュアル、テスト仕様書・結果 |
@@ -88,7 +88,7 @@ pip install ziglang==0.17.1
 
 Android SDK の platform ファイルも必要です（このリポジトリには入っていません）。Android Studio の SDK Manager か `sdkmanager "platforms;android-36" "platforms;android-34"` で入れてください。スクリプトは `$ANDROID_HOME`（なければ `~/Android/Sdk`）の下を探します。別の場所にあるときは `ANDROID_JAR`（API 36 の android.jar、Java のコンパイル用）と `AAPT2_JAR`（API 34 の android.jar、Ubuntu の aapt2 は API 35 以降を読めないため）で指定します。
 
-アイコンを作り直すとき（`icon/make-icons.sh`）だけ、`librsvg2-bin` と `imagemagick` も必要です。
+アイコンを作り直すとき（`icon/make-icons.sh`）だけ、`librsvg2-bin` と `imagemagick` も必要です。絵そのものを変えるとき（`icon/draw-icon.py`）は、Python の `fonttools` とフォント Inter も使います。
 
 ## ビルド
 
@@ -147,4 +147,4 @@ QCalc は GNU General Public License v2 以降（[LICENSE](LICENSE)）のフリ�
 
 計算エンジンには、GMP（LGPL v3 以降 または GPL v2 以降）、MPFR（LGPL v3 以降）、libxml2（MIT）、zig に同梱の musl libc（MIT）、LLVM libc++ / libc++abi / libunwind（Apache License 2.0 with LLVM Exceptions）、compiler_rt（MIT）も組み込んでいます。MPFR が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。これらのソースは `third_party/` にあり、ライセンスの全文はアプリの「このアプリについて」→「オープンソースライセンス」で読めます。
 
-アイコンは QCalc のために作ったもので、Qalculate! のアイコンとは別のものです。
+アイコンは QCalc のために作ったもので、Qalculate! のアイコンとは別のものです。アイコンの中の数字は、フォント Inter（SIL Open Font License）で描いています。

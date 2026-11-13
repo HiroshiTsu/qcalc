@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- QCalc icon in one color, for themed icons (Android 13 and later): the launcher uses only its shape.
+     Written by icon/draw-icon.py: change the drawing there, not here. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
+<defs><clipPath id="window"><circle cx="50.5" cy="50.5" r="17.2"/></clipPath></defs>
+<g clip-path="url(#window)">
+<path d="M32.7,58.7 L33.2,58.7 L33.7,58.7 L34.2,58.7 L34.7,58.7 L35.2,58.7 L35.7,58.7 L36.2,58.7 L36.7,58.7 L37.2,58.7 L37.7,58.7 L38.2,58.7 L38.7,58.7 L39.2,58.7 L39.7,58.69 L40.2,58.69 L40.7,58.68 L41.2,58.67 L41.7,58.65 L42.2,58.62 L42.7,58.56 L43.2,58.48 L43.7,58.36 L44.2,58.19 L44.7,57.95 L45.2,57.61 L45.7,57.17 L46.2,56.6 L46.7,55.87 L47.2,54.99 L47.7,53.94 L48.2,52.75 L48.7,51.42 L49.2,50.01 L49.7,48.57 L50.2,47.16 L50.7,45.87 L51.2,44.76 L51.7,43.92 L52.2,43.38 L52.7,43.2 L53.2,43.38 L53.7,43.92 L54.2,44.76 L54.7,45.87 L55.2,47.16 L55.7,48.57 L56.2,50.01 L56.7,51.42 L57.2,52.75 L57.7,53.94 L58.2,54.99 L58.7,55.87 L59.2,56.6 L59.7,57.17 L60.2,57.61 L60.7,57.95 L61.2,58.19 L61.7,58.36 L62.2,58.48 L62.7,58.56 L63.2,58.62 L63.7,58.65 L64.2,58.67 L64.7,58.68 L65.2,58.69 L65.7,58.69 L66.2,58.7 L66.7,58.7 L67.2,58.7 L67.7,58.7 L68.2,58.7 L68.7,58.7 L69.2,58.7 L69.7,58.7 L70.2,58.7 L70.7,58.7 L71.2,58.7 L71.7,58.7 L72.2,58.7 L72.7,58.7 L72.7,72 L32.7,72Z" fill="#FFFFFF"/>
+<path d="M45.57,39.04 C45.01,37.03 42.6,37.14 42.6,40.22 L41.6,51.98 C41.6,55.06 39.19,55.17 38.63,53.16" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<circle cx="50.5" cy="50.5" r="21.5" fill="none" stroke="#FFFFFF" stroke-width="6.6"/>
+<line x1="68.32" y1="61.81" x2="77.44" y2="70.94" stroke="#FFFFFF" stroke-width="4.6" stroke-linecap="round"/>
+<line x1="61.81" y1="68.32" x2="70.94" y2="77.44" stroke="#FFFFFF" stroke-width="4.6" stroke-linecap="round"/>
+</svg>

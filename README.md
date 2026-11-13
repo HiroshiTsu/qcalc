@@ -74,7 +74,7 @@ The design document set is in [design/](design/), in English and in Japanese wit
 | `version.properties` | The app version (read by the scripts and by Android Studio) |
 | `settings.gradle`, `build.gradle`, `app/build.gradle`, `gradle.properties`, `gradle/wrapper/` | Settings for Android Studio (Gradle) |
 | `keystore.properties.example` | A template for signing release builds in Android Studio |
-| `icon/` | The icon source (`qcalc-icon.svg`) and a script that makes the icons of every size in `app/res` |
+| `icon/` | The icon: its sources (`qcalc-icon.svg` in color and `qcalc-icon-mono.svg` in one color), the script that draws them (`draw-icon.py`) and the script that makes the icons of every size in `app/res` (`make-icons.sh`) |
 | `store/` | Texts (`listing-en.md` in English, `listing-ja.md` in Japanese) and images (`screenshots-en/`, `screenshots/`) for the Google Play store listing |
 | `docs/` | The pages published with GitHub Pages (the app's home page and the privacy policy) |
 | `design/` | The design document set in English and Japanese (PDF) |
@@ -89,7 +89,7 @@ pip install ziglang==0.17.1
 
 The Android SDK platform files are also needed (they are not in this repository). Install them with the SDK Manager of Android Studio or with `sdkmanager "platforms;android-36" "platforms;android-34"`. The scripts look under `$ANDROID_HOME` (or `~/Android/Sdk` when it is not set). If the files are somewhere else, set `ANDROID_JAR` (the android.jar of API 36, used to compile the Java code) and `AAPT2_JAR` (the android.jar of API 34, because the aapt2 of Ubuntu cannot read API 35 or later).
 
-`librsvg2-bin` and `imagemagick` are needed only to rebuild the icons (`icon/make-icons.sh`).
+`librsvg2-bin` and `imagemagick` are needed only to rebuild the icons (`icon/make-icons.sh`). Changing the drawing itself (`icon/draw-icon.py`) also needs the Python package `fonttools` and the font Inter.
 
 ## Build
 
@@ -148,4 +148,4 @@ As a special exception, the copyright holder of QCalc's own code (everything in 
 
 The engine also contains GMP (LGPL v3 or later, or GPL v2 or later), MPFR (LGPL v3 or later), libxml2 (MIT), the musl libc bundled with zig (MIT), LLVM libc++ / libc++abi / libunwind (Apache License 2.0 with LLVM Exceptions) and compiler_rt (MIT). Because MPFR is LGPL v3 or later, the engine as a whole is distributed under the terms of the GNU GPL v3 or later. The sources are in `third_party/`, and the full license texts can be read in the app under "About this app" → "Open source licenses".
 
-The icon was made for QCalc and is different from the Qalculate! icon.
+The icon was made for QCalc and is different from the Qalculate! icon. The digits in it are drawn with the font Inter (SIL Open Font License).

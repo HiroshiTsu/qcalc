@@ -5,8 +5,9 @@ From version 1.3.0 the app starts in English, so English (United States, en-US) 
 language** of the listing, and the Japanese texts (listing-ja.md) are its Japanese (ja-JP) translation.
 Limits: app name 30 characters, short description 80, full description 4000.
 
-Screenshots for this listing: store/screenshots-en/ (1080 × 1920). The feature graphic
-(store/feature-graphic.png) has no text in a particular language and is used for both languages.
+Screenshots for this listing: store/screenshots-en/ (1080 × 1920). Feature graphic:
+store/feature-graphic-en.png (1024 × 500; the Japanese listing uses store/feature-graphic-ja.png).
+App icon: store/icon-512.png (512 × 512, the same for both languages).
 
 ## App name
 
