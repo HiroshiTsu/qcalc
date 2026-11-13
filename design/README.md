@@ -16,7 +16,7 @@ The design document set of QCalc 1.4.0 (versionCode 6, package name `io.github.h
 | 3. Detailed design | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 76 | [03-detailed-design.pdf](03-detailed-design.pdf) (詳細設計書) | 70 | Class diagram, JavaScript bridge, protocol between the app and the engine, calculation, process supervision, user interface, data formats, time limits, error codes and messages, QCalc Pro, language, color themes, CSV export, suggestions, the Light or dark setting |
 | 4. User manual | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 30 | [04-user-manual.pdf](04-user-manual.pdf) (操作マニュアル) | 30 | Installation and the language, the screen, calculating (including the suggestions and very long results), calculus, matrices, keyboard input, examples, the menu, settings, troubleshooting; with screenshots |
 | 5. Build and maintenance manual | [05-build-and-maintenance-en.pdf](05-build-and-maintenance-en.pdf) | 18 | [05-build-and-maintenance.pdf](05-build-and-maintenance.pdf) (ビルド・保守マニュアル) | 17 | Development environment, build steps (test APK and App Bundle for Google Play), signing, the build with billing (Gradle), checks, updating libqalculate, Android Studio |
-| 6. Test specification and results | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 42 | [06-test-specification.pdf](06-test-specification.pdf) (テスト仕様書・結果) | 40 | Test policy, test items and their results for 1.4.0 (all 700 items passed), tests not yet done |
+| 6. Test specification and results | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 43 | [06-test-specification.pdf](06-test-specification.pdf) (テスト仕様書・結果) | 40 | Test policy, test items and their results for 1.4.0 (all 700 items passed), tests not yet done |
 
 ### Reading order
 
@@ -46,7 +46,7 @@ QCalc 1.4.0（versionCode 6、パッケージ名 `io.github.hiroshitsu.qcalc`）
 | 3. 詳細設計書 | [03-detailed-design.pdf](03-detailed-design.pdf) | 70 | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 76 | クラス図、JavaScript ブリッジ、計算エンジンとの通信プロトコル、計算処理、プロセス監視、画面処理、データ形式、時間制限、エラーコードとメッセージ、QCalc Pro、表示の言語、配色テーマ、履歴の書き出し、入力の候補、ライト／ダークの設定 |
 | 4. 操作マニュアル | [04-user-manual.pdf](04-user-manual.pdf) | 30 | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 30 | インストールと表示の言語、画面の見方、計算のしかた（入力の候補、とても長い結果を含む）、解析（微分・積分・極限）、行列、キーボード入力、式の例、メニュー、設定、困ったとき。各画面の画像つき |
 | 5. ビルド・保守マニュアル | [05-build-and-maintenance.pdf](05-build-and-maintenance.pdf) | 17 | [05-build-and-maintenance-en.pdf](05-build-and-maintenance-en.pdf) | 18 | 開発環境、ビルド手順（テスト用 APK と Google Play 用 App Bundle）、署名、課金のある版（Gradle）、動作確認、libqalculate の更新手順、Android Studio |
-| 6. テスト仕様書・結果 | [06-test-specification.pdf](06-test-specification.pdf) | 40 | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 42 | テストの方針、テスト項目と 1.4.0 での結果（700 項目すべて合格）、未実施のテスト |
+| 6. テスト仕様書・結果 | [06-test-specification.pdf](06-test-specification.pdf) | 40 | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 43 | テストの方針、テスト項目と 1.4.0 での結果（700 項目すべて合格）、未実施のテスト |
 
 ### 読む順の目安
 
