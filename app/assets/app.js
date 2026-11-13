@@ -683,7 +683,7 @@
     return parts;
   }
   function showResult(node, text) {
-    const parts = splitMatrices(text);
+    const parts = splitMatrices(text); node.classList.toggle('brk', /\S{16,}/.test(text)); // a number longer than a line is cut at the end of the line (.brk in style.css); "≈" does not stand alone
     if (parts.every((x) => typeof x === 'string')) { node.textContent = text; return; }
     node.textContent = '';
     for (const part of parts) {
@@ -1025,8 +1025,8 @@
   }
   async function historyMenu(h) {
     if (history.indexOf(h) < 0) return;
-    // the expression, the result and when it was calculated
-    const a = await sheet(clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300) + (h.t ? '\n' + fmtTime(h.t / 1000) : ''), [
+    // when it was calculated, the expression and the result (the time first: the title shows 4 lines at most)
+    const a = await sheet((h.t ? fmtTime(h.t / 1000) + '\n' : '') + clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300), [
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')], ['del', tr('Delete this line', 'この行を削除'), 'danger']
     ]);
