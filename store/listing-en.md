@@ -30,23 +30,26 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Complex numbers; binary, octal and hexadecimal numbers
 • Date calculations (today + 100 days)
 • Uncertainty propagation ((5 ± 0.2) m × (3 ± 0.1) m)
-• Exact results with fractions and square roots, and high precision with up to 200,000 significant digits. Long results are shown and copied with all their digits
+• Exact results with fractions and square roots, and high precision with up to 200,000 significant digits (above 1000 digits with QCalc Pro). Long results are shown and copied with all their digits
 • 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom
-• 3D graphs of surfaces z = f(x, y) that you turn with a finger
+• 3D graphs of surfaces z = f(x, y) that you turn with a finger (QCalc Pro)
 • Traditional Japanese units: tsubo, tan, sun, shaku, ken, ri, gō, shō, monme, kan (30 tsubo to m²)
 • Examples and tips inside the app: tap one to try it
 • Lists of functions, units and constants with search
 • Your own variables and functions
 • The result is shown while you type; reuse and copy results from the history
 • Suggestions while you type: the units you can convert to after "to", and the names of functions and units with the phone's keyboard
-• Undo for a cleared expression or history, three text sizes, seven color themes
-• Export the history as a CSV file for spreadsheets
+• Undo for a cleared expression or history, three text sizes, seven color themes (QCalc Pro)
+• Export the history as a CSV file for spreadsheets (QCalc Pro)
 • Four pages of keys (123, Functions, Calculus, Matrix) or your phone's keyboard
 • Light or dark display: follow the phone's setting or choose your own
 • English and Japanese (menu → Language / 言語)
 
+■ QCalc Pro
+A one-time purchase in the app unlocks a precision above 1000 digits (up to 200,000), 3D graphs, the color themes, exporting the history, and the Pro features of later versions. There is no subscription, and everything else is free.
+
 ■ Privacy
-QCalc collects no personal data and sends nothing anywhere. There are no ads. The internet is used only to download exchange rates. The history and the settings stay on your device and are never sent to the developer.
+QCalc collects no personal data and sends nothing to the developer. There are no ads. The internet is used only to download exchange rates, and Google Play handles the purchase of QCalc Pro. The history and the settings stay on your device and are never sent to the developer.
 
 ■ Open source
 QCalc is free software under the GNU GPL version 2 or later. The source code is on GitHub:
