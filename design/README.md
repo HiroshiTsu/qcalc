@@ -1,8 +1,8 @@
-# QCalc design documents (v1.3.0)
+# QCalc design documents (v1.4.0)
 
 **English** | [日本語](#日本語)
 
-The design document set of QCalc 1.3.0 (versionCode 5, package name `io.github.hiroshitsu.qcalc`): requirements, design, usage, maintenance and tests. Every document is in English and in Japanese, with the same content. The documents match the 1.3.0 source code in this repository (commit `81d80f1`).
+The design document set of QCalc 1.4.0 (versionCode 6, package name `io.github.hiroshitsu.qcalc`): requirements, design, usage, maintenance and tests. Every document is in English and in Japanese, with the same content. The documents match the 1.4.0 source code in this repository (commit `3d78424`).
 
 - Author: Hiroshi Tsukayama (津嘉山 弘)
 - Date: 2026-11-13
@@ -10,13 +10,13 @@ The design document set of QCalc 1.3.0 (versionCode 5, package name `io.github.h
 
 | Document | English | Pages | Japanese | Pages | Contents |
 | --- | --- | ---: | --- | ---: | --- |
-| Overview | [00-overview-en.pdf](00-overview-en.pdf) | 26 | [00-overview.pdf](00-overview.pdf) (概要) | 13 | What QCalc is, what changed in 1.3.0, 1.2.0 and 1.1.0, the design in brief, components and versions, list of the documents, glossary, revision history |
-| 1. Requirements definition | [01-requirements-en.pdf](01-requirements-en.pdf) | 18 | [01-requirements.pdf](01-requirements.pdf) (要件定義書) | 16 | Purpose, scope, 22 use cases, 34 functional requirements, non-functional requirements, constraints, 21 acceptance criteria, QCalc Pro |
-| 2. Basic design | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 28 | [02-basic-design.pdf](02-basic-design.pdf) (基本設計書) | 25 | System structure, deployment, modules, screens and screen transitions, keys, main processing flows, stored data, external interfaces, error handling, security |
-| 3. Detailed design | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 72 | [03-detailed-design.pdf](03-detailed-design.pdf) (詳細設計書) | 65 | Class diagram, JavaScript bridge, protocol between the app and the engine, calculation, process supervision, user interface, data formats, time limits, error codes and messages, QCalc Pro, language, color themes, CSV export |
-| 4. User manual | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 28 | [04-user-manual.pdf](04-user-manual.pdf) (操作マニュアル) | 28 | Installation and the language, the screen, calculating (including very long results), calculus, matrices, keyboard input, examples, the menu, settings, troubleshooting; with screenshots |
+| Overview | [00-overview-en.pdf](00-overview-en.pdf) | 31 | [00-overview.pdf](00-overview.pdf) (概要) | 16 | What QCalc is, what changed in 1.4.0, 1.3.0, 1.2.0 and 1.1.0, the design in brief, components and versions, list of the documents, glossary, revision history |
+| 1. Requirements definition | [01-requirements-en.pdf](01-requirements-en.pdf) | 19 | [01-requirements.pdf](01-requirements.pdf) (要件定義書) | 17 | Purpose, scope, 22 use cases, 35 functional requirements, non-functional requirements, constraints, 22 acceptance criteria, QCalc Pro |
+| 2. Basic design | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 29 | [02-basic-design.pdf](02-basic-design.pdf) (基本設計書) | 25 | System structure, deployment, modules, screens and screen transitions, keys, main processing flows, stored data, external interfaces, error handling, security |
+| 3. Detailed design | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 76 | [03-detailed-design.pdf](03-detailed-design.pdf) (詳細設計書) | 70 | Class diagram, JavaScript bridge, protocol between the app and the engine, calculation, process supervision, user interface, data formats, time limits, error codes and messages, QCalc Pro, language, color themes, CSV export, suggestions, the Light or dark setting |
+| 4. User manual | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 30 | [04-user-manual.pdf](04-user-manual.pdf) (操作マニュアル) | 30 | Installation and the language, the screen, calculating (including the suggestions and very long results), calculus, matrices, keyboard input, examples, the menu, settings, troubleshooting; with screenshots |
 | 5. Build and maintenance manual | [05-build-and-maintenance-en.pdf](05-build-and-maintenance-en.pdf) | 18 | [05-build-and-maintenance.pdf](05-build-and-maintenance.pdf) (ビルド・保守マニュアル) | 16 | Development environment, build steps (test APK and App Bundle for Google Play), signing, the build with billing (Gradle), checks, updating libqalculate, Android Studio |
-| 6. Test specification and results | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 38 | [06-test-specification.pdf](06-test-specification.pdf) (テスト仕様書・結果) | 37 | Test policy, test items and their results for 1.3.0 (all 665 items passed), tests not yet done |
+| 6. Test specification and results | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 42 | [06-test-specification.pdf](06-test-specification.pdf) (テスト仕様書・結果) | 40 | Test policy, test items and their results for 1.4.0 (all 700 items passed), tests not yet done |
 
 ### Reading order
 
@@ -32,7 +32,7 @@ The design document set of QCalc 1.3.0 (versionCode 5, package name `io.github.h
 
 ## 日本語
 
-QCalc 1.3.0（versionCode 5、パッケージ名 `io.github.hiroshitsu.qcalc`）の要件、設計、使い方、保守、テストをまとめた設計書です。どの文書も日本語と英語の 2 通りがあり、内容は同じです。内容はこのリポジトリの 1.3.0 のソースコード（コミット `81d80f1`）に合わせています。
+QCalc 1.4.0（versionCode 6、パッケージ名 `io.github.hiroshitsu.qcalc`）の要件、設計、使い方、保守、テストをまとめた設計書です。どの文書も日本語と英語の 2 通りがあり、内容は同じです。内容はこのリポジトリの 1.4.0 のソースコード（コミット `3d78424`）に合わせています。
 
 - 作成：津嘉山 弘
 - 作成日：2026-11-13
@@ -40,13 +40,13 @@ QCalc 1.3.0（versionCode 5、パッケージ名 `io.github.hiroshitsu.qcalc`）
 
 | 文書 | 日本語 | ページ | 英語 | ページ | 内容 |
 | --- | --- | ---: | --- | ---: | --- |
-| 概要 | [00-overview.pdf](00-overview.pdf) | 13 | [00-overview-en.pdf](00-overview-en.pdf) | 26 | 1.3.0・1.2.0・1.1.0 で変えたところ、文書の一覧、全体像の図、構成要素と版、用語集、改訂履歴（英語版は設計の要点のまとめも含む） |
-| 1. 要件定義書 | [01-requirements.pdf](01-requirements.pdf) | 16 | [01-requirements-en.pdf](01-requirements-en.pdf) | 18 | 目的、対象範囲、ユースケース 22、機能要件 34、非機能要件、制約、受け入れ基準 21、QCalc Pro |
-| 2. 基本設計書 | [02-basic-design.pdf](02-basic-design.pdf) | 25 | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 28 | システム構成、配置、モジュール、画面と画面遷移、キー、主要な処理の流れ、保存データ、外部インターフェース、エラー処理、セキュリティ |
-| 3. 詳細設計書 | [03-detailed-design.pdf](03-detailed-design.pdf) | 65 | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 72 | クラス図、JavaScript ブリッジ、計算エンジンとの通信プロトコル、計算処理、プロセス監視、画面処理、データ形式、時間制限、エラーコードとメッセージ、QCalc Pro、表示の言語、配色テーマ、履歴の書き出し |
-| 4. 操作マニュアル | [04-user-manual.pdf](04-user-manual.pdf) | 28 | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 28 | インストールと表示の言語、画面の見方、計算のしかた（とても長い結果を含む）、解析（微分・積分・極限）、行列、キーボード入力、式の例、メニュー、設定、困ったとき。各画面の画像つき |
+| 概要 | [00-overview.pdf](00-overview.pdf) | 16 | [00-overview-en.pdf](00-overview-en.pdf) | 31 | 1.4.0・1.3.0・1.2.0・1.1.0 で変えたところ、文書の一覧、全体像の図、構成要素と版、用語集、改訂履歴（英語版は設計の要点のまとめも含む） |
+| 1. 要件定義書 | [01-requirements.pdf](01-requirements.pdf) | 17 | [01-requirements-en.pdf](01-requirements-en.pdf) | 19 | 目的、対象範囲、ユースケース 22、機能要件 35、非機能要件、制約、受け入れ基準 22、QCalc Pro |
+| 2. 基本設計書 | [02-basic-design.pdf](02-basic-design.pdf) | 25 | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 29 | システム構成、配置、モジュール、画面と画面遷移、キー、主要な処理の流れ、保存データ、外部インターフェース、エラー処理、セキュリティ |
+| 3. 詳細設計書 | [03-detailed-design.pdf](03-detailed-design.pdf) | 70 | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 76 | クラス図、JavaScript ブリッジ、計算エンジンとの通信プロトコル、計算処理、プロセス監視、画面処理、データ形式、時間制限、エラーコードとメッセージ、QCalc Pro、表示の言語、配色テーマ、履歴の書き出し、入力の候補、ライト／ダークの設定 |
+| 4. 操作マニュアル | [04-user-manual.pdf](04-user-manual.pdf) | 30 | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 30 | インストールと表示の言語、画面の見方、計算のしかた（入力の候補、とても長い結果を含む）、解析（微分・積分・極限）、行列、キーボード入力、式の例、メニュー、設定、困ったとき。各画面の画像つき |
 | 5. ビルド・保守マニュアル | [05-build-and-maintenance.pdf](05-build-and-maintenance.pdf) | 16 | [05-build-and-maintenance-en.pdf](05-build-and-maintenance-en.pdf) | 18 | 開発環境、ビルド手順（テスト用 APK と Google Play 用 App Bundle）、署名、課金のある版（Gradle）、動作確認、libqalculate の更新手順、Android Studio |
-| 6. テスト仕様書・結果 | [06-test-specification.pdf](06-test-specification.pdf) | 37 | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 38 | テストの方針、テスト項目と 1.3.0 での結果（665 項目すべて合格）、未実施のテスト |
+| 6. テスト仕様書・結果 | [06-test-specification.pdf](06-test-specification.pdf) | 40 | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 42 | テストの方針、テスト項目と 1.4.0 での結果（700 項目すべて合格）、未実施のテスト |
 
 ### 読む順の目安
 
