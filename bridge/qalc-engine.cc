@@ -1479,18 +1479,22 @@ static string cmd_user_defs(JOut &out) {
 // files). The values are the exact ones of the Japanese Weights and Measures Act of 1891:
 // 1 尺 = 10/33 m, 1 升 = 2401/1331 L, 1 貫 = 3.75 kg. Only 坪 also has a Latin name (tsubo);
 // short names such as "ken", "go" or "tan" could be meant as something else in an expression.
+// The relations of 寸 and 貫 are written as 10/330 and 7500/2 on purpose: "to mixed" in libqalculate
+// (Calculator-convert.cc) also splits a value into alias units whose relation is written as a whole
+// number or as 1/N, and would turn "1.5 m to mixed" into "16.5 寸 + 1 m" and "5 kg to mixed" into
+// "1 貫 + 1.25 kg" where the official Qalculate! answers 1.5 m and 10 pfund. The values are the same.
 static void add_japanese_units() {
 	static const struct { const char *name, *latin, *title, *base; int exp; const char *relation, *description; } defs[] = {
 		{"坪", "tsubo", "Tsubo (坪)", "m", 2, "400/121", "Area. 1 tsubo = 1 ken × 1 ken = 400/121 m² (about 3.3058 m²)"},
 		{"反", "", "Tan (反)", "m", 2, "120000/121", "Area. 1 tan = 300 tsubo (about 991.74 m²)"},
-		{"寸", "", "Sun (寸)", "m", 1, "1/33", "Length. 1 sun = 1/10 shaku (about 3.0303 cm)"},
+		{"寸", "", "Sun (寸)", "m", 1, "10/330", "Length. 1 sun = 1/10 shaku (about 3.0303 cm)"},
 		{"尺", "", "Shaku (尺)", "m", 1, "10/33", "Length. 1 shaku = 10/33 m (about 30.303 cm)"},
 		{"間", "", "Ken (間)", "m", 1, "20/11", "Length. 1 ken = 6 shaku (about 1.8182 m)"},
 		{"里", "", "Ri (里)", "m", 1, "43200/11", "Length. 1 ri = 36 chō = 2160 ken (about 3.9273 km)"},
 		{"合", "", "Gō (合)", "L", 1, "2401/13310", "Volume. 1 gō = 1/10 shō (about 180.39 mL)"},
 		{"升", "", "Shō (升)", "L", 1, "2401/1331", "Volume. 1 shō = 2401/1331 L (about 1.8039 L)"},
 		{"匁", "", "Monme (匁)", "g", 1, "15/4", "Mass. 1 monme = 3.75 g"},
-		{"貫", "", "Kan (貫)", "g", 1, "3750", "Mass. 1 kan = 1000 monme = 3.75 kg"},
+		{"貫", "", "Kan (貫)", "g", 1, "7500/2", "Mass. 1 kan = 1000 monme = 3.75 kg"},
 	};
 	for(size_t i = 0; i < sizeof(defs) / sizeof(defs[0]); i++) {
 		Unit *base = CALCULATOR->getActiveUnit(defs[i].base);

@@ -146,7 +146,7 @@
     angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: false, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
-    text_size: 'normal', lang: 'en', theme: 'blue'
+    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system'
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
   const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
@@ -207,16 +207,17 @@
   // inserted into an expression up to MAX_INPUT characters.
   const MAX_RESULT = 450000, TAIL_RESULT = 20000, HISTORY_BUDGET = 1000000, SHORT_RESULT = 2000, MAX_INPUT = 20000;
   function fitHistory() {
-    let used = 0;
+    let used = 0, changed = false;
     for (let i = history.length - 1; i >= 0; i--) {
       const h = history[i];
       if (!h || typeof h !== 'object') continue;
       if (used >= HISTORY_BUDGET) {
-        if (typeof h.result === 'string' && h.result.length > SHORT_RESULT + 1) { h.result = h.result.slice(0, SHORT_RESULT) + '…'; h.cut = true; delete h.tail; }
-        if (typeof h.input === 'string' && h.input.length > SHORT_RESULT) { delete h.input; h.big = true; }
+        if (typeof h.result === 'string' && h.result.length > SHORT_RESULT + 1) { h.result = h.result.slice(0, SHORT_RESULT) + '…'; h.cut = true; delete h.tail; changed = true; }
+        if (typeof h.input === 'string' && h.input.length > SHORT_RESULT) { delete h.input; h.big = true; changed = true; }
       }
       used += String(h.result || '').length + String(h.tail || '').length + String(h.input || '').length + String(h.expr || '').length;
     }
+    return changed; // an older long result was shortened (what is shown of it is out of date)
   }
   let history = store.get('qalc.history', []);
   if (!Array.isArray(history)) history = [];
@@ -479,12 +480,14 @@
         let p = s;
         if (s === e && p > 0) p -= /[\uDC00-\uDFFF]/.test(v[p - 1]) && p > 1 ? 2 : 1;
         exprEl.setSelectionRange(p, p);
+        updateSuggest(false);
         break;
       }
       case 'right': {
         let p = e;
         if (s === e && p < v.length) p += /[\uD800-\uDBFF]/.test(v[p]) && p + 1 < v.length ? 2 : 1;
         exprEl.setSelectionRange(p, p);
+        updateSuggest(false);
         break;
       }
     }
@@ -529,9 +532,11 @@
       exprEl.value = 'ans' + exprEl.value;
       exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length);
     }
-    exprChanged();
+    exprChanged(true);
   });
   exprEl.addEventListener('focus', () => updateToolbar());
+  // the caret was put somewhere else by touching the field
+  exprEl.addEventListener('click', () => updateSuggest(false));
 
   function autosize() {
     exprEl.style.height = 'auto';
@@ -566,26 +571,32 @@
     exprEl.value = n;
     exprEl.setSelectionRange(a, b);
   }
-  exprEl.addEventListener('compositionend', () => { normalizeField(); exprChanged(); });
+  exprEl.addEventListener('compositionend', () => { normalizeField(); exprChanged(true); });
 
   // ======================================================= live preview
   let previewBusy = false, previewAgain = false, previewTimer = null, engineReady = false;
   // the expression being typed survives closing the app or the page being reloaded
   const saveDraft = debounce(() => store.set('qalc.draft', exprEl.value), 500);
-  function exprChanged() {
+  // typed: the change was typed with the phone's keyboard (names are then offered, see updateSuggest)
+  function exprChanged(typed) {
     saveDraft();
     autosize();
+    updateSuggest(typed === true);
     clearTimeout(previewTimer);
     if (!exprEl.value.trim() || !S.preview) { showPreview(null); return; }
     previewTimer = setTimeout(runPreview, 160);
   }
+  // "5 km to" while the unit is still to be typed or chosen: what is before the "to" is calculated
+  // (the engine would read a "to" at the end as units, t·o: "255 to" gave "255 B·t")
+  function withoutOpenTo(expr) { return expr.replace(/\s+(?:to|→|->)$/i, ''); }
   async function runPreview() {
     if (!engineReady) return;
     if (previewBusy) { previewAgain = true; return; }
     const raw = exprEl.value.trim();
-    if (!raw) { showPreview(null); return; }
+    const expr = raw && withoutOpenTo(normalizeExpr(raw));
+    if (!expr) { showPreview(null); return; }
     previewBusy = true;
-    const r = await Bridge.send('calc', { expr: normalizeExpr(raw), opts: engineOpts(), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
     previewBusy = false;
     if (exprEl.value.trim() === raw && !committing) showPreview(r);
     if (previewAgain) { previewAgain = false; runPreview(); }
@@ -794,7 +805,8 @@
     const raw = exprEl.value.trim();
     if (!raw || committing) return;
     if (!engineReady) { toast(tr('The calculation engine is starting', '計算エンジンを準備中です')); return; }
-    const expr = normalizeExpr(raw);
+    const expr = withoutOpenTo(normalizeExpr(raw));
+    if (!expr) return;
     committing = true;
     clearTimeout(previewTimer);
     previewEl.textContent = tr('Calculating…', '計算中…');
@@ -832,20 +844,31 @@
       if (sessionEntries.size > 20) sessionEntries.delete(sessionEntries.keys().next().value);
     }
     history.push(entry);
-    if (history.length > 300) history = history.slice(-300);
-    fitHistory();
+    const over = history.length > 300;
+    if (over) history = history.slice(-300);
+    const shortened = fitHistory();
     saveHistory();
     dropUndo();
     if (exprEl.value.trim() === raw) {
       exprEl.value = '';
       showPreview(null);
       autosize();
+      updateSuggest(false);
     } else {
       previewEl.textContent = '';
       exprChanged(); // something was typed while the calculation ran: keep it
     }
     saveDraft();
-    renderHistory(true);
+    // only the new line is added, unless the lines on the screen are no longer the history
+    // (the first result, the oldest line dropped, an older long result shortened)
+    if (over || shortened || histEl.children.length !== history.length - 1 || !histEl.querySelector('.h-item')) renderHistory(true);
+    else {
+      const item = historyItem(entry);
+      histEl.append(item);
+      fitMatrices(item);
+      histEl.scrollTop = histEl.scrollHeight;
+      histPinned = true;
+    }
     announce(entry);
   }
 
@@ -938,21 +961,24 @@
       histPinned = false;
       return;
     }
-    for (let i = 0; i < history.length; i++) {
-      const h = history[i];
-      const res = el('div', { class: 'h-res' });
-      showResult(res, displayResult(h));
-      const item = el('div', { class: 'h-item' }, el('div', { class: 'h-expr', text: h.expr }), res);
-      for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
-      bindLongPress(item, () => historyMenu(i), (target) => {
-        if (target.closest('.h-expr')) setExpr(h.expr);
-        else insertResult(h);
-        focusExpr();
-      });
-      histEl.append(item);
-    }
+    const frag = document.createDocumentFragment();
+    for (const h of history) frag.append(historyItem(h));
+    histEl.append(frag);
     fitMatrices(histEl);
     if (scroll) { histEl.scrollTop = histEl.scrollHeight; histPinned = true; }
+  }
+  // one line of the history: the expression, the result and its warnings
+  function historyItem(h) {
+    const res = el('div', { class: 'h-res' });
+    showResult(res, displayResult(h));
+    const item = el('div', { class: 'h-item' }, el('div', { class: 'h-expr', text: h.expr }), res);
+    for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
+    bindLongPress(item, () => historyMenu(h), (target) => {
+      if (target.closest('.h-expr')) setExpr(h.expr);
+      else insertResult(h);
+      focusExpr();
+    });
+    return item;
   }
   // A very long result (thousands of digits) scrolls inside a box at most 70 % as high as the
   // history, so that the history can still be scrolled past it (.h-res in style.css).
@@ -997,9 +1023,10 @@
     node.addEventListener('pointercancel', () => { clearTimeout(timer); timer = null; });
     node.addEventListener('contextmenu', (e) => e.preventDefault());
   }
-  async function historyMenu(i) {
-    const h = history[i];
-    const a = await sheet(clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300), [
+  async function historyMenu(h) {
+    if (history.indexOf(h) < 0) return;
+    // the expression, the result and when it was calculated
+    const a = await sheet(clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300) + (h.t ? '\n' + fmtTime(h.t / 1000) : ''), [
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')], ['del', tr('Delete this line', 'この行を削除'), 'danger']
     ]);
@@ -1008,7 +1035,8 @@
     else if (a === 'edit') setExpr(h.expr);
     else if (a === 'ins-ans') insertResult(h);
     else if (a === 'del') {
-      if (history[i] !== h) return; // the history changed while the menu was open
+      const i = history.indexOf(h);
+      if (i < 0) return; // the history changed while the menu was open
       history.splice(i, 1);
       historyChanged();
       toast(tr('Line deleted', '1 行を削除しました'), 5000, [tr('Undo', '元に戻す'), () => {
@@ -1264,6 +1292,7 @@
     tr('The result is shown below while you type. Press = to confirm it and keep it in the history.', '入力している間に結果が下に表示されます。= を押すと確定して、履歴に残ります。'),
     tr('Tap a result in the history to insert it, tap an expression to edit it again, or touch and hold to copy or delete.', '履歴の結果をタップすると式に挿入、式をタップするともう一度編集、長押しでコピーや削除ができます。'),
     tr('The → key types "to" (conversion of units, currencies and number bases). Example: 5 km → mi', '→ キーは「to」（単位・通貨・進数の変換）です。例：5 km → mi'),
+    tr('After →, the units you can convert to are suggested below the input field (number formats such as hex when there is no unit): tap one to type it. With the phone keyboard, the names of functions, units and constants are suggested while you type them.', '→ の後には、変換先の候補（同じ種類の単位。単位がなければ 16 進数などの表し方）が入力欄の下に出ます。タップすると入力されます。スマホのキーボードで入力しているときは、関数・単位・定数の名前の候補も出ます。'),
     tr('Switch the keys with the tabs 123, Functions, Calculus and Matrix. The ⌨ key opens the phone keyboard.', 'キーは「123」「関数」「解析」「行列」のタブで切り替えます。⌨ キーでスマホのキーボードも使えます。'),
     tr('Calculus has keys for derivatives, integrals, limits, sums and differential equations; Matrix has keys to type matrices and for determinants, inverses and more. "more…" opens the list of the functions of that field.', '「解析」には微分・積分・極限・総和・微分方程式、「行列」には行列の入力と行列式・逆行列などのキーがあります。「ほか…」でその分野の関数の一覧が開きます。'),
     tr('Type the "=" of an equation with the a=b key (the large = key calculates). Example: solve(x^2 = 16)', '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)'),
@@ -1305,6 +1334,7 @@
     const items = r.items.filter((it) => hidden.indexOf(it.name) < 0);
     // Japanese names: shown beside the English title and used by the search
     const names = !JA ? {} : kind === 'functions' ? FUNC_JA : kind === 'variables' ? VAR_JA : JA_NAMES;
+    items.forEach((it, i) => { it._i = i; }); // the engine's order: the common units of a category come first
     for (const it of items) {
       it._cat = it.category || tr('Other', 'その他');
       it._top = it._cat.split('/')[0];
@@ -1539,6 +1569,224 @@
     focusExpr();
   }
 
+  // ======================================================== suggestions
+  // A row of chips under the input field (#suggest):
+  //  - While a name is typed with the phone's keyboard: the functions, variables and units whose
+  //    name begins with the letters typed, or whose title has a word that does ("pound" finds lb).
+  //    On the Japanese screen a Japanese name finds them too (積分 finds integrate).
+  //  - After "to" (the → key): what the value can be converted to. When the expression has a unit,
+  //    the other units of its category in the unit list (5 km to … m, mi, ft); otherwise other ways
+  //    to write a number (fraction, hex, factors).
+  // Tapping a chip writes the name; a function gets its parentheses with the caret between them.
+  const sugEl = $('#suggest');
+  let sugData = null, sugLoading = null, sugSeq = 0;
+  // the units of a category that are used most come first; the rest follow in the engine's order
+  const COMMON_UNITS = {
+    'Length': ['m', 'km', 'cm', 'mm', 'mi', 'ft', 'in', 'yd', 'nmi'],
+    'Mass': ['kg', 'g', 'lb', 'oz', 't'],
+    'Temperature': ['°C', '°F', 'K'],
+    'Speed': ['km/h', 'm/s', 'mph', 'knot'],
+    'Area': ['m²', 'km²', 'ha', 'acre', 'ft²'],
+    'Volume': ['L', 'mL', 'm³', 'cm³'],
+    'Time': ['s', 'min', 'h', 'd', 'week', 'month'],
+    'Currency': JA ? ['JPY', 'USD', 'EUR', 'GBP', 'CNY', 'KRW', 'AUD', 'CAD', 'CHF'] : ['USD', 'EUR', 'JPY', 'GBP', 'CNY', 'CAD', 'AUD', 'CHF', 'KRW'],
+    'Information': ['B', 'kB', 'MB', 'GB', 'TB', 'bit', 'KiB', 'MiB', 'GiB'],
+    'Energy': ['J', 'kJ', 'cal', 'kcal', 'kW⋅h', 'W⋅h', 'eV', 'Btu'],
+    'Energy/Power': ['W', 'hp', 'PS'],
+    'Force/Pressure': ['Pa', 'bar', 'atm', 'psi', 'mmHg', 'Torr'],
+    'Angle/Plane Angle': ['rad', 'deg', 'gra', 'arcmin', 'arcsec']
+  };
+  // the traditional Japanese units have a category of their own in the unit list; what they measure:
+  const JP_UNIT_CATEGORY = { '坪': 'Area', '反': 'Area', '寸': 'Length', '尺': 'Length', '間': 'Length', '里': 'Length', '合': 'Volume', '升': 'Volume', '匁': 'Mass', '貫': 'Mass' };
+  // after "to" when the expression has no unit: other ways to write a number
+  const NUMBER_FORMS = [
+    ['fraction', tr('fraction', '分数')], ['hex', tr('hexadecimal', '16進数')], ['bin', tr('binary', '2進数')], ['oct', tr('octal', '8進数')],
+    ['factors', tr('prime factors', '素因数分解')], ['sci', tr('scientific notation', '指数表記')], ['roman', tr('Roman numerals', 'ローマ数字')]
+  ];
+  // How a unit is written in an expression: the spelling the engine has checked (abbr), but the
+  // code of a currency (USD, not $) and °C, °F as they are shown (not oC, oF).
+  function unitText(it) {
+    if (it.currency) return it.name;
+    if (it.display && it.display[0] === '°' && it.display.length === 2) return it.display;
+    return it.abbr || it.name;
+  }
+  function loadSugData() {
+    if (!sugLoading) {
+      sugLoading = Promise.all([loadCatalog('functions'), loadCatalog('variables'), loadCatalog('units')]).then(buildSugData)
+        .catch(() => { sugLoading = null; });
+    }
+    return sugLoading;
+  }
+  function buildSugData() {
+    const units = catalogs.units.slice().sort((a, b) => a._i - b._i);
+    const byText = new Map(), byTitle = new Map(), byCat = new Map();
+    for (const it of units) {
+      it._text = unitText(it);
+      it._conv = own(JP_UNIT_CATEGORY, it.name) || it._cat;
+      if (!byText.has(it._text)) byText.set(it._text, it);
+      if (!byCat.has(it._conv)) byCat.set(it._conv, []);
+      byCat.get(it._conv).push(it);
+    }
+    for (const it of units) {
+      for (const k of [it.abbr, it.name, it.display]) if (k && !byText.has(k)) byText.set(k, it);
+      const t = String(it.title || '').toLowerCase();
+      if (t && !byTitle.has(t)) byTitle.set(t, it);
+    }
+    for (const [cat, list] of byCat) {
+      const common = own(COMMON_UNITS, cat) || [];
+      // on the Japanese screen the Japanese units follow the common ones
+      const pos = (it) => { const i = common.indexOf(it._text); return i >= 0 ? i : JA && it._cat === 'Japanese Units' ? 100 : 1000; };
+      list.sort((a, b) => pos(a) - pos(b) || a._i - b._i);
+    }
+    const names = new Set();
+    for (const it of catalogs.functions) names.add(it.name);
+    for (const it of catalogs.variables) names.add(it.name);
+    sugData = { byText, byTitle, byCat, names };
+  }
+  // The place of the caret: the name being typed there (word, from start), whether it follows
+  // "to" (conv), and the expression before that "to" (src). null: nothing is offered here.
+  function sugContext() {
+    const v = exprEl.value, s = exprEl.selectionStart;
+    if (s === undefined || s === null || s !== exprEl.selectionEnd) return null;
+    if (/^[\p{L}\p{N}_]/u.test(v.slice(s))) return null; // in the middle of a name or a number
+    const before = v.slice(0, s);
+    const m = /[\p{L}_][\p{L}\p{N}_]*$/u.exec(before);
+    const word = m ? m[0] : '';
+    const head = before.slice(0, before.length - word.length);
+    const to = /(?:^|\s)(?:to|→|->)\s+$/i.exec(head);
+    return { word, start: s - word.length, end: s, conv: !!to, src: to ? head.slice(0, to.index) : '' };
+  }
+  function lookupUnit(tok) {
+    const d = sugData;
+    let it = d.byText.get(tok);
+    if (it) return it;
+    if (d.names.has(tok)) return null; // a function or a variable ("sin" is not s·in)
+    const low = tok.toLowerCase();
+    it = d.byTitle.get(low) || (low.length > 3 && low.slice(-1) === 's' ? d.byTitle.get(low.slice(0, -1)) : undefined); // meter, miles
+    if (it) return it;
+    // an SI prefix that the unit list does not have with this unit: kPa, mg, GHz, μs
+    if (tok.length > 1 && 'kMGmcµμn'.indexOf(tok[0]) >= 0) {
+      it = d.byText.get(tok.slice(1));
+      if (it && !it.currency && it._cat !== 'Japanese Units') { prefixed.add(it); return it; }
+    }
+    return null;
+  }
+  const prefixed = new Set(); // units found with a prefix in the expression being looked at (kPa: Pa)
+  // the units written in an expression (a name followed by "(" is a function)
+  function unitsIn(src) {
+    const found = [];
+    prefixed.clear();
+    const re = /°[CFR]|[\p{L}$€£¥₩₿][\p{L}\p{N}_²³⋅·]*(?:\/[\p{L}][\p{L}\p{N}²³]*)?/gu;
+    let m;
+    while ((m = re.exec(src))) {
+      const tok = m[0];
+      if (src[m.index + tok.length] === '(') continue;
+      const it = lookupUnit(tok);
+      if (it) { found.push(it); continue; }
+      if (tok.indexOf('/') > 0) for (const part of tok.split('/')) { const u = lookupUnit(part); if (u) found.push(u); }
+    }
+    return found;
+  }
+  function unitNote(it) { return (JA && it._ja ? it._ja.split(' ')[0] : it.title) || ''; }
+  // after "to", before anything is typed
+  function conversionChips(src) {
+    const found = unitsIn(src);
+    if (!found.length) return NUMBER_FORMS.map(([text, note]) => ({ kind: 'k', text, note }));
+    const cats = new Set(found.map((it) => it._conv));
+    if (cats.size !== 1) return []; // km and h: what the whole expression measures is not known here
+    const out = [];
+    for (const it of sugData.byCat.get(found[0]._conv) || []) {
+      if (found.indexOf(it) >= 0 && !prefixed.has(it)) continue; // the unit it already has
+      out.push({ kind: 'u', text: it._text, note: unitNote(it) });
+      if (out.length >= 16) break;
+    }
+    return out;
+  }
+  // Names for the letters typed. After "to" only what a value can be converted to: units (those of
+  // category cat, if the expression has a unit and any of them fits) and the ways to write a number.
+  function nameChips(word, conv, cat) {
+    const w = word.toLowerCase(), ascii = /^[\x20-\x7e]+$/.test(word), out = [];
+    if (!conv) {
+      // a variable or a unit that is already written in full (pi, kg): nothing to offer
+      const d = sugData;
+      const isUnit = d.byText.has(word), isFunc = catalogs.functions.some((it) => it.name === word);
+      if (!isFunc && (isUnit || catalogs.variables.some((it) => it.name === word))) return [];
+    }
+    const rank = (text, title, ja) => {
+      if (text === word) return 0;
+      if (text.indexOf(word) === 0) return 1;
+      if (text.toLowerCase().indexOf(w) === 0) return 2;
+      if (!ascii) {
+        if (!ja || ja.indexOf(word) < 0) return -1;
+        const names = ja.split(' ');
+        return names.indexOf(word) >= 0 ? 3 : names.some((x) => x.indexOf(word) === 0) ? 3.5 : 4;
+      }
+      return w.length >= 4 && title && title.toLowerCase().split(/[^a-z0-9]+/).some((x) => x.indexOf(w) === 0) ? 4 : -1;
+    };
+    const add = (kind, order, it, text, note) => {
+      const r = rank(text, it.title, it._ja);
+      if (r < 0 || (r === 0 && kind !== 'f')) return; // not found, or already written in full
+      out.push({ kind, text, note, r, order, i: it._i || 0 });
+    };
+    if (conv) {
+      for (const it of catalogs.units) if (!cat || it._conv === cat) add('u', 1, it, it._text, unitNote(it));
+      if (cat && !out.length) return nameChips(word, conv, '');
+      for (const [text, note] of NUMBER_FORMS) add('k', 0, { title: '' }, text, note);
+    } else {
+      for (const it of catalogs.functions) add('f', 1, it, it.name, unitNote(it));
+      for (const it of catalogs.variables) add('v', 2, it, it.name, unitNote(it));
+      for (const it of catalogs.units) if (it.insert !== false) add('u', 3, it, it._text, unitNote(it));
+    }
+    out.sort((a, b) => a.r - b.r || a.order - b.order || a.text.length - b.text.length || a.i - b.i);
+    const seen = new Set();
+    return out.filter((c) => !seen.has(c.kind + c.text) && seen.add(c.kind + c.text)).slice(0, 8);
+  }
+  // the one category of the units in an expression, or '' (no unit, or units of several categories)
+  function unitCategory(src) {
+    const cats = new Set(unitsIn(src).map((it) => it._conv));
+    return cats.size === 1 ? cats.values().next().value : '';
+  }
+  function showSuggest(chips, cx) {
+    sugEl.textContent = '';
+    for (const c of chips) {
+      const b = tapButton({ class: 'sug', 'aria-label': c.text + (c.note ? tr(', ', '、') + c.note : '') }, () => applySuggest(c, cx));
+      b.append(el('b', { text: c.kind === 'f' ? c.text + '()' : c.text }));
+      if (c.note) b.append(el('small', { text: c.note }));
+      sugEl.append(b);
+    }
+    sugEl.hidden = !chips.length;
+    sugEl.scrollLeft = 0;
+  }
+  // writes the chosen name in place of the letters typed
+  function applySuggest(c, cx) {
+    const v = exprEl.value;
+    if (v.slice(cx.start, cx.end) !== cx.word) return; // the expression changed in the meantime
+    let text = c.text, pos = cx.start + text.length;
+    if (c.kind === 'f') {
+      if (v[cx.end] !== '(') text += '()';
+      pos += 1; // between the parentheses
+    }
+    dropUndo();
+    exprEl.value = v.slice(0, cx.start) + text + v.slice(cx.end);
+    exprEl.setSelectionRange(pos, pos);
+    exprChanged();
+    showSuggest([]);
+    focusExpr();
+  }
+  // typed: the last change was typed with the phone's keyboard. The on-screen keys write whole
+  // names, so for them only the conversions after "to" are offered.
+  function updateSuggest(typed) {
+    const seq = ++sugSeq;
+    const cx = sugContext();
+    if (!cx || /^to$/i.test(cx.word) || (!cx.conv && (!typed || cx.word.length < 2))) { showSuggest([]); return; }
+    if (!sugData) {
+      showSuggest([]);
+      if (engineReady) loadSugData().then(() => { if (seq === sugSeq && sugData) updateSuggest(typed); });
+      return;
+    }
+    showSuggest(cx.word ? nameChips(cx.word, cx.conv, cx.conv ? unitCategory(cx.src) : '') : conversionChips(cx.src), cx);
+  }
+
   // -------------------------------------------------------------- plot
   const COLORS = ['#2563eb', '#e11d48', '#059669', '#d97706', '#7c3aed', '#0891b2'];
   const P = { series: [], view: null, dataX: null, exprs: [] };
@@ -1574,8 +1822,8 @@
       const canvas = el('canvas', { role: 'img', 'aria-label': tr('2D graph', '2D グラフ') });
       const tip = el('div', { class: 'plot-tip', 'aria-live': 'polite' });
       const ctl = el('div', { class: 'plot-ctl' },
-        el('button', { text: '＋', 'aria-label': tr('Zoom in', '拡大'), onclick: () => zoom(0.5) }),
-        el('button', { text: '－', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom(2) }),
+        el('button', { text: '+', 'aria-label': tr('Zoom in', '拡大'), onclick: () => zoom(0.5) }),
+        el('button', { text: '−', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom(2) }),
         el('button', { text: '⟲', 'aria-label': tr('Back to the entered range', '入力した範囲に戻す'), onclick: () => {
           P.view = null; P.mark = null; P.tip.style.display = 'none';
           compute(normalizeExpr(xmin.value), normalizeExpr(xmax.value));
@@ -1862,8 +2110,8 @@
     const canvas = el('canvas', { role: 'img', 'aria-label': tr('3D graph', '3D グラフ') });
     const tip = el('div', { class: 'plot-tip', 'aria-live': 'polite' });
     const ctl = el('div', { class: 'plot-ctl' },
-      el('button', { text: '＋', 'aria-label': tr('Zoom in', '拡大'), onclick: () => zoom3d(1.25) }),
-      el('button', { text: '－', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom3d(0.8) }),
+      el('button', { text: '+', 'aria-label': tr('Zoom in', '拡大'), onclick: () => zoom3d(1.25) }),
+      el('button', { text: '−', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom3d(0.8) }),
       el('button', { text: '⟲', 'aria-label': tr('Reset the view', '向きと大きさを戻す'), onclick: () => { Object.assign(Q3, VIEW3D); clearMark3d(); draw3d(); } }));
     const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
     const legend = el('div', { class: 'legend' });
@@ -2193,6 +2441,7 @@
   }
   function invalidateCatalogs() {
     for (const k of Object.keys(catalogs)) delete catalogs[k];
+    sugData = null; sugLoading = null; // the suggestions read the lists again when they are needed
     for (const k of ['cat-functions', 'cat-variables', 'cat-units']) {
       const p = panels[k];
       if (!p) continue;
@@ -2267,6 +2516,7 @@
       ['notation', tr('Exponential notation', '指数表記'), [['auto', tr('Automatic', '自動')], ['sci', tr('Scientific (exponent from about 1000)', '科学表記（1000 以上などで指数）')], ['eng', tr('Engineering (exponent a multiple of 3)', '工学表記（指数は 3 の倍数）')], ['pure', tr('Always', '常に指数表記')], ['none', tr('Never (all digits)', '使わない（全桁を表示）')]],
         tr('"Never" shows all digits of large integers too', '「使わない」にすると大きな整数も全桁を表示します')],
       ['grouping', tr('Digit grouping (1,000)', '3桁ごとに区切る'), 'bool'],
+      ['appearance', tr('Light or dark', 'ライト／ダーク'), [['system', tr('Same as the phone', '端末の設定と同じ')], ['light', tr('Light', 'ライト')], ['dark', tr('Dark', 'ダーク')]]],
       ['text_size', tr('Text size', '文字の大きさ'), [['normal', tr('Normal', '標準')], ['large', tr('Large', '大きめ')], ['xlarge', tr('Extra large', '特大')]], tr('Text in the history, the input field and the result', '履歴・入力欄・結果の文字の大きさ')],
       ['theme', tr('Color theme', '配色テーマ'), THEMES, tr('The color of the keys and the highlights, in the light and the dark theme', 'キーや強調表示の色（ライト・ダークの両方）')]
     ]],
@@ -2555,11 +2805,22 @@
   };
 
   // ---------------------------------------------------------------- boot
+  // The setting "Light or dark" (S.appearance): the phone's setting, or always light or dark. The app
+  // colors the system bars to match: it reads the setting at its start and is told when it changes.
+  let appearanceTold = S.appearance;
   function applyTheme() {
     let dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     try { if (window.QalcNative) dark = !!JSON.parse(QalcNative.appInfo()).dark; } catch (e) { }
+    if (S.appearance === 'dark') dark = true;
+    else if (S.appearance === 'light') dark = false;
+    if (S.appearance !== appearanceTold) {
+      appearanceTold = S.appearance;
+      try { if (window.QalcNative && QalcNative.setAppearance) QalcNative.setAppearance(String(S.appearance)); } catch (e) { }
+    }
     const root = document.documentElement;
+    const was = root.classList.contains('dark');
     root.classList.toggle('dark', dark);
+    if (was !== dark) { draw(); draw3d(); } // graphs that are already drawn take the new colors
     // the color theme (QCalc Pro); blue is the default of style.css
     const theme = hasPro() && THEMES.some(([v]) => v === S.theme) && S.theme !== 'blue' ? S.theme : '';
     if (theme) root.dataset.theme = theme; else delete root.dataset.theme;
@@ -2593,6 +2854,7 @@
     set('#expr', 'placeholder', '式を入力');
     set('#pages', 'aria-label', 'キーの種類');
     set('#drawer', 'aria-label', 'メニュー');
+    set('#suggest', 'aria-label', '候補');
     undoEl.textContent = '↶ 元に戻す';
   }
   // "Language / 言語" in the menu and in the settings: the page is loaded again in the new language
@@ -2648,6 +2910,8 @@
     const sub = $('#drawer-sub');
     if (sub) sub.textContent = tr('Calculation engine ', '計算エンジン ') + engineName;
     if (exprEl.value.trim()) exprChanged();
+    // the lists of names for the suggestions, once the first calculations are out of the way
+    setTimeout(() => { if (!sugData) loadSugData(); }, 2500);
   }
   boot();
 })();

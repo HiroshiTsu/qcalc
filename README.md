@@ -15,12 +15,13 @@ The app is in English and Japanese: it starts in English, and "Language / 言語
 ## Features
 
 - Type expressions such as `60 mph to km/h`, `100 USD to JPY`, `solve(x^2 − 5x + 6 = 0)` or `integrate(x^2 sin(x), 0, pi)`; the result is shown while you type.
+- Suggestions below the input field: after `to`, the units the value can be converted to (`5 km to` offers m, mi, ft, …; a number without a unit offers `hex`, `fraction`, `factors`, …), and with the phone keyboard the names of functions, units and constants that begin with the letters typed
 - Unit conversion, currency conversion, equations, derivatives and integrals, matrices, complex numbers, binary, octal and hexadecimal numbers, dates, uncertainty propagation, and high-precision arithmetic with up to 200,000 digits
 - Four keypads: 123, Functions, Calculus (`diff`, `integrate`, `limit`, `sum`, `dsolve`) and Matrix (entering `[1, 2; 3, 4]`, determinant, inverse, transpose and more). Matrix results are shown as tables.
 - Traditional Japanese units (坪 tsubo, 反 tan, 寸 sun, 尺 shaku, 間 ken, 里 ri, 合 gō, 升 shō, 匁 monme, 貫 kan), for example `30 坪 to m²`. libqalculate does not have these units; QCalc adds them when the engine starts, together with the matrix trace `trace()`.
 - 2D graphs (y = f(x)) and 3D graphs (surfaces z = f(x, y) that you rotate and zoom with your fingers)
 - Built-in examples and instructions (tap an example to try it). The lists of functions, units and constants can be searched (in Japanese too).
-- User-defined variables and functions, calculation history, undo for a cleared expression or a deleted history item, three text sizes, seven color themes, dark mode
+- User-defined variables and functions, calculation history, undo for a cleared expression or a deleted history item, three text sizes, seven color themes, light or dark display (the phone's setting or your own choice)
 - Export of the history as a CSV file (UTF-8 with a byte order mark, so that Excel reads it correctly)
 - No personal data is collected, and there are no ads ([privacy policy](https://hiroshitsu.github.io/qcalc/privacy.html)).
 - Requirements: Android 7.0 or later on a 64-bit ARM (arm64) device

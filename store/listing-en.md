@@ -37,10 +37,11 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Lists of functions, units and constants with search
 • Your own variables and functions
 • The result is shown while you type; reuse and copy results from the history
+• Suggestions while you type: the units you can convert to after "to", and the names of functions and units with the phone's keyboard
 • Undo for a cleared expression or history, three text sizes, seven color themes
 • Export the history as a CSV file for spreadsheets
 • Four pages of keys (123, Functions, Calculus, Matrix) or your phone's keyboard
-• Dark theme
+• Light or dark display: follow the phone's setting or choose your own
 • English and Japanese (menu → Language / 言語)
 
 ■ Privacy
@@ -60,6 +61,23 @@ Android 7.0 or later on a 64-bit ARM (arm64) device.
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
 each user the notes in their language: put both blocks into the field.
 
+1.4.0:
+
+<en-US>
+• Suggestions below the input field: the units you can convert to after "to", and names of functions and units while you type with the phone's keyboard
+• New setting "Light or dark": follow the phone, or always light or dark
+• The menu of a history item shows the date and time of the calculation
+• Fixed: "to mixed" answered with the Japanese units sun and kan
+• Fixed: in landscape a long expression pushed the keys off the screen
+</en-US>
+<ja-JP>
+・入力欄の下に候補を表示するようにしました（「to」の後は変換先の単位、スマホのキーボードでの入力中は関数や単位の名前）
+・設定に「ライト／ダーク」を追加しました（端末に合わせる・常にライト・常にダーク）
+・履歴の項目のメニューに、計算した日時を表示するようにしました
+・「to mixed」の結果に寸や貫が出る不具合を直しました
+・横向きで長い式を入力するとキーが画面の外に出る不具合を直しました
+</ja-JP>
+
 1.3.0:
 
 <en-US>
@@ -77,7 +95,7 @@ each user the notes in their language: put both blocks into the field.
 ・「3桁ごとに区切る」で、小数部分や単位の前にカンマが入る不具合を直しました
 </ja-JP>
 
-If 1.3.0 is the first release that is published:
+If no version has been published yet (this release is the first one):
 
 <en-US>
 First release.

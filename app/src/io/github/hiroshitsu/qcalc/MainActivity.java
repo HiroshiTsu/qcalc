@@ -72,10 +72,15 @@ public class MainActivity extends Activity {
     private Pro pro;
     /** The text of a file being saved, while the system's file picker is open. */
     private String pendingSave;
+    /** The page's setting "Light or dark": "system" (the phone's setting), "light" or "dark". */
+    private volatile String appearance = "system";
+    /** The view behind the page; its colour shows behind the navigation bar. */
+    private FrameLayout root;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        appearance = savedAppearance();
         // first: on its first start a build with billing looks for the data of older versions
         pro = new Pro(this, new Pro.Listener() {
             @Override
@@ -154,7 +159,7 @@ public class MainActivity extends Activity {
      * and the keyboard. Older versions keep the system's own layout.
      */
     private void setUpWindow() {
-        FrameLayout root = new FrameLayout(this);
+        root = new FrameLayout(this);
         root.setBackgroundColor(navigationBarColor());
         statusScrim = new View(this);
         statusScrim.setBackgroundColor(statusBarColor());
@@ -288,9 +293,40 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
+    /** Whether the app is shown dark: the page's setting "Light or dark", or else the phone's setting. */
     private boolean isDark() {
+        String a = appearance;
+        if ("dark".equals(a)) return true;
+        if ("light".equals(a)) return false;
+        return isSystemDark();
+    }
+
+    /** The phone's own setting (dark theme). */
+    private boolean isSystemDark() {
         int mode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
         return mode == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    /** The setting "Light or dark" as the page saved it with its other settings (qalc.settings). */
+    private String savedAppearance() {
+        try {
+            String s = StateStore.load(this, "qalc.settings");
+            if (s != null) {
+                String a = new JSONObject(s).optString("appearance", "system");
+                if ("dark".equals(a) || "light".equals(a)) return a;
+            }
+        } catch (Exception ignored) {
+        }
+        return "system";
+    }
+
+    /** Colours everything outside the page again (after the setting "Light or dark" changed). */
+    private void applyColors() {
+        if (root != null) root.setBackgroundColor(navigationBarColor());
+        if (statusScrim != null) statusScrim.setBackgroundColor(statusBarColor());
+        if (content != null) content.setBackgroundColor(backgroundColor());
+        if (web != null) web.setBackgroundColor(backgroundColor());
+        applySystemBarColors();
     }
 
     private int backgroundColor() {
@@ -493,7 +529,7 @@ public class MainActivity extends Activity {
                 o.put("version", versionName());
                 o.put("android", Build.VERSION.RELEASE);
                 o.put("device", Build.MANUFACTURER + " " + Build.MODEL);
-                o.put("dark", isDark());
+                o.put("dark", isSystemDark()); // the phone's setting; the page applies its own setting
             } catch (Exception ignored) {
             }
             return o.toString();
@@ -505,6 +541,18 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     openExternal(url);
+                }
+            });
+        }
+
+        /** The page's setting "Light or dark" changed: the system bars follow it. */
+        @JavascriptInterface
+        public void setAppearance(String mode) {
+            appearance = "dark".equals(mode) || "light".equals(mode) ? mode : "system";
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (!destroyed) applyColors();
                 }
             });
         }

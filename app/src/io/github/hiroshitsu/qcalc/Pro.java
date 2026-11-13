@@ -184,6 +184,8 @@ final class Pro {
 
     private void setOwned(boolean isOwned, boolean isPending) {
         synchronized (this) {
+            // the purchases are asked for whenever the app comes back to the screen: nothing new, no event
+            if (owned == isOwned && pending == isPending) return;
             owned = isOwned;
             pending = isPending;
         }
