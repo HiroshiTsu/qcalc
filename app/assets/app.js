@@ -1729,8 +1729,9 @@
       out.push({ kind, text, note, r, order, i: it._i || 0 });
     };
     if (conv) {
-      for (const it of catalogs.units) if (!cat || it._conv === cat) add('u', 1, it, it._text, unitNote(it));
-      if (cat && !out.length) return nameChips(word, conv, '');
+      const full = sugData.byText.get(word), only = cat || (full ? full._conv : ''); // a unit written in full (m²) offers only longer names of its own kind, not m²·A
+      for (const it of catalogs.units) if (!only || it._conv === only) add('u', 1, it, it._text, unitNote(it));
+      if (only && !out.length && !full) return nameChips(word, conv, '');
       for (const [text, note] of NUMBER_FORMS) add('k', 0, { title: '' }, text, note);
     } else {
       for (const it of catalogs.functions) add('f', 1, it, it.name, unitNote(it));
