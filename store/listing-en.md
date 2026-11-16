@@ -34,8 +34,9 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Uncertainty propagation ((5 ± 0.2) m × (3 ± 0.1) m)
 • Exact results with fractions and square roots, and high precision with up to 200,000 significant digits (above 1000 digits with QCalc Pro). Long results are shown and copied with all their digits
 • Special functions stay fast with many digits (zeta, gamma, erf, Bessel functions and more), and a long calculation can be given up to one hour
-• 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom
-• 3D graphs of surfaces z = f(x, y) that you turn with a finger (QCalc Pro)
+• 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom. Derivatives, antiderivatives, tangents, zeros and extrema; areas, curve lengths and perimeters (with a circle and an ellipse as examples)
+• 3D graphs of surfaces z = f(x, y) that you turn with a finger, with partial derivatives, volumes and surface areas (with a sphere as an example) (QCalc Pro)
+• From the calculus, equation and matrix forms, the graph that goes with the calculation: tangents, areas, the lines or planes of a linear system with its solution, the rows of a matrix as points
 • Traditional Japanese units: tsubo, tan, sun, shaku, ken, ri, gō, shō, monme, kan (30 tsubo to m²)
 • Examples and tips inside the app: tap one to try it
 • Lists of functions, units and constants with search
@@ -71,18 +72,20 @@ each user the notes in their language: put both blocks into the field.
 1.6.0:
 
 <en-US>
-• Forms laid out like the mathematics for calculus (d/dx, ∫, lim, Σ, Π, dsolve), equations and systems (solve) and matrices (▦: a grid of cells, determinant, inverse, eigenvalues, Ax = b), with the result shown at once
-• The expression is shown in math notation above the input field
-• Empty boxes are □; "Next box ▶" goes to the next one
-• Hold x for y, z, t and other letters; 📈 draws an expression in x
-• Hold a result to differentiate, integrate, draw or solve it, or edit a matrix
+• Forms laid out like the math for calculus, equations and matrices, with the result at once
+• Math notation above the input field; □ boxes and "Next box ▶"; □/□ for fractions
+• Hold x for y, z, t…; 📈 draws an expression in x
+• Graphs: f′, ∫f, tangents, zeros, extrema, ∂f/∂x; area, curve length, volume and surface area (a sphere of r = 2: 32π/3, 16π)
+• 📈 in the forms: tangents, areas, the lines or planes of a linear system, matrix rows as points
+• 1:1 scale; spheres are drawn closed
 </en-US>
 <ja-JP>
-・数式の形に欄が並んだ入力画面：微分・積分など（d/dx・∫・lim・Σ・Π・dsolve）、方程式・連立方程式（solve）、行列（▦：表の形で入力し、行列式・逆行列・固有値・連立方程式など）。結果もすぐに表示
-・入力中の式を、入力欄の上に数式の形で表示
-・空の欄は □ になり、「次の欄 ▶」で移動
-・x キーの長押しで y・z・t などの文字、📈 で x の式のグラフ
-・結果の長押しで微分・積分・グラフ・方程式、行列の編集
+・微分・積分など、方程式・連立方程式、行列を数式の形の画面で入力。結果もすぐに表示
+・入力中の式を数式の形で表示。空の欄は □、「次の欄 ▶」で移動。□/□ で分数
+・x キーの長押しで y・z・t など、📈 で x の式のグラフ
+・グラフで f′・∫f・接線・零点・極値・偏微分、面積・曲線の長さ・体積・表面積（球 r = 2 なら 32π/3・16π）
+・フォームの 📈：接線、面積、連立方程式の直線・平面と解、行列の各行を点で表示
+・目盛りをそろえる 1:1 表示、球を割れずに描画
 </ja-JP>
 
 1.5.0:

@@ -8,7 +8,7 @@
   'use strict';
   const SUP = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', '⁻': '-', '⁺': '+' };
   const SUP_RE = /^[⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]+/;
-  const OPS = '+-−×*·÷/^!%=≠<>≤≥±(),;[]√∛∜°→∞□';
+  const OPS = '+-−×*·÷/^!%=≠<>≤≥±(),;[]√∛∜°→∞□≈';
 
   function tokenize(s) {
     const t = [];
@@ -106,7 +106,7 @@
         if (!tk) break;
         if (tk.k === 'op') {
           const v = tk.v;
-          if ('=≠<>≤≥'.indexOf(v) >= 0) { if (rbp >= 5) break; next(); left = { t: 'rel', op: v, a: left, b: expr(5) }; continue; }
+          if ('=≠<>≤≥≈'.indexOf(v) >= 0) { if (rbp >= 5) break; next(); left = { t: 'rel', op: v, a: left, b: expr(5) }; continue; }
           if (v === '±') { if (rbp >= 9) break; next(); left = { t: 'bin', op: '±', a: left, b: expr(9) }; continue; }
           if (v === '+' || v === '−') { if (rbp >= 10) break; next(); left = { t: 'bin', op: v, a: left, b: expr(10) }; continue; }
           if (v === '×' || v === '÷' || v === '/') { if (rbp >= 20) break; next(); left = { t: v === '/' ? 'frac' : 'bin', op: v, a: left, b: expr(20) }; continue; }
@@ -161,7 +161,7 @@
     (n.t === 'pow' && ['num', 'id', 'paren', 'call'].indexOf(n.a.t) >= 0) || n.t === 'frac' || n.t === 'post';
   const paren = (s) => '\\left(' + s + '\\right)';
   const BIN = { '+': '+', '−': '-', '×': '\\times', '÷': '\\div', '±': '\\pm', mod: '\\bmod', and: '\\;\\text{and}\\;', or: '\\;\\text{or}\\;' };
-  const REL = { '=': '=', '≠': '\\ne', '<': '<', '>': '>', '≤': '\\le', '≥': '\\ge' };
+  const REL = { '=': '=', '≠': '\\ne', '<': '<', '>': '>', '≤': '\\le', '≥': '\\ge', '≈': '\\approx' };
 
   function tex(n, rich) {
     const T = (x) => tex(x, rich);
@@ -181,7 +181,8 @@
       case 'pos': return '+' + T(n.e);
       case 'bin': return T(n.a) + ' ' + BIN[n.op] + ' ' + T(n.b);
       case 'imul': {
-        const a = T(n.a), b = T(n.b);
+        // (2/3)x³: the fraction needs no parentheses in front of what it multiplies
+        const a = n.a.t === 'paren' && n.a.e.t === 'frac' ? T(n.a.e) : T(n.a), b = T(n.b);
         const sep = /\d$/.test(a) && /^[\d.]/.test(b) ? '\\cdot ' : (n.a.t === 'num' && (n.b.t === 'id' && n.b.v.length === 1 || n.b.t === 'paren' || n.b.t === 'pow')) ? '' : '\\,';
         return a + sep + b;
       }
@@ -275,7 +276,10 @@
   function toTeX(text) {
     if (!text || !text.trim() || text.length > 2000) return null;
     try {
-      let s = text;
+      let s = text, lead = '';
+      // a result begins with "= " or "≈ "
+      const m0 = /^\s*([=≈])\s*/.exec(s);
+      if (m0) { lead = m0[1] === '=' ? '= ' : '\\approx '; s = s.slice(m0[0].length); }
       // missing ")" at the end (the expression is still being typed)
       let depth = 0;
       for (const c of s) { if (c === '(') depth++; else if (c === ')') depth = Math.max(0, depth - 1); }
@@ -284,7 +288,7 @@
       if (!tokens.length) return null;
       const rich = { v: false };
       const out = tex(parse(tokens), rich);
-      return { tex: out, rich: rich.v };
+      return { tex: lead + out, rich: rich.v };
     } catch (e) {
       return null;
     }
@@ -295,7 +299,7 @@
     const r = toTeX(text);
     if (!r || !window.katex || (opts && opts.richOnly && !r.rich)) return false;
     try {
-      window.katex.render('\\displaystyle ' + r.tex, el, { throwOnError: false, strict: 'ignore', output: 'html' });
+      window.katex.render('\\displaystyle ' + r.tex, el, { throwOnError: false, strict: 'ignore', output: opts && opts.mathml ? 'htmlAndMathml' : 'html' });
       return true;
     } catch (e) {
       return false;
