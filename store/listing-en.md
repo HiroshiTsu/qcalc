@@ -25,7 +25,8 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Unit conversion: length, mass, speed, temperature, area, energy and many more units (5 km to mi, 20 °C to °F)
 • Currency conversion with exchange rates from the European Central Bank and other sources (100 USD to EUR)
 • Equations and systems of equations (solve, multisolve)
-• Derivatives, integrals, limits, sums and differential equations (diff, integrate, limit, sum, dsolve), with a page of keys for calculus
+• Derivatives, integrals, limits, sums and differential equations (diff, integrate, limit, sum, dsolve): the calculus keys open forms laid out like the mathematics (the limits above and below ∫ …), with the result shown at once
+• The expression is shown in math notation (fractions, powers, roots, integrals) while you type
 • Matrices and vectors, entered with a page of keys and shown as tables (inverse, determinant, transpose, rank, linear systems)
 • Complex numbers; binary, octal and hexadecimal numbers
 • Date calculations (today + 100 days)
@@ -65,6 +66,21 @@ Android 7.0 or later on a 64-bit ARM (arm64) device.
 
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
 each user the notes in their language: put both blocks into the field.
+
+1.6.0:
+
+<en-US>
+• Calculus forms: d/dx, ∫, lim, Σ, Π and dsolve open boxes laid out as the mathematics is written (the limits above and below ∫ …), and the result is shown at once
+• The expression is shown in math notation above the input field
+• An empty box becomes □ in the input field; "Next box ▶" goes to the next one
+• Touch and hold a result with x to differentiate or integrate it, draw it or put in a value for x
+</en-US>
+<ja-JP>
+・微分・積分などの入力フォーム：d/dx・∫・lim・Σ・Π・dsolve のキーで、数式の形に欄が並んだ画面（∫ の上下に上端・下端など）が開き、結果もすぐに表示されます
+・入力中の式を、入力欄の上に数式の形で表示します
+・空の欄は入力欄では □ になり、「次の欄 ▶」で次の欄へ移れます
+・x を含む結果を長押しすると、微分・積分・グラフ・x への値の代入ができます
+</ja-JP>
 
 1.5.0:
 

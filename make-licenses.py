@@ -33,6 +33,7 @@ texts = {
     'musl': read(ZIG, 'lib', 'libc', 'musl', 'COPYRIGHT'),
     'llvm': read(ZIG, 'lib', 'libcxx', 'LICENSE.TXT'),
     'zig': read(ZIG, 'LICENSE'),
+    'katex': read(P, 'app', 'assets', 'katex', 'LICENSE'),
 }
 titles = {
     'gpl2': 'GNU General Public License v2',
@@ -42,11 +43,13 @@ titles = {
     'musl': 'musl license (MIT)',
     'llvm': 'Apache License v2.0 with LLVM Exceptions',
     'zig': 'Zig license (MIT)',
+    'katex': 'KaTeX license (MIT)',
 }
 titles_ja = {
     'libxml2': 'libxml2 のライセンス（MIT）',
     'musl': 'musl のライセンス（MIT）',
     'zig': 'Zig のライセンス（MIT）',
+    'katex': 'KaTeX のライセンス（MIT）',
 }
 components = [
     {'name': 'QCalc', 'version': '',
@@ -73,6 +76,10 @@ components = [
      'license': 'MIT License', 'license_ja': 'MIT ライセンス',
      'copyright': 'Copyright (C) 1998-2012 Daniel Veillard. Copyright (C) The Libxml2 Contributors.',
      'url': 'https://gitlab.gnome.org/GNOME/libxml2', 'texts': ['libxml2']},
+    {'name': 'KaTeX', 'version': '0.16.11',
+     'license': 'MIT License', 'license_ja': 'MIT ライセンス',
+     'copyright': 'Copyright (c) 2013-2020 Khan Academy and other contributors',
+     'url': 'https://katex.org/', 'texts': ['katex']},
     {'name': 'musl libc', 'version': '(from Zig 0.17.1)', 'version_ja': '（Zig 0.17.1 に同梱）',
      'license': 'MIT License', 'license_ja': 'MIT ライセンス',
      'copyright': 'Copyright © 2005-2020 Rich Felker, et al.',

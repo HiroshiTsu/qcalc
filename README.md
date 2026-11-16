@@ -16,7 +16,7 @@ The app is in English and Japanese: it starts in English, and "Language / 言語
 
 - Type expressions such as `60 mph to km/h`, `100 USD to JPY`, `solve(x^2 − 5x + 6 = 0)` or `integrate(x^2 sin(x), 0, pi)`; the result is shown while you type.
 - Suggestions below the input field: after `to`, the units the value can be converted to (`5 km to` offers m, mi, ft, …; a number without a unit offers `hex`, `fraction`, `factors`, …), and with the phone keyboard the names of functions, units and constants that begin with the letters typed
-- Unit conversion, currency conversion, equations, derivatives and integrals, matrices, complex numbers, binary, octal and hexadecimal numbers, dates, uncertainty propagation, and high-precision arithmetic with up to 200,000 digits
+- Unit conversion, currency conversion, equations, derivatives and integrals, matrices, complex numbers, binary, octal and hexadecimal numbers, dates, uncertainty propagation, and high-precision arithmetic with up to 200,000 digits; calculus is entered in forms laid out like the mathematics, and the expression is shown in math notation while you type
 - Four keypads: 123, Functions, Calculus (`diff`, `integrate`, `limit`, `sum`, `dsolve`) and Matrix (entering `[1, 2; 3, 4]`, determinant, inverse, transpose and more). Matrix results are shown as tables.
 - Traditional Japanese units (坪 tsubo, 反 tan, 寸 sun, 尺 shaku, 間 ken, 里 ri, 合 gō, 升 shō, 匁 monme, 貫 kan), for example `30 坪 to m²`. libqalculate does not have these units; QCalc adds them when the engine starts, together with the matrix trace `trace()`.
 - 2D graphs (y = f(x)) and 3D graphs (surfaces z = f(x, y) that you rotate and zoom with your fingers)
@@ -62,7 +62,7 @@ The design document set is in [design/](design/), in English and in Japanese wit
 | `app/AndroidManifest.xml`, `app/src/` | The Java code of the app (WebView, starting and supervising the engine, downloading exchange rates, saving the history and settings, QCalc Pro) |
 | `app/src-billing/` | The purchase of QCalc Pro with the Google Play Billing Library (only in Gradle builds with `qcalc.billing=true`) |
 | `app/res/`, `app/res-debug/` | App name, theme and launcher icons (`res-debug` holds the name of the test build, "QCalc (debug)") |
-| `app/assets/` | The user interface (HTML / CSS / JavaScript). `licenses.js` holds the license texts of the bundled software |
+| `app/assets/` | The user interface (HTML / CSS / JavaScript). `mathview.js` turns expressions into math notation, shown with KaTeX (`katex/`). `licenses.js` holds the license texts of the bundled software |
 | `app/jniLibs/arm64-v8a/libqalcengine.so` | The prebuilt calculation engine (an arm64 executable; `build-engine.sh` rebuilds it) |
 | `third_party/` | Source archives of libqalculate, GMP, MPFR, FLINT and libxml2, which are built into the engine ([details](third_party/README.md)) |
 | `patches/` | QCalc's changes to libqalculate: special functions at a high precision with FLINT's Arb ([details](patches/README.md)) |
@@ -147,6 +147,6 @@ QCalc is free software under the GNU General Public License, version 2 or later 
 
 As a special exception, the copyright holder of QCalc's own code (everything in this repository that is not in `third_party/`) gives permission to link it with the Google Play Billing Library and the libraries it needs, and to distribute the result, without the GPL applying to those libraries. Any other software that is GPL-licensed, such as libqalculate, is not covered by this exception; QCalc's app code does not link libqalculate, which runs as a separate program (the engine).
 
-The engine also contains GMP (LGPL v3 or later, or GPL v2 or later), MPFR (LGPL v3 or later), FLINT (LGPL v3 or later), libxml2 (MIT), the musl libc bundled with zig (MIT), LLVM libc++ / libc++abi / libunwind (Apache License 2.0 with LLVM Exceptions) and compiler_rt (MIT). Because MPFR and FLINT are LGPL v3 or later, the engine as a whole is distributed under the terms of the GNU GPL v3 or later. The sources are in `third_party/`, and the full license texts can be read in the app under "About this app" → "Open source licenses".
+The engine also contains GMP (LGPL v3 or later, or GPL v2 or later), MPFR (LGPL v3 or later), FLINT (LGPL v3 or later), libxml2 (MIT), the musl libc bundled with zig (MIT), LLVM libc++ / libc++abi / libunwind (Apache License 2.0 with LLVM Exceptions) and compiler_rt (MIT). Because MPFR and FLINT are LGPL v3 or later, the engine as a whole is distributed under the terms of the GNU GPL v3 or later. The user interface shows math notation with KaTeX 0.16.11 (MIT, `app/assets/katex/`). The sources are in `third_party/`, and the full license texts can be read in the app under "About this app" → "Open source licenses".
 
 The icon was made for QCalc and is different from the Qalculate! icon. The digits in it are drawn with the font Inter (SIL Open Font License).

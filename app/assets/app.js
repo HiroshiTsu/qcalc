@@ -143,7 +143,7 @@
 
   // ----------------------------------------------------------- settings
   const DEFAULTS = {
-    angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1, time_limit: 20,
+    angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1, time_limit: 20, math_view: true,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: false, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
     text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system'
@@ -258,15 +258,15 @@
       ['asin', { ins: 'asin()', back: 1 }], ['acos', { ins: 'acos()', back: 1 }], ['atan', { ins: 'atan()', back: 1 }], ['ln', { ins: 'ln()', back: 1 }], ['log', { ins: 'log10()', back: 1, label: 'log₁₀' }],
       ['x²', { ins: '^2', op: true }], ['x⁻¹', { ins: '^(−1)', op: true }], ['∛', { ins: 'cbrt()', back: 1 }], ['eˣ', { ins: 'exp()', back: 1 }], ['n!', { ins: '!', op: true }],
       ['|x|', { ins: 'abs()', back: 1 }], ['e', { ins: 'e' }], ['i', { ins: 'i' }], ['°', { ins: '°' }], ['mod', { ins: ' mod ' }],
-      ['solve', { ins: 'solve()', back: 1 }], ['∫', { ins: 'integrate()', back: 1 }], ['d/dx', { ins: 'diff()', back: 1 }], ['Σ', { ins: 'sum()', back: 1 }], ['=', { act: 'eq', cls: 'eq' }]
+      ['solve', { ins: 'solve()', back: 1 }], ['∫', { form: 'int', ins: 'integrate(□)' }], ['d/dx', { form: 'diff', ins: 'diff(□)' }], ['Σ', { form: 'sum', ins: 'sum(□, □, □)' }], ['=', { act: 'eq', cls: 'eq' }]
     ],
     // analysis: derivatives, integrals, limits, sums and products, differential equations.
-    // A template such as integrate(, 0, 1) shows where the limits go; the caret is put where the
-    // function is typed ("back" characters before the end).
+    // These keys open a form (form, see "calculus forms") with the boxes laid out as the mathematics
+    // is written; in a box of a form they type the template (ins) instead, with □ for each box.
     calc: [
-      ['d/dx', { ins: 'diff()', back: 1 }], ['d²/dx²', { ins: 'diff(, x, 2)', back: 7, cls: 'fn sm' }], ['∂/∂y', { ins: 'diff(, y)', back: 4 }], ['⌫', { act: 'del', cls: 'ctl', repeat: true }], ['AC', { act: 'clear', cls: 'ctl' }],
-      ['∫', { ins: 'integrate()', back: 1 }], ['∫ₐᵇ', { ins: 'integrate(, 0, 1)', back: 7, html: '∫<sub>a</sub><sup>b</sup>' }], ['lim', { ins: 'limit(, 0)', back: 4 }], ['Σ', { ins: 'sum(, 1, 10)', back: 8 }], ['Π', { ins: 'product(, 1, 10)', back: 8 }],
-      ['dsolve', { ins: 'dsolve(diff(y, x) = )', back: 1, cls: 'fn sm' }], [tr('max/min', '極値'), { ins: 'extremum()', back: 1, cls: tr('fn sm', undefined) }], ['solve', { ins: 'solve()', back: 1 }], ['∞', { ins: '∞' }], ['y', { ins: 'y' }],
+      ['d/dx', { form: 'diff', ins: 'diff(□)' }], ['d²/dx²', { form: 'diff', init: { n: '2' }, ins: 'diff(□, x, 2)', cls: 'fn sm' }], ['∂/∂y', { form: 'diff', init: { v: 'y' }, ins: 'diff(□, y)' }], ['⌫', { act: 'del', cls: 'ctl', repeat: true }], ['AC', { act: 'clear', cls: 'ctl' }],
+      ['∫', { form: 'int', ins: 'integrate(□)' }], ['∫ₐᵇ', { form: 'int', init: { focus: 'a', order: ['a', 'b', 'f', 'v'] }, ins: 'integrate(□, □, □)', html: '∫<sub>a</sub><sup>b</sup>' }], ['lim', { form: 'lim', ins: 'limit(□, □)' }], ['Σ', { form: 'sum', ins: 'sum(□, □, □)' }], ['Π', { form: 'prod', ins: 'product(□, □, □)' }],
+      ['dsolve', { form: 'dsolve', ins: 'dsolve(diff(y, x) = □)', cls: 'fn sm' }], [tr('max/min', '極値'), { ins: 'extremum()', back: 1, cls: tr('fn sm', undefined) }], ['solve', { ins: 'solve()', back: 1 }], ['∞', { ins: '∞' }], ['y', { ins: 'y' }],
       ['(', { ins: '(' }], [')', { ins: ')' }], ['xʸ', { ins: '^', op: true, cls: 'op' }], ['√', { ins: '√()', back: 1, cls: 'op' }], ['π', { ins: 'π', cls: 'op' }],
       ['sin', { ins: 'sin()', back: 1 }], ['ln', { ins: 'ln()', back: 1 }], ['e', { ins: 'e' }], [tr('more…', 'ほか…'), { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
     ],
@@ -326,7 +326,8 @@
     else b.textContent = o.label || label;
     const run = () => {
       vibrate();
-      if (o.act) action(o.act);
+      if (o.form && !editTarget) openForm(o.form, o.init); // in a form's box the template is typed instead
+      else if (o.act) action(o.act);
       else insert(o.ins !== undefined ? o.ins : label, o.back || 0, o.op);
     };
     bindPress(b, run, o.repeat);
@@ -428,32 +429,42 @@
     exprChanged();
   }
 
+  // The keys type into the input field, or into the box of a calculus form that has the focus
+  // (editTarget, see "calculus forms").
+  let editTarget = null;
+  const tgt = () => editTarget || exprEl;
+  function targetChanged() { if (editTarget) formChanged(); else exprChanged(); }
   function insert(text, back, isOp) {
-    dropUndo();
-    const v = exprEl.value;
-    let s = exprEl.selectionStart, e = exprEl.selectionEnd;
+    const f = tgt();
+    if (f === exprEl) dropUndo();
+    const v = f.value;
+    let s = f.selectionStart, e = f.selectionEnd;
     if (s === undefined || s === null) { s = e = v.length; }
-    if (isOp && S.auto_ans && v.trim() === '' && history.length) {
+    if (isOp && S.auto_ans && v.trim() === '' && history.length && f === exprEl) {
       text = 'ans' + text;
     }
     const sel = v.slice(s, e);
-    if (sel && back) {
+    if (sel && back && sel !== '□') {
       // wrap the selection: sin() + "2" -> sin(2), integrate(, 0, 1) + "x^2" -> integrate(x^2, 0, 1)
+      // (a selected □, a box still to be filled in, is replaced instead)
       text = text.slice(0, text.length - back) + sel + text.slice(text.length - back);
       back = 0;
     }
-    exprEl.value = v.slice(0, s) + text + v.slice(e);
+    f.value = v.slice(0, s) + text + v.slice(e);
     const pos = s + text.length - (back || 0);
-    exprEl.setSelectionRange(pos, pos);
-    exprChanged();
+    const box = text.indexOf('□');
+    if (box >= 0) f.setSelectionRange(s + box, s + box + 1); // the first □ of a template, to be typed over
+    else f.setSelectionRange(pos, pos);
+    targetChanged();
   }
   function action(a) {
-    const v = exprEl.value;
-    const s = exprEl.selectionStart, e = exprEl.selectionEnd;
+    const f = tgt();
+    const v = f.value;
+    const s = f.selectionStart, e = f.selectionEnd;
     switch (a) {
       case 'del':
-        if (v) dropUndo();
-        if (s !== e) { exprEl.value = v.slice(0, s) + v.slice(e); exprEl.setSelectionRange(s, s); }
+        if (v && f === exprEl) dropUndo();
+        if (s !== e) { f.value = v.slice(0, s) + v.slice(e); f.setSelectionRange(s, s); }
         else if (s > 0) {
           // delete a whole surrogate pair, or a whole template that is still empty when the caret
           // is right after its "name(":  sin(|)  integrate(|, 0, 1)  diff(|, x, 2)
@@ -461,19 +472,19 @@
           const before = v.slice(0, s);
           const m = before.match(/(?:[\p{L}_][\p{L}\p{N}_]*|[√∛∜])\($/u);
           const rest = m && /^(?:, [^(),;[\]]*)*\)/.exec(v.slice(s));
-          if (rest) { n = m[0].length; exprEl.value = v.slice(0, s - n) + v.slice(s + rest[0].length); exprEl.setSelectionRange(s - n, s - n); exprChanged(); break; }
+          if (rest) { n = m[0].length; f.value = v.slice(0, s - n) + v.slice(s + rest[0].length); f.setSelectionRange(s - n, s - n); targetChanged(); break; }
           if (/[\uDC00-\uDFFF]/.test(v[s - 1] || '')) n = 2;
-          exprEl.value = v.slice(0, s - n) + v.slice(e);
-          exprEl.setSelectionRange(s - n, s - n);
+          f.value = v.slice(0, s - n) + v.slice(e);
+          f.setSelectionRange(s - n, s - n);
         }
-        exprChanged();
+        targetChanged();
         break;
       case 'clear':
-        offerUndo(v); // AC is next to ⌫: a long expression cleared by mistake can be brought back
-        exprEl.value = '';
-        exprChanged();
+        if (f === exprEl) offerUndo(v); // AC is next to ⌫: a long expression cleared by mistake can be brought back
+        f.value = '';
+        targetChanged();
         break;
-      case 'eq': commit(); break;
+      case 'eq': if (editTarget) formCalculate(); else commit(); break;
       case 'more': {
         // "more…": the function list, showing the functions of this page's field
         const tab = PAGE_TABS.find((t) => t[0] === page);
@@ -485,15 +496,15 @@
         // a selection collapses to its start; otherwise one character back (a surrogate pair counts as one)
         let p = s;
         if (s === e && p > 0) p -= /[\uDC00-\uDFFF]/.test(v[p - 1]) && p > 1 ? 2 : 1;
-        exprEl.setSelectionRange(p, p);
-        updateSuggest(false);
+        f.setSelectionRange(p, p);
+        if (f === exprEl) updateSuggest(false);
         break;
       }
       case 'right': {
         let p = e;
         if (s === e && p < v.length) p += /[\uD800-\uDBFF]/.test(v[p]) && p + 1 < v.length ? 2 : 1;
-        exprEl.setSelectionRange(p, p);
-        updateSuggest(false);
+        f.setSelectionRange(p, p);
+        if (f === exprEl) updateSuggest(false);
         break;
       }
     }
@@ -502,10 +513,12 @@
   function toggleKeyboard(force) {
     const text = force !== undefined ? force : exprEl.inputMode !== 'text';
     exprEl.inputMode = text ? 'text' : 'none';
+    for (const b of formBoxes()) b.inputMode = exprEl.inputMode; // the boxes of an open calculus form too
     document.body.classList.toggle('kbd', text);
     kbdMinH = window.innerHeight; kbdW = window.innerWidth;
-    exprEl.blur();
-    setTimeout(text ? () => exprEl.focus() : focusExpr, 30);
+    const f = tgt();
+    f.blur();
+    setTimeout(text ? () => f.focus() : focusExpr, 30);
     updateToolbar();
   }
   // When the phone keyboard is closed (for example with the back gesture) the page grows
@@ -552,8 +565,10 @@
   }
   function focusExpr() {
     // with inputmode="none" this only shows the caret, not the system keyboard
-    if (document.activeElement !== exprEl) {
-      try { exprEl.focus({ preventScroll: true }); } catch (e) { exprEl.focus(); }
+    // (the box of an open calculus form gets the focus instead of the input field)
+    const f = tgt();
+    if (document.activeElement !== f) {
+      try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); }
     }
   }
 
@@ -588,6 +603,8 @@
     saveDraft();
     autosize();
     updateSuggest(typed === true);
+    updateMathView();
+    nextBoxEl.hidden = exprEl.value.indexOf('□') < 0;
     clearTimeout(previewTimer);
     if (!exprEl.value.trim() || !S.preview) { showPreview(null); return; }
     previewTimer = setTimeout(runPreview, 160);
@@ -595,12 +612,28 @@
   // "5 km to" while the unit is still to be typed or chosen: what is before the "to" is calculated
   // (the engine would read a "to" at the end as units, t·o: "255 to" gave "255 B·t")
   function withoutOpenTo(expr) { return expr.replace(/\s+(?:to|→|->)$/i, ''); }
+  // The expression in math notation above the input field (setting "Math notation"; mathview.js and
+  // KaTeX): only when it shows more than the text does (fractions, powers, roots, integrals …).
+  const mathEl = $('#mathview');
+  function updateMathView() {
+    const t = exprEl.value;
+    let ok = false;
+    if (S.math_view && t.trim() && window.QMath) ok = QMath.render(mathEl, normalizeExpr(t), { richOnly: true });
+    mathEl.hidden = !ok;
+    parsedEl.hidden = ok;
+    if (ok) mathEl.scrollLeft = mathEl.scrollWidth;
+  }
   async function runPreview() {
     if (!engineReady) return;
     if (previewBusy) { previewAgain = true; return; }
     const raw = exprEl.value.trim();
     const expr = raw && withoutOpenTo(normalizeExpr(raw));
     if (!expr) { showPreview(null); return; }
+    if (expr.indexOf('□') >= 0) { // a template with boxes still to fill in
+      showPreview(null);
+      msgEl.textContent = tr('Fill in the boxes □ ("Next box ▶" goes to the next one)', '□ の欄を埋めてください（「次の欄 ▶」で次の欄へ）');
+      return;
+    }
     previewBusy = true;
     const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
     previewBusy = false;
@@ -813,6 +846,12 @@
     if (!engineReady) { toast(tr('The calculation engine is starting', '計算エンジンを準備中です')); return; }
     const expr = withoutOpenTo(normalizeExpr(raw));
     if (!expr) return;
+    if (expr.indexOf('□') >= 0) {
+      selectBox(false);
+      msgEl.textContent = tr('Fill in the boxes □ first', '先に □ の欄を埋めてください');
+      msgEl.className = 'msg error';
+      return;
+    }
     committing = true;
     stopping = false;
     clearTimeout(previewTimer);
@@ -924,6 +963,264 @@
     clearInterval(cancelTimer);
     cancelTimer = setInterval(() => { if (committing) QalcNative.cancel(); else clearInterval(cancelTimer); }, 400);
   });
+
+  // ===================================================== calculus forms
+  // Derivatives, integrals, limits, sums, products, differential equations and substituting a value
+  // are entered in a form instead of a template: boxes laid out the way the mathematics is written
+  // (the limits above and below ∫, the variable under lim …). The form takes the place of the history
+  // and the input field, and the keys type into the box that has the focus (editTarget). "Insert"
+  // puts the expression into the input field, where a needed box that is still empty becomes □ to be
+  // filled in; "Calculate" (or =) inserts it and calculates it. The result is previewed while typing.
+  const cformEl = $('#cform');
+  const CF = { id: null, boxes: {}, order: [], sel: [0, 0], dir: '', seq: 0, timer: null, nodes: null };
+  function formBoxes() { return CF.id ? CF.order.map((k) => CF.boxes[k]) : []; }
+  // the layout: rows, columns, an operator with a box above and below it, symbols and labels
+  const cfRow = (...c) => el('div', { class: 'cf-row' }, ...c);
+  const cfCol = (...c) => el('div', { class: 'cf-col' }, ...c);
+  const cfOp = (top, sym, bottom) => el('div', { class: 'cf-op' }, top || el('span'), sym, bottom || el('span'));
+  const cfBig = (t, cls) => el('span', { class: 'cf-big' + (cls ? ' ' + cls : ''), text: t, 'aria-hidden': 'true' });
+  const cfT = (t) => el('span', { class: 'cf-t', text: t });
+  const cfLbl = (t, box) => el('label', { class: 'cf-lbl' }, typeof t === 'string' ? el('span', { text: t }) : t, box);
+  // A form: its title, the boxes in the order "Next" goes through them ([key, placeholder, needed,
+  // value when empty]), the layout, and the expression it makes (g(key) gives a box's value, □ for a
+  // needed box that is empty, '' for an optional one).
+  const FORMS = {
+    int: {
+      title: tr('Integral', '積分'),
+      boxes: [['f', 'f(x)', true], ['a', tr('lower', '下端')], ['b', tr('upper', '上端')], ['v', 'x', false, 'x']],
+      hint: tr('Leave both limits empty for the indefinite integral', '上端と下端を空にすると不定積分になります'),
+      layout: (B) => [cfRow(cfOp(B.b, cfBig('∫', 'int'), B.a), B.f, cfT('d'), B.v)],
+      build: (g) => {
+        const f = g('f'), a = g('a'), b = g('b'), v = g('v');
+        if (!a && !b) return v === 'x' ? `integrate(${f})` : `integrate(${f}, undefined, undefined, ${v})`;
+        return `integrate(${f}, ${a || '□'}, ${b || '□'}${v === 'x' ? '' : ', ' + v})`;
+      }
+    },
+    diff: {
+      title: tr('Derivative', '微分'),
+      boxes: [['f', 'f(x)', true], ['v', 'x', false, 'x'], ['n', '1', false, '1'], ['at', tr('(none)', '（なし）')]],
+      hint: tr('With a value of the variable, the result is the derivative at that point', '変数の値を入れると、その点での微分係数になります'),
+      layout: (B, N) => [cfRow(N.op = el('span', { class: 'cf-tex' }), B.f),
+        el('div', { class: 'cf-opts' }, cfLbl(tr('variable', '変数'), B.v), cfLbl(tr('order', '階数'), B.n),
+          cfLbl(N.at = el('span', { text: 'x =' }), B.at))],
+      update: (g, N) => {
+        const v = g('v'), n = g('n');
+        const d = n === '1' ? '\\frac{\\mathrm{d}}{\\mathrm{d}' + v + '}' : '\\frac{\\mathrm{d}^{' + n + '}}{\\mathrm{d}' + v + '^{' + n + '}}';
+        renderTeX(N.op, d, v + ' ' + n);
+        N.at.textContent = v + ' =';
+      },
+      build: (g) => {
+        const f = g('f'), v = g('v'), n = g('n'), at = g('at');
+        if (at) return `diff(${f}, ${v}, ${n}, ${at})`;
+        if (n !== '1') return `diff(${f}, ${v}, ${n})`;
+        return v === 'x' ? `diff(${f})` : `diff(${f}, ${v})`;
+      }
+    },
+    lim: {
+      title: tr('Limit', '極限'),
+      boxes: [['f', 'f(x)', true], ['v', 'x', false, 'x'], ['a', 'a', true]],
+      dirs: true,
+      layout: (B) => [cfRow(cfOp(null, cfBig('lim', 'lim'), cfRow(B.v, cfT('→'), B.a)), B.f)],
+      build: (g, dir) => {
+        const f = g('f'), v = g('v'), a = g('a');
+        return `limit(${f}, ${a}${v !== 'x' || dir ? ', ' + v : ''}${dir ? ', ' + dir : ''})`;
+      }
+    },
+    sum: {
+      title: tr('Sum', '総和'),
+      boxes: [['f', 'f(x)', true], ['v', 'x', false, 'x'], ['a', tr('from', '始め'), true], ['b', tr('to', '終わり'), true]],
+      layout: (B) => [cfRow(cfOp(B.b, cfBig('Σ'), cfRow(B.v, cfT('='), B.a)), B.f)],
+      build: (g) => `sum(${g('f')}, ${g('a')}, ${g('b')}${g('v') === 'x' ? '' : ', ' + g('v')})`
+    },
+    prod: {
+      title: tr('Product', '総乗'),
+      boxes: [['f', 'f(x)', true], ['v', 'x', false, 'x'], ['a', tr('from', '始め'), true], ['b', tr('to', '終わり'), true]],
+      layout: (B) => [cfRow(cfOp(B.b, cfBig('Π'), cfRow(B.v, cfT('='), B.a)), B.f)],
+      build: (g) => `product(${g('f')}, ${g('a')}, ${g('b')}${g('v') === 'x' ? '' : ', ' + g('v')})`
+    },
+    dsolve: {
+      title: tr('Differential equation', '微分方程式'),
+      boxes: [['r', 'f(x, y)', true], ['y0', tr('(none)', '（なし）')]],
+      hint: tr('y′ is dy/dx. Without y(0) the result is the general solution (with a constant C)', 'y′ は dy/dx です。y(0) を空にすると一般解（定数 C を含む）になります'),
+      layout: (B) => [cfCol(cfRow(cfTeX("y' =", 'y′ ='), B.r), cfRow(cfTeX('y(0) =', 'y(0) ='), B.y0))],
+      build: (g) => `dsolve(diff(y, x) = ${g('r')}${g('y0') ? ', ' + g('y0') : ''})`
+    },
+    subst: {
+      title: tr('Substitute a value', '値を代入'),
+      boxes: [['f', 'f(x)', true], ['v', 'x', false, 'x'], ['a', tr('value', '値'), true]],
+      layout: (B) => [cfRow(B.f, cfBig('|', 'bar'), B.v, cfT('='), B.a)],
+      build: (g) => `${wrapValue(g('f'))} where ${g('v')} = ${g('a')}`
+    }
+  };
+  // the width of a text in ch: Japanese (full-width) characters count twice
+  const textWidth = (t) => Array.from(t).reduce((n, c) => n + (/[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/.test(c) ? 2 : 1), 0);
+  // a symbol or label written in TeX (y′ =)
+  const cfTeX = (texSrc, text) => { const n = el('span', { class: 'cf-t' }); renderTeX(n, texSrc, text); return n; };
+  function renderTeX(node, texSrc, fallback) {
+    try { if (window.katex) { window.katex.render('\\displaystyle ' + texSrc, node, { throwOnError: false, strict: 'ignore' }); return; } } catch (e) { }
+    node.textContent = fallback;
+  }
+  function formValue(k) {
+    const d = FORMS[CF.id].boxes.find((b) => b[0] === k);
+    const v = normalizeExpr(CF.boxes[k].value);
+    return v || (d[3] !== undefined ? d[3] : d[2] ? '□' : '');
+  }
+  const formMissing = () => FORMS[CF.id].boxes.filter((b) => b[2] && !CF.boxes[b[0]].value.trim()).map((b) => b[0]);
+  // init: values of the boxes ({ f: 'x^2', n: '2' }), the box to start in (focus), the direction of a limit (dir)
+  function openForm(id, init) {
+    const F = FORMS[id];
+    if (!F) return;
+    init = init || {};
+    if (CF.id) closeForm();
+    CF.id = id;
+    CF.boxes = {};
+    CF.order = init.order || F.boxes.map((b) => b[0]);
+    CF.dir = init.dir || '';
+    CF.nodes = {};
+    // the expression replaces what is selected in the input field, or goes where the caret is;
+    // a selection is put into the box of the function
+    const len = exprEl.value.length;
+    const ss = exprEl.selectionStart, se = exprEl.selectionEnd;
+    CF.sel = [Math.min(ss === null || ss === undefined ? len : ss, len), Math.min(se === null || se === undefined ? len : se, len)];
+    const selected = exprEl.value.slice(CF.sel[0], CF.sel[1]);
+    for (const [k, ph] of F.boxes) {
+      const b = el('input', { class: 'cf-box' + (k === 'f' || k === 'r' ? ' wide' : ''), placeholder: ph, inputmode: exprEl.inputMode === 'text' ? 'text' : 'none',
+        autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', enterkeyhint: 'go', 'aria-label': ph });
+      b.dataset.k = k;
+      b.value = init[k] !== undefined ? String(init[k]) : '';
+      b.addEventListener('focus', () => { editTarget = b; for (const x of formBoxes()) x.classList.toggle('on', x === b); });
+      b.addEventListener('input', () => { const p = b.selectionStart, q = b.value; b.value = normalizeJa(q); if (b.value !== q) b.setSelectionRange(p, p); formChanged(); });
+      b.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); formCalculate(); } });
+      CF.boxes[k] = b;
+    }
+    if (selected && selected !== '□' && init.f === undefined && CF.boxes.f) CF.boxes.f.value = selected.trim();
+    const next = tapButton({ class: 'cf-next', text: tr('Next box ▶', '次の欄 ▶') }, () => formNext());
+    const close = tapButton({ class: 'icon-btn', 'aria-label': tr('Close', '閉じる'), html: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>' }, () => closeForm());
+    const body = el('div', { class: 'cf-body' }, ...F.layout(CF.boxes, CF.nodes));
+    if (F.dirs) {
+      const seg = el('div', { class: 'seg cf-seg', role: 'group', 'aria-label': tr('Direction', '近づき方') });
+      for (const [d, t] of [['', tr('Both sides', '両側')], ['1', tr('From the right (+)', '右から（+）')], ['−1', tr('From the left (−)', '左から（−）')]]) {
+        const b = tapButton({ text: t }, () => { CF.dir = d; for (const x of seg.children) x.classList.toggle('on', x === b); formChanged(); });
+        b.classList.toggle('on', d === CF.dir);
+        seg.append(b);
+      }
+      body.append(seg);
+    }
+    CF.nodes.expr = el('div', { class: 'cf-expr' });
+    CF.nodes.res = el('div', { class: 'cf-res', 'aria-live': 'polite' });
+    CF.nodes.msg = el('div', { class: 'cf-msg' });
+    cformEl.textContent = '';
+    cformEl.append(el('div', { class: 'cf-bar' }, close, el('div', { class: 'cf-title', text: F.title }), next),
+      body, F.hint ? el('div', { class: 'cf-hint', text: F.hint }) : el('span'), CF.nodes.expr, CF.nodes.res, CF.nodes.msg,
+      el('div', { class: 'cf-actions' },
+        tapButton({ class: 'btn', text: tr('Insert', '式に入れる') }, () => formInsert(false)),
+        tapButton({ class: 'btn primary', text: tr('Calculate', '計算する') }, () => formCalculate())));
+    cformEl.hidden = false;
+    document.body.classList.add('cform-open');
+    const first = init.focus || formMissing()[0] || CF.order[0];
+    editTarget = CF.boxes[first];
+    formChanged();
+    focusExpr();
+  }
+  function closeForm() {
+    if (!CF.id) return;
+    clearTimeout(CF.timer);
+    CF.seq++;
+    CF.id = null;
+    editTarget = null;
+    cformEl.hidden = true;
+    cformEl.textContent = '';
+    document.body.classList.remove('cform-open');
+    focusExpr();
+  }
+  // "Next box": the box after the one that has the focus (from the last one back to the first)
+  function formNext() {
+    const i = CF.order.indexOf(editTarget && editTarget.dataset.k);
+    const b = CF.boxes[CF.order[(i + 1) % CF.order.length]];
+    editTarget = b;
+    b.focus();
+    b.setSelectionRange(b.value.length, b.value.length);
+  }
+  function formChanged() {
+    if (!CF.id) return;
+    const F = FORMS[CF.id];
+    for (const b of formBoxes()) {
+      b.style.width = Math.max(b.classList.contains('wide') ? 7 : 3, textWidth(b.value || b.placeholder) + 1.5) + 'ch';
+      b.classList.remove('missing');
+    }
+    if (F.update) F.update(formValue, CF.nodes);
+    const expr = F.build(formValue, CF.dir);
+    CF.nodes.expr.textContent = expr;
+    CF.nodes.msg.textContent = '';
+    clearTimeout(CF.timer);
+    const seq = ++CF.seq;
+    if (formMissing().length) {
+      CF.nodes.res.textContent = '';
+      CF.nodes.msg.className = 'cf-msg';
+      CF.nodes.msg.textContent = tr('Fill in the boxes to see the result', '欄を埋めると結果を表示します');
+      return;
+    }
+    CF.timer = setTimeout(async () => {
+      if (!engineReady) return;
+      CF.nodes.res.textContent = '…';
+      const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 1500, max_chars: 20000 });
+      if (seq !== CF.seq || !CF.id) return;
+      const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
+      CF.nodes.msg.className = 'cf-msg error';
+      if (!r.ok) { CF.nodes.res.textContent = ''; CF.nodes.msg.textContent = localMessage(r.error) || ''; }
+      else if (r.timeout) { CF.nodes.res.textContent = ''; CF.nodes.msg.className = 'cf-msg'; CF.nodes.msg.textContent = tr('Press "Calculate" to calculate it (it takes longer)', '時間がかかるため「計算する」で計算してください'); }
+      else if (err || !r.result) { CF.nodes.res.textContent = ''; CF.nodes.msg.textContent = err ? localMessage(err.text) : tr('Check the boxes', '欄を確認してください'); }
+      else {
+        showResult(CF.nodes.res, resultText(r));
+        const warn = (r.messages || []).find((m) => m.type === 'warning');
+        if (warn) { CF.nodes.msg.className = 'cf-msg warning'; CF.nodes.msg.textContent = localMessage(warn.text); }
+      }
+    }, 250);
+  }
+  // puts the expression into the input field; calc: and calculates it
+  function formInsert(calc) {
+    if (!CF.id) return;
+    const text = FORMS[CF.id].build(formValue, CF.dir);
+    const [s, e] = CF.sel;
+    closeForm();
+    dropUndo();
+    const v = exprEl.value;
+    exprEl.value = v.slice(0, s) + text + v.slice(e);
+    const box = text.indexOf('□');
+    if (box >= 0) exprEl.setSelectionRange(s + box, s + box + 1);
+    else exprEl.setSelectionRange(s + text.length, s + text.length);
+    exprChanged();
+    focusExpr();
+    if (calc) commit();
+  }
+  function formCalculate() {
+    if (!CF.id) return;
+    const missing = formMissing();
+    if (missing.length) {
+      for (const k of missing) CF.boxes[k].classList.add('missing');
+      CF.nodes.msg.className = 'cf-msg error';
+      CF.nodes.msg.textContent = tr('Fill in the boxes marked in red', '赤い枠の欄を埋めてください');
+      editTarget = CF.boxes[missing[0]];
+      editTarget.focus();
+      return;
+    }
+    formInsert(true);
+  }
+
+  // ---- □: a box of a template to be filled in, in the input field ("Next box" goes to the next one)
+  const nextBoxEl = $('#nextbox');
+  nextBoxEl.addEventListener('pointerdown', (e) => e.preventDefault());
+  nextBoxEl.addEventListener('click', () => { vibrate(); selectBox(true); });
+  // selects the next □ after the caret (from the end back to the start); false when there is none
+  function selectBox(fromCaret) {
+    const v = exprEl.value;
+    let i = v.indexOf('□', fromCaret ? exprEl.selectionEnd : 0);
+    if (i < 0) i = v.indexOf('□');
+    if (i < 0) return false;
+    exprEl.setSelectionRange(i, i + 1);
+    focusExpr();
+    return true;
+  }
 
   // ============================================================ history
   function firstPart(result) {
@@ -1046,11 +1343,19 @@
   async function historyMenu(h) {
     if (history.indexOf(h) < 0) return;
     // when it was calculated, the expression and the result (the time first: the title shows 4 lines at most)
-    const a = await sheet((h.t ? fmtTime(h.t / 1000) + '\n' : '') + clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300), [
+    // a result with x (a function of x): differentiate, integrate, draw it or put in a value for x
+    const fx = functionOfX(h);
+    const more = fx ? [['f-diff', tr('Differentiate', '微分する')], ['f-int', tr('Integrate', '積分する')],
+      ['f-plot', tr('Draw a graph', 'グラフにする')], ['f-subst', tr('Substitute a value for x', 'x に値を代入する')]] : [];
+    const a = await sheet((h.t ? fmtTime(h.t / 1000) + '\n' : '') + clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300), more.concat([
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')], ['del', tr('Delete this line', 'この行を削除'), 'danger']
-    ]);
-    if (a === 'copy-res') copyText(shownText(h));
+    ]));
+    if (a === 'f-diff') openForm('diff', { f: fx });
+    else if (a === 'f-int') openForm('int', { f: fx });
+    else if (a === 'f-plot') openPlotWith(fx);
+    else if (a === 'f-subst') openForm('subst', { f: fx, focus: 'a' });
+    else if (a === 'copy-res') copyText(shownText(h));
     else if (a === 'copy-expr') copyText(h.expr);
     else if (a === 'edit') setExpr(h.expr);
     else if (a === 'ins-ans') insertResult(h);
@@ -1065,6 +1370,27 @@
         historyChanged();
       }]);
     }
+  }
+  // The result of a history line as an expression in x (x³ − 3x, 3x² + C), or null: not for numbers,
+  // equations, comparisons, matrices or results that cannot be inserted. "+ C" of an indefinite
+  // integral is left out.
+  function functionOfX(h) {
+    if (h.cmp || h.cut) return null;
+    let t = insertText(h);
+    if (t === null || t.length > 2000 || /[[\]=<>≤≥≠]/.test(t) || / (?:or|and) /.test(t)) return null;
+    if (outerParens(t)) t = t.slice(1, -1);
+    t = t.replace(/\s*\+\s*C$/, '');
+    return /(^|[^\p{L}_])x(?![\p{L}\p{Nd}_])/u.test(t) ? t : null; // 3x and x³ count, x2 is another name
+  }
+  // "(x + 1)" but not "(x + 1)(x − 1)": the first parenthesis is closed by the last character
+  function outerParens(t) {
+    if (t[0] !== '(' || t[t.length - 1] !== ')') return false;
+    let d = 0;
+    for (let i = 0; i < t.length; i++) {
+      if (t[i] === '(') d++;
+      else if (t[i] === ')' && --d === 0) return i === t.length - 1;
+    }
+    return false;
   }
   function historyChanged() {
     fitHistory();
@@ -1315,6 +1641,10 @@
     tr('After →, the units you can convert to are suggested below the input field (number formats such as hex when there is no unit): tap one to type it. With the phone keyboard, the names of functions, units and constants are suggested while you type them.', '→ の後には、変換先の候補（同じ種類の単位。単位がなければ 16 進数などの表し方）が入力欄の下に出ます。タップすると入力されます。スマホのキーボードで入力しているときは、関数・単位・定数の名前の候補も出ます。'),
     tr('Switch the keys with the tabs 123, Functions, Calculus and Matrix. The ⌨ key opens the phone keyboard.', 'キーは「123」「関数」「解析」「行列」のタブで切り替えます。⌨ キーでスマホのキーボードも使えます。'),
     tr('Calculus has keys for derivatives, integrals, limits, sums and differential equations; Matrix has keys to type matrices and for determinants, inverses and more. "more…" opens the list of the functions of that field.', '「解析」には微分・積分・極限・総和・微分方程式、「行列」には行列の入力と行列式・逆行列などのキーがあります。「ほか…」でその分野の関数の一覧が開きます。'),
+    tr('The calculus keys (d/dx, ∫, lim, Σ …) open a form with boxes where the mathematics is written: the limits above and below ∫, the variable under lim. Tap a box (or "Next box ▶") and type with the keys; the result is shown at once. "Insert" puts the expression into the input field.', '解析のキー（d/dx、∫、lim、Σ など）を押すと、数式の形に欄が並んだ入力フォームが開きます（∫ の上下に上端・下端、lim の下に変数など）。欄をタップするか「次の欄 ▶」で選んでキーで入力すると、結果がすぐに表示されます。「式に入れる」で入力欄に入ります。'),
+    tr('An empty box of a form becomes □ in the input field: it is selected, so the next key types over it, and "Next box ▶" goes to the next □.', 'フォームで空のままの欄は、入力欄では □ になります。□ は選ばれた状態なので、そのままキーを押すと置き換わります。「次の欄 ▶」で次の □ に移ります。'),
+    tr('Above the input field the expression is shown in math notation (fractions, powers, roots, integrals), so you can check what you typed. It can be turned off in the settings.', '入力欄の上に、式が数式の形（分数・べき乗・根号・積分など）で表示されるので、入力した内容を確かめられます。設定で表示しないこともできます。'),
+    tr('Touch and hold a result with x (x³ − 3x) to differentiate or integrate it, draw its graph or put in a value for x.', 'x を含む結果（x³ − 3x など）を長押しすると、微分・積分・グラフ・x への値の代入ができます。'),
     tr('Type the "=" of an equation with the a=b key (the large = key calculates). Example: solve(x^2 = 16)', '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)'),
     tr('Type a matrix as [1, 2; 3, 4]: "," between the elements and ";" between the rows. Matrix results are shown as tables in the history.', '行列は [1, 2; 3, 4] のように、要素を「,」、行を「;」で区切って入力します。結果の行列は履歴に表の形で表示されます。'),
     tr('Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.', '上の「RAD」「自動」「10進」をタップすると、角度の単位、厳密・近似、結果の進数が切り替わります。'),
@@ -1858,6 +2188,7 @@
       el('div', { class: 'form-hint', text: tr('Drag to move, pinch to zoom, tap to show the coordinates. The functions are the same as on the calculator.', 'ドラッグで移動、2本指で拡大・縮小、タップで座標を表示します。式に使える関数は計算画面と同じです。') }));
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Type of graph', 'グラフの種類') }, b2, b3), f2, f3);
       P.canvas = canvas; P.tip = tip; P.legend = legend; P.msg = msg; P.wrap = wrap;
+      P.ta = ta; P.go = go; P.setMode = setMode;
       go.addEventListener('click', () => {
         store.set('qalc.plot.exprs', ta.value); store.set('qalc.plot.min', xmin.value); store.set('qalc.plot.max', xmax.value);
         document.activeElement && document.activeElement.blur();
@@ -1872,6 +2203,14 @@
       setMode(store.get('qalc.plot.mode', '2d') === '3d' ? '3d' : '2d');
     });
     return p;
+  }
+  // the graph of one function (a history line: "Draw a graph")
+  function openPlotWith(expr) {
+    store.set('qalc.plot.exprs', expr);
+    store.set('qalc.plot.mode', '2d');
+    const built = !!panels.plot;
+    openPlot();
+    if (built && P.ta) { P.ta.value = expr; P.setMode('2d'); P.go.click(); }
   }
   async function compute(min, max, keepView) {
     if (!P.exprs.length) return;
@@ -2540,6 +2879,8 @@
       ['notation', tr('Exponential notation', '指数表記'), [['auto', tr('Automatic', '自動')], ['sci', tr('Scientific (exponent from about 1000)', '科学表記（1000 以上などで指数）')], ['eng', tr('Engineering (exponent a multiple of 3)', '工学表記（指数は 3 の倍数）')], ['pure', tr('Always', '常に指数表記')], ['none', tr('Never (all digits)', '使わない（全桁を表示）')]],
         tr('"Never" shows all digits of large integers too', '「使わない」にすると大きな整数も全桁を表示します')],
       ['grouping', tr('Digit grouping (1,000)', '3桁ごとに区切る'), 'bool'],
+      ['math_view', tr('Show the expression in math notation', '入力中の式を数式の形で表示'), 'bool',
+        tr('Fractions, powers, roots, integrals and the like are shown above the input field', '分数・べき乗・根号・積分などを入力欄の上に表示します')],
       ['appearance', tr('Light or dark', 'ライト／ダーク'), [['system', tr('Same as the phone', '端末の設定と同じ')], ['light', tr('Light', 'ライト')], ['dark', tr('Dark', 'ダーク')]]],
       ['text_size', tr('Text size', '文字の大きさ'), [['normal', tr('Normal', '標準')], ['large', tr('Large', '大きめ')], ['xlarge', tr('Extra large', '特大')]], tr('Text in the history, the input field and the result', '履歴・入力欄・結果の文字の大きさ')],
       ['theme', tr('Color theme', '配色テーマ'), THEMES, tr('The color of the keys and the highlights, in the light and the dark theme', 'キーや強調表示の色（ライト・ダークの両方）')]
@@ -2616,6 +2957,7 @@
     applyTextSize();
     applyTheme();
     exprChanged();
+    if (CF.id) formChanged();
   }
   function updateChips() {
     $('#chip-angle').textContent = ANGLE_LABEL[S.angle] || 'RAD';
@@ -2827,6 +3169,7 @@
     if ($('#sheet').classList.contains('open')) { closeSheet(null); return true; }
     if ($('#drawer').classList.contains('open')) { closeDrawer(); return true; }
     if (panelStack.length) { closePanel(); return true; }
+    if (CF.id) { closeForm(); return true; }
     if (exprEl.inputMode === 'text') { toggleKeyboard(false); return true; }
     return false;
   };
@@ -2886,7 +3229,9 @@
     set('#pages', 'aria-label', 'キーの種類');
     set('#drawer', 'aria-label', 'メニュー');
     set('#suggest', 'aria-label', '候補');
+    set('#cform', 'aria-label', '入力フォーム');
     undoEl.textContent = '↶ 元に戻す';
+    nextBoxEl.textContent = '次の欄 ▶';
   }
   // "Language / 言語" in the menu and in the settings: the page is loaded again in the new language
   async function chooseLanguage() {

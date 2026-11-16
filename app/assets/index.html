@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="color-scheme" content="light dark">
 <title>QCalc</title>
+<link rel="stylesheet" href="katex/katex.min.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -26,7 +27,9 @@
 
   <section class="entry">
     <div class="parsed-row">
+      <div id="mathview" class="mathview" aria-hidden="true" hidden></div>
       <div id="parsed" class="parsed"></div>
+      <button id="nextbox" class="undo" hidden>Next box ▶</button>
       <button id="undo" class="undo" hidden>↶ Undo</button>
     </div>
     <textarea id="expr" rows="1" inputmode="none" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Enter an expression"></textarea>
@@ -34,6 +37,8 @@
     <div id="msg" class="msg"></div>
     <div id="suggest" class="suggest" role="group" aria-label="Suggestions" hidden></div>
   </section>
+
+  <section id="cform" class="cform" aria-label="Form" hidden></section>
 
   <section class="keypad" id="keypad">
     <div class="toolbar" id="toolbar"></div>
@@ -47,6 +52,8 @@
 <div id="sheet" class="sheet" role="dialog" inert></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+<script src="katex/katex.min.js"></script>
+<script src="mathview.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

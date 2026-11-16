@@ -12,7 +12,7 @@
 
 - `60 mph to km/h`、`100 USD to JPY`、`solve(x^2 − 5x + 6 = 0)`、`integrate(x^2 sin(x), 0, pi)` のように、式をそのまま入力して計算できます。
 - 入力欄の下に候補を表示：`to` の後には変換先の候補（`5 km to` なら m、mi、ft など。単位のない数なら `hex`、`fraction`、`factors` など）、スマホのキーボードで入力しているときは、入力した文字で始まる関数・単位・定数の名前（日本語の名前でも探せます）
-- 単位変換、通貨換算、方程式、微分・積分、行列、複素数、2・8・16 進数、日付、誤差の伝播、最大 200000 桁（20 万桁）の高精度計算
+- 単位変換、通貨換算、方程式、微分・積分、行列、複素数、2・8・16 進数、日付、誤差の伝播、最大 200000 桁（20 万桁）の高精度計算。微分・積分などは数式の形に欄が並んだフォームで入力でき、入力中の式は数式の形で表示されます
 - キーは「123」「関数」「解析」「行列」の 4 種類。「解析」は微分・積分・極限・総和・微分方程式（`diff`、`integrate`、`limit`、`sum`、`dsolve`）、「行列」は `[1, 2; 3, 4]` の入力と行列式・逆行列・転置などのキーです。行列の結果は表の形で表示します。
 - 日本の単位（坪・反・寸・尺・間・里・合・升・匁・貫）も使えます（例：`30 坪 to m²`）。libqalculate にはない単位で、QCalc が計算エンジンの起動時に追加しています。行列のトレース `trace()` も同じように追加しています。
 - 2D グラフ（y = f(x)）と 3D グラフ（z = f(x, y) の曲面、指で回転・拡大）
@@ -61,7 +61,7 @@ QCalc Pro は Google Play での買い切りの購入（1 回限りのアイテ�
 | `app/AndroidManifest.xml`, `app/src/` | Android 側の Java コード（WebView、エンジンの起動と監視、為替レートの取得、履歴などの保存、QCalc Pro） |
 | `app/src-billing/` | Google Play Billing Library を使う QCalc Pro の購入（Gradle で `qcalc.billing=true` のときだけ） |
 | `app/res/`, `app/res-debug/` | アプリ名、テーマ、ランチャーのアイコン（`res-debug` はテスト版の名前「QCalc (debug)」） |
-| `app/assets/` | 画面（HTML / CSS / JavaScript）。`licenses.js` はアプリに組み込んだソフトウェアのライセンス文 |
+| `app/assets/` | 画面（HTML / CSS / JavaScript）。`mathview.js` は式を数式の形に直し、KaTeX（`katex/`）で表示します。`licenses.js` はアプリに組み込んだソフトウェアのライセンス文 |
 | `app/jniLibs/arm64-v8a/libqalcengine.so` | ビルド済みの計算エンジン（arm64 の実行ファイル。`build-engine.sh` で作り直せます） |
 | `third_party/` | エンジンに組み込んだ libqalculate・GMP・MPFR・FLINT・libxml2 のソース（[説明](third_party/README.md)） |
 | `patches/` | QCalc が libqalculate に加えた変更：高い精度の特殊関数を FLINT の Arb で計算する（[説明](patches/README.md)） |
@@ -146,6 +146,6 @@ QCalc は GNU General Public License v2 以降（[LICENSE](LICENSE)）のフリ�
 
 特別な例外として、QCalc 自身のコード（このリポジトリの `third_party/` 以外）の著作権者は、これを Google Play Billing Library とそれが必要とするライブラリにリンクし、その結果を配布することを、それらのライブラリに GPL を適用せずに許可します。libqalculate など、ほかの GPL のソフトウェアはこの例外の対象ではありません。QCalc のアプリのコードは libqalculate にリンクしておらず、libqalculate は別のプログラム（計算エンジン）として動きます。
 
-計算エンジンには、GMP（LGPL v3 以降 または GPL v2 以降）、MPFR（LGPL v3 以降）、FLINT（LGPL v3 以降）、libxml2（MIT）、zig に同梱の musl libc（MIT）、LLVM libc++ / libc++abi / libunwind（Apache License 2.0 with LLVM Exceptions）、compiler_rt（MIT）も組み込んでいます。MPFR と FLINT が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。これらのソースは `third_party/` にあり、ライセンスの全文はアプリの「このアプリについて」→「オープンソースライセンス」で読めます。
+計算エンジンには、GMP（LGPL v3 以降 または GPL v2 以降）、MPFR（LGPL v3 以降）、FLINT（LGPL v3 以降）、libxml2（MIT）、zig に同梱の musl libc（MIT）、LLVM libc++ / libc++abi / libunwind（Apache License 2.0 with LLVM Exceptions）、compiler_rt（MIT）も組み込んでいます。MPFR と FLINT が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。画面の数式表示には KaTeX 0.16.11（MIT、`app/assets/katex/`）を使っています。これらのソースは `third_party/` にあり、ライセンスの全文はアプリの「このアプリについて」→「オープンソースライセンス」で読めます。
 
 アイコンは QCalc のために作ったもので、Qalculate! のアイコンとは別のものです。アイコンの中の数字は、フォント Inter（SIL Open Font License）で描いています。
