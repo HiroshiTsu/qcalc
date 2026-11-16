@@ -28,14 +28,14 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Derivatives, integrals, limits, sums and differential equations (diff, integrate, limit, sum, dsolve): the calculus keys open forms laid out like the mathematics (the limits above and below ∫ …), with the result shown at once
 • The expression is shown in math notation (fractions, powers, roots, integrals) while you type
 • Equations and systems of equations in a form (left side = right side), and matrices up to 30 × 30 in a grid of cells with the determinant, inverse, rank, eigenvalues and linear systems
-• Matrices and vectors, entered with a page of keys and shown as tables (inverse, determinant, transpose, rank, linear systems)
+• Shapes: area, lengths, volume and surface area of 15 shapes (circle, triangle, sphere, cylinder, cone…) from their sizes, with pictures, formulas and units
 • Complex numbers; binary, octal and hexadecimal numbers
 • Date calculations (today + 100 days)
 • Uncertainty propagation ((5 ± 0.2) m × (3 ± 0.1) m)
 • Exact results with fractions and square roots, and high precision with up to 200,000 significant digits (above 1000 digits with QCalc Pro). Long results are shown and copied with all their digits
 • Special functions stay fast with many digits (zeta, gamma, erf, Bessel functions and more), and a long calculation can be given up to one hour
-• 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom. Derivatives, antiderivatives, tangents, zeros and extrema; areas, curve lengths and perimeters (with a circle and an ellipse as examples)
-• 3D graphs of surfaces z = f(x, y) that you turn with a finger, with partial derivatives, volumes and surface areas (with a sphere as an example) (QCalc Pro)
+• 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom. Derivatives, antiderivatives, tangents, zeros and extrema; areas (shown at once; drag the edges), curve lengths and perimeters
+• 3D graphs of surfaces z = f(x, y) that you turn with a finger, with partial derivatives, volumes and surface areas (QCalc Pro)
 • From the calculus, equation and matrix forms, the graph that goes with the calculation: tangents, areas, the lines or planes of a linear system with its solution, the rows of a matrix as points
 • Traditional Japanese units: tsubo, tan, sun, shaku, ken, ri, gō, shō, monme, kan (30 tsubo to m²)
 • Examples and tips inside the app: tap one to try it
@@ -68,6 +68,21 @@ Android 7.0 or later on a 64-bit ARM (arm64) device.
 
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
 each user the notes in their language: put both blocks into the field.
+
+1.7.0:
+
+<en-US>
+• New: Shapes in the menu. Type the sizes and get the area, lengths, volume and surface area of 15 shapes (circle, triangle, trapezoid, sphere, cylinder, cone…), with pictures, formulas and units
+• Graph: "Area and length" shows the shaded area at once; drag its edges with a finger; the value is also written on the graph
+• The area stays when you move or zoom the graph
+• Fixed: Back had to be pressed twice after drawing an example shape
+</en-US>
+<ja-JP>
+・新機能：メニューの「図形（面積・体積・長さ）」。大きさを入れるだけで、円・三角形・台形・球・円柱・円錐など 15 の図形の面積・周の長さ・体積・表面積を計算（絵と公式つき、単位も選べます）
+・グラフ：「面積・長さ」を開くと、色のついた部分の面積をすぐ表示。範囲の端は指で動かせ、面積はグラフの上にも出ます
+・グラフを動かしたり拡大したりしても、面積が消えません
+・修正：図形の例を描いたあと「戻る」を 2 回押す必要があった不具合
+</ja-JP>
 
 1.6.0:
 
