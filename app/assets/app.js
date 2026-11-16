@@ -469,7 +469,7 @@
   // (editTarget, see "calculus forms").
   let editTarget = null;
   const tgt = () => editTarget || exprEl;
-  function targetChanged() { if (editTarget) formChanged(); else exprChanged(); }
+  function targetChanged() { if (editTarget) { CF.reveal = true; formChanged(); } else exprChanged(); }
   function insert(text, back, isOp) {
     const f = tgt();
     if (f === exprEl) dropUndo();
@@ -722,6 +722,7 @@
   // In the history and in the preview a matrix with two or more rows is drawn as a grid. Only
   // the display changes: copying and inserting a result use its text.
   // Returns the text cut into strings and { rows: [[element, …], …], text } objects.
+  // (a grid for up to 30 × 30 elements, the largest matrix of the matrix form)
   function splitMatrices(text) {
     if (text.length > 20000 || text.indexOf('[') < 0 || text.indexOf(';') < 0) return [text];
     const parts = [], n = text.length;
@@ -751,7 +752,7 @@
       }
       row.push(cell); rows.push(row);
       const cols = rows[0].length;
-      if (closed && rows.length >= 2 && rows.length * cols <= 400 && rows.every((r) => r.length === cols && r.every((x) => x.trim() !== ''))) {
+      if (closed && rows.length >= 2 && rows.length * cols <= 900 && rows.every((r) => r.length === cols && r.every((x) => x.trim() !== ''))) {
         if (i > from) parts.push(text.slice(from, i));
         parts.push({ rows: rows.map((r) => r.map((x) => x.trim())), text: text.slice(i, j + 1) });
         i = from = j + 1;
@@ -1027,7 +1028,7 @@
   // puts the expression into the input field, where a needed box that is still empty becomes □ to be
   // filled in; "Calculate" (or =) inserts it and calculates it. The result is previewed while typing.
   const cformEl = $('#cform');
-  const CF = { id: null, boxes: {}, order: [], sel: [0, 0], dir: '', seq: 0, timer: null, nodes: null };
+  const CF = { id: null, boxes: {}, order: [], sel: [0, 0], dir: '', seq: 0, timer: null, nodes: null, reveal: false };
   function formBoxes() { return CF.id ? CF.order.map((k) => CF.boxes[k]) : []; }
   // the layout: rows, columns, an operator with a box above and below it, symbols and labels
   const cfRow = (...c) => el('div', { class: 'cf-row' }, ...c);
@@ -1222,6 +1223,7 @@
     document.body.classList.add('cform-open');
     const first = init.focus || formMissing()[0] || CF.order[0];
     editTarget = CF.boxes[first];
+    CF.reveal = true; // a form opened with its boxes filled in (from the history) shows its result
     formChanged();
     focusExpr();
   }
@@ -1232,20 +1234,24 @@
     b.addEventListener('focus', () => {
       editTarget = b;
       for (const x of formBoxes()) x.classList.toggle('on', x === b);
-      if (CF.nodes && CF.nodes.vars && !FORMS[CF.id].eqs) CF.nodes.vars.hidden = k !== 'v';
+      // the letters for the variable show while its box is being edited ("Solve for" of equations too)
+      if (CF.nodes && CF.nodes.vars) CF.nodes.vars.hidden = k !== 'v';
     });
-    b.addEventListener('input', () => { const p = b.selectionStart, q = b.value; b.value = normalizeJa(q); if (b.value !== q) b.setSelectionRange(p, p); formChanged(); });
+    b.addEventListener('input', () => { const p = b.selectionStart, q = b.value; b.value = normalizeJa(q); if (b.value !== q) b.setSelectionRange(p, p); CF.reveal = true; formChanged(); });
     b.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); formCalculate(); } });
     return b;
   }
 
   // ---- the matrix form: a grid of cells (an empty cell is 0), its size, and what to calculate
-  const MAT_MAX = 8;
+  // up to 30 × 30 (the grid scrolls; determinants and inverses of that size take well under a second,
+  // eigenvalues — the roots of det(A − x·I) — some seconds from about 12 × 12 on)
+  const MAT_MAX = 30;
   const MAT_OPS = [['', tr('Matrix', '行列のまま')], ['det', tr('Determinant', '行列式')], ['inv', tr('Inverse', '逆行列')],
     ['tr', tr('Transpose', '転置')], ['rk', tr('Rank', '階数')], ['eig', tr('Eigenvalues', '固有値')], ['sys', tr('Linear system Ax = b', '連立方程式 Ax = b')]];
   const MAT_HINT = {
     '': tr('An empty cell is 0. For a product, insert the first matrix, type ×, then open this form again', '空の欄は 0 です。行列の積は、1 つ目を「式に入れる」→ × → もう一度この画面で 2 つ目を入れます'),
-    eig: tr('The eigenvalues are the solutions of det(A − x·I) = 0', '固有値は det(A − x·I) = 0 の解として求めます'),
+    // (libqalculate's solve gives the real solutions of a cubic or higher when there are any: x³ = 1 gives 1)
+    eig: tr('The eigenvalues are the solutions of det(A − x·I) = 0 (from 3 × 3 on, complex ones may be left out)', '固有値は det(A − x·I) = 0 の解として求めます（3 行以上では、複素数の固有値は出ないことがあります）'),
     sys: tr('Coefficients on the left, the right side b on the right of the line. The result is the values of x₁, x₂, …', '線の左に係数、右に右辺 b を入れます。結果は x₁, x₂, … の値です')
   };
   const squareOps = ['det', 'inv', 'eig', 'sys'];
@@ -1276,14 +1282,31 @@
   }
   function matrixLayout(body) {
     const M = CF.mat;
-    const step = (dim, d) => tapButton({ class: 'cf-step', text: d > 0 ? '+' : '−', 'aria-label': (d > 0 ? tr('More ', '増やす：') : tr('Fewer ', '減らす：')) + (dim === 'rows' ? tr('rows', '行') : tr('columns', '列')) }, () => {
-      const n = M[dim] + d;
-      if (n < 1 || n > MAT_MAX) return;
-      saveMatrixCells();
-      M[dim] = n;
-      buildMatrixGrid();
-      formChanged();
-    });
+    // + and − change the number of rows or columns by one; held down, they keep going (as ⌫ does)
+    const step = (dim, d) => {
+      const change = () => {
+        const n = M[dim] + d;
+        if (n < 1 || n > MAT_MAX) return false;
+        saveMatrixCells();
+        M[dim] = n;
+        buildMatrixGrid();
+        formChanged();
+        return true;
+      };
+      const b = el('button', { class: 'cf-step', text: d > 0 ? '+' : '−', 'aria-label': (d > 0 ? tr('More ', '増やす：') : tr('Fewer ', '減らす：')) + (dim === 'rows' ? tr('rows', '行') : tr('columns', '列')) });
+      let timer = null, repeated = false;
+      const stop = () => { clearTimeout(timer); clearInterval(timer); timer = null; };
+      b.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        stop();
+        repeated = false;
+        timer = setTimeout(() => { timer = setInterval(() => { repeated = true; if (!change()) stop(); }, 90); }, 450);
+      });
+      for (const t of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(t, stop);
+      // a click after a hold that already counted is not one more step
+      b.addEventListener('click', () => { if (repeated) { repeated = false; return; } vibrate(); change(); });
+      return b;
+    };
     CF.nodes.rowsN = el('b'); CF.nodes.colsN = el('b');
     body.append(el('div', { class: 'cf-size' },
       el('span', { class: 'cf-sz' }, el('span', { text: tr('Rows', '行') }), step('rows', -1), CF.nodes.rowsN, step('rows', 1)),
@@ -1295,6 +1318,7 @@
       const b = tapButton({ class: 'cf-op-btn', text: label }, () => {
         saveMatrixCells();
         M.op = op;
+        CF.reveal = 'op'; // a calculation was chosen: its result comes into view (the boxes may leave it)
         for (const x of ops.children) x.classList.toggle('on', x === b);
         buildMatrixGrid();
         formChanged();
@@ -1352,14 +1376,16 @@
     const m = '[' + rows.join('; ') + ']';
     switch (M.op) {
       case 'det': return 'det(' + m + ')';
-      case 'inv': return 'inverse(' + m + ')';
+      // A^(−1) rather than inverse(A): the same result, but inverse() takes seconds from about 12 × 12 on
+      // and more than 30 s at 16 × 16, where ^(−1) takes milliseconds even at 30 × 30
+      case 'inv': return m + '^(−1)';
       case 'tr': return 'transpose(' + m + ')';
       case 'rk': return 'rk(' + m + ')';
       case 'eig': return 'solve(det(' + m + ' − x × identity(' + M.rows + ')) = 0)';
       case 'sys': {
         const b = [];
         for (let i = 0; i < M.rows; i++) b.push(v('b' + i));
-        return 'inverse(' + m + ') × [' + b.join('; ') + ']';
+        return m + '^(−1) × [' + b.join('; ') + ']';
       }
     }
     return m;
@@ -1403,7 +1429,7 @@
         formChanged();
       }));
     }
-    CF.nodes.vars.hidden = false;
+    CF.nodes.vars.hidden = keep !== 'v';
     CF.nodes.eqDel.disabled = E.n < 2;
     if (CF.nodes.hint) CF.nodes.hint.textContent = eqHint();
     editTarget = CF.boxes[keep] || CF.boxes.l0;
@@ -1464,6 +1490,7 @@
       CF.nodes.res.textContent = '';
       CF.nodes.msg.className = 'cf-msg error';
       CF.nodes.msg.textContent = problem;
+      revealResult();
       return;
     }
     if (formMissing().length) {
@@ -1487,7 +1514,25 @@
         const warn = (r.messages || []).find((m) => m.type === 'warning');
         if (warn) { CF.nodes.msg.className = 'cf-msg warning'; CF.nodes.msg.textContent = localMessage(warn.text); }
       }
+      revealResult();
     }, 250);
+  }
+  // A tall form (a matrix, several equations) scrolls, with its buttons kept at the bottom: the result
+  // and its message are brought into view below the boxes, but only as far as the box being edited
+  // stays in view, and only after typing or choosing a calculation (CF.reveal) — not after + or − of
+  // the matrix size, which would move those buttons away from a finger that taps them again.
+  function revealResult() {
+    const f = cformEl, msg = CF.nodes && CF.nodes.msg, why = CF.reveal;
+    if (!why) return;
+    CF.reveal = false;
+    if (!msg || f.scrollHeight <= f.clientHeight) return;
+    const fr = f.getBoundingClientRect();
+    const actions = f.querySelector('.cf-actions');
+    const need = msg.getBoundingClientRect().bottom - (fr.bottom - (actions ? actions.offsetHeight : 0));
+    if (need <= 0) return;
+    const room = why !== 'op' && editTarget && f.contains(editTarget) ? editTarget.getBoundingClientRect().top - fr.top - 6 : need;
+    const by = Math.min(need, room);
+    if (by > 0) f.scrollTop += by;
   }
   // puts the expression into the input field; calc: and calculates it
   function formInsert(calc) {
@@ -2368,7 +2413,13 @@
           }
         }
       };
-      search.addEventListener('input', debounce(() => { p.state.q = search.value; render(); }, 150));
+      // a search looks in all the categories (the units start with the currencies, and "more…" opens
+      // one category); a category can then be chosen to narrow the results down
+      search.addEventListener('input', debounce(() => {
+        if (!p.state.q.trim() && search.value.trim()) p.state.cat = '';
+        p.state.q = search.value;
+        render();
+      }, 150));
       // show one category from the start (the "more…" key of the Calculus and Matrix key pages)
       p.setCategory = (c) => {
         p.state.cat = c; p.state.q = ''; search.value = '';

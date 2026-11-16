@@ -810,6 +810,8 @@ body.cform-open #history, body.cform-open .entry { display: none; }
   overscroll-behavior: contain;
 }
 .cform[hidden] { display: none; }
+/* the parts keep their size and the form scrolls (a result squeezed to one line would hide a matrix) */
+.cform > * { flex-shrink: 0; }
 .cf-bar { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-bottom: 1px solid var(--line); }
 .cf-title { flex: 1 1 auto; font-weight: 700; font-size: 17px; }
 .cf-next {
@@ -876,6 +878,8 @@ body.cform-open #history, body.cform-open .entry { display: none; }
   overflow-wrap: anywhere;
   -webkit-user-select: text;
   user-select: text;
+  max-height: 5.6em; /* a large matrix (up to 30 × 30) scrolls here instead of pushing the result away */
+  overflow-y: auto;
 }
 .cf-res {
   min-height: 30px;
