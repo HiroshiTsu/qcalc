@@ -790,7 +790,8 @@ input, select, textarea { font: inherit; color: inherit; }
   white-space: nowrap;
 }
 .mathview::-webkit-scrollbar { display: none; }
-.mathview[hidden], .parsed[hidden], #nextbox[hidden] { display: none; }
+.mathview[hidden], .parsed[hidden], #nextbox[hidden], #plotbtn[hidden] { display: none; }
+#plotbtn { padding: 3px 10px; font-size: 15px; }
 .mathview .katex { font-size: 1.25em; }
 
 /* -------------------------------------------------------- calculus forms */
@@ -827,8 +828,8 @@ body.cform-open #history, body.cform-open .entry { display: none; }
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 12px;
-  padding: 12px 12px 6px;
+  gap: 10px;
+  padding: 10px 12px 4px;
 }
 .cf-row { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; max-width: 100%; }
 .cf-col { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; max-width: 100%; }
@@ -887,5 +888,95 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .cf-msg { min-height: 18px; padding: 0 16px; font-size: 12.5px; color: var(--muted); text-align: right; }
 .cf-msg.error { color: var(--danger); }
 .cf-msg.warning { color: var(--warn); }
-.cf-actions { display: flex; gap: 10px; padding: 6px 12px 10px; }
+/* the buttons stay at the bottom while the form scrolls */
+.cf-actions { position: sticky; bottom: 0; display: flex; gap: 10px; padding: 6px 12px 10px; background: var(--surface); border-top: 1px solid var(--line); margin-top: auto; }
+.cf-eqs { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 100%; }
 .cf-actions .btn { flex: 1 1 0; min-height: 44px; font-size: 15px; border-radius: 12px; }
+
+/* ------------------------------------------------- letters for variables */
+/* the x key has more letters (touch and hold): a small mark in its corner */
+.toolbar .key.has-more { position: relative; }
+.toolbar .key.has-more::after {
+  content: "";
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-bottom: 6px solid var(--muted);
+  opacity: .8;
+}
+.varpop {
+  position: fixed;
+  z-index: 30;
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  max-width: calc(100vw - 12px);
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(16, 24, 40, .18);
+}
+.varpop[hidden] { display: none; }
+.varpop .key { width: 40px; height: 44px; font-size: 19px; background: var(--key-fn); flex: 0 0 auto; }
+/* a form's variable box: letters to choose */
+.cf-vars { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 420px; }
+.cf-vars[hidden] { display: none; }
+.cf-var {
+  min-width: 40px;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-family: KaTeX_Math, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 19px;
+}
+.cf-var:active { background: var(--key-press); }
+
+/* ------------------------------------------------------------ matrix form */
+.key.mxk { font-size: 14px; font-weight: 700; }
+.cf-size { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-size: 14px; color: var(--muted); }
+.cf-sz { display: flex; align-items: center; gap: 6px; }
+.cf-sz b { min-width: 1.6em; text-align: center; font-size: 18px; color: var(--text); font-variant-numeric: tabular-nums; }
+.cf-step {
+  width: 40px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.cf-step:active { background: var(--key-press); }
+/* square brackets around the cells */
+.cf-brk { position: relative; padding: 6px 12px; max-width: 100%; overflow-x: auto; }
+.cf-brk::before, .cf-brk::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  border: 2px solid var(--text);
+}
+.cf-brk::before { left: 2px; border-right: 0; }
+.cf-brk::after { right: 2px; border-left: 0; }
+.cf-mat { display: grid; gap: 6px; align-items: center; justify-items: center; }
+.cf-box.cell { font-size: calc(18px * var(--fs)); min-height: 38px; }
+.cf-box.cell::placeholder { opacity: .35; }
+.cf-bar-v { width: 2px; align-self: stretch; background: var(--muted); }
+.cf-ops { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 460px; }
+.cf-op-btn {
+  min-height: 36px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+}
+.cf-op-btn.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }

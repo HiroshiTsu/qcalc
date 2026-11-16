@@ -30,6 +30,7 @@
       <div id="mathview" class="mathview" aria-hidden="true" hidden></div>
       <div id="parsed" class="parsed"></div>
       <button id="nextbox" class="undo" hidden>Next box ▶</button>
+      <button id="plotbtn" class="undo plot" aria-label="Graph of this expression" hidden>📈</button>
       <button id="undo" class="undo" hidden>↶ Undo</button>
     </div>
     <textarea id="expr" rows="1" inputmode="none" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Enter an expression"></textarea>
@@ -51,6 +52,7 @@
 <nav id="drawer" class="drawer" aria-label="Menu" inert></nav>
 <div id="sheet" class="sheet" role="dialog" inert></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="varpop" class="varpop" role="group" aria-label="Letters" hidden></div>
 
 <script src="katex/katex.min.js"></script>
 <script src="mathview.js"></script>

@@ -27,6 +27,7 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Equations and systems of equations (solve, multisolve)
 • Derivatives, integrals, limits, sums and differential equations (diff, integrate, limit, sum, dsolve): the calculus keys open forms laid out like the mathematics (the limits above and below ∫ …), with the result shown at once
 • The expression is shown in math notation (fractions, powers, roots, integrals) while you type
+• Equations and systems of equations in a form (left side = right side), and matrices in a grid of cells with the determinant, inverse, rank, eigenvalues and linear systems
 • Matrices and vectors, entered with a page of keys and shown as tables (inverse, determinant, transpose, rank, linear systems)
 • Complex numbers; binary, octal and hexadecimal numbers
 • Date calculations (today + 100 days)
@@ -70,16 +71,18 @@ each user the notes in their language: put both blocks into the field.
 1.6.0:
 
 <en-US>
-• Calculus forms: d/dx, ∫, lim, Σ, Π and dsolve open boxes laid out as the mathematics is written (the limits above and below ∫ …), and the result is shown at once
+• Forms laid out like the mathematics for calculus (d/dx, ∫, lim, Σ, Π, dsolve), equations and systems (solve) and matrices (▦: a grid of cells, determinant, inverse, eigenvalues, Ax = b), with the result shown at once
 • The expression is shown in math notation above the input field
-• An empty box becomes □ in the input field; "Next box ▶" goes to the next one
-• Touch and hold a result with x to differentiate or integrate it, draw it or put in a value for x
+• Empty boxes are □; "Next box ▶" goes to the next one
+• Hold x for y, z, t and other letters; 📈 draws an expression in x
+• Hold a result to differentiate, integrate, draw or solve it, or edit a matrix
 </en-US>
 <ja-JP>
-・微分・積分などの入力フォーム：d/dx・∫・lim・Σ・Π・dsolve のキーで、数式の形に欄が並んだ画面（∫ の上下に上端・下端など）が開き、結果もすぐに表示されます
-・入力中の式を、入力欄の上に数式の形で表示します
-・空の欄は入力欄では □ になり、「次の欄 ▶」で次の欄へ移れます
-・x を含む結果を長押しすると、微分・積分・グラフ・x への値の代入ができます
+・数式の形に欄が並んだ入力画面：微分・積分など（d/dx・∫・lim・Σ・Π・dsolve）、方程式・連立方程式（solve）、行列（▦：表の形で入力し、行列式・逆行列・固有値・連立方程式など）。結果もすぐに表示
+・入力中の式を、入力欄の上に数式の形で表示
+・空の欄は □ になり、「次の欄 ▶」で移動
+・x キーの長押しで y・z・t などの文字、📈 で x の式のグラフ
+・結果の長押しで微分・積分・グラフ・方程式、行列の編集
 </ja-JP>
 
 1.5.0:

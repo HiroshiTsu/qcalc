@@ -19,6 +19,8 @@
       let m;
       if ((m = /^(?:\d+(?:\.\d*)?|\.\d+)(?:E[−-]?\d+)?/.exec(rest))) { t.push({ k: 'num', v: m[0] }); i += m[0].length; continue; }
       if ((m = SUP_RE.exec(rest))) { t.push({ k: 'sup', v: Array.from(m[0]).map((x) => SUP[x]).join('') }); i += m[0].length; continue; }
+      // an unknown written \t or 't' (a letter that would otherwise be a unit or a constant)
+      if ((m = /^\\([\p{L}_][\p{L}\p{Nd}_]*)/u.exec(rest)) || (m = /^'([\p{L}_][\p{L}\p{Nd}_]*)'/u.exec(rest))) { t.push({ k: 'id', v: m[1] }); i += m[0].length; continue; }
       // a name (π stands alone: iπ is i × π; ² after a name is a power, not part of it)
       if (c === 'π') { t.push({ k: 'id', v: 'π' }); i++; continue; }
       if ((m = /^[\p{L}_][\p{L}\p{Nd}_]*/u.exec(rest))) { const v = m[0].split('π')[0]; t.push({ k: 'id', v }); i += v.length; continue; }

@@ -258,7 +258,7 @@
       ['asin', { ins: 'asin()', back: 1 }], ['acos', { ins: 'acos()', back: 1 }], ['atan', { ins: 'atan()', back: 1 }], ['ln', { ins: 'ln()', back: 1 }], ['log', { ins: 'log10()', back: 1, label: 'log₁₀' }],
       ['x²', { ins: '^2', op: true }], ['x⁻¹', { ins: '^(−1)', op: true }], ['∛', { ins: 'cbrt()', back: 1 }], ['eˣ', { ins: 'exp()', back: 1 }], ['n!', { ins: '!', op: true }],
       ['|x|', { ins: 'abs()', back: 1 }], ['e', { ins: 'e' }], ['i', { ins: 'i' }], ['°', { ins: '°' }], ['mod', { ins: ' mod ' }],
-      ['solve', { ins: 'solve()', back: 1 }], ['∫', { form: 'int', ins: 'integrate(□)' }], ['d/dx', { form: 'diff', ins: 'diff(□)' }], ['Σ', { form: 'sum', ins: 'sum(□, □, □)' }], ['=', { act: 'eq', cls: 'eq' }]
+      ['solve', { form: 'solve', ins: 'solve()', back: 1 }], ['∫', { form: 'int', ins: 'integrate(□)' }], ['d/dx', { form: 'diff', ins: 'diff(□)' }], ['Σ', { form: 'sum', ins: 'sum(□, □, □)' }], ['=', { act: 'eq', cls: 'eq' }]
     ],
     // analysis: derivatives, integrals, limits, sums and products, differential equations.
     // These keys open a form (form, see "calculus forms") with the boxes laid out as the mathematics
@@ -266,18 +266,20 @@
     calc: [
       ['d/dx', { form: 'diff', ins: 'diff(□)' }], ['d²/dx²', { form: 'diff', init: { n: '2' }, ins: 'diff(□, x, 2)', cls: 'fn sm' }], ['∂/∂y', { form: 'diff', init: { v: 'y' }, ins: 'diff(□, y)' }], ['⌫', { act: 'del', cls: 'ctl', repeat: true }], ['AC', { act: 'clear', cls: 'ctl' }],
       ['∫', { form: 'int', ins: 'integrate(□)' }], ['∫ₐᵇ', { form: 'int', init: { focus: 'a', order: ['a', 'b', 'f', 'v'] }, ins: 'integrate(□, □, □)', html: '∫<sub>a</sub><sup>b</sup>' }], ['lim', { form: 'lim', ins: 'limit(□, □)' }], ['Σ', { form: 'sum', ins: 'sum(□, □, □)' }], ['Π', { form: 'prod', ins: 'product(□, □, □)' }],
-      ['dsolve', { form: 'dsolve', ins: 'dsolve(diff(y, x) = □)', cls: 'fn sm' }], [tr('max/min', '極値'), { ins: 'extremum()', back: 1, cls: tr('fn sm', undefined) }], ['solve', { ins: 'solve()', back: 1 }], ['∞', { ins: '∞' }], ['y', { ins: 'y' }],
+      ['dsolve', { form: 'dsolve', ins: 'dsolve(diff(y, x) = □)', cls: 'fn sm' }], [tr('max/min', '極値'), { ins: 'extremum()', back: 1, cls: tr('fn sm', undefined) }], ['solve', { form: 'solve', ins: 'solve()', back: 1 }], ['∞', { ins: '∞' }], ['y', { ins: 'y' }],
       ['(', { ins: '(' }], [')', { ins: ')' }], ['xʸ', { ins: '^', op: true, cls: 'op' }], ['√', { ins: '√()', back: 1, cls: 'op' }], ['π', { ins: 'π', cls: 'op' }],
       ['sin', { ins: 'sin()', back: 1 }], ['ln', { ins: 'ln()', back: 1 }], ['e', { ins: 'e' }], [tr('more…', 'ほか…'), { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
     ],
     // matrices and vectors: [1, 2; 3, 4] is typed without leaving the page (digits, brackets, ";"
     // between rows; the "," between elements is in the row of keys above)
+    // "▦" opens the matrix form (a grid of cells); det, Aᵀ and A⁻¹ open it too when the input field
+    // is empty, with that calculation chosen (formEmpty), and otherwise type the function
     mat: [
-      ['[', { ins: '[' }], [']', { ins: ']' }], [';', { ins: '; ' }], ['⌫', { act: 'del', cls: 'ctl', repeat: true }], ['AC', { act: 'clear', cls: 'ctl' }],
-      ['7'], ['8'], ['9'], ['det', { ins: 'det()', back: 1 }], ['Aᵀ', { ins: 'transpose()', back: 1, html: 'A<sup>T</sup>' }],
-      ['4'], ['5'], ['6'], ['A⁻¹', { ins: '^(−1)', op: true }], ['×', { ins: '×', op: true, cls: 'op' }],
+      ['▦', { form: 'mat', cls: 'fn mxk', label: tr('▦ Matrix', '▦ 行列') }], ['[', { ins: '[' }], [']', { ins: ']' }], ['⌫', { act: 'del', cls: 'ctl', repeat: true }], ['AC', { act: 'clear', cls: 'ctl' }],
+      ['7'], ['8'], ['9'], ['det', { ins: 'det()', back: 1, form: 'mat', formEmpty: true, init: { op: 'det' } }], ['Aᵀ', { ins: 'transpose()', back: 1, html: 'A<sup>T</sup>', form: 'mat', formEmpty: true, init: { op: 'tr' } }],
+      ['4'], ['5'], ['6'], ['A⁻¹', { ins: '^(−1)', op: true, form: 'mat', formEmpty: true, init: { op: 'inv' } }], ['×', { ins: '×', op: true, cls: 'op' }],
       ['1'], ['2'], ['3'], ['−', { ins: '−', cls: 'op' }], ['+', { ins: '+', op: true, cls: 'op' }],
-      ['0'], ['.'], ['Iₙ', { ins: 'identity()', back: 1, html: 'I<sub>n</sub>' }], [tr('more…', 'ほか…'), { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
+      ['0'], ['.'], [';', { ins: '; ' }], [tr('more…', 'ほか…'), { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
     ]
   };
   // the pages of the keypad: [id, label of the tab, name for screen readers, category of the function list for "more…"]
@@ -286,8 +288,15 @@
     ['calc', tr('Calculus', '解析'), tr('Calculus keys (derivatives, integrals, limits)', '解析（微分・積分・極限）のキー'), 'Calculus'],
     ['mat', tr('Matrix', '行列'), tr('Matrix and vector keys', '行列・ベクトルのキー'), 'Matrices & Vectors']
   ];
+  // letters for variables: touch and hold the x key to choose one (also offered in a form's variable box).
+  // libqalculate knows x, y, z and n as variables; other single letters are names of units or constants
+  // (t is the tonne, c the speed of light, θ the Heaviside function), so they are typed with a
+  // backslash, which makes them plain unknowns: \t. Results show them without it.
+  const VAR_LETTERS = ['y', 'z', 'n', 't', 'a', 'b', 'c', 'k', 'θ'];
+  const PLAIN_VARS = ['x', 'y', 'z', 'n'];
+  const varText = (l) => (PLAIN_VARS.indexOf(l) >= 0 || l[0] === '\\' ? l : '\\' + l);
   const TOOLBAR = [
-    ['x', { ins: 'x' }], [',', { ins: ', ' }], ['a=b', { ins: ' = ', title: tr('Equals sign (for equations)', '等号（方程式の = を入力）') }], ['→', { ins: ' to ', op: true, title: tr('Convert units or number bases (to)', '単位・進数の変換') }],
+    ['x', { ins: 'x', long: () => openVarPop(), cls: 'has-more', title: tr('x (touch and hold for y, z, t and other letters)', 'x（長押しで y・z・t などの文字）') }], [',', { ins: ', ' }], ['a=b', { ins: ' = ', title: tr('Equals sign (for equations)', '等号（方程式の = を入力）') }], ['→', { ins: ' to ', op: true, title: tr('Convert units or number bases (to)', '単位・進数の変換') }],
     ['ans', { ins: 'ans' }], ['⌨', { act: 'kbd', id: 'k-kbd' }], ['◀', { act: 'left', repeat: true }], ['▶', { act: 'right', repeat: true }]
   ];
   let page = 'num';
@@ -301,7 +310,7 @@
     'd²/dx²': '2階微分', '∂/∂y': 'yで偏微分', '∫ₐᵇ': '定積分', 'lim': '極限', 'Π': '総乗', 'dsolve': '微分方程式を解く',
     '極値': '極値', 'solve': '方程式を解く', '∞': '無限大', 'ほか…': 'ほかの関数を一覧から選ぶ',
     '[': '左角かっこ（行列の始まり）', ']': '右角かっこ（行列の終わり）', ';': 'セミコロン（行列の行の区切り）',
-    'det': '行列式', 'Aᵀ': '転置行列', 'A⁻¹': '逆行列', 'Iₙ': '単位行列'
+    'det': '行列式', 'Aᵀ': '転置行列', 'A⁻¹': '逆行列', 'Iₙ': '単位行列', '▦': '行列を入力する画面を開く'
   } : {
     '⌫': 'Backspace', 'AC': 'Clear all', '◀': 'Cursor left', '▶': 'Cursor right', '⌨': 'Type with the keyboard',
     'xʸ': 'Power', '√': 'Square root', '∛': 'Cube root', 'E': 'Times ten to the power', '÷': 'Divide', '×': 'Multiply', '−': 'Minus',
@@ -312,7 +321,7 @@
     'Π': 'Product', 'dsolve': 'Solve a differential equation', 'max/min': 'Extremum (maximum or minimum)', 'solve': 'Solve an equation',
     '∞': 'Infinity', 'more…': 'Choose another function from the list',
     '[': 'Left bracket (start of a matrix)', ']': 'Right bracket (end of a matrix)', ';': 'Semicolon (end of a matrix row)',
-    'det': 'Determinant', 'Aᵀ': 'Transpose', 'A⁻¹': 'Inverse matrix', 'Iₙ': 'Identity matrix'
+    'det': 'Determinant', 'Aᵀ': 'Transpose', 'A⁻¹': 'Inverse matrix', 'Iₙ': 'Identity matrix', '▦': 'Open the matrix form'
   };
 
   function makeKey(def, inToolbar) {
@@ -326,16 +335,18 @@
     else b.textContent = o.label || label;
     const run = () => {
       vibrate();
-      if (o.form && !editTarget) openForm(o.form, o.init); // in a form's box the template is typed instead
+      // in a form's box the template is typed instead; formEmpty: only when the input field is empty
+      if (o.form && !editTarget && (!o.formEmpty || !exprEl.value.trim())) openForm(o.form, o.init);
       else if (o.act) action(o.act);
       else insert(o.ins !== undefined ? o.ins : label, o.back || 0, o.op);
     };
-    bindPress(b, run, o.repeat);
+    bindPress(b, run, o.repeat, o.long);
     return b;
   }
 
-  // press handling: keep the caret in the expression field, support key repeat
-  function bindPress(b, run, repeat) {
+  // press handling: keep the caret in the expression field, support key repeat, or another action
+  // when the key is touched and held (onLong)
+  function bindPress(b, run, repeat, onLong) {
     let timer = null, rep = null, fired = false, viaPointer = false;
     const stop = () => { clearTimeout(timer); clearInterval(rep); timer = rep = null; b.classList.remove('pressed'); };
     b.addEventListener('pointerdown', (e) => {
@@ -345,6 +356,8 @@
       fired = false;
       if (repeat) {
         timer = setTimeout(() => { fired = true; run(); rep = setInterval(run, 70); }, 420);
+      } else if (onLong) {
+        timer = setTimeout(() => { fired = true; b.classList.remove('pressed'); vibrate(); onLong(b); }, 420);
       }
     });
     b.addEventListener('pointerup', (e) => {
@@ -359,6 +372,26 @@
     // screen readers (TalkBack), switch access and hardware keyboards send a plain click
     b.addEventListener('click', () => { if (viaPointer) { viaPointer = false; return; } run(); });
   }
+
+  // The letters of the x key (touch and hold): a row of keys above it; one tap types the letter.
+  const varPopEl = $('#varpop');
+  function openVarPop() {
+    const xKey = $('#toolbar .key');
+    if (!xKey) return;
+    varPopEl.textContent = '';
+    for (const l of VAR_LETTERS) {
+      const b = el('button', { class: 'key', text: l, 'aria-label': l });
+      bindPress(b, () => { vibrate(); closeVarPop(); insert(varText(l), 0, false); });
+      varPopEl.append(b);
+    }
+    varPopEl.hidden = false;
+    const r = xKey.getBoundingClientRect(), w = varPopEl.offsetWidth;
+    varPopEl.style.left = Math.max(6, Math.min(r.left, window.innerWidth - w - 6)) + 'px';
+    varPopEl.style.top = Math.max(6, r.top - varPopEl.offsetHeight - 6) + 'px';
+  }
+  function closeVarPop() { varPopEl.hidden = true; }
+  // a touch anywhere else closes the letters
+  document.addEventListener('pointerdown', (e) => { if (!varPopEl.hidden && !varPopEl.contains(e.target)) closeVarPop(); }, true);
 
   function buildKeypad() {
     const tb = $('#toolbar');
@@ -605,6 +638,7 @@
     updateSuggest(typed === true);
     updateMathView();
     nextBoxEl.hidden = exprEl.value.indexOf('□') < 0;
+    plotBtnEl.hidden = !plottable(exprEl.value);
     clearTimeout(previewTimer);
     if (!exprEl.value.trim() || !S.preview) { showPreview(null); return; }
     previewTimer = setTimeout(runPreview, 160);
@@ -657,7 +691,8 @@
       });
     }
     const d = /^"(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?)"$/.exec(t);
-    return d ? d[1].replace('T', ' ') : t;
+    // an unknown typed as \t is 't' in the engine's text: shown as t
+    return d ? d[1].replace('T', ' ') : t.replace(/'([\p{L}_][\p{L}\p{Nd}_]*)'/gu, '$1');
   }
   // A result as shown, without "= ". One that was too long has its beginning, "…" and its end.
   function shownText(h) {
@@ -1004,7 +1039,7 @@
         el('div', { class: 'cf-opts' }, cfLbl(tr('variable', '変数'), B.v), cfLbl(tr('order', '階数'), B.n),
           cfLbl(N.at = el('span', { text: 'x =' }), B.at))],
       update: (g, N) => {
-        const v = g('v'), n = g('n');
+        const v = g('v').replace(/^\\/, ''), n = g('n');
         const d = n === '1' ? '\\frac{\\mathrm{d}}{\\mathrm{d}' + v + '}' : '\\frac{\\mathrm{d}^{' + n + '}}{\\mathrm{d}' + v + '^{' + n + '}}';
         renderTeX(N.op, d, v + ' ' + n);
         N.at.textContent = v + ' =';
@@ -1045,6 +1080,18 @@
       layout: (B) => [cfCol(cfRow(cfTeX("y' =", 'y′ ='), B.r), cfRow(cfTeX('y(0) =', 'y(0) ='), B.y0))],
       build: (g) => `dsolve(diff(y, x) = ${g('r')}${g('y0') ? ', ' + g('y0') : ''})`
     },
+    solve: {
+      title: tr('Solve equations', '方程式を解く'),
+      eqs: true,
+      boxes: [],
+      build: () => solveExpr()
+    },
+    mat: {
+      title: tr('Matrix', '行列'),
+      matrix: true,
+      boxes: [],
+      build: () => matrixExpr()
+    },
     subst: {
       title: tr('Substitute a value', '値を代入'),
       boxes: [['f', 'f(x)', true], ['v', 'x', false, 'x'], ['a', tr('value', '値'), true]],
@@ -1062,10 +1109,12 @@
   }
   function formValue(k) {
     const d = FORMS[CF.id].boxes.find((b) => b[0] === k);
-    const v = normalizeExpr(CF.boxes[k].value);
+    let v = normalizeExpr(CF.boxes[k].value);
+    if (k === 'v' && /^\p{L}$/u.test(v)) v = varText(v); // a variable t is written \t
     return v || (d[3] !== undefined ? d[3] : d[2] ? '□' : '');
   }
-  const formMissing = () => FORMS[CF.id].boxes.filter((b) => b[2] && !CF.boxes[b[0]].value.trim()).map((b) => b[0]);
+  const formMissing = () => (FORMS[CF.id].matrix ? [] : FORMS[CF.id].eqs ? CF.order.filter((k) => k[0] === 'l' && !CF.boxes[k].value.trim())
+    : FORMS[CF.id].boxes.filter((b) => b[2] && !CF.boxes[b[0]].value.trim()).map((b) => b[0]));
   // init: values of the boxes ({ f: 'x^2', n: '2' }), the box to start in (focus), the direction of a limit (dir)
   function openForm(id, init) {
     const F = FORMS[id];
@@ -1083,20 +1132,34 @@
     const ss = exprEl.selectionStart, se = exprEl.selectionEnd;
     CF.sel = [Math.min(ss === null || ss === undefined ? len : ss, len), Math.min(se === null || se === undefined ? len : se, len)];
     const selected = exprEl.value.slice(CF.sel[0], CF.sel[1]);
-    for (const [k, ph] of F.boxes) {
-      const b = el('input', { class: 'cf-box' + (k === 'f' || k === 'r' ? ' wide' : ''), placeholder: ph, inputmode: exprEl.inputMode === 'text' ? 'text' : 'none',
-        autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', enterkeyhint: 'go', 'aria-label': ph });
-      b.dataset.k = k;
-      b.value = init[k] !== undefined ? String(init[k]) : '';
-      b.addEventListener('focus', () => { editTarget = b; for (const x of formBoxes()) x.classList.toggle('on', x === b); });
-      b.addEventListener('input', () => { const p = b.selectionStart, q = b.value; b.value = normalizeJa(q); if (b.value !== q) b.setSelectionRange(p, p); formChanged(); });
-      b.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); formCalculate(); } });
-      CF.boxes[k] = b;
+    if (!F.matrix && !F.eqs) {
+      for (const [k, ph] of F.boxes) {
+        const b = makeFormBox(k, ph, k === 'f' || k === 'r' ? 'wide' : '');
+        b.value = init[k] !== undefined ? String(init[k]) : '';
+        CF.boxes[k] = b;
+      }
+      if (selected && selected !== '□' && init.f === undefined && CF.boxes.f) CF.boxes.f.value = selected.trim();
+    } else if (F.eqs) {
+      // equations: from init.eqs, else an equation (or an expression = 0) selected in the input field
+      const eqs = init.eqs || (selected && selected.trim() ? [selected.trim()] : ['']);
+      CF.eq = { n: Math.min(eqs.length, EQ_MAX), vals: { v: init.vars || '' } };
+      eqs.slice(0, EQ_MAX).forEach((e, i) => {
+        const m = /^(.*?)\s*=\s*(.*)$/.exec(e);
+        CF.eq.vals['l' + i] = m ? m[1] : e;
+        CF.eq.vals['r' + i] = m ? m[2] : '';
+      });
+    } else {
+      // a matrix: from init.matrix, else from a matrix that is selected in the input field, else 2 × 2
+      const m = parseMatrix(init.matrix || (selected && selected.trim())) || { rows: [['', ''], ['', '']] };
+      CF.mat = { rows: m.rows.length, cols: m.rows[0].length, op: init.op || '', vals: {} };
+      m.rows.forEach((r, i) => r.forEach((x, j) => { CF.mat.vals['c' + i + '_' + j] = x; }));
     }
-    if (selected && selected !== '□' && init.f === undefined && CF.boxes.f) CF.boxes.f.value = selected.trim();
     const next = tapButton({ class: 'cf-next', text: tr('Next box ▶', '次の欄 ▶') }, () => formNext());
     const close = tapButton({ class: 'icon-btn', 'aria-label': tr('Close', '閉じる'), html: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>' }, () => closeForm());
-    const body = el('div', { class: 'cf-body' }, ...F.layout(CF.boxes, CF.nodes));
+    const body = el('div', { class: 'cf-body' });
+    if (F.matrix) matrixLayout(body);
+    else if (F.eqs) equationsLayout(body);
+    else body.append(...F.layout(CF.boxes, CF.nodes));
     if (F.dirs) {
       const seg = el('div', { class: 'seg cf-seg', role: 'group', 'aria-label': tr('Direction', '近づき方') });
       for (const [d, t] of [['', tr('Both sides', '両側')], ['1', tr('From the right (+)', '右から（+）')], ['−1', tr('From the left (−)', '左から（−）')]]) {
@@ -1106,12 +1169,21 @@
       }
       body.append(seg);
     }
+    if (CF.boxes.v && !F.eqs) {
+      // the variable: one tap on a letter puts it into the variable box
+      CF.nodes.vars = el('div', { class: 'cf-vars', role: 'group', 'aria-label': tr('Variable', '変数') });
+      for (const l of ['x'].concat(VAR_LETTERS)) {
+        CF.nodes.vars.append(tapButton({ class: 'cf-var', text: l }, () => { CF.boxes.v.value = l; formChanged(); CF.boxes.v.focus(); }));
+      }
+      CF.nodes.vars.hidden = true;
+      body.append(CF.nodes.vars);
+    }
     CF.nodes.expr = el('div', { class: 'cf-expr' });
     CF.nodes.res = el('div', { class: 'cf-res', 'aria-live': 'polite' });
     CF.nodes.msg = el('div', { class: 'cf-msg' });
     cformEl.textContent = '';
     cformEl.append(el('div', { class: 'cf-bar' }, close, el('div', { class: 'cf-title', text: F.title }), next),
-      body, F.hint ? el('div', { class: 'cf-hint', text: F.hint }) : el('span'), CF.nodes.expr, CF.nodes.res, CF.nodes.msg,
+      body, CF.nodes.hint = el('div', { class: 'cf-hint', text: (F.matrix ? MAT_HINT[CF.mat.op] : F.eqs ? eqHint() : F.hint) || '' }), CF.nodes.expr, CF.nodes.res, CF.nodes.msg,
       el('div', { class: 'cf-actions' },
         tapButton({ class: 'btn', text: tr('Insert', '式に入れる') }, () => formInsert(false)),
         tapButton({ class: 'btn primary', text: tr('Calculate', '計算する') }, () => formCalculate())));
@@ -1121,6 +1193,207 @@
     editTarget = CF.boxes[first];
     formChanged();
     focusExpr();
+  }
+  function makeFormBox(k, ph, cls) {
+    const b = el('input', { class: 'cf-box' + (cls ? ' ' + cls : ''), placeholder: ph, inputmode: exprEl.inputMode === 'text' ? 'text' : 'none',
+      autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', enterkeyhint: 'go', 'aria-label': ph });
+    b.dataset.k = k;
+    b.addEventListener('focus', () => {
+      editTarget = b;
+      for (const x of formBoxes()) x.classList.toggle('on', x === b);
+      if (CF.nodes && CF.nodes.vars && !FORMS[CF.id].eqs) CF.nodes.vars.hidden = k !== 'v';
+    });
+    b.addEventListener('input', () => { const p = b.selectionStart, q = b.value; b.value = normalizeJa(q); if (b.value !== q) b.setSelectionRange(p, p); formChanged(); });
+    b.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); formCalculate(); } });
+    return b;
+  }
+
+  // ---- the matrix form: a grid of cells (an empty cell is 0), its size, and what to calculate
+  const MAT_MAX = 8;
+  const MAT_OPS = [['', tr('Matrix', '行列のまま')], ['det', tr('Determinant', '行列式')], ['inv', tr('Inverse', '逆行列')],
+    ['tr', tr('Transpose', '転置')], ['rk', tr('Rank', '階数')], ['eig', tr('Eigenvalues', '固有値')], ['sys', tr('Linear system Ax = b', '連立方程式 Ax = b')]];
+  const MAT_HINT = {
+    '': tr('An empty cell is 0. For a product, insert the first matrix, type ×, then open this form again', '空の欄は 0 です。行列の積は、1 つ目を「式に入れる」→ × → もう一度この画面で 2 つ目を入れます'),
+    eig: tr('The eigenvalues are the solutions of det(A − x·I) = 0', '固有値は det(A − x·I) = 0 の解として求めます'),
+    sys: tr('Coefficients on the left, the right side b on the right of the line. The result is the values of x₁, x₂, …', '線の左に係数、右に右辺 b を入れます。結果は x₁, x₂, … の値です')
+  };
+  const squareOps = ['det', 'inv', 'eig', 'sys'];
+  // "[1, 2; 3, 4]", "[−2  1; 1.5  −0.5]" (the engine's text) or "[1; 2; 3]" as rows of cells, or null
+  function parseMatrix(t) {
+    if (!t) return null;
+    t = t.trim();
+    if (outerParens(t)) t = t.slice(1, -1).trim();
+    if (t[0] !== '[' || t[t.length - 1] !== ']') return null;
+    const split = (s, seps) => {
+      const out = []; let d = 0, cur = '';
+      for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if ('([{'.indexOf(c) >= 0) d++;
+        else if (')]}'.indexOf(c) >= 0) d--;
+        if (d === 0 && seps(s, i)) { out.push(cur); cur = ''; if (s[i] === ' ') while (s[i + 1] === ' ') i++; continue; }
+        cur += c;
+      }
+      out.push(cur);
+      return out.map((x) => x.trim());
+    };
+    const inner = t.slice(1, -1);
+    if (/[[\]]/.test(inner)) return null;
+    const rows = split(inner, (s, i) => s[i] === ';').map((r) => (r.indexOf(',') >= 0 ? split(r, (s, i) => s[i] === ',') : split(r, (s, i) => s[i] === ' ' && s[i + 1] === ' ')));
+    const cols = rows[0].length;
+    if (!rows.length || rows.length > MAT_MAX || cols > MAT_MAX || rows.some((r) => r.length !== cols)) return null;
+    return { rows };
+  }
+  function matrixLayout(body) {
+    const M = CF.mat;
+    const step = (dim, d) => tapButton({ class: 'cf-step', text: d > 0 ? '+' : '−', 'aria-label': (d > 0 ? tr('More ', '増やす：') : tr('Fewer ', '減らす：')) + (dim === 'rows' ? tr('rows', '行') : tr('columns', '列')) }, () => {
+      const n = M[dim] + d;
+      if (n < 1 || n > MAT_MAX) return;
+      saveMatrixCells();
+      M[dim] = n;
+      buildMatrixGrid();
+      formChanged();
+    });
+    CF.nodes.rowsN = el('b'); CF.nodes.colsN = el('b');
+    body.append(el('div', { class: 'cf-size' },
+      el('span', { class: 'cf-sz' }, el('span', { text: tr('Rows', '行') }), step('rows', -1), CF.nodes.rowsN, step('rows', 1)),
+      el('span', { class: 'cf-sz' }, el('span', { text: tr('Columns', '列') }), step('cols', -1), CF.nodes.colsN, step('cols', 1))));
+    CF.nodes.grid = el('div', { class: 'cf-mat' });
+    body.append(el('div', { class: 'cf-brk' }, CF.nodes.grid));
+    const ops = el('div', { class: 'cf-ops', role: 'group', 'aria-label': tr('Calculate', '計算') });
+    for (const [op, label] of MAT_OPS) {
+      const b = tapButton({ class: 'cf-op-btn', text: label }, () => {
+        saveMatrixCells();
+        M.op = op;
+        for (const x of ops.children) x.classList.toggle('on', x === b);
+        buildMatrixGrid();
+        formChanged();
+      });
+      b.classList.toggle('on', op === M.op);
+      ops.append(b);
+    }
+    body.append(ops);
+    buildMatrixGrid();
+  }
+  function saveMatrixCells() {
+    for (const k of Object.keys(CF.boxes)) CF.mat.vals[k] = CF.boxes[k].value;
+  }
+  // (re)makes the cells for the current size; with "Ax = b" a column for b after a line
+  function buildMatrixGrid() {
+    const M = CF.mat, keep = editTarget && editTarget.dataset.k;
+    const sys = M.op === 'sys';
+    CF.boxes = {};
+    CF.order = [];
+    CF.nodes.grid.textContent = '';
+    CF.nodes.grid.style.gridTemplateColumns = 'repeat(' + M.cols + ', auto)' + (sys ? ' 2px auto' : '');
+    for (let i = 0; i < M.rows; i++) {
+      for (let j = 0; j < M.cols; j++) {
+        const k = 'c' + i + '_' + j;
+        const b = makeFormBox(k, '0', 'cell');
+        b.setAttribute('aria-label', tr('Row ', '') + (i + 1) + tr(', column ', '行') + (j + 1) + tr('', '列'));
+        b.value = M.vals[k] || '';
+        CF.boxes[k] = b; CF.order.push(k);
+        CF.nodes.grid.append(b);
+      }
+      if (sys) {
+        const k = 'b' + i;
+        const b = makeFormBox(k, '0', 'cell rhs');
+        b.setAttribute('aria-label', 'b' + (i + 1));
+        b.value = M.vals[k] || '';
+        CF.boxes[k] = b; CF.order.push(k);
+        CF.nodes.grid.append(el('span', { class: 'cf-bar-v' }), b);
+      }
+    }
+    CF.nodes.rowsN.textContent = M.rows;
+    CF.nodes.colsN.textContent = M.cols;
+    if (CF.nodes.hint) CF.nodes.hint.textContent = MAT_HINT[M.op] || '';
+    editTarget = CF.boxes[keep] || CF.boxes[CF.order[0]];
+    if (document.body.classList.contains('cform-open')) focusExpr();
+  }
+  function matrixExpr() {
+    const M = CF.mat;
+    const v = (k) => normalizeExpr(CF.boxes[k] ? CF.boxes[k].value : '') || '0';
+    const rows = [];
+    for (let i = 0; i < M.rows; i++) {
+      const r = [];
+      for (let j = 0; j < M.cols; j++) r.push(v('c' + i + '_' + j));
+      rows.push(r.join(', '));
+    }
+    const m = '[' + rows.join('; ') + ']';
+    switch (M.op) {
+      case 'det': return 'det(' + m + ')';
+      case 'inv': return 'inverse(' + m + ')';
+      case 'tr': return 'transpose(' + m + ')';
+      case 'rk': return 'rk(' + m + ')';
+      case 'eig': return 'solve(det(' + m + ' − x × identity(' + M.rows + ')) = 0)';
+      case 'sys': {
+        const b = [];
+        for (let i = 0; i < M.rows; i++) b.push(v('b' + i));
+        return 'inverse(' + m + ') × [' + b.join('; ') + ']';
+      }
+    }
+    return m;
+  }
+  // ---- the equations form: one equation, or a system (+ adds one), and the variables to solve for
+  const EQ_MAX = 6;
+  function equationsLayout(body) {
+    CF.nodes.eqs = el('div', { class: 'cf-eqs' });
+    CF.nodes.eqBtns = el('div', { class: 'cf-size' },
+      tapButton({ class: 'cf-op-btn', text: tr('+ Add an equation', '＋ 式を追加') }, () => { if (CF.eq.n < EQ_MAX) { saveEqCells(); CF.eq.n++; buildEquations(); formChanged(); } }),
+      CF.nodes.eqDel = tapButton({ class: 'cf-op-btn', text: tr('− Remove the last', '− 最後の式を消す') }, () => { if (CF.eq.n > 1) { saveEqCells(); CF.eq.n--; buildEquations(); formChanged(); } }));
+    body.append(CF.nodes.eqs, CF.nodes.eqBtns);
+    CF.nodes.vars = el('div', { class: 'cf-vars' });
+    body.append(CF.nodes.vars);
+    buildEquations();
+  }
+  function saveEqCells() { for (const k of Object.keys(CF.boxes)) CF.eq.vals[k] = CF.boxes[k].value; }
+  function buildEquations() {
+    const E = CF.eq, keep = editTarget && editTarget.dataset.k;
+    CF.boxes = {};
+    CF.order = [];
+    CF.nodes.eqs.textContent = '';
+    for (let i = 0; i < E.n; i++) {
+      const l = makeFormBox('l' + i, tr('left side', '左辺'), 'wide'), r = makeFormBox('r' + i, '0', 'wide');
+      l.value = E.vals['l' + i] || ''; r.value = E.vals['r' + i] || '';
+      CF.boxes['l' + i] = l; CF.boxes['r' + i] = r; CF.order.push('l' + i, 'r' + i);
+      CF.nodes.eqs.append(cfRow(l, cfT('='), r));
+    }
+    // the variables: x, or x, y (, z …) for a system; tap the letters to choose others
+    const v = makeFormBox('v', E.n > 1 ? 'x, y' : 'x', '');
+    v.value = E.vals.v || '';
+    CF.boxes.v = v; CF.order.push('v');
+    CF.nodes.eqs.append(cfRow(el('span', { class: 'cf-lbl', text: tr('Solve for', '解く文字') }), v));
+    CF.nodes.vars.textContent = '';
+    for (const letter of ['x'].concat(VAR_LETTERS)) {
+      CF.nodes.vars.append(tapButton({ class: 'cf-var', text: letter }, () => {
+        // one equation: the letter; a system: the letters tapped one after another
+        const cur = v.value.split(',').map((t) => t.trim()).filter(Boolean);
+        if (CF.eq.n === 1) v.value = letter;
+        else if (cur.indexOf(letter) < 0) v.value = cur.concat(letter).slice(-CF.eq.n).join(', ');
+        formChanged();
+      }));
+    }
+    CF.nodes.vars.hidden = false;
+    CF.nodes.eqDel.disabled = E.n < 2;
+    if (CF.nodes.hint) CF.nodes.hint.textContent = eqHint();
+    editTarget = CF.boxes[keep] || CF.boxes.l0;
+    if (document.body.classList.contains('cform-open')) focusExpr();
+  }
+  const eqHint = () => (CF.eq.n > 1 ? tr('A system of equations: the result is the values of the variables in their order', '連立方程式：結果は「解く文字」の順の値です')
+    : tr('An empty right side is 0', '右辺が空なら 0 です'));
+  function solveExpr() {
+    const E = CF.eq;
+    const v = (k) => normalizeExpr(CF.boxes[k] ? CF.boxes[k].value : '');
+    const eqs = [];
+    for (let i = 0; i < E.n; i++) eqs.push((v('l' + i) || '□') + ' = ' + (v('r' + i) || '0'));
+    const names = v('v').split(',').map((t) => t.trim()).filter(Boolean).map((t) => (/^\p{L}$/u.test(t) ? varText(t) : t));
+    if (E.n === 1) return names.length && names[0] !== 'x' ? `solve(${eqs[0]}, ${names[0]})` : `solve(${eqs[0]})`;
+    const all = names.length ? names : ['x', 'y', 'z', 'w', 'u', 'v'].slice(0, E.n).map(varText);
+    return `multisolve([${eqs.join(', ')}], [${all.join(', ')}])`;
+  }
+  // what keeps the form from being calculated (a non-square matrix), or ''
+  function matrixProblem() {
+    const M = CF.mat;
+    return squareOps.indexOf(M.op) >= 0 && M.rows !== M.cols ? tr('This needs a square matrix (as many rows as columns)', '行と列の数が同じ行列（正方行列）で使えます') : '';
   }
   function closeForm() {
     if (!CF.id) return;
@@ -1154,6 +1427,13 @@
     CF.nodes.msg.textContent = '';
     clearTimeout(CF.timer);
     const seq = ++CF.seq;
+    const problem = F.matrix ? matrixProblem() : '';
+    if (problem) {
+      CF.nodes.res.textContent = '';
+      CF.nodes.msg.className = 'cf-msg error';
+      CF.nodes.msg.textContent = problem;
+      return;
+    }
     if (formMissing().length) {
       CF.nodes.res.textContent = '';
       CF.nodes.msg.className = 'cf-msg';
@@ -1195,6 +1475,7 @@
   }
   function formCalculate() {
     if (!CF.id) return;
+    if (FORMS[CF.id].matrix && matrixProblem()) { formChanged(); return; }
     const missing = formMissing();
     if (missing.length) {
       for (const k of missing) CF.boxes[k].classList.add('missing');
@@ -1205,6 +1486,16 @@
       return;
     }
     formInsert(true);
+  }
+
+  // ---- 📈 next to the input field: the graph of an expression in x (not an equation or a conversion)
+  const plotBtnEl = $('#plotbtn');
+  plotBtnEl.addEventListener('pointerdown', (e) => e.preventDefault());
+  plotBtnEl.addEventListener('click', () => { vibrate(); openPlotWith(normalizeExpr(exprEl.value)); });
+  function plottable(t) {
+    t = normalizeExpr(t);
+    return !!t && t.length < 500 && t.indexOf('□') < 0 && !/[=<>≤≥≠;[\]]| to |→|solve|dsolve|integrate\([^)]*,|diff\([^)]*,[^)]*,[^)]*,/.test(t) &&
+      /(^|[^\p{L}_])x(?![\p{L}\p{Nd}_])/u.test(t);
   }
 
   // ---- □: a box of a template to be filled in, in the input field ("Next box" goes to the next one)
@@ -1234,7 +1525,7 @@
   function insertText(h) {
     if (h.big || h.cut) return null;
     // the engine's text is already the value: for "x = 2" it is 2, for "x = 2 or x = −2" [2  −2]
-    if (h.input) return wrapValue(h.input);
+    if (h.input) return wrapValue(h.input.replace(/'([\p{L}_][\p{L}\p{Nd}_]*)'/gu, '\\$1')); // 't' -> \t
     return legacyInsertText(h);
   }
   function wrapValue(t) {
@@ -1346,14 +1637,21 @@
     // a result with x (a function of x): differentiate, integrate, draw it or put in a value for x
     const fx = functionOfX(h);
     const more = fx ? [['f-diff', tr('Differentiate', '微分する')], ['f-int', tr('Integrate', '積分する')],
-      ['f-plot', tr('Draw a graph', 'グラフにする')], ['f-subst', tr('Substitute a value for x', 'x に値を代入する')]] : [];
+      ['f-plot', tr('Draw a graph', 'グラフにする')], ['f-subst', tr('Substitute a value for x', 'x に値を代入する')],
+      ['f-solve', tr('Solve = 0 for x', '= 0 として x を求める')]] : [];
+    // a matrix result: edit it and calculate with it in the matrix form
+    const mx = !h.cut && insertText(h);
+    const mat = mx && parseMatrix(mx) ? mx : null;
+    if (mat) more.push(['m-edit', tr('Matrix: edit and calculate', '行列を編集・計算する')]);
     const a = await sheet((h.t ? fmtTime(h.t / 1000) + '\n' : '') + clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300), more.concat([
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')], ['del', tr('Delete this line', 'この行を削除'), 'danger']
     ]));
-    if (a === 'f-diff') openForm('diff', { f: fx });
+    if (a === 'm-edit') openForm('mat', { matrix: mat });
+    else if (a === 'f-diff') openForm('diff', { f: fx });
     else if (a === 'f-int') openForm('int', { f: fx });
     else if (a === 'f-plot') openPlotWith(fx);
+    else if (a === 'f-solve') openForm('solve', { eqs: [fx + ' = 0'] });
     else if (a === 'f-subst') openForm('subst', { f: fx, focus: 'a' });
     else if (a === 'copy-res') copyText(shownText(h));
     else if (a === 'copy-expr') copyText(h.expr);
@@ -1640,6 +1938,9 @@
     tr('The → key types "to" (conversion of units, currencies and number bases). Example: 5 km → mi', '→ キーは「to」（単位・通貨・進数の変換）です。例：5 km → mi'),
     tr('After →, the units you can convert to are suggested below the input field (number formats such as hex when there is no unit): tap one to type it. With the phone keyboard, the names of functions, units and constants are suggested while you type them.', '→ の後には、変換先の候補（同じ種類の単位。単位がなければ 16 進数などの表し方）が入力欄の下に出ます。タップすると入力されます。スマホのキーボードで入力しているときは、関数・単位・定数の名前の候補も出ます。'),
     tr('Switch the keys with the tabs 123, Functions, Calculus and Matrix. The ⌨ key opens the phone keyboard.', 'キーは「123」「関数」「解析」「行列」のタブで切り替えます。⌨ キーでスマホのキーボードも使えます。'),
+    tr('Touch and hold the x key for other letters: y, z, t, n, a, b, c, k, θ.', 'x キーを長押しすると、ほかの文字（y・z・t・n・a・b・c・k・θ）を選べます。'),
+    tr('The solve key opens a form for an equation (left side = right side); "+ Add an equation" makes a system of equations.', 'solve キーで方程式を入力する画面（左辺 = 右辺）が開きます。「＋ 式を追加」で連立方程式になります。'),
+    tr('With x in the expression, 📈 next to the input field draws its graph.', '式に x があるときは、入力欄の上の 📈 でグラフを描けます。'),
     tr('Calculus has keys for derivatives, integrals, limits, sums and differential equations; Matrix has keys to type matrices and for determinants, inverses and more. "more…" opens the list of the functions of that field.', '「解析」には微分・積分・極限・総和・微分方程式、「行列」には行列の入力と行列式・逆行列などのキーがあります。「ほか…」でその分野の関数の一覧が開きます。'),
     tr('The calculus keys (d/dx, ∫, lim, Σ …) open a form with boxes where the mathematics is written: the limits above and below ∫, the variable under lim. Tap a box (or "Next box ▶") and type with the keys; the result is shown at once. "Insert" puts the expression into the input field.', '解析のキー（d/dx、∫、lim、Σ など）を押すと、数式の形に欄が並んだ入力フォームが開きます（∫ の上下に上端・下端、lim の下に変数など）。欄をタップするか「次の欄 ▶」で選んでキーで入力すると、結果がすぐに表示されます。「式に入れる」で入力欄に入ります。'),
     tr('An empty box of a form becomes □ in the input field: it is selected, so the next key types over it, and "Next box ▶" goes to the next □.', 'フォームで空のままの欄は、入力欄では □ になります。□ は選ばれた状態なので、そのままキーを押すと置き換わります。「次の欄 ▶」で次の □ に移ります。'),
@@ -1647,6 +1948,7 @@
     tr('Touch and hold a result with x (x³ − 3x) to differentiate or integrate it, draw its graph or put in a value for x.', 'x を含む結果（x³ − 3x など）を長押しすると、微分・積分・グラフ・x への値の代入ができます。'),
     tr('Type the "=" of an equation with the a=b key (the large = key calculates). Example: solve(x^2 = 16)', '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)'),
     tr('Type a matrix as [1, 2; 3, 4]: "," between the elements and ";" between the rows. Matrix results are shown as tables in the history.', '行列は [1, 2; 3, 4] のように、要素を「,」、行を「;」で区切って入力します。結果の行列は履歴に表の形で表示されます。'),
+    tr('The ▦ key of the Matrix page opens a grid of cells: set the rows and columns with + and −, type the elements and choose what to calculate (determinant, inverse, transpose, rank, eigenvalues, linear system). det, Aᵀ and A⁻¹ open it too when the input field is empty. Touch and hold a matrix result to edit it there.', '「行列」ページの ▦ キーで、行列を表の形で入力する画面が開きます。行と列の数を + と − で決めて要素を入れ、計算（行列式・逆行列・転置・階数・固有値・連立方程式）を選びます。入力欄が空のときは det・Aᵀ・A⁻¹ のキーでも開きます。結果の行列を長押しすると、その画面で編集できます。'),
     tr('Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.', '上の「RAD」「自動」「10進」をタップすると、角度の単位、厳密・近似、結果の進数が切り替わります。'),
     tr('Find functions, units and constants in the lists in the menu (search by name or description, for example "integral", "mile" or "speed of light").', '関数・単位・定数は、メニューの一覧から日本語でも探せます（例：「積分」「マイル」「光速」）。'),
     tr('Draw graphs with "Graph" in the menu: 2D graphs of y = f(x) and 3D graphs of z = f(x, y). Expressions with derivatives or integrals such as diff(x^3 − 3x) can be drawn as they are.', 'グラフはメニューの「グラフ」から。y = f(x) の 2D と、z = f(x, y) の 3D が描けます。diff(x^3 − 3x) のように、微分や積分の式もそのまま描けます。'),
@@ -1895,7 +2197,7 @@
       el('div', { class: 't' }, it.title || it.name, it._ja ? el('span', { class: 'ja', text: it._ja.split(' ')[0] }) : null), acts));
     if (kind === 'functions') {
       row.append(el('div', { class: 'n', text: it.syntax }));
-      acts.append(el('button', { class: 'btn primary', text: tr('Insert', '挿入'), onclick: (e) => { e.stopPropagation(); useItem(it.name + '()', 1); } }));
+      acts.append(el('button', { class: 'btn primary', text: tr('Insert', '挿入'), onclick: (e) => { e.stopPropagation(); const t = functionTemplate(it); useItem(t[0], t[1]); } }));
     } else if (kind === 'units') {
       // "abbr" is the text the engine has checked to be read as this unit (km, km/h, kW·h, $, °C);
       // the internal names of composite units (km_c, km_p_h) are not shown
@@ -1912,6 +2214,19 @@
     if (it.description) row.append(el('div', { class: 'd', text: it.description }));
     row.addEventListener('click', () => row.classList.toggle('expanded'));
     return row;
+  }
+  // A function from the list: name(□, □) with a box for each needed argument when it has two or more
+  // (the syntax "log(x, [base=e])" tells which are needed), else name() with the caret inside.
+  function functionTemplate(it) {
+    const m = /\((.*)\)$/.exec(it.syntax || '');
+    let n = 0, d = 0, cur = '';
+    if (m) {
+      const parts = [];
+      for (const c of m[1]) { if (c === '[' || c === '(') d++; else if (c === ']' || c === ')') d--; if (c === ',' && d === 0) { parts.push(cur); cur = ''; } else cur += c; }
+      parts.push(cur);
+      n = parts.filter((x) => x.trim() && x.trim()[0] !== '[' && x.trim() !== '…').length;
+    }
+    return n >= 2 ? [it.name + '(' + Array(n).fill('□').join(', ') + ')', 0] : [it.name + '()', 1];
   }
   function useItem(text, back) {
     while (panelStack.length) closePanel();
@@ -3230,6 +3545,8 @@
     set('#drawer', 'aria-label', 'メニュー');
     set('#suggest', 'aria-label', '候補');
     set('#cform', 'aria-label', '入力フォーム');
+    set('#varpop', 'aria-label', '文字');
+    set('#plotbtn', 'aria-label', 'この式のグラフ');
     undoEl.textContent = '↶ 元に戻す';
     nextBoxEl.textContent = '次の欄 ▶';
   }
