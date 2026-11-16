@@ -1982,6 +1982,7 @@
     ['units', '㎏', tr('Units and currencies', '単位・通貨の一覧')],
     ['variables', 'π', tr('Variables and constants', '変数・定数の一覧')],
     ['plot', '📈', tr('Graph', 'グラフ')],
+    ['shapes', '📐', tr('Shapes: area, volume, length', '図形（面積・体積・長さ）')],
     ['defs', '✎', tr('User-defined variables and functions', 'ユーザー定義の変数・関数')],
     ['rates', tr('$', '¥'), tr('Update exchange rates', '為替レートの更新')],
     null,
@@ -2021,6 +2022,7 @@
   async function menuAction(k) {
     if (k === 'functions' || k === 'units' || k === 'variables') openCatalog(k);
     else if (k === 'plot') openPlot();
+    else if (k === 'shapes') openShapes();
     else if (k === 'defs') openDefs();
     else if (k === 'rates') openRates();
     else if (k === 'settings') openSettings();
@@ -2057,6 +2059,15 @@
       document.body.append(p.node);
       panels[id] = p;
       build(p);
+    }
+    // a panel is on the stack once; opened again from another panel (the graph of a shape, from the
+    // graph's own tools), it comes to the top instead of being counted twice for Back
+    const at = panelStack.indexOf(p);
+    if (at >= 0) panelStack.splice(at, 1);
+    if (panelStack.length && document.body.lastElementChild !== p.node) {
+      const y = p.body.scrollTop;
+      document.body.append(p.node);
+      p.body.scrollTop = y;
     }
     requestAnimationFrame(() => p.node.classList.add('open'));
     panelStack.push(p);
@@ -2200,7 +2211,8 @@
     tr('Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.', '上の「RAD」「自動」「10進」をタップすると、角度の単位、厳密・近似、結果の進数が切り替わります。'),
     tr('Find functions, units and constants in the lists in the menu (search by name or description, for example "integral", "mile" or "speed of light").', '関数・単位・定数は、メニューの一覧から日本語でも探せます（例：「積分」「マイル」「光速」）。'),
     tr('Draw graphs with "Graph" in the menu: 2D graphs of y = f(x) and 3D graphs of z = f(x, y). Expressions with derivatives or integrals such as diff(x^3 − 3x) can be drawn as they are.', 'グラフはメニューの「グラフ」から。y = f(x) の 2D と、z = f(x, y) の 3D が描けます。diff(x^3 − 3x) のように、微分や積分の式もそのまま描けます。'),
-    tr('An expression cleared with AC comes back with "Undo", which appears right after.', 'AC で消した式は、すぐ後に出る「元に戻す」で戻せます。')
+    tr('An expression cleared with AC comes back with "Undo", which appears right after.', 'AC で消した式は、すぐ後に出る「元に戻す」で戻せます。'),
+    tr('Areas, lengths and volumes of shapes: "Shapes" in the menu. Choose a circle, a triangle, a cylinder and so on, type the sizes, and the results appear at once. In a graph, "Area and length" shades the area, and its edges can be dragged.', '図形の面積・長さ・体積は、メニューの「図形」で求められます。円・三角形・円柱などを選んで大きさを入れると、結果がすぐに出ます。グラフでは「面積・長さ」で面積に色が付き、両端をドラッグして範囲を変えられます。')
   ];
   function useExample(text) {
     while (panelStack.length) closePanel();
@@ -2881,6 +2893,8 @@
     const r = await Bridge.send('plot', { exprs: P.exprs, min: String(min), max: String(max), steps: 600, var: 'x', opts: engineOpts(), timeout: 12000 });
     if (!r.ok) { P.msg.textContent = r.error === 'invalid range' ? tr('Check the range of x', 'x の範囲を確認してください') : (localMessage(r.error) || tr('Could not calculate the graph', 'グラフを計算できませんでした')); return; }
     if (!Array.isArray(r.series)) { P.msg.textContent = tr('The calculation took too long and was stopped', '時間がかかりすぎたため計算を中止しました'); return; }
+    // moving or zooming the graph only reads its values again: the shaded area and its results stay
+    const kept = keepView && P.area ? [P.series.indexOf(P.area.f), P.area.g ? P.series.indexOf(P.area.g) : -1] : null;
     P.series = r.series.map((s, i) => ({ expr: P.exprs[i], x: s.x, y: s.y, color: COLORS[i % COLORS.length] }));
     const err = (r.messages || []).find((m) => m.type === 'error');
     P.msg.textContent = err ? localMessage(err.text) : '';
@@ -2890,8 +2904,13 @@
     if (!keepView) P.view = null;
     P.legend.textContent = '';
     for (const s of P.series) P.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.y.some((v) => v !== null) ? '' : tr(' (no values)', '（値なし）')) }));
-    P.area = null;
-    if (P.areaUI) areaFunctionsChanged();
+    if (kept && P.series[kept[0]] && (kept[1] < 0 || P.series[kept[1]])) {
+      P.area.f = P.series[kept[0]]; P.area.g = kept[1] < 0 ? null : P.series[kept[1]];
+    } else {
+      P.area = null;
+      // with the area tools open, a new graph shows its area at once (unless a form or a shape asks for its own)
+      if (P.areaUI) { P.areaUI.auto = !P.areaUI.box.hidden && !(P.pending && P.pending.area); areaFunctionsChanged(); }
+    }
     if (P.calcUI) calcFunctionsChanged();
     store.set('qalc.plot.ok', false);
     draw();
@@ -3046,6 +3065,46 @@
       g.fillStyle = P.mark.color;
       g.beginPath(); g.arc(sx(P.mark.x), sy(P.mark.y), 4.5, 0, Math.PI * 2); g.fill();
     }
+    if (P.area) drawAreaEdges(g, sx, W, H, css); else delete c.dataset.area;
+  }
+  // The two edges of the shaded area, each with a grip to drag (setupPlotGestures), and the value
+  // of the area (and of the length, when it was asked for) in the corner of the graph.
+  const GRIP_Y = 0.62;
+  function drawAreaEdges(g, sx, W, H, css) {
+    const A = P.area, bg = css.getPropertyValue('--plot-bg').trim() || '#fff';
+    g.save();
+    for (const x of [A.a, A.b]) {
+      const px = Math.round(sx(x)) + .5;
+      if (px < -20 || px > W + 20) continue;
+      g.strokeStyle = A.f.color; g.globalAlpha = 0.75; g.lineWidth = 1.5; g.setLineDash([5, 4]);
+      g.beginPath(); g.moveTo(px, 0); g.lineTo(px, H); g.stroke();
+      g.setLineDash([]); g.globalAlpha = 1; g.fillStyle = bg; g.lineWidth = 2;
+      g.beginPath(); g.arc(px, H * GRIP_Y, 9, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.fillStyle = A.f.color; g.font = '700 11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('↔', px, H * GRIP_Y + 0.5);
+    }
+    const lines = [A.text, A.lenText].filter(Boolean);
+    P.canvas.dataset.area = lines.join(' / '); // what the graph shows, as text
+    if (lines.length) {
+      g.font = '600 13px system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+      const w = Math.min(W - 70, Math.max(...lines.map((t) => g.measureText(t).width)) + 16), h = 20 * lines.length + 6;
+      g.globalAlpha = 0.9; g.fillStyle = bg;
+      g.beginPath(); g.rect(6, 6, w, h); g.fill();
+      g.globalAlpha = 1; g.strokeStyle = A.f.color; g.lineWidth = 1; g.strokeRect(6.5, 6.5, w, h);
+      g.fillStyle = css.getPropertyValue('--text').trim() || '#222';
+      lines.forEach((t, i) => g.fillText(t, 14, 19 + 20 * i, w - 14));
+    }
+    g.restore();
+  }
+  // "Area = 4π ≈ 12.5664": a short text for the graph, from a result ("4π ≈ 12.56637061", "≈ 2.5",
+  // "6"; approx: a number alone is not exact)
+  function shortValue(name, result, approx) {
+    const t = String(result).trim(), bare = t.replace(/^[=≈]\s*/, ''), v = Number(numberPart(bare)), ex = bare.split(' ≈ ')[0].split(' = ')[0].trim(); // "32/3 = 10 + 2/3 ≈ …": 32/3
+    if (!isFinite(v)) return name + ' ' + clip(bare, 26);
+    const num = (+v.toPrecision(6)).toLocaleString('en-US', { maximumSignificantDigits: 6 });
+    if (bare.indexOf(' ≈ ') > 0) return name + (ex.length <= 12 ? ' = ' + ex : '') + ' ≈ ' + num;
+    if (approx || t[0] === '≈') return name + ' ≈ ' + num;
+    return name + ' = ' + (ex.length <= 14 ? ex : num);
   }
   function zoom(f, cx, cy) {
     if (!P.view) return;
@@ -3074,9 +3133,19 @@
       const r = P.canvas.getBoundingClientRect(), v = P.view;
       return { x: v.x0 + (cx - r.left) / r.width * (v.x1 - v.x0), y: v.y1 - (cy - r.top) / r.height * (v.y1 - v.y0) };
     };
+    // an edge of the shaded area under the finger (within 22 px of its line), or ''
+    let edge = '';
+    const edgeAt = (cx) => {
+      if (!P.area || !P.areaUI || P.areaUI.box.hidden) return '';
+      const r = P.canvas.getBoundingClientRect(), v = P.view;
+      const px = (x) => r.left + (x - v.x0) / (v.x1 - v.x0) * r.width;
+      const da = Math.abs(cx - px(P.area.a)), db = Math.abs(cx - px(P.area.b));
+      return Math.min(da, db) > 22 ? '' : (da <= db ? 'a' : 'b');
+    };
     wrap.addEventListener('pointerdown', (e) => {
       if (e.target.tagName === 'BUTTON' || !P.view) return;
       try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* the pointer is already gone */ }
+      if (!pts.size) edge = edgeAt(e.clientX);
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       start = { view: Object.assign({}, P.view), pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) };
       moved = false;
@@ -3086,6 +3155,17 @@
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const r = P.canvas.getBoundingClientRect(), v0 = start.view;
       const ids = Array.from(pts.keys());
+      if (edge && ids.length === 1 && P.area) {
+        // the edge follows the finger; the other edge stays, and the two never cross
+        const A = P.area, x = toData(e.clientX, e.clientY).x, min = (v0.x1 - v0.x0) / r.width * 4;
+        moved = true;
+        if (edge === 'a') A.a = Math.min(x, A.b - min); else A.b = Math.max(x, A.a + min);
+        A.text = A.lenText = '';
+        areaEdgeMoved(edge, false);
+        P.mark = null; P.tip.style.display = 'none';
+        draw();
+        return;
+      }
       if (ids.length === 1) {
         const p0 = start.pts.get(ids[0]), p1 = pts.get(ids[0]);
         if (!p0) return;
@@ -3111,6 +3191,11 @@
     const end = (e) => {
       if (!pts.has(e.pointerId)) return;
       pts.delete(e.pointerId);
+      if (edge) {
+        const k = edge;
+        if (!pts.size) edge = '';
+        if (moved && P.area) { start = null; areaEdgeMoved(k, true); return; }
+      }
       if (!moved && pts.size === 0 && P.view && e.type === 'pointerup') showPoint(toData(e.clientX, e.clientY));
       if (pts.size) start = { view: Object.assign({}, P.view), pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) };
       else { start = null; if (moved) refetchIfNeeded(); }
@@ -3337,7 +3422,8 @@
     U.len.textContent = tr('Calculating…', '計算中…');
     const lf = await curveLength(f.expr, a, b);
     if (!lf) { U.len.textContent = tr('Could not calculate the length', '長さを計算できませんでした'); return; }
-    if (!g) { U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + shownValue(lf)); return; }
+    const onGraph = (name, val) => { U.lenShown = true; if (P.area) { P.area.lenText = shortValue(name, val.text); draw(); } };
+    if (!g) { U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + shownValue(lf)); onGraph(tr('Length', '長さ'), lf); return; }
     const lg = await curveLength(g.expr, a, b);
     if (!lg) { U.len.textContent = tr('Could not calculate the length', '長さを計算できませんでした'); return; }
     const side = async (x) => bestValue(await exactIntegral(`abs((${f.expr}) − (${g.expr})) where x = ${x}`, 3000), await numValue(`abs((${f.expr}) − (${g.expr})) where x = ${x}`));
@@ -3346,6 +3432,7 @@
     const total = await sumValues(parts);
     U.len.textContent = '';
     showResult(U.len, tr('Perimeter ', '周の長さ ') + shownValue(total));
+    onGraph(tr('Perimeter', '周の長さ'), total);
     U.len.append(el('div', { class: 'form-hint', text: tr('Curves: ', '曲線：') + shownValue(lf).replace(/^= /, '') + ' + ' + shownValue(lg).replace(/^= /, '') +
       (parts.length > 2 ? tr(', with the vertical sides at a and b', '、a と b の縦の辺を含む') : '') }));
   }
@@ -3366,16 +3453,18 @@
     const lenBtn = tapButton({ class: 'btn', text: tr('Length', '長さ・周') }, () => computeLength());
     const len = el('div', { class: 'area-out', 'aria-live': 'polite' });
     const box = el('div', { class: 'area-box' },
-      buildShapes2d(),
       el('div', { class: 'plot-range' }, f1, el('span', { text: tr('and', 'と') }), f2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), a, el('span', { text: tr('to', '〜') }), b, go, lenBtn),
       cross, out, ins, len,
-      el('div', { class: 'form-hint', text: tr('The area counts the parts below the x axis (or below the other function) as positive. Tap a range between crossing points to use it. "Length" gives the length of the curve, or the perimeter of the region between two functions.', '面積は、x 軸（またはもう一方の関数）より下の部分もプラスとして数えます。交点の間の範囲をタップすると、その範囲を使います。「長さ・周」は曲線の長さ（2 つの関数の間なら囲まれた部分の周の長さ）です。') }));
+      el('div', { class: 'form-hint', text: tr('The area is shaded in the graph. Drag one of its two edges (↔) to change the range, or tap a range between crossing points. Parts below the x axis (or below the other function) count as positive. "Length" gives the length of the curve, or the perimeter of the region between two functions.', '面積を求める部分はグラフに色が付きます。両端の ↔ をドラッグすると範囲を変えられ、交点の間の範囲はタップでも選べます。x 軸（またはもう一方の関数）より下の部分もプラスとして数えます。「長さ・周」は曲線の長さ（2 つの関数の間なら囲まれた部分の周の長さ）です。') }),
+      buildShapes2d(),
+      tapButton({ class: 'btn geo-link', text: tr('More shapes: rectangle, triangle, cylinder… ›', 'ほかの図形（長方形・三角形・円柱など）›') }, () => openShapes()));
     box.hidden = true;
-    const toggle = el('button', { class: 'btn area-toggle', text: tr('Area ▾', '面積を求める ▾') });
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) areaFunctionsChanged(); else { P.area = null; draw(); } });
-    f1.addEventListener('change', () => areaPairChanged());
-    f2.addEventListener('change', () => areaPairChanged());
+    const toggle = el('button', { class: 'btn area-toggle', text: tr('Area and length ▾', '面積・長さ ▾') });
+    // opened: the area between the first function and the x axis (or the second function) is shown at once
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) { P.areaUI.auto = true; areaFunctionsChanged(); } else { P.area = null; draw(); } });
+    f1.addEventListener('change', () => { P.areaUI.auto = true; areaPairChanged(); });
+    f2.addEventListener('change', () => { P.areaUI.auto = true; areaPairChanged(); });
     go.addEventListener('click', () => computeArea());
     ins.addEventListener('click', () => { if (P.areaExpr) useExample(P.areaExpr); });
     P.areaUI = { f1, f2, a, b, cross, out, ins, box, len };
@@ -3409,18 +3498,18 @@
     });
     return el('div', { class: 'plot-range shapes' }, el('span', { text: tr('Example', '図形の例') }), sel, params, go);
   }
-  function buildShapes2d() {
-    return buildShapes(SHAPES2D, async (k, v) => {
-      // the upper and the lower half as two functions; area and perimeter between them
-      const sq = async (t) => (await symText(`(${t})^2`)) || `(${t})^2`;
-      let top, w;
-      if (k === 'circle') { top = `√(${await sq(v.r)} − x^2)`; w = v.r; }
-      else { top = `${/^[\d.]+$/.test(v.b) ? v.b : '(' + v.b + ')'} √(1 − x^2 / ${await sq(v.a)})`; w = v.a; }
-      const n = await numValue(w);
-      if (!(n > 0)) { toast(tr('The size must be a positive number', '大きさは正の数にしてください'), 2000); return; }
-      const neg = /^[\d.]+$/.test(w) ? '−' + w : `−(${w})`;
-      openPlotWith([top, '−' + top], { range: [r6(-n * 1.3), r6(n * 1.3)], equal: true, area: { a: neg, b: w, between: true, length: true } });
-    });
+  function buildShapes2d() { return buildShapes(SHAPES2D, drawShape2d); }
+  // a circle (v.r) or an ellipse (v.a, v.b) in the 2D graph, with its area and perimeter:
+  // the upper and the lower half as two functions; area and perimeter between them
+  async function drawShape2d(k, v) {
+    const sq = async (t) => (await symText(`(${t})^2`)) || `(${t})^2`;
+    let top, w;
+    if (k === 'circle') { top = `√(${await sq(v.r)} − x^2)`; w = v.r; }
+    else { top = `${/^[\d.]+$/.test(v.b) ? v.b : '(' + v.b + ')'} √(1 − x^2 / ${await sq(v.a)})`; w = v.a; }
+    const n = await numValue(w);
+    if (!(n > 0)) { toast(tr('The size must be a positive number', '大きさは正の数にしてください'), 2000); return; }
+    const neg = /^[\d.]+$/.test(w) ? '−' + w : `−(${w})`;
+    openPlotWith([top, '−' + top], { range: [r6(-n * 1.3), r6(n * 1.3)], equal: true, area: { a: neg, b: w, between: true, length: true } });
   }
   // the functions of the graph were drawn again: the lists of functions follow them
   function areaFunctionsChanged() {
@@ -3446,7 +3535,9 @@
   // the crossing points of the two functions in the drawn values, then exact or precise ones
   async function areaPairChanged() {
     const U = P.areaUI, f = P.series[Number(U.f1.value)], g = areaG();
-    P.area = null; U.out.textContent = ''; U.ins.hidden = true; U.len.textContent = '';
+    const auto = U.auto;
+    U.auto = false;
+    P.area = null; U.out.textContent = ''; U.ins.hidden = true; U.len.textContent = ''; U.lenShown = false;
     U.cross.textContent = '';
     draw();
     if (!f) return;
@@ -3464,7 +3555,31 @@
     }
     // the range to start with: from the first to the last crossing point, or the drawn range
     if (pts.length >= 2) { U.a.value = pts[0].text; U.b.value = pts[pts.length - 1].text; }
-    else if (P.dataX) { U.a.value = String(+P.dataX[0].toPrecision(10)); U.b.value = String(+P.dataX[1].toPrecision(10)); }
+    else if (P.dataX) {
+      // the part of the graph on the screen (the values reach further than the screen after moving it)
+      const v = P.view || {}, lo = Math.max(P.dataX[0], isFinite(v.x0) ? v.x0 : -Infinity), hi = Math.min(P.dataX[1], isFinite(v.x1) ? v.x1 : Infinity);
+      U.a.value = String(+lo.toPrecision(6)); U.b.value = String(+hi.toPrecision(6));
+    }
+    if (auto) await computeArea(true);
+  }
+  // An edge of the shaded area was dragged (setupPlotGestures): a or b follows it. When the finger
+  // lifts, the edge snaps to a crossing point close by (its exact value) or to a round number, and
+  // the area (and the length, if it was shown) is calculated again.
+  function areaEdgeMoved(k, done) {
+    const U = P.areaUI, A = P.area, v = P.view, px = (v.x1 - v.x0) / (P.canvas.clientWidth || 1);
+    let x = A[k], text;
+    const near = (P.areaCross || []).find((c) => Math.abs(c.x - x) < px * 12);
+    if (near) { x = near.x; text = near.text; }
+    else {
+      const q = Math.pow(10, Math.floor(Math.log10(px * 6))); // a round step of a few pixels
+      x = +(Math.round(x / q) * q).toPrecision(10);
+      text = String(x);
+    }
+    U[k].value = text;
+    if (!done) return;
+    A[k] = x;
+    const again = !!U.lenShown;
+    computeArea().then(() => { if (again) computeLength(); });
   }
   // Where f and g (or the x axis) cross, in the drawn values, made exact with solve() or precise
   // with secantsolve(): [{ x, text }] (text is the exact value when there is one)
@@ -3495,7 +3610,8 @@
       const r = await Bridge.send('calc', { expr: `secantsolve((${fe}) − (${ge}), ${engineNum(p.lo)}, ${engineNum(p.hi)})`, opts: Object.assign(engineOpts(), { precision: 16, approx: 'approx', grouping: false }), timeout: 1500 });
       const v = r.ok && r.result ? Number(numberPart(r.result)) : NaN;
       p.x = isFinite(v) ? v : p.x;
-      p.text = isFinite(v) ? (niceNumber(v) || numberPart(r.result)) : String(+p.x.toPrecision(10));
+      // 10 digits read well in the boxes for a and b (the area hardly changes: f − g is 0 there)
+      p.text = niceNumber(p.x) || String(+p.x.toPrecision(10));
     }
     return pts;
   }
@@ -3530,7 +3646,8 @@
     if (ex.length !== ap.length) return [];
     return ex.map((e, i) => ({ text: e.replace(/^\((.*)\)$/, '$1'), v: Number(ap[i].replace(/−/g, '-')) })).filter((r) => isFinite(r.v));
   }
-  async function computeArea() {
+  // auto: asked for by opening the tools or drawing a graph, not with the "Area" button (a short time limit)
+  async function computeArea(auto) {
     const U = P.areaUI, f = P.series[Number(U.f1.value)];
     if (!f) return;
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
@@ -3554,12 +3671,12 @@
     const pieces = [];
     for (let i = 0; i + 1 < bounds.length; i++) pieces.push(`abs(integrate(${d}, ${bounds[i]}, ${bounds[i + 1]}))`);
     const expr = pieces.length <= 8 ? pieces.join(' + ') : `integrate(abs(${d}), ${a}, ${b})`;
-    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: timeLimit() * 1000 });
+    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: auto ? Math.min(5000, timeLimit() * 1000) : timeLimit() * 1000 });
     const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
     // a result the engine could not integrate exactly still has its approximate value after ≈
     if (r.ok && r.result && /∫|integrate\(/.test(r.result) && r.result.indexOf('≈') > 0) r.result = '≈ ' + r.result.split('≈').pop().trim();
     if (!r.ok || r.timeout || err || !r.result || /integrate\(|∫/.test(r.result)) {
-      U.out.textContent = r.timeout ? tr('It took too long (the time limit can be changed in the settings)', '時間がかかりすぎました（制限時間は設定で変えられます）')
+      U.out.textContent = r.timeout ? (auto ? tr('Press "Area" to calculate the area', '「面積」を押すと面積を計算します') : tr('It took too long (the time limit can be changed in the settings)', '時間がかかりすぎました（制限時間は設定で変えられます）'))
         : localMessage((err && err.text) || r.error) || tr('Could not calculate the area', '面積を計算できませんでした');
       P.area = null; draw();
       return;
@@ -3569,7 +3686,7 @@
     P.areaExpr = expr;
     U.ins.hidden = false;
     if (nums.length === 2 && nums.every(isFinite)) {
-      P.area = { f, g, a: Math.min(nums[0], nums[1]), b: Math.max(nums[0], nums[1]) };
+      P.area = { f, g, a: Math.min(nums[0], nums[1]), b: Math.max(nums[0], nums[1]), text: shortValue(tr('Area', '面積'), r.result, r.approx) };
       draw();
     }
   }
@@ -3673,6 +3790,7 @@
     };
     const box = el('div', { class: 'area-box' },
       buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
+      tapButton({ class: 'btn geo-link', text: tr('More shapes: cylinder, cone, box… ›', 'ほかの図形（円柱・円錐・直方体など）›') }, () => openShapes()),
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk), rangeText, diskRow),
       el('div', { class: 'calc-btns' }, go, sur), out, ins,
@@ -4282,6 +4400,215 @@
     };
     wrap.addEventListener('pointerup', end);
     wrap.addEventListener('pointercancel', end);
+  }
+
+  // ------------------------------------------- shapes: area, length, volume
+  // Menu "Shapes": choose a shape, type its sizes, and its area, lengths, volume and surface area
+  // are shown at once, with a picture that names the sizes. Every value is calculated by the engine
+  // from a formula with the sizes put in ({r} and so on), so exact values (4π), units (2 cm gives
+  // cm²) and the precision of the settings work as on the calculator. A circle, an ellipse and a
+  // sphere can also be shown in the graph, where the same values come from integrals.
+  // A shape: k key, d 2 (flat) or 3 (solid), name, p sizes [key, label, kind, symbol] (kind: '' a
+  // length, 'deg' an angle in degrees, 'n' a count), def the first values, out results [label,
+  // formula as shown, expression, power of the length (1 a length, 2 an area, 3 a volume), true: a
+  // number only], pic the picture (SVG, 160 × 110), graph: it can be drawn.
+  const GEO_TRI = '<path class="g" d="M20 90H140L95 20Z"/>';
+  const GEO_S = '(({a} + {b} + {c}) / 2)';
+  const GEO = [
+    { k: 'circle', d: 2, name: tr('Circle', '円'), graph: true, p: [['r', tr('Radius', '半径')]], def: ['2'],
+      out: [[tr('Area', '面積'), 'π r²', 'π × {r}^2', 2], [tr('Circumference', '円周'), '2π r', '2π × {r}', 1], [tr('Diameter', '直径'), '2 r', '2 × {r}', 1]],
+      pic: '<circle class="g" cx="80" cy="55" r="42"/><path class="d" d="M80 55H122"/><circle class="c" cx="80" cy="55" r="2.5"/><text x="97" y="49">r</text>' },
+    { k: 'ellipse', d: 2, name: tr('Ellipse', '楕円'), graph: true, p: [['a', tr('Half width', '横の半径')], ['b', tr('Half height', '縦の半径')]], def: ['3', '2'],
+      out: [[tr('Area', '面積'), 'π a b', 'π × {a} × {b}', 2],
+        [tr('Perimeter', '周の長さ'), tr('no simple formula: by a sum', '簡単な公式がないため数値で計算'), 'sum(√({a}^2 × sin(\\k × {turn}/360)^2 + {b}^2 × cos(\\k × {turn}/360)^2), 1, 360, \\k) × 2π/360', 1, true]],
+      pic: '<ellipse class="g" cx="80" cy="55" rx="62" ry="38"/><path class="d" d="M80 55H142M80 55V17"/><circle class="c" cx="80" cy="55" r="2.5"/><text x="108" y="50">a</text><text x="66" y="38">b</text>' },
+    { k: 'sector', d: 2, name: tr('Sector', '扇形'), p: [['r', tr('Radius', '半径')], ['t', tr('Angle (degrees)', '中心角（度）'), 'deg', 'θ']], def: ['3', '60'],
+      out: [[tr('Area', '面積'), 'π r² × θ/360', 'π × {r}^2 × {t} / 360', 2], [tr('Arc length', '弧の長さ'), '2π r × θ/360', '2π × {r} × {t} / 360', 1], [tr('Perimeter', '周の長さ'), tr('arc + 2 r', '弧 + 2 r'), '2π × {r} × {t} / 360 + 2 × {r}', 1]],
+      pic: '<path class="g" d="M36 92H132A96 96 0 0 0 97.7 18.5Z"/><path class="d" d="M62 92A26 26 0 0 0 52.7 72.1"/><text x="80" y="106">r</text><text x="66" y="80">θ</text>' },
+    { k: 'rect', d: 2, name: tr('Rectangle', '長方形'), p: [['a', tr('Width', '横')], ['b', tr('Height', '縦')]], def: ['4', '3'],
+      out: [[tr('Area', '面積'), 'a b', '{a} × {b}', 2], [tr('Perimeter', '周の長さ'), '2 (a + b)', '2 × ({a} + {b})', 1], [tr('Diagonal', '対角線'), '√(a² + b²)', '√({a}^2 + {b}^2)', 1]],
+      pic: '<rect class="g" x="24" y="22" width="108" height="62"/><path class="d" d="M24 84L132 22"/><text x="76" y="100">a</text><text x="139" y="58">b</text>' },
+    { k: 'tri', d: 2, name: tr('Triangle (base, height)', '三角形（底辺と高さ）'), p: [['b', tr('Base', '底辺')], ['h', tr('Height', '高さ')]], def: ['4', '3'],
+      out: [[tr('Area', '面積'), 'b h / 2', '{b} × {h} / 2', 2]],
+      pic: GEO_TRI + '<path class="d" d="M95 20V90"/><text x="74" y="105">b</text><text x="101" y="62">h</text>' },
+    { k: 'tri3', d: 2, name: tr('Triangle (3 sides)', '三角形（3 辺）'), p: [['a', tr('Side', '辺')], ['b', tr('Side', '辺')], ['c', tr('Side', '辺')]], def: ['3', '4', '5'],
+      out: [[tr('Area', '面積'), tr("Heron's formula", 'ヘロンの公式') + ' √(s(s−a)(s−b)(s−c))', `√(${GEO_S} × (${GEO_S} − {a}) × (${GEO_S} − {b}) × (${GEO_S} − {c}))`, 2], [tr('Perimeter', '周の長さ'), 'a + b + c', '{a} + {b} + {c}', 1]],
+      pic: GEO_TRI + '<text x="46" y="52">a</text><text x="123" y="54">b</text><text x="76" y="105">c</text>' },
+    { k: 'rtri', d: 2, name: tr('Right triangle', '直角三角形'), p: [['a', tr('Base', '底辺')], ['b', tr('Height', '高さ')]], def: ['3', '4'],
+      out: [[tr('Hypotenuse c', '斜辺 c'), '√(a² + b²)', '√({a}^2 + {b}^2)', 1], [tr('Area', '面積'), 'a b / 2', '{a} × {b} / 2', 2], [tr('Perimeter', '周の長さ'), 'a + b + c', '{a} + {b} + √({a}^2 + {b}^2)', 1]],
+      pic: '<path class="g" d="M30 90H135L30 22Z"/><path class="e" d="M30 79H41V90"/><text x="78" y="105">a</text><text x="15" y="60">b</text><text x="88" y="50">c</text>' },
+    { k: 'trap', d: 2, name: tr('Trapezoid', '台形'), p: [['a', tr('Top', '上底')], ['b', tr('Bottom', '下底')], ['h', tr('Height', '高さ')]], def: ['2', '4', '3'],
+      out: [[tr('Area', '面積'), '(a + b) h / 2', '({a} + {b}) × {h} / 2', 2]],
+      pic: '<path class="g" d="M20 90H140L112 28H52Z"/><path class="d" d="M52 28V90"/><text x="78" y="22">a</text><text x="76" y="105">b</text><text x="58" y="64">h</text>' },
+    { k: 'poly', d: 2, name: tr('Regular polygon', '正多角形'), p: [['n', tr('Number of sides', '辺の数'), 'n'], ['a', tr('Side', '1 辺の長さ')]], def: ['6', '2'],
+      out: [[tr('Area', '面積'), 'n a² / (4 tan(180°/n))', '{n} × {a}^2 / (4 × tan({turn} / (2 × {n})))', 2], [tr('Perimeter', '周の長さ'), 'n a', '{n} × {a}', 1]],
+      pic: (v) => {
+        const n = /^\d+$/.test(v.n) && +v.n >= 3 && +v.n <= 24 ? +v.n : 6, pt = [];
+        for (let i = 0; i < n; i++) { const t = Math.PI / 2 + Math.PI / n + i * 2 * Math.PI / n; pt.push((80 + 44 * Math.cos(t)).toFixed(1) + ' ' + (52 + 44 * Math.sin(t)).toFixed(1)); }
+        return `<path class="g" d="M${pt.join('L')}Z"/><text x="76" y="${(52 + 44 * Math.cos(Math.PI / n) + 13).toFixed(0)}">a</text>`;
+      } },
+    { k: 'sphere', d: 3, name: tr('Sphere', '球'), graph: true, p: [['r', tr('Radius', '半径')]], def: ['2'],
+      out: [[tr('Volume', '体積'), '4/3 π r³', '4/3 × π × {r}^3', 3], [tr('Surface area', '表面積'), '4π r²', '4π × {r}^2', 2]],
+      pic: '<circle class="g" cx="80" cy="55" r="44"/><path class="e" d="M36 55A44 13 0 0 0 124 55"/><path class="e h" d="M36 55A44 13 0 0 1 124 55"/><path class="d" d="M80 55H124"/><circle class="c" cx="80" cy="55" r="2.5"/><text x="98" y="49">r</text>' },
+    { k: 'cyl', d: 3, name: tr('Cylinder', '円柱'), p: [['r', tr('Radius', '半径')], ['h', tr('Height', '高さ')]], def: ['2', '5'],
+      out: [[tr('Volume', '体積'), 'π r² h', 'π × {r}^2 × {h}', 3], [tr('Surface area', '表面積'), '2π r (r + h)', '2π × {r} × ({r} + {h})', 2], [tr('Side area', '側面積'), '2π r h', '2π × {r} × {h}', 2]],
+      pic: '<path class="g" d="M38 24V88A42 12 0 0 0 122 88V24"/><ellipse class="g" cx="80" cy="24" rx="42" ry="12"/><path class="e h" d="M38 88A42 12 0 0 1 122 88"/><path class="d" d="M80 24H122"/><text x="96" y="20">r</text><text x="128" y="62">h</text>' },
+    { k: 'cone', d: 3, name: tr('Cone', '円錐'), p: [['r', tr('Radius', '半径')], ['h', tr('Height', '高さ')]], def: ['3', '4'],
+      out: [[tr('Volume', '体積'), 'π r² h / 3', 'π × {r}^2 × {h} / 3', 3], [tr('Surface area', '表面積'), 'π r (r + s)', 'π × {r} × ({r} + √({r}^2 + {h}^2))', 2], [tr('Side area', '側面積'), 'π r s', 'π × {r} × √({r}^2 + {h}^2)', 2], [tr('Slant height s', '母線 s'), '√(r² + h²)', '√({r}^2 + {h}^2)', 1]],
+      pic: '<path class="g" d="M34 88L80 12L126 88A46 12 0 0 1 34 88"/><path class="e h" d="M34 88A46 12 0 0 1 126 88"/><path class="d" d="M80 12V88H126"/><text x="85" y="54">h</text><text x="99" y="82">r</text><text x="110" y="46">s</text>' },
+    { k: 'box', d: 3, name: tr('Box', '直方体'), p: [['a', tr('Width', '横')], ['b', tr('Depth', '奥行き')], ['c', tr('Height', '高さ')]], def: ['4', '3', '2'],
+      out: [[tr('Volume', '体積'), 'a b c', '{a} × {b} × {c}', 3], [tr('Surface area', '表面積'), '2 (a b + b c + c a)', '2 × ({a} × {b} + {b} × {c} + {c} × {a})', 2], [tr('Diagonal', '対角線'), '√(a² + b² + c²)', '√({a}^2 + {b}^2 + {c}^2)', 1]],
+      pic: '<path class="g" d="M22 42H112V94H22ZM22 42L48 20H138L112 42M138 20V72L112 94"/><text x="62" y="108">a</text><text x="130" y="94">b</text><text x="144" y="50">c</text>' },
+    { k: 'pyr', d: 3, name: tr('Square pyramid', '正四角錐'), p: [['a', tr('Side of the base', '底面の 1 辺')], ['h', tr('Height', '高さ')]], def: ['4', '3'],
+      out: [[tr('Volume', '体積'), 'a² h / 3', '{a}^2 × {h} / 3', 3], [tr('Surface area', '表面積'), 'a² + 2 a √((a/2)² + h²)', '{a}^2 + 2 × {a} × √(({a} / 2)^2 + {h}^2)', 2]],
+      pic: '<path class="g" d="M22 88H104L136 66L80 12Z"/><path class="g" d="M80 12L104 88"/><path class="e h" d="M22 88L54 66H136M80 12L54 66"/><path class="d" d="M80 12V77"/><text x="58" y="103">a</text><text x="85" y="52">h</text>' },
+    { k: 'torus', d: 3, name: tr('Torus (ring)', 'トーラス（輪）'), p: [['R', tr('Radius of the ring', '輪の半径')], ['r', tr('Radius of the tube', '管の半径')]], def: ['3', '1'],
+      out: [[tr('Volume', '体積'), '2π² R r²', '2π^2 × {R} × {r}^2', 3], [tr('Surface area', '表面積'), '4π² R r', '4π^2 × {R} × {r}', 2]],
+      pic: '<ellipse class="g" cx="80" cy="55" rx="66" ry="38"/><path class="g hole" d="M52 52Q80 72 108 52Q80 38 52 52Z"/><path class="d" d="M80 55H127"/><path class="d r" d="M127 55H146"/><text x="98" y="49">R</text><text x="133" y="49">r</text>' }
+  ];
+  const GEO_UNITS = ['', 'mm', 'cm', 'm', 'km', 'in', 'ft'];
+  // a size as it goes into an expression: with the unit of the panel when it has none of its own
+  function geoValue(v, kind, unit) {
+    v = normalizeExpr(v);
+    if (!kind && unit && !/\p{L}/u.test(v.replace(/π/g, ''))) return `(${v} ${unit})`;
+    return /^[\d.]+$/.test(v) ? v : `(${v})`;
+  }
+  // what is wrong with the sizes (plain numbers only; other sizes are left to the engine), or ''
+  function geoProblem(sh, v) {
+    const num = {};
+    for (const [n, , kind] of sh.p) {
+      if (!/^[\d.]+$/.test(v[n])) continue;
+      num[n] = Number(v[n]);
+      if (!(num[n] > 0)) return tr('The sizes must be positive numbers', '大きさは正の数にしてください');
+      if (kind === 'n' && (num[n] < 3 || num[n] % 1)) return tr('The number of sides is a whole number from 3', '辺の数は 3 以上の整数にしてください');
+      if (kind === 'deg' && num[n] > 360) return tr('The angle is from 0 to 360 degrees', '中心角は 0〜360 度にしてください');
+    }
+    const { a, b, c } = num;
+    if (sh.k === 'tri3' && [a, b, c].every(isFinite) && (a + b <= c || b + c <= a || c + a <= b)) return tr('These three sides do not make a triangle (each side must be shorter than the other two together)', 'この 3 辺では三角形になりません（どの辺も、ほかの 2 辺の和より短くします）');
+    if (sh.k === 'torus' && isFinite(num.R) && isFinite(num.r) && num.r > num.R) return tr('The tube must not be wider than the ring (r ≤ R)', '管の半径は輪の半径以下にしてください（r ≤ R）');
+    return '';
+  }
+  function openShapes() {
+    const p = panel('shapes', tr('Shapes: area, length, volume', '図形：面積・長さ・体積'), (p) => {
+      const saved = store.get('qalc.shapes', {}) || {};
+      const G = { k: GEO.some((s) => s.k === saved.k) ? saved.k : 'circle', unit: GEO_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : '', vals: saved.v || {}, seq: 0, last: {} };
+      const cur = () => GEO.find((s) => s.k === G.k);
+      const save = () => store.set('qalc.shapes', { k: G.k, unit: G.unit, v: G.vals });
+      const b2 = el('button', { text: tr('Flat shapes', '平面の図形') }), b3 = el('button', { text: tr('Solids', '立体の図形') });
+      const chips = el('div', { class: 'geo-chips', role: 'group', 'aria-label': tr('Shape', '図形') });
+      const pic = el('div', { class: 'geo-pic' }), sizes = el('div', { class: 'geo-sizes' });
+      const outs = el('div', { class: 'geo-out', 'aria-live': 'polite' });
+      const unit = el('select', { 'aria-label': tr('Unit of the lengths', '長さの単位') });
+      for (const u of GEO_UNITS) unit.append(el('option', { value: u, text: u || tr('no unit', '単位なし') }));
+      unit.value = G.unit;
+      const graph = tapButton({ class: 'btn geo-graph', text: tr('📈 Show in a graph', '📈 グラフで見る') }, () => {
+        const sh = cur(), v = values();
+        if (sh.p.some(([n]) => !v[n] || /\p{L}/u.test(v[n].replace(/π/g, '')))) { toast(tr('The graph is drawn from sizes that are numbers without units', 'グラフは、単位のない数の大きさで描きます'), 2600); return; }
+        if (sh.k === 'sphere') showSphere(v.r); else drawShape2d(sh.k, v);
+      });
+      let inputs = {}, rows = [];
+      const values = () => { const v = {}; for (const [n] of cur().p) v[n] = normalizeExpr(inputs[n].value); return v; };
+      const svg = (sh, v, small) => {
+        let t = typeof sh.pic === 'function' ? sh.pic(v || {}) : sh.pic;
+        if (small) t = t.replace(/<text[^>]*>[^<]*<\/text>/g, '').replace(/<path class="d[^>]*>/g, '').replace(/<circle class="c"[^>]*>/g, '');
+        return `<svg viewBox="0 0 160 110" ${small ? 'aria-hidden="true"' : 'role="img" aria-label="' + sh.name + '"'}>${t}</svg>`;
+      };
+      // the results: one request for each, in the order of the list; an older run is given up
+      const run = debounce(async () => {
+        const sh = cur(), v = values(), seq = ++G.seq;
+        G.vals[sh.k] = sh.p.map(([n]) => inputs[n].value);
+        save();
+        if (typeof sh.pic === 'function') pic.innerHTML = svg(sh, v);
+        const problem = sh.p.some(([n]) => !v[n]) ? tr('Enter the sizes', '大きさを入れてください') : geoProblem(sh, v);
+        outs.classList.toggle('bad', !!problem);
+        msg.textContent = problem;
+        for (const row of rows) { row.expr = ''; row.result = ''; row.node.dataset.value = ''; if (problem) { row.val.textContent = '—'; row.val.classList.remove('math'); } }
+        if (problem) return;
+        // Units: sizes that are plain numbers are calculated as numbers, so that exact values stay
+        // (12π), and the unit of the panel is written after the result (cm³). Sizes with units of
+        // their own are calculated with them; the result is asked for in their unit when they all
+        // have the same one (else the engine chooses, and "2π × 2 in" would come out in feet and inches).
+        const own = Array.from(new Set([].concat(...sh.p.map(([n, , kind]) => (kind ? [] : v[n].replace(/π/g, '').match(/\p{L}+/gu) || [])))));
+        const target = own.length === 1 ? own[0] : G.unit;
+        for (const row of rows) {
+          const pow = row.def[3], to = (u) => ' to ' + u + (pow > 1 ? '^' + pow : '');
+          const sub = (unit) => row.def[2].replace(/\{(\w+)\}/g, (m, n) => (n === 'turn' ? fullTurn() : geoValue(v[n], (sh.p.find((q) => q[0] === n) || [])[2], unit)));
+          let expr = sub(''), full = expr, suffix = '';
+          if (!own.length && G.unit) { full = `(${sub(G.unit)})` + to(G.unit); suffix = ' ' + G.unit + ['', '', '²', '³'][pow]; }
+          else if (own.length) { expr = sub(G.unit || target); if (target) expr = `(${expr})` + to(target); full = expr; } // "2 in" and "4": both in inches
+          const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), row.def[4] ? { approx: 'approx' } : {}), timeout: 4000 });
+          if (seq !== G.seq) return;
+          const bad = !r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error') || /(^|[^\p{L}])i($|[^\p{L}])|undefined/u.test(r.result);
+          if (bad) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
+          row.expr = full; row.result = r.result + suffix; row.shown = resultText(r) + suffix;
+          row.node.dataset.value = row.shown;
+          showResult(row.val, row.shown);
+        }
+      }, 220);
+      const choose = (k) => {
+        G.k = k;
+        const sh = cur();
+        G.last[sh.d] = k;
+        b2.classList.toggle('on', sh.d === 2); b3.classList.toggle('on', sh.d === 3);
+        b2.setAttribute('aria-pressed', String(sh.d === 2)); b3.setAttribute('aria-pressed', String(sh.d === 3));
+        chips.textContent = '';
+        for (const s of GEO.filter((x) => x.d === sh.d)) {
+          chips.append(tapButton({ class: 'geo-chip' + (s.k === k ? ' on' : ''), 'aria-pressed': String(s.k === k), html: svg(s, null, true) + '<span></span>' }, () => { if (s.k !== G.k) { typed(); choose(s.k); } }));
+          chips.lastChild.lastChild.textContent = s.name;
+        }
+        const old = G.vals[k] || [];
+        inputs = {}; sizes.textContent = '';
+        sh.p.forEach(([n, label, kind, sym], i) => {
+          inputs[n] = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: old[i] !== undefined ? old[i] : sh.def[i], 'aria-label': label });
+          inputs[n].addEventListener('input', run);
+          inputs[n].addEventListener('focus', () => inputs[n].select());
+          sizes.append(el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl' }, label, kind === 'n' ? '' : el('i', { text: ' ' + (sym || n) })), inputs[n],
+            el('span', { class: 'geo-unit', text: kind ? (kind === 'deg' ? '°' : '') : G.unit })));
+        });
+        pic.innerHTML = svg(sh, values());
+        rows = sh.out.map((def) => {
+          const val = el('span', { class: 'geo-val', text: '…' });
+          const row = { def, val, expr: '', result: '' };
+          row.node = tapButton({ class: 'geo-row' }, async () => {
+            if (!row.expr) return;
+            const key = await sheet(def[0] + '  ' + clip(row.shown, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'], ['copy', tr('Copy the result', '結果をコピー')]]);
+            if (key === 'use') useExample(row.expr);
+            else if (key === 'copy') copyText(row.result);
+          });
+          row.node.append(el('span', { class: 'geo-name' }, def[0], el('small', { text: def[1] })), val);
+          return row;
+        });
+        outs.textContent = '';
+        for (const row of rows) outs.append(row.node);
+        graph.hidden = !sh.graph;
+        if (sh.k === 'sphere') graph.dataset.pro = ''; else delete graph.dataset.pro;
+        run();
+      };
+      const msg = el('div', { class: 'geo-msg', role: 'status' });
+      const typed = () => { G.vals[G.k] = cur().p.map(([n]) => inputs[n].value); };
+      unit.addEventListener('change', () => { G.unit = unit.value; typed(); choose(G.k); });
+      b2.addEventListener('click', () => { if (cur().d !== 2) { typed(); choose(G.last[2] || 'circle'); } });
+      b3.addEventListener('click', () => { if (cur().d !== 3) { typed(); choose(G.last[3] || 'sphere'); } });
+      p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3), chips,
+        el('div', { class: 'geo-main' }, pic, el('div', { class: 'geo-side' }, sizes,
+          el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
+        msg, outs, graph,
+        el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
+      p.run = run;
+      choose(G.k);
+    });
+    // opened again: the precision or the angle unit of the settings may have changed
+    if (p.run) p.run();
+    return p;
+  }
+  // a sphere of radius r in the 3D graph, with its volume and surface area (a QCalc Pro feature)
+  async function showSphere(r) {
+    if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です')); return; }
+    const built = !!panels.plot;
+    if (!built) { store.set('qalc.plot.mode', '3d'); store.set('qalc.plot3d.ok', false); }
+    openPlot();
+    if (built) P.setMode('3d');
+    drawSphere(r);
   }
 
   // ----------------------------------------------------- user definitions
