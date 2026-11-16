@@ -27,7 +27,7 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Equations and systems of equations (solve, multisolve)
 • Derivatives, integrals, limits, sums and differential equations (diff, integrate, limit, sum, dsolve): the calculus keys open forms laid out like the mathematics (the limits above and below ∫ …), with the result shown at once
 • The expression is shown in math notation (fractions, powers, roots, integrals) while you type
-• Equations and systems of equations in a form (left side = right side), and matrices in a grid of cells with the determinant, inverse, rank, eigenvalues and linear systems
+• Equations and systems of equations in a form (left side = right side), and matrices up to 30 × 30 in a grid of cells with the determinant, inverse, rank, eigenvalues and linear systems
 • Matrices and vectors, entered with a page of keys and shown as tables (inverse, determinant, transpose, rank, linear systems)
 • Complex numbers; binary, octal and hexadecimal numbers
 • Date calculations (today + 100 days)
@@ -72,15 +72,15 @@ each user the notes in their language: put both blocks into the field.
 1.6.0:
 
 <en-US>
-• Forms laid out like the math for calculus, equations and matrices, with the result at once
+• Forms laid out like the math for calculus, equations and matrices up to 30 × 30, with the result at once
 • Math notation above the input field; □ boxes and "Next box ▶"; □/□ for fractions
 • Hold x for y, z, t…; 📈 draws an expression in x
-• Graphs: f′, ∫f, tangents, zeros, extrema, ∂f/∂x; area, curve length, volume and surface area (a sphere of r = 2: 32π/3, 16π)
+• Graphs: f′, ∫f, tangents, zeros, extrema, ∂f/∂x; area, curve length, volume and surface area (sphere r = 2: 32π/3, 16π)
 • 📈 in the forms: tangents, areas, the lines or planes of a linear system, matrix rows as points
 • 1:1 scale; spheres are drawn closed
 </en-US>
 <ja-JP>
-・微分・積分など、方程式・連立方程式、行列を数式の形の画面で入力。結果もすぐに表示
+・微分・積分など、方程式・連立方程式、行列（30 × 30 まで）を数式の形の画面で入力。結果もすぐに表示
 ・入力中の式を数式の形で表示。空の欄は □、「次の欄 ▶」で移動。□/□ で分数
 ・x キーの長押しで y・z・t など、📈 で x の式のグラフ
 ・グラフで f′・∫f・接線・零点・極値・偏微分、面積・曲線の長さ・体積・表面積（球 r = 2 なら 32π/3・16π）
