@@ -4062,26 +4062,39 @@
     });
     for (const p of Q3.points || []) vals.push(p.z);
     const [z0, z1] = zRange3d(vals);
-    Q3.data = { xs: r.x, ys: r.y, nx, ny, series, z0, z1 };
-    clearMark3d();
+    const data = { xs: r.x, ys: r.y, nx, ny, series, z0, z1 };
     const err = (r.messages || []).find((m) => m.type === 'error');
-    Q3.msg.textContent = err ? localMessage(err.text)
+    const note = err ? localMessage(err.text)
       : series.some((s) => !s.complete) ? tr('The calculation took too long: only part of the graph was calculated', '時間がかかりすぎたため、途中までしか計算できませんでした')
       : vals.length ? '' : tr('There are no real values (check the ranges of x and y)', '実数の値がありません（x と y の範囲を確認してください）');
-    Q3.legend.textContent = '';
-    if (series.length === 1 && vals.length) {
-      const step = niceStep(z1 - z0, 4);
-      Q3.legend.append(el('span', { class: 'zbar' }, series[0].expr + tr('   z: ', '　z：') + fmt(z0, step / 10), el('i'), fmt(z1, step / 10)));
-    } else {
-      for (const s of series) Q3.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
-    }
-    if (Q3.volUI && !Q3.volUI.box.hidden) volumeSurfacesChanged();
-    if (Q3.partUI && !Q3.partUI.box.hidden) partialSurfacesChanged();
-    store.set('qalc.plot3d.ok', false);
-    draw3d();
-    store.set('qalc.plot3d.ok', true);
-    if (await refineRims(series, r.x, r.y, seq)) draw3d();
+    let shown = false;
+    const show = () => {
+      if (shown || seq !== Q3.seq) return;
+      shown = true;
+      Q3.data = data;
+      clearMark3d();
+      Q3.msg.textContent = note;
+      Q3.legend.textContent = '';
+      if (series.length === 1 && vals.length) {
+        const step = niceStep(z1 - z0, 4);
+        Q3.legend.append(el('span', { class: 'zbar' }, series[0].expr + tr('   z: ', '　z：') + fmt(z0, step / 10), el('i'), fmt(z1, step / 10)));
+      } else {
+        for (const s of series) Q3.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
+      }
+      if (Q3.volUI && !Q3.volUI.box.hidden) volumeSurfacesChanged();
+      if (Q3.partUI && !Q3.partUI.box.hidden) partialSurfacesChanged();
+      store.set('qalc.plot3d.ok', false);
+      draw3d();
+      store.set('qalc.plot3d.ok', true);
+    };
+    // A surface with an edge (a sphere) is shown when its edge has been found (refineRims), so
+    // that it does not appear torn at the edge first and whole a moment later. If finding the
+    // edge takes more than 2.5 seconds, the surface is shown as it is and drawn again afterwards.
+    const late = setTimeout(show, 2500);
+    const refined = await refineRims(series, r.x, r.y, seq);
+    clearTimeout(late);
     if (seq !== Q3.seq) return;
+    if (shown) { if (refined) draw3d(); } else show();
     if (Q3.pending) { const run = Q3.pending; Q3.pending = null; run(); }
   }
   // The edge of a surface with no real values beyond it (a sphere: √(r² − x² − y²)). On each grid
