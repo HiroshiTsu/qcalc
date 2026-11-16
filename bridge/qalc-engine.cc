@@ -424,6 +424,9 @@ static string print_input(const MathStructure &value) {
 // Android passes the clipboard text in one transaction of at most about 1 MB (UTF-16). Higher
 // precisions make results that cannot be copied and calculations that exceed the time limits.
 static const int MAX_PRECISION = 200000;
+// Longest time limit of a calculation (the app's setting "Time limit" goes up to one hour).
+// Graphs keep their own limit of two minutes.
+static const int MAX_CALC_TIMEOUT = 3600000, MAX_PLOT_TIMEOUT = 120000;
 
 struct Opts {
 	EvaluationOptions eo;
@@ -840,7 +843,7 @@ static bool changes_something(const MathStructure &m, int depth = 0) {
 
 static string cmd_calc(const JVal &req, JOut &out) {
 	string expr = req.str("expr");
-	int timeout = req.integer("timeout", 3000, 100, 120000);
+	int timeout = req.integer("timeout", 3000, 100, MAX_CALC_TIMEOUT);
 	int max_chars = req.integer("max_chars", 200000, 100, 10000000);
 	// A result longer than max_chars is cut. With tail_chars (the live preview) its end is kept
 	// too, so that the beginning and the end can be shown, with "chars" and "digits" of the whole.
@@ -1010,7 +1013,7 @@ static string cmd_plot(const JVal &req, JOut &out) {
 	if(!exprs || exprs->t != JVal::ARR) return "exprs missing";
 	string var = req.str("var", "x");
 	int steps = req.integer("steps", 300, 10, 4000);
-	int timeout = req.integer("timeout", 8000, 100, 120000);
+	int timeout = req.integer("timeout", 8000, 100, MAX_PLOT_TIMEOUT);
 	if(exprs->a.size() > 12) return "too many expressions";
 	Opts op = make_opts(req.get("opts"));
 	EvaluationOptions eo = op.eo;
@@ -1088,7 +1091,7 @@ static string cmd_plot3d(const JVal &req, JOut &out) {
 	if(!exprs || exprs->t != JVal::ARR || exprs->a.empty()) return "exprs missing";
 	if(exprs->a.size() > 4) return "too many expressions";
 	int nx = req.integer("nx", 41, 2, 121), ny = req.integer("ny", 41, 2, 121);
-	int timeout = req.integer("timeout", 15000, 100, 120000);
+	int timeout = req.integer("timeout", 15000, 100, MAX_PLOT_TIMEOUT);
 	Opts op = make_opts(req.get("opts"));
 	EvaluationOptions eo = op.eo;
 	eo.approximation = APPROXIMATION_APPROXIMATE;
@@ -1592,7 +1595,8 @@ int main() {
 				// answering and restarting sooner keeps the app responsive.
 				std::lock_guard<std::mutex> lock(out_mutex);
 				wd_id = id_json;
-				wd_deadline = now_ms() + req.integer("timeout", cmd == "calc" ? 3000 : (cmd == "plot" ? 8000 : 15000), 100, 120000) + 3000;
+				wd_deadline = now_ms() + req.integer("timeout", cmd == "calc" ? 3000 : (cmd == "plot" ? 8000 : 15000), 100,
+				                                     cmd == "calc" ? MAX_CALC_TIMEOUT : MAX_PLOT_TIMEOUT) + 3000;
 			}
 			string err;
 			JOut body;

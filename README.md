@@ -64,7 +64,8 @@ The design document set is in [design/](design/), in English and in Japanese wit
 | `app/res/`, `app/res-debug/` | App name, theme and launcher icons (`res-debug` holds the name of the test build, "QCalc (debug)") |
 | `app/assets/` | The user interface (HTML / CSS / JavaScript). `licenses.js` holds the license texts of the bundled software |
 | `app/jniLibs/arm64-v8a/libqalcengine.so` | The prebuilt calculation engine (an arm64 executable; `build-engine.sh` rebuilds it) |
-| `third_party/` | Source archives of libqalculate, GMP, MPFR and libxml2, which are built into the engine ([details](third_party/README.md)) |
+| `third_party/` | Source archives of libqalculate, GMP, MPFR, FLINT and libxml2, which are built into the engine ([details](third_party/README.md)) |
+| `patches/` | QCalc's changes to libqalculate: special functions at a high precision with FLINT's Arb ([details](patches/README.md)) |
 | `fetch-sources.sh` | Extracts the sources in `third_party/` into `src/` |
 | `build-engine.sh` | Builds the engine statically for arm64 (with zig; the Android NDK is not needed) |
 | `build-common.sh` | The parts shared by `build-apk.sh` and `build-aab.sh` (location of the Android SDK, Java compilation and so on) |
@@ -146,6 +147,6 @@ QCalc is free software under the GNU General Public License, version 2 or later 
 
 As a special exception, the copyright holder of QCalc's own code (everything in this repository that is not in `third_party/`) gives permission to link it with the Google Play Billing Library and the libraries it needs, and to distribute the result, without the GPL applying to those libraries. Any other software that is GPL-licensed, such as libqalculate, is not covered by this exception; QCalc's app code does not link libqalculate, which runs as a separate program (the engine).
 
-The engine also contains GMP (LGPL v3 or later, or GPL v2 or later), MPFR (LGPL v3 or later), libxml2 (MIT), the musl libc bundled with zig (MIT), LLVM libc++ / libc++abi / libunwind (Apache License 2.0 with LLVM Exceptions) and compiler_rt (MIT). Because MPFR is LGPL v3 or later, the engine as a whole is distributed under the terms of the GNU GPL v3 or later. The sources are in `third_party/`, and the full license texts can be read in the app under "About this app" → "Open source licenses".
+The engine also contains GMP (LGPL v3 or later, or GPL v2 or later), MPFR (LGPL v3 or later), FLINT (LGPL v3 or later), libxml2 (MIT), the musl libc bundled with zig (MIT), LLVM libc++ / libc++abi / libunwind (Apache License 2.0 with LLVM Exceptions) and compiler_rt (MIT). Because MPFR and FLINT are LGPL v3 or later, the engine as a whole is distributed under the terms of the GNU GPL v3 or later. The sources are in `third_party/`, and the full license texts can be read in the app under "About this app" → "Open source licenses".
 
 The icon was made for QCalc and is different from the Qalculate! icon. The digits in it are drawn with the font Inter (SIL Open Font License).

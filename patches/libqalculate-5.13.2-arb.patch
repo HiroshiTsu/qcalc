@@ -1,0 +1,285 @@
+--- a/libqalculate/Number.h
++++ b/libqalculate/Number.h
+@@ -7,6 +7,8 @@
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation; either version 2 of the License, or
+     (at your option) any later version.
++
++    Modified for QCalc by HiroshiTsu, 2026-11-16: Number::arbFunction (see Number.cc).
+ */
+ 
+ #ifndef NUMBER_H
+@@ -54,6 +56,8 @@
+ 		void testInteger();
+ 		bool testErrors(int error_level = 1) const;
+ 		bool testFloatResult(bool allow_infinite_result = true, int error_level = 1, bool test_integer = true);
++		// QCalc: a special function calculated with Arb at a high precision (see Number.cc)
++		bool arbFunction(int fn, const Number *o = NULL);
+ 
+ 		mpq_t r_value;
+ 		mpfr_t fu_value;
+--- a/libqalculate/Number.cc
++++ b/libqalculate/Number.cc
+@@ -7,6 +7,9 @@
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation; either version 2 of the License, or
+     (at your option) any later version.
++
++    Modified for QCalc by HiroshiTsu, 2026-11-16: special functions of real numbers
++    at a high precision are calculated with Arb (FLINT) when QALC_USE_ARB is defined.
+ */
+ 
+ #include "support.h"
+@@ -48,6 +51,124 @@
+ 
+ #define DOZENAL (po.base == BASE_DUODECIMAL && (po.duodecimal_symbols || po.custom_time_zone == TZ_DOZENAL || po.custom_time_zone == TZ_TRUNCATE + TZ_DOZENAL))
+ 
++#ifdef QALC_USE_ARB
++// QCalc: special functions of real numbers at a high precision are calculated with Arb (part of
++// FLINT), which is much faster there than the MPFR functions and the series of libqalculate (for
++// example zeta(3) or Si(1) with 100000 digits). Arb returns a ball that is guaranteed to contain the
++// exact value; it becomes the interval of the result (with interval arithmetic) or its midpoint.
++// Below ARB_MIN_PRECISION digits, for complex numbers and when Arb cannot give the precision,
++// libqalculate calculates as before.
++#include <flint/flint.h>
++#include <flint/fmpq.h>
++#include <flint/arb.h>
++#include <flint/arb_hypgeom.h>
++#define ARB_MIN_PRECISION 100
++#endif
++enum {
++	ARB_ZETA, ARB_GAMMA, ARB_DIGAMMA, ARB_ERF, ARB_ERFC, ARB_ERFINV, ARB_AIRY, ARB_BESSELJ, ARB_BESSELY,
++	ARB_POLYLOG, ARB_EI, ARB_LI, ARB_SI, ARB_CI, ARB_SHI, ARB_CHI
++};
++#ifdef QALC_USE_ARB
++// a real number as a ball; point is set to false for an interval
++static bool arb_set_number(arb_t x, const Number &n, slong prec, bool &point) {
++	if(n.hasImaginaryPart()) return false;
++	if(n.isRational()) {
++		fmpq_t q;
++		fmpq_init(q);
++		fmpq_set_mpq(q, n.internalRational());
++		arb_set_fmpq(x, q, prec);
++		fmpq_clear(q);
++		return true;
++	}
++	if(!n.isFloatingPoint()) return false;
++	if(!mpfr_number_p(n.internalLowerFloat()) || !mpfr_number_p(n.internalUpperFloat())) return false;
++	arb_set_interval_mpfr(x, n.internalLowerFloat(), n.internalUpperFloat(), prec);
++	if(!mpfr_equal_p(n.internalLowerFloat(), n.internalUpperFloat())) point = false;
++	return true;
++}
++bool Number::arbFunction(int fn, const Number *o) {
++	if(PRECISION < ARB_MIN_PRECISION || !CALCULATOR || CALCULATOR->aborted()) return false;
++	if(hasImaginaryPart() || (o && o->hasImaginaryPart())) return false;
++	long int bits = BIT_PRECISION;
++	bool point = true, ok = false;
++	arb_t x, s, y;
++	arb_init(x);
++	arb_init(s);
++	arb_init(y);
++	slong prec = bits + 64;
++	for(int i = 0; i < 3; i++) {
++		if(!arb_set_number(x, *this, prec, point) || (o && !arb_set_number(s, *o, prec, point))) break;
++		switch(fn) {
++			case ARB_ZETA: {arb_zeta(y, x, prec); break;}
++			case ARB_GAMMA: {
++				if(isRational()) {
++					// fast for fractions with a small denominator (gamma(1/3))
++					fmpq_t q;
++					fmpq_init(q);
++					fmpq_set_mpq(q, r_value);
++					arb_gamma_fmpq(y, q, prec);
++					fmpq_clear(q);
++				} else {
++					arb_gamma(y, x, prec);
++				}
++				break;
++			}
++			case ARB_DIGAMMA: {arb_digamma(y, x, prec); break;}
++			case ARB_ERF: {arb_hypgeom_erf(y, x, prec); break;}
++			case ARB_ERFC: {arb_hypgeom_erfc(y, x, prec); break;}
++			case ARB_ERFINV: {arb_hypgeom_erfinv(y, x, prec); break;}
++			case ARB_AIRY: {arb_hypgeom_airy(y, NULL, NULL, NULL, x, prec); break;}
++			case ARB_BESSELJ: {arb_hypgeom_bessel_j(y, s, x, prec); break;}
++			case ARB_BESSELY: {arb_hypgeom_bessel_y(y, s, x, prec); break;}
++			case ARB_POLYLOG: {arb_polylog(y, s, x, prec); break;}
++			case ARB_EI: {arb_hypgeom_ei(y, x, prec); break;}
++			case ARB_LI: {arb_hypgeom_li(y, x, 0, prec); break;}
++			case ARB_SI: {arb_hypgeom_si(y, x, prec); break;}
++			case ARB_CI: {arb_hypgeom_ci(y, x, prec); break;}
++			case ARB_SHI: {arb_hypgeom_shi(y, x, prec); break;}
++			case ARB_CHI: {arb_hypgeom_chi(y, x, prec); break;}
++			default: {arb_indeterminate(y);}
++		}
++		if(!arb_is_finite(y)) break;
++		// a point: all digits of the precision; an interval: at least a few digits
++		slong acc = arb_rel_accuracy_bits(y);
++		if(point ? acc >= bits : acc >= 8) {ok = true; break;}
++		if(!point || CALCULATOR->aborted()) break;
++		prec += bits / 2 + 64;
++	}
++	if(ok) {
++		Number nr_bak(*this);
++		if(n_type != NUMBER_TYPE_FLOAT) {
++			mpfr_init2(fl_value, bits);
++			mpfr_init2(fu_value, bits);
++			mpq_set_ui(r_value, 0, 1);
++			n_type = NUMBER_TYPE_FLOAT;
++		} else {
++			mpfr_set_prec(fl_value, bits);
++			mpfr_set_prec(fu_value, bits);
++		}
++		mpfr_clear_flags();
++		if(CREATE_INTERVAL || !point) {
++			arb_get_interval_mpfr(fl_value, fu_value, y);
++		} else {
++			arf_get_mpfr(fl_value, arb_midref(y), MPFR_RNDN);
++			mpfr_set(fu_value, fl_value, MPFR_RNDN);
++		}
++		if(!arb_is_exact(y)) mpfr_set_inexflag();
++		if(!testFloatResult()) {
++			set(nr_bak);
++			ok = false;
++		}
++	}
++	arb_clear(x);
++	arb_clear(s);
++	arb_clear(y);
++	return ok;
++}
++#else
++bool Number::arbFunction(int, const Number*) {return false;}
++#endif
++
+ RoundingMode get_rounding_mode(const PrintOptions &po) {
+ 	if(po.rounding == ROUNDING_HALF_AWAY_FROM_ZERO) {
+ 		if(po.custom_time_zone == TZ_TRUNCATE || po.custom_time_zone == TZ_TRUNCATE + TZ_DOZENAL) return ROUNDING_TOWARD_ZERO;
+@@ -5543,6 +5664,7 @@
+ 	}
+ 	if(isPlusInfinity()) {set(1, 1, 0, true); return true;}
+ 	if(isMinusInfinity()) return false;
++	if(arbFunction(ARB_ZETA)) return true;
+ 	Number nr_bak(*this);
+ 	if(!setToFloatingPoint()) return false;
+ 	mpfr_clear_flags();
+@@ -5740,6 +5862,7 @@
+ 	if(isPlusInfinity()) return true;
+ 	if(!isReal()) return false;
+ 	if(!isNonZero()) return false;
++	if(arbFunction(ARB_GAMMA)) return true;
+ 	Number nr_bak(*this);
+ 	if(!setToFloatingPoint()) return false;
+ 	mpfr_clear_flags();
+@@ -5859,6 +5982,7 @@
+ bool Number::digamma() {
+ 	if(!isReal()) return false;
+ 	if(!isNonZero()) return false;
++	if(arbFunction(ARB_DIGAMMA)) return true;
+ 	Number nr_bak(*this);
+ 	if(!setToFloatingPoint()) return false;
+ 	mpfr_clear_flags();
+@@ -5891,6 +6015,7 @@
+ 	return true;
+ }
+ bool Number::erf() {
++	if(isReal() && arbFunction(ARB_ERF)) return true;
+ 	if(hasImaginaryPart()) {
+ 		if(hasRealPart()) {
+ 			if(includesInfinity()) return false;
+@@ -6130,6 +6255,7 @@
+ 	}
+ 	if(isPlusInfinity()) {clear(true); return true;}
+ 	if(isMinusInfinity()) {set(2, 1, 0, true); return true;}
++	if(arbFunction(ARB_ERFC)) return true;
+ 	Number nr_bak(*this);
+ 	if(!setToFloatingPoint()) return false;
+ 	mpfr_clear_flags();
+@@ -6153,6 +6279,7 @@
+ 	if(isMinusOne()) {setMinusInfinity(); return true;}
+ 	if(isZero()) return true;
+ 	if(!isLessThanOrEqualTo(1) || !isGreaterThanOrEqualTo(-1)) return false;
++	if(arbFunction(ARB_ERFINV)) return true;
+ 
+ 	Number nr_bak(*this);
+ 	if(!setToFloatingPoint()) return false;
+@@ -6251,6 +6378,7 @@
+ bool Number::airy() {
+ 	if(!isReal()) return false;
+ 	if(!isLessThanOrEqualTo(500) || !isGreaterThanOrEqualTo(-500)) return false;
++	if(arbFunction(ARB_AIRY)) return true;
+ 	Number nr_bak(*this);
+ 	if(!setToFloatingPoint()) return false;
+ 	mpfr_clear_flags();
+@@ -6338,6 +6466,7 @@
+ 		clear(true);
+ 		return true;
+ 	}
++	if(arbFunction(ARB_BESSELJ, &o)) return true;
+ 	if(!mpz_fits_slong_p(mpq_numref(o.internalRational()))) return false;
+ 	long int n = mpz_get_si(mpq_numref(o.internalRational()));
+ 	Number nr_bak(*this);
+@@ -6431,6 +6560,7 @@
+ 		return true;
+ 	}
+ 	if(isMinusInfinity()) return false;
++	if(arbFunction(ARB_BESSELY, &o)) return true;
+ 	if(!mpz_fits_slong_p(mpq_numref(o.internalRational()))) return false;
+ 	long int n = mpz_get_si(mpq_numref(o.internalRational()));
+ 	Number nr_bak(*this);
+@@ -8122,6 +8252,7 @@
+ 		setPrecisionAndApproximateFrom(o);
+ 		return true;
+ 	}
++	if(arbFunction(ARB_POLYLOG, &o)) return true;
+ 	if(!o.isTwo() || !isLessThanOrEqualTo(1)) {
+ 		if(isInterval(false)) {
+ 			Number nr_l, nr_u;
+@@ -8812,6 +8943,7 @@
+ }
+ bool Number::expint() {
+ 	if(isZero()) {setMinusInfinity(true); return true;}
++	if(isReal() && arbFunction(ARB_EI)) return true;
+ 	if(hasImaginaryPart()) {
+ 		if(i_value->includesInfinity() && includesInfinity(true)) return false;
+ 		if(i_value->isPlusInfinity()) {i_value->pi(); setPrecisionAndApproximateFrom(*i_value); return true;}
+@@ -8962,6 +9094,7 @@
+ }
+ bool Number::logint() {
+ 	if(isZero()) return true;
++	if(isReal() && isPositive() && arbFunction(ARB_LI)) return true;
+ 	Number nr_bak(*this);
+ 	if(!ln() || !expint()) {
+ 		set(nr_bak);
+@@ -8973,6 +9106,7 @@
+ 	if(isPlusInfinity()) {pi(); multiply(2); return true;}
+ 	if(isMinusInfinity()) {pi(); multiply(-2); return true;}
+ 	if(isZero()) return true;
++	if(isReal() && arbFunction(ARB_SI)) return true;
+ 	if(hasImaginaryPart()) {
+ 		if(hasRealPart()) {
+ 			if(includesInfinity()) return false;
+@@ -9329,6 +9463,7 @@
+ 	if(isPlusInfinity()) {return true;}
+ 	if(isMinusInfinity()) {return true;}
+ 	if(isZero()) return true;
++	if(isReal() && arbFunction(ARB_SHI)) return true;
+ 	if(hasImaginaryPart()) {
+ 		if(hasRealPart()) {
+ 			Number nr_bak(*this);
+@@ -9402,6 +9537,7 @@
+ bool Number::cosint() {
+ 	if(isPlusInfinity()) {clear(true); return true;}
+ 	if(isZero()) {setMinusInfinity(true); return true;}
++	if(isReal() && isPositive() && arbFunction(ARB_CI)) return true;
+ 	if(hasImaginaryPart()) {
+ 		if(hasRealPart()) {
+ 			if(includesInfinity()) return false;
+@@ -9794,6 +9930,7 @@
+ bool Number::coshint() {
+ 	if(isPlusInfinity()) {return true;}
+ 	if(isZero()) {setMinusInfinity(true); return true;}
++	if(isReal() && isPositive() && arbFunction(ARB_CHI)) return true;
+ 	if(hasImaginaryPart()) {
+ 		if(hasRealPart()) {
+ 			if(includesInfinity()) return false;

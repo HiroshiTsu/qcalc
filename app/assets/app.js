@@ -143,7 +143,7 @@
 
   // ----------------------------------------------------------- settings
   const DEFAULTS = {
-    angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1,
+    angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1, time_limit: 20,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: false, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
     text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system'
@@ -188,6 +188,12 @@
       max_decimals: Number(S.max_decimals), base: Number(S.base), notation: S.notation, units: S.units,
       mixed_units: !!S.mixed_units, complex: S.complex, grouping: !!S.grouping, structuring: S.structuring
     };
+  }
+  // The time limit of a calculation with "=" in seconds (setting "Time limit"). The engine accepts up
+  // to one hour (MAX_CALC_TIMEOUT in qalc-engine.cc); the preview always stops after 1.5 s.
+  const MIN_TIME_LIMIT = 1, MAX_TIME_LIMIT = 3600, DEFAULT_TIME_LIMIT = 20;
+  function timeLimit() {
+    return Math.max(MIN_TIME_LIMIT, Math.min(MAX_TIME_LIMIT, Math.round(Number(S.time_limit)) || DEFAULT_TIME_LIMIT));
   }
   const ANGLE_LABEL = { rad: 'RAD', deg: 'DEG', gra: 'GRA' };
   const APPROX_LABEL = { auto: tr('AUTO', '自動'), exact: tr('EXACT', '厳密'), approx: tr('APPROX', '近似') };
@@ -800,7 +806,7 @@
   }
 
   // ============================================================ commit
-  let committing = false, busyTimer = null;
+  let committing = false, stopping = false, busyTimer = null;
   async function commit() {
     const raw = exprEl.value.trim();
     if (!raw || committing) return;
@@ -808,12 +814,19 @@
     const expr = withoutOpenTo(normalizeExpr(raw));
     if (!expr) return;
     committing = true;
+    stopping = false;
     clearTimeout(previewTimer);
     previewEl.textContent = tr('Calculating…', '計算中…');
-    busyTimer = setTimeout(() => { if (committing) previewEl.textContent = tr('Calculating… (tap here to stop)', '計算中…（ここをタップで中止）'); }, 1200);
-    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 20000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    // from the first second: the seconds so far, and that a tap stops the calculation
+    const limit = timeLimit(), started = Date.now();
+    busyTimer = setInterval(() => {
+      if (!committing || stopping) return;
+      const s = Math.floor((Date.now() - started) / 1000);
+      if (s >= 1) previewEl.textContent = tr(`Calculating… ${s} s (tap here to stop)`, `計算中… ${s} 秒（ここをタップで中止）`);
+    }, 1000);
+    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
     committing = false;
-    clearTimeout(busyTimer);
+    clearInterval(busyTimer);
     clearInterval(cancelTimer);
     if (!r.ok) {
       previewEl.textContent = '';
@@ -821,7 +834,13 @@
       msgEl.className = 'msg error';
       return;
     }
-    if (r.timeout) { previewEl.textContent = ''; msgEl.textContent = tr('The calculation took too long and was stopped', '時間がかかりすぎたため計算を中止しました'); msgEl.className = 'msg error'; return; }
+    if (r.timeout) {
+      previewEl.textContent = '';
+      msgEl.textContent = tr(`The calculation took longer than the time limit (${limit} s) and was stopped. The time limit can be changed in Settings`,
+        `制限時間（${limit} 秒）を過ぎたため計算を中止しました。制限時間は設定で変えられます`);
+      msgEl.className = 'msg error';
+      return;
+    }
     if (!r.result) {
       const err = (r.messages || []).find((m) => m.type === 'error');
       previewEl.textContent = '';
@@ -899,6 +918,7 @@
   let cancelTimer = null;
   previewEl.addEventListener('click', () => {
     if (!committing || !window.QalcNative || !QalcNative.cancel) return;
+    stopping = true;
     previewEl.textContent = tr('Stopping…', '中止しています…');
     QalcNative.cancel();
     clearInterval(cancelTimer);
@@ -2505,7 +2525,10 @@
       ['structuring', tr('Simplification', '式の整理'), [['simplify', tr('Simplify', '簡約')], ['factorize', tr('Factorize', '因数分解')], ['expand', tr('Expand', '展開')]]],
       ['complex', tr('Complex number form', '複素数の形式'), [['rect', 'a + bi'], ['exp', tr('Exponential', '指数形式')], ['polar', tr('Polar', '極形式')], ['cis', tr('cis', 'cis 形式')]]],
       ['units', tr('Automatic unit conversion', '単位の自動変換'), [['optimal', tr('Best unit', '最適な単位')], ['si', tr('Best SI unit', 'SI 単位で最適')], ['base', tr('Base units', '基本単位')], ['none', tr('None', 'しない')]]],
-      ['mixed_units', tr('Mixed units (3 ft + 2 in and the like)', '複合単位で表示（3 ft + 2 in など）'), 'bool']
+      ['mixed_units', tr('Mixed units (3 ft + 2 in and the like)', '複合単位で表示（3 ft + 2 in など）'), 'bool'],
+      ['time_limit', tr('Time limit (seconds)', '計算の制限時間（秒）'), 'number',
+        tr('1 to 3600 seconds (default 20). A calculation with = is stopped after this time; tap "Calculating…" to stop it sooner',
+          '1〜3600 秒（既定 20）。「=」の計算がこの時間を過ぎると中止します。「計算中…」をタップすれば途中でも止められます')]
     ]],
     [tr('Display', '表示'), [
       ['fraction', tr('Fractions', '分数の表示'), [['auto', tr('Automatic', '自動')], ['decimal', tr('Decimal', '小数')], ['exact', tr('Decimal (when exact)', '小数（厳密なときだけ）')], ['fraction', tr('Fraction', '分数')], ['combined', tr('Mixed fraction', '帯分数')]]],
@@ -2528,6 +2551,11 @@
       ['haptics', tr('Vibrate when a key is pressed', 'キーを押したときに振動'), 'bool']
     ]]
   ];
+  // the settings that are numbers: smallest, largest (now, and with QCalc Pro) and default value
+  const NUMBER_RANGE = {
+    precision: { min: 2, max: maxPrecision, limit: MAX_PRECISION, def: 10 },
+    time_limit: { min: MIN_TIME_LIMIT, max: () => MAX_TIME_LIMIT, limit: MAX_TIME_LIMIT, def: DEFAULT_TIME_LIMIT }
+  };
   function openSettings() {
     const p = panel('settings', tr('Settings', '設定'), (p) => {
       for (const [group, rows] of SETTINGS) {
@@ -2539,11 +2567,13 @@
             input.checked = !!S[key];
             input.addEventListener('change', () => { S[key] = input.checked; settingsChanged(); });
           } else if (type === 'number') {
-            input = el('input', { type: 'number', min: 2, max: maxPrecision(), inputmode: 'numeric' });
+            const R = NUMBER_RANGE[key];
+            input = el('input', { type: 'number', min: R.min, max: R.max(), inputmode: 'numeric' });
             input.value = S[key];
             input.addEventListener('change', () => {
-              let n = Math.max(2, Math.min(MAX_PRECISION, parseInt(input.value, 10) || 10));
-              const locked = n > maxPrecision();
+              const v = parseInt(input.value, 10);
+              let n = Number.isNaN(v) ? R.def : Math.max(R.min, Math.min(R.limit, v));
+              const locked = key === 'precision' && n > maxPrecision();
               if (locked) n = maxPrecision();
               S[key] = n; input.value = n; settingsChanged();
               if (locked) proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'));

@@ -17,7 +17,7 @@ window.QCALC_LICENSES = {
    "version": "5.13.2",
    "license": "GNU GPL v2 or later",
    "license_ja": "GNU GPL v2 以降",
-   "copyright": "Copyright (C) 2003-2007, 2008, 2016-2024 Hanna Knutsson",
+   "copyright": "Copyright (C) 2003-2007, 2008, 2016-2024 Hanna Knutsson. Modified for QCalc (special functions with Arb)",
    "url": "https://github.com/Qalculate/libqalculate",
    "texts": [
     "gpl2"
@@ -43,6 +43,18 @@ window.QCALC_LICENSES = {
    "license_ja": "GNU LGPL v3 以降",
    "copyright": "Copyright 1999-2025 Free Software Foundation, Inc.",
    "url": "https://www.mpfr.org/",
+   "texts": [
+    "lgpl3",
+    "gpl3"
+   ]
+  },
+  {
+   "name": "FLINT (with Arb)",
+   "version": "3.6.0",
+   "license": "GNU LGPL v3 or later",
+   "license_ja": "GNU LGPL v3 以降",
+   "copyright": "Copyright (C) 2007-2026 William Hart, Fredrik Johansson and the FLINT authors",
+   "url": "https://flintlib.org/",
    "texts": [
     "lgpl3",
     "gpl3"

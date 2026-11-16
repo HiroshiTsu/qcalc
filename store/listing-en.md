@@ -31,6 +31,7 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Date calculations (today + 100 days)
 • Uncertainty propagation ((5 ± 0.2) m × (3 ± 0.1) m)
 • Exact results with fractions and square roots, and high precision with up to 200,000 significant digits (above 1000 digits with QCalc Pro). Long results are shown and copied with all their digits
+• Special functions stay fast with many digits (zeta, gamma, erf, Bessel functions and more), and a long calculation can be given up to one hour
 • 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom
 • 3D graphs of surfaces z = f(x, y) that you turn with a finger (QCalc Pro)
 • Traditional Japanese units: tsubo, tan, sun, shaku, ken, ri, gō, shō, monme, kan (30 tsubo to m²)
@@ -64,6 +65,19 @@ Android 7.0 or later on a 64-bit ARM (arm64) device.
 
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
 each user the notes in their language: put both blocks into the field.
+
+1.5.0:
+
+<en-US>
+• Special functions are much faster at a high precision: zeta, gamma, digamma, erf, erfc, erfinv, Ei, li, Si, Ci, Shi, Chi, polylog, airy and the Bessel functions (with FLINT)
+• New setting "Time limit": a calculation with = can take up to one hour; the seconds so far are shown while it runs
+• Fixed: Si, Ci, Shi and Chi gave no result from 100,000 digits
+</en-US>
+<ja-JP>
+・高い精度での特殊関数の計算を大幅に速くしました（FLINT を使用）：zeta、gamma、digamma、erf、erfc、erfinv、Ei、li、Si、Ci、Shi、Chi、polylog、airy、ベッセル関数
+・設定に「計算の制限時間」を追加しました（「=」の計算を最大 1 時間まで。計算中は経過した秒数を表示）
+・Si・Ci・Shi・Chi が 10 万桁以上で結果を出さない不具合を直しました
+</ja-JP>
 
 1.4.0:
 

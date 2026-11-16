@@ -63,7 +63,8 @@ QCalc Pro は Google Play での買い切りの購入（1 回限りのアイテ�
 | `app/res/`, `app/res-debug/` | アプリ名、テーマ、ランチャーのアイコン（`res-debug` はテスト版の名前「QCalc (debug)」） |
 | `app/assets/` | 画面（HTML / CSS / JavaScript）。`licenses.js` はアプリに組み込んだソフトウェアのライセンス文 |
 | `app/jniLibs/arm64-v8a/libqalcengine.so` | ビルド済みの計算エンジン（arm64 の実行ファイル。`build-engine.sh` で作り直せます） |
-| `third_party/` | エンジンに組み込んだ libqalculate・GMP・MPFR・libxml2 のソース（[説明](third_party/README.md)） |
+| `third_party/` | エンジンに組み込んだ libqalculate・GMP・MPFR・FLINT・libxml2 のソース（[説明](third_party/README.md)） |
+| `patches/` | QCalc が libqalculate に加えた変更：高い精度の特殊関数を FLINT の Arb で計算する（[説明](patches/README.md)） |
 | `fetch-sources.sh` | `third_party/` のソースを `src/` に展開 |
 | `build-engine.sh` | エンジンを arm64 向けに静的ビルド（zig を使用。Android NDK は不要） |
 | `build-common.sh` | `build-apk.sh` と `build-aab.sh` の共通部分（Android SDK の場所、Java のコンパイルなど） |
@@ -145,6 +146,6 @@ QCalc は GNU General Public License v2 以降（[LICENSE](LICENSE)）のフリ�
 
 特別な例外として、QCalc 自身のコード（このリポジトリの `third_party/` 以外）の著作権者は、これを Google Play Billing Library とそれが必要とするライブラリにリンクし、その結果を配布することを、それらのライブラリに GPL を適用せずに許可します。libqalculate など、ほかの GPL のソフトウェアはこの例外の対象ではありません。QCalc のアプリのコードは libqalculate にリンクしておらず、libqalculate は別のプログラム（計算エンジン）として動きます。
 
-計算エンジンには、GMP（LGPL v3 以降 または GPL v2 以降）、MPFR（LGPL v3 以降）、libxml2（MIT）、zig に同梱の musl libc（MIT）、LLVM libc++ / libc++abi / libunwind（Apache License 2.0 with LLVM Exceptions）、compiler_rt（MIT）も組み込んでいます。MPFR が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。これらのソースは `third_party/` にあり、ライセンスの全文はアプリの「このアプリについて」→「オープンソースライセンス」で読めます。
+計算エンジンには、GMP（LGPL v3 以降 または GPL v2 以降）、MPFR（LGPL v3 以降）、FLINT（LGPL v3 以降）、libxml2（MIT）、zig に同梱の musl libc（MIT）、LLVM libc++ / libc++abi / libunwind（Apache License 2.0 with LLVM Exceptions）、compiler_rt（MIT）も組み込んでいます。MPFR と FLINT が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。これらのソースは `third_party/` にあり、ライセンスの全文はアプリの「このアプリについて」→「オープンソースライセンス」で読めます。
 
 アイコンは QCalc のために作ったもので、Qalculate! のアイコンとは別のものです。アイコンの中の数字は、フォント Inter（SIL Open Font License）で描いています。

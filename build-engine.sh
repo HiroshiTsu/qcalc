@@ -1,5 +1,5 @@
 #!/bin/bash
-# Cross-compile GMP, MPFR, libxml2 and libqalculate 5.13.2 as static libraries for
+# Cross-compile GMP, MPFR, FLINT, libxml2 and libqalculate 5.13.2 as static libraries for
 # Android arm64 (aarch64) with zig, then build the engine program (bridge/qalc-engine).
 # The engine is a static executable, so it needs no Android NDK and runs on any arm64 Android.
 set -euo pipefail
@@ -18,6 +18,7 @@ printf '#!/bin/sh\nexec %s cc -target %s "$@"\n' "$ZIG" "$HOST" > "$T/zcc"
 printf '#!/bin/sh\nexec %s c++ -target %s "$@"\n' "$ZIG" "$HOST" > "$T/zcxx"
 printf '#!/bin/sh\nexec %s ar "$@"\n' "$ZIG" > "$T/zar"
 printf '#!/bin/sh\nexec %s ranlib "$@"\n' "$ZIG" > "$T/zranlib"
+printf '#!/bin/sh\nexec %s ld.lld "$@"\n' "$ZIG" > "$T/zld"  # FLINT merges objects with ld -r
 chmod +x "$T"/*
 
 export CC=$T/zcc CXX=$T/zcxx AR=$T/zar RANLIB=$T/zranlib
@@ -46,6 +47,17 @@ if [ ! -f "$PREFIX/lib/libmpfr.a" ]; then
   make install > install.log 2>&1
 fi
 
+if [ ! -f "$PREFIX/lib/libflint.a" ]; then
+  step "FLINT (takes a while)"
+  rm -rf "$B/flint" && mkdir -p "$B/flint" && cd "$B/flint"
+  # one section per function, so that the engine links only the functions it uses (--gc-sections)
+  LD=$T/zld CFLAGS="-O2 -ffunction-sections -fdata-sections" "$S/flint-3.6.0/configure" --host=$HOST --build=x86_64-pc-linux-gnu --prefix="$PREFIX" \
+    --with-gmp="$PREFIX" --with-mpfr="$PREFIX" --enable-static --disable-shared \
+    > configure.log 2>&1 || { tail -30 configure.log; exit 1; }
+  make -j"$JOBS" > make.log 2>&1 || { tail -40 make.log; exit 1; }
+  make install > install.log 2>&1
+fi
+
 if [ ! -f "$PREFIX/lib/libxml2.a" ]; then
   step "libxml2"
   rm -rf "$B/libxml2" && mkdir -p "$B/libxml2" && cd "$B/libxml2"
@@ -65,17 +77,19 @@ if [ ! -f "$PREFIX/lib/libqalculate.a" ]; then
   "$S/libqalculate-5.13.2/configure" --host=$HOST --build=x86_64-pc-linux-gnu --prefix="$PREFIX" \
     --enable-static --disable-shared --enable-compiled-definitions --disable-insecure \
     --without-libcurl --without-icu --without-gnuplot-call --with-readline=no --disable-nls \
-    CPPFLAGS="-I$PREFIX/include" LDFLAGS="-L$PREFIX/lib -static" \
+    CPPFLAGS="-I$PREFIX/include -DQALC_USE_ARB" LDFLAGS="-L$PREFIX/lib -static" \
     > configure.log 2>&1 || { tail -40 configure.log; exit 1; }
-  make -j"$JOBS" > make.log 2>&1 || { tail -60 make.log; exit 1; }
-  make install > install.log 2>&1 || { tail -30 install.log; exit 1; }
+  # the programs of libqalculate (qalc, unittest) link libqalculate.a, which needs FLINT now
+  LQ_LIBS="-lflint -lmpfr -lgmp $(sed -n 's/^LIBS = //p' Makefile)"
+  make -j"$JOBS" LIBS="$LQ_LIBS" > make.log 2>&1 || { tail -60 make.log; exit 1; }
+  make install LIBS="$LQ_LIBS" > install.log 2>&1 || { tail -30 install.log; exit 1; }
 fi
 
 step "engine (bridge/qalc-engine)"
 "$T/zcxx" -O2 -std=c++17 -static -I"$PREFIX/include" -I"$PREFIX/include/libxml2" \
   -DQALC_ENGINE_VERSION='"5.13.2"' "$P/bridge/qalc-engine.cc" \
-  -L"$PREFIX/lib" -lqalculate -lxml2 -lmpfr -lgmp -lpthread -lm \
-  -Wl,-z,max-page-size=16384 -s -o "$P/bridge/qalc-engine"
+  -L"$PREFIX/lib" -lqalculate -lxml2 -lflint -lmpfr -lgmp -lpthread -lm \
+  -Wl,--gc-sections -Wl,-z,max-page-size=16384 -s -o "$P/bridge/qalc-engine"
 # the APK takes the engine from app/jniLibs (both build-apk.sh and Android Studio)
 mkdir -p "$P/app/jniLibs/arm64-v8a"
 cp "$P/bridge/qalc-engine" "$P/app/jniLibs/arm64-v8a/libqalcengine.so"
