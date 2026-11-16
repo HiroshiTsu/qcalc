@@ -313,7 +313,7 @@
     'd²/dx²': '2階微分', '∂/∂y': 'yで偏微分', '∫ₐᵇ': '定積分', 'lim': '極限', 'Π': '総乗', 'dsolve': '微分方程式を解く',
     '極値': '極値', 'solve': '方程式を解く', '∞': '無限大', 'ほか…': 'ほかの関数を一覧から選ぶ',
     '[': '左角かっこ（行列の始まり）', ']': '右角かっこ（行列の終わり）', ';': 'セミコロン（行列の行の区切り）',
-    'det': '行列式', 'Aᵀ': '転置行列', 'A⁻¹': '逆行列', 'Iₙ': '単位行列', '▦': '行列を入力する画面を開く', 'a/b': '分数（分子と分母の欄）'
+    'det': '行列式', 'Aᵀ': '転置行列', 'A⁻¹': '逆行列', '▦': '行列を入力する画面を開く', 'a/b': '分数（分子と分母の欄）'
   } : {
     '⌫': 'Backspace', 'AC': 'Clear all', '◀': 'Cursor left', '▶': 'Cursor right', '⌨': 'Type with the keyboard',
     'xʸ': 'Power', '√': 'Square root', '∛': 'Cube root', 'E': 'Times ten to the power', '÷': 'Divide', '×': 'Multiply', '−': 'Minus',
@@ -324,7 +324,7 @@
     'Π': 'Product', 'dsolve': 'Solve a differential equation', 'max/min': 'Extremum (maximum or minimum)', 'solve': 'Solve an equation',
     '∞': 'Infinity', 'more…': 'Choose another function from the list',
     '[': 'Left bracket (start of a matrix)', ']': 'Right bracket (end of a matrix)', ';': 'Semicolon (end of a matrix row)',
-    'det': 'Determinant', 'Aᵀ': 'Transpose', 'A⁻¹': 'Inverse matrix', 'Iₙ': 'Identity matrix', '▦': 'Open the matrix form', 'a/b': 'Fraction (boxes for the numerator and the denominator)'
+    'det': 'Determinant', 'Aᵀ': 'Transpose', 'A⁻¹': 'Inverse matrix', '▦': 'Open the matrix form', 'a/b': 'Fraction (boxes for the numerator and the denominator)'
   };
 
   function makeKey(def, inToolbar) {
@@ -1133,8 +1133,16 @@
     if (k === 'v' && /^\p{L}$/u.test(v)) v = varText(v); // a variable t is written \t
     return v || (d[3] !== undefined ? d[3] : d[2] ? '□' : '');
   }
-  const formMissing = () => (FORMS[CF.id].matrix ? [] : FORMS[CF.id].eqs ? CF.order.filter((k) => k[0] === 'l' && !CF.boxes[k].value.trim())
-    : FORMS[CF.id].boxes.filter((b) => b[2] && !CF.boxes[b[0]].value.trim()).map((b) => b[0]));
+  // the needed boxes that are empty; for an integral, both limits or neither (one limit alone: the other is needed)
+  function formMissing() {
+    const F = FORMS[CF.id];
+    if (F.matrix) return [];
+    if (F.eqs) return CF.order.filter((k) => k[0] === 'l' && !CF.boxes[k].value.trim());
+    const empty = (k) => !CF.boxes[k].value.trim();
+    const out = F.boxes.filter((b) => b[2] && empty(b[0])).map((b) => b[0]);
+    if (CF.id === 'int' && empty('a') !== empty('b')) out.push(empty('a') ? 'a' : 'b');
+    return out;
+  }
   // init: values of the boxes ({ f: 'x^2', n: '2' }), the box to start in (focus), the direction of a limit (dir)
   function openForm(id, init) {
     const F = FORMS[id];
@@ -1158,7 +1166,9 @@
         b.value = init[k] !== undefined ? String(init[k]) : '';
         CF.boxes[k] = b;
       }
-      if (selected && selected !== '□' && init.f === undefined && CF.boxes.f) CF.boxes.f.value = selected.trim();
+      // (for a differential equation the box of its right side y′ = …)
+      const fk = CF.boxes.f ? 'f' : CF.boxes.r ? 'r' : '';
+      if (selected && selected !== '□' && fk && init[fk] === undefined) CF.boxes[fk].value = selected.trim();
     } else if (F.eqs) {
       // equations: from init.eqs, else an equation (or an expression = 0) selected in the input field
       const eqs = init.eqs || (selected && selected.trim() ? [selected.trim()] : ['']);
@@ -3165,7 +3175,11 @@
   // numerically with the double exponential (tanh-sinh) rule: x = m + h tanh(π/2 sinh t) and a sum
   // over even steps of t, which stays accurate with an infinite slope or 1/√ at the ends (the edge
   // of a circle or a sphere). The engine works out these sums with 40 to 50 digits.
-  const iOpts = (more) => Object.assign(engineOpts(), { angle: 'rad', grouping: false }, more || {});
+  // The angle unit of the settings is kept, as for drawing the graph (sin(x) in degrees has its area
+  // and length in degrees too); polar coordinates go round a full turn in that unit (2π, 360° or
+  // 400 gradians) and are scaled to radians by 2π / (full turn).
+  const iOpts = (more) => Object.assign(engineOpts(), { grouping: false }, more || {});
+  const fullTurn = () => ({ deg: '360', gra: '400' })[S.angle] || '2π';
   // x and y of an expression replaced by other expressions; "2xy" (x times y) counts too
   function subXY(expr, xs, ys) {
     return expr.replace(/[\p{L}_][\p{L}\p{Nd}_]*/gu, (tok, off, str) => {
@@ -3183,7 +3197,7 @@
     }
     return t;
   }
-  // an expression worked out (radians), as text for the next step, or ''
+  // an expression worked out, as text for the next step, or ''
   async function symText(expr) {
     const r = await Bridge.send('calc', { expr, opts: iOpts(), timeout: 4000 });
     if (!r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error')) return '';
@@ -3213,9 +3227,9 @@
     return sumValue(`sum(${g}, −${N}, ${N}, \\k) × ${H}`, 50);
   }
   // ∬ F over the disk x² + y² ≤ R², numerically: r by the rule above (t from −3.2 to 3.2), θ in 36
-  // even steps (the integrand is periodic in θ)
+  // even steps of a full turn (the integrand is periodic in θ; each step is 2π/36 in radians)
   async function tsDisk(F, R) {
-    const N = 64, M = 36, H = '(3.2/64)', t = `\\k × ${H}`, q = `\\j × 2π/${M}`;
+    const N = 64, M = 36, H = '(3.2/64)', t = `\\k × ${H}`, q = `\\j × ${fullTurn()}/${M}`;
     const rr = `((${R}) / 2 × (1 + tanh(π/2 × sinh(${t}))))`;
     const g = `(${subXY(F, `${rr} × cos(${q})`, `${rr} × sin(${q})`)}) × ${rr} × (${R}) / 2 × π/2 × cosh(${t}) / cosh(π/2 × sinh(${t}))^2`;
     return sumValue(`sum(sum(${g}, −${N}, ${N}, \\k), 1, ${M}, \\j) × ${H} × 2π/${M}`, 40);
@@ -3317,6 +3331,7 @@
     return el('div', { class: 'area-wrap' }, toggle, box);
   }
   // shapes to draw and measure: a circle (radius r), an ellipse (half axes a and b)
+  const PARAM_NAMES = { r: tr('radius r', '半径 r'), a: tr('half axis a (x)', 'x 方向の半径 a'), b: tr('half axis b (y)', 'y 方向の半径 b') };
   const SHAPES2D = [['circle', tr('Circle', '円'), ['r'], ['2']], ['ellipse', tr('Ellipse', '楕円'), ['a', 'b'], ['3', '2']]];
   function buildShapes(defs, run) {
     const sel = el('select', { 'aria-label': tr('Shape', '図形') });
@@ -3327,7 +3342,8 @@
       params.textContent = '';
       const d = defs.find((x) => x[0] === sel.value);
       d[2].forEach((n, i) => {
-        inputs[n] = inputs[n] || el('input', { inputmode: 'text', autocapitalize: 'off', value: d[3][i], 'aria-label': n });
+        inputs[n] = inputs[n] || el('input', { inputmode: 'text', autocapitalize: 'off', value: d[3][i] });
+        inputs[n].setAttribute('aria-label', d[1] + ' ' + (PARAM_NAMES[n] || n));
         params.append(el('span', { text: n + ' =' }), inputs[n]);
       });
     };
@@ -3629,7 +3645,7 @@
     Q3.ta.value = top + '\n−' + top;
     Q3.inputs.forEach((e, i) => { e.value = r6(i % 2 ? w : -w); });
     if (Q3.resEl && Number(Q3.resEl.value) < 61) Q3.resEl.value = '61';
-    setEqual3d(true);
+    Q3.equalOnce = true; // round for this drawing; the 1:1 setting itself stays as it was
     Q3.keep = true;
     Q3.pending = async () => {
       const U = Q3.volUI;
@@ -3676,9 +3692,11 @@
   // ∬ F over the region: the exact double integral (as text), its value if the engine finds it, the numeric value
   async function regionIntegral(S, F, signedF) {
     const exprF = signedF || F;
-    const ix = S.disk ? `integrate(integrate((${polar(exprF)}) × \\r, 0, ${S.R}, \\r), 0, 2π, \\θ)`
+    const turn = fullTurn();
+    const ix = S.disk ? `integrate(integrate((${polar(exprF)}) × \\r, 0, ${S.R}, \\r), 0, ${turn}, \\θ)` + (turn === '2π' ? '' : ` × 2π/${turn}`)
       : `integrate(integrate(${exprF}, ${S.x0}, ${S.x1}, x), ${S.y0}, ${S.y1}, y)`;
-    const ex = await exactIntegral(signedF ? `abs(${ix})` : ix, Math.min(15000, timeLimit() * 1000));
+    // the exact value is tried for a few seconds only (some double integrals keep the engine busy)
+    const ex = await exactIntegral(signedF ? `abs(${ix})` : ix, Math.min(8000, timeLimit() * 1000));
     let num, missing = 0;
     if (S.disk) num = await tsDisk(F, S.R);
     else { const r = await simpsonRect(F, S.x0, S.x1, S.y0, S.y1); num = r.v; missing = r.missing; }
@@ -3710,12 +3728,14 @@
     if (append) U.out.append(out); else { U.out.textContent = ''; U.ins.hidden = true; }
     out.textContent = tr('Calculating…', '計算中…');
     const parts = [], names = [];
+    let missing = 0;
     for (const s1 of g ? [f, g] : [f]) {
       const A = recipSqrt(await symText(`√(1 + (diff(${s1.expr}, x))^2 + (diff(${s1.expr}, y))^2)`));
       if (!A) { out.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); return; }
       const r = await regionIntegral(S, A);
       if (!r.val) { out.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); return; }
       parts.push(r.val); names.push(clip(s1.expr, 24));
+      missing += r.missing;
     }
     if (!g) {
       const floor = S.disk ? await exactIntegral(`π × (${S.R})^2`, 3000) : await exactIntegral(`abs(((${S.x1}) − (${S.x0})) × ((${S.y1}) − (${S.y0})))`, 3000);
@@ -3725,6 +3745,7 @@
     out.textContent = '';
     showResult(out, tr('Surface area ', '表面積 ') + shownValue(total));
     out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+    if (missing) out.append(el('div', { class: 'form-hint', text: tr(`${missing} points without a real value were left out (for a round region, choose "Disk")`, `実数の値がない ${missing} 点を除いています（丸い範囲なら「円」を選んでください）`) }));
   }
 
   // ----------------------------------------------------------- 3D plot
@@ -3770,7 +3791,7 @@
       Q3.res = Number(res.value) || 41;
     };
     go.addEventListener('click', () => {
-      if (!Q3.keep) { Q3.points = null; Q3.pending = null; } // they belong to the graph they were made for
+      if (!Q3.keep) { Q3.points = null; Q3.pending = null; Q3.equalOnce = false; } // they belong to the graph they were made for
       Q3.keep = false;
       store.set('qalc.plot3d.exprs', ta.value); store.set('qalc.plot3d.res', res.value);
       store.set('qalc.plot3d.xmin', xmin.value); store.set('qalc.plot3d.xmax', xmax.value);
@@ -3819,7 +3840,7 @@
     store.set('qalc.plot.mode', '3d');
     store.set('qalc.plot3d.ok', true);
     Q3.points = opts.points || null;
-    if (opts.equal) setEqual3d(true);
+    Q3.equalOnce = !!opts.equal;
     Q3.pending = null;
     const built = !!panels.plot;
     openPlot();
@@ -3940,9 +3961,11 @@
   // as long as each other (a sphere, a cone), off for flat surfaces over wide ranges
   function setEqual3d(on) {
     Q3.equal = !!on;
+    Q3.equalOnce = false;
     store.set('qalc.plot3d.equal', Q3.equal);
   }
   function equal3dNow(rx, ry, rz) {
+    if (Q3.equalOnce) return true; // a sphere drawn from the examples
     if (Q3.equal !== 'auto') return !!Q3.equal;
     const a = Math.max(rx, ry) / Math.min(rx, ry), b = rz / Math.max(rx, ry);
     return a <= 1.25 && b >= 0.6 && b <= 1.6;
@@ -4631,6 +4654,7 @@
 
   // ---------------------------------------------------------- back/pause
   window.qalcBack = function () {
+    if (!varPopEl.hidden) { closeVarPop(); return true; }
     if ($('#sheet').classList.contains('open')) { closeSheet(null); return true; }
     if ($('#drawer').classList.contains('open')) { closeDrawer(); return true; }
     if (panelStack.length) { closePanel(); return true; }

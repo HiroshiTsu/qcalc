@@ -2,7 +2,7 @@
 
 [English](README.md) | **日本語**
 
-式のまま計算できる、Android 用の多機能電卓です。計算には、オープンソースの電卓 [Qalculate!](https://qalculate.github.io/) の計算エンジン **libqalculate 5.13.2** をそのまま使っています。
+式のまま計算できる、Android 用の多機能電卓です。計算には、オープンソースの電卓 [Qalculate!](https://qalculate.github.io/) の計算エンジン **libqalculate 5.13.2** を使っています。QCalc 1.5.0 からは、特殊関数を FLINT の Arb で高い精度のまま速く計算するための小さなパッチ（[patches/](patches/README.md)）を当てています。それ以外は libqalculate のままです。
 
 <p>
 <img src="store/screenshots/phone-1-main.png" width="200" alt="計算画面">
@@ -12,10 +12,13 @@
 
 - `60 mph to km/h`、`100 USD to JPY`、`solve(x^2 − 5x + 6 = 0)`、`integrate(x^2 sin(x), 0, pi)` のように、式をそのまま入力して計算できます。
 - 入力欄の下に候補を表示：`to` の後には変換先の候補（`5 km to` なら m、mi、ft など。単位のない数なら `hex`、`fraction`、`factors` など）、スマホのキーボードで入力しているときは、入力した文字で始まる関数・単位・定数の名前（日本語の名前でも探せます）
-- 単位変換、通貨換算、方程式、微分・積分、行列、複素数、2・8・16 進数、日付、誤差の伝播、最大 200000 桁（20 万桁）の高精度計算。微分・積分などは数式の形に欄が並んだフォームで入力でき、入力中の式は数式の形で表示されます
-- キーは「123」「関数」「解析」「行列」の 4 種類。「解析」は微分・積分・極限・総和・微分方程式（`diff`、`integrate`、`limit`、`sum`、`dsolve`）、「行列」は `[1, 2; 3, 4]` の入力と行列式・逆行列・転置などのキーです。行列の結果は表の形で表示します。
+- 単位変換、通貨換算、方程式、微分・積分、行列、複素数、2・8・16 進数、日付、誤差の伝播、最大 200000 桁（20 万桁）の高精度計算。特殊関数（zeta、gamma、erf、ベッセル関数など）は桁数が多くても速く、計算の制限時間は 1 秒〜1 時間で設定できます
+- 数式の形に欄が並んだ入力フォーム（結果もすぐに表示）：微分、積分（∫ の上下に上端・下端）、極限、総和、総乗、微分方程式、値の代入、方程式・連立方程式（左辺 = 右辺）、行列（表の形の欄。行列式・逆行列・転置・階数・固有値・Ax = b）。空の欄は入力欄では □ になり、「次の欄 ▶」で次の欄に移ります。分数は □/□ で入力します
+- 入力中の式を、入力欄の上に数式の形（分数・べき乗・根号・積分など）で表示し、1/6 のような結果も分数の形で表示します（KaTeX）
+- キーは「123」「関数」「解析」「行列」の 4 種類。「解析」は微分・積分・極限・総和・微分方程式（`diff`、`integrate`、`limit`、`sum`、`dsolve`）、「行列」は ▦（表の形の入力画面）と行列式・逆行列・転置などのキーです（`[1, 2; 3, 4]` と入力することもできます）。行列の結果は表の形で表示します。x キーの長押しで y・z・t などの文字を選べます。
 - 日本の単位（坪・反・寸・尺・間・里・合・升・匁・貫）も使えます（例：`30 坪 to m²`）。libqalculate にはない単位で、QCalc が計算エンジンの起動時に追加しています。行列のトレース `trace()` も同じように追加しています。
-- 2D グラフ（y = f(x)）と 3D グラフ（z = f(x, y) の曲面、指で回転・拡大）
+- 2D グラフ（y = f(x)）と 3D グラフ（z = f(x, y) の曲面、指で回転・拡大）。2D では導関数・原始関数・接線・零点・極値、曲線の間の面積、曲線の長さ・周の長さ（円・楕円の例つき）、3D では偏微分、長方形か円の範囲での体積・表面積（球の例つき。r = 2 なら 32π/3 と 16π）を求められます。「1:1」でどの軸の目盛りもそろい、円や球が丸く見えます
+- 入力フォーム・履歴・グラフが連携します。フォームの 📈 でその計算のグラフ（微分なら接線、定積分なら面積、連立方程式なら直線や平面と解の点、行列なら各行の点）を描き、結果を長押しすると微分・積分・グラフ・方程式に進めます
 - 式の例と使い方をアプリ内に収録（タップして試せます）。関数・単位・定数の一覧は日本語でも検索できます。
 - 自分で定義する変数と関数、計算履歴、消した式や履歴を「元に戻す」、文字の大きさの変更、配色テーマ（7 色）、ライト／ダークの表示（端末の設定に合わせるか、自分で選ぶ）
 - 計算履歴を CSV ファイルに書き出し（Excel でも文字化けしないよう、BOM 付きの UTF-8）
@@ -114,7 +117,7 @@ echo '{"id":2,"cmd":"plot3d","exprs":["sin(x) cos(y)"],"nx":5,"ny":5}' | QALCULA
 
 ## libqalculate との違い
 
-libqalculate のソースは変更していません（`third_party/` のものをそのままビルドします）。計算の結果は公式の `qalc` と同じです。次の 3 点だけ、`bridge/qalc-engine.cc` が実行中の計算エンジンに足しています。
+QCalc 1.5.0 からは、`fetch-sources.sh` が libqalculate にパッチ `patches/libqalculate-5.13.2-arb.patch` を 1 つ当てます（[詳しく](patches/README.md)）。高い精度のとき、特殊関数（zeta、gamma、digamma、erf、erfc、erfinv、Ei、li、Si、Ci、Shi、Chi、polylog、airy、ベッセル関数）を、libqalculate 自身の級数ではなく、誤差の範囲を厳密に保証する FLINT の Arb で計算します。結果は公式の `qalc` と一致し、桁数が多いときにずっと早く出ます。このパッチのほかは、`third_party/` のものをそのままビルドします。次の 3 点だけ、`bridge/qalc-engine.cc` が実行中の計算エンジンに足しています。
 
 - 日本の単位（坪・反・寸・尺・間・里・合・升・匁・貫）
 - 行列のトレース `trace()`（libqalculate には `det()` や `rk()` はありますが、トレースがありません）
@@ -137,7 +140,7 @@ QCalc は Google Play アプリ署名を使います。アプリに署名する�
 注意：
 
 - Android Studio は計算エンジンを作りません。`app/jniLibs/arm64-v8a/libqalcengine.so` をそのまま入れます。`bridge/qalc-engine.cc` や libqalculate を変えたときは、Linux（Windows では WSL）で `./build-engine.sh` を実行してください。
-- Gradle の設定は、Gradle と Android SDK をダウンロードできない環境で作ったため、Android Studio でのビルドはまだ確かめていません。Gradle で作った `.aab` を使うときは、`bundletool dump config --bundle=app-release.aab` で `uncompressNativeLibraries` が有効になっていない（`"enabled": true` がない）ことを確かめてください。
+- Gradle でのビルドは `gradle` コマンド（8.14.3、オフライン）で確かめています。`gradle bundleRelease -Pqcalc.billing=true` で、Google Play にアップロードする課金ありの署名済み App Bundle ができます。Android Studio そのものではまだ試していません。Gradle で作った `.aab` を使うときは、`bundletool dump config --bundle=app-release.aab` で `uncompressNativeLibraries` が有効になっていない（`"enabled": true` がない）ことを確かめてください。
 - `gradlew` は入っていません（Android Studio では不要です）。
 
 ## ライセンス

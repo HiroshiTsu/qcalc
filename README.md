@@ -2,7 +2,7 @@
 
 **English** | [日本語](README.ja.md)
 
-QCalc is a multi-function calculator for Android. You type an expression the way you would write it, and QCalc evaluates it with **libqalculate 5.13.2**, the calculation engine of the open-source calculator [Qalculate!](https://qalculate.github.io/), used without modification.
+QCalc is a multi-function calculator for Android. You type an expression the way you would write it, and QCalc evaluates it with **libqalculate 5.13.2**, the calculation engine of the open-source calculator [Qalculate!](https://qalculate.github.io/). Since QCalc 1.5.0 a small patch ([patches/](patches/README.md)) lets libqalculate calculate special functions at a high precision with FLINT's Arb; everything else is libqalculate as it is.
 
 The app is in English and Japanese: it starts in English, and "Language / 言語" in the menu switches it to Japanese. QCalc is not an official Qalculate! app; it is made by an individual developer who is not affiliated with the Qalculate! project.
 
@@ -16,10 +16,13 @@ The app is in English and Japanese: it starts in English, and "Language / 言語
 
 - Type expressions such as `60 mph to km/h`, `100 USD to JPY`, `solve(x^2 − 5x + 6 = 0)` or `integrate(x^2 sin(x), 0, pi)`; the result is shown while you type.
 - Suggestions below the input field: after `to`, the units the value can be converted to (`5 km to` offers m, mi, ft, …; a number without a unit offers `hex`, `fraction`, `factors`, …), and with the phone keyboard the names of functions, units and constants that begin with the letters typed
-- Unit conversion, currency conversion, equations, derivatives and integrals, matrices, complex numbers, binary, octal and hexadecimal numbers, dates, uncertainty propagation, and high-precision arithmetic with up to 200,000 digits; calculus is entered in forms laid out like the mathematics, and the expression is shown in math notation while you type
-- Four keypads: 123, Functions, Calculus (`diff`, `integrate`, `limit`, `sum`, `dsolve`) and Matrix (entering `[1, 2; 3, 4]`, determinant, inverse, transpose and more). Matrix results are shown as tables.
+- Unit conversion, currency conversion, equations, derivatives and integrals, matrices, complex numbers, binary, octal and hexadecimal numbers, dates, uncertainty propagation, and high-precision arithmetic with up to 200,000 digits. Special functions (zeta, gamma, erf, Bessel functions and more) stay fast with many digits, and the time limit of a calculation can be set from 1 second to 1 hour.
+- Forms laid out like the mathematics, with the result shown at once: derivatives, integrals (the limits above and below ∫), limits, sums, products, differential equations, substituting a value, equations and systems of equations (left side = right side), and matrices in a grid of cells (determinant, inverse, transpose, rank, eigenvalues, Ax = b). An empty box becomes □ in the input field, and "Next box ▶" goes to the next one; fractions are typed as □/□.
+- The expression is shown in math notation (fractions, powers, roots, integrals) above the input field while you type, and results such as 1/6 are shown as fractions (KaTeX).
+- Four keypads: 123, Functions, Calculus (`diff`, `integrate`, `limit`, `sum`, `dsolve`) and Matrix (▦ opens the grid of cells; `[1, 2; 3, 4]` can also be typed). Matrix results are shown as tables. Touching and holding the x key offers y, z, t and other letters.
 - Traditional Japanese units (坪 tsubo, 反 tan, 寸 sun, 尺 shaku, 間 ken, 里 ri, 合 gō, 升 shō, 匁 monme, 貫 kan), for example `30 坪 to m²`. libqalculate does not have these units; QCalc adds them when the engine starts, together with the matrix trace `trace()`.
-- 2D graphs (y = f(x)) and 3D graphs (surfaces z = f(x, y) that you rotate and zoom with your fingers)
+- 2D graphs (y = f(x)) and 3D graphs (surfaces z = f(x, y) that you rotate and zoom with your fingers). Under the 2D graph: f′ and ∫f, the tangent at a point, zeros and extrema, the area between curves, the length of a curve and the perimeter of a region (examples: a circle and an ellipse). Under the 3D graph: ∂f/∂x and ∂f/∂y, the volume and the surface area over a rectangle or a disk (example: a sphere, 32π/3 and 16π for r = 2). "1:1" gives every axis the same scale, so a circle or a sphere looks round.
+- The forms, the history and the graphs work together: 📈 in a form draws the graph of that calculation (a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points), and holding a result offers to differentiate, integrate, draw or solve it.
 - Built-in examples and instructions (tap an example to try it). The lists of functions, units and constants can be searched (in Japanese too).
 - User-defined variables and functions, calculation history, undo for a cleared expression or a deleted history item, three text sizes, seven color themes, light or dark display (the phone's setting or your own choice)
 - Export of the history as a CSV file (UTF-8 with a byte order mark, so that Excel reads it correctly)
@@ -115,7 +118,7 @@ echo '{"id":2,"cmd":"plot3d","exprs":["sin(x) cos(y)"],"nx":5,"ny":5}' | QALCULA
 
 ## Differences from libqalculate
 
-The source of libqalculate is not changed (the archive in `third_party/` is built as it is), so the results are the same as those of the official `qalc`. `bridge/qalc-engine.cc` adds only these three things to the running engine:
+Since QCalc 1.5.0, `fetch-sources.sh` applies one patch to libqalculate, `patches/libqalculate-5.13.2-arb.patch` ([details](patches/README.md)): at a high precision, special functions (zeta, gamma, digamma, erf, erfc, erfinv, Ei, li, Si, Ci, Shi, Chi, polylog, airy and the Bessel functions) are calculated with FLINT's Arb, which gives rigorous error bounds, instead of libqalculate's own series. The results agree with those of the official `qalc`; they come much sooner with many digits. Apart from this patch, the archive in `third_party/` is built as it is. `bridge/qalc-engine.cc` adds only these three things to the running engine:
 
 - Traditional Japanese units (坪, 反, 寸, 尺, 間, 里, 合, 升, 匁, 貫)
 - The matrix trace `trace()` (libqalculate has `det()` and `rk()`, but no trace)
@@ -138,7 +141,7 @@ QCalc uses Play App Signing: Google manages the key that signs the app, and the 
 Notes:
 
 - Android Studio does not build the engine; it packages `app/jniLibs/arm64-v8a/libqalcengine.so` as it is. After changing `bridge/qalc-engine.cc` or libqalculate, run `./build-engine.sh` on Linux (WSL on Windows).
-- The Gradle files were written in an environment that could not download Gradle or the Android SDK, so the Android Studio build has not been tested yet. If you use an `.aab` built with Gradle, check with `bundletool dump config --bundle=app-release.aab` that `uncompressNativeLibraries` is not enabled (there is no `"enabled": true`).
+- The Gradle build has been checked with the `gradle` command (8.14.3, offline): `gradle bundleRelease -Pqcalc.billing=true` makes the signed App Bundle with billing that is uploaded to Google Play. Android Studio itself has not been tried. If you use an `.aab` built with Gradle, check with `bundletool dump config --bundle=app-release.aab` that `uncompressNativeLibraries` is not enabled (there is no `"enabled": true`).
 - `gradlew` is not included (Android Studio does not need it).
 
 ## License
