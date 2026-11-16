@@ -6,8 +6,8 @@
 
 <p>
 <img src="store/screenshots/phone-1-main.png" width="200" alt="計算画面">
-<img src="store/screenshots/phone-3-graph-3d.png" width="200" alt="3D グラフ">
-<img src="store/screenshots/phone-8-dark.png" width="200" alt="ダークモード">
+<img src="store/screenshots/phone-2-shapes.png" width="200" alt="図形の面積・体積">
+<img src="store/screenshots/phone-3-graph-area.png" width="200" alt="グラフの面積">
 </p>
 
 - `60 mph to km/h`、`100 USD to JPY`、`solve(x^2 − 5x + 6 = 0)`、`integrate(x^2 sin(x), 0, pi)` のように、式をそのまま入力して計算できます。

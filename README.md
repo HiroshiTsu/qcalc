@@ -8,8 +8,8 @@ The app is in English and Japanese: it starts in English, and "Language / 言語
 
 <p>
 <img src="store/screenshots-en/phone-1-main.png" width="200" alt="Calculator screen">
-<img src="store/screenshots-en/phone-3-graph-3d.png" width="200" alt="3D graph">
-<img src="store/screenshots-en/phone-8-dark.png" width="200" alt="Dark mode">
+<img src="store/screenshots-en/phone-2-shapes.png" width="200" alt="Shapes: area and volume">
+<img src="store/screenshots-en/phone-3-graph-area.png" width="200" alt="Area in the graph">
 </p>
 
 ## Features
