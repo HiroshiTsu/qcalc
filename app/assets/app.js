@@ -3672,7 +3672,7 @@
   async function exactText(expr) {
     const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { grouping: false }), timeout: 3000 });
     if (!r.ok || !r.result || (r.messages || []).some((m) => m.type === 'error')) return '';
-    return r.result.split(' ≈ ')[0].split(' = ')[0].trim();
+    return barsToAbs(r.result.split(' ≈ ')[0].split(' = ')[0].trim());
   }
   // after a graph was drawn: the marks, the area, the tangent asked for by openPlotWith
   async function applyPending() {
@@ -4182,11 +4182,27 @@
     return t;
   }
   // an expression worked out, as text for the next step, or ''
-  async function symText(expr) {
-    const r = await Bridge.send('calc', { expr, opts: iOpts(), timeout: 4000 });
-    if (!r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error')) return '';
-    const t = r.result.split(' ≈ ')[0].trim();
-    return /integrate|∫|diff\(|=/.test(t) ? '' : t;
+  // |x| in a result of the engine as abs(x), so that the text can be calculated again (1.9.2): the
+  // engine writes abs() as bars, but reads "2 |x| − x²" back as something else (the length of the
+  // heart in the samples could not be calculated). A bar opens when none is open or after an
+  // operator or "(", and closes after a number, a name or ")".
+  function barsToAbs(t) {
+    if (t.indexOf('|') < 0) return t;
+    let out = '', open = 0;
+    for (const c of t) {
+      if (c !== '|') { out += c; continue; }
+      const prev = out.replace(/\s+$/, '').slice(-1);
+      if (!open || prev === '' || /[(\[,+\-−×÷*/^=]/.test(prev)) { out += 'abs('; open++; } else { out += ')'; open--; }
+    }
+    return open ? t : out;
+  }
+  // exact: with exact numbers (1.9.2): an integrand such as √(1 + f′²) keeps √(3) instead of
+  // 1.732050808, which would limit the numeric value of the integral to 10 digits
+  async function symText(expr, exact) {
+    const r = await Bridge.send('calc', { expr, opts: iOpts(exact ? { approx: 'exact' } : undefined), timeout: 4000 });
+    if (!r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error')) return exact ? symText(expr) : '';
+    const t = barsToAbs(r.result.split(' ≈ ')[0].trim());
+    return /integrate|∫|diff\(|=/.test(t) ? (exact ? symText(expr) : '') : t;
   }
   // exact values already looked for (1.8.2): drawing a surface again, or going back to a region,
   // shows them at once. Emptied when the user's definitions change (invalidateCatalogs); the
@@ -4202,6 +4218,10 @@
     if (kept && (kept.res || kept.ms >= ms)) { exactCache.delete(key); exactCache.set(key, kept); return kept.res; }
     const r = await Bridge.send('calc', { expr, opts: iOpts(), timeout: ms });
     let res = null;
+    // a real exact value whose approximate value shows an imaginary part of 0 from rounding (1.9.2):
+    // "√(3) × π ≈ 5.441398093 + 0.000000000i" is √(3) × π ≈ 5.441398093
+    const z = r.ok && r.result ? /^(.+?) ≈ (.+?) [+−] 0(?:\.0*)?i$/.exec(r.result) : null;
+    if (z && !/(^|[^\p{L}])i($|[^\p{L}(])/u.test(z[1])) r.result = z[1] + ' ≈ ' + z[2];
     if (r.ok && r.result && !/∫|integrate/.test(r.result) && !(r.messages || []).some((m) => m.type === 'error' || /integrate|approximated/i.test(m.text))) {
       const v = Number(numberPart(r.result));
       if (isFinite(v)) res = { text: r.result, exact: r.result.split(' ≈ ')[0].trim(), v };
@@ -4220,21 +4240,196 @@
     if (!r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error')) return NaN;
     return Number(numberPart(r.result));
   }
-  // ∫ F dx from a to b, numerically: t from −4 to 4 in steps of 1/50
+  // several sums in one request (a vector), as numbers (NaN for one without a real value)
+  async function sumVector(exprs, digits) {
+    const r = await Bridge.send('calc', { expr: '[' + exprs.join(', ') + ']', opts: iOpts({ approx: 'approx', precision: digits }), timeout: Math.max(20000, timeLimit() * 1000) });
+    if (!r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error')) return exprs.map(() => NaN);
+    const m = exprs.length === 1 ? { rows: [[numberPart(r.result)]] } : parseMatrix(numberPartVec(r.result));
+    const row = m && m.rows.length === 1 ? m.rows[0] : [];
+    return exprs.map((e, i) => (row.length === exprs.length ? Number(String(row[i]).replace(/−/g, '-').replace(/\s/g, '')) : NaN));
+  }
+  // ∫ F dx from a to b, numerically: t from −4 to 4 in steps of 1/50. { v, digits } or { inf: true }
+  // when the integrand grows too fast at an end (1.9.2): the nodes with 3 < |t| ≤ 3.5 and those with
+  // 3.5 < |t| ≤ 4 lie 1e-13 to 1e-80 from the ends; for an integral that has a value the second group
+  // adds far less than the first (also for 1/√ at the end of a circle or y = x^0.1 at 0), for one
+  // without a value (the length of ln(x) from 0: the curve goes off to infinity) at least as much.
+  // The second group also tells how many digits can be trusted.
   async function tsIntegral(F, a, b) {
     const N = 200, H = '(4/200)', t = `\\k × ${H}`;
     const m = `(((${a}) + (${b})) / 2)`, h = `(((${b}) − (${a})) / 2)`;
     const g = `(${subXY(F, `${m} + ${h} × tanh(π/2 × sinh(${t}))`, 'y')}) × ${h} × π/2 × cosh(${t}) / cosh(π/2 × sinh(${t}))^2`;
-    return sumValue(`sum(${g}, −${N}, ${N}, \\k) × ${H}`, 50);
+    const both = (k0, k1) => `(sum(${g}, ${k0}, ${k1}, \\k) + sum(${g}, −${k1}, −${k0}, \\k)) × ${H}`;
+    const [s0, s1, s2] = await sumVector([`sum(${g}, −150, 150, \\k) × ${H}`, both(151, 175), both(176, N)], 50);
+    const v = s0 + s1 + s2;
+    if (!isFinite(v)) return { v: NaN };
+    const big = Math.max(Math.abs(v), 1e-300);
+    if (Math.abs(s2) > 1e-9 * big && Math.abs(s2) >= 0.5 * Math.abs(s1)) return { v: NaN, inf: true };
+    return { v, digits: Math.abs(s2) > 1e-11 * big ? Math.max(4, Math.min(10, Math.floor(-Math.log10(Math.abs(s2) / big)))) : 10 };
   }
-  // ∬ F over the disk x² + y² ≤ R², numerically: r by the rule above (t from −3.2 to 3.2), θ in 36
-  // even steps of a full turn (the integrand is periodic in θ; each step is 2π/36 in radians)
-  async function tsDisk(F, R) {
+  // ∬ F over the disk (x − cx)² + (y − cy)² ≤ R², numerically: r by the rule above (t from −3.2 to
+  // 3.2), θ in 36 even steps of a full turn (the integrand is periodic in θ; each step is 2π/36 in
+  // radians). The center is the origin except for a part of a region (regionReal, 1.9.2).
+  async function tsDisk(F, R, cx, cy) {
     const N = 64, M = 36, H = '(3.2/64)', t = `\\k × ${H}`, q = `\\j × ${fullTurn()}/${M}`;
     const rr = `((${R}) / 2 × (1 + tanh(π/2 × sinh(${t}))))`;
-    const g = `(${subXY(F, `${rr} × cos(${q})`, `${rr} × sin(${q})`)}) × ${rr} × (${R}) / 2 × π/2 × cosh(${t}) / cosh(π/2 × sinh(${t}))^2`;
+    const g = `(${subXY(F, `${offset(cx)}${rr} × cos(${q})`, `${offset(cy)}${rr} × sin(${q})`)}) × ${rr} × (${R}) / 2 × π/2 × cosh(${t}) / cosh(π/2 × sinh(${t}))^2`;
     return sumValue(`sum(sum(${g}, −${N}, ${N}, \\k), 1, ${M}, \\j) × ${H} × 2π/${M}`, 40);
   }
+
+  // ------------------------------- measuring only where the functions have real values (1.9.2)
+  // A function can end inside the range that is measured: √(4 − x²) has no real value for |x| > 2,
+  // and the upper and the lower half of a circle only touch at x = ±2 (they do not cross there, so
+  // until 1.9.1 the range to start with was the drawn one, −2.6 〜 2.6). Beyond such an end the
+  // engine works with complex numbers, and abs() made them real again: an area or a volume came out
+  // wrong without a word (that circle: 12.83 instead of 4π; a sphere in its square: 48.6 instead of
+  // 32π/3), a length or a surface area could not be calculated, and a length could count a part
+  // where the curve is not drawn (ln(x) for x < 0, whose derivative 1/x is real there). Now the
+  // parts where all the functions have real values are found first: along x in 2D, along rays from a
+  // center in 3D. Every integral is taken over these parts only.
+
+  // The functions whose values decide where a part ends: −f has its values where f has them, so
+  // the lower half of a sphere (−√(4 − x² − y²)) is not looked at again
+  function domainExprs(exprs) {
+    const bare = (e) => { let t = e.trim().replace(/^[−-]\s*/, ''); while (outerParens(t)) t = t.slice(1, -1).trim(); return t; };
+    return exprs.filter((e, i) => !exprs.slice(0, i).some((d) => bare(d) === bare(e)));
+  }
+  // the plot of expressions of x for x from lo to hi (0 to 1), up to 12 in one request: [{ x, y } or
+  // null]. The plot has no value where an expression is not a real number (as in the graph).
+  async function plotUnit(exprs, steps, lo, hi) {
+    const out = [];
+    for (let i = 0; i < exprs.length; i += 12) {
+      const part = exprs.slice(i, i + 12);
+      const r = await Bridge.send('plot', { exprs: part, min: lo || '0', max: hi || '1', steps, opts: iOpts({ precision: 20 }), timeout: Math.max(8000, timeLimit() * 1000) });
+      part.forEach((e, k) => { const s = r.ok && Array.isArray(r.series) ? r.series[k] : null; out.push(s && s.x.length >= 2 ? s : null); });
+    }
+    return out;
+  }
+  // The parts of lines where all the expressions have real values. A line is { p0, p1, at } (p0 < p1)
+  // with at(p) = the expressions with the position p put in (p is an expression in x, the variable
+  // of the plot). Returns for each line [{ a, b }, …] (p0 ≤ a < b ≤ p1, an end at p0 or p1 is exactly
+  // that number), or null when the line could not be sampled. Each expression is plotted along the
+  // line (up to 12 in one request); each end inside the line is then found to about 1e-15 of it by
+  // plotting again between the last point with a value and the first one without, which makes the
+  // gap 20 or more times smaller each round. At the end of a square root (a circle, a sphere) f² is
+  // nearly a straight line, so the end is first guessed from the last two values and only a small
+  // piece around the guess is plotted: 4 or 5 rounds instead of 12. A gap of a single point (sin(x)/x
+  // at 0) is no gap, unless keepGaps. Each end is moved 1e-15 of the line inside: the integrals are
+  // worked out with more digits than the plot and must not reach a point just beyond the end, where
+  // there is no value.
+  async function realParts(lines, steps, keepGaps) {
+    const span = (L) => Math.max(Math.abs(L.p0), Math.abs(L.p1), L.p1 - L.p0);
+    const seg = (r, q) => `((${engineNum(r)}) + (${engineNum(q - r)}) × x)`;
+    const tracks = [];
+    lines.forEach((L, i) => L.at('x').forEach((e, k) => tracks.push({ L, i, k })));
+    const first = await plotUnit(tracks.map((T) => T.L.at(seg(T.L.p0, T.L.p1))[T.k]), steps || 64);
+    const ends = [];
+    tracks.forEach((T, j) => {
+      const s = first[j];
+      if (!s) { T.parts = null; return; }
+      const n = s.x.length, P = (k) => (k === 0 ? T.L.p0 : k === n - 1 ? T.L.p1 : T.L.p0 + (T.L.p1 - T.L.p0) * s.x[k]);
+      T.parts = [];
+      for (let k = 0; k < n; k++) {
+        if (s.y[k] === null) continue;
+        let m = k;
+        while (m + 1 < n && s.y[m + 1] !== null) m++;
+        const part = { a: P(k), b: P(m) };
+        // r: the point with a value, q: the one without; p1, y1 and p2 = r, y2: the last two values
+        if (k > 0) ends.push({ T, part, end: 'a', r: part.a, q: P(k - 1), dir: -1, p1: m > k ? P(k + 1) : NaN, y1: m > k ? s.y[k + 1] : NaN, y2: s.y[k] });
+        if (m < n - 1) ends.push({ T, part, end: 'b', r: part.b, q: P(m + 1), dir: 1, p1: m > k ? P(m - 1) : NaN, y1: m > k ? s.y[m - 1] : NaN, y2: s.y[m] });
+        T.parts.push(part);
+        k = m;
+      }
+    });
+    let todo = ends.slice();
+    for (let round = 0; round < 24 && todo.length; round++) {
+      // the piece to plot, as fractions of r → q: all of it, or a small piece around the guess
+      for (const B of todo) {
+        B.t0 = 0; B.t1 = 1;
+        const a = B.y1 * B.y1, b = B.y2 * B.y2;
+        if (a > b && isFinite(a) && !B.missed) {
+          const e = B.r + (B.r - B.p1) * b / (a - b), t = (e - B.r) / (B.q - B.r);
+          if (t > 0 && t < 1) { const w = Math.max(0.05 * t, 4e-16 * span(B.T.L) / Math.abs(B.q - B.r)); B.t0 = Math.max(0, t - w); B.t1 = Math.min(1, t + w); }
+        }
+      }
+      const ss = await plotUnit(todo.map((B) => { const w = B.q - B.r; return B.T.L.at(seg(B.r + w * B.t0, B.r + w * B.t1))[B.T.k]; }), 40);
+      const next = [];
+      todo.forEach((B, j) => {
+        const s = ss[j], w = B.q - B.r, S0 = B.r + w * B.t0, S1 = B.r + w * B.t1, n = s ? s.x.length : 0;
+        const P = (k) => (k === 0 ? S0 : k === n - 1 ? S1 : S0 + (S1 - S0) * s.x[k]);
+        const r0 = B.r, q0 = B.q;
+        if (!s) return; // (not found more closely: the end found so far stays)
+        B.missed = false;
+        if (s.y[0] === null) {
+          if (B.t0 === 0) return;
+          B.q = S0; B.missed = true; // the end is before the guessed piece
+        } else {
+          let k = 0;
+          while (k + 1 < n && s.y[k + 1] !== null) k++;
+          if (k > 0) { B.p1 = P(k - 1); B.y1 = s.y[k - 1]; }
+          B.y2 = s.y[k];
+          if (k + 1 >= n) { if (B.t1 === 1) { B.r = B.q; return; } B.r = S1; B.missed = true; } // (after the guessed piece)
+          else { B.r = P(k); B.q = P(k + 1); }
+        }
+        if ((B.r !== r0 || B.q !== q0) && Math.abs(B.q - B.r) > 2e-16 * span(B.T.L)) next.push(B);
+      });
+      todo = next;
+    }
+    for (const B of ends) B.part[B.end] = B.r - B.dir * 1e-15 * span(B.T.L);
+    // each line: the parts where all its expressions have values
+    const tidy = (parts, L) => {
+      const tiny = 1e-12 * span(L), out = [];
+      for (const p of parts) {
+        const last = out[out.length - 1];
+        if (last && p.a - last.b <= tiny && !keepGaps) last.b = p.b; else out.push({ a: p.a, b: p.b });
+      }
+      return out.filter((p) => p.b - p.a > tiny);
+    };
+    return lines.map((L, i) => {
+      const ts = tracks.filter((T) => T.i === i);
+      if (!ts.length || ts.some((T) => !T.parts)) return ts.length ? null : [{ a: L.p0, b: L.p1 }];
+      let cur = tidy(ts[0].parts, L);
+      for (const T of ts.slice(1)) {
+        const other = tidy(T.parts, L), both = [];
+        for (const p of cur) for (const q of other) { const a = Math.max(p.a, q.a), b = Math.min(p.b, q.b); if (b > a) both.push({ a, b }); }
+        cur = tidy(both, L);
+      }
+      return cur;
+    });
+  }
+  // an end as exact text when it is a simple fraction, a multiple of π or a square root (√3, √(5/2)), else ''
+  // (also with 1 to 3 decimals, as typed: √(2.31 − x²) ends at √(231/100))
+  function niceEnd(v) {
+    const t = niceNumber(v);
+    if (t) return t;
+    const sign = v < 0 ? '−' : '', v2 = v * v, qs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 100, 1000];
+    for (const q of [10, 100, 1000]) {
+      const p = Math.round(Math.abs(v) * q);
+      if (p > 0 && Math.abs(Math.abs(v) - p / q) < 1e-13 * Math.max(1, Math.abs(v))) return sign + String(p / q);
+    }
+    for (const q of qs) {
+      const p = Math.round(v2 * q);
+      if (p > 0 && p <= 1000000 && Math.abs(v2 - p / q) < 1e-13 * Math.max(1, v2)) return sign + (q === 1 ? `√(${p})` : `√(${p}/${q})`);
+    }
+    return '';
+  }
+  // 2D: the parts of x from A to B (numbers, A < B, with the texts AT and BT) where the functions
+  // have real values: [{ a, b, at, bt }] with at and bt exact texts or '' (only a number is known),
+  // or null when they could not be found. roots: exact solutions of f = g ([{ v, text }]); the ends of
+  // a circle are among them.
+  async function realRange2d(exprs, A, B, AT, BT, roots) {
+    const dom = domainExprs(exprs);
+    const parts = (await realParts([{ p0: A, p1: B, at: (p) => dom.map((e) => subXY(e, p, 'y')) }], 200))[0];
+    if (!parts) return null;
+    const tol = 1e-9 * Math.max(1, Math.abs(A), Math.abs(B));
+    // (a root that solve() gave only as a rounded number may lie just beyond the end: not that one)
+    const exact = (roots || []).filter((r) => !/^[−-]?\d*\.\d{6,}$/.test(r.text));
+    const text = (v, edge, txt) => (v === edge ? txt : (exact.find((r) => Math.abs(r.v - v) <= tol) || {}).text || niceEnd(v));
+    return parts.map((p) => ({ a: p.a, b: p.b, at: text(p.a, A, AT), bt: text(p.b, B, BT) }));
+  }
+  const endText = (p, k) => p[k + 't'] || engineNum(p[k]);
+  // "x = −2 〜 2" for the parts that are measured
+  const partsText = (parts) => 'x = ' + parts.slice(0, 4).map((p) => (p.at || short(p.a)) + ' 〜 ' + (p.bt || short(p.b))).join(', ') + (parts.length > 4 ? ', …' : '');
+  const onlyPartsNote = (parts) => tr(`Only where the functions have values: ${partsText(parts)}`, `関数の値がある ${partsText(parts)} の部分で計算しました`, `Solo donde las funciones tienen valores: ${partsText(parts)}`);
   // ∬ F over a rectangle, numerically: Simpson's rule on 101 × 101 points (points without a value left out)
   async function simpsonRect(F, x0, x1, y0, y1) {
     const r = await Bridge.send('plot3d', { exprs: [F], xmin: x0, xmax: x1, ymin: y0, ymax: y1, nx: VOL_N, ny: VOL_N, opts: iOpts(), timeout: Math.max(15000, timeLimit() * 1000) });
@@ -4243,9 +4438,13 @@
     const hx = (r.x[nx - 1] - r.x[0]) / (nx - 1), hy = (r.y[ny - 1] - r.y[0]) / (ny - 1);
     const w = (i, n) => (i === 0 || i === n - 1 ? 1 : i % 2 ? 4 : 2);
     let sum = 0, missing = 0;
+    const at = (i, j) => (i >= 0 && j >= 0 && i < nx && j < ny && typeof z[j * nx + i] === 'number' && isFinite(z[j * nx + i]) ? z[j * nx + i] : NaN);
     for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
-      const v = z[j * nx + i];
-      if (typeof v !== 'number' || !isFinite(v)) { missing++; continue; }
+      let v = at(i, j);
+      // a single point without a value among points with values (0/0 at the middle of the Ripple
+      // sample): the mean of its four neighbours (1.9.2; it was left out, as if it were 0)
+      if (v !== v) { const n = [at(i - 1, j), at(i + 1, j), at(i, j - 1), at(i, j + 1)]; if (n.every((u) => u === u)) v = (n[0] + n[1] + n[2] + n[3]) / 4; }
+      if (v !== v) { missing++; continue; }
       sum += w(i, nx) * w(j, ny) * v;
     }
     return { v: sum * hx * hy / 9, missing };
@@ -4268,16 +4467,85 @@
   }
   const shownValue = (val) => (val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text);
 
-  // the length of the curve of f from a to b: ∫ √(1 + f′²) dx
-  async function curveLength(f, a, b) {
-    const L = recipSqrt(await symText(`√(1 + (diff(${f}, x))^2)`));
+  // the length of the curve of f from a to b: ∫ √(1 + f′²) dx; null, or { inf: true } when the curve
+  // goes off to infinity at an end (its length has no value). numeric (1.9.2): an end is known only
+  // as a number (where a function stops having values); then the exact integral is not looked for
+  // (its "exact" value would be that of the rounded end), and 7 digits are shown: the curve can be
+  // as steep as a circle there, and its length up to 1e-15 before the end misses about 1e-7 of it
+  async function curveLength(f, a, b, numeric) {
+    const L = recipSqrt(await symText(`√(1 + (diff(${f}, x))^2)`, true));
     if (!L) return null;
-    const ex = await exactIntegral(`integrate(${L}, ${a}, ${b})`);
+    const ex = numeric ? null : await exactIntegral(`integrate(${L}, ${a}, ${b})`);
     const num = await tsIntegral(L, a, b);
-    return bestValue(ex, num);
+    if (num.inf) return ex ? ex : { inf: true };
+    return bestValue(ex, num.v, numeric ? Math.min(7, num.digits) : num.digits);
+  }
+  // The length of f over a part { a, b, at, bt } (numbers and texts) (1.9.2): taken on each side of a
+  // point inside where the slope grows without limit, such as a vertical tangent (the two halves of
+  // the heart in the samples meet at x = 0); the rule for the integral needs such a point at an end.
+  async function partLength(f, p) {
+    // (no value with one rule over the part, as when a point without a value is its middle, where
+    // the rule takes a value: the two halves)
+    const whole = async () => {
+      const r = await curveLength(f, endText(p, 'a'), endText(p, 'b'), p.at === '' || p.bt === '');
+      if (r || !isFinite(p.a) || !isFinite(p.b)) return r;
+      const m = (p.a + p.b) / 2, mt = niceEnd(m) || engineNum(m);
+      const h1 = await curveLength(f, endText(p, 'a'), mt, p.at === '' || !niceEnd(m)), h2 = h1 && !h1.inf ? await curveLength(f, mt, endText(p, 'b'), p.bt === '' || !niceEnd(m)) : null;
+      return h1 && h2 && !h1.inf && !h2.inf ? sumValues([h1, h2]) : h1 && h1.inf ? h1 : h2;
+    };
+    if (!isFinite(p.a) || !isFinite(p.b) || !(p.b > p.a)) return whole();
+    const L = recipSqrt(await symText(`√(1 + (diff(${f}, x))^2)`, true));
+    if (!L) return null;
+    const cuts = (await steepPoints(L, p.a, p.b)).filter((c) => c.v - p.a > 1e-9 * (p.b - p.a) && p.b - c.v > 1e-9 * (p.b - p.a));
+    if (!cuts.length) return whole();
+    const ends = [{ v: p.a, t: p.at }].concat(cuts, [{ v: p.b, t: p.bt }]), out = [];
+    for (let i = 0; i + 1 < ends.length; i++) {
+      const at = ends[i].t, bt = ends[i + 1].t;
+      const r = await curveLength(f, at || engineNum(ends[i].v), bt || engineNum(ends[i + 1].v), !at || !bt);
+      if (!r || r.inf) return r;
+      out.push(r);
+    }
+    return sumValues(out);
+  }
+  // Points inside a 〜 b where L (√(1 + f′²)) grows without limit: [{ v, t }] (t: exact text or '').
+  // The plot leaves out such a point, so they are found as the highest values (twice the
+  // least value or more), looked at more and more closely: a value that keeps growing (a thousand
+  // times in 10 rounds, each 20 times closer; like 1/√ it grows 3 million times) is such a point, a
+  // hump of the curve's steepness is not.
+  async function steepPoints(L, a, b) {
+    const seg = (r, q) => `((${engineNum(r)}) + (${engineNum(q - r)}) × x)`;
+    const plot = async (lo, hi, n) => { const s = (await plotUnit([subXY(L, seg(lo, hi), 'y')], n))[0]; return s ? s.x.map((u, k) => ({ x: lo + (hi - lo) * u, y: s.y[k] })) : null; };
+    const pts = await plot(a, b, 200);
+    if (!pts) return [];
+    // (the least value, not the middle one: the plot takes many points where the values grow fast)
+    const ys = pts.map((q) => q.y).filter((y) => y !== null), least = ys.length ? Math.min(...ys) : NaN, out = [];
+    for (let k = 1; k + 1 < pts.length && out.length < 8; k++) {
+      const y = pts[k].y, y0 = pts[k - 1].y, y1 = pts[k + 1].y;
+      if (y === null || !(y > 2 * least) || (y0 !== null && y0 > y) || (y1 !== null && y1 >= y)) continue;
+      // the highest value between the neighbours, closer each round
+      let lo = pts[k - 1].x, hi = pts[k + 1].x, top = y, x = pts[k].x, flat = 0;
+      for (let round = 0; round < 10 && hi - lo > 1e-14 * Math.max(1, Math.abs(x)); round++) {
+        const z = await plot(lo, hi, 40);
+        if (!z) break;
+        let j = -1;
+        z.forEach((q, i) => { if (q.y !== null && (j < 0 || q.y > z[j].y)) j = i; });
+        if (j < 0) break;
+        // (a hump: the highest value does not grow in two rounds one after the other)
+        flat = z[j].y > 1.5 * top ? 0 : flat + 1;
+        x = z[j].x; top = Math.max(top, z[j].y);
+        lo = z[Math.max(0, j - 1)].x; hi = z[Math.min(z.length - 1, j + 1)].x;
+        if (flat >= 2) break;
+      }
+      if (top > 1e3 * y && x > a && x < b) {
+        const t = niceEnd(x);
+        out.push({ v: t ? Number(numberPart(t).replace(/−/g, '-')) || x : x, t });
+      }
+    }
+    return out.filter((c, i) => i === 0 || c.v - out[i - 1].v > 1e-9 * (b - a));
   }
   // 2D: the length of the curve, or the perimeter of the region between two functions (both curves
-  // and the vertical sides at a and b, which are 0 when the curves meet there, as for a circle)
+  // and the vertical sides at a and b, which are 0 when the curves meet there, as for a circle).
+  // Only where the functions have real values (1.9.2): for each of those parts of a 〜 b.
   async function computeLength() {
     const U = P.areaUI, f = P.series[Number(U.f1.value)];
     if (!f) return;
@@ -4285,21 +4553,59 @@
     if (!a || !b) { U.len.textContent = tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'); return; }
     const g = areaG();
     U.len.textContent = tr('Calculating…', '計算中…');
-    const lf = await curveLength(f.expr, a, b);
-    if (!lf) { U.len.textContent = tr('Could not calculate the length', '長さを計算できませんでした'); return; }
+    const range = await measuredParts(f, g, a, b);
+    if (range.none) { U.len.textContent = range.none; return; }
+    const n = range.nums || [];
+    const parts = range.parts || (n.length === 2 && n.every(isFinite) ? (n[0] < n[1] ? [{ a: n[0], b: n[1], at: a, bt: b }] : [{ a: n[1], b: n[0], at: b, bt: a }]) : [{ at: a, bt: b }]);
+    const failed = (r) => { U.len.textContent = r && r.inf ? tr('The length has no value: the curve goes off to infinity at an end of the range', '長さは有限の値になりません（範囲の端で曲線が無限に伸びています）', 'La longitud no tiene valor: la curva se va al infinito en un extremo del rango') : tr('Could not calculate the length', '長さを計算できませんでした'); };
+    const lengths = async (s) => {
+      const out = [];
+      for (const p of parts) { const r = await partLength(s.expr, p); if (!r || r.inf) { failed(r); return null; } out.push(r); }
+      return sumValues(out);
+    };
+    const lf = await lengths(f);
+    if (!lf) return;
+    const note = () => { if (range.parts && !range.quiet) U.len.append(el('div', { class: 'form-hint', text: onlyPartsNote(range.parts) })); };
     const onGraph = (name, val) => { U.lenShown = true; if (P.area) { P.area.lenText = shortValue(name, val.text); draw(); } };
-    if (!g) { U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + shownValue(lf)); onGraph(tr('Length', '長さ'), lf); return; }
-    const lg = await curveLength(g.expr, a, b);
-    if (!lg) { U.len.textContent = tr('Could not calculate the length', '長さを計算できませんでした'); return; }
+    if (!g) { U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + shownValue(lf)); note(); onGraph(tr('Length', '長さ'), lf); return; }
+    const lg = await lengths(g);
+    if (!lg) return;
     const side = async (x) => bestValue(await exactIntegral(`abs((${f.expr}) − (${g.expr})) where x = ${x}`, 3000), await numValue(`abs((${f.expr}) − (${g.expr})) where x = ${x}`));
-    const sa = await side(a), sb = await side(b);
-    const parts = [lf, lg].concat([sa, sb].filter((p) => p && Math.abs(p.v) > 1e-12));
-    const total = await sumValues(parts);
+    const sides = [];
+    for (const p of parts) sides.push(await side(endText(p, 'a')), await side(endText(p, 'b')));
+    const all = [lf, lg].concat(sides.filter((p) => p && Math.abs(p.v) > 1e-12));
+    const total = await sumValues(all);
     U.len.textContent = '';
     showResult(U.len, tr('Perimeter ', '周の長さ ') + shownValue(total));
     onGraph(tr('Perimeter', '周の長さ'), total);
     U.len.append(el('div', { class: 'form-hint', text: tr('Curves: ', '曲線：') + shownValue(lf).replace(/^= /, '') + ' + ' + shownValue(lg).replace(/^= /, '') +
-      (parts.length > 2 ? tr(', with the vertical sides at a and b', '、a と b の縦の辺を含む') : '') }));
+      (all.length > 2 ? tr(', with the vertical sides at a and b', '、a と b の縦の辺を含む') : '') }));
+    note();
+  }
+  // The parts of a 〜 b where f (and g) have real values (1.9.2): { parts } (null when that is all of
+  // a 〜 b, or when they could not be found: then everything is as before), or { none: message }
+  async function measuredParts(f, g, a, b) {
+    const lim = await Bridge.send('calc', { expr: `[${a}, ${b}]`, opts: Object.assign(engineOpts(), { approx: 'approx', precision: 17, grouping: false }), timeout: 1500 });
+    const nums = lim.ok && lim.result ? (parseMatrix(numberPartVec(lim.result)) || { rows: [[]] }).rows[0].map((x) => Number(x.replace(/−/g, '-'))) : [];
+    if (nums.length !== 2 || !nums.every(isFinite) || nums[0] === nums[1]) return { parts: null, nums };
+    const flip = nums[0] > nums[1];
+    let lo = Math.min(nums[0], nums[1]), hi = Math.max(nums[0], nums[1]), lt = flip ? b : a, ht = flip ? a : b;
+    // an end of the values that the boxes hold rounded to 10 digits (areaPairChanged): its precise value
+    const end = (t) => (P.areaEnds || []).find((e) => e.text === t && !niceEnd(e.x));
+    const el0 = end(lt), eh0 = end(ht);
+    if (el0) { lo = el0.x; lt = ''; }
+    if (eh0) { hi = eh0.x; ht = ''; }
+    const parts = await realRange2d(g ? [f.expr, g.expr] : [f.expr], lo, hi, lt, ht, P.areaRoots);
+    if (!parts) return { parts: null, nums };
+    if (!parts.length) return { none: tr('The functions have no real values between these values of x', 'この x の範囲では関数に（実数の）値がありません', 'Las funciones no tienen valores reales entre estos valores de x'), nums };
+    // all of a 〜 b, or so close to it that no note is needed (the boxes hold rounded numbers): when a
+    // or b lies a little beyond the end of the values (a rounded end of a circle), the integrals go
+    // to the end found instead, where the integrand still has a value
+    const tol = 1e-12 * Math.max(1, Math.abs(lo), Math.abs(hi)) + 2e-15 * (hi - lo);
+    if (parts.length === 1 && parts[0].a - lo <= tol && hi - parts[0].b <= tol) {
+      return parts[0].a === lo && parts[0].b === hi && !el0 && !eh0 ? { parts: null, nums } : { parts, nums, quiet: true };
+    }
+    return { parts, nums };
   }
 
   // ------------------------------------------------------ area (2D graph)
@@ -4412,6 +4718,7 @@
     const pts = await findCrossings(f, g);
     if (seq !== U.pairSeq || U.f1.value !== String(P.series.indexOf(f))) return; // changed in the meantime
     P.areaCross = pts;
+    P.areaRoots = pts.roots || [];
     if (pts.length) {
       U.cross.append(el('span', { class: 'area-lbl', text: tr('Crossing points: ', '交点：') + pts.map((p) => short(p.x)).join(', ') }));
       const range = (i, j) => {
@@ -4421,12 +4728,31 @@
       for (let i = 0; i + 1 < pts.length && i < 6; i++) range(i, i + 1);
       if (pts.length > 2) range(0, pts.length - 1);
     }
-    // the range to start with: from the first to the last crossing point, or the drawn range
-    if (pts.length >= 2) { U.a.value = pts[0].text; U.b.value = pts[pts.length - 1].text; }
-    else if (P.dataX) {
+    // where a function ends on the screen (√x at 0, ln(x) at 0, a semicircle at ±r; 1.9.2): the range
+    // to start with stops there, and a dragged edge snaps to it
+    let ends = null, lo = NaN, hi = NaN;
+    if (P.dataX) {
       // the part of the graph on the screen (the values reach further than the screen after moving it)
-      const v = P.view || {}, lo = Math.max(P.dataX[0], isFinite(v.x0) ? v.x0 : -Infinity), hi = Math.min(P.dataX[1], isFinite(v.x1) ? v.x1 : Infinity);
-      U.a.value = String(+lo.toPrecision(6)); U.b.value = String(+hi.toPrecision(6));
+      const v = P.view || {};
+      lo = Math.max(P.dataX[0], isFinite(v.x0) ? v.x0 : -Infinity); hi = Math.min(P.dataX[1], isFinite(v.x1) ? v.x1 : Infinity);
+      if (lo < hi) ends = await realRange2d(g ? [f.expr, g.expr] : [f.expr], lo, hi, '', '', pts.roots);
+      if (seq !== U.pairSeq) return;
+    }
+    // an end known only as a number: 10 digits, rounded towards the inside of the part with values
+    const inward = (x, up) => { const q = Math.pow(10, Math.floor(Math.log10(Math.abs(x))) - 9); return +((up ? Math.ceil(x / q) : Math.floor(x / q)) * q).toPrecision(10); };
+    P.areaEnds = [];
+    for (const p of ends || []) {
+      if (p.a !== lo) P.areaEnds.push({ x: p.a, text: p.at || String(inward(p.a, true)) });
+      if (p.b !== hi) P.areaEnds.push({ x: p.b, text: p.bt || String(inward(p.b, false)) });
+    }
+    // the range to start with: from the first to the last crossing point, or the drawn range (only
+    // the part where the functions have values)
+    const valuesBetween = (x0, x1) => !ends || ends.some((p) => p.b > x0 && p.a < x1);
+    if (pts.length >= 2 && valuesBetween(pts[0].x, pts[pts.length - 1].x)) { U.a.value = pts[0].text; U.b.value = pts[pts.length - 1].text; }
+    else if (P.dataX) {
+      const p0 = ends && ends.length ? ends[0] : null, p1 = ends && ends.length ? ends[ends.length - 1] : null;
+      U.a.value = p0 && p0.a !== lo ? P.areaEnds.find((e) => e.x === p0.a).text : String(+lo.toPrecision(6));
+      U.b.value = p1 && p1.b !== hi ? P.areaEnds.find((e) => e.x === p1.b).text : String(+hi.toPrecision(6));
     }
     if (auto) await computeArea(true);
   }
@@ -4436,7 +4762,7 @@
   function areaEdgeMoved(k, done) {
     const U = P.areaUI, A = P.area, v = P.view, px = (v.x1 - v.x0) / (P.canvas.clientWidth || 1);
     let x = A[k], text;
-    const near = (P.areaCross || []).find((c) => Math.abs(c.x - x) < px * 12);
+    const near = (P.areaCross || []).concat(P.areaEnds || []).find((c) => Math.abs(c.x - x) < px * 12);
     if (near) { x = near.x; text = near.text; }
     else {
       const q = Math.pow(10, Math.floor(Math.log10(px * 6))); // a round step of a few pixels
@@ -4481,6 +4807,17 @@
       // 10 digits read well in the boxes for a and b (the area hardly changes: f − g is 0 there)
       p.text = niceNumber(p.x) || String(+p.x.toPrecision(10));
     }
+    // points where f and g only touch (1.9.2): f − g does not change its sign there, so the drawn
+    // values do not show them. The two halves of a circle touch at its ends (x = ±r), where the
+    // functions also end; a root of solve() in the drawn range where f − g is really 0 counts.
+    const x0 = f.x[0], x1 = f.x[f.x.length - 1];
+    for (const e of exact) {
+      if (!(e.v >= x0 && e.v <= x1) || pts.some((p) => Math.abs(p.x - e.v) <= 1e-9 * Math.max(1, Math.abs(e.v)))) continue;
+      const v = await numValue(`(${fe}) − (${ge}) where x = ${e.text}`);
+      if (isFinite(v) && Math.abs(v) <= 1e-9 * Math.max(1, Math.abs(P.view ? P.view.y1 - P.view.y0 : 1))) pts.push({ x: e.v, text: e.text });
+    }
+    pts.sort((p, q) => p.x - q.x);
+    pts.roots = exact;
     return pts;
   }
   // a precise number that is a simple fraction or a simple multiple of π (3.14159265358979 -> π,
@@ -4523,23 +4860,38 @@
     const g = areaG();
     U.out.textContent = tr('Calculating…', '計算中…');
     U.ins.hidden = true;
-    // the limits as numbers, for the shading and to find the crossing points between them
-    const lim = await Bridge.send('calc', { expr: `[${a}, ${b}]`, opts: Object.assign(engineOpts(), { approx: 'approx', precision: 15, grouping: false }), timeout: 1500 });
-    const nums = lim.ok && lim.result ? (parseMatrix(numberPartVec(lim.result)) || { rows: [[]] }).rows[0].map((x) => Number(x.replace(/−/g, '-'))) : [];
+    // the limits as numbers, for the shading and to find the crossing points between them, and the
+    // parts of a 〜 b where the functions have real values (1.9.2; null: all of it)
+    const range = await measuredParts(f, g, a, b);
+    const nums = range.nums;
+    if (range.none) { U.out.textContent = range.none; P.area = null; draw(); return; }
     // f − g keeps its sign between crossing points: the area is the sum of |∫(f − g)| over those
     // pieces, which the engine can often give exactly (with abs() inside it often cannot)
     const d = g ? `(${f.expr}) − (${g.expr})` : f.expr;
-    let cuts = [];
-    if (nums.length === 2 && nums.every(isFinite) && P.areaCross) {
-      const lo = Math.min(nums[0], nums[1]), hi = Math.max(nums[0], nums[1]), eps = (hi - lo) * 1e-9;
-      cuts = P.areaCross.filter((p) => p.x > lo + eps && p.x < hi - eps).map((p) => p.text);
-      if (nums[0] > nums[1]) cuts.reverse();
-    }
-    const bounds = [a].concat(cuts, [b]);
+    const crossIn = (lo, hi) => { const eps = (hi - lo) * 1e-9; return (P.areaCross || []).filter((p) => p.x > lo + eps && p.x < hi - eps).map((p) => p.text); };
     const pieces = [];
-    for (let i = 0; i + 1 < bounds.length; i++) pieces.push(`abs(integrate(${d}, ${bounds[i]}, ${bounds[i + 1]}))`);
-    const expr = pieces.length <= 8 ? pieces.join(' + ') : `integrate(abs(${d}), ${a}, ${b})`;
-    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: auto ? Math.min(5000, timeLimit() * 1000) : timeLimit() * 1000 });
+    let expr, numeric = false;
+    if (!range.parts) {
+      let cuts = [];
+      if (nums.length === 2 && nums.every(isFinite)) {
+        cuts = crossIn(Math.min(nums[0], nums[1]), Math.max(nums[0], nums[1]));
+        if (nums[0] > nums[1]) cuts.reverse();
+      }
+      const bounds = [a].concat(cuts, [b]);
+      for (let i = 0; i + 1 < bounds.length; i++) pieces.push(`abs(integrate(${d}, ${bounds[i]}, ${bounds[i + 1]}))`);
+      expr = pieces.length <= 8 ? pieces.join(' + ') : `integrate(abs(${d}), ${a}, ${b})`;
+    } else {
+      // only the parts with values; an end known only as a number makes the result approximate
+      const whole = [];
+      for (const p of range.parts) {
+        const bounds = [endText(p, 'a')].concat(crossIn(p.a, p.b), [endText(p, 'b')]);
+        for (let i = 0; i + 1 < bounds.length; i++) pieces.push(`abs(integrate(${d}, ${bounds[i]}, ${bounds[i + 1]}))`);
+        whole.push(`integrate(abs(${d}), ${bounds[0]}, ${bounds[bounds.length - 1]})`);
+        if (!p.at || !p.bt) numeric = true;
+      }
+      expr = pieces.length <= 8 ? pieces.join(' + ') : whole.join(' + ');
+    }
+    const r = await Bridge.send('calc', { expr, opts: numeric ? Object.assign(engineOpts(), { approx: 'approx' }) : engineOpts(), timeout: auto ? Math.min(5000, timeLimit() * 1000) : timeLimit() * 1000 });
     const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
     // a result the engine could not integrate exactly still has its approximate value after ≈
     if (r.ok && r.result && /∫|integrate\(/.test(r.result) && r.result.indexOf('≈') > 0) r.result = '≈ ' + r.result.split('≈').pop().trim();
@@ -4551,6 +4903,7 @@
     }
     U.out.textContent = '';
     showResult(U.out, tr('Area ', '面積 ') + (r.result.indexOf('≈ ') === 0 ? r.result : resultText(r)));
+    if (range.parts && !range.quiet) U.out.append(el('div', { class: 'form-hint', text: onlyPartsNote(range.parts) }));
     P.areaExpr = expr;
     U.ins.hidden = false;
     if (nums.length === 2 && nums.every(isFinite)) {
@@ -4777,22 +5130,348 @@
     const [x0, x1, y0, y1] = Q3.range.map((v, i) => v || ['-5', '5', '-5', '5'][i]);
     return { U, f, g, disk, R, x0, x1, y0, y1 };
   }
-  const polar = (e) => subXY(e, '\\r cos(\\θ)', '\\r sin(\\θ)');
+  // polar coordinates around the center of a disk (the origin, or cx, cy for a part of a region)
+  const offset = (c) => (c && c !== '0' ? `(${c}) + ` : '');
+  const polar = (e, S) => subXY(e, `${offset(S && S.cx)}\\r cos(\\θ)`, `${offset(S && S.cy)}\\r sin(\\θ)`);
   // ∬ F over the region: the exact double integral (as text), its value if the engine finds it, the numeric value
-  // ∬ F over the region as an expression for the engine (polar coordinates for a disk)
+  // ∬ F over the region as an expression for the engine (polar coordinates for a disk); '' for a
+  // part of a region that is no disk (regionReal), which has no such expression
   function regionExpr(S, exprF) {
+    if (S.rays) return '';
     const turn = fullTurn();
-    return S.disk ? `integrate(integrate((${polar(exprF)}) × \\r, 0, ${S.R}, \\r), 0, ${turn}, \\θ)` + (turn === '2π' ? '' : ` × 2π/${turn}`)
+    return S.disk ? `integrate(integrate((${polar(exprF, S)}) × \\r, 0, ${S.R}, \\r), 0, ${turn}, \\θ)` + (turn === '2π' ? '' : ` × 2π/${turn}`)
       : `integrate(integrate(${exprF}, ${S.x0}, ${S.x1}, x), ${S.y0}, ${S.y1}, y)`;
   }
-  // its numeric value: { num, missing } (Simpson's rule on 101 × 101 points for a rectangle: about
-  // 8 correct digits for a smooth surface)
+  // its numeric value: { num, missing, digits } (Simpson's rule on 101 × 101 points for a rectangle:
+  // about 8 correct digits for a smooth surface; rays for a part of a region, rayIntegral)
   async function regionNumeric(S, F) {
-    if (S.disk) return { num: await tsDisk(F, S.R), missing: 0 };
+    if (S.rays) return rayIntegral(S, F);
+    if (S.disk) return { num: await tsDisk(F, S.R, S.cx, S.cy), missing: 0 };
     const r = await simpsonRect(F, S.x0, S.x1, S.y0, S.y1);
     return { num: r.v, missing: r.missing };
   }
-  const regionDigits = (S) => (S.disk ? 10 : 8);
+  const regionDigits = (S, n) => (n && n.digits ? n.digits : S.disk ? 10 : 8);
+
+  // 3D (1.9.2): the part of the region where the surfaces have real values. A sphere drawn in its
+  // square has values only on its disk; until 1.9.1 the rest of the square was counted too (abs() of
+  // the complex values: 48.6 instead of 32π/3), or the surface area could not be calculated.
+  // Returns S as it is when the surfaces have values everywhere in the region (the region checked on
+  // the drawn grid for a rectangle, along 32 rays for a disk); else S with base (S itself) and the part:
+  //  - a disk (x − cx)² + (y − cy)² ≤ R² (a sphere, a hemisphere, a cylinder standing up…): disk, R,
+  //    cx, cy and partText, so that the exact value can be found as for a disk;
+  //  - any other part: rays, measured along rays from the middle of it (rayIntegral);
+  //  - none: no values at all.
+  // Kept for the next calculation with the same surfaces and region (the volume, then the area).
+  function regionReal(S) {
+    const exprs = S.g ? [S.f.expr, S.g.expr] : [S.f.expr];
+    const key = JSON.stringify([exprs, S.disk, S.R, S.x0, S.x1, S.y0, S.y1, iOpts()]);
+    const U = S.U;
+    if (U.realKey !== key || !U.realPart) {
+      U.realKey = key;
+      U.realPart = findRegionPart(S, exprs).catch(() => null);
+    }
+    return U.realPart.then((part) => (part ? Object.assign({}, S, part, { base: S }) : S));
+  }
+  async function findRegionPart(S, exprs) {
+    const num = async (t) => { const v = Number(String(t).replace(/−/g, '-')); return String(t).trim() !== '' && isFinite(v) ? v : numValue(t); };
+    const X0 = await num(S.x0), X1 = await num(S.x1), Y0 = await num(S.y0), Y1 = await num(S.y1);
+    const Rn = S.disk ? await num(S.R) : NaN;
+    if (![X0, X1, Y0, Y1].every(isFinite) || (S.disk && !(Rn > 0))) return null;
+    const inRegion = (x, y) => (S.disk ? x * x + y * y <= Rn * Rn * (1 + 1e-12) : x >= X0 && x <= X1 && y >= Y0 && y <= Y1);
+    // the drawn grid: the points of the region where both surfaces have values
+    const D = Q3.data, fi = D ? D.series.indexOf(S.f) : -1, gi = D && S.g ? D.series.indexOf(S.g) : -1;
+    const pts = [];
+    let nulls = 0;
+    if (D && D.series && fi >= 0 && (!S.g || gi >= 0)) {
+      const nx = D.nx;
+      for (let j = 0; j < D.ny; j++) for (let i = 0; i < nx; i++) {
+        const x = D.xs[i], y = D.ys[j];
+        if (!inRegion(x, y)) continue;
+        const k = j * nx + i, zf = D.series[fi].z[k], zg = gi < 0 ? 0 : D.series[gi].z[k], ok = zf === zf && zg === zg;
+        if (ok) pts.push([x, y]); else nulls++;
+      }
+    }
+    // a rectangle (the drawn range) with values at every point of the grid: as before
+    if (!S.disk && D && pts.length && !nulls) return null;
+    // the center of the rays: the middle of the points with values (or the middle of the region)
+    let cx = S.disk ? 0 : (X0 + X1) / 2, cy = S.disk ? 0 : (Y0 + Y1) / 2;
+    if (pts.length) { cx = pts.reduce((t, p) => t + p[0], 0) / pts.length; cy = pts.reduce((t, p) => t + p[1], 0) / pts.length; }
+    const size = S.disk ? Rn : Math.max(X1 - X0, Y1 - Y0);
+    const snap = (v) => (Math.abs(v) < 1e-9 * size ? 0 : v);
+    cx = snap(cx); cy = snap(cy);
+    const dom = domainExprs(exprs);
+    const at = (x, y) => dom.map((e) => subXY(e, x, y));
+    // (the center need not have values: the rays from the middle of a ring all cross it in the same way)
+    // how far the region reaches along the ray with the direction (ux, uy) from the center
+    const reach = (ux, uy) => {
+      if (S.disk) { const cu = cx * ux + cy * uy; return -cu + Math.sqrt(Math.max(0, cu * cu - (cx * cx + cy * cy) + Rn * Rn)); }
+      let r = Infinity;
+      if (ux > 1e-15) r = Math.min(r, (X1 - cx) / ux); else if (ux < -1e-15) r = Math.min(r, (X0 - cx) / ux);
+      if (uy > 1e-15) r = Math.min(r, (Y1 - cy) / uy); else if (uy < -1e-15) r = Math.min(r, (Y0 - cy) / uy);
+      return Math.max(0, r);
+    };
+    const rays = new Map(); // angle (radians) -> { ux, uy, reach, parts, dom }
+    const RS = { cx, cy, rays, rect: !S.disk, X0, X1, Y0, Y1, kinks: null };
+    // The parts of the rays at these angles where the surfaces have values (realParts). Each ray is
+    // followed a quarter beyond the region's edge: dom, how far the part from the center goes, tells
+    // where the edge of the part meets the region's edge (rayKinks); parts are those in the region.
+    RS.ensure = async (angles) => {
+      const todo = Array.from(new Set(angles.filter((t) => !rays.has(t))));
+      const lines = todo.map((t) => {
+        const ux = Math.cos(t), uy = Math.sin(t), r = reach(ux, uy);
+        return { ux, uy, reach: r, p0: 0, p1: r > 0 ? r * 1.25 : 1, at: (p) => at(`(${engineNum(cx)} + ${p} × ${engineNum(ux)})`, `(${engineNum(cy)} + ${p} × ${engineNum(uy)})`) };
+      });
+      const parts = lines.length ? await realParts(lines, 64) : [];
+      todo.forEach((t, i) => {
+        const L = lines[i], ps = parts[i];
+        if (!ps) { rays.set(t, { ux: L.ux, uy: L.uy, reach: L.reach, parts: null, dom: NaN, last: NaN }); return; }
+        rays.set(t, {
+          ux: L.ux, uy: L.uy, reach: L.reach, dom: ps.length && ps[0].a === 0 ? ps[0].b : NaN, last: ps.length ? ps[ps.length - 1].b : NaN,
+          parts: ps.filter((q) => q.a < L.reach).map((q) => ({ a: q.a, b: Math.min(q.b, L.reach) }))
+        });
+      });
+    };
+    const M = 32, first = Array.from({ length: M }, (e, j) => 2 * Math.PI * j / M);
+    await RS.ensure(first);
+    const rs = first.map((t) => rays.get(t));
+    if (rs.some((r) => !r.parts)) return null; // (could not be sampled: as before)
+    // values along every ray from the center to the edge of the region: the region as before
+    const full = (r) => r.parts.length === 1 && r.parts[0].a === 0 && r.parts[0].b >= r.reach * (1 - 1e-12);
+    if (rs.every(full)) return null;
+    if (rs.every((r) => !r.parts.length) && !pts.length) return { none: true };
+    // a disk inside the region: every ray has values from the center to one end, and the ends lie
+    // on a circle (fitted to them; within 1e-9 of its radius)
+    if (rs.every((r) => r.parts.length === 1 && r.parts[0].a === 0 && r.dom < r.reach * (1 - 1e-9))) {
+      const E = rs.map((r) => [cx + r.dom * r.ux, cy + r.dom * r.uy]);
+      const c = fitCircle(E);
+      if (c && E.every((p) => Math.abs(Math.hypot(p[0] - c.x, p[1] - c.y) - c.r) <= 1e-9 * c.r)) {
+        const nice = (v) => (Math.abs(v) < 1e-9 * c.r ? '0' : niceEnd(v));
+        const ctx = nice(c.x), cty = nice(c.y), rt = niceEnd(c.r);
+        // a radius known only as a number stays a little inside the circle (the values end there)
+        const R = rt || engineNum(c.r * (1 - 1e-14));
+        const cxT = ctx || engineNum(c.x), cyT = cty || engineNum(c.y);
+        const sq = (v, t) => (t === '0' ? `${v}²` : `(${v} ${t[0] === '−' || t[0] === '-' ? '+ ' + t.slice(1) : '− ' + t})²`);
+        const text = `${sq('x', cxT)} + ${sq('y', cyT)} ≤ ${/^[\d.]+$/.test(R) ? R : '(' + R + ')'}²`;
+        return { disk: true, R, cx: cxT, cy: cyT, partText: text };
+      }
+    }
+    return { disk: false, rays: RS, partText: '' };
+  }
+  // the circle through points (least squares, x² + y² + Dx + Ey + F = 0): { x, y, r } or null
+  function fitCircle(P) {
+    // the normal equations of the three unknowns D, E, F
+    const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], B = [0, 0, 0];
+    for (const [x, y] of P) {
+      const row = [x, y, 1], rhs = -(x * x + y * y);
+      for (let i = 0; i < 3; i++) { B[i] += row[i] * rhs; for (let j = 0; j < 3; j++) A[i][j] += row[i] * row[j]; }
+    }
+    // Gaussian elimination with pivoting
+    for (let i = 0; i < 3; i++) {
+      let p = i;
+      for (let k = i + 1; k < 3; k++) if (Math.abs(A[k][i]) > Math.abs(A[p][i])) p = k;
+      [A[i], A[p]] = [A[p], A[i]]; [B[i], B[p]] = [B[p], B[i]];
+      if (Math.abs(A[i][i]) < 1e-300) return null;
+      for (let k = i + 1; k < 3; k++) { const m = A[k][i] / A[i][i]; for (let j = i; j < 3; j++) A[k][j] -= m * A[i][j]; B[k] -= m * B[i]; }
+    }
+    const s = [0, 0, 0];
+    for (let i = 2; i >= 0; i--) { let t = B[i]; for (let j = i + 1; j < 3; j++) t -= A[i][j] * s[j]; s[i] = t / A[i][i]; }
+    const x = -s[0] / 2, y = -s[1] / 2, r2 = x * x + y * y - s[2];
+    return r2 > 0 ? { x, y, r: Math.sqrt(r2) } : null;
+  }
+  // The angles where the integral along a ray has a corner (rayIntegral): where a ray goes through a
+  // corner of the rectangle while the values reach the region's edge there, and where the edge of the
+  // part meets the region's edge (the cylinder √(4 − x²) in a square: its edge x = 2 meets y = 3 at
+  // tan t = 3/2), found by the false position method (Illinois) on last − reach (last: where the
+  // values along the longer ray end), all of them together. [] when a ray has no values at all: the
+  // halving of the angle intervals in rayIntegral takes care of that.
+  async function rayKinks(RS) {
+    const TWO_PI = 2 * Math.PI, M = 32, kinks = [];
+    const first = Array.from({ length: M }, (e, j) => RS.rays.get(TWO_PI * j / M));
+    if (first.some((r) => !r || !r.parts || !isFinite(r.last))) return kinks;
+    const touch = (r) => r.last >= r.reach * (1 - 1e-12);
+    if (RS.rect) for (const [x, y] of [[RS.X0, RS.Y0], [RS.X1, RS.Y0], [RS.X1, RS.Y1], [RS.X0, RS.Y1]]) {
+      let t = Math.atan2(y - RS.cy, x - RS.cx);
+      if (t < 0) t += TWO_PI;
+      const j = Math.floor(t / (TWO_PI / M)) % M;
+      if (touch(first[j]) || touch(first[(j + 1) % M])) kinks.push(t);
+    }
+    let brs = [];
+    for (let j = 0; j < M; j++) {
+      const a = first[j], b = first[(j + 1) % M];
+      if (touch(a) !== touch(b)) brs.push({ t0: TWO_PI * j / M, t1: TWO_PI * (j + 1) / M, g0: a.last - a.reach, g1: b.last - b.reach, side: 0 });
+    }
+    for (let it = 0; it < 40 && brs.length; it++) {
+      for (const B of brs) { B.t = (B.t0 * B.g1 - B.t1 * B.g0) / (B.g1 - B.g0); if (!(B.t > B.t0 && B.t < B.t1)) B.t = (B.t0 + B.t1) / 2; }
+      await RS.ensure(brs.map((B) => B.t));
+      const next = [];
+      for (const B of brs) {
+        const r = RS.rays.get(B.t), g = r.last - r.reach;
+        if (!isFinite(g) || g === 0) { kinks.push(B.t); continue; }
+        if ((g > 0) === (B.g0 > 0)) { B.t0 = B.t; B.g0 = g; if (B.side === -1) B.g1 /= 2; B.side = -1; }
+        else { B.t1 = B.t; B.g1 = g; if (B.side === 1) B.g0 /= 2; B.side = 1; }
+        if (B.t1 - B.t0 <= 1e-13 || Math.abs(g) <= 1e-14 * r.reach) kinks.push(B.t); else next.push(B);
+      }
+      brs = next;
+    }
+    for (const B of brs) kinks.push((B.t0 + B.t1) / 2);
+    kinks.sort((a, b) => a - b);
+    return kinks.filter((t, i) => i === 0 || t - kinks[i - 1] > 1e-12);
+  }
+  // Gauss–Kronrod 7–15: the nodes in (0, 1) from the outside in, their Kronrod weights (the last for
+  // the middle) and the Gauss weights of every second node (the last for the middle)
+  const GK_X = [0.991455371120812639, 0.949107912342758525, 0.864864423359769073, 0.741531185599394440, 0.586087235467691130, 0.405845151377397167, 0.207784955007898468];
+  const GK_W = [0.022935322010529225, 0.063092092629978553, 0.104790010322250184, 0.140653259715525919, 0.169004726639267903, 0.190350578064785410, 0.204432940075298892, 0.209482141084727828];
+  const G_W = [0.129484966168869693, 0.279705391489276668, 0.381830050505118945, 0.417959183673469388];
+  // a matrix of numbers from the engine, "[1.5  2; −3  4E−20]", of any size: { rows } (strings), or null
+  function numMatrix(t) {
+    t = String(t || '').trim();
+    if (t[0] !== '[' || t[t.length - 1] !== ']' || /[[\]]/.test(t.slice(1, -1))) return null;
+    return { rows: t.slice(1, -1).split(';').map((r) => r.trim().split(/\s{2,}|,\s*/)) };
+  }
+  // the error of a Gauss–Kronrod value K from its difference to the Gauss value G, as QUADPACK
+  // estimates it: |K − G| is the error of G, and K is much better when that is small
+  const gkErr = (K, G) => { const d = Math.abs(K - G), a = Math.max(Math.abs(K), 1e-300); return Math.min(d, a * Math.pow(200 * d / a, 1.5)); };
+  // the 15 nodes of Gauss–Kronrod 7–15 on (0, 1) in order, with their Kronrod and Gauss weights
+  const GK_S = GK_X.map((x) => (1 - x) / 2).concat([0.5], GK_X.slice().reverse().map((x) => (1 + x) / 2));
+  const GK_SK = GK_W.slice(0, 7).concat([GK_W[7]], GK_W.slice(0, 7).reverse()).map((w) => w / 2);
+  const GK_SG = GK_S.map((s, i) => { const j = i < 7 ? i : 14 - i; return i === 7 ? G_W[3] / 2 : j % 2 ? G_W[(j - 1) / 2] / 2 : 0; });
+  // ∬ F over the part of a region found by findRegionPart (S.rays), in polar coordinates around its
+  // center. For each angle, ∫ F r dr over the parts of the ray with values: Gauss–Kronrod 7–15 after
+  // r = a + (b − a)(1 − cos πs)/2, which makes the integrand smooth at an end where the values stop
+  // like √ (a sphere) or grow like 1/√ (its surface); the engine gives the 15 values of F of each part,
+  // for 64 parts in one request, with 20 digits. Then over the angle: with no corners (a part inside
+  // the region with a smooth edge, an ellipse) the trapezoidal rule with 32 and 64 angles, which is
+  // exact to many digits for a periodic integrand; between corners (rayKinks) Gauss–Kronrod 7–15 on
+  // each interval, halved where its error is above its share. (An end of a part lies about 1e-15
+  // inside the last value; where the integrand grows like 1/√ the substitution still integrates up
+  // to the true end, as its nodes do not come that close.) { num, missing: 0, digits }
+  async function rayIntegral(S, F) {
+    const RS = S.rays, vals = new Map(), TWO_PI = 2 * Math.PI, MAX_RAYS = 600;
+    if (!RS.kinks) RS.kinks = rayKinks(RS);
+    const kinks = (await RS.kinks).slice();
+    let innerErr = 0, checked = false, ranOut = false;
+    // ∫ F r dr over a piece s0 〜 s1 of a part (s from 0 to 1 is all of it) for each item
+    // { ray, p, s0, s1 }: { K }, or null
+    const vec = (v) => '[' + v.map(engineNum).join(', ') + ']';
+    const pieces = async (items) => {
+      const out = [];
+      for (let i = 0; i < items.length; i += 64) {
+        const chunk = items.slice(i, i + 64).map((w) => {
+          // a part cut off by the region's edge just before the values stop (next to a corner of the
+          // integral over the angle): the substitution of the whole part with values, up to the cut,
+          // so that the end where the integrand may grow like 1/√ still becomes smooth
+          let E = w.p.b, smax = 1;
+          const e = w.ray.dom, a = w.p.a;
+          if (a === 0 && w.p === w.ray.parts[0] && isFinite(e) && w.p.b >= w.ray.reach * (1 - 1e-12) && e > w.p.b * (1 + 1e-12) && e < 4 * w.p.b) {
+            E = e; smax = Math.acos(1 - 2 * w.p.b / e) / Math.PI;
+          }
+          const ss = GK_S.map((x) => smax * (w.s0 + (w.s1 - w.s0) * x)), d = E - a;
+          const r = ss.map((x) => a + d * (1 - Math.cos(Math.PI * x)) / 2);
+          return Object.assign({ r, jac: ss.map((x, k) => smax * (w.s1 - w.s0) * d * Math.PI / 2 * Math.sin(Math.PI * x) * r[k]) }, w);
+        });
+        const expr = '[' + chunk.map((w) => `genvector(${subXY(F, `element(${vec(w.r.map((r) => RS.cx + r * w.ray.ux))}, \\k)`, `element(${vec(w.r.map((r) => RS.cy + r * w.ray.uy))}, \\k)`)}, 1, 15, 1, \\k, 1)`).join('; ') + ']';
+        const res = await Bridge.send('calc', { expr, opts: iOpts({ approx: 'approx', precision: 20 }), timeout: Math.max(20000, timeLimit() * 1000) });
+        const m = res.ok && res.result && !res.timeout ? numMatrix(numberPartVec(res.result)) : null;
+        chunk.forEach((w, k) => {
+          const row = m && m.rows.length === chunk.length && m.rows[k].length === 15 ? m.rows[k].map((t) => Number(String(t).replace(/−/g, '-').replace(/\s/g, ''))) : null;
+          if (!row || !row.every(isFinite)) { out.push(null); return; }
+          const T = row.map((v, n) => v * w.jac[n]);
+          out.push({ K: T.reduce((t, v, n) => t + GK_SK[n] * v, 0) });
+        });
+      }
+      return out;
+    };
+    const evalAt = async (angles) => {
+      const todo = Array.from(new Set(angles.filter((a) => !vals.has(a))));
+      await RS.ensure(todo);
+      const items = [];
+      for (const a of todo) {
+        const ray = RS.rays.get(a);
+        vals.set(a, ray.parts ? 0 : NaN);
+        for (const p of ray.parts || []) items.push({ a, ray, p, s0: 0, s1: 1 });
+      }
+      const res = await pieces(items);
+      items.forEach((w, k) => {
+        const v = res[k];
+        if (!v) { vals.set(w.a, NaN); return; }
+        vals.set(w.a, vals.get(w.a) + v.K);
+      });
+    };
+    // how good the values along the rays are: four of them again with each part in two halves
+    const checkInner = async (pick) => {
+      const items = [];
+      for (const a of pick) for (const p of RS.rays.get(a).parts || []) items.push({ a, p, ray: RS.rays.get(a), s0: 0, s1: 0.5 }, { a, p, ray: RS.rays.get(a), s0: 0.5, s1: 1 });
+      const res = await pieces(items), two = new Map();
+      items.forEach((w, k) => { two.set(w.a, (two.get(w.a) || 0) + (res[k] ? res[k].K : NaN)); });
+      for (const [a, v] of two) innerErr = Math.max(innerErr, isFinite(v) ? Math.abs(v - vals.get(a)) / Math.max(Math.abs(v), 1e-300) : 1);
+    };
+    const I = (a) => vals.get(a);
+    const fail = { num: NaN, missing: 0 };
+    let total = 0, err = 0;
+    if (!kinks.length) {
+      const at = (n) => Array.from({ length: n }, (e, j) => TWO_PI * j / n);
+      const trap = (n) => at(n).reduce((s, a) => s + I(a), 0) * TWO_PI / n;
+      // (an edge such as a long ellipse needs more angles: 32, 64, … 256, while the error falls fast)
+      for (let n = 64, dh = Infinity; n <= 256; n *= 2) {
+        await evalAt(at(n));
+        if (at(n).some((a) => !isFinite(I(a)))) return fail;
+        if (!checked) { checked = true; await checkInner([0, 1, 2, 3].map((k) => at(64)[k * 16 + 5])); }
+        const tn = trap(n), th = trap(n / 2), d = Math.abs(tn - th) / Math.max(Math.abs(tn), 1e-300);
+        if (d <= 1e-10 || (n === 256 && d <= 1e-8)) {
+          // the next halving of the step would square the relative error
+          const rel = Math.max(d * d * 100, innerErr, 1e-16);
+          return { num: tn, missing: 0, digits: Math.max(2, Math.min(10, Math.floor(-Math.log10(rel)))) };
+        }
+        if (d > 0.1 * dh) break; // (the error falls slowly: there is a corner)
+        dh = d;
+      }
+      // (not smooth: Gauss–Kronrod on 16 intervals, halved as needed)
+      kinks.push(...Array.from({ length: 16 }, (e, j) => TWO_PI * j / 16));
+    }
+    // the intervals between the corners, all round (the last one goes past 2π to the first corner).
+    // Next to a corner the integral along the rays can change like √ of the angle (where the edge of
+    // the part meets the region's edge), so each interval α 〜 β is taken with the angle
+    // α + (β − α)(1 − cos πs)/2 as for the rays, and its pieces s0 〜 s1 are halved as needed.
+    let active = kinks.map((a, i) => ({ A: a, B: i + 1 < kinks.length ? kinks[i + 1] : kinks[0] + TWO_PI, s0: 0, s1: 1 }));
+    const ang = (P, s) => P.A + (P.B - P.A) * (1 - Math.cos(Math.PI * s)) / 2;
+    const nodes = (P) => GK_S.map((x) => ang(P, P.s0 + (P.s1 - P.s0) * x));
+    while (active.length) {
+      const need = active.flatMap(nodes).filter((a) => !vals.has(a));
+      if (vals.size + need.length > MAX_RAYS) {
+        // (the rays ran out: the pieces that were to be halved count with their last value, and the
+        // error that is known is not trusted fully)
+        ranOut = true;
+        const seen = new Set();
+        for (const P of active) {
+          if (!P.parent) return fail;
+          if (!seen.has(P.parent)) { seen.add(P.parent); total += P.parent.K; err += 10 * P.parent.e; }
+        }
+        break;
+      }
+      await evalAt(need);
+      if (!checked) { checked = true; await checkInner(active.slice(0, 4).map((P) => ang(P, (P.s0 + P.s1) / 2))); }
+      const next = [];
+      for (const P of active) {
+        const ss = GK_S.map((x) => P.s0 + (P.s1 - P.s0) * x), T = ss.map((x) => I(ang(P, x)) * (P.s1 - P.s0) * (P.B - P.A) * Math.PI / 2 * Math.sin(Math.PI * x));
+        const K = T.reduce((t, v, n) => t + GK_SK[n] * v, 0), G = T.reduce((t, v, n) => t + GK_SG[n] * v, 0);
+        if (!isFinite(K)) return fail;
+        P.K = K; P.e = gkErr(K, G);
+        next.push(P);
+      }
+      const tol = 1e-10 * Math.abs(next.reduce((t, P) => t + P.K, total));
+      active = [];
+      for (const P of next) {
+        const w = ang(P, P.s1) - ang(P, P.s0);
+        if (P.e <= tol * Math.max(w, 1e-3) / TWO_PI || P.s1 - P.s0 < 1e-6) { total += P.K; err += P.e; }
+        else { const m = (P.s0 + P.s1) / 2; active.push({ A: P.A, B: P.B, s0: P.s0, s1: m, parent: P }, { A: P.A, B: P.B, s0: m, s1: P.s1, parent: P }); }
+      }
+    }
+    if (!isFinite(total)) return fail;
+    const scale = Math.max(Math.abs(total), 1e-300);
+    const rel = Math.max(err / scale, innerErr, 1e-16);
+    const digits = Math.max(2, Math.min(10, Math.floor(-Math.log10(rel)) - (ranOut ? 1 : 0)));
+    return { num: total, missing: 0, digits };
+  }
   // the exact value is tried for a few seconds only (some double integrals keep the engine busy).
   // 1.8.2: 3 s for the volume and 2 s for each surface (8 s until 1.8.1). Every exact value of the
   // samples is found in 0.11 s or less on a PC, and a search that finds none uses all the time, so
@@ -4804,40 +5483,50 @@
   async function regionIntegral(S, F, signedF, early) {
     const ix = regionExpr(S, signedF || F);
     const n = await regionNumeric(S, F);
-    if (early) early(bestValue(null, n.num, regionDigits(S)), n.missing);
-    const ex = await regionExact(S, signedF ? `abs(${ix})` : ix);
-    return { expr: ix, val: bestValue(ex, n.num, regionDigits(S)), missing: n.missing };
+    if (early) early(bestValue(null, n.num, regionDigits(S, n)), n.missing);
+    const ex = ix ? await regionExact(S, signedF ? `abs(${ix})` : ix) : null;
+    return { expr: ix, val: bestValue(ex, n.num, regionDigits(S, n)), missing: n.missing };
   }
+  // the line under a value measured on a part of the region (regionReal)
+  const regionPartNote = (S) => el('div', { class: 'form-hint', text: S.partText
+    ? tr(`Only where the surfaces have values: ${S.partText}`, `曲面の値がある ${S.partText} の部分で計算しました`, `Solo donde las superficies tienen valores: ${S.partText}`)
+    : tr('Only the part of the region where the surfaces have values', '範囲のうち、曲面の値がある部分だけで計算しました', 'Solo la parte de la región donde las superficies tienen valores') });
+  const noValuesText = () => tr('The surfaces have no real values in this region', 'この範囲では曲面に（実数の）値がありません', 'Las superficies no tienen valores reales en esta región');
   // a value shown before the exact one has been looked for: "about 39.939589 (checking…)"
   const aboutValue = (name, val) => name + tr(' about ', ' 約 ') + val.text.replace(/^≈ /, '') + tr(' (checking for an exact value…)', '（厳密な値を確かめています…）');
   // seq: the number of this calculation (a button press takes a new one); a result is written only
   // while no newer calculation has started
   async function computeVolume(seq) {
-    const S = volumeSetup();
-    if (!S) { setVolumeShade(null); return; }
-    const { U, f, g } = S;
+    const S0 = volumeSetup();
+    if (!S0) { setVolumeShade(null); return; }
+    const { U, f, g } = S0;
     if (seq === undefined) { clearTimeout(U.timer); seq = ++U.seq; }
-    await setVolumeShade(S);
-    if (seq !== U.seq) return;
     U.out.textContent = tr('Calculating…', '計算中…');
     U.ins.hidden = true;
+    // only where the surfaces have values (1.9.2); a disk part around the origin is shaded as a disk
+    const S = await regionReal(S0);
+    if (seq !== U.seq) return;
+    await setVolumeShade(S.disk && (!S.cx || S.cx === '0') && (!S.cy || S.cy === '0') ? S : S0);
+    if (seq !== U.seq) return;
+    if (S.none) { U.out.textContent = noValuesText(); return; }
     const d = g ? `(${f.expr}) − (${g.expr})` : f.expr;
     const r = await regionIntegral(S, `abs(${d})`, d, (v) => { if (v && seq === U.seq) U.out.textContent = aboutValue(tr('Volume', '体積'), v); });
     if (seq !== U.seq) return;
     if (!r.val) { U.out.textContent = tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
     U.out.textContent = '';
     showResult(U.out, tr('Volume ', '体積 ') + shownValue(r.val));
+    if (S.base) U.out.append(regionPartNote(S));
     if (r.missing) U.out.append(el('div', { class: 'form-hint', text: tr(`${r.missing} points without a real value were left out (for a round region, choose "Disk")`, `実数の値がない ${r.missing} 点を除いています（丸い範囲なら「円」を選んでください）`,
       `Se omitieron ${r.missing} puntos sin valor real (para una región redonda, elige "Disco")`) }));
     Q3.volExpr = r.expr;
-    U.ins.hidden = false;
+    U.ins.hidden = !r.expr;
   }
   // the area of the surfaces: ∬ √(1 + f_x² + f_y²), for each surface (the floor z = 0: the area of the region)
   // append: below the volume that is shown (else in its place)
   async function computeSurface(append, seq) {
-    const S = volumeSetup();
-    if (!S) return;
-    const { U, f, g } = S;
+    const S0 = volumeSetup();
+    if (!S0) return;
+    const { U, f, g } = S0;
     if (seq === undefined) { clearTimeout(U.timer); seq = ++U.seq; }
     const out = append ? el('div', { class: 'area-out' }) : U.out;
     if (append) U.out.append(out); else { U.out.textContent = ''; U.ins.hidden = true; }
@@ -4845,11 +5534,17 @@
     const fail = () => { if (seq === U.seq) out.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); };
     const parts = [], names = [], items = [];
     let missing = 0;
-    const floor = g ? null : S.disk ? await exactIntegral(`π × (${S.R})^2`, 3000) : await exactIntegral(`abs(((${S.x1}) − (${S.x0})) × ((${S.y1}) − (${S.y0})))`, 3000);
+    // only where the surfaces have values (1.9.2): the floor too
+    const S = await regionReal(S0);
+    if (seq !== U.seq) return;
+    if (S.none) { out.textContent = noValuesText(); return; }
+    let floor = null;
+    if (!g && S.rays) { const n = await rayIntegral(S, '1'); floor = bestValue(null, n.num, n.digits); if (!floor) { fail(); return; } }
+    else if (!g) floor = S.disk ? await exactIntegral(`π × (${S.R})^2`, 3000) : await exactIntegral(`abs(((${S.x1}) − (${S.x0})) × ((${S.y1}) − (${S.y0})))`, 3000);
     if (seq !== U.seq) return;
     // the numeric value of each surface first: their sum is shown while the exact values are looked for
     for (const s1 of g ? [f, g] : [f]) {
-      const A = recipSqrt(await symText(`√(1 + (diff(${s1.expr}, x))^2 + (diff(${s1.expr}, y))^2)`));
+      const A = recipSqrt(await symText(`√(1 + (diff(${s1.expr}, x))^2 + (diff(${s1.expr}, y))^2)`, true));
       if (seq !== U.seq) return;
       if (!A) { fail(); return; }
       const n = await regionNumeric(S, A);
@@ -4858,10 +5553,11 @@
     }
     if (items.every((it) => isFinite(it.n.num))) {
       const sum = items.reduce((t, it) => t + it.n.num, floor ? floor.v : 0);
-      out.textContent = aboutValue(tr('Surface area', '表面積'), { text: fmtV(+sum.toPrecision(regionDigits(S))) });
+      out.textContent = aboutValue(tr('Surface area', '表面積'), { text: fmtV(+sum.toPrecision(Math.min(...items.map((it) => regionDigits(S, it.n))))) });
     }
     for (const it of items) {
-      const val = bestValue(await regionExact(S, regionExpr(S, it.A), SURFACE_EXACT_MS), it.n.num, regionDigits(S));
+      const ix = regionExpr(S, it.A);
+      const val = bestValue(ix ? await regionExact(S, ix, SURFACE_EXACT_MS) : null, it.n.num, regionDigits(S, it.n));
       if (seq !== U.seq) return;
       if (!val) { fail(); return; }
       parts.push(val); names.push(it.name);
@@ -4873,6 +5569,7 @@
     out.textContent = '';
     showResult(out, tr('Surface area ', '表面積 ') + shownValue(total));
     out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+    if (S.base && !append) out.append(regionPartNote(S)); // (below the volume, the note is there already)
     if (missing) out.append(el('div', { class: 'form-hint', text: tr(`${missing} points without a real value were left out (for a round region, choose "Disk")`, `実数の値がない ${missing} 点を除いています（丸い範囲なら「円」を選んでください）`,
       `Se omitieron ${missing} puntos sin valor real (para una región redonda, elige "Disco")`) }));
   }
