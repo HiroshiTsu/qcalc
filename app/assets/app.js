@@ -2335,14 +2335,96 @@
     openPlot3dWith(fs, { range: ok ? around([sol[0]], 3).concat(around([sol[1]], 3)) : null, points: ok ? [{ x: sol[0], y: sol[1], z: sol[2], label: pairText(sol[0], sol[1], sol[2]) }] : null });
   }
 
-  // ---- 📈 next to the input field: the graph of an expression in x (not an equation or a conversion)
+  // ---- graphs from everywhere (1.8.4): an expression, an equation, a function or a matrix made in
+  // the input field, in the history, in the user's functions or in a form goes to the graph that
+  // fits it. graphRoute(text) says what would be drawn (null: nothing), graphOf(text) draws it.
+  //  - an expression in x: the 2D graph; in y (with or without x): the 3D graph z = f(x, y)
+  //  - y = f(x), f(x) = … (also the other way round): 2D; z = f(x, y), f(x, y) = …: 3D
+  //  - an equation in x: its two sides in 2D with their crossing points (as the equation form does)
+  //  - an equation in x and y (x² + y² = 4): solved for y by the engine, every solution in 2D;
+  //    with z as well (x + y + z = 1): solved for z, in 3D
+  //  - a matrix of numbers with 2 or 3 columns ([1 2; 3 4], [[1, 2], [3, 4]]): its rows as points
+  // Several functions in one line (sin(x), cos(x)) are drawn together, as in the graph itself.
+  function matrixRows(t) {
+    const m = parseMatrix(t);
+    // typed with single spaces ([1 2; 3 4]): numbers apart by spaces are the columns
+    const num = /^[−-]?(?:\d+(?:\.\d*)?|\.\d+)(?:E[−-]?\d+)?$/i;
+    if (m && m.rows[0].length === 1 && m.rows.every((r) => r[0].split(/\s+/).every((c) => num.test(c)))) {
+      const rows = m.rows.map((r) => r[0].split(/\s+/));
+      return rows.every((r) => r.length === rows[0].length) ? rows : null;
+    }
+    if (m) return m.rows;
+    if (!/^\[\s*\[/.test(t) || !/\]\s*\]$/.test(t)) return null; // [[1, 2], [3, 4]]: a list of rows
+    const rows = splitTop(t.slice(1, -1), ',');
+    if (!rows || !rows.every((r) => /^\[[^[\]]*\]$/.test(r))) return null;
+    const out = rows.map((r) => (splitTop(r.slice(1, -1), ',') || []).map((c) => c.trim()));
+    return out.length && out[0].length && out.every((r) => r.length === out[0].length) ? out : null;
+  }
+  function graphRoute(text) {
+    let t = normalizeExpr(text || '');
+    if (!t || t.length > 500 || t.indexOf('□') >= 0 || /[<>≤≥≠]| to |→|\bsolve\(|dsolve|integrate\([^)]*,|diff\([^)]*,[^)]*,[^)]*,/.test(t)) return null;
+    if (outerParens(t)) t = t.slice(1, -1).trim();
+    const rows = matrixRows(t);
+    if (rows) return (rows[0].length === 2 || rows[0].length === 3) && rows.every((r) => r.every((c) => !/[xyz]/.test(c.replace(/[\p{L}_]{2,}/gu, '')))) ? { kind: 'points', rows, three: rows[0].length === 3 } : null;
+    if (/[[\]]/.test(t)) return null;
+    const vx = (s) => hasVar(s, 'x'), vy = (s) => hasVar(s, 'y'), vz = (s) => hasVar(s, 'z');
+    const sides = splitTop(t.replace(/:=/g, '='), '=');
+    if (!sides) return null;
+    if (sides.length === 1) {
+      if (vz(t)) return null;
+      if (vy(t)) return { kind: 'f', exprs: [t], three: true };
+      return vx(t) ? { kind: 'f', exprs: [t] } : null;
+    }
+    if (sides.length !== 2 || !sides[0] || !sides[1]) return null;
+    const [L, R] = sides;
+    // one side names the other: y = …, z = …, f(x) = …, f(x, y) = …
+    const named = (a, b) => {
+      const head = /^[\p{L}_][\p{L}\p{Nd}_]*\(\s*x\s*(,\s*y\s*)?\)$/u.exec(a);
+      if (a === 'y' && vx(b) && !vy(b) && !vz(b)) return { kind: 'f', exprs: [b] };
+      if (a === 'z' && (vx(b) || vy(b)) && !vz(b)) return { kind: 'f', exprs: [b], three: true };
+      if (head && !vz(b) && (head[1] || !vy(b)) && (vx(b) || vy(b))) return { kind: 'f', exprs: [b], three: !!head[1] };
+      return null;
+    };
+    const n = named(L, R) || named(R, L);
+    if (n) return n;
+    const e = L + ' = ' + R;
+    if (vz(e)) return (vx(e) || vy(e)) ? { kind: 'solve', eq: e, v: 'z', three: true } : null;
+    if (vy(e)) return { kind: 'solve', eq: e, v: 'y' };
+    return vx(e) ? { kind: 'sides', L, R } : null;
+  }
+  async function graphOf(text) {
+    const g = graphRoute(text);
+    if (!g) return false;
+    if (g.kind === 'points') { await plotMatrixRows(g.rows); return true; }
+    if (g.kind === 'f') { if (g.three) openPlot3dWith(g.exprs); else openPlotWith(g.exprs); return true; }
+    if (g.kind === 'sides') {
+      const roots = await resultNumbers(`solve(${g.L} = ${g.R}, x)`);
+      const range = roots ? around(roots, Math.max(3, (Math.max(...roots) - Math.min(...roots)) * 0.3)) : null;
+      if (g.R === '0') openPlotWith([g.L], { zeros: true, range }); else openPlotWith([g.L, g.R], { roots: true, range });
+      return true;
+    }
+    // solved for y (2D) or z (3D): one solution, or a list of them ("[√(4 − x²)  −√(4 − x²)]")
+    const s = await exactText(`solve(${g.eq}, ${g.v})`);
+    const m = s && parseMatrix(s);
+    const fs = !s || /solve|[=|<>]/.test(s) ? null : m ? [].concat(...m.rows) : [s];
+    if (!fs || !fs.length || fs.some((f) => hasVar(f, g.v))) {
+      toast(g.three ? tr('This equation cannot be written as z = …, so it cannot be drawn', 'z = … の形にできない式なので描けません')
+        : tr('This equation cannot be written as y = …, so it cannot be drawn (a vertical line x = c, for example)', 'y = … の形にできない式なので描けません（縦の直線 x = 一定 など）'), 3000);
+      return true;
+    }
+    if (g.three) openPlot3dWith(fs.slice(0, 4)); else openPlotWith(fs.slice(0, 6));
+    return true;
+  }
+  // the name of the graph that graphRoute chose, for a menu
+  const graphLabel = (g) => (g.kind === 'points' ? (g.three ? tr('Draw as points (3D graph)', '点としてグラフに描く（3D）') : tr('Draw as points (2D graph)', '点としてグラフに描く（2D）'))
+    : g.three ? tr('Draw a 3D graph', '3D グラフにする') : tr('Draw a graph', 'グラフにする'));
+
+  // ---- 📈 next to the input field: the graph of what is typed (graphRoute)
   const plotBtnEl = $('#plotbtn');
   plotBtnEl.addEventListener('pointerdown', (e) => e.preventDefault());
-  plotBtnEl.addEventListener('click', () => { vibrate(); openPlotWith(normalizeExpr(exprEl.value)); });
+  plotBtnEl.addEventListener('click', () => { vibrate(); graphOf(exprEl.value); });
   function plottable(t) {
-    t = normalizeExpr(t);
-    return !!t && t.length < 500 && t.indexOf('□') < 0 && !/[=<>≤≥≠;[\]]| to |→|solve|dsolve|integrate\([^)]*,|diff\([^)]*,[^)]*,[^)]*,/.test(t) &&
-      /(^|[^\p{L}_])x(?![\p{L}\p{Nd}_])/u.test(t);
+    return !!graphRoute(t);
   }
 
   // ---- □: a box of a template to be filled in, in the input field ("Next box" goes to the next one)
@@ -2499,9 +2581,13 @@
     // when it was calculated, the expression and the result (the time first: the title shows 4 lines at most)
     // a result with x (a function of x): differentiate, integrate, draw it or put in a value for x
     const fx = functionOfX(h);
+    // the graph that fits the result, or else the expression (1.8.4: also in x and y, equations, functions)
+    const gsrc = [insertText(h), h.expr].find((s) => s && graphRoute(s)) || null, groute = gsrc ? graphRoute(gsrc) : null;
+    const gItem = groute ? ['g-plot', graphLabel(groute)] : null;
     const more = fx ? [['f-diff', tr('Differentiate', '微分する')], ['f-int', tr('Integrate', '積分する')],
-      ['f-plot', tr('Draw a graph', 'グラフにする')], ['f-subst', tr('Substitute a value for x', 'x に値を代入する')],
+      gItem || ['f-plot', tr('Draw a graph', 'グラフにする')], ['f-subst', tr('Substitute a value for x', 'x に値を代入する')],
       ['f-solve', tr('Solve = 0 for x', '= 0 として x を求める')]] : [];
+    if (!fx && gItem && !(groute.kind === 'points' && !h.cut && insertText(h) && parseMatrix(insertText(h)))) more.push(gItem);
     // a matrix result: edit it and calculate with it in the matrix form
     const mx = !h.cut && insertText(h);
     const mat = mx && parseMatrix(mx) ? mx : null;
@@ -2517,7 +2603,8 @@
     else if (a === 'm-plot') plotMatrixRows(parseMatrix(mat).rows);
     else if (a === 'f-diff') openForm('diff', { f: fx });
     else if (a === 'f-int') openForm('int', { f: fx });
-    else if (a === 'f-plot') openPlotWith(fx);
+    else if (a === 'f-plot') { if (!(await graphOf(fx))) openPlotWith(fx); }
+    else if (a === 'g-plot') graphOf(gsrc);
     else if (a === 'f-solve') openForm('solve', { eqs: [fx + ' = 0'] });
     else if (a === 'f-subst') openForm('subst', { f: fx, focus: 'a' });
     else if (a === 'copy-res') copyText(shownText(h));
@@ -2819,9 +2906,9 @@
     tr('Touch and hold the x key for other letters: y, z, t, n, a, b, c, k, θ.', 'x キーを長押しすると、ほかの文字（y・z・t・n・a・b・c・k・θ）を選べます。'),
     tr('A fraction: the □/□ key on the Functions page, or touch and hold ÷. Type the numerator, "Next box ▶", then the denominator. Selected text becomes the numerator. Results such as 1/6 are shown as fractions.', '分数は「関数」ページの □/□ キーか、÷ キーの長押しで入力します。分子を入れて「次の欄 ▶」、分母を入れます。選んだ部分は分子になります。1/6 のような結果も分数の形で表示します。'),
     tr('The solve key opens a form for an equation (left side = right side); "+ Add an equation" makes a system of equations.', 'solve キーで方程式を入力する画面（左辺 = 右辺）が開きます。「＋ 式を追加」で連立方程式になります。'),
-    tr('With x in the expression, 📈 next to the input field draws its graph.', '式に x があるときは、入力欄の上の 📈 でグラフを描けます。'),
+    tr('📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.', '入力欄の上の 📈 で、入力した式のグラフを描けます。x の式は 2D、x と y の式は 3D、y = 2x + 1、x² + y² = 4、z = x y のような方程式、2 列か 3 列の数の行列（点）も描けます。履歴の行を長押ししても同じことができます。'),
     tr('In the graph, "Area" finds the area between a function and the x axis or between two functions (the crossing points are offered as ranges), and "Length" the length of a curve or the perimeter between two functions. "Example" draws a circle or an ellipse.', 'グラフの「面積を求める」で、関数と x 軸の間や 2 つの関数の間の面積（交点の間の範囲を選べます）、「長さ・周」で曲線の長さや 2 つの関数に囲まれた部分の周の長さが求められます。「図形の例」で円や楕円を描けます。'),
-    tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
+    tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks filled with a pale liquid in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで薄い色の液体に満たされたように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
     tr('1:1 in the graph makes one unit as long on every axis, so a circle or a sphere looks round. In 3D it turns on by itself when the ranges are about the same.', 'グラフの「1:1」で、どの軸も 1 目盛りの長さがそろい、円や球が丸く見えます。3D では範囲の長さが近いときに自動でオンになります。'),
     tr('"Calculus" under a 2D graph draws f′ and ∫f, the tangent at x = a, and marks zeros and extrema; in 3D, "Partial derivatives" draws ∂f/∂x and ∂f/∂y.', '2D グラフの「微分・接線・極値」で f′ と ∫f、x = a での接線を描き、零点と極値に印を付けます。3D の「偏微分」では ∂f/∂x と ∂f/∂y を描きます。'),
     tr('📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.', '入力フォームの 📈 で、その計算に合うグラフを描きます。微分なら接線、定積分なら面積、連立方程式なら直線や平面と解の点、行列なら各行の点です。'),
@@ -4459,23 +4546,25 @@
       out.textContent = ''; ins.hidden = true;
       if (!quiet) volumeAuto();
     };
+    // the color of the solid that is measured, as it is shown in the graph (1.8.4; draw3d sets it)
+    const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('In the graph, the solid that is measured looks filled with a pale liquid of this color (hidden edges dashed)', 'グラフでは、計測している立体を、この色の薄い液体で満たしたように示しています（隠れた辺は破線）') }));
     const box = el('div', { class: 'area-box' },
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk), rangeText, diskRow),
-      out, ins,
+      legend, out, ins,
       el('div', { class: 'form-hint', text: tr('The values are those of the graph that is drawn. Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.', 'いま描いているグラフの値です。平面（またはもう一方の曲面）より下の部分もプラスとして数えます。表面積は 2 つの曲面（または曲面と z = 0 の底面）の面積の和で、側面は含みません。') }),
       buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
       tapButton({ class: 'btn geo-link', text: tr('More shapes: cylinder, cone, box… ›', 'ほかの図形（円柱・円錐・直方体など）›') }, () => openShapes()));
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Volume and surface ▾', '体積・表面積 ▾') });
     // opened: the volume and the surface area of the drawn surface are shown at once
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) volumeSurfacesChanged(); else Q3.volUI.seq++; });
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) volumeSurfacesChanged(); else { Q3.volUI.seq++; Q3.volShade = null; requestDraw3d(); } });
     s1.addEventListener('change', () => { if (s2.value === s1.value) s2.value = 'plane'; volumeAuto(); });
     s2.addEventListener('change', () => volumeAuto());
     R.addEventListener('change', () => volumeAuto());
     R.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); R.blur(); } });
     ins.addEventListener('click', () => { if (Q3.volExpr) useExample(Q3.volExpr); });
-    Q3.volUI = { s1, s2, out, ins, box, rangeText, R, toggle, setRegion, seq: 0, timer: 0 };
+    Q3.volUI = { s1, s2, out, ins, box, rangeText, R, toggle, setRegion, legend, seq: 0, timer: 0 };
     setRegion('rect', true);
     return el('div', { class: 'area-wrap' }, toggle, box);
   }
@@ -4528,6 +4617,17 @@
     U.seq++;
     clearTimeout(U.timer);
     U.out.textContent = ''; U.ins.hidden = true;
+    Q3.volShade = null;
+  }
+  // the solid that is measured, for draw3d (1.8.4): the chosen surfaces of this graph and the
+  // region, with the radius of a disk as a number (the engine is asked when it is an expression)
+  async function setVolumeShade(S) {
+    const D = Q3.data;
+    if (!S || !D) { Q3.volShade = null; requestDraw3d(); return; }
+    let R = 0;
+    if (S.disk) { R = Number(S.R); if (!isFinite(R)) R = await numValue(S.R); }
+    Q3.volShade = S.disk && !(R > 0) ? null : { D, fi: D.series.indexOf(S.f), gi: S.g ? D.series.indexOf(S.g) : -1, disk: S.disk, R };
+    requestDraw3d();
   }
   // the lists of surfaces follow the graph; quiet: without calculating (the caller does)
   function volumeSurfacesChanged(quiet) {
@@ -4598,9 +4698,11 @@
   // while no newer calculation has started
   async function computeVolume(seq) {
     const S = volumeSetup();
-    if (!S) return;
+    if (!S) { setVolumeShade(null); return; }
     const { U, f, g } = S;
     if (seq === undefined) { clearTimeout(U.timer); seq = ++U.seq; }
+    await setVolumeShade(S);
+    if (seq !== U.seq) return;
     U.out.textContent = tr('Calculating…', '計算中…');
     U.ins.hidden = true;
     const d = g ? `(${f.expr}) − (${g.expr})` : f.expr;
@@ -5124,6 +5226,171 @@
   function clearMark3d() { Q3.mark = null; if (Q3.tip) Q3.tip.style.display = 'none'; }
   function zoom3d(f) { Q3.zoom = Math.max(0.4, Math.min(6, Q3.zoom * f)); clearMark3d(); draw3d(); }
   function requestDraw3d() { if (!Q3.raf) Q3.raf = requestAnimationFrame(() => { Q3.raf = 0; draw3d(); }); }
+  // ---- the solid that is measured by "Volume and surface" (1.8.4)
+  const VOL_FADE = 0.5; // how far the parts that are not measured fade into the background
+  // a CSS color (#rgb, #rrggbb or rgb()) as [r, g, b], or null
+  const cssRgb = (s) => { let m = /^#([0-9a-f]{3})$/i.exec(s); if (m) return m[1].split('').map((h) => parseInt(h + h, 16)); m = /^#([0-9a-f]{6})$/i.exec(s); if (m) return hexRgb(s); m = /rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)/.exec(s); return m ? [+m[1], +m[2], +m[3]] : null; };
+  // a unit normal turned toward the viewer (depth grows away from the viewer)
+  const towardViewer = (x, y, d, len) => { const s = d > 0 ? -1 / len : 1 / len; return [x * s, y * s, d * s]; };
+  const mixRgb = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const hslRgb = (h, s, l) => {
+    const a = s * Math.min(l, 1 - l), f = (n) => { const k = (n + h / 30) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); };
+    return [f(0), f(8), f(4)];
+  };
+  // Its color is chosen for each graph: the hue farthest from the colors of the surfaces in the
+  // picture (the hues of the cells, weighted by how colorful they are; the measured surfaces count
+  // twice), so that it stands out from them. Among equally good hues, the one farthest from every
+  // color (the middle of the widest gap). The liquid is a pale shade of it, its edges a deeper one.
+  function volumeColor(D, cells, single, dark, vf, vg) {
+    const key = [dark, single, D.series.indexOf(vf), vg ? D.series.indexOf(vg) : -1].join();
+    if (Q3.volColor && Q3.volColor.D === D && Q3.volColor.key === key) return Q3.volColor;
+    const bins = new Float64Array(72);
+    let total = 0;
+    for (const q of cells) {
+      const [r, gr, b] = single ? viridis(q.t) : q.s.rgb;
+      const mx = Math.max(r, gr, b), c = mx - Math.min(r, gr, b);
+      if (c < 10) continue; // grey: no hue
+      let h = mx === r ? ((gr - b) / c) % 6 : mx === gr ? (b - r) / c + 2 : (r - gr) / c + 4;
+      h = (h * 60 + 360) % 360;
+      const w = (c / mx) * (q.s === vf || q.s === vg ? 2 : 1);
+      bins[Math.floor(h / 5) % 72] += w; total += w;
+    }
+    let best = 350, bestP = Infinity, bestGap = -1;
+    for (let h = 0; h < 360; h += 5) {
+      let p = 0, gap = 180;
+      for (let b = 0; b < 72; b++) {
+        if (!bins[b]) continue;
+        let d = Math.abs(h - (b * 5 + 2.5));
+        if (d > 180) d = 360 - d;
+        if (d < 75) p += bins[b] * (1 - d / 75) * (1 - d / 75);
+        if (bins[b] > total * 0.01) gap = Math.min(gap, d);
+      }
+      if (p < bestP - total * 1e-6 || (p <= bestP + total * 1e-6 && gap > bestGap)) { bestP = p; best = h; bestGap = gap; }
+    }
+    // the liquid in a pale (pastel) shade of the hue, a little deeper lower down; its edges in a deeper one, so that the shape stays clear
+    const rgb = hslRgb(best, 0.7, dark ? 0.74 : 0.72), cs = rgb.join(','), ln = hslRgb(best, 0.8, dark ? 0.68 : 0.45).join(','), deep = hslRgb(best, 0.75, dark ? 0.58 : 0.52);
+    return (Q3.volColor = { D, key, hue: best, rgb, css: 'rgb(' + cs + ')', swatch: 'rgba(' + cs + ',0.5)', deep, alpha: dark ? 0.3 : 0.32, mesh: 'rgba(' + ln + (dark ? ',0.2)' : ',0.18)'), line: 'rgba(' + ln + ',0.9)', hidden: 'rgba(' + ln + (dark ? ',0.55)' : ',0.45)') });
+  }
+  // the side walls (from the lower surface or z = 0 up to the upper one, along the edge of the
+  // region), the floor z = 0 and the edges of the solid, added to the cells of draw3d so that they
+  // are sorted with them. The walls are cut into 4 slices up the height for a better order and
+  // for the color of the liquid, which is a little deeper lower down.
+  // Values outside the box of the graph are drawn at its top or bottom.
+  function volumeSolid(D, VS, vf, vg, cells, Pj) {
+    const { proj, U, V, Wz, EZ, T } = Pj, xs = D.xs, ys = D.ys, x0 = xs[0], x1 = xs[D.nx - 1], y0 = ys[0], y1 = ys[D.ny - 1];
+    const ok = (z) => z !== null && z === z;
+    const P3 = (x, y, z) => { proj(U(x), V(y), Math.max(-EZ, Math.min(EZ, Wz(z)))); return { x: T[0], y: T[1], d: T[2] }; };
+    // the value of a surface between the grid points (bilinear), or null
+    const zAt = (s, x, y) => {
+      const fi = (x - x0) / (x1 - x0) * (D.nx - 1), fj = (y - y0) / (y1 - y0) * (D.ny - 1);
+      if (!(fi >= 0 && fi <= D.nx - 1 && fj >= 0 && fj <= D.ny - 1)) return null;
+      const i = Math.min(D.nx - 2, Math.floor(fi)), j = Math.min(D.ny - 2, Math.floor(fj)), a = fi - i, b = fj - j, k = j * D.nx + i;
+      const z = [s.z[k], s.z[k + 1], s.z[k + D.nx], s.z[k + D.nx + 1]];
+      if (!z.every(ok)) return null;
+      return z[0] * (1 - a) * (1 - b) + z[1] * a * (1 - b) + z[2] * (1 - a) * b + z[3] * a * b;
+    };
+    // points along the edge of the region with the upper (a) and the lower (b) value
+    const B = [];
+    if (!VS.disk) {
+      const at = (i, j) => { const k = j * D.nx + i; B.push({ x: xs[i], y: ys[j], a: vf.z[k], b: vg ? vg.z[k] : 0 }); };
+      for (let i = 0; i < D.nx; i++) at(i, 0);
+      for (let j = 1; j < D.ny; j++) at(D.nx - 1, j);
+      for (let i = D.nx - 2; i >= 0; i--) at(i, D.ny - 1);
+      for (let j = D.ny - 2; j >= 0; j--) at(0, j);
+    } else {
+      // where a surface ends on the circle (a sphere and its disk), the values of its edge (refineRims)
+      const cell = Math.max(xs[1] - xs[0], ys[1] - ys[0]);
+      const rimOf = (s) => {
+        const r = [];
+        if (s && s.rim) for (const key in s.rim) { const e = s.rim[key]; if (Math.abs(Math.hypot(e.x, e.y) - VS.R) <= cell * 1.5) r.push({ t: Math.atan2(e.y, e.x), z: e.z }); }
+        return r.sort((p, q) => p.t - q.t);
+      };
+      const ra = rimOf(vf), rb = rimOf(vg);
+      const rimAt = (r, th) => {
+        let best = null, bd = 0.06;
+        for (const e of r) { let d = Math.abs(e.t - th); if (d > Math.PI) d = 2 * Math.PI - d; if (d < bd) { bd = d; best = e.z; } }
+        return best;
+      };
+      const N = 120;
+      for (let n = 0; n <= N; n++) {
+        const th = 2 * Math.PI * n / N, x = VS.R * Math.cos(th), y = VS.R * Math.sin(th), ta = Math.atan2(y, x);
+        let a = zAt(vf, x, y), b = vg ? zAt(vg, x, y) : 0;
+        if (a === null && ra.length) a = rimAt(ra, ta);
+        if (b === null && rb.length) b = rimAt(rb, ta);
+        B.push({ x, y, a, b });
+      }
+    }
+    const sum = (ps) => ps.reduce((t, p) => t + p.d, 0) * 4 / ps.length;
+    // the light and the slant of a face with the normal (nu, nv, nw), as for the cells of draw3d
+    const ca = Math.cos(Q3.az), sa = Math.sin(Q3.az), ce = Math.cos(Q3.el), se = Math.sin(Q3.el), L = [-0.42, 0.62, -0.66];
+    const lit = (nu, nv, nw) => {
+      const yr = nu * sa + nv * ca, ncx = nu * ca - nv * sa, ncy = nw * ce + yr * se, ncd = yr * ce - nw * se, len = Math.hypot(ncx, ncy, ncd) || 1;
+      return { shade: Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len, facing: Math.abs(ncd) / len, hl: Math.abs(ncx * -0.2306 + ncy * 0.3405 + ncd * -0.9116) / len, nrm: towardViewer(ncx, ncy, ncd, len) };
+    };
+    const up = lit(0, 0, 1);
+    const hgt = (z) => (Math.max(-EZ, Math.min(EZ, Wz(z))) / EZ + 1) / 2; // the height in the box, 0 to 1, as the t of the cells
+    let walls = 0, lines = 0, floor = 0;
+    for (let n = 0; n + 1 < B.length; n++) {
+      const p = B[n], q = B[n + 1];
+      if (!ok(p.a) || !ok(p.b) || !ok(q.a) || !ok(q.b)) continue;
+      const lv = (e, t) => e.b + (e.a - e.b) * t;
+      // (no wall where the two surfaces meet, as at the edge of a sphere)
+      const side = lit(V(q.y) - V(p.y), U(p.x) - U(q.x), 0);
+      if (Math.max(Math.abs(p.a - p.b), Math.abs(q.a - q.b)) > (D.z1 - D.z0) * 0.002) for (let m = 0; m < 4; m++) {
+        const poly = [P3(p.x, p.y, lv(p, m / 4)), P3(q.x, q.y, lv(q, m / 4)), P3(q.x, q.y, lv(q, (m + 1) / 4)), P3(p.x, p.y, lv(p, (m + 1) / 4))];
+        const zm = (lv(p, (m + 0.5) / 4) + lv(q, (m + 0.5) / 4)) / 2;
+        cells.push({ vol: 'wall', poly, depth: sum(poly), shade: side.shade, facing: side.facing, hl: side.hl, nrm: side.nrm, t: hgt(zm) }); walls++;
+      }
+      // the edges on the upper and the lower surface, a little to the front so that the cells beside them do not cover them
+      for (const e of [[p.a, q.a], [p.b, q.b]]) {
+        const poly = [P3(p.x, p.y, e[0]), P3(q.x, q.y, e[1])];
+        cells.push({ vol: 'line', poly, depth: sum(poly) - 0.08 }); lines++;
+      }
+    }
+    // vertical edges: at the corners of a rectangle, and at the left and the right side of a disk as
+    // it is seen (in 3 pieces)
+    const vert = [];
+    if (!VS.disk) vert.push(0, D.nx - 1, D.nx + D.ny - 2, 2 * D.nx + D.ny - 3);
+    else {
+      let lo = -1, hi = -1, xl = Infinity, xh = -Infinity;
+      B.forEach((p, n) => { if (!ok(p.a) || !ok(p.b)) return; const sx = P3(p.x, p.y, 0).x; if (sx < xl) { xl = sx; lo = n; } if (sx > xh) { xh = sx; hi = n; } });
+      if (lo >= 0) vert.push(lo, hi);
+    }
+    for (const n of vert) {
+      const p = B[n];
+      if (!p || !ok(p.a) || !ok(p.b) || Math.abs(p.a - p.b) <= (D.z1 - D.z0) * 0.002) continue;
+      for (let m = 0; m < 3; m++) {
+        const poly = [P3(p.x, p.y, p.b + (p.a - p.b) * m / 3), P3(p.x, p.y, p.b + (p.a - p.b) * (m + 1) / 3)];
+        cells.push({ vol: 'line', poly, depth: sum(poly) - 0.08 }); lines++;
+      }
+    }
+    // the floor z = 0 under one surface, when z = 0 is inside the box
+    const w0 = Wz(0);
+    if (!vg && w0 >= -EZ * 1.0001 && w0 <= EZ * 1.0001) {
+      const fl = (pts) => { const poly = pts.map(([x, y]) => P3(x, y, 0)); cells.push({ vol: 'floor', poly, depth: sum(poly), shade: up.shade, facing: up.facing, hl: up.hl, nrm: up.nrm, t: hgt(0) }); floor++; };
+      if (!VS.disk) {
+        const nf = Math.min(20, D.nx - 1), mf = Math.min(20, D.ny - 1);
+        for (let j = 0; j < mf; j++) {
+          for (let i = 0; i < nf; i++) {
+            const xa = x0 + (x1 - x0) * i / nf, xb = x0 + (x1 - x0) * (i + 1) / nf, ya = y0 + (y1 - y0) * j / mf, yb = y0 + (y1 - y0) * (j + 1) / mf;
+            fl([[xa, ya], [xb, ya], [xb, yb], [xa, yb]]);
+          }
+        }
+      } else {
+        // rings and sectors of the disk, kept inside the drawn range
+        const cl = (v, a, b) => Math.max(a, Math.min(b, v)), pt = (r, t) => [cl(r * Math.cos(t), x0, x1), cl(r * Math.sin(t), y0, y1)];
+        for (let r = 0; r < 6; r++) {
+          for (let n = 0; n < 48; n++) {
+            const ra = VS.R * r / 6, rb = VS.R * (r + 1) / 6, ta = 2 * Math.PI * n / 48, tb = 2 * Math.PI * (n + 1) / 48;
+            const cx = (ra + rb) / 2 * Math.cos((ta + tb) / 2), cy = (ra + rb) / 2 * Math.sin((ta + tb) / 2);
+            if (cx < x0 || cx > x1 || cy < y0 || cy > y1) continue;
+            fl(r ? [pt(ra, ta), pt(rb, ta), pt(rb, tb), pt(ra, tb)] : [pt(0, 0), pt(rb, ta), pt(rb, tb)]);
+          }
+        }
+      }
+    }
+    return { walls, lines, floor };
+  }
   function draw3d() {
     const c = Q3.canvas;
     if (!c || !c.clientWidth) return;
@@ -5169,6 +5436,8 @@
     const wb = proj(0, 0, EZ)[2] > proj(0, 0, -EZ)[2] ? EZ : -EZ;
     const stx = niceStep(x1 - x0, 4), sty = niceStep(y1 - y0, 4), stz = niceStep(z1 - z0, 4);
     const gx = gridValues(x0, x1, stx, 40), gy = gridValues(y0, y1, sty, 40), gz = gridValues(z0, z1, stz, 40);
+    // a path on the floor of the box (z at its bottom), from points (u, v)
+    const pane0 = (pts) => { pts.forEach(([u, v], i) => { proj(u, v, -EZ); if (i) g.lineTo(T[0], T[1]); else g.moveTo(T[0], T[1]); }); g.closePath(); };
     const pane = (corners) => { g.beginPath(); corners.forEach(([u, v, w], i) => { proj(u, v, w); if (i) g.lineTo(T[0], T[1]); else g.moveTo(T[0], T[1]); }); g.closePath(); g.fill(); g.stroke(); };
     g.fillStyle = dark ? 'rgba(255,255,255,0.035)' : 'rgba(30,50,90,0.035)';
     g.strokeStyle = axisColor; g.lineWidth = 1;
@@ -5180,11 +5449,36 @@
     for (const y of gy) { line(-EX, V(y), wb, EX, V(y), wb); line(ub, V(y), -EZ, ub, V(y), EZ); }
     for (const z of gz) { line(ub, -EY, Wz(z), ub, EY, Wz(z)); line(-EX, vb, Wz(z), EX, vb, Wz(z)); }
     g.stroke();
+    // a soft shadow of the measured solid on the floor of the box, seen from above (1.8.4)
+    if (Q3.volUI && !Q3.volUI.box.hidden && Q3.volShade && Q3.volShade.D === D && se > 0.05) {
+      g.save();
+      g.filter = 'blur(7px)';
+      g.fillStyle = dark ? 'rgba(0,0,0,0.32)' : 'rgba(20,30,60,0.11)';
+      g.beginPath();
+      if (!Q3.volShade.disk) pane0([[-EX, -EY], [EX, -EY], [EX, EY], [-EX, EY]]);
+      else {
+        const R = Q3.volShade.R, ok = [];
+        for (let n = 0; n <= 72; n++) { const th = 2 * Math.PI * n / 72, x = Math.max(x0, Math.min(x1, R * Math.cos(th))), y = Math.max(y0, Math.min(y1, R * Math.sin(th))); ok.push([U(x), V(y)]); }
+        pane0(ok);
+      }
+      g.fill();
+      g.restore();
+    }
     // the surfaces: project every grid point once, then draw the cells from back to front
     const cells = [];
     const L = [-0.42, 0.62, -0.66];  // light from the upper left, in front
+    const HV = [-0.2306, 0.3405, -0.9116]; // halfway between the light and the viewer (the shine of the liquid, 1.8.4)
+    // the solid that is measured while "Volume and surface" is open (1.8.4): it looks filled with a
+    // pale liquid (its surfaces inside the region, its side walls and its floor z = 0, see-through)
+    const VS = Q3.volUI && !Q3.volUI.box.hidden && Q3.volShade && Q3.volShade.D === D ? Q3.volShade : null;
+    const vf = VS ? D.series[VS.fi] || null : null, vg = vf && VS.gi >= 0 ? D.series[VS.gi] || null : null;
+    // a cell counts as inside the region when any part of it is (its point nearest to the centre of a disk)
+    const inRegion = (i, j) => { if (!VS.disk) return true; const cx = Math.max(xs[i], Math.min(xs[i + 1], 0)), cy = Math.max(ys[j], Math.min(ys[j + 1], 0)); return cx * cx + cy * cy <= VS.R * VS.R; };
+    // a cell partly inside and partly outside the disk (its nearest point inside, its farthest corner outside)
+    const crossing = (i, j) => VS.disk && inRegion(i, j) && Math.max(Math.hypot(xs[i], ys[j]), Math.hypot(xs[i + 1], ys[j]), Math.hypot(xs[i], ys[j + 1]), Math.hypot(xs[i + 1], ys[j + 1])) > VS.R;
     for (const s of D.series) {
       const n = D.nx * D.ny;
+      const chosen = !!vf && (s === vf || s === vg);
       if (!s.proj || s.proj.st.length !== n) s.proj = { px: new Float32Array(n), py: new Float32Array(n), pd: new Float32Array(n), pw: new Float32Array(n), st: new Uint8Array(n) };
       const { px, py, pd, pw, st } = s.proj;
       st.fill(0);
@@ -5236,7 +5530,7 @@
             const yr = su * sa + sv * ca;
             const ncx = su * ca - sv * sa, ncy = sw * ce + yr * se, ncd = yr * ce - sw * se;
             const len = Math.hypot(ncx, ncy, ncd) || 1;
-            cells.push({ s, poly, depth: dd * 4 / poly.length, shade: Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len, t: (ww / (poly.length * EZ) + 1) / 2 });
+            cells.push({ s, poly, depth: dd * 4 / poly.length, shade: Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len, facing: Math.abs(ncd) / len, hl: Math.abs(ncx * HV[0] + ncy * HV[1] + ncd * HV[2]) / len, nrm: towardViewer(ncx, ncy, ncd, len), t: (ww / (poly.length * EZ) + 1) / 2, inR: chosen && inRegion(i, j) });
             continue;
           }
           if (real < 3) continue;
@@ -5256,28 +5550,88 @@
           const yr = nu * sa + nv * ca;
           const ncx = nu * ca - nv * sa, ncy = nw * ce + yr * se, ncd = yr * ce - nw * se;
           const len = Math.hypot(ncx, ncy, ncd) || 1;
-          const shade = Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len;
+          const shade = Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len, facing = Math.abs(ncd) / len, hl = Math.abs(ncx * HV[0] + ncy * HV[1] + ncd * HV[2]) / len, nrm = towardViewer(ncx, ncy, ncd, len);
           let dsum = 0, wsum = 0;
           for (const k of pts) { dsum += pd[k]; wsum += pw[k]; }
-          cells.push({ s, pts, depth: dsum * 4 / pts.length, shade, t: (wsum / (pts.length * EZ) + 1) / 2 });
+          if (chosen && real === 4 && crossing(i, j)) {
+            // a cell across the circle of the disk: cut into 6 × 6 pieces (each inside or not), so
+            // that the measured part ends close to the circle
+            const za = s.z[a], zb = s.z[b], zc = s.z[c2], zd = s.z[d], N = 6;
+            const P = (fa, fb) => { const z = za * (1 - fa) * (1 - fb) + zb * fa * (1 - fb) + zc * fa * fb + zd * (1 - fa) * fb; proj(U(xs[i] + (xs[i + 1] - xs[i]) * fa), V(ys[j] + (ys[j + 1] - ys[j]) * fb), Wz(z)); return { x: T[0], y: T[1], d: T[2], w: Wz(z) }; };
+            for (let m = 0; m < N; m++) {
+              for (let n = 0; n < N; n++) {
+                const poly = [P(n / N, m / N), P((n + 1) / N, m / N), P((n + 1) / N, (m + 1) / N), P(n / N, (m + 1) / N)];
+                const xm = xs[i] + (xs[i + 1] - xs[i]) * (n + 0.5) / N, ym = ys[j] + (ys[j + 1] - ys[j]) * (m + 0.5) / N;
+                cells.push({ s, poly, piece: true, depth: (poly[0].d + poly[1].d + poly[2].d + poly[3].d), shade, facing, hl, nrm, t: ((poly[0].w + poly[1].w + poly[2].w + poly[3].w) / (4 * EZ) + 1) / 2, inR: xm * xm + ym * ym <= VS.R * VS.R });
+              }
+            }
+            continue;
+          }
+          cells.push({ s, pts, depth: dsum * 4 / pts.length, shade, facing, hl, nrm, t: (wsum / (pts.length * EZ) + 1) / 2, inR: chosen && inRegion(i, j) });
         }
       }
     }
-    cells.sort((p, q) => q.depth - p.depth);
     const single = D.series.length === 1, mesh = D.nx <= 45;
+    const vc = vf ? volumeColor(D, cells, single, dark, vf, vg) : null;
+    const vsol = vf ? volumeSolid(D, VS, vf, vg, cells, { proj, U, V, Wz, EZ, T }) : null;
+    // the parts that are not measured (other surfaces, outside the disk) fade into the background
+    let fadeTo = null;
+    if (vc && cells.some((q) => !q.vol && !q.inR)) fadeTo = cssRgb(css.getPropertyValue('--plot-bg').trim()) || (dark ? [24, 26, 32] : [255, 255, 255]);
+    cells.sort((p, q) => q.depth - p.depth);
     const meshColor = dark ? 'rgba(0,0,0,0.35)' : 'rgba(20,30,50,0.22)';
     g.lineJoin = 'round';
+    let jelly = 0, faded = 0;
     for (const q of cells) {
-      const pr = q.s.proj, rgb = single ? viridis(q.t) : q.s.rgb;
-      const k = single ? 0.5 + 0.5 * q.shade : 0.42 + 0.58 * q.shade;
-      const col = 'rgb(' + Math.round(rgb[0] * k) + ',' + Math.round(rgb[1] * k) + ',' + Math.round(rgb[2] * k) + ')';
+      const pr = q.s && q.s.proj;
       g.beginPath();
       if (q.poly) q.poly.forEach((p, n) => { if (n) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); });
       else q.pts.forEach((k, n) => { if (n) g.lineTo(pr.px[k], pr.py[k]); else g.moveTo(pr.px[k], pr.py[k]); });
+      if (q.vol === 'line') { g.strokeStyle = vc.line; g.lineWidth = 1.3; g.stroke(); continue; }
       g.closePath();
+      if (q.vol || q.inR) {
+        // a face of the solid that is measured (1.8.4): the measured parts of the surfaces, the
+        // walls and the floor. The solid looks filled with a pale liquid: one body color, a little deeper lower down (as
+        // a real liquid looks deeper where it is deep), lit like a real see-through material: the
+        // side toward the light bright and the side away from it darker (Lambert), the sky above
+        // mirrored on faces that look up, a sharp shine and a soft sheen where a face mirrors the
+        // light to the eye (Blinn-Phong), and more reflection and less see-through at a slant
+        // (Fresnel), as at the edge of water in a glass.
+        const n = q.nrm, deep = 1 - q.t;
+        const diff = Math.max(0, n[0] * L[0] + n[1] * L[1] + n[2] * L[2]), amb = 0.42 + 0.12 * n[1];
+        const nh = Math.max(0, n[0] * HV[0] + n[1] * HV[1] + n[2] * HV[2]), sp = Math.pow(nh, 90) * 0.95 + Math.pow(nh, 12) * 0.12;
+        const fres = 0.04 + 0.96 * Math.pow(1 - Math.max(0, -n[2]), 5), sky = 0.1 * Math.max(0, n[1]);
+        const body = mixRgb(vc.rgb, vc.deep, 0.6 * deep), k = amb + 0.62 * diff, w = Math.min(1, sp + fres * 0.3 + sky);
+        const c3 = body.map((v) => Math.round(Math.min(255, v * k + (255 - v * k) * w)));
+        const a = vc.alpha + 0.12 * deep + 0.36 * fres + 0.4 * sp;
+        g.fillStyle = 'rgba(' + c3.join(',') + ',' + Math.min(0.94, a).toFixed(3) + ')';
+        g.fill();
+        if (q.inR) {
+          jelly++;
+          // fine lines of the grid on the measured surfaces, so that their shape can be followed
+          if (!q.piece && mesh) { g.lineWidth = 0.6; g.strokeStyle = vc.mesh; g.stroke(); }
+        }
+        continue;
+      }
+      const base = single ? viridis(q.t) : q.s.rgb;
+      const k = single ? 0.5 + 0.5 * q.shade : 0.42 + 0.58 * q.shade;
+      let rgb = base.map((v) => v * k);
+      if (fadeTo) { rgb = mixRgb(rgb, fadeTo, VOL_FADE); faded++; }
+      const col = 'rgb(' + Math.round(rgb[0]) + ',' + Math.round(rgb[1]) + ',' + Math.round(rgb[2]) + ')';
       g.fillStyle = col; g.fill();
-      g.lineWidth = 0.7; g.strokeStyle = mesh ? meshColor : col; g.stroke();
+      g.lineWidth = 0.7; g.strokeStyle = mesh && !q.piece ? meshColor : col; g.stroke();
     }
+    if (vc) {
+      // the edges of the solid once more, dashed and over everything: the hidden ones show through
+      // (as in a technical drawing; the ones in sight are already drawn solid)
+      g.save(); g.setLineDash([4, 4]); g.strokeStyle = vc.hidden; g.lineWidth = 1.2; g.beginPath();
+      for (const q of cells) if (q.vol === 'line') { g.moveTo(q.poly[0].x, q.poly[0].y); g.lineTo(q.poly[1].x, q.poly[1].y); }
+      g.stroke(); g.restore();
+    }
+    // the color of the solid in the box, and what was drawn (for the tests)
+    const lg = Q3.volUI && Q3.volUI.legend;
+    if (lg) { lg.hidden = !vc; if (vc) { lg.firstChild.style.background = vc.swatch; lg.firstChild.style.borderColor = vc.line; } }
+    if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: vsol.walls, floor: vsol.floor, lines: vsol.lines, jelly, faded });
+    else delete c.dataset.vol;
     // axes on the front edges of the floor and the leftmost vertical edge, with labels
     const un = -ub, vn = -vb;
     let ze = null;
@@ -5652,6 +6006,8 @@
         const row = (kind, name, body) => el('div', { class: 'item' }, el('div', { class: 'row1' },
           el('div', { class: 't' }, el('span', { class: 'mono', text: kind === 'function' ? name + '()' : name }), el('div', { class: 'n', text: body })),
           el('div', { class: 'acts' },
+            // a function of x (and y): its graph, 2D or 3D (1.8.4)
+            kind === 'function' && hasVar(body, 'x') && !hasVar(body, 'z') ? el('button', { class: 'btn', text: tr('Graph', 'グラフ'), onclick: () => graphOf(name + (hasVar(body, 'y') ? '(x, y)' : '(x)')) }) : '',
             el('button', { class: 'btn', text: tr('Insert', '挿入'), onclick: () => useItem(kind === 'function' ? name + '()' : name, kind === 'function' ? 1 : 0) }),
             el('button', { class: 'btn danger', text: tr('Delete', '削除'), onclick: async () => {
               if (!(await confirmSheet(tr('Delete "' + name + '"?', '「' + name + '」を削除しますか？'), tr('Delete', '削除する')))) return;

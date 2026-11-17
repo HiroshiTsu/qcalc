@@ -69,6 +69,66 @@ Android 7.0 or later on a 64-bit ARM (arm64) device.
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
 each user the notes in their language: put both blocks into the field.
 
+1.8.4 (when 1.8.3 was already released):
+
+<en-US>
+• 3D graph: while "Volume and surface" is open, the solid that is measured looks filled with a pale liquid, lit like a real surface
+• 📈 draws more of what you type: expressions in x and y (3D), equations such as y = 2x + 1 or x² + y² = 4, and matrices of numbers (as points). The history menu and saved functions can draw graphs too
+</en-US>
+<ja-JP>
+・3D グラフ：「体積・表面積」を開いている間、計測している立体を、現実の面のように光の当たった薄い色の液体で満たしたように示します
+・📈 で描けるものを増やしました：x と y の式（3D）、y = 2x + 1 や x² + y² = 4 のような方程式、数の行列（点）。履歴のメニューや保存した関数からもグラフにできます
+</ja-JP>
+
+1.8.4, when 1.8.0, 1.8.1 or 1.8.2 was the last release (the changes of 1.8.1 to 1.8.4):
+
+<en-US>
+• 3D graph: "Volume and surface" has no more buttons. Both values appear by themselves and become final much sooner, and the solid that is measured looks filled with a pale liquid
+• 📈 draws expressions in x and y (3D), equations and matrices of numbers; the history menu and saved functions can draw graphs too
+• Fixed: the pictures of "Sphere" and "Doughnut" looked torn; a round sample (1:1) lost its shape when drawn again with another grid or range
+</en-US>
+<ja-JP>
+・3D グラフ：「体積・表面積」のボタンをなくし、2 つの値はひとりでに出て早く確定します。計測している立体は、薄い色の液体で満たしたように示します
+・📈 で x と y の式（3D）、方程式、数の行列を描けます。履歴のメニューや保存した関数からもグラフにできます
+・修正：「球」「ドーナツ」の絵が裂けて見えていた不具合、丸く描いたサンプル（1:1）を細かさや範囲を変えて描き直すと形がくずれていた不具合
+</ja-JP>
+
+1.8.4, when 1.7.0 or 1.7.1 was the last release (the changes of 1.8.0 to 1.8.4):
+
+<en-US>
+• 3D graph: "Volume and surface" measures the surface you have drawn, at once, with no button, and the solid looks filled with a pale liquid
+• New: samples for 2D and 3D graphs. Tap a picture to draw it
+• 📈 draws expressions in x and y (3D), equations and matrices; the history and saved functions can draw graphs too
+• Forms: Undo and Redo, boxes kept and checked, paste a table from a spreadsheet into a matrix
+• A note when input is read differently than meant (1,000 + 500)
+</en-US>
+<ja-JP>
+・3D グラフ：「体積・表面積」が、いま描いている曲面をボタンなしですぐに計算し、立体を薄い色の液体で満たしたように示します
+・新機能：2D・3D グラフのサンプル。絵をタップするだけで描けます
+・📈 で x と y の式（3D）、方程式、行列を描けます。履歴や保存した関数からもグラフにできます
+・入力フォーム：「元に戻す」「やり直す」、内容の保存と確認、表計算ソフトの表を行列に貼り付け
+・意図と違って読まれる入力（1,000 + 500 など）に注意を表示
+</ja-JP>
+
+1.8.4, when the last release was 1.6.0 (the changes of 1.7.0 to 1.8.4):
+
+<en-US>
+• New: Shapes in the menu: area, lengths, volume of 15 shapes
+• New: samples for 2D and 3D graphs; tap a picture to draw it
+• Graphs: the area (2D) and the volume and surface (3D) of what you drew appear at once; the measured solid looks like a pale liquid
+• 📈 draws expressions in x and y, equations and matrices, also from the history and saved functions
+• Forms: Undo and Redo, boxes kept and checked, paste a table into a matrix
+• A note when input is read differently than meant (1,000 + 500)
+</en-US>
+<ja-JP>
+・新機能：メニューの「図形」。大きさを入れるだけで、15 の図形の面積・長さ・体積を計算
+・新機能：2D・3D グラフのサンプル。絵をタップするだけで描けます
+・グラフ：描いているものの面積（2D）、体積・表面積（3D）をすぐに表示。計測している立体は薄い色の液体で満たしたように示します
+・📈 で x と y の式、方程式、行列を描けます。履歴や保存した関数からも同じです
+・入力フォーム：「元に戻す」「やり直す」、内容の保存と確認、表を行列に貼り付け
+・意図と違って読まれる入力（1,000 + 500 など）に注意を表示
+</ja-JP>
+
 1.8.3 (when 1.8.2 was already released):
 
 <en-US>
