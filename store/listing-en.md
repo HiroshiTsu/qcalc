@@ -69,6 +69,30 @@ Android 7.0 or later on a 64-bit ARM (arm64) device.
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
 each user the notes in their language: put both blocks into the field.
 
+1.8.3 (when 1.8.2 was already released):
+
+<en-US>
+• Fixed: the pictures of the samples "Sphere" and "Doughnut" looked torn in the middle
+• Fixed: a sample drawn round (1:1) lost its shape when it was drawn again with another grid or range
+</en-US>
+<ja-JP>
+・修正：サンプル「球」「ドーナツ」の絵が、真ん中で裂けて見えていた不具合
+・修正：丸く描いたサンプル（1:1）を、細かさや範囲を変えて描き直すと、形がくずれていた不具合
+</ja-JP>
+
+1.8.3, when 1.8.0 or 1.8.1 was the last release (the changes of 1.8.1 to 1.8.3):
+
+<en-US>
+• 3D graph: no more "Volume" and "Surface area" buttons in "Volume and surface". Both values appear by themselves, become final much sooner, and appear at once when you draw the same surface again
+• Fixed: the pictures of "Sphere" and "Doughnut" looked torn; a round sample (1:1) lost its shape when drawn again with another grid or range; the mark on a sample stayed after an example shape
+</en-US>
+<ja-JP>
+・3D グラフ：「体積・表面積」の中の「体積」「表面積」のボタンをなくしました。2 つの値はひとりでに出て、早く確定し、同じ曲面を描き直したときはすぐに出ます
+・修正：「球」「ドーナツ」の絵が裂けて見えていた不具合、丸く描いたサンプル（1:1）を細かさや範囲を変えて描き直すと形がくずれていた不具合、図形の例のあとにサンプルの印が残っていた不具合
+</ja-JP>
+
+1.8.3, when 1.7.0 or 1.7.1 was the last release: the same notes as for 1.8.1 below ("when 1.7.0 or 1.7.1 was the last release"). When the last release was 1.6.0: the same notes as for 1.8.0 below ("when the last release was 1.6.0").
+
 1.8.2 (when 1.8.1 was already released):
 
 <en-US>

@@ -3409,7 +3409,12 @@
         store.set('qalc.plot.exprs', ta.value); store.set('qalc.plot.min', xmin.value); store.set('qalc.plot.max', xmax.value);
         document.activeElement && document.activeElement.blur();
         // points and marks belong to the graph they were made for (a matrix, a form), not to one drawn by hand
-        if (!P.keep) { P.points = null; P.marks = []; P.pending = null; P.guides = null; P.equal = store.get('qalc.plot.equal', false) === true; if (P.samples) P.samples.clearChoice(); }
+        if (!P.keep) {
+          P.points = null; P.marks = []; P.pending = null; P.guides = null;
+          // the same scale of a sample (a circle) and the marked sample stay while the same functions
+          // are drawn again with another range; other functions drop them (1.8.3)
+          if (plotExprs(ta.value, 6).join('\n') !== (P.exprs || []).join('\n')) { P.equal = store.get('qalc.plot.equal', false) === true; if (P.samples) P.samples.clearChoice(); }
+        }
         P.keep = false;
         P.exprs = plotExprs(ta.value, 6);
         P.view = null;
@@ -4787,22 +4792,44 @@
     const EH = Math.hypot(EX, EY);
     const sc = Math.min((W - 4) / (2 * EH), (H - 4) / (2 * (EZ * Math.abs(ce) + EH * Math.abs(se))));
     const proj = (u, v, w) => { const xr = u * ca - v * sa, yr = u * sa + v * ca; return [W / 2 + xr * sc, H / 2 - (w * ce + yr * se) * sc, yr * ce - w * se]; };
+    const X = (i) => x0 + (x1 - x0) * i / (n - 1), Y = (j) => y0 + (y1 - y0) * j / (n - 1);
+    const at = (x, y, v) => proj(((x - x0) / (x1 - x0) * 2 - 1) * EX, ((y - y0) / (y1 - y0) * 2 - 1) * EY, ((v - z0) / (z1 - z0) * 2 - 1) * EZ);
     const cells = [];
     surf.forEach((z, si) => {
-      const pt = z.map((v, k) => (v === v ? proj(((k % n) / (n - 1) * 2 - 1) * EX, (Math.floor(k / n) / (n - 1) * 2 - 1) * EY, ((v - z0) / (z1 - z0) * 2 - 1) * EZ) : null));
+      const f = d.f[si];
+      const pt = z.map((v, k) => (v === v ? at(X(k % n), Y(Math.floor(k / n)), v) : null));
+      // the edge of the real values (a sphere, 1.8.3): on a cell side from a corner with a value to one
+      // without, the last point with a value, found by halving (as refineRims does for the 3D graph),
+      // so that the two halves of a sphere meet instead of leaving a torn band between them
+      const rim = (ka, kb) => {
+        const xa = X(ka % n), ya = Y(Math.floor(ka / n)), xb = X(kb % n), yb = Y(Math.floor(kb / n));
+        let lo = 0, hi = 1;
+        for (let it = 0; it < 20; it++) { const m = (lo + hi) / 2; if (isFinite(f(xa + (xb - xa) * m, ya + (yb - ya) * m))) lo = m; else hi = m; }
+        const x = xa + (xb - xa) * lo, y = ya + (yb - ya) * lo, v = f(x, y);
+        return { p: at(x, y, v), v };
+      };
       for (let j = 0; j + 1 < n; j++) for (let i = 0; i + 1 < n; i++) {
-        const k = j * n + i, a = pt[k], b = pt[k + 1], e = pt[k + n + 1], f = pt[k + n];
-        if (!a || !b || !e || !f) continue;
-        cells.push([(a[2] + b[2] + e[2] + f[2]) / 4, a, b, e, f, ((z[k] + z[k + 1] + z[k + n + 1] + z[k + n]) / 4 - z0) / (z1 - z0), si]);
+        const ks = [j * n + i, j * n + i + 1, (j + 1) * n + i + 1, (j + 1) * n + i];
+        const real = ks.filter((k) => pt[k]).length;
+        if (!real) continue;
+        const poly = [], vs = [];
+        ks.forEach((k, m) => {
+          const k2 = ks[(m + 1) % 4];
+          if (pt[k]) { poly.push(pt[k]); vs.push(z[k]); }
+          if (!pt[k] !== !pt[k2] && real < 4) { const r = pt[k] ? rim(k, k2) : rim(k2, k); poly.push(r.p); vs.push(r.v); }
+        });
+        if (poly.length < 3) continue;
+        const t = Math.max(0, Math.min(1, (vs.reduce((s, v) => s + v, 0) / vs.length - z0) / (z1 - z0)));
+        cells.push({ d: poly.reduce((s, p) => s + p[2], 0) / poly.length, poly, t, si });
       }
     });
-    cells.sort((p, q) => q[0] - p[0]);
+    cells.sort((p, q) => q.d - p.d);
     const many = d.f.length > 1 && !d.one;
     g.lineWidth = 0.5; g.lineJoin = 'round';
-    for (const [, a, b, e, f, t, si] of cells) {
+    for (const { poly, t, si } of cells) {
       const col = (many ? hexRgb(COLORS[si % COLORS.length]).map((v) => v * (0.6 + 0.4 * t)) : viridis(t)).map(Math.round).join(',');
       g.fillStyle = 'rgb(' + col + ')'; g.strokeStyle = 'rgba(0,0,0,0.16)';
-      g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(e[0], e[1]); g.lineTo(f[0], f[1]); g.closePath(); g.fill(); g.stroke();
+      g.beginPath(); poly.forEach((p, m) => { if (m) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }); g.closePath(); g.fill(); g.stroke();
     }
   }
   // the row of samples; run(sample) draws one
@@ -4881,7 +4908,12 @@
       Q3.res = Number(res.value) || 41;
     };
     go.addEventListener('click', () => {
-      if (!Q3.keep) { Q3.points = null; Q3.pending = null; Q3.equalOnce = false; if (Q3.samples) Q3.samples.clearChoice(); } // they belong to the graph they were made for
+      if (!Q3.keep) {
+        Q3.points = null; Q3.pending = null; // they belong to the graph they were made for
+        // the round shape of a sample or a sphere (1:1) and the marked sample stay while the same
+        // surfaces are drawn again with another grid or range; other surfaces drop them (1.8.3)
+        if (plotExprs(ta.value, 4).join('\n') !== Q3.exprs.join('\n')) { Q3.equalOnce = false; if (Q3.samples) Q3.samples.clearChoice(); }
+      }
       Q3.keep = false;
       store.set('qalc.plot3d.exprs', ta.value); store.set('qalc.plot3d.res', res.value);
       store.set('qalc.plot3d.xmin', xmin.value); store.set('qalc.plot3d.xmax', xmax.value);
@@ -5052,7 +5084,8 @@
       jb.px = xs[jb.p % nx]; jb.py = ys[(jb.p / nx) | 0]; jb.qx = xs[jb.q % nx]; jb.qy = ys[(jb.q / nx) | 0];
       jb.z = series[jb.si].z[jb.p];
     }
-    const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect' });
+    // (plain decimal numbers whatever the settings of the results are: base 16 or 2 decimals, 1.8.3)
+    const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect', base: 10, notation: 'auto', max_decimals: -1 });
     const B = 300;
     for (let step = 0; step < 12; step++) {
       for (let b0 = 0; b0 < jobs.length; b0 += B) {
