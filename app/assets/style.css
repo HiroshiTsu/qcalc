@@ -503,7 +503,7 @@ input, select, textarea { font: inherit; color: inherit; }
 /* the color of the solid that "Volume and surface" measures, as drawn in the 3D graph (1.8.4) */
 .vol-legend { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); margin: 6px 0 2px; line-height: 1.4; }
 .vol-legend[hidden] { display: none; }
-.vol-legend i { flex: none; width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid transparent; }
+.vol-legend i { flex: none; width: 16px; height: 16px; border-radius: 5px; border: 2px solid transparent; }
 .section-title { font-weight: 700; font-size: 14px; margin: 18px 2px 6px; color: var(--muted); }
 .setting {
   display: flex; align-items: center; gap: 10px;

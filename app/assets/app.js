@@ -3004,7 +3004,7 @@
     tr('The solve key opens a form for an equation (left side = right side); "+ Add an equation" makes a system of equations.', 'solve キーで方程式を入力する画面（左辺 = 右辺）が開きます。「＋ 式を追加」で連立方程式になります。'),
     tr('📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.', '入力欄の上の 📈 で、入力した式のグラフを描けます。x の式は 2D、x と y の式は 3D、y = 2x + 1、x² + y² = 4、z = x y のような方程式、2 列か 3 列の数の行列（点）も描けます。履歴の行を長押ししても同じことができます。'),
     tr('In the graph, "Area" finds the area between a function and the x axis or between two functions (the crossing points are offered as ranges), and "Length" the length of a curve or the perimeter between two functions. "Example" draws a circle or an ellipse.', 'グラフの「面積を求める」で、関数と x 軸の間や 2 つの関数の間の面積（交点の間の範囲を選べます）、「長さ・周」で曲線の長さや 2 つの関数に囲まれた部分の周の長さが求められます。「図形の例」で円や楕円を描けます。'),
-    tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks filled with a pale liquid in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで薄い色の液体に満たされたように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
+    tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks like a pale gelatin in a skin of a deeper shade in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで濃い色の皮に包まれた薄い色のゼラチンのように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
     tr('1:1 in the graph makes one unit as long on every axis, so a circle or a sphere looks round. In 3D it turns on by itself when the ranges are about the same.', 'グラフの「1:1」で、どの軸も 1 目盛りの長さがそろい、円や球が丸く見えます。3D では範囲の長さが近いときに自動でオンになります。'),
     tr('"Calculus" under a 2D graph draws f′ and ∫f, the tangent at x = a, and marks zeros and extrema; in 3D, "Partial derivatives" draws ∂f/∂x and ∂f/∂y.', '2D グラフの「微分・接線・極値」で f′ と ∫f、x = a での接線を描き、零点と極値に印を付けます。3D の「偏微分」では ∂f/∂x と ∂f/∂y を描きます。'),
     tr('📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.', '入力フォームの 📈 で、その計算に合うグラフを描きます。微分なら接線、定積分なら面積、連立方程式なら直線や平面と解の点、行列なら各行の点です。'),
@@ -4663,7 +4663,7 @@
       if (!quiet) volumeAuto();
     };
     // the color of the solid that is measured, as it is shown in the graph (1.8.4; draw3d sets it)
-    const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('In the graph, the solid that is measured looks like a clear, glossy film filled with a pale liquid of this color', 'グラフでは、計測している立体を、つやのある透明な膜にこの色の薄い液体を満たしたように示しています') }));
+    const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('In the graph, the solid that is measured looks like a pale gelatin of this color in a clear, glossy skin of a deeper shade', 'グラフでは、計測している立体を、この色の薄いゼラチンを、濃い色のつやのある透明な皮で包んだように示しています') }));
     const box = el('div', { class: 'area-box' },
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk), rangeText, diskRow),
@@ -5001,7 +5001,8 @@
       g.stroke();
     });
   }
-  // a small surface: the cells of a coarse grid from back to front, seen as the 3D graph is at first
+  // a small surface: the cells of a coarse grid, lit and laid over the pixels as in the 3D graph
+  // (surfacePaint, 1.9.2), seen as the 3D graph is at first
   function thumb3d(c, d) {
     const g = thumbContext(c), W = THUMB_W, H = THUMB_H, n = d.n || 19;
     const ca = Math.cos(VIEW3D.az), sa = Math.sin(VIEW3D.az), ce = Math.cos(VIEW3D.el), se = Math.sin(VIEW3D.el);
@@ -5014,46 +5015,58 @@
     if (d.eq) { const M = Math.max(x1 - x0, y1 - y0, z1 - z0); EX = (x1 - x0) / M; EY = (y1 - y0) / M; EZ = (z1 - z0) / M; }
     const EH = Math.hypot(EX, EY);
     const sc = Math.min((W - 4) / (2 * EH), (H - 4) / (2 * (EZ * Math.abs(ce) + EH * Math.abs(se))));
-    const proj = (u, v, w) => { const xr = u * ca - v * sa, yr = u * sa + v * ca; return [W / 2 + xr * sc, H / 2 - (w * ce + yr * se) * sc, yr * ce - w * se]; };
     const X = (i) => x0 + (x1 - x0) * i / (n - 1), Y = (j) => y0 + (y1 - y0) * j / (n - 1);
-    const at = (x, y, v) => proj(((x - x0) / (x1 - x0) * 2 - 1) * EX, ((y - y0) / (y1 - y0) * 2 - 1) * EY, ((v - z0) / (z1 - z0) * 2 - 1) * EZ);
-    const cells = [];
+    const Uu = (x) => ((x - x0) / (x1 - x0) * 2 - 1) * EX, Vv = (y) => ((y - y0) / (y1 - y0) * 2 - 1) * EY, Ww = (v) => ((v - z0) / (z1 - z0) * 2 - 1) * EZ;
+    // a corner of a triangle (as for the 3D graph, 1.9.2): screen x, y, depth, the normal in the camera's
+    // axes, the color and the grid coordinates
+    const many = d.f.length > 1 && !d.one;
+    const vert = (x, y, v, nu, nv, nw, si) => {
+      const u = Uu(x), vv = Vv(y), w = Ww(v), xr = u * ca - vv * sa, yr = u * sa + vv * ca;
+      const t = Math.max(0, Math.min(1, (v - z0) / (z1 - z0)));
+      const col = many ? hexRgb(COLORS[si % COLORS.length]).map((c3) => c3 * (0.6 + 0.4 * t)) : viridis(t);
+      return [W / 2 + xr * sc, H / 2 - (w * ce + yr * se) * sc, yr * ce - w * se,
+        nu * ca - nv * sa, nu * sa * se + nv * ca * se + nw * ce, nu * sa * ce + nv * ca * ce - nw * se,
+        col[0], col[1], col[2], (x - x0) / (x1 - x0) * (n - 1), (y - y0) / (y1 - y0) * (n - 1)];
+    };
+    const tb = triBuf(null);
     surf.forEach((z, si) => {
       const f = d.f[si];
-      const pt = z.map((v, k) => (v === v ? at(X(k % n), Y(Math.floor(k / n)), v) : null));
+      const ok = (k) => z[k] === z[k];
+      // the normal at a grid point, from the slopes to its neighbours (in the box's axes)
+      const du = 2 * EX / (n - 1), dv = 2 * EY / (n - 1);
+      const nrm = (k) => {
+        const i = k % n, j = (k / n) | 0, il = i > 0 && ok(k - 1) ? i - 1 : i, ir = i < n - 1 && ok(k + 1) ? i + 1 : i;
+        const jl = j > 0 && ok(k - n) ? j - 1 : j, jr = j < n - 1 && ok(k + n) ? j + 1 : j;
+        const gu = ir > il ? (Ww(z[j * n + ir]) - Ww(z[j * n + il])) / ((ir - il) * du) : 0, gv = jr > jl ? (Ww(z[jr * n + i]) - Ww(z[jl * n + i])) / ((jr - jl) * dv) : 0;
+        return [-gu, -gv, 1];
+      };
+      const vk = (k) => { const nn = nrm(k); return vert(X(k % n), Y((k / n) | 0), z[k], nn[0], nn[1], nn[2], si); };
       // the edge of the real values (a sphere, 1.8.3): on a cell side from a corner with a value to one
       // without, the last point with a value, found by halving (as refineRims does for the 3D graph),
-      // so that the two halves of a sphere meet instead of leaving a torn band between them
+      // so that the two halves of a sphere meet instead of leaving a torn band between them; there the
+      // surface stands upright (its normal is level)
       const rim = (ka, kb) => {
         const xa = X(ka % n), ya = Y(Math.floor(ka / n)), xb = X(kb % n), yb = Y(Math.floor(kb / n));
         let lo = 0, hi = 1;
         for (let it = 0; it < 20; it++) { const m = (lo + hi) / 2; if (isFinite(f(xa + (xb - xa) * m, ya + (yb - ya) * m))) lo = m; else hi = m; }
-        const x = xa + (xb - xa) * lo, y = ya + (yb - ya) * lo, v = f(x, y);
-        return { p: at(x, y, v), v };
+        const x = xa + (xb - xa) * lo, y = ya + (yb - ya) * lo, nn = nrm(ka), h = Math.hypot(nn[0], nn[1]);
+        return h > 0.05 ? vert(x, y, f(x, y), nn[0] / h, nn[1] / h, 0, si) : vert(x, y, f(x, y), Uu(xb) - Uu(xa), Vv(yb) - Vv(ya), 0, si);
       };
       for (let j = 0; j + 1 < n; j++) for (let i = 0; i + 1 < n; i++) {
         const ks = [j * n + i, j * n + i + 1, (j + 1) * n + i + 1, (j + 1) * n + i];
-        const real = ks.filter((k) => pt[k]).length;
+        const real = ks.filter(ok).length;
         if (!real) continue;
-        const poly = [], vs = [];
+        const poly = [];
         ks.forEach((k, m) => {
           const k2 = ks[(m + 1) % 4];
-          if (pt[k]) { poly.push(pt[k]); vs.push(z[k]); }
-          if (!pt[k] !== !pt[k2] && real < 4) { const r = pt[k] ? rim(k, k2) : rim(k2, k); poly.push(r.p); vs.push(r.v); }
+          if (ok(k)) poly.push(vk(k));
+          if (ok(k) !== ok(k2) && real < 4) poly.push(ok(k) ? rim(k, k2) : rim(k2, k));
         });
-        if (poly.length < 3) continue;
-        const t = Math.max(0, Math.min(1, (vs.reduce((s, v) => s + v, 0) / vs.length - z0) / (z1 - z0)));
-        cells.push({ d: poly.reduce((s, p) => s + p[2], 0) / poly.length, poly, t, si });
+        for (let m = 1; m + 1 < poly.length; m++) tb.add(poly[0], poly[m], poly[m + 1]);
       }
     });
-    cells.sort((p, q) => q.d - p.d);
-    const many = d.f.length > 1 && !d.one;
-    g.lineWidth = 0.5; g.lineJoin = 'round';
-    for (const { poly, t, si } of cells) {
-      const col = (many ? hexRgb(COLORS[si % COLORS.length]).map((v) => v * (0.6 + 0.4 * t)) : viridis(t)).map(Math.round).join(',');
-      g.fillStyle = 'rgb(' + col + ')'; g.strokeStyle = 'rgba(0,0,0,0.16)';
-      g.beginPath(); poly.forEach((p, m) => { if (m) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }); g.closePath(); g.fill(); g.stroke();
-    }
+    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    surfacePaint(g, tb, { W, H, q: dpr, dark: document.documentElement.classList.contains('dark'), mesh: [0, 0, 0, 0.16, 0.5], fade: null, cache: null });
   }
   // the row of samples; run(sample) draws one
   function buildSamples(defs, is3d, run) {
@@ -5089,8 +5102,9 @@
   }
 
   // ----------------------------------------------------------- 3D plot
-  // z = f(x, y). The engine computes the values on a grid (plot3d); the page draws the surface
-  // back to front (painter's algorithm) on a 2D canvas, so no WebGL is needed.
+  // z = f(x, y). The engine computes the values on a grid (plot3d); the page lays the surfaces over
+  // the pixels itself with a depth buffer (surfacePaint, 1.9.2; until 1.9.1 the cells were painted
+  // from back to front) on a 2D canvas, so no WebGL is needed.
   // Coordinates: the box is u, v in [-1, 1] (x, y) and w in [-ZS, ZS] (z).
   const ZS = 0.72;
   const VIEW3D = { az: -0.62, el: 0.52, zoom: 1 };
@@ -5359,7 +5373,7 @@
   // Its color is chosen for each graph: the hue farthest from the colors of the surfaces in the
   // picture (the hues of the cells, weighted by how colorful they are; the measured surfaces count
   // twice), so that it stands out from them. Among equally good hues, the one farthest from every
-  // color (the middle of the widest gap). The liquid is a pale shade of it (liquidPaint).
+  // color (the middle of the widest gap). The gelatin is a pale shade of it, and its skin a deep one (liquidPaint).
   function volumeColor(D, cells, single, dark, vf, vg) {
     const key = [dark, single, D.series.indexOf(vf), vg ? D.series.indexOf(vg) : -1].join();
     if (Q3.volColor && Q3.volColor.D === D && Q3.volColor.key === key) return Q3.volColor;
@@ -5386,19 +5400,234 @@
       }
       if (p < bestP - total * 1e-6 || (p <= bestP + total * 1e-6 && gap > bestGap)) { bestP = p; best = h; bestGap = gap; }
     }
-    // the liquid in a pale (pastel) shade of the hue (the box in the panel); a deeper one for the edge of the box and the shadow
-    const rgb = hslRgb(best, 0.7, dark ? 0.74 : 0.72), cs = rgb.join(','), ln = hslRgb(best, 0.8, dark ? 0.68 : 0.45).join(','), deep = hslRgb(best, 0.75, dark ? 0.58 : 0.52);
+    // the gelatin in a pale (pastel) shade of the hue (the box in the panel); a deep one for the edge of
+    // the box (the skin, 1.9.2) and a deeper one for the shadow
+    const rgb = hslRgb(best, 0.7, dark ? 0.74 : 0.72), cs = rgb.join(','), ln = hslRgb(best, 0.75, dark ? 0.5 : 0.3).join(','), deep = hslRgb(best, 0.75, dark ? 0.58 : 0.52);
     return (Q3.volColor = { D, key, hue: best, rgb, css: 'rgb(' + cs + ')', swatch: 'rgba(' + cs + ',0.5)', deep, line: 'rgba(' + ln + ',0.9)' });
   }
-  // ---- the measured solid as a real liquid (1.9.1)
-  // While "Volume and surface" is open, the solid that is measured looks like a pale liquid held by a
-  // clear, glossy film: its top (the measured part of the surface), its side walls and its floor. It
-  // is traced for every pixel instead of being painted face by face: a closed mesh of the solid is laid
-  // over the pixels with the depth of every face it crosses, so that the thickness of liquid along
-  // each line of sight is known, and the other surfaces in front of it hide it. As in a real liquid,
-  // the color deepens with the thickness (the light is absorbed on its way, Beer–Lambert) and a little
-  // light is scattered inside; the film mirrors a bright room (a sky above, a floor below, a large soft
-  // lamp and a sharp glint), more at a slant (Fresnel); and what lies behind is seen bent (refraction).
+  // ---- the surfaces as real, smooth surfaces (1.9.2)
+  // The surfaces are laid over the pixels with a depth buffer instead of being painted cell by cell
+  // from back to front, so that each pixel shows what is in front: where two surfaces meet or cross
+  // (the two halves of a sphere at its rim, the inside of a doughnut) there are no saw teeth from
+  // cells sorted as a whole. The normal is taken at every point of the grid (from the slopes) and
+  // blended across each cell, so the light changes smoothly instead of in rings of flat cells, and
+  // there are no seams between the cells. The surface is lit like a smooth, glossy object: light from
+  // the sky above and less from the floor, a lamp at the upper left with a highlight, and a little of
+  // the bright surroundings mirrored at a slant. The lines of the grid (a coarse grid) are drawn in
+  // the same pass, so the ones that are hidden stay hidden. The edges are smoothed.
+  // The triangles: 11 numbers for each corner, x and y (CSS pixels), depth (larger is farther), the
+  // normal in the camera's axes (x right, y up, z away from the eye; any length), the color (r, g, b)
+  // and the grid coordinates gi and gj (for the lines of the grid; NaN: no lines).
+  function triBuf(holder) {
+    let a = holder && holder.triBuf;
+    if (!a) { a = { f: new Float32Array(33 * 4096), n: 0 }; if (holder) holder.triBuf = a; }
+    a.n = 0;
+    a.add = function (p, q, r) {
+      if ((this.n + 1) * 33 > this.f.length) { const b = new Float32Array(this.f.length * 2); b.set(this.f); this.f = b; }
+      this.f.set(p, this.n * 33); this.f.set(q, this.n * 33 + 11); this.f.set(r, this.n * 33 + 22); this.n++;
+    };
+    return a;
+  }
+  // tb: the triangles (triBuf); o: W and H of the canvas (CSS pixels), q (pixels of the layer for each
+  // CSS pixel), dark, mesh (the color of the grid lines [r, g, b, alpha] and their width, or null), fade
+  // (a color the surfaces fade halfway to, or null), cache (an object that keeps the buffers)
+  function surfacePaint(g, tb, o) {
+    const T = tb.f, nt = tb.n, q = o.q, none = { shown: 0, q };
+    if (!nt) return none;
+    let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity;
+    for (let v = 0; v < nt * 3; v++) {
+      const x = T[v * 11], y = T[v * 11 + 1];
+      if (x < mnx) mnx = x; if (x > mxx) mxx = x; if (y < mny) mny = y; if (y > mxy) mxy = y;
+    }
+    // (the layer starts on a whole pixel of itself, so that with q equal to the device's pixels it
+    // lies exactly on them)
+    const lx0 = Math.max(0, Math.floor(Math.max(0, mnx) * q) - 2), ly0 = Math.max(0, Math.floor(Math.max(0, mny) * q) - 2);
+    const lx1 = Math.min(Math.ceil(o.W * q), Math.ceil(mxx * q) + 2), ly1 = Math.min(Math.ceil(o.H * q), Math.ceil(mxy * q) + 2);
+    if (!(lx1 > lx0 && ly1 > ly0)) return none;
+    const LW = lx1 - lx0, LH = ly1 - ly0, NP = LW * LH;
+    const C = o.cache || {};
+    if (!C.surfBuf || C.surfBuf.n < NP) C.surfBuf = { n: NP, zb: new Float32Array(NP), id: new Int32Array(NP), b0: new Float32Array(NP), b1: new Float32Array(NP) };
+    const { zb, id, b0, b1 } = C.surfBuf;
+    zb.fill(Infinity, 0, NP); id.fill(-1, 0, NP);
+    // the depth buffer: for each pixel the nearest triangle, and where in it (the weights of two corners)
+    let t = 0, ad = 0, bd = 0, cd = 0;
+    const px = (i, l0, l1, l2) => { const d = l0 * ad + l1 * bd + l2 * cd; if (d < zb[i]) { zb[i] = d; id[i] = t; b0[i] = l0; b1[i] = l1; } };
+    for (t = 0; t < nt; t++) {
+      const k = t * 33;
+      ad = T[k + 2]; bd = T[k + 13]; cd = T[k + 24];
+      rasterTri(T[k] * q - lx0, T[k + 1] * q - ly0, T[k + 11] * q - lx0, T[k + 12] * q - ly0, T[k + 22] * q - lx0, T[k + 23] * q - ly0, LW, LH, px);
+    }
+    // the lines of the grid: how fast gi and gj change across the screen in each triangle (per pixel of
+    // the layer), so that the lines have the same width everywhere and fade at the edges
+    let GI = null;
+    const mesh = o.mesh;
+    if (mesh) {
+      GI = new Float32Array(nt * 2);
+      for (let s = 0; s < nt; s++) {
+        const k = s * 33;
+        const x0 = T[k] * q, y0 = T[k + 1] * q, ex1 = T[k + 11] * q - x0, ey1 = T[k + 12] * q - y0, ex2 = T[k + 22] * q - x0, ey2 = T[k + 23] * q - y0;
+        const det = ex1 * ey2 - ex2 * ey1;
+        if (!(Math.abs(det) > 1e-9)) { GI[2 * s] = GI[2 * s + 1] = 0; continue; }
+        for (let m = 0; m < 2; m++) {
+          const f0 = T[k + 9 + m], f1 = T[k + 20 + m] - f0, f2 = T[k + 31 + m] - f0;
+          const gx = (f1 * ey2 - f2 * ey1) / det, gy = (ex1 * f2 - ex2 * f1) / det;
+          GI[2 * s + m] = Math.hypot(gx, gy);
+        }
+      }
+    }
+    // the light (camera's axes): a lamp at the upper left in front, the eye looking along +z
+    const dark = !!o.dark;
+    let Lx = -0.42, Ly = 0.62, Lz = -0.66;
+    const ll = Math.hypot(Lx, Ly, Lz); Lx /= ll; Ly /= ll; Lz /= ll;
+    let Hx = Lx, Hy = Ly, Hz = Lz - 1;
+    const hl = Math.hypot(Hx, Hy, Hz); Hx /= hl; Hy /= hl; Hz /= hl;
+    const AMB = dark ? 0.3 : 0.34, SKY = 0.08, DIF = dark ? 0.66 : 0.62, KS = dark ? 0.42 : 0.38, SH = 56;
+    // (and a weaker light from the lower right in front, as from a bright floor, so that faces turned
+    // down are not black)
+    let Fx = 0.45, Fy = -0.45, Fz = -0.77;
+    const fl = Math.hypot(Fx, Fy, Fz); Fx /= fl; Fy /= fl; Fz /= fl;
+    const FILL = 0.22;
+    const env = dark ? [150, 165, 190] : [236, 241, 250], ENV = dark ? 0.42 : 0.5;
+    const fade = o.fade, FADE = VOL_FADE;
+    const out = new ImageData(LW, LH), od = out.data;
+    let shown = 0;
+    const halfW = mesh ? mesh[4] * q / 2 : 0;
+    for (let i = 0; i < NP; i++) {
+      const s = id[i];
+      if (s < 0) continue;
+      const l0 = b0[i], l1 = b1[i], l2 = 1 - l0 - l1, k = s * 33;
+      let nx = l0 * T[k + 3] + l1 * T[k + 14] + l2 * T[k + 25];
+      let ny = l0 * T[k + 4] + l1 * T[k + 15] + l2 * T[k + 26];
+      let nz = l0 * T[k + 5] + l1 * T[k + 16] + l2 * T[k + 27];
+      let nl = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+      if (nz > 0) nl = -nl;  // (both sides of a surface: the one turned to the eye)
+      nx /= nl; ny /= nl; nz /= nl;
+      let r = l0 * T[k + 6] + l1 * T[k + 17] + l2 * T[k + 28];
+      let gg = l0 * T[k + 7] + l1 * T[k + 18] + l2 * T[k + 29];
+      let b = l0 * T[k + 8] + l1 * T[k + 19] + l2 * T[k + 30];
+      // diffuse light from the lamp, light from the sky (more on faces that look up), a highlight, and
+      // the surroundings mirrored more at a slant (Fresnel)
+      const dif = nx * Lx + ny * Ly + nz * Lz, nh = nx * Hx + ny * Hy + nz * Hz;
+      const fil = nx * Fx + ny * Fy + nz * Fz;
+      const kd = AMB + SKY * ny + DIF * (dif > 0 ? dif : 0) + FILL * (fil > 0 ? fil : 0);
+      const sp = nh > 0 ? KS * Math.pow(nh, SH) * 255 : 0;
+      const c = -nz, om = 1 - (c > 0 ? c : 0), fr = ENV * (0.04 + 0.96 * om * om * om * om * om);
+      r = (r * kd) * (1 - fr) + env[0] * fr + sp; gg = (gg * kd) * (1 - fr) + env[1] * fr + sp; b = (b * kd) * (1 - fr) + env[2] * fr + sp;
+      // the lines of the grid
+      if (mesh) {
+        const gi = l0 * T[k + 9] + l1 * T[k + 20] + l2 * T[k + 31], gj = l0 * T[k + 10] + l1 * T[k + 21] + l2 * T[k + 32];
+        if (gi === gi) {
+          const di = Math.abs(gi - Math.round(gi)), dj = Math.abs(gj - Math.round(gj));
+          const pi = GI[2 * s] > 1e-6 ? di / GI[2 * s] : 1e9, pj = GI[2 * s + 1] > 1e-6 ? dj / GI[2 * s + 1] : 1e9;
+          const dd = (pi < pj ? pi : pj) - halfW;
+          if (dd < 1) {
+            const a = mesh[3] * (dd <= 0 ? 1 : 1 - dd);
+            r += (mesh[0] - r) * a; gg += (mesh[1] - gg) * a; b += (mesh[2] - b) * a;
+          }
+        }
+      }
+      if (fade) { r += (fade[0] - r) * FADE; gg += (fade[1] - gg) * FADE; b += (fade[2] - b) * FADE; }
+      const o4 = i * 4;
+      od[o4] = r; od[o4 + 1] = gg; od[o4 + 2] = b; od[o4 + 3] = 255;
+      shown++;
+    }
+    // smoothing: a pixel with no surface between two with one (a hair-thin gap where two surfaces meet)
+    // takes their color; a pixel at the edge against the background lets some of it through; where a
+    // surface lies in front of another one, the two colors are blended across the edge
+    const src = new Uint8ClampedArray(od);
+    const NB = [0, 0, 0, 0];
+    for (let y = 1; y < LH - 1; y++) {
+      for (let x = 1; x < LW - 1; x++) {
+        const i = y * LW + x, s = id[i];
+        NB[0] = i - 1; NB[1] = i + 1; NB[2] = i - LW; NB[3] = i + LW;
+        if (s < 0) {
+          if ((id[i - 1] >= 0 && id[i + 1] >= 0) || (id[i - LW] >= 0 && id[i + LW] >= 0)) {
+            let n = 0, r = 0, gg = 0, b = 0;
+            for (let m = 0; m < 4; m++) { const j = NB[m]; if (id[j] >= 0) { r += src[j * 4]; gg += src[j * 4 + 1]; b += src[j * 4 + 2]; n++; } }
+            od[i * 4] = r / n; od[i * 4 + 1] = gg / n; od[i * 4 + 2] = b / n; od[i * 4 + 3] = 255;
+          }
+          continue;
+        }
+        const z = zb[i];
+        // (a far surface seen through a gap one pixel wide between two near ones: the gap takes their color)
+        let cj = -1, ck = -1;
+        if (id[i - 1] >= 0 && id[i + 1] >= 0 && zb[i - 1] < z - 0.04 && zb[i + 1] < z - 0.04) { cj = i - 1; ck = i + 1; }
+        else if (id[i - LW] >= 0 && id[i + LW] >= 0 && zb[i - LW] < z - 0.04 && zb[i + LW] < z - 0.04) { cj = i - LW; ck = i + LW; }
+        if (cj >= 0) {
+          const o4 = i * 4;
+          od[o4] = (src[cj * 4] + src[ck * 4]) / 2; od[o4 + 1] = (src[cj * 4 + 1] + src[ck * 4 + 1]) / 2; od[o4 + 2] = (src[cj * 4 + 2] + src[ck * 4 + 2]) / 2;
+          continue;
+        }
+        let e = 0, n = 0, r = 0, gg = 0, b = 0;
+        for (let m = 0; m < 4; m++) {
+          const j = NB[m];
+          if (id[j] < 0) { e++; continue; }
+          const dz = zb[j] - z;
+          // (an edge in front of another surface, or between two surfaces of different colors)
+          let edge = dz > 0.04 || dz < -0.04;
+          if (!edge && id[j] !== s) { const ka = s * 33 + 6, kb = id[j] * 33 + 6; edge = Math.abs(T[ka] - T[kb]) + Math.abs(T[ka + 1] - T[kb + 1]) + Math.abs(T[ka + 2] - T[kb + 2]) > 120; }
+          if (edge) { r += src[j * 4]; gg += src[j * 4 + 1]; b += src[j * 4 + 2]; n++; }
+        }
+        if (n) {
+          const w = 0.12 * n, o4 = i * 4;
+          od[o4] = src[o4] * (1 - w) + r / n * w; od[o4 + 1] = src[o4 + 1] * (1 - w) + gg / n * w; od[o4 + 2] = src[o4 + 2] * (1 - w) + b / n * w;
+        }
+        if (e) od[i * 4 + 3] = 255 - 56 * e;
+      }
+    }
+    const off = C.surfCanvas || (C.surfCanvas = document.createElement('canvas'));
+    off.width = LW; off.height = LH;
+    off.getContext('2d').putImageData(out, 0, 0);
+    g.save();
+    g.imageSmoothingEnabled = true;
+    g.drawImage(off, lx0 / q, ly0 / q, LW / q, LH / q);
+    g.restore();
+    return { shown, q };
+  }
+  // the normal of a surface at the points of its grid (in the box's axes u, v, w), for the points with
+  // st 1: the slopes from a parabola through the point and its two neighbours, or (where the surface
+  // ends, as a sphere at its rim) through the edge that refineRims found, which keeps the steep slopes
+  // near an edge right; one-sided where there is a neighbour on one side only
+  function gridNormals(s, D, U, V, Wz) {
+    const nx = D.nx, ny = D.ny, n = nx * ny, st = s.proj.st, w = s.proj.pw, xs = D.xs, ys = D.ys, rim = s.rim || {};
+    const N = s.nrm && s.nrm.length === 3 * n ? s.nrm : (s.nrm = new Float32Array(3 * n));
+    // the slope at a point from the points on its two sides (a: before, b: after; null if none)
+    const slope = (p0, w0, a, b) => {
+      if (a && b) {
+        const h1 = p0 - a[0], h2 = b[0] - p0;
+        if (h1 > 1e-9 && h2 > 1e-9) return (-h2 / (h1 * (h1 + h2))) * a[1] + ((h2 - h1) / (h1 * h2)) * w0 + (h1 / (h2 * (h1 + h2))) * b[1];
+      }
+      if (b && b[0] - p0 > 1e-9) return (b[1] - w0) / (b[0] - p0);
+      if (a && p0 - a[0] > 1e-9) return (w0 - a[1]) / (p0 - a[0]);
+      return 0;
+    };
+    const fromRim = (key, along) => { const e = rim[key]; return e && e.z === e.z ? [along(e), Wz(e.z)] : null; };
+    for (let k = 0; k < n; k++) {
+      if (st[k] !== 1) continue;
+      const i = k % nx, j = (k / nx) | 0, u0 = U(xs[i]), v0 = V(ys[j]);
+      const L = i > 0 ? (st[k - 1] === 1 ? [U(xs[i - 1]), w[k - 1]] : fromRim('h' + (k - 1), (e) => U(e.x))) : null;
+      const R = i < nx - 1 ? (st[k + 1] === 1 ? [U(xs[i + 1]), w[k + 1]] : fromRim('h' + k, (e) => U(e.x))) : null;
+      const Dn = j > 0 ? (st[k - nx] === 1 ? [V(ys[j - 1]), w[k - nx]] : fromRim('v' + (k - nx), (e) => V(e.y))) : null;
+      const Up = j < ny - 1 ? (st[k + nx] === 1 ? [V(ys[j + 1]), w[k + nx]] : fromRim('v' + k, (e) => V(e.y))) : null;
+      const du = slope(u0, w[k], L, R), dv = slope(v0, w[k], Dn, Up);
+      const l = Math.sqrt(du * du + dv * dv + 1);
+      N[3 * k] = -du / l; N[3 * k + 1] = -dv / l; N[3 * k + 2] = 1 / l;
+    }
+    return N;
+  }
+
+  // ---- the measured solid as a real liquid (1.9.1), a pale gelatin in a deep-colored skin (1.9.2)
+  // While "Volume and surface" is open, the solid that is measured looks like a pale gelatin held by a
+  // clear, glossy skin of a deeper shade of the same color: its top (the measured part of the
+  // surface), its side walls and its floor. It is traced for every pixel instead of being painted face
+  // by face: a closed mesh of the solid is laid over the pixels with the depth of every face it
+  // crosses, so that the thickness of gelatin along each line of sight is known, and the other
+  // surfaces in front of it hide it. As in a real gelatin, the light is absorbed a little on its way
+  // (Beer–Lambert) and scattered in its pale color, more where it is thicker; the skin is thin and
+  // clear where it is looked at straight and deep in color at a slant, where the line of sight goes
+  // through more of it, so that the outline of the solid shows in the deep color; it mirrors a bright
+  // room (a sky above, a floor below, a large soft lamp and a sharp glint), more at a slant (Fresnel);
+  // and what lies behind is seen bent (refraction).
 
   // The mesh: the cells of the grid inside the region, cut along the circle of a disk and along the
   // edge found for a surface that ends (a sphere, refineRims), each with a face on sheet A (the
@@ -5420,14 +5649,18 @@
       if (okB[k]) wb[k] = vg ? cw(zb) : w0;
       inside[k] = okA[k] && okB[k] && x * x + y * y <= R2 ? 1 : 0;
     }
-    // the normal of a sheet at a grid point, from the slopes to its neighbours
+    // the normal of a sheet at a grid point: the one found for the surface (gridNormals, 1.9.2: a
+    // parabola through the neighbours or the rim) where the point is in the box; otherwise from the
+    // slopes to its neighbours (all of length 1, so that they mix evenly along a face)
     const gridNormal = (w, ok, k) => {
+      const sv = w === wa ? vf : vg, sn = sv && sv.nrm, sst = sv && sv.proj && sv.proj.st;
+      if (sn && sst && sst[k] === 1 && sn.length === 3 * n) return [sn[3 * k], sn[3 * k + 1], sn[3 * k + 2]];
       const i = k % nx, j = (k / nx) | 0;
       const il = i > 0 && ok[k - 1] ? i - 1 : i, ir = i < nx - 1 && ok[k + 1] ? i + 1 : i;
       const jl = j > 0 && ok[k - nx] ? j - 1 : j, jr = j < ny - 1 && ok[k + nx] ? j + 1 : j;
       const du = ir > il ? (w[j * nx + ir] - w[j * nx + il]) / (U(xs[ir]) - U(xs[il])) : 0;
-      const dv = jr > jl ? (w[jr * nx + i] - w[jl * nx + i]) / (V(ys[jr]) - V(ys[jl])) : 0;
-      return [-du, -dv, 1];
+      const dv = jr > jl ? (w[jr * nx + i] - w[jl * nx + i]) / (V(ys[jr]) - V(ys[jl])) : 0, l = Math.sqrt(du * du + dv * dv + 1);
+      return [-du / l, -dv / l, 1 / l];
     };
     const lerp = (a, b, t) => a + (b - a) * t, lerp3 = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
     // the points: x, y, the values on sheets A and B, and their normals
@@ -5601,12 +5834,13 @@
   }
 
   let EXPT = null;
-  // The liquid: laid over the pixels of the part of the canvas it covers (q pixels for each CSS
+  // The gelatin: laid over the pixels of the part of the canvas it covers (q pixels for each CSS
   // pixel), then shaded and put over what is drawn behind it. Along each line of sight, from the eye:
-  // at every face of the film a little light is mirrored (more at a slant) and a little scattered by
-  // the film itself; between a face where it goes in and the next where it comes out, the liquid
-  // absorbs light (its color deepens with the thickness) and scatters a little of its own pale color;
-  // at the end, what is drawn behind, seen bent by the liquid in front of it.
+  // at every face of the skin a little light is mirrored (more at a slant), and the skin shows its own
+  // deep color and lets the rest through in that color (both more at a slant); between a face where
+  // it goes in and the next where it comes out, the gelatin scatters its pale color (more where it is
+  // thick, and what comes through is that much less) and absorbs a little; at the end, what is drawn
+  // behind, seen bent by the gelatin in front of it.
   function liquidPaint(g, c, M, mesh, opaque, vc, dark, q) {
     const { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S } = M;
     const np = mesh.PX.length, none = { shown: 0, odd: 0, q, thick: 0 };
@@ -5641,10 +5875,10 @@
         rasterTri(lx(P[0][0]), ly(P[0][1]), lx(P[m][0]), ly(P[m][1]), lx(P[m + 1][0]), ly(P[m + 1][1]), LW, LH, opx);
       }
     }
-    // the room mirrored by the film: sky above and floor below, a large soft lamp at the upper left (the
+    // the room mirrored by the skin: sky above and floor below, a large soft lamp at the upper left (the
     // light of the graph) with a sharp glint, and a smaller lamp at the right; much brighter than the
     // page, as real lamps are
-    const skyI = dark ? 0.42 : 0.98, groundI = dark ? 0.12 : 0.58, AF = dark ? 0.1 : 0.08;
+    const skyI = dark ? 0.42 : 0.98, groundI = dark ? 0.12 : 0.58;
     const Lx = -0.42, Ly = 0.62, Lz = -0.66, F0 = 0.035, lampI = dark ? 24 : 18;
     const sm = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     // a lamp: a lit rectangle (half width w, half height h, seen from the liquid, with soft edges) in
@@ -5665,12 +5899,12 @@
       return s;
     };
     // The light of a face depends only on its normal in the camera's axes (x right, y up, z away, toward
-    // the eye): it is worked out once for a grid of normals (x and y from −1 to 1) for this view, and
-    // packed: the light it mirrors (16 bits), the share of light that goes through it (8 bits) and how
-    // much light falls on it (8 bits).
-    const NL = q < 1 ? 128 : 256, lutKey = [NL, ce, se, dark].join();
+    // the eye): it is worked out once for a grid of normals (x and y from −1 to 1) for this view: the
+    // light the skin mirrors, the share of the light that goes into it, how much of the skin the line of
+    // sight goes through (1 looked at straight, more at a slant), and how much light falls on it.
+    const NL = q < 1 ? 128 : 256, lutKey = [NL, ce, se, dark, 'skin3'].join();
     if (!Q3.liqLut || Q3.liqLut.key !== lutKey) {
-      const lut = new Uint32Array(NL * NL);
+      const lut = new Float32Array(NL * NL * 4);
       for (let iy = 0; iy < NL; iy++) {
         for (let ix = 0; ix < NL; ix++) {
           let cx = ix / (NL - 1) * 2 - 1, cy = iy / (NL - 1) * 2 - 1, r2 = cx * cx + cy * cy;
@@ -5679,7 +5913,9 @@
           const rx = 2 * cosT * cx, ry = 2 * cosT * cy, rz = 2 * cosT * cz + 1;
           const rl = rx * Lx + ry * Ly + rz * Lz;
           const env = groundI + (skyI - groundI) * sm(-0.3, 0.45, ry * ce - rz * se) + lampI * lampAt(rx, ry, rz) + (rl > 0.99 ? 60 * Math.pow(rl, 1500) : 0);
-          lut[iy * NL + ix] = (Math.min(65535, Math.round(fr * env * 9000)) << 16 | Math.round(255 * (1 - fr) * (1 - AF)) << 8 | Math.round(255 * (0.55 + 0.45 * Math.max(0, cx * Lx + cy * Ly + cz * Lz)))) >>> 0;
+          const o = (iy * NL + ix) * 4;
+          lut[o] = fr * env; lut[o + 1] = 1 - fr; lut[o + 2] = 1 / Math.max(cosT * cosT, 0.006);
+          lut[o + 3] = 0.42 + 0.58 * Math.max(0, cx * Lx + cy * Ly + cz * Lz);
         }
       }
       Q3.liqLut = { key: lutKey, lut };
@@ -5692,7 +5928,7 @@
       let cx = l0 * CN[0] + l1 * CN[3] + l2 * CN[6], cy = l0 * CN[1] + l1 * CN[4] + l2 * CN[7], cz = l0 * CN[2] + l1 * CN[5] + l2 * CN[8];
       const nl = Math.sqrt(cx * cx + cy * cy + cz * cz), sg = cz > 0 ? -1 / nl : 1 / nl;
       cx *= sg; cy *= sg;
-      const pk = lut[((cy + 1) * half + 0.5 | 0) * NL + ((cx + 1) * half + 0.5 | 0)];
+      const pk = ((cy + 1) * half + 0.5 | 0) * NL + ((cx + 1) * half + 0.5 | 0);
       const n0 = cnt[i];
       if (n0 < K) { dep[i * K + n0] = d; shd[i * K + n0] = pk; cnt[i] = n0 + 1; }
       else {
@@ -5716,10 +5952,14 @@
     // what is drawn behind (device pixels), to be seen through the liquid
     const DX0 = Math.floor(bx0 * dpr), DY0 = Math.floor(by0 * dpr), DW = Math.min(c.width, Math.ceil(bx1 * dpr)) - DX0, DH = Math.min(c.height, Math.ceil(by1 * dpr)) - DY0;
     const bg = g.getImageData(DX0, DY0, DW, DH).data;
-    // the liquid: a strong color for what it absorbs, a pale one for the light it scatters; the film: nearly white
-    const ab = hslRgb(vc.hue, 0.9, 0.5).map((v) => 1 - v / 255), sc = hslRgb(vc.hue, 0.8, dark ? 0.7 : 0.8).map((v) => v / 255);
-    const film = sc.map((v) => (1 + v) / 2), tint = dark ? [0.92, 0.96, 1.08] : [0.97, 0.99, 1.03];
-    const KAP = 0.3, BETA = 0.8, SCAT = dark ? 0.85 : 0.1, ETA = 0.25, KA0 = KAP * ab[0], KA1 = KAP * ab[1], KA2 = KAP * ab[2], AF1 = AF / (1 - AF);
+    // inside, a pale gelatin (1.9.2): a strong color for what it absorbs, a pale one for the light it
+    // scatters (a little cloudy, paler where it is thick); the skin: a deep shade of the same color (the
+    // light it scatters, SS), and what it absorbs (a little of every color, SN, and more of the others,
+    // SD), for each time the line of sight goes through it straight
+    const ab = hslRgb(vc.hue, 0.9, 0.5).map((v) => 1 - v / 255), sc = hslRgb(vc.hue, dark ? 0.5 : 0.55, dark ? 0.82 : 0.9).map((v) => v / 255);
+    const skin = hslRgb(vc.hue, 0.75, dark ? 0.34 : 0.3).map((v) => v / 255), tint = dark ? [0.92, 0.96, 1.08] : [0.97, 0.99, 1.03];
+    const SN = 0.02, SD = 0.08, SS = 0.06, SA0 = SN + SD * ab[0] + SS, SA1 = SN + SD * ab[1] + SS, SA2 = SN + SD * ab[2] + SS;
+    const KAP = 0.1, BETA = 1.4, SCAT = dark ? 0.48 : 0.35, ETA = 0.25, KA0 = KAP * ab[0], KA1 = KAP * ab[1], KA2 = KAP * ab[2];
     // e^−x from a table (x from 0 to 16 in steps of 1/64, between them on a straight line): far quicker
     // than Math.exp for every stretch of liquid
     if (!EXPT) { EXPT = new Float64Array(1026); for (let n = 0; n < 1026; n++) EXPT[n] = Math.exp(-n / 64); }
@@ -5744,17 +5984,18 @@
         // two faces at nearly the same depth (a sliver, where two sheets meet at an edge): neither counts
         if (!end && m + 1 < n0 && dep[i * K + idx[m + 1]] - d < 0.004 && dep[i * K + idx[m + 1]] < z) { m++; continue; }
         if (inl) {
-          // a stretch of liquid: it scatters its pale color and absorbs what comes through
+          // a stretch of gelatin: it scatters its pale color, and what comes through is less by that and by what it absorbs
           const len = (end ? z : d) - from, s = SCAT * (1 - ex(BETA * len));
           c0 += t0 * sc[0] * s; c1 += t1 * sc[1] * s; c2 += t2 * sc[2] * s;
-          t0 *= ex(KA0 * len); t1 *= ex(KA1 * len); t2 *= ex(KA2 * len);
+          t0 *= (1 - s) * ex(KA0 * len); t1 *= (1 - s) * ex(KA1 * len); t2 *= (1 - s) * ex(KA2 * len);
           th += len;
         }
         if (end) break;
-        // the face: the light it mirrors, and its own pale glow
-        const pk = shd[k], refl = (pk >>> 16) / 9000, pass = ((pk >>> 8) & 255) / 255, fs = AF1 * pass * (pk & 255) / 255;
-        c0 += t0 * (refl * tint[0] + fs * film[0]); c1 += t1 * (refl * tint[1] + fs * film[1]); c2 += t2 * (refl * tint[2] + fs * film[2]);
-        t0 *= pass; t1 *= pass; t2 *= pass;
+        // the skin: the light it mirrors, its own deep color (where light falls on it), and what goes
+        // through it, in its color (pf: how much of the skin the line of sight goes through)
+        const o = shd[k] * 4, refl = lut[o], pass = lut[o + 1], pf = lut[o + 2], lit = pass * (1 - ex(SS * pf)) * lut[o + 3];
+        c0 += t0 * (refl * tint[0] + lit * skin[0]); c1 += t1 * (refl * tint[1] + lit * skin[1]); c2 += t2 * (refl * tint[2] + lit * skin[2]);
+        t0 *= pass * ex(SA0 * pf); t1 *= pass * ex(SA1 * pf); t2 *= pass * ex(SA2 * pf);
         inl = !inl; from = d;
       }
       // what is behind, seen bent: toward the middle of a rounded front, more where the liquid is thicker
@@ -5853,8 +6094,12 @@
     for (const y of gy) { line(-EX, V(y), wb, EX, V(y), wb); line(ub, V(y), -EZ, ub, V(y), EZ); }
     for (const z of gz) { line(ub, -EY, Wz(z), ub, EY, Wz(z)); line(-EX, vb, Wz(z), EX, vb, Wz(z)); }
     g.stroke();
-    // the surfaces: project every grid point once, then draw the cells from back to front
+    // the surfaces: project every grid point once, then lay the cells over the pixels with a depth
+    // buffer (surfacePaint, 1.9.2)
     const cells = [];
+    // a normal in the box's axes (u, v, w) in the camera's axes; grid coordinates of u and v
+    const camN = (nu, nv, nw) => [nu * ca - nv * sa, nu * sa * se + nv * ca * se + nw * ce, nu * sa * ce + nv * ca * ce - nw * se];
+    const giOf = (u) => (u / EX + 1) / 2 * (D.nx - 1), gjOf = (v) => (v / EY + 1) / 2 * (D.ny - 1);
     const L = [-0.42, 0.62, -0.66];  // light from the upper left, in front
     // the solid that is measured while "Volume and surface" is open (1.8.4): drawn as a liquid (1.9.1,
     // liquidPaint); the measured parts of the surfaces are not drawn as cells (inR)
@@ -5881,6 +6126,10 @@
           px[k] = T[0]; py[k] = T[1]; pd[k] = T[2]; pw[k] = w; st[k] = 1;
         }
       }
+      // the normals at the grid points (1.9.2), in the box's axes and in the camera's
+      const NM = gridNormals(s, D, U, V, Wz);
+      if (!s.cnrm || s.cnrm.length !== NM.length) s.cnrm = new Float32Array(NM.length);
+      for (let k = 0; k < n; k++) if (st[k] === 1) { const c3 = camN(NM[3 * k], NM[3 * k + 1], NM[3 * k + 2]); s.cnrm[3 * k] = c3[0]; s.cnrm[3 * k + 1] = c3[1]; s.cnrm[3 * k + 2] = c3[2]; }
       s.rimP = null;
       if (s.rim) {
         s.rimP = {};
@@ -5888,7 +6137,13 @@
           const e = s.rim[key], w = Wz(e.z);
           if (!(w <= EZ * 1.0001 && w >= -EZ * 1.0001)) continue;
           proj(U(e.x), V(e.y), w);
-          s.rimP[key] = { x: T[0], y: T[1], d: T[2], u: U(e.x), v: V(e.y), w };
+          // (where a surface ends, as a sphere at its rim, it stands upright: its normal is level, the
+          // way the surface falls toward its edge from the grid point inside)
+          const ka = +key.slice(1), kb = key[0] === 'h' ? ka + 1 : ka + D.nx, kin = st[ka] === 1 ? ka : kb;
+          let lu = NM[3 * kin], lv = NM[3 * kin + 1];
+          const lh = Math.hypot(lu, lv);
+          if (lh > 0.05) { lu /= lh; lv /= lh; } else { lu = U(e.x) - U(xs[kin % D.nx]); lv = V(e.y) - V(ys[(kin / D.nx) | 0]); }
+          s.rimP[key] = { x: T[0], y: T[1], d: T[2], u: U(e.x), v: V(e.y), w, n: camN(lu, lv, 0), gi: giOf(U(e.x)), gj: gjOf(V(e.y)) };
         }
       }
       for (let j = 0; j < D.ny - 1; j++) {
@@ -5905,7 +6160,7 @@
             let poly = [];
             for (let n = 0; n < 4 && poly; n++) {
               const k = cs[n], k2 = cs[(n + 1) % 4];
-              if (st[k] === 1) poly.push({ x: px[k], y: py[k], d: pd[k], u: U(xs[k % D.nx]), v: V(ys[(k / D.nx) | 0]), w: pw[k] });
+              if (st[k] === 1) poly.push({ x: px[k], y: py[k], d: pd[k], u: U(xs[k % D.nx]), v: V(ys[(k / D.nx) | 0]), w: pw[k], n: [s.cnrm[3 * k], s.cnrm[3 * k + 1], s.cnrm[3 * k + 2]], gi: k % D.nx, gj: (k / D.nx) | 0 });
               if ((st[k] === 1) !== (st[k2] === 1)) { const rp = s.rimP[eks[n]]; if (rp) poly.push(rp); else poly = null; }
             }
             if (!poly || poly.length < 3) continue;
@@ -5947,7 +6202,13 @@
             // without a gap; the part inside is the liquid's
             const K4 = [a, b, c2, d], R2 = VS.R * VS.R, xa = xs[i], xb = xs[i + 1], ya = ys[j], yb = ys[j + 1];
             const X = (k) => xs[k % D.nx], Y = (k) => ys[(k / D.nx) | 0], isIn = (k) => X(k) * X(k) + Y(k) * Y(k) <= R2;
-            const pt = (x, y, w) => { proj(U(x), V(y), w); return { x: T[0], y: T[1], d: T[2], w, gx: x, gy: y }; };
+            // (the normal between the four corners, as the values)
+            const pt = (x, y, w) => {
+              const fa = (x - xa) / (xb - xa), fb = (y - ya) / (yb - ya), wt = [(1 - fa) * (1 - fb), fa * (1 - fb), fa * fb, (1 - fa) * fb], nn = [0, 0, 0];
+              for (let m = 0; m < 4; m++) for (let c3 = 0; c3 < 3; c3++) nn[c3] += wt[m] * s.cnrm[3 * K4[m] + c3];
+              proj(U(x), V(y), w);
+              return { x: T[0], y: T[1], d: T[2], w, gx: x, gy: y, n: nn, gi: giOf(U(x)), gj: gjOf(V(y)) };
+            };
             const cut = (k1, k2) => {
               const p = isIn(k1) ? k1 : k2, q = p === k1 ? k2 : k1, xp = X(p), yp = Y(p), xq = X(q), yq = Y(q);
               const ddx = xq - xp, ddy = yq - yp, A = ddx * ddx + ddy * ddy, B = 2 * (xp * ddx + yp * ddy), C = xp * xp + yp * yp - R2;
@@ -6016,26 +6277,44 @@
     // the parts that are not measured (other surfaces, outside the disk) fade into the background
     let fadeTo = null;
     if (vc && cells.some((q) => !q.vol && !q.inR)) fadeTo = cssRgb(css.getPropertyValue('--plot-bg').trim()) || (dark ? [24, 26, 32] : [255, 255, 255]);
-    cells.sort((p, q) => q.depth - p.depth);
-    const meshColor = dark ? 'rgba(0,0,0,0.35)' : 'rgba(20,30,50,0.22)';
-    g.lineJoin = 'round';
-    let jelly = 0, faded = 0;
-    for (const q of cells) {
-      const pr = q.s && q.s.proj;
-      g.beginPath();
-      if (q.poly) q.poly.forEach((p, n) => { if (n) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); });
-      else q.pts.forEach((k, n) => { if (n) g.lineTo(pr.px[k], pr.py[k]); else g.moveTo(pr.px[k], pr.py[k]); });
-      g.closePath();
-      // the measured parts of the surfaces: drawn as the liquid, below
-      if (q.inR) { jelly++; continue; }
-      const base = single ? viridis(q.t) : q.s.rgb;
-      const k = single ? 0.5 + 0.5 * q.shade : 0.42 + 0.58 * q.shade;
-      let rgb = base.map((v) => v * k);
-      if (fadeTo) { rgb = mixRgb(rgb, fadeTo, VOL_FADE); faded++; }
-      const col = 'rgb(' + Math.round(rgb[0]) + ',' + Math.round(rgb[1]) + ',' + Math.round(rgb[2]) + ')';
-      g.fillStyle = col; g.fill();
-      g.lineWidth = 0.7; g.strokeStyle = mesh && !q.piece ? meshColor : col; g.stroke();
+    // where two surfaces end at the same place (the two halves of a sphere at its rim), their edges are
+    // made to meet exactly: the edges found for each surface differ a little in height (a square root
+    // near 0), which left a hair-thin gap through which the far side of the solid showed (1.9.2)
+    if (D.series.length > 1) {
+      const byKey = new Map();
+      for (const s of D.series) if (s.rimP) for (const key in s.rimP) { const a = byKey.get(key); if (a) a.push(s.rimP[key]); else byKey.set(key, [s.rimP[key]]); }
+      for (const ps of byKey.values()) {
+        for (let a = 0; a < ps.length; a++) {
+          for (let b = a + 1; b < ps.length; b++) {
+            const p = ps[a], r = ps[b];
+            if (!(Math.abs(p.u - r.u) + Math.abs(p.v - r.v) < 2e-3 && Math.abs(p.w - r.w) < 0.04 * EZ)) continue;
+            const u = (p.u + r.u) / 2, v = (p.v + r.v) / 2, w = (p.w + r.w) / 2;
+            proj(u, v, w);
+            for (const o of [p, r]) { o.u = u; o.v = v; o.w = w; o.x = T[0]; o.y = T[1]; o.d = T[2]; o.gi = giOf(u); o.gj = gjOf(v); }
+          }
+        }
+      }
     }
+    // the cells as triangles with the normal, the color (by height for one surface) and the grid
+    // coordinates at their corners, laid over the pixels with a depth buffer (1.9.2)
+    const tb = triBuf(Q3);
+    const colorAt = (s, w) => (single ? viridis((w / EZ + 1) / 2) : s.rgb);
+    const vtxK = (s, k) => {
+      const P = s.proj, N = s.cnrm, c3 = colorAt(s, P.pw[k]);
+      return [P.px[k], P.py[k], P.pd[k], N[3 * k], N[3 * k + 1], N[3 * k + 2], c3[0], c3[1], c3[2], k % D.nx, (k / D.nx) | 0];
+    };
+    const vtxP = (s, p) => { const c3 = colorAt(s, p.w); return [p.x, p.y, p.d, p.n[0], p.n[1], p.n[2], c3[0], c3[1], c3[2], p.gi, p.gj]; };
+    let jelly = 0, faded = 0;
+    for (const cl of cells) {
+      // the measured parts of the surfaces: drawn as the liquid, below
+      if (cl.inR) { jelly++; continue; }
+      if (fadeTo) faded++;
+      const vs = cl.poly ? cl.poly.map((p) => vtxP(cl.s, p)) : cl.pts.map((k) => vtxK(cl.s, k));
+      for (let m = 1; m + 1 < vs.length; m++) tb.add(vs[0], vs[m], vs[m + 1]);
+    }
+    const surf = surfacePaint(g, tb, { W, H, q: Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3 });
+    // (what was drawn, for the tests)
+    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
     if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
@@ -6138,7 +6417,8 @@
         Q3.zoom = Math.max(0.4, Math.min(6, start.zoom * d1 / d0));
       }
       clearMark3d();
-      // while the graph is turned, the liquid is drawn with fewer pixels; in full when the finger is lifted
+      // while the graph is turned, the surfaces and the liquid are drawn with fewer pixels; in full
+      // when the finger is lifted
       Q3.turning = true;
       requestDraw3d();
     });

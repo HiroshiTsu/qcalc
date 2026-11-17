@@ -70,6 +70,42 @@ Paste in Play Console under "Release notes" (up to 500 characters per language).
 each user the notes in their language: put all the blocks into the field (from 1.9.0 also the Spanish one,
 es-419, after the Spanish translation of the listing has been added; listing-es.md).
 
+1.9.2 (when 1.9.0 or 1.9.1 was already released):
+
+<en-US>
+• 3D graph: smooth, glossy surfaces, with no rings and no jagged edges where two surfaces meet, also in the pictures of the samples
+• "Volume and surface": the measured solid now looks like a pale gelatin in a clear skin of a deeper color, with the lamps of a room mirrored on it
+</en-US>
+<ja-JP>
+・3D グラフ：曲面をなめらかでつやのある姿で描きます。輪のような模様や、2 つの曲面が接する所のぎざぎざがなくなりました（サンプルの絵も）
+・「体積・表面積」：計測している立体を、濃い色の透明な皮に包まれた薄い色のゼラチンのように示します。照明が映り込みます
+</ja-JP>
+<es-419>
+• Gráfico 3D: superficies suaves y brillantes, sin anillos ni bordes dentados donde se juntan dos superficies, también en los dibujos de las muestras
+• "Volumen y superficie": el sólido medido ahora se ve como una gelatina clara dentro de una piel transparente de un color más intenso, que refleja las luces
+</es-419>
+
+1.9.2, when the last release was 1.8.0, 1.8.1, 1.8.2, 1.8.3 or 1.8.4 (the changes of 1.8.1 to 1.9.2):
+
+<en-US>
+• New: Spanish (menu → Language / 言語 / Idioma → Español). A phone set to Spanish starts in Spanish
+• 3D graph: smooth, glossy surfaces without rings or jagged edges; "Volume and surface" has no buttons, its values come at once, and the measured solid looks like a pale gelatin in a clear skin
+• 📈 draws expressions in x and y, equations and matrices, also from the history and saved functions
+• Fixed: the pictures of "Sphere" and "Doughnut"; round samples keep their shape
+</en-US>
+<ja-JP>
+・新機能：スペイン語に対応（メニュー →「Language / 言語 / Idioma」→ Español）。スペイン語の端末ではスペイン語で始まります
+・3D グラフ：曲面をなめらかでつやのある姿で描きます。「体積・表面積」のボタンをなくし、値はすぐに出ます。計測している立体は、透明な皮に包まれた薄いゼラチンのように示します
+・📈 で x と y の式、方程式、行列を描けます。履歴や保存した関数からも同じです
+・修正：「球」「ドーナツ」の絵、丸いサンプルの形
+</ja-JP>
+<es-419>
+• Nuevo: español (menú → Language / 言語 / Idioma → Español). Un teléfono en español empieza en español
+• Gráfico 3D: superficies suaves y brillantes; "Volumen y superficie" ya no tiene botones, los valores salen al instante y el sólido medido parece una gelatina clara en una piel transparente
+• 📈 dibuja expresiones en x e y, ecuaciones y matrices, también desde el historial y las funciones guardadas
+• Corregido: los dibujos de "Esfera" y "Dona"; las muestras redondas mantienen su forma
+</es-419>
+
 1.9.1 (when 1.9.0 was already released):
 
 <en-US>
