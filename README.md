@@ -4,7 +4,7 @@
 
 QCalc is a multi-function calculator for Android. You type an expression the way you would write it, and QCalc evaluates it with **libqalculate 5.13.2**, the calculation engine of the open-source calculator [Qalculate!](https://qalculate.github.io/). Since QCalc 1.5.0 a small patch ([patches/](patches/README.md)) lets libqalculate calculate special functions at a high precision with FLINT's Arb; everything else is libqalculate as it is.
 
-The app is in English and Japanese: it starts in English, and "Language / 言語" in the menu switches it to Japanese. QCalc is not an official Qalculate! app; it is made by an individual developer who is not affiliated with the Qalculate! project.
+The app is in English, Japanese and Spanish: it starts in English (in Spanish on a phone set to Spanish), and "Language / 言語 / Idioma" in the menu switches the language. QCalc is not an official Qalculate! app; it is made by an individual developer who is not affiliated with the Qalculate! project.
 
 <p>
 <img src="store/screenshots-en/phone-1-main.png" width="200" alt="Calculator screen">

@@ -38,7 +38,7 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • 3D graphs of surfaces z = f(x, y) that you turn with a finger: partial derivatives, the volume and surface area of what you have drawn, 14 samples (QCalc Pro)
 • From the forms, the graph that goes with the calculation: tangents, areas, the lines or planes of a linear system with its solution, the rows of a matrix as points
 • Traditional Japanese units: tsubo, tan, sun, shaku, ken, ri, gō, shō, monme, kan (30 tsubo to m²)
-• Examples and tips inside the app: tap one to try it
+• Examples and tips in the app: tap one to try it
 • Lists of functions, units and constants with search
 • Your own variables and functions
 • The result is shown while you type; reuse and copy results from the history
@@ -46,8 +46,8 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Undo for a cleared expression or history, three text sizes, seven color themes (QCalc Pro)
 • Export the history as a CSV file for spreadsheets (QCalc Pro)
 • Four pages of keys (123, Functions, Calculus, Matrix) or your phone's keyboard
-• Light or dark display: follow the phone's setting or choose your own
-• English and Japanese (menu → Language / 言語)
+• Light or dark display: the phone's setting or your own choice
+• English, Japanese, Spanish (menu → Language / 言語 / Idioma)
 
 ■ QCalc Pro
 A one-time purchase in the app unlocks a precision above 1000 digits (up to 200,000), 3D graphs, the color themes, exporting the history, and the Pro features of later versions. There is no subscription, and everything else is free.
@@ -67,7 +67,44 @@ Android 7.0 or later on a 64-bit ARM (arm64) device.
 ## Release notes
 
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
-each user the notes in their language: put both blocks into the field.
+each user the notes in their language: put all the blocks into the field (from 1.9.0 also the Spanish one,
+es-419, after the Spanish translation of the listing has been added; listing-es.md).
+
+1.9.0 (when 1.8.4 was already released):
+
+<en-US>
+• New: Spanish. Choose Español in the menu → Language / 言語 / Idioma. A phone set to Spanish starts in Spanish
+• The texts of the app, the messages of the calculation engine and the names of the keys read out are in Spanish
+</en-US>
+<ja-JP>
+・新機能：スペイン語に対応しました。メニュー →「Language / 言語 / Idioma」で Español を選べます。スペイン語に設定した端末では、最初からスペイン語で表示します
+・アプリの文、計算エンジンのメッセージ、読み上げるキーの名前もスペイン語になります
+</ja-JP>
+<es-419>
+• Nuevo: QCalc en español. Elige Español en el menú → Language / 言語 / Idioma. En un teléfono configurado en español, la app empieza en español
+• Los textos de la app, los mensajes del motor de cálculo y los nombres de las teclas que se leen en voz alta están en español
+</es-419>
+
+1.9.0, when the last release was 1.8.0, 1.8.1, 1.8.2 or 1.8.3 (the changes of 1.8.1 to 1.9.0):
+
+<en-US>
+• New: Spanish (menu → Language / 言語 / Idioma → Español). A phone set to Spanish starts in Spanish
+• 3D graph: "Volume and surface" has no buttons; its values come at once, and the measured solid looks like a pale liquid
+• 📈 draws expressions in x and y, equations and matrices, also from the history and saved functions
+• Fixed: the pictures of "Sphere" and "Doughnut"; round samples keep their shape
+</en-US>
+<ja-JP>
+・新機能：スペイン語に対応（メニュー →「Language / 言語 / Idioma」→ Español）。スペイン語の端末ではスペイン語で始まります
+・3D グラフ：「体積・表面積」のボタンをなくし、値はすぐに出ます。計測している立体は薄い液体で満たしたように示します
+・📈 で x と y の式、方程式、行列を描けます。履歴や保存した関数からも同じです
+・修正：「球」「ドーナツ」の絵、丸いサンプルの形
+</ja-JP>
+<es-419>
+• Nuevo: español (menú → Language / 言語 / Idioma → Español). Un teléfono en español empieza en español
+• Gráfico 3D: "Volumen y superficie" ya no tiene botones; los valores salen al instante y el sólido medido parece un líquido claro
+• 📈 dibuja expresiones en x e y, ecuaciones y matrices, también desde el historial y las funciones guardadas
+• Corregido: los dibujos de "Esfera" y "Dona"; las muestras redondas mantienen su forma
+</es-419>
 
 1.8.4 (when 1.8.3 was already released):
 

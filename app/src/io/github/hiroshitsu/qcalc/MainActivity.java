@@ -99,7 +99,9 @@ public class MainActivity extends Activity {
             showMessage(tr("QCalc needs Android System WebView, which is not available. "
                     + "Update it in the Play Store or turn it on in the Settings app, then open QCalc again.",
                     "画面の表示に必要な「Android System WebView」を利用できません。"
-                    + "Play ストアで更新するか、設定アプリで有効にしてから、もう一度開いてください。"));
+                    + "Play ストアで更新するか、設定アプリで有効にしてから、もう一度開いてください。",
+                    "QCalc necesita Android System WebView, que no está disponible. "
+                    + "Actualízalo en Play Store o actívalo en la app Ajustes, y vuelve a abrir QCalc."));
             return;
         }
         WebSettings s = web.getSettings();
@@ -131,7 +133,8 @@ public class MainActivity extends Activity {
                 boolean again = lastRendererGone != 0 && now - lastRendererGone < 15000;
                 lastRendererGone = now;
                 if (again) showMessage(tr("The screen stopped again and again. Close the app and open it again.",
-                        "画面の表示が繰り返し停止しました。アプリを閉じて、もう一度開いてください。"));
+                        "画面の表示が繰り返し停止しました。アプリを閉じて、もう一度開いてください。",
+                        "La pantalla se detuvo una y otra vez. Cierra la app y vuelve a abrirla."));
                 else recreate();
                 return true;
             }
@@ -201,12 +204,17 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * The text in the language of the app: Japanese when the user chose it in the page
-     * ("Language / 言語", saved by the page as qalc.lang, the JSON text "ja"), otherwise English.
+     * The text in the language of the app, as the page chooses it: the language the user chose in
+     * the page ("Language / 言語 / Idioma", saved by the page as qalc.lang, the JSON text "ja", "es"
+     * or "en"); without a choice, Spanish on a device set to Spanish, otherwise English.
      */
-    private String tr(String en, String ja) {
+    private String tr(String en, String ja, String es) {
         String s = StateStore.load(this, "qalc.lang");
-        return s != null && "\"ja\"".equals(s.trim()) ? ja : en;
+        String chosen = s == null ? "" : s.trim();
+        if ("\"ja\"".equals(chosen)) return ja;
+        if ("\"es\"".equals(chosen)) return es;
+        if ("\"en\"".equals(chosen)) return en;
+        return "es".equals(java.util.Locale.getDefault().getLanguage()) ? es : en;
     }
 
     private void showMessage(String text) {
@@ -513,11 +521,11 @@ public class MainActivity extends Activity {
                         if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("QCalc", text));
                     } catch (RuntimeException e) {
                         // the system passes the text in one transaction of at most about 1 MB
-                        Toast.makeText(MainActivity.this, tr("Too long to copy", "長すぎてコピーできませんでした"), Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, tr("Too long to copy", "長すぎてコピーできませんでした", "Es demasiado largo para copiarlo"), Toast.LENGTH_LONG).show();
                         return;
                     }
                     // Android 13 and later show their own confirmation
-                    if (Build.VERSION.SDK_INT < 33) Toast.makeText(MainActivity.this, tr("Copied", "コピーしました"), Toast.LENGTH_SHORT).show();
+                    if (Build.VERSION.SDK_INT < 33) Toast.makeText(MainActivity.this, tr("Copied", "コピーしました", "Copiado"), Toast.LENGTH_SHORT).show();
                 }
             });
         }
