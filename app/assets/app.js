@@ -5134,7 +5134,10 @@
       el('button', { text: '−', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom3d(0.8) }),
       el('button', { text: '⟲', 'aria-label': tr('Reset the view', '向きと大きさを戻す'), onclick: () => { Object.assign(Q3, VIEW3D); clearMark3d(); draw3d(); } }),
       Q3.eqBtn = el('button', { class: 'eq', text: '1:1', 'aria-label': tr('The same scale on the x, y and z axes', 'x・y・z の目盛りの間隔をそろえる'), onclick: () => { setEqual3d(!Q3.equalNow); clearMark3d(); draw3d(); } }));
-    Q3.equal = store.get('qalc.plot3d.equal', 'auto');
+    // (the choice made with 1:1 for the functions it was made for; a value saved before 1.9.3 for all
+    // graphs, true or false, counts as no choice)
+    const eq = store.get('qalc.plot3d.equal', 'auto');
+    Q3.equal = eq && typeof eq === 'object' && typeof eq.on === 'boolean' && typeof eq.exprs === 'string' ? eq : 'auto';
     const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
     const legend = el('div', { class: 'legend' });
     const msg = el('div', { class: 'form-hint' });
@@ -5232,6 +5235,8 @@
     }
     if (!Q3.exprs.length) { Q3.msg.textContent = tr('Enter a function (for example sin(x) cos(y)), or tap a sample', '関数を入れてください（例：sin(x) cos(y)）。下のサンプルもタップで描けます'); return; }
     Q3.msg.textContent = tr('Calculating…', '計算中…');
+    // (the 1:1 chosen for other functions is dropped: these are automatic until 1:1 is pressed, 1.9.3)
+    if (Q3.equal && Q3.equal.exprs !== undefined && Q3.equal.exprs !== Q3.exprs.join('\n')) { Q3.equal = 'auto'; store.set('qalc.plot3d.equal', 'auto'); }
     clearVolume();
     const seq = Q3.seq = (Q3.seq || 0) + 1;
     const [x0, x1, y0, y1] = Q3.range;
@@ -5279,13 +5284,7 @@
       Q3.data = data;
       clearMark3d();
       Q3.msg.textContent = note;
-      Q3.legend.textContent = '';
-      if (series.length === 1 && vals.length) {
-        const step = niceStep(z1 - z0, 4);
-        Q3.legend.append(el('span', { class: 'zbar' }, series[0].expr + tr('   z: ', '　z：') + fmt(z0, step / 10), el('i'), fmt(z1, step / 10)));
-      } else {
-        for (const s of series) Q3.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
-      }
+      legend3d(data, vals.length > 0);
       if (Q3.volUI && !Q3.volUI.box.hidden) volumeSurfacesChanged();
       if (Q3.partUI && !Q3.partUI.box.hidden) partialSurfacesChanged();
       store.set('qalc.plot3d.ok', false);
@@ -5299,8 +5298,46 @@
     const refined = await refineRims(series, r.x, r.y, seq);
     clearTimeout(late);
     if (seq !== Q3.seq) return;
-    if (shown) { if (refined) draw3d(); } else show();
+    // (surfaces that close up into one solid are known when their edges are, 1.9.3)
+    data.joined = refined && joinedSolid(series, r.x, r.y, z0, z1);
+    // the range of z reaches the edges that were found (half a sphere alone: its rim at z = 0 lies
+    // below the lowest grid value, and was cut off; 1.9.3), unless that would widen it by more than half
+    if (refined) {
+      let lo = data.z0, hi = data.z1;
+      for (const s of series) for (const key in s.rim || {}) { const v = s.rim[key].z; if (v === v && v !== undefined) { if (v < lo) lo = v; if (v > hi) hi = v; } }
+      if ((lo < data.z0 || hi > data.z1) && hi - lo <= 1.5 * (data.z1 - data.z0)) { data.z0 = lo; data.z1 = hi; }
+    }
+    if (shown) { if (refined) { legend3d(data, vals.length > 0); draw3d(); } } else show();
     if (Q3.pending) { const run = Q3.pending; Q3.pending = null; run(); }
+  }
+  // The legend of the 3D graph: for one surface, or surfaces that close up into one solid (1.9.3), the
+  // function(s) and the colors of the heights; otherwise each function in its color.
+  function legend3d(data, any) {
+    const series = data.series;
+    Q3.legend.textContent = '';
+    if ((series.length === 1 || data.joined) && any) {
+      const step = niceStep(data.z1 - data.z0, 4);
+      Q3.legend.append(el('span', { class: 'zbar' }, series.map((s) => s.expr).join(tr(', ', '、')) + tr('   z: ', '　z：') + fmt(data.z0, step / 10), el('i'), fmt(data.z1, step / 10)));
+    } else {
+      for (const s of series) Q3.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
+    }
+  }
+  // Do the surfaces close up into one solid, as the two halves of a sphere or of a doughnut do? Each
+  // of them ends at an edge (refineRims), and most of its edge points are those of another surface at
+  // the same place and height (1.9.3). Such a solid is drawn as one object (colored by height).
+  function joinedSolid(series, xs, ys, z0, z1) {
+    if (series.length < 2) return false;
+    const rx = Math.abs(xs[xs.length - 1] - xs[0]) || 1, ry = Math.abs(ys[ys.length - 1] - ys[0]) || 1, tz = 0.02 * (z1 - z0);
+    return series.every((s) => {
+      const keys = s.rim ? Object.keys(s.rim).filter((k) => s.rim[k].z === s.rim[k].z && s.rim[k].z !== undefined) : [];
+      if (keys.length < 4) return false;
+      let met = 0;
+      for (const k of keys) {
+        const e = s.rim[k];
+        if (series.some((o) => o !== s && o.rim && o.rim[k] && Math.abs(o.rim[k].z - e.z) <= tz && Math.abs(o.rim[k].x - e.x) / rx + Math.abs(o.rim[k].y - e.y) / ry < 2e-3)) met++;
+      }
+      return met >= 0.8 * keys.length;
+    });
   }
   // The edge of a surface with no real values beyond it (a sphere: √(r² − x² − y²)). On each grid
   // line from a point with a value to one without, the last point with a real value is found by
@@ -5345,16 +5382,18 @@
     for (const jb of jobs) series[jb.si].rim[jb.key] = { x: jb.px, y: jb.py, z: jb.z };
     return true;
   }
-  // 1:1:1 — true, false, or 'auto' (until the button is used): on when the three ranges are about
-  // as long as each other (a sphere, a cone), off for flat surfaces over wide ranges
+  // 1:1:1 — automatic: on when the three ranges are about as long as each other (a sphere, a cone),
+  // off for flat surfaces over wide ranges. The button sets it on or off for the functions being drawn
+  // ({ exprs, on }); other functions are automatic again (1.9.3: until 1.9.2 the choice held for every
+  // graph, so after 1:1 was turned off once, every sphere came out flattened).
   function setEqual3d(on) {
-    Q3.equal = !!on;
+    Q3.equal = { exprs: Q3.exprs.join('\n'), on: !!on };
     Q3.equalOnce = false;
     store.set('qalc.plot3d.equal', Q3.equal);
   }
   function equal3dNow(rx, ry, rz) {
     if (Q3.equalOnce) return true; // a sphere drawn from the examples
-    if (Q3.equal !== 'auto') return !!Q3.equal;
+    if (Q3.equal && Q3.equal.exprs === Q3.exprs.join('\n')) return Q3.equal.on;
     const a = Math.max(rx, ry) / Math.min(rx, ry), b = rz / Math.max(rx, ry);
     return a <= 1.25 && b >= 0.6 && b <= 1.6;
   }
@@ -5415,16 +5454,18 @@
   // the sky above and less from the floor, a lamp at the upper left with a highlight, and a little of
   // the bright surroundings mirrored at a slant. The lines of the grid (a coarse grid) are drawn in
   // the same pass, so the ones that are hidden stay hidden. The edges are smoothed.
-  // The triangles: 11 numbers for each corner, x and y (CSS pixels), depth (larger is farther), the
-  // normal in the camera's axes (x right, y up, z away from the eye; any length), the color (r, g, b)
-  // and the grid coordinates gi and gj (for the lines of the grid; NaN: no lines).
+  // The triangles: 11 numbers for each corner (CV), x and y (CSS pixels), depth (larger is farther),
+  // the normal in the camera's axes (x right, y up, z away from the eye; any length: it is blended in a
+  // straight line across the triangle and then made of length 1), the color (r, g, b) and the grid
+  // coordinates gi and gj (for the lines of the grid; NaN: no lines).
+  const CV = 11, CT = 3 * CV;
   function triBuf(holder) {
     let a = holder && holder.triBuf;
-    if (!a) { a = { f: new Float32Array(33 * 4096), n: 0 }; if (holder) holder.triBuf = a; }
+    if (!a) { a = { f: new Float32Array(CT * 4096), n: 0 }; if (holder) holder.triBuf = a; }
     a.n = 0;
     a.add = function (p, q, r) {
-      if ((this.n + 1) * 33 > this.f.length) { const b = new Float32Array(this.f.length * 2); b.set(this.f); this.f = b; }
-      this.f.set(p, this.n * 33); this.f.set(q, this.n * 33 + 11); this.f.set(r, this.n * 33 + 22); this.n++;
+      if ((this.n + 1) * CT > this.f.length) { const b = new Float32Array(this.f.length * 2); b.set(this.f); this.f = b; }
+      this.f.set(p, this.n * CT); this.f.set(q, this.n * CT + CV); this.f.set(r, this.n * CT + 2 * CV); this.n++;
     };
     return a;
   }
@@ -5436,7 +5477,7 @@
     if (!nt) return none;
     let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity;
     for (let v = 0; v < nt * 3; v++) {
-      const x = T[v * 11], y = T[v * 11 + 1];
+      const x = T[v * CV], y = T[v * CV + 1];
       if (x < mnx) mnx = x; if (x > mxx) mxx = x; if (y < mny) mny = y; if (y > mxy) mxy = y;
     }
     // (the layer starts on a whole pixel of itself, so that with q equal to the device's pixels it
@@ -5452,10 +5493,11 @@
     // the depth buffer: for each pixel the nearest triangle, and where in it (the weights of two corners)
     let t = 0, ad = 0, bd = 0, cd = 0;
     const px = (i, l0, l1, l2) => { const d = l0 * ad + l1 * bd + l2 * cd; if (d < zb[i]) { zb[i] = d; id[i] = t; b0[i] = l0; b1[i] = l1; } };
+    const B = CV, C2 = 2 * CV;  // (where the second and the third corner start)
     for (t = 0; t < nt; t++) {
-      const k = t * 33;
-      ad = T[k + 2]; bd = T[k + 13]; cd = T[k + 24];
-      rasterTri(T[k] * q - lx0, T[k + 1] * q - ly0, T[k + 11] * q - lx0, T[k + 12] * q - ly0, T[k + 22] * q - lx0, T[k + 23] * q - ly0, LW, LH, px);
+      const k = t * CT;
+      ad = T[k + 2]; bd = T[k + B + 2]; cd = T[k + C2 + 2];
+      rasterTri(T[k] * q - lx0, T[k + 1] * q - ly0, T[k + B] * q - lx0, T[k + B + 1] * q - ly0, T[k + C2] * q - lx0, T[k + C2 + 1] * q - ly0, LW, LH, px);
     }
     // the lines of the grid: how fast gi and gj change across the screen in each triangle (per pixel of
     // the layer), so that the lines have the same width everywhere and fade at the edges
@@ -5464,12 +5506,12 @@
     if (mesh) {
       GI = new Float32Array(nt * 2);
       for (let s = 0; s < nt; s++) {
-        const k = s * 33;
-        const x0 = T[k] * q, y0 = T[k + 1] * q, ex1 = T[k + 11] * q - x0, ey1 = T[k + 12] * q - y0, ex2 = T[k + 22] * q - x0, ey2 = T[k + 23] * q - y0;
+        const k = s * CT;
+        const x0 = T[k] * q, y0 = T[k + 1] * q, ex1 = T[k + B] * q - x0, ey1 = T[k + B + 1] * q - y0, ex2 = T[k + C2] * q - x0, ey2 = T[k + C2 + 1] * q - y0;
         const det = ex1 * ey2 - ex2 * ey1;
         if (!(Math.abs(det) > 1e-9)) { GI[2 * s] = GI[2 * s + 1] = 0; continue; }
         for (let m = 0; m < 2; m++) {
-          const f0 = T[k + 9 + m], f1 = T[k + 20 + m] - f0, f2 = T[k + 31 + m] - f0;
+          const f0 = T[k + 9 + m], f1 = T[k + B + 9 + m] - f0, f2 = T[k + C2 + 9 + m] - f0;
           const gx = (f1 * ey2 - f2 * ey1) / det, gy = (ex1 * f2 - ex2 * f1) / det;
           GI[2 * s + m] = Math.hypot(gx, gy);
         }
@@ -5495,16 +5537,16 @@
     for (let i = 0; i < NP; i++) {
       const s = id[i];
       if (s < 0) continue;
-      const l0 = b0[i], l1 = b1[i], l2 = 1 - l0 - l1, k = s * 33;
-      let nx = l0 * T[k + 3] + l1 * T[k + 14] + l2 * T[k + 25];
-      let ny = l0 * T[k + 4] + l1 * T[k + 15] + l2 * T[k + 26];
-      let nz = l0 * T[k + 5] + l1 * T[k + 16] + l2 * T[k + 27];
+      const l0 = b0[i], l1 = b1[i], l2 = 1 - l0 - l1, k = s * CT;
+      let nx = l0 * T[k + 3] + l1 * T[k + B + 3] + l2 * T[k + C2 + 3];
+      let ny = l0 * T[k + 4] + l1 * T[k + B + 4] + l2 * T[k + C2 + 4];
+      let nz = l0 * T[k + 5] + l1 * T[k + B + 5] + l2 * T[k + C2 + 5];
       let nl = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
       if (nz > 0) nl = -nl;  // (both sides of a surface: the one turned to the eye)
       nx /= nl; ny /= nl; nz /= nl;
-      let r = l0 * T[k + 6] + l1 * T[k + 17] + l2 * T[k + 28];
-      let gg = l0 * T[k + 7] + l1 * T[k + 18] + l2 * T[k + 29];
-      let b = l0 * T[k + 8] + l1 * T[k + 19] + l2 * T[k + 30];
+      let r = l0 * T[k + 6] + l1 * T[k + B + 6] + l2 * T[k + C2 + 6];
+      let gg = l0 * T[k + 7] + l1 * T[k + B + 7] + l2 * T[k + C2 + 7];
+      let b = l0 * T[k + 8] + l1 * T[k + B + 8] + l2 * T[k + C2 + 8];
       // diffuse light from the lamp, light from the sky (more on faces that look up), a highlight, and
       // the surroundings mirrored more at a slant (Fresnel)
       const dif = nx * Lx + ny * Ly + nz * Lz, nh = nx * Hx + ny * Hy + nz * Hz;
@@ -5515,7 +5557,7 @@
       r = (r * kd) * (1 - fr) + env[0] * fr + sp; gg = (gg * kd) * (1 - fr) + env[1] * fr + sp; b = (b * kd) * (1 - fr) + env[2] * fr + sp;
       // the lines of the grid
       if (mesh) {
-        const gi = l0 * T[k + 9] + l1 * T[k + 20] + l2 * T[k + 31], gj = l0 * T[k + 10] + l1 * T[k + 21] + l2 * T[k + 32];
+        const gi = l0 * T[k + 9] + l1 * T[k + B + 9] + l2 * T[k + C2 + 9], gj = l0 * T[k + 10] + l1 * T[k + B + 10] + l2 * T[k + C2 + 10];
         if (gi === gi) {
           const di = Math.abs(gi - Math.round(gi)), dj = Math.abs(gj - Math.round(gj));
           const pi = GI[2 * s] > 1e-6 ? di / GI[2 * s] : 1e9, pj = GI[2 * s + 1] > 1e-6 ? dj / GI[2 * s + 1] : 1e9;
@@ -5565,7 +5607,7 @@
           const dz = zb[j] - z;
           // (an edge in front of another surface, or between two surfaces of different colors)
           let edge = dz > 0.04 || dz < -0.04;
-          if (!edge && id[j] !== s) { const ka = s * 33 + 6, kb = id[j] * 33 + 6; edge = Math.abs(T[ka] - T[kb]) + Math.abs(T[ka + 1] - T[kb + 1]) + Math.abs(T[ka + 2] - T[kb + 2]) > 120; }
+          if (!edge && id[j] !== s) { const ka = s * CT + 6, kb = id[j] * CT + 6; edge = Math.abs(T[ka] - T[kb]) + Math.abs(T[ka + 1] - T[kb + 1]) + Math.abs(T[ka + 2] - T[kb + 2]) > 120; }
           if (edge) { r += src[j * 4]; gg += src[j * 4 + 1]; b += src[j * 4 + 2]; n++; }
         }
         if (n) {
@@ -5584,6 +5626,17 @@
     g.restore();
     return { shown, q };
   }
+  // the slope at p0 (value w0) from the points on its two sides, [place, value] (a: before, b: after;
+  // null if none): the parabola through the three, or the line to the one there is
+  function parabolaSlope(p0, w0, a, b) {
+    if (a && b) {
+      const h1 = p0 - a[0], h2 = b[0] - p0;
+      if (h1 > 1e-9 && h2 > 1e-9) return (-h2 / (h1 * (h1 + h2))) * a[1] + ((h2 - h1) / (h1 * h2)) * w0 + (h1 / (h2 * (h1 + h2))) * b[1];
+    }
+    if (b && b[0] - p0 > 1e-9) return (b[1] - w0) / (b[0] - p0);
+    if (a && p0 - a[0] > 1e-9) return (w0 - a[1]) / (p0 - a[0]);
+    return 0;
+  }
   // the normal of a surface at the points of its grid (in the box's axes u, v, w), for the points with
   // st 1: the slopes from a parabola through the point and its two neighbours, or (where the surface
   // ends, as a sphere at its rim) through the edge that refineRims found, which keeps the steep slopes
@@ -5591,16 +5644,7 @@
   function gridNormals(s, D, U, V, Wz) {
     const nx = D.nx, ny = D.ny, n = nx * ny, st = s.proj.st, w = s.proj.pw, xs = D.xs, ys = D.ys, rim = s.rim || {};
     const N = s.nrm && s.nrm.length === 3 * n ? s.nrm : (s.nrm = new Float32Array(3 * n));
-    // the slope at a point from the points on its two sides (a: before, b: after; null if none)
-    const slope = (p0, w0, a, b) => {
-      if (a && b) {
-        const h1 = p0 - a[0], h2 = b[0] - p0;
-        if (h1 > 1e-9 && h2 > 1e-9) return (-h2 / (h1 * (h1 + h2))) * a[1] + ((h2 - h1) / (h1 * h2)) * w0 + (h1 / (h2 * (h1 + h2))) * b[1];
-      }
-      if (b && b[0] - p0 > 1e-9) return (b[1] - w0) / (b[0] - p0);
-      if (a && p0 - a[0] > 1e-9) return (w0 - a[1]) / (p0 - a[0]);
-      return 0;
-    };
+    const slope = parabolaSlope;
     const fromRim = (key, along) => { const e = rim[key]; return e && e.z === e.z ? [along(e), Wz(e.z)] : null; };
     for (let k = 0; k < n; k++) {
       if (st[k] !== 1) continue;
@@ -5614,6 +5658,105 @@
       N[3 * k] = -du / l; N[3 * k + 1] = -dv / l; N[3 * k + 2] = 1 / l;
     }
     return N;
+  }
+
+  // ---- the light near the edge where a surface ends (1.9.3)
+  // A sphere √(r² − x² − y²) ends at its rim, where it stands upright: near the rim its height rises
+  // as the square root of the distance to the rim, and its normal turns from level to tilted within
+  // the last cell. Blending the normals of the corners of that cell in a straight line (1.9.2) made
+  // the light wrong by an amount that depended on how far each grid point happened to be from the rim,
+  // which showed as streaks across the band next to the rim. The square of the height above the rim,
+  // G = (w − w_rim)², changes smoothly there instead (on a sphere it is r² − x² − y²), so G and its
+  // slopes can be blended across a cell in a straight line. For a surface that ends this way (tested
+  // on the grid lines that cross its edge), the grid points within a few cells of the edge get the
+  // normal (−∂G/∂u, −∂G/∂v, 2·|w − w_rim|) (turned to +w), and the cells there are cut into smaller
+  // triangles whose corners are lifted to the height w_rim ± √G (draw3d, rimTri), so that near the rim
+  // they lie on the rounded surface instead of on the flat cell below it. Sets s.rm
+  // (G, the side of the edge and the level part at the grid points, or null) and, at the edge points
+  // of s.rimP, G = 0, the side and the level part; improves s.nrm and s.cnrm at those grid points.
+  // camN: from the box's axes to the camera's.
+  function rimModel(s, D, U, V, camN) {
+    s.rm = null;
+    const rp = s.rimP, P = s.proj;
+    if (!rp || !P) return null;
+    const nx = D.nx, ny = D.ny, n = nx * ny, xs = D.xs, ys = D.ys, st = P.st, pw = P.pw;
+    const keys = Object.keys(rp);
+    if (keys.length < 4) return null;
+    // (the grid point inside the surface on the grid line of an edge point, and the next one inward)
+    const inner = (key) => {
+      const ka = +key.slice(1), hz = key[0] === 'h', kb = hz ? ka + 1 : ka + nx;
+      const kin = st[ka] === 1 ? ka : kb, k2 = 2 * kin - (kin === ka ? kb : ka);
+      const ok2 = k2 >= 0 && k2 < n && st[k2] === 1 && (!hz || ((k2 / nx) | 0) === ((kin / nx) | 0));
+      return { kin, k2: ok2 ? k2 : -1, hz };
+    };
+    // Does the surface end as a square root? Along a grid line into it from its edge, G grows in a
+    // straight line, so G / d (d: the distance to the edge) is about the same at the first two grid
+    // points; for a surface that ends at a slant, with its height in a straight line, G / d grows by
+    // the ratio of the two distances. The test passes when it is nearer the first.
+    let tested = 0, passed = 0;
+    for (const key of keys) {
+      const e = rp[key], { kin, k2, hz } = inner(key);
+      if (k2 < 0) continue;
+      const at = (k) => (hz ? U(xs[k % nx]) : V(ys[(k / nx) | 0]));
+      const pe = hz ? e.u : e.v, d1 = Math.abs(at(kin) - pe), d2 = Math.abs(at(k2) - pe);
+      if (!(d1 > 0.05 * (d2 - d1)) || !(d2 > d1)) continue;  // (an edge point too near a grid point says nothing)
+      tested++;
+      const h1 = pw[kin] - e.w, h2 = pw[k2] - e.w;
+      if (!(h1 * h2 > 0 && Math.abs(h2) > Math.abs(h1))) continue;
+      if (Math.abs(Math.log((h2 * h2 / d2) / (h1 * h1 / d1))) < 0.5 * Math.log(d2 / d1)) passed++;
+    }
+    if (tested < 4 || passed < 0.7 * tested) return null;
+    // the height of the edge near each grid point: the edge points within RM cells, weighted by
+    // 1 / distance² (on a sphere the rim lies at one height; elsewhere it may change along the edge)
+    const RM = 3, zs = new Float64Array(n), ws = new Float64Array(n);
+    for (const key of keys) {
+      const e = rp[key], i0 = Math.round(e.gi), j0 = Math.round(e.gj);
+      for (let j = Math.max(0, j0 - RM); j <= Math.min(ny - 1, j0 + RM); j++) {
+        for (let i = Math.max(0, i0 - RM); i <= Math.min(nx - 1, i0 + RM); i++) {
+          const k = j * nx + i, dd = (i - e.gi) * (i - e.gi) + (j - e.gj) * (j - e.gj);
+          if (st[k] !== 1 || dd > RM * RM) continue;
+          const wt = 1 / (dd + 0.01);
+          zs[k] += wt * e.w; ws[k] += wt;
+        }
+      }
+    }
+    const G = new Float32Array(n).fill(-1), SG = new Int8Array(n), GU = new Float32Array(n), GV = new Float32Array(n), ZR = new Float32Array(n);
+    const N = s.nrm, CN = s.cnrm;
+    for (let k = 0; k < n; k++) {
+      if (!(ws[k] > 0)) continue;
+      const zr = zs[k] / ws[k], h = pw[k] - zr;
+      if (!(h !== 0)) continue;
+      const i = k % nx, j = (k / nx) | 0, sq = (w) => (w - zr) * (w - zr);
+      // the neighbours on the four sides: grid points with a value, or the edge points between
+      const side = (kk, place, key) => (st[kk] === 1 ? [place, sq(pw[kk])] : rp[key] ? [key[0] === 'h' ? rp[key].u : rp[key].v, sq(rp[key].w)] : null);
+      const Lf = i > 0 ? side(k - 1, U(xs[i - 1]), 'h' + (k - 1)) : null, Rt = i < nx - 1 ? side(k + 1, U(xs[i + 1]), 'h' + k) : null;
+      const Dn = j > 0 ? side(k - nx, V(ys[j - 1]), 'v' + (k - nx)) : null, Up = j < ny - 1 ? side(k + nx, V(ys[j + 1]), 'v' + k) : null;
+      const gu = parabolaSlope(U(xs[i]), h * h, Lf, Rt), gv = parabolaSlope(V(ys[j]), h * h, Dn, Up);
+      const sg = h > 0 ? 1 : -1;
+      G[k] = h * h; SG[k] = sg; GU[k] = -sg * gu; GV[k] = -sg * gv; ZR[k] = zr;
+      // the normal at the point (+w), in the box's axes and in the camera's
+      const nu = -sg * gu, nv = -sg * gv, nw = 2 * Math.abs(h), l = Math.hypot(nu, nv, nw) || 1;
+      N[3 * k] = nu / l; N[3 * k + 1] = nv / l; N[3 * k + 2] = nw / l;
+      const c3 = camN(nu / l, nv / l, nw / l);
+      CN[3 * k] = c3[0]; CN[3 * k + 1] = c3[1]; CN[3 * k + 2] = c3[2];
+    }
+    // the edge points: G = 0, and the level part from the slopes of G, carried on in a straight line
+    // from the two grid points inside on the same grid line (G changes smoothly; on a sphere its slopes
+    // change in a straight line, so this is exact), or from the one there is
+    for (const key of keys) {
+      const e = rp[key], { kin, k2, hz } = inner(key);
+      if (!(G[kin] >= 0)) continue;
+      let gu = GU[kin], gv = GV[kin];
+      if (k2 >= 0 && G[k2] >= 0 && SG[k2] === SG[kin]) {
+        const at = (k) => (hz ? U(xs[k % nx]) : V(ys[(k / nx) | 0]));
+        const t = (at(kin) - (hz ? e.u : e.v)) / (at(k2) - at(kin));  // (how far beyond kin, in steps from k2 to kin)
+        if (t >= 0 && t < 1.5) { gu += t * (GU[kin] - GU[k2]); gv += t * (GV[kin] - GV[k2]); }
+      }
+      const h = Math.hypot(gu, gv);
+      e.G = 0; e.sg = SG[kin]; e.L = camN(gu, gv, 0); e.zr = e.w;
+      if (h > 1e-9) e.n = camN(gu / h, gv / h, 0);
+    }
+    return (s.rm = { G, SG, ZR, L: (k) => camN(GU[k], GV[k], 0) });
   }
 
   // ---- the measured solid as a real liquid (1.9.1), a pale gelatin in a deep-colored skin (1.9.2)
@@ -6160,7 +6303,7 @@
             let poly = [];
             for (let n = 0; n < 4 && poly; n++) {
               const k = cs[n], k2 = cs[(n + 1) % 4];
-              if (st[k] === 1) poly.push({ x: px[k], y: py[k], d: pd[k], u: U(xs[k % D.nx]), v: V(ys[(k / D.nx) | 0]), w: pw[k], n: [s.cnrm[3 * k], s.cnrm[3 * k + 1], s.cnrm[3 * k + 2]], gi: k % D.nx, gj: (k / D.nx) | 0 });
+              if (st[k] === 1) poly.push({ k, x: px[k], y: py[k], d: pd[k], u: U(xs[k % D.nx]), v: V(ys[(k / D.nx) | 0]), w: pw[k], n: [s.cnrm[3 * k], s.cnrm[3 * k + 1], s.cnrm[3 * k + 2]], gi: k % D.nx, gj: (k / D.nx) | 0 });
               if ((st[k] === 1) !== (st[k2] === 1)) { const rp = s.rimP[eks[n]]; if (rp) poly.push(rp); else poly = null; }
             }
             if (!poly || poly.length < 3) continue;
@@ -6255,7 +6398,29 @@
         }
       }
     }
-    const single = D.series.length === 1, mesh = D.nx <= 45;
+    // where two surfaces end at the same place (the two halves of a sphere at its rim), their edges are
+    // made to meet exactly: the edges found for each surface differ a little in height (a square root
+    // near 0), which left a hair-thin gap through which the far side of the solid showed (1.9.2)
+    if (D.series.length > 1) {
+      const byKey = new Map();
+      for (const s of D.series) if (s.rimP) for (const key in s.rimP) { const a = byKey.get(key); if (a) a.push(s.rimP[key]); else byKey.set(key, [s.rimP[key]]); }
+      for (const ps of byKey.values()) {
+        for (let a = 0; a < ps.length; a++) {
+          for (let b = a + 1; b < ps.length; b++) {
+            const p = ps[a], r = ps[b];
+            if (!(Math.abs(p.u - r.u) + Math.abs(p.v - r.v) < 2e-3 && Math.abs(p.w - r.w) < 0.04 * EZ)) continue;
+            const u = (p.u + r.u) / 2, v = (p.v + r.v) / 2, w = (p.w + r.w) / 2;
+            proj(u, v, w);
+            for (const o of [p, r]) { o.u = u; o.v = v; o.w = w; o.x = T[0]; o.y = T[1]; o.d = T[2]; o.gi = giOf(u); o.gj = gjOf(v); }
+          }
+        }
+      }
+    }
+    // the light near the edges where surfaces end, as on a sphere (1.9.3)
+    for (const s of D.series) rimModel(s, D, U, V, camN);
+    // one surface, or surfaces that close up into one solid (the two halves of a sphere, 1.9.3): colored
+    // by height, as one object
+    const single = D.series.length === 1 || !!D.joined, mesh = D.nx <= 45;
     const vc = vf ? volumeColor(D, cells, single, dark, vf, vg) : null;
     const lmesh = vf ? liquidMesh(D, VS, vf, vg, { U, V, Wz, EZ, EX, EY }) : null;
     // a soft shadow of the measured solid on the floor of the box, seen from above (1.8.4), tinted
@@ -6277,44 +6442,70 @@
     // the parts that are not measured (other surfaces, outside the disk) fade into the background
     let fadeTo = null;
     if (vc && cells.some((q) => !q.vol && !q.inR)) fadeTo = cssRgb(css.getPropertyValue('--plot-bg').trim()) || (dark ? [24, 26, 32] : [255, 255, 255]);
-    // where two surfaces end at the same place (the two halves of a sphere at its rim), their edges are
-    // made to meet exactly: the edges found for each surface differ a little in height (a square root
-    // near 0), which left a hair-thin gap through which the far side of the solid showed (1.9.2)
-    if (D.series.length > 1) {
-      const byKey = new Map();
-      for (const s of D.series) if (s.rimP) for (const key in s.rimP) { const a = byKey.get(key); if (a) a.push(s.rimP[key]); else byKey.set(key, [s.rimP[key]]); }
-      for (const ps of byKey.values()) {
-        for (let a = 0; a < ps.length; a++) {
-          for (let b = a + 1; b < ps.length; b++) {
-            const p = ps[a], r = ps[b];
-            if (!(Math.abs(p.u - r.u) + Math.abs(p.v - r.v) < 2e-3 && Math.abs(p.w - r.w) < 0.04 * EZ)) continue;
-            const u = (p.u + r.u) / 2, v = (p.v + r.v) / 2, w = (p.w + r.w) / 2;
-            proj(u, v, w);
-            for (const o of [p, r]) { o.u = u; o.v = v; o.w = w; o.x = T[0]; o.y = T[1]; o.d = T[2]; o.gi = giOf(u); o.gj = gjOf(v); }
-          }
-        }
-      }
-    }
     // the cells as triangles with the normal, the color (by height for one surface) and the grid
     // coordinates at their corners, laid over the pixels with a depth buffer (1.9.2)
     const tb = triBuf(Q3);
     const colorAt = (s, w) => (single ? viridis((w / EZ + 1) / 2) : s.rgb);
+    // (a corner, and for rimModel its G, its side of the edge and the level part of its normal)
     const vtxK = (s, k) => {
-      const P = s.proj, N = s.cnrm, c3 = colorAt(s, P.pw[k]);
-      return [P.px[k], P.py[k], P.pd[k], N[3 * k], N[3 * k + 1], N[3 * k + 2], c3[0], c3[1], c3[2], k % D.nx, (k / D.nx) | 0];
+      const P = s.proj, N = s.cnrm, c3 = colorAt(s, P.pw[k]), rm = s.rm;
+      const v = [P.px[k], P.py[k], P.pd[k], N[3 * k], N[3 * k + 1], N[3 * k + 2], c3[0], c3[1], c3[2], k % D.nx, (k / D.nx) | 0];
+      if (rm && rm.G[k] >= 0) { v.G = rm.G[k]; v.sg = rm.SG[k]; v.L = rm.L(k); v.zr = rm.ZR[k]; v.u = U(xs[k % D.nx]); v.v = V(ys[(k / D.nx) | 0]); }
+      return v;
     };
-    const vtxP = (s, p) => { const c3 = colorAt(s, p.w); return [p.x, p.y, p.d, p.n[0], p.n[1], p.n[2], c3[0], c3[1], c3[2], p.gi, p.gj]; };
-    let jelly = 0, faded = 0;
+    const vtxP = (s, p) => {
+      const c3 = colorAt(s, p.w), v = [p.x, p.y, p.d, p.n[0], p.n[1], p.n[2], c3[0], c3[1], c3[2], p.gi, p.gj];
+      if (p.G >= 0 && p.L) { v.G = p.G; v.sg = p.sg; v.L = p.L; v.zr = p.zr; v.u = p.u; v.v = p.v; }
+      return v;
+    };
+    // a triangle near the edge of a surface (rimModel), cut into RS × RS smaller ones whose corners lie
+    // on the rounded surface: G (and the edge's height, the level part of the normal and the grid
+    // coordinates) in a straight line between the corners, the height zr ± √G, and the normal (not
+    // made of length 1) the level part plus 2·√G up. On a sphere this normal is in proportion to the
+    // place itself, so blending it in a straight line across each small triangle is right, and the light
+    // stays smooth across the rim, where the two halves meet.
+    // (fewer while the graph is turned)
+    const RS = Q3.turning ? 2 : 3, rsub = new Array((RS + 1) * (RS + 2) / 2), upN = camN(0, 0, 2);
+    const rimTri = (s, A, B, C) => {
+      let m = 0;
+      for (let j = 0; j <= RS; j++) {
+        for (let i = 0; i + j <= RS; i++) {
+          const b = i / RS, c = j / RS, a = 1 - b - c, L3 = (o) => a * A[o] + b * B[o] + c * C[o];
+          const G = a * A.G + b * B.G + c * C.G, w = a * A.zr + b * B.zr + c * C.zr + A.sg * Math.sqrt(G > 0 ? G : 0);
+          proj(a * A.u + b * B.u + c * C.u, a * A.v + b * B.v + c * C.v, w);
+          const c3 = colorAt(s, w), h = Math.sqrt(G > 0 ? G : 0);
+          rsub[m++] = [T[0], T[1], T[2], a * A.L[0] + b * B.L[0] + c * C.L[0] + h * upN[0], a * A.L[1] + b * B.L[1] + c * C.L[1] + h * upN[1], a * A.L[2] + b * B.L[2] + c * C.L[2] + h * upN[2], c3[0], c3[1], c3[2], L3(9), L3(10)];
+        }
+      }
+      // (the point (i, j) is number j·(RS + 1) − j·(j − 1)/2 + i)
+      const at = (i, j) => rsub[j * (RS + 1) - (j * (j - 1)) / 2 + i];
+      for (let j = 0; j < RS; j++) {
+        for (let i = 0; i + j < RS; i++) {
+          tb.add(at(i, j), at(i + 1, j), at(i, j + 1));
+          if (i + j + 1 < RS) tb.add(at(i + 1, j), at(i + 1, j + 1), at(i, j + 1));
+        }
+      }
+    };
+    let jelly = 0, faded = 0, rimTris = 0;
     for (const cl of cells) {
       // the measured parts of the surfaces: drawn as the liquid, below
       if (cl.inR) { jelly++; continue; }
       if (fadeTo) faded++;
-      const vs = cl.poly ? cl.poly.map((p) => vtxP(cl.s, p)) : cl.pts.map((k) => vtxK(cl.s, k));
+      // (the grid points of a cell cut at an edge as the other grid points: their normals may have been
+      // improved since the cell was made, rimModel)
+      const vs = cl.poly ? cl.poly.map((p) => (p.k !== undefined ? vtxK(cl.s, p.k) : vtxP(cl.s, p))) : cl.pts.map((k) => vtxK(cl.s, k));
+      // a cell near the edge of a surface whose corners all have G, on the same side of the edge: the
+      // light from G for each pixel (rimModel)
+      if (vs.every((v) => v.G >= 0 && v.sg === vs[0].sg)) {
+        for (let m = 1; m + 1 < vs.length; m++) rimTri(cl.s, vs[0], vs[m], vs[m + 1]);
+        rimTris += vs.length - 2;
+        continue;
+      }
       for (let m = 1; m + 1 < vs.length; m++) tb.add(vs[0], vs[m], vs[m + 1]);
     }
     const surf = surfacePaint(g, tb, { W, H, q: Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3 });
     // (what was drawn, for the tests)
-    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh });
+    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, joined: !!D.joined });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
     if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));

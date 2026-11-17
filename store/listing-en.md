@@ -70,6 +70,45 @@ Paste in Play Console under "Release notes" (up to 500 characters per language).
 each user the notes in their language: put all the blocks into the field (from 1.9.0 also the Spanish one,
 es-419, after the Spanish translation of the listing has been added; listing-es.md).
 
+1.9.3 (when 1.9.0, 1.9.1 or 1.9.2 was already released):
+
+<en-US>
+• 3D graph: a sphere is drawn as one round, smooth ball: its two halves in one set of colors, with no streaks near its rim
+• A sphere is round by itself again: "1:1" set for one graph no longer flattens later ones
+• Half a sphere reaches all the way down to its rim
+</en-US>
+<ja-JP>
+・3D グラフ：球を 1 つのなめらかな球として描きます。上下の半分を同じ色合いで描き、ふちの近くの縦すじをなくしました
+・球が自動で丸く描かれます。あるグラフで「1:1」を切っても、ほかのグラフはつぶれなくなりました
+・半球をふちまで描きます
+</ja-JP>
+<es-419>
+• Gráfico 3D: una esfera se dibuja como una sola bola redonda y suave: sus dos mitades con los mismos colores y sin rayas cerca del borde
+• La esfera vuelve a ser redonda por sí sola: "1:1" elegido para un gráfico ya no aplana los siguientes
+• Media esfera llega hasta su borde
+</es-419>
+
+1.9.3, when the last release was 1.8.0, 1.8.1, 1.8.2, 1.8.3 or 1.8.4 (the changes of 1.8.1 to 1.9.3):
+
+<en-US>
+• New: Spanish (menu → Language / 言語 / Idioma → Español). A phone set to Spanish starts in Spanish
+• 3D graph: smooth, glossy surfaces; a sphere is one round ball. "Volume and surface" gives its values at once and shows the solid as a pale gelatin in a clear skin
+• 📈 draws expressions in x and y, equations and matrices, also from the history and saved functions
+• Fixed: round samples keep their shape
+</en-US>
+<ja-JP>
+・新機能：スペイン語に対応（メニュー →「Language / 言語 / Idioma」→ Español）。スペイン語の端末ではスペイン語で始まります
+・3D グラフ：曲面をなめらかでつやのある姿で描き、球は 1 つの丸い球になります。「体積・表面積」は値がすぐに出て、立体を透明な皮に包まれた薄いゼラチンのように示します
+・📈 で x と y の式、方程式、行列を描けます。履歴や保存した関数からも同じです
+・修正：丸いサンプルの形
+</ja-JP>
+<es-419>
+• Nuevo: español (menú → Language / 言語 / Idioma → Español). Un teléfono en español empieza en español
+• Gráfico 3D: superficies suaves y brillantes; una esfera es una sola bola redonda. "Volumen y superficie" da sus valores al instante y muestra el sólido como una gelatina clara en una piel transparente
+• 📈 dibuja expresiones en x e y, ecuaciones y matrices, también desde el historial y las funciones guardadas
+• Corregido: las muestras redondas mantienen su forma
+</es-419>
+
 1.9.2 (when 1.9.0 or 1.9.1 was already released):
 
 <en-US>
