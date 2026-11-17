@@ -1,22 +1,27 @@
-# QCalc design documents (v1.9.0)
+# QCalc design documents (v1.9.1)
 
 **English** | [日本語](#日本語)
 
-The design document set of QCalc 1.9.0 (versionCode 16, package name `io.github.hiroshitsu.qcalc`): requirements, design, usage, maintenance and tests. Every document is in English and in Japanese, with the same content. The documents match the 1.9.0 source code in this repository (commit `1427130`).
+The design document set of QCalc 1.9.1 (versionCode 17, package name `io.github.hiroshitsu.qcalc`): requirements, design, usage, maintenance and tests. Every document is in English and in Japanese, with the same content. The documents match the 1.9.1 source code in this repository (commit `0df8ec6`).
 
 - Author: Hiroshi Tsukayama (津嘉山 弘)
-- Date: 2026-11-17 (10th edition, for 1.9.0)
+- Date: 2026-11-18 (11th edition, for 1.9.1)
 - Format: PDF (A4), with UML class, sequence and state diagrams and other figures
 
 | Document | English | Pages | Japanese | Pages | Contents |
 | --- | --- | ---: | --- | ---: | --- |
-| Overview | [00-overview-en.pdf](00-overview-en.pdf) | 51 | [00-overview.pdf](00-overview.pdf) (概要) | 29 | What QCalc is, what changed in 1.9.0, 1.8.4, 1.8.3, 1.8.2, 1.8.1, 1.8.0, 1.7.1, 1.7.0, 1.6.0, 1.5.0, 1.4.0, 1.3.0, 1.2.0 and 1.1.0, the design in brief, components and versions, list of the documents, glossary, revision history |
-| 1. Requirements definition | [01-requirements-en.pdf](01-requirements-en.pdf) | 33 | [01-requirements.pdf](01-requirements.pdf) (要件定義書) | 29 | Purpose, scope, 28 use cases, 54 functional requirements, non-functional requirements, constraints, 33 acceptance criteria, QCalc Pro |
+| Overview | [00-overview-en.pdf](00-overview-en.pdf) | 51 | [00-overview.pdf](00-overview.pdf) (概要) | 29 | What QCalc is, what changed in 1.9.1, 1.9.0, 1.8.4, 1.8.3, 1.8.2, 1.8.1, 1.8.0, 1.7.1, 1.7.0, 1.6.0, 1.5.0, 1.4.0, 1.3.0, 1.2.0 and 1.1.0, the design in brief, components and versions, list of the documents, glossary, revision history |
+| 1. Requirements definition | [01-requirements-en.pdf](01-requirements-en.pdf) | 35 | [01-requirements.pdf](01-requirements.pdf) (要件定義書) | 30 | Purpose, scope, 28 use cases, 54 functional requirements, non-functional requirements, constraints, 34 acceptance criteria, QCalc Pro |
 | 2. Basic design | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 39 | [02-basic-design.pdf](02-basic-design.pdf) (基本設計書) | 32 | System structure, deployment, modules, screens and screen transitions (with the forms), keys, main processing flows, stored data, external interfaces, error handling, security |
-| 3. Detailed design | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 102 | [03-detailed-design.pdf](03-detailed-design.pdf) (詳細設計書) | 94 | Class diagram, JavaScript bridge, protocol between the app and the engine, calculation, process supervision, user interface, data formats, time limits, error codes and messages, QCalc Pro, language, color themes, CSV export, suggestions, the Light or dark setting, special functions with Arb, the time limit setting, forms, the math view, □ boxes, actions on results, analysis and measuring in 2D and 3D graphs, graphs from forms, the Shapes panel, the area shown at once with edges that can be dragged, and for 1.8.0: forms that check, keep and undo, samples for the graphs, the volume of the drawn surface, notes on input, and for 1.8.2: the shorter search for exact values and the values kept, and for 1.8.3: the edge in the pictures of the samples and the scale kept for round samples, for 1.8.4: the measured solid shown filled with a pale liquid and graphs from expressions, equations, functions and matrices made anywhere in the app, and for 1.9.0: Spanish as the third language of the screens |
+| 3. Detailed design | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 104 | [03-detailed-design.pdf](03-detailed-design.pdf) (詳細設計書) | 96 | Class diagram, JavaScript bridge, protocol between the app and the engine, calculation, process supervision, user interface, data formats, time limits, error codes and messages, QCalc Pro, language, color themes, CSV export, suggestions, the Light or dark setting, special functions with Arb, the time limit setting, forms, the math view, □ boxes, actions on results, analysis and measuring in 2D and 3D graphs, graphs from forms, the Shapes panel, the area shown at once with edges that can be dragged, and for 1.8.0: forms that check, keep and undo, samples for the graphs, the volume of the drawn surface, notes on input, and for 1.8.2: the shorter search for exact values and the values kept, and for 1.8.3: the edge in the pictures of the samples and the scale kept for round samples, for 1.8.4: the measured solid shown filled with a pale liquid and graphs from expressions, equations, functions and matrices made anywhere in the app, for 1.9.0: Spanish as the third language of the screens, and for 1.9.1: the measured solid drawn as a real pale liquid in a clear, glossy film, traced for every pixel |
 | 4. User manual | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 49 | [04-user-manual.pdf](04-user-manual.pdf) (操作マニュアル) | 48 | Installation and the language (English, Japanese, Spanish), the screen, calculating (□ boxes, fractions, the suggestions and very long results), the forms for calculus and matrices (up to 30 × 30; checking, Undo and Redo, pasting a table), keyboard input, examples, the menu (graphs with samples, analysis and measuring, drawn also from the input field, the history and saved functions; shapes: area, volume, length), settings, troubleshooting; with screenshots |
 | 5. Build and maintenance manual | [05-build-and-maintenance-en.pdf](05-build-and-maintenance-en.pdf) | 22 | [05-build-and-maintenance.pdf](05-build-and-maintenance.pdf) (ビルド・保守マニュアル) | 20 | Development environment, build steps (test APK and App Bundle for Google Play), FLINT and the patch to libqalculate, signing, the build with billing (Gradle), checks, updating libqalculate, Android Studio |
-| 6. Test specification and results | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 68 | [06-test-specification.pdf](06-test-specification.pdf) (テスト仕様書・結果) | 65 | Test policy, test items and their results for 1.9.0 (all 947 items passed; the engine and Java tests are results of 1.6.0, as the engine and the Java code they test are unchanged), tests not yet done |
+| 6. Test specification and results | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 70 | [06-test-specification.pdf](06-test-specification.pdf) (テスト仕様書・結果) | 67 | Test policy, test items and their results for 1.9.1 (all 957 items passed; the engine and Java tests are results of 1.6.0, as the engine and the Java code they test are unchanged), tests not yet done |
+
+### What changed in 1.9.1
+
+- At the user's request, while "Volume and surface" is open in the 3D graph, the solid whose volume is measured looks like a real pale liquid held by a clear, glossy film. It is traced for every pixel: the color deepens where the liquid is thicker, the film mirrors the lamps of a bright room (more at a slant), what lies behind is seen through it, bent, and the shadow on the floor of the box takes the color of the liquid. The dashed edges and the grid lines on the solid are gone.
+- While the graph is turned with a finger, the liquid is drawn with fewer pixels, and in full again when the finger is lifted. The values, the engine and the Java code do not change (only app.js and one text of i18n-es.js changed).
 
 ### What changed in 1.9.0
 
@@ -62,25 +67,30 @@ Only the page changed (app.js and style.css); the engine and the Java code are t
 
 - The overview mentions a separate guide for publishing QCalc on Google Play. It is a working document for the developer's own Play Console tasks and is not included here.
 - The signing keys (the upload key and the test key) and their passwords are not in the documents or in this repository; the documents give only the file names and locations.
-- The screenshots in the user manuals were taken on a PC: the app's user interface was shown in Chromium at the size of a smartphone screen (details at the beginning of each manual). The English manual shows the English screens and the Japanese manual the Japanese screens. Two screen examples show 1.8.0 (the checked form, the pasted table), and four show 1.8.4: the volume in the 3D graph, where the measured solid looks filled with a pale liquid (two figures; the 2D half of one is from 1.8.0), and graphs drawn with 📈 and from the menu of the history (two figures). One screen example in 4.1 shows 1.9.0 in Spanish (the same figure in both manuals). The others are from earlier versions, as the manuals say.
+- The screenshots in the user manuals were taken on a PC: the app's user interface was shown in Chromium at the size of a smartphone screen (details at the beginning of each manual). The English manual shows the English screens and the Japanese manual the Japanese screens. Two screen examples show 1.8.0 (the checked form, the pasted table), two show 1.8.4 (graphs drawn with 📈 and from the menu of the history), and two show 1.9.1: the volume in the 3D graph, where the measured solid looks like a pale liquid in a clear, glossy film (the 2D half of one is from 1.8.0). One screen example in 4.1 shows 1.9.0 in Spanish (the same figure in both manuals). The others are from earlier versions, as the manuals say.
 
 ## 日本語
 
-QCalc 1.9.0（versionCode 16、パッケージ名 `io.github.hiroshitsu.qcalc`）の要件、設計、使い方、保守、テストをまとめた設計書です。どの文書も日本語と英語の 2 通りがあり、内容は同じです。内容はこのリポジトリの 1.9.0 のソースコード（コミット `1427130`）に合わせています。
+QCalc 1.9.1（versionCode 17、パッケージ名 `io.github.hiroshitsu.qcalc`）の要件、設計、使い方、保守、テストをまとめた設計書です。どの文書も日本語と英語の 2 通りがあり、内容は同じです。内容はこのリポジトリの 1.9.1 のソースコード（コミット `0df8ec6`）に合わせています。
 
 - 作成：津嘉山 弘
-- 作成日：2026-11-17（第 10 版。1.9.0 に合わせて改訂）
+- 作成日：2026-11-18（第 11 版。1.9.1 に合わせて改訂）
 - 形式：PDF（A4）。UML のクラス図・シーケンス図・状態遷移図などの図を含みます。
 
 | 文書 | 日本語 | ページ | 英語 | ページ | 内容 |
 | --- | --- | ---: | --- | ---: | --- |
-| 概要 | [00-overview.pdf](00-overview.pdf) | 29 | [00-overview-en.pdf](00-overview-en.pdf) | 51 | 1.9.0・1.8.4・1.8.3・1.8.2・1.8.1・1.8.0・1.7.1・1.7.0・1.6.0・1.5.0・1.4.0・1.3.0・1.2.0・1.1.0 で変えたところ、文書の一覧、全体像の図、構成要素と版、用語集、改訂履歴（英語版は設計の要点のまとめも含む） |
-| 1. 要件定義書 | [01-requirements.pdf](01-requirements.pdf) | 29 | [01-requirements-en.pdf](01-requirements-en.pdf) | 33 | 目的、対象範囲、ユースケース 28、機能要件 54、非機能要件、制約、受け入れ基準 33、QCalc Pro |
+| 概要 | [00-overview.pdf](00-overview.pdf) | 29 | [00-overview-en.pdf](00-overview-en.pdf) | 51 | 1.9.1・1.9.0・1.8.4・1.8.3・1.8.2・1.8.1・1.8.0・1.7.1・1.7.0・1.6.0・1.5.0・1.4.0・1.3.0・1.2.0・1.1.0 で変えたところ、文書の一覧、全体像の図、構成要素と版、用語集、改訂履歴（英語版は設計の要点のまとめも含む） |
+| 1. 要件定義書 | [01-requirements.pdf](01-requirements.pdf) | 30 | [01-requirements-en.pdf](01-requirements-en.pdf) | 35 | 目的、対象範囲、ユースケース 28、機能要件 54、非機能要件、制約、受け入れ基準 34、QCalc Pro |
 | 2. 基本設計書 | [02-basic-design.pdf](02-basic-design.pdf) | 32 | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 39 | システム構成、配置、モジュール、画面と画面遷移（フォームを含む）、キー、主要な処理の流れ、保存データ、外部インターフェース、エラー処理、セキュリティ |
-| 3. 詳細設計書 | [03-detailed-design.pdf](03-detailed-design.pdf) | 94 | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 102 | クラス図、JavaScript ブリッジ、計算エンジンとの通信プロトコル、計算処理、プロセス監視、画面処理、データ形式、時間制限、エラーコードとメッセージ、QCalc Pro、表示の言語、配色テーマ、履歴の書き出し、入力の候補、ライト／ダークの設定、Arb による特殊関数、計算の制限時間、入力フォーム、数式の形、□ の欄、結果からの操作、2D・3D グラフの解析と計測、フォームからのグラフ、図形の画面、すぐに出て端を指で動かせる面積。版 1.8.0 の、確かめる・残す・元に戻すフォーム、グラフのサンプル、描いている曲面の体積、入力への注意。版 1.8.2 の、厳密な値を探す時間の短縮と求めた値の記憶。版 1.8.3 の、サンプルの絵の縁と、丸いサンプルの比を保つこと。版 1.8.4 の、計測している立体を薄い液体で満たしたように示すことと、どこで作った式・方程式・関数・行列もグラフにすること。版 1.9.0 の、3 つ目の言語としてのスペイン語 |
+| 3. 詳細設計書 | [03-detailed-design.pdf](03-detailed-design.pdf) | 96 | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 104 | クラス図、JavaScript ブリッジ、計算エンジンとの通信プロトコル、計算処理、プロセス監視、画面処理、データ形式、時間制限、エラーコードとメッセージ、QCalc Pro、表示の言語、配色テーマ、履歴の書き出し、入力の候補、ライト／ダークの設定、Arb による特殊関数、計算の制限時間、入力フォーム、数式の形、□ の欄、結果からの操作、2D・3D グラフの解析と計測、フォームからのグラフ、図形の画面、すぐに出て端を指で動かせる面積。版 1.8.0 の、確かめる・残す・元に戻すフォーム、グラフのサンプル、描いている曲面の体積、入力への注意。版 1.8.2 の、厳密な値を探す時間の短縮と求めた値の記憶。版 1.8.3 の、サンプルの絵の縁と、丸いサンプルの比を保つこと。版 1.8.4 の、計測している立体を薄い液体で満たしたように示すことと、どこで作った式・方程式・関数・行列もグラフにすること。版 1.9.0 の、3 つ目の言語としてのスペイン語。版 1.9.1 の、計測している立体を、つやのある透明な膜に満たした本物の薄い液体として画素ごとに描くこと |
 | 4. 操作マニュアル | [04-user-manual.pdf](04-user-manual.pdf) | 48 | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 49 | インストールと表示の言語（英語・日本語・スペイン語）、画面の見方、計算のしかた（□ の欄、分数、入力の候補、とても長い結果を含む）、解析と行列のフォーム（行列は 30 × 30 まで。欄の確認、「元に戻す」「やり直す」、表の貼り付け）、キーボード入力、式の例、メニュー（グラフのサンプル・解析・計測、入力欄・履歴・保存した関数からのグラフ、図形の面積・体積・長さ）、設定、困ったとき。各画面の画像つき |
 | 5. ビルド・保守マニュアル | [05-build-and-maintenance.pdf](05-build-and-maintenance.pdf) | 20 | [05-build-and-maintenance-en.pdf](05-build-and-maintenance-en.pdf) | 22 | 開発環境、ビルド手順（テスト用 APK と Google Play 用 App Bundle）、FLINT と libqalculate へのパッチ、署名、課金のある版（Gradle）、動作確認、libqalculate の更新手順、Android Studio |
-| 6. テスト仕様書・結果 | [06-test-specification.pdf](06-test-specification.pdf) | 65 | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 68 | テストの方針、テスト項目と 1.9.0 での結果（947 項目すべて合格。計算エンジンと、試験の対象の Java は変えていないので、その試験は 1.6.0 の結果）、未実施のテスト |
+| 6. テスト仕様書・結果 | [06-test-specification.pdf](06-test-specification.pdf) | 67 | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 70 | テストの方針、テスト項目と 1.9.1 での結果（957 項目すべて合格。計算エンジンと、試験の対象の Java は変えていないので、その試験は 1.6.0 の結果）、未実施のテスト |
+
+### 1.9.1 で変えたところ
+
+- 利用者の要望で、3D グラフの「体積・表面積」を開いている間、体積を計測している立体を、つやのある透明な膜に満たした本物の薄い色の液体のように示します。画素ごとにたどって描き、液体が厚いところほど色が濃く、膜には明るい部屋の照明が映り込み（斜めほど強く）、後ろにあるものが曲がって透けて見え、箱の底の影も液体の色になります。立体の破線の辺と格子の線はなくしました。
+- 指でグラフを回している間は液体を少し粗く描き、指を離すとくっきり描き直します。値、計算エンジン、Java のコードは変わりません（変えたのは app.js と、i18n-es.js の 1 つの文だけ）。
 
 ### 1.9.0 で変えたところ
 
@@ -126,4 +136,4 @@ QCalc 1.9.0（versionCode 16、パッケージ名 `io.github.hiroshitsu.qcalc`�
 
 - 概要に出てくる「QCalc を Google Play で公開する手順」は、開発者が Play Console で作業するための手順書で、ここには含めていません。
 - 署名の鍵（アップロード鍵とテスト用の鍵）とそのパスワードは、設計書にもこのリポジトリにも含まれていません（ファイル名と置き場所だけを記載しています）。
-- 操作マニュアルの画面の画像は、PC の Chromium でアプリと同じ画面をスマートフォン相当の大きさで表示して撮影したものです（詳しくは各マニュアルの冒頭）。日本語版は日本語の画面、英語版は英語の画面を載せています。2 つの画面例（確かめるフォーム、表の貼り付け）は版 1.8.0、4 つは版 1.8.4 のものです。版 1.8.4 の画面例は、計測している立体を薄い液体で満たしたように示す 3D グラフの体積（2 つ。うち 1 つの左半分の 2D グラフは版 1.8.0）と、📈 と履歴のメニューから描いたグラフ（2 つ）です。4.1 の画面例 1 つは版 1.9.0 のスペイン語の画面です（日本語版と英語版で同じ画像）。ほかは、マニュアルに書いたとおり、それより前の版のものです。
+- 操作マニュアルの画面の画像は、PC の Chromium でアプリと同じ画面をスマートフォン相当の大きさで表示して撮影したものです（詳しくは各マニュアルの冒頭）。日本語版は日本語の画面、英語版は英語の画面を載せています。2 つの画面例（確かめるフォーム、表の貼り付け）は版 1.8.0、2 つ（📈 と履歴のメニューから描いたグラフ）は版 1.8.4、2 つ（計測している立体を、つやのある透明な膜に満たした薄い液体のように示す 3D グラフの体積。うち 1 つの左半分の 2D グラフは版 1.8.0）は版 1.9.1 のものです。4.1 の画面例 1 つは版 1.9.0 のスペイン語の画面です（日本語版と英語版で同じ画像）。ほかは、マニュアルに書いたとおり、それより前の版のものです。
