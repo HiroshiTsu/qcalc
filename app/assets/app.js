@@ -4418,8 +4418,8 @@
     const s1 = el('select', { 'aria-label': tr('Surface', '曲面') }), s2 = el('select', { 'aria-label': tr('and', 'と') });
     const out = el('div', { class: 'area-out', 'aria-live': 'polite' });
     const ins = el('button', { class: 'btn', text: tr('Put the double integral into the input field', '重積分の式を入力欄に入れる'), hidden: true });
-    const go = tapButton({ class: 'btn primary', text: tr('Volume', '体積') }, () => computeVolume());
-    const sur = tapButton({ class: 'btn', text: tr('Surface area', '表面積') }, () => computeSurface());
+    // (no "Volume" and "Surface area" buttons since 1.8.1: both values are always calculated, and
+    // the buttons only replaced the two values with one of them)
     const rangeText = el('span', { class: 'form-hint' });
     const R = el('input', { inputmode: 'text', autocapitalize: 'off', placeholder: 'R', 'aria-label': tr('Radius R', '半径 R') });
     const bRect = tapButton({ text: tr('Rectangle', '長方形') }, () => setRegion('rect')), bDisk = tapButton({ text: tr('Disk', '円') }, () => setRegion('disk'));
@@ -4435,7 +4435,7 @@
     const box = el('div', { class: 'area-box' },
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk), rangeText, diskRow),
-      el('div', { class: 'calc-btns' }, go, sur), out, ins,
+      out, ins,
       el('div', { class: 'form-hint', text: tr('The values are those of the graph that is drawn. Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.', 'いま描いているグラフの値です。平面（またはもう一方の曲面）より下の部分もプラスとして数えます。表面積は 2 つの曲面（または曲面と z = 0 の底面）の面積の和で、側面は含みません。') }),
       buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
       tapButton({ class: 'btn geo-link', text: tr('More shapes: cylinder, cone, box… ›', 'ほかの図形（円柱・円錐・直方体など）›') }, () => openShapes()));

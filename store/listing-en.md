@@ -69,6 +69,32 @@ Android 7.0 or later on a 64-bit ARM (arm64) device.
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
 each user the notes in their language: put both blocks into the field.
 
+1.8.1 (when 1.8.0 was already released):
+
+<en-US>
+• 3D graph: the "Volume" and "Surface area" buttons in "Volume and surface" are gone. Both values appear by themselves as soon as the box is open (pressing a button only hid the other value)
+</en-US>
+<ja-JP>
+・3D グラフ：「体積・表面積」の中の「体積」「表面積」のボタンをなくしました。2 つの値は、箱を開くだけですぐに出ます（ボタンを押すと、もう片方の値が消えるだけでした）
+</ja-JP>
+
+1.8.1, when 1.7.0 or 1.7.1 was the last release (the notes of 1.8.0; the first line also says what 1.8.1 changed):
+
+<en-US>
+• 3D graph: "Volume and surface" now measures the surface you have drawn, at once, with no button to press (the sphere is only an example)
+• New: samples for 2D and 3D graphs. Tap a picture to draw it (heart, ripple, doughnut…)
+• Forms: Undo and Redo, boxes are kept and checked one by one, paste a table from a spreadsheet into a matrix, insert and delete rows and columns
+• A note when input is read differently than meant (1,000 + 500), and Undo after "x = 5"
+</en-US>
+<ja-JP>
+・3D グラフ：「体積・表面積」が、いま描いている曲面を、ボタンを押さなくてもすぐに計算するようになりました（球は例として残しています）
+・新機能：2D・3D グラフのサンプル。絵をタップするだけで描けます（ハート、波紋、ドーナツなど）
+・入力フォーム：「元に戻す」「やり直す」、入力した内容の保存、欄ごとの確認、表計算ソフトの表を行列に貼り付け、行・列の挿入と削除
+・意図と違って読まれる入力（1,000 + 500 など）に注意を表示。「x = 5」のあとに「取り消す」を表示
+</ja-JP>
+
+1.8.1, when the last release was 1.6.0: the same notes as for 1.8.0 below ("when the last release was 1.6.0"); they already say that the volume and surface are shown at once.
+
 1.8.0 (when 1.7.0 or 1.7.1 was already released):
 
 <en-US>
