@@ -25,18 +25,18 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Unit conversion: length, mass, speed, temperature, area, energy and many more units (5 km to mi, 20 °C to °F)
 • Currency conversion with exchange rates from the European Central Bank and other sources (100 USD to EUR)
 • Equations and systems of equations (solve, multisolve)
-• Derivatives, integrals, limits, sums and differential equations (diff, integrate, limit, sum, dsolve): the calculus keys open forms laid out like the mathematics (the limits above and below ∫ …), with the result shown at once
+• Derivatives, integrals, limits, sums and differential equations (diff, integrate, limit, sum, dsolve) in forms laid out like the math: the result at once, Undo and Redo, boxes that are checked and kept
 • The expression is shown in math notation (fractions, powers, roots, integrals) while you type
-• Equations and systems of equations in a form (left side = right side), and matrices up to 30 × 30 in a grid of cells with the determinant, inverse, rank, eigenvalues and linear systems
+• Equations and systems in a form (left side = right side); matrices up to 30 × 30 in a grid (paste a table from a spreadsheet) with determinant, inverse, rank, eigenvalues and linear systems
 • Shapes: area, lengths, volume and surface area of 15 shapes (circle, triangle, sphere, cylinder, cone…) from their sizes, with pictures, formulas and units
 • Complex numbers; binary, octal and hexadecimal numbers
 • Date calculations (today + 100 days)
 • Uncertainty propagation ((5 ± 0.2) m × (3 ± 0.1) m)
-• Exact results with fractions and square roots, and high precision with up to 200,000 significant digits (above 1000 digits with QCalc Pro). Long results are shown and copied with all their digits
+• Exact results with fractions and square roots, and high precision with up to 200,000 significant digits (above 1000 digits with QCalc Pro). Long results are shown and copied in full
 • Special functions stay fast with many digits (zeta, gamma, erf, Bessel functions and more), and a long calculation can be given up to one hour
-• 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom. Derivatives, antiderivatives, tangents, zeros and extrema; areas (shown at once; drag the edges), curve lengths and perimeters
-• 3D graphs of surfaces z = f(x, y) that you turn with a finger, with partial derivatives, volumes and surface areas (QCalc Pro)
-• From the calculus, equation and matrix forms, the graph that goes with the calculation: tangents, areas, the lines or planes of a linear system with its solution, the rows of a matrix as points
+• 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom. Derivatives, antiderivatives, tangents, zeros and extrema; areas (shown at once; drag the edges), curve lengths and perimeters; 17 samples to draw with one tap
+• 3D graphs of surfaces z = f(x, y) that you turn with a finger: partial derivatives, the volume and surface area of what you have drawn, 14 samples (QCalc Pro)
+• From the forms, the graph that goes with the calculation: tangents, areas, the lines or planes of a linear system with its solution, the rows of a matrix as points
 • Traditional Japanese units: tsubo, tan, sun, shaku, ken, ri, gō, shō, monme, kan (30 tsubo to m²)
 • Examples and tips inside the app: tap one to try it
 • Lists of functions, units and constants with search
@@ -68,6 +68,66 @@ Android 7.0 or later on a 64-bit ARM (arm64) device.
 
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
 each user the notes in their language: put both blocks into the field.
+
+1.8.0 (when 1.7.0 or 1.7.1 was already released):
+
+<en-US>
+• 3D graph: "Volume and surface" now measures the surface you have drawn, at once (the sphere is only an example)
+• New: samples for 2D and 3D graphs. Tap a picture to draw it (heart, ripple, doughnut…)
+• Forms: Undo and Redo, boxes are kept and checked one by one, paste a table from a spreadsheet into a matrix, insert and delete rows and columns
+• A note when input is read differently than meant (1,000 + 500), and Undo after "x = 5"
+</en-US>
+<ja-JP>
+・3D グラフ：「体積・表面積」が、いま描いている曲面をすぐに計算するようになりました（球は例として残しています）
+・新機能：2D・3D グラフのサンプル。絵をタップするだけで描けます（ハート、波紋、ドーナツなど）
+・入力フォーム：「元に戻す」「やり直す」、入力した内容の保存、欄ごとの確認、表計算ソフトの表を行列に貼り付け、行・列の挿入と削除
+・意図と違って読まれる入力（1,000 + 500 など）に注意を表示。「x = 5」のあとに「取り消す」を表示
+</ja-JP>
+
+1.8.0, when the last release was 1.6.0 (the notes of 1.7.0, 1.7.1 and 1.8.0 together):
+
+<en-US>
+• New: Shapes in the menu. Area, lengths and volume of 15 shapes from their sizes
+• New: samples for 2D and 3D graphs. Tap a picture to draw it
+• Graphs: the area (2D) and the volume and surface (3D) of what you have drawn are shown at once; drag the edges of an area
+• Forms: Undo and Redo, boxes are kept and checked, paste a table from a spreadsheet into a matrix
+• A note when input is read differently than meant (1,000 + 500)
+• Fixed: Back after an example shape; a sphere looked torn at first
+</en-US>
+<ja-JP>
+・新機能：メニューの「図形」。大きさを入れるだけで、15 の図形の面積・長さ・体積を計算
+・新機能：2D・3D グラフのサンプル。絵をタップするだけで描けます
+・グラフ：描いているものの面積（2D）、体積・表面積（3D）をすぐに表示。面積の範囲は指で動かせます
+・入力フォーム：「元に戻す」「やり直す」、内容の保存と確認、表計算ソフトの表を行列に貼り付け
+・意図と違って読まれる入力（1,000 + 500 など）に注意を表示
+・修正：図形の例のあとの「戻る」、球が「描画」の直後に一瞬くずれる不具合
+</ja-JP>
+
+1.7.1 (the notes of 1.7.0 and the fix of 1.7.1; use these when 1.7.1 is the first release after 1.6.0):
+
+<en-US>
+• New: Shapes in the menu. Type the sizes and get the area, lengths, volume and surface area of 15 shapes (circle, triangle, sphere, cylinder, cone…), with pictures, formulas and units
+• Graph: "Area and length" shows the shaded area at once; drag its edges; the value is also written on the graph
+• The area stays when you move or zoom the graph
+• Fixed: Back had to be pressed twice after an example shape
+• Fixed: a sphere in the 3D graph looked torn for a moment after Draw
+</en-US>
+<ja-JP>
+・新機能：メニューの「図形（面積・体積・長さ）」。大きさを入れるだけで、円・三角形・台形・球・円柱・円錐など 15 の図形の面積・周の長さ・体積・表面積を計算（絵と公式つき、単位も選べます）
+・グラフ：「面積・長さ」を開くと、色のついた部分の面積をすぐ表示。範囲の端は指で動かせ、面積はグラフの上にも出ます
+・グラフを動かしたり拡大したりしても、面積が消えません
+・修正：図形の例を描いたあと「戻る」を 2 回押す必要があった不具合
+・修正：3D グラフの球が、「描画」の直後に一瞬くずれて見える不具合
+</ja-JP>
+
+1.7.1, when 1.7.0 was already released:
+
+<en-US>
+• Fixed: a sphere in the 3D graph looked torn along its middle for a moment after Draw. It now appears whole at once
+</en-US>
+<ja-JP>
+・修正：3D グラフの球が、「描画」の直後に真ん中が一瞬くずれて見える不具合。最初から整った球が出るようになりました
+</ja-JP>
 
 1.7.0:
 

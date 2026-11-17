@@ -469,10 +469,14 @@
   // (editTarget, see "calculus forms").
   let editTarget = null;
   const tgt = () => editTarget || exprEl;
-  function targetChanged() { if (editTarget) { CF.reveal = true; formChanged(); } else exprChanged(); }
+  function targetChanged() { if (editTarget) { CF.reveal = true; CF.typing = true; CF.navSel = null; formChanged(); } else exprChanged(); }
+  // a box of a form that was reached with "Next box" or the arrows and is still selected as a whole
+  const boxSelected = (f) => f !== exprEl && CF.navSel === f && f.selectionStart === 0 && f.selectionEnd === f.value.length && f.value !== '';
   function insert(text, back, isOp) {
     const f = tgt();
     if (f === exprEl) dropUndo();
+    // (as in a cell of a spreadsheet, what is typed takes the place of what the box held)
+    if (boxSelected(f)) f.value = '';
     const v = f.value;
     let s = f.selectionStart, e = f.selectionEnd;
     if (s === undefined || s === null) { s = e = v.length; }
@@ -532,6 +536,9 @@
       }
       case 'kbd': toggleKeyboard(); break;
       case 'left': {
+        // in a form: from the start of a box (or from a box selected as a whole) to the box before
+        if (editTarget && (boxSelected(f) || (s === 0 && e === 0)) && formMove(f, 'prev')) break;
+        CF.navSel = null;
         // a selection collapses to its start; otherwise one character back (a surrogate pair counts as one)
         let p = s;
         if (s === e && p > 0) p -= /[\uDC00-\uDFFF]/.test(v[p - 1]) && p > 1 ? 2 : 1;
@@ -540,6 +547,8 @@
         break;
       }
       case 'right': {
+        if (editTarget && (boxSelected(f) || (s === v.length && e === v.length)) && formMove(f, 'next')) break;
+        CF.navSel = null;
         let p = e;
         if (s === e && p < v.length) p += /[\uD800-\uDBFF]/.test(v[p]) && p + 1 < v.length ? 2 : 1;
         f.setSelectionRange(p, p);
@@ -663,6 +672,46 @@
     parsedEl.hidden = ok;
     if (ok) mathEl.scrollLeft = mathEl.scrollWidth;
   }
+  // ---- notes on input that the engine reads in another way than it was probably meant. The
+  // engine gives no message of its own in these cases:
+  //   1,000 + 500      a "," outside parentheses separates values (the result is [1  500])
+  //   sni(30)          a name before "(" that is not a function is letters multiplied (s × n × i × 30)
+  const callKind = new Map(); // a name before "(": true when it is a function
+  async function inputNotes(expr) {
+    const notes = [];
+    let d = 0, top = false;
+    for (const c of expr) { if ('([{'.indexOf(c) >= 0) d++; else if (')]}'.indexOf(c) >= 0) d--; else if (c === ',' && d <= 0) top = true; }
+    if (top) {
+      const m = /(?:^|[^\d.,])(\d{1,3}(?:,\d{3})+)(?![\d,])/.exec(expr);
+      notes.push(m ? tr(`The "," in ${m[1]} separates values, it does not group digits: type ${m[1].replace(/,/g, '')}`, `「${m[1]}」の「,」は桁区切りではなく、値の区切りとして扱われます。${m[1].replace(/,/g, '')} と続けて入れてください`)
+        : tr('"," separates values, so the result is a list of values (the decimal point is ".")', '「,」は値の区切りなので、結果は値の並びになります（小数点は「.」）'));
+    }
+    const names = new Set();
+    for (const m of expr.matchAll(/(^|[^\p{L}\p{N}_\\])([\p{L}_][\p{L}\p{N}_]+)\(/gu)) names.add(m[2]);
+    for (const n of names) {
+      if (!callKind.has(n)) {
+        let fn = false;
+        try { fn = (await loadCatalog('functions')).some((it) => it.name === n); } catch (e) { fn = true; }
+        if (!fn) {
+          // (other names of a function, such as asin for arcsin, are not in the list: the engine is
+          // asked. Only a name that is not a function leaves the parentheses of "name()" empty.)
+          const r = await Bridge.send('calc', { expr: n + '()', opts: engineOpts(), timeout: 800 });
+          fn = !r.ok || !!r.timeout || !(r.messages || []).some((x) => /Empty expression in parentheses/.test(x.text));
+        }
+        callKind.set(n, fn);
+      }
+      if (!callKind.get(n)) notes.push(tr(`"${n}" is not a function: it was read as letters multiplied (units and constants). Check the spelling`, `「${n}」という関数はありません（文字ごとの掛け算＝単位や定数として計算しました）。つづりを確認してください`));
+    }
+    return notes;
+  }
+  // the notes go with the messages of the engine, in front of them
+  async function withNotes(r, expr) {
+    if (!r || !r.ok || r.deferred) return r;
+    let notes = [];
+    try { notes = await inputNotes(expr); } catch (e) { notes = []; }
+    if (notes.length) r.messages = notes.map((text) => ({ type: 'warning', text })).concat(r.messages || []);
+    return r;
+  }
   async function runPreview() {
     if (!engineReady) return;
     if (previewBusy) { previewAgain = true; return; }
@@ -675,7 +724,7 @@
       return;
     }
     previewBusy = true;
-    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    const r = await withNotes(await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), expr);
     previewBusy = false;
     if (exprEl.value.trim() === raw && !committing) showPreview(r);
     if (previewAgain) { previewAgain = false; runPreview(); }
@@ -796,6 +845,11 @@
     [/^Misplaced operator\(s\) "(.+)" ignored\.?$/, (m, o) => '余分な演算子「' + o + '」を無視しました'],
     [/^Misplaced '(.+)' ignored\.?$/, (m, o) => '余分な「' + o + '」を無視しました'],
     [/^Division by zero\.?$/, () => 'ゼロで割っています'],
+    [/^Misplaced decimal separator ignored\.?$/, () => '余分な小数点を無視しました'],
+    [/^Floating point overflow\.?$/, () => '数が大きすぎて、小数では表せません'],
+    [/^Floating point underflow\.?$/, () => '数が小さすぎて、小数では表せません'],
+    [/^log\(\) with a single argument is considered ambiguous\. Please use ln\(\) or log10\(\) instead\.?$/,
+      () => 'log() は底があいまいなので、自然対数（ln）として計算しました。自然対数は ln()、常用対数は log10() を使ってください'],
     [/^Definite integral was approximated\.?$/, () => '定積分は数値計算による近似値です'],
     [/^Empty expression in parentheses interpreted as zero\.?$/, () => '空のかっこは 0 として計算しました'],
     [/^A global unit or variable was deactivated\..*$/, () => '同じ名前の組み込みの単位・変数を一時的に置き換えました（新しい変数を削除すると元に戻ります）'],
@@ -817,6 +871,11 @@
       (m, x) => x + ' を実数として求められなかったため、その仮定を外して解きました（複素数の解を含むことがあります）'],
     [/^Was unable to completely isolate (.+)\.$/, (m, x) => x + ' について完全には解けませんでした'],
     [/^Was unable to isolate (.+)\.$/, (m, x) => x + ' について解けませんでした'],
+    [/^"(.+)" is not a valid variable\/function\/unit\.?$/, (m, a) => '「' + a + '」という変数・関数・単位はありません'],
+    [/^No possible solution was found \(with current assumptions\)\.?$/, () => '条件に合う解はありません'],
+    [/^Argument (\d+), (.+), in (.+)\(\) must be an unknown variable\/symbol\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は、x のような変数（文字）でなければなりません'],
+    [/^Argument (\d+), (.+), in (.+)\(\) must be an integer >= (-?\d+)(?: and <= \d+)?\.?$/, (m, n, a, f, lo) => f + '() の ' + n + ' 番目の引数は、' + lo + ' 以上の整数でなければなりません'],
+    [/^Argument (\d+), (.+), in (.+)\(\) must be an integer\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は整数でなければなりません（∞ は使えません）'],
     // matrices and vectors
     [/^Inverse of singular matrix\.?$/, () => '逆行列がありません（行列式が 0 の行列です）'],
     [/^Please use the cross\(\), dot\(\), and hadamard\(\) functions for vector multiplication\.?$/,
@@ -856,6 +915,8 @@
     [/^The middle of this long result is not shown \(([\d,]+) digits\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 桁）'],
     [/^The middle of this long result is not shown \(([\d,]+) characters\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 文字）'],
     [/^The middle of this long result is not shown$/, () => '長い結果のため、途中を省略しています'],
+    // (after the more exact ones above) an argument of another kind than the function takes
+    [/^Argument (\d+), (.+), in (.+)\(\) must be (.+?)\.?$/, (m, n, a, f, c) => f + '() の ' + n + ' 番目の引数が合っていません（' + c + '）'],
   ];
   // a message of the engine or of the app's Java code, in the language of the user interface
   function localMessage(text) {
@@ -879,9 +940,8 @@
     else {
       showResult(previewEl, resultText(r));
       fitMatrices(previewEl);
-      const warn = (r.messages || []).find((m) => m.type === 'warning');
-      const notes = [];
-      if (warn) notes.push(localMessage(warn.text));
+      const warns = (r.messages || []).filter((m) => m.type === 'warning').slice(0, 2), warn = warns[0];
+      const notes = warns.map((m) => localMessage(m.text));
       if (r.truncated) notes.push(localMessage(cutMessage(r)));
       if (notes.length) { msgEl.textContent = notes.join(' '); if (!warn) msgEl.className = 'msg note'; }
     }
@@ -920,6 +980,7 @@
       if (s >= 1) previewEl.textContent = tr(`Calculating… ${s} s (tap here to stop)`, `計算中… ${s} 秒（ここをタップで中止）`);
     }, 1000);
     const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
     committing = false;
     clearInterval(busyTimer);
     clearInterval(cancelTimer);
@@ -984,6 +1045,34 @@
       histPinned = true;
     }
     announce(entry);
+    definitionMade(r, expr);
+  }
+  // "x = 5" and "f(x) := x^2" define a variable or a function. From then on every expression uses
+  // it (x is 5 in the forms too), which is easy to do by mistake when an equation was meant: a
+  // message says so and offers to take the definition back.
+  const definedVars = new Set(); // the names of the user's variables
+  async function refreshDefined() {
+    const r = await Bridge.send('user_defs');
+    if (!r.ok) return;
+    definedVars.clear();
+    for (const v of r.variables || []) definedVars.add(v.name);
+  }
+  function definitionMade(r, expr) {
+    const m = /^save\(.*?, '([^']+)',/.exec(r.parsed || '');
+    if (!m) return;
+    const name = m[1], kind = new RegExp('^\\s*' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(').test(expr) ? 'function' : 'variable';
+    invalidateCatalogs();
+    const shown = kind === 'function' ? name + '()' : name;
+    toast(kind === 'function' ? tr(`${shown} is defined`, `${shown} を定義しました`)
+      : tr(`${shown} is now ${clip(r.result, 24)} in every expression`, `これ以降、${shown} は ${clip(r.result, 24)} として計算します`), 9000,
+    [tr('Undo', '取り消す'), async () => {
+      const d = await Bridge.send('delete_def', { kind, name });
+      if (!d.ok) { toast(localMessage(d.error)); return; }
+      invalidateCatalogs();
+      await refreshDefined();
+      toast(tr(`The definition of ${shown} was taken back`, `${shown} の定義を取り消しました`));
+      if (CF.id) formChanged(); else exprChanged();
+    }]);
   }
 
   function setInput(h, input) {
@@ -1028,7 +1117,8 @@
   // puts the expression into the input field, where a needed box that is still empty becomes □ to be
   // filled in; "Calculate" (or =) inserts it and calculates it. The result is previewed while typing.
   const cformEl = $('#cform');
-  const CF = { id: null, boxes: {}, order: [], sel: [0, 0], dir: '', seq: 0, timer: null, nodes: null, reveal: false };
+  const CF = { id: null, boxes: {}, order: [], sel: [0, 0], dir: '', seq: 0, timer: null, nodes: null, reveal: false,
+    hist: [], hi: -1, histK: '', histT: 0, histT0: 0, typing: false, restoring: false, navSel: null, base: null };
   function formBoxes() { return CF.id ? CF.order.map((k) => CF.boxes[k]) : []; }
   // the layout: rows, columns, an operator with a box above and below it, symbols and labels
   const cfRow = (...c) => el('div', { class: 'cf-row' }, ...c);
@@ -1128,11 +1218,105 @@
     try { if (window.katex) { window.katex.render('\\displaystyle ' + texSrc, node, { throwOnError: false, strict: 'ignore' }); return; } } catch (e) { }
     node.textContent = fallback;
   }
+  // ---- what a box holds, checked. A box takes one expression. Its parentheses are closed when
+  // some are missing (as "=" does for the whole input), so that "(x + 1" in the box of the function
+  // does not swallow the limits that follow it; a ")" too many, or a "," or ";" outside parentheses,
+  // would change what the whole expression means and is reported on the box instead (formProblems).
+  function scanBox(t) {
+    let d = 0, sq = 0, extra = false, comma = false, bracket = false;
+    for (const c of t) {
+      if (c === '(') d++;
+      else if (c === ')') { if (d) d--; else extra = true; }
+      else if (c === '[') { sq++; bracket = true; }
+      else if (c === ']') { if (sq) sq--; bracket = true; }
+      else if ((c === ',' || c === ';') && !d && !sq) comma = true;
+    }
+    return { open: d, extra, comma, bracket };
+  }
+  // the text of a box as it goes into the expression
+  function boxText(k) {
+    const b = CF.boxes[k];
+    const t = b ? normalizeExpr(b.value) : '';
+    return t ? t + ')'.repeat(scanBox(t).open) : '';
+  }
+  const isName = (t) => /^\\?[\p{L}_][\p{L}\p{Nd}_]*$/u.test(t);
+  // A variable such as k or t is an unknown for the engine only as \k or \t (t alone is the tonne).
+  // The letter typed in the other boxes means the variable of the form, so it is written the same way.
+  function asUnknown(t, name) {
+    if (!t || !name || name[0] !== '\\') return t;
+    const l = name.slice(1);
+    return t.replace(/\\?[\p{L}_][\p{L}\p{Nd}_]*/gu, (tok) => (tok === l ? name : tok));
+  }
+  // A letter as the unknown of a form: \t for a letter that is a unit or a constant, and also for a
+  // letter that the user gave a value (after "x = 5", x is written \x: the form integrates or
+  // solves for x all the same; the result then shows it as 'x').
+  const formUnknown = (l) => (definedVars.has(l) ? '\\' + l : varText(l));
+  // the letter of the form that the user gave a value, or ''
+  function formDefinedVar() {
+    const F = FORMS[CF.id];
+    if (!definedVars.size) return '';
+    if (F.matrix) return CF.mat.op === 'eig' && definedVars.has('x') ? 'x' : '';
+    if (F.eqs) { const ns = eqNames(); return (ns.length ? ns : ['x', 'y', 'z', 'w', 'u', 'v'].slice(0, CF.eq.n)).find((l) => definedVars.has(l)) || ''; }
+    if (!CF.boxes.v) return '';
+    const v = normalizeExpr(CF.boxes.v.value) || 'x';
+    return definedVars.has(v) ? v : '';
+  }
+  // the variable of the form as the engine reads it (\k), or '' (x, y, z, n as they are, or none)
+  function formVar() {
+    if (!CF.boxes.v || FORMS[CF.id].eqs) return '';
+    const v = normalizeExpr(CF.boxes.v.value) || 'x';
+    return /^\p{L}$/u.test(v) ? formUnknown(v) : '';
+  }
   function formValue(k) {
     const d = FORMS[CF.id].boxes.find((b) => b[0] === k);
-    let v = normalizeExpr(CF.boxes[k].value);
-    if (k === 'v' && /^\p{L}$/u.test(v)) v = varText(v); // a variable t is written \t
+    let v = boxText(k);
+    if (k === 'v') {
+      const t = v || (d[3] !== undefined ? d[3] : '');
+      return /^\p{L}$/u.test(t) ? formUnknown(t) : t; // a variable t is written \t
+    }
+    v = asUnknown(v, formVar());
     return v || (d[3] !== undefined ? d[3] : d[2] ? '□' : '');
+  }
+  // the letters to solve for in the equations form ("x, y" or "x y")
+  function eqNames() {
+    const v = CF.boxes.v ? normalizeExpr(CF.boxes.v.value) : '';
+    return v.split(/[\s,、]+/).filter(Boolean);
+  }
+  const countEq = (t) => (t.match(/(^|[^<>!=])=(?!=)/g) || []).length;
+  // the boxes that cannot be used as they are: [{ k, msg }]
+  function formProblems() {
+    const F = FORMS[CF.id], out = [];
+    const add = (k, msg) => { if (CF.boxes[k] && !out.some((x) => x.k === k)) out.push({ k, msg }); };
+    for (const k of CF.order) {
+      const t = normalizeExpr(CF.boxes[k].value);
+      if (!t) continue;
+      const sc = scanBox(t), cell = CF.boxes[k].classList.contains('cell');
+      if (sc.extra) add(k, tr('There is a ")" without its "("', '「)」に対応する「(」がありません'));
+      else if (sc.comma && !(F.eqs && k === 'v')) {
+        add(k, cell ? tr('A cell takes one number or expression: "," and ";" cannot be used (the decimal point is ".")', '1 つの欄には数か式を 1 つだけ入れます。「,」や「;」は使えません（小数点は「.」）')
+          : tr('"," and ";" cannot be used in this box', 'この欄に「,」や「;」は使えません'));
+      } else if (sc.bracket && cell) add(k, tr('A cell takes one number or expression, not a matrix', '欄の中に行列（[ ]）は入れられません'));
+    }
+    if (F.eqs) {
+      for (let i = 0; i < CF.eq.n; i++) {
+        const l = boxText('l' + i), r = boxText('r' + i), n = countEq(l) + countEq(r);
+        if (n > (r ? 0 : 1)) add(countEq(r) ? 'r' + i : 'l' + i, tr('An equation has one "=": its left side goes into the first box and its right side into the second', '「=」は 1 つの式に 1 つだけです（左の欄に左辺、右の欄に右辺を入れます）'));
+      }
+      const names = eqNames(), n = CF.eq.n;
+      if (names.some((x) => !isName(x))) add('v', tr('The letters to solve for are written like x, y', '解く文字は「x, y」のように文字で入れてください'));
+      else if (names.length && names.length !== n) {
+        add('v', n > 1 ? tr(`${n} equations are solved for ${n} letters (for example ${['x', 'y', 'z', 'w', 'u', 'v'].slice(0, n).join(', ')})`, `式が ${n} つなので、解く文字も ${n} つ入れてください（例：${['x', 'y', 'z', 'w', 'u', 'v'].slice(0, n).join(', ')}）`)
+          : tr('One equation is solved for one letter', '式が 1 つのときは、解く文字も 1 つです'));
+      }
+    } else if (CF.boxes.v) {
+      const v = normalizeExpr(CF.boxes.v.value);
+      if (v && !isName(v)) add('v', tr('The variable is one letter or name, such as x or t', '変数は x や t のような文字 1 つにしてください'));
+    }
+    if (CF.id === 'diff') {
+      const n = normalizeExpr(CF.boxes.n.value);
+      if (n && !/^[1-9]\d{0,2}$/.test(n)) add('n', tr('The order is a whole number from 1', '階数は 1 以上の整数にしてください'));
+    }
+    return out;
   }
   // the needed boxes that are empty; for an integral, both limits or neither (one limit alone: the other is needed)
   function formMissing() {
@@ -1160,41 +1344,71 @@
     const len = exprEl.value.length;
     const ss = exprEl.selectionStart, se = exprEl.selectionEnd;
     CF.sel = [Math.min(ss === null || ss === undefined ? len : ss, len), Math.min(se === null || se === undefined ? len : se, len)];
-    const selected = exprEl.value.slice(CF.sel[0], CF.sel[1]);
+    let selected = exprEl.value.slice(CF.sel[0], CF.sel[1]);
+    if (selected === '□') selected = '';
+    const given = (o) => !!(o.matrix || o.eqs || o.f !== undefined || o.r !== undefined);
+    // an expression that this form made, alone in the input field, is read back into the boxes
+    // and replaced by the new one ("integrate(x^2, 0, 1)" and the ∫ key: x^2, 0 and 1)
+    if (!given(init) && !selected.trim() && exprEl.value.trim()) {
+      const back = formFromExpr(id, exprEl.value);
+      if (back) { init = Object.assign({}, init, back); CF.dir = init.dir || ''; CF.sel = [0, len]; }
+    }
+    // else the boxes are as they were left when the form was closed without being used (formDrafts)
+    // (the matrix that was used is kept for a new calculation: not while an expression is being
+    // typed, where the form is opened for a second matrix: [1, 2; 3, 4] × …)
+    const kept = formDrafts[id] && formDrafts[id].vals && !(formDrafts[id].used && exprEl.value.trim()) ? formDrafts[id] : null;
+    const D = !given(init) && !selected.trim() ? kept : null;
     if (!F.matrix && !F.eqs) {
       for (const [k, ph] of F.boxes) {
         const b = makeFormBox(k, ph, k === 'f' || k === 'r' ? 'wide' : '');
-        b.value = init[k] !== undefined ? String(init[k]) : '';
+        b.value = init[k] !== undefined ? String(init[k]) : D ? String(D.vals[k] || '') : '';
         CF.boxes[k] = b;
       }
+      if (D && !init.dir && D.dir) CF.dir = D.dir;
       // (for a differential equation the box of its right side y′ = …)
       const fk = CF.boxes.f ? 'f' : CF.boxes.r ? 'r' : '';
-      if (selected && selected !== '□' && fk && init[fk] === undefined) CF.boxes[fk].value = selected.trim();
+      if (selected && fk && init[fk] === undefined) CF.boxes[fk].value = selected.trim();
     } else if (F.eqs) {
-      // equations: from init.eqs, else an equation (or an expression = 0) selected in the input field
-      const eqs = init.eqs || (selected && selected.trim() ? [selected.trim()] : ['']);
-      CF.eq = { n: Math.min(eqs.length, EQ_MAX), vals: { v: init.vars || '' } };
-      eqs.slice(0, EQ_MAX).forEach((e, i) => {
-        const m = /^(.*?)\s*=\s*(.*)$/.exec(e);
-        CF.eq.vals['l' + i] = m ? m[1] : e;
-        CF.eq.vals['r' + i] = m ? m[2] : '';
-      });
+      if (D) CF.eq = { n: Math.max(1, Math.min(Number(D.n) || 1, EQ_MAX)), vals: Object.assign({}, D.vals) };
+      else {
+        // equations: from init.eqs, else an equation (or an expression = 0) selected in the input field
+        const eqs = init.eqs || (selected && selected.trim() ? [selected.trim()] : ['']);
+        CF.eq = { n: Math.min(eqs.length, EQ_MAX), vals: { v: init.vars || '' } };
+        eqs.slice(0, EQ_MAX).forEach((e, i) => {
+          const m = /^(.*?)\s*=\s*(.*)$/.exec(e);
+          CF.eq.vals['l' + i] = m ? m[1] : e;
+          CF.eq.vals['r' + i] = m ? m[2] : '';
+        });
+      }
     } else {
-      // a matrix: from init.matrix, else from a matrix that is selected in the input field, else 2 × 2
-      const m = parseMatrix(init.matrix || (selected && selected.trim())) || { rows: [['', ''], ['', '']] };
-      CF.mat = { rows: m.rows.length, cols: m.rows[0].length, op: init.op || '', vals: {} };
-      m.rows.forEach((r, i) => r.forEach((x, j) => { CF.mat.vals['c' + i + '_' + j] = x; }));
+      // a matrix: from init.matrix, else from a matrix that is selected in the input field, else
+      // the matrix that was entered last (kept until "Clear"), else 2 × 2
+      const m = parseMatrix(init.matrix || (selected && selected.trim()));
+      const size = (n) => Math.max(1, Math.min(Number(n) || 2, MAT_MAX));
+      if (!m && D) CF.mat = { rows: size(D.rows), cols: size(D.cols), op: init.op !== undefined ? init.op : D.op || '', vals: Object.assign({}, D.vals) };
+      else {
+        const rows = m ? m.rows : [['', ''], ['', '']];
+        CF.mat = { rows: rows.length, cols: rows[0].length, op: init.op || '', vals: {} };
+        rows.forEach((r, i) => r.forEach((x, j) => { CF.mat.vals['c' + i + '_' + j] = x; }));
+      }
     }
+    CF.hist = []; CF.hi = -1; CF.typing = false; CF.navSel = null; CF.base = null;
     const next = tapButton({ class: 'cf-next', text: tr('Next box ▶', '次の欄 ▶') }, () => formNext());
     const close = tapButton({ class: 'icon-btn', 'aria-label': tr('Close', '閉じる'), html: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>' }, () => closeForm());
+    // undo and redo of what was done in the form, and a menu (clear; rows and columns of a matrix)
+    const arrow = (d) => '<svg viewBox="0 0 24 24" width="20" height="20"' + (d > 0 ? ' style="transform:scaleX(-1)"' : '') + '><path d="M9 7L4 12l5 5M4 12h10a5 5 0 0 1 0 10h-3" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+    CF.nodes.undo = tapButton({ class: 'icon-btn cf-ic', 'aria-label': tr('Undo', '元に戻す'), title: tr('Undo', '元に戻す'), html: arrow(-1) }, () => formStep(-1));
+    CF.nodes.redo = tapButton({ class: 'icon-btn cf-ic', 'aria-label': tr('Redo', 'やり直す'), title: tr('Redo', 'やり直す'), html: arrow(1) }, () => formStep(1));
+    const more = tapButton({ class: 'icon-btn cf-ic cf-more', 'aria-label': tr('More: clear, rows and columns', 'その他（消去、行と列）'), text: '⋯' }, () => formMenu());
     const body = el('div', { class: 'cf-body' });
     if (F.matrix) matrixLayout(body);
     else if (F.eqs) equationsLayout(body);
     else body.append(...F.layout(CF.boxes, CF.nodes));
     if (F.dirs) {
-      const seg = el('div', { class: 'seg cf-seg', role: 'group', 'aria-label': tr('Direction', '近づき方') });
+      const seg = CF.nodes.seg = el('div', { class: 'seg cf-seg', role: 'group', 'aria-label': tr('Direction', '近づき方') });
       for (const [d, t] of [['', tr('Both sides', '両側')], ['1', tr('From the right (+)', '右から（+）')], ['−1', tr('From the left (−)', '左から（−）')]]) {
         const b = tapButton({ text: t }, () => { CF.dir = d; for (const x of seg.children) x.classList.toggle('on', x === b); formChanged(); });
+        b.dataset.d = d;
         b.classList.toggle('on', d === CF.dir);
         seg.append(b);
       }
@@ -1210,11 +1424,15 @@
       body.append(CF.nodes.vars);
     }
     CF.nodes.expr = el('div', { class: 'cf-expr' });
+    CF.nodes.note = el('div', { class: 'cf-hint cf-note', hidden: true });
     CF.nodes.res = el('div', { class: 'cf-res', 'aria-live': 'polite' });
     CF.nodes.msg = el('div', { class: 'cf-msg' });
     cformEl.textContent = '';
-    cformEl.append(el('div', { class: 'cf-bar' }, close, el('div', { class: 'cf-title', text: F.title }), next),
-      body, CF.nodes.hint = el('div', { class: 'cf-hint', text: (F.matrix ? MAT_HINT[CF.mat.op] : F.eqs ? eqHint() : F.hint) || '' }), CF.nodes.expr, CF.nodes.res, CF.nodes.msg,
+    // (beside the title of the matrix form: where the cell being edited is, "row 2, column 3", as
+    // the name box of a spreadsheet shows it)
+    CF.nodes.pos = F.matrix ? el('small', { class: 'cf-pos' }) : null;
+    cformEl.append(el('div', { class: 'cf-bar' }, close, el('div', { class: 'cf-title' }, F.title, CF.nodes.pos), CF.nodes.undo, CF.nodes.redo, more, next),
+      body, CF.nodes.hint = el('div', { class: 'cf-hint', text: (F.matrix ? MAT_HINT[CF.mat.op] : F.eqs ? eqHint() : F.hint) || '' }), CF.nodes.note, CF.nodes.expr, CF.nodes.res, CF.nodes.msg,
       el('div', { class: 'cf-actions' },
         CF.nodes.graph = tapButton({ class: 'btn cf-graph', text: '📈', title: tr('Graph', 'グラフ'), 'aria-label': tr('Draw a graph', 'グラフに描く') }, () => formGraph()),
         tapButton({ class: 'btn', text: tr('Insert', '式に入れる') }, () => formInsert(false)),
@@ -1222,10 +1440,14 @@
     cformEl.hidden = false;
     document.body.classList.add('cform-open');
     const first = init.focus || formMissing()[0] || CF.order[0];
-    editTarget = CF.boxes[first];
+    editTarget = CF.boxes[first] || CF.boxes[CF.order[0]];
     CF.reveal = true; // a form opened with its boxes filled in (from the history) shows its result
+    // (a form as its key made it, with no draft and nothing brought along: not kept as a draft)
+    CF.base = !D && !given(init) && !selected.trim() ? JSON.stringify(formSnapshot()) : null;
     formChanged();
     focusExpr();
+    // what is already in the first box is selected: typing replaces it, ◀ ▶ edit it
+    if (editTarget && editTarget.value) { try { editTarget.select(); CF.navSel = editTarget; } catch (e) { } }
   }
   function makeFormBox(k, ph, cls) {
     const b = el('input', { class: 'cf-box' + (cls ? ' ' + cls : ''), placeholder: ph, inputmode: exprEl.inputMode === 'text' ? 'text' : 'none',
@@ -1236,9 +1458,42 @@
       for (const x of formBoxes()) x.classList.toggle('on', x === b);
       // the letters for the variable show while its box is being edited ("Solve for" of equations too)
       if (CF.nodes && CF.nodes.vars) CF.nodes.vars.hidden = k !== 'v';
+      showCellPos(b);
     });
-    b.addEventListener('input', () => { const p = b.selectionStart, q = b.value; b.value = normalizeJa(q); if (b.value !== q) b.setSelectionRange(p, p); CF.reveal = true; formChanged(); });
-    b.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); formCalculate(); } });
+    // a tap puts the caret into the text (a box reached with "Next box", Enter or the arrows is selected as a whole)
+    b.addEventListener('pointerdown', () => { CF.navSel = null; });
+    b.addEventListener('input', (e) => {
+      if (e.isComposing) return;
+      CF.navSel = null;
+      const p = b.selectionStart, q = b.value; b.value = normalizeJa(q); if (b.value !== q) b.setSelectionRange(p, p);
+      CF.reveal = true; CF.typing = true; formChanged();
+    });
+    b.addEventListener('compositionend', () => { b.value = normalizeJa(b.value); CF.reveal = true; CF.typing = true; formChanged(); });
+    b.addEventListener('keydown', (e) => {
+      if (e.isComposing || e.keyCode === 229) return;
+      const mod = e.ctrlKey || e.metaKey, key = e.key;
+      if (mod && (key === 'z' || key === 'Z')) { e.preventDefault(); formStep(e.shiftKey ? 1 : -1); return; }
+      if (mod && (key === 'y' || key === 'Y')) { e.preventDefault(); formStep(1); return; }
+      if (key === 'Enter') { e.preventDefault(); formEnter(b, e); return; }
+      if (key === 'Escape') { e.preventDefault(); closeForm(); return; }
+      if (mod || e.altKey || e.shiftKey) return;
+      // the arrow keys leave a box at the end of its text, or at once while the box is selected as
+      // a whole; in a matrix ↑ and ↓ go to the row above and below
+      const whole = CF.navSel === b && b.selectionStart === 0 && b.selectionEnd === b.value.length;
+      const at = (pos) => b.selectionStart === pos && b.selectionEnd === pos;
+      let to = '';
+      if (key === 'ArrowUp' || key === 'ArrowDown') to = b.classList.contains('cell') ? (key === 'ArrowUp' ? 'up' : 'down') : '';
+      else if (key === 'ArrowLeft' && (whole || at(0))) to = 'prev';
+      else if (key === 'ArrowRight' && (whole || at(b.value.length))) to = 'next';
+      if (to && formMove(b, to)) e.preventDefault();
+    });
+    // some keyboards send a line break as text instead of an Enter key press
+    b.addEventListener('beforeinput', (e) => { if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') { e.preventDefault(); formEnter(b, null); } });
+    // a table copied from a spreadsheet goes into the cells (a matrix), several lines into the equations
+    b.addEventListener('paste', (e) => {
+      const text = e.clipboardData ? e.clipboardData.getData('text') : '';
+      if (text && formPaste(b, text)) e.preventDefault();
+    });
     return b;
   }
 
@@ -1249,7 +1504,7 @@
   const MAT_OPS = [['', tr('Matrix', '行列のまま')], ['det', tr('Determinant', '行列式')], ['inv', tr('Inverse', '逆行列')],
     ['tr', tr('Transpose', '転置')], ['rk', tr('Rank', '階数')], ['eig', tr('Eigenvalues', '固有値')], ['sys', tr('Linear system Ax = b', '連立方程式 Ax = b')]];
   const MAT_HINT = {
-    '': tr('An empty cell is 0. For a product, insert the first matrix, type ×, then open this form again', '空の欄は 0 です。行列の積は、1 つ目を「式に入れる」→ × → もう一度この画面で 2 つ目を入れます'),
+    '': tr('An empty cell is 0. A table copied in a spreadsheet can be pasted into the cells. For a product, insert the first matrix, type ×, then open this form again', '空の欄は 0 です。表計算ソフトでコピーした表は、欄に貼り付けるとまとめて入ります。行列の積は、1 つ目を「式に入れる」→ × → もう一度この画面で 2 つ目を入れます'),
     // (libqalculate's solve gives the real solutions of a cubic or higher when there are any: x³ = 1 gives 1)
     eig: tr('The eigenvalues are the solutions of det(A − x·I) = 0 (from 3 × 3 on, complex ones may be left out)', '固有値は det(A − x·I) = 0 の解として求めます（3 行以上では、複素数の固有値は出ないことがあります）'),
     sys: tr('Coefficients on the left, the right side b on the right of the line. The result is the values of x₁, x₂, …', '線の左に係数、右に右辺 b を入れます。結果は x₁, x₂, … の値です')
@@ -1313,7 +1568,7 @@
       el('span', { class: 'cf-sz' }, el('span', { text: tr('Columns', '列') }), step('cols', -1), CF.nodes.colsN, step('cols', 1))));
     CF.nodes.grid = el('div', { class: 'cf-mat' });
     body.append(el('div', { class: 'cf-brk' }, CF.nodes.grid));
-    const ops = el('div', { class: 'cf-ops', role: 'group', 'aria-label': tr('Calculate', '計算') });
+    const ops = CF.nodes.ops = el('div', { class: 'cf-ops', role: 'group', 'aria-label': tr('Calculate', '計算') });
     for (const [op, label] of MAT_OPS) {
       const b = tapButton({ class: 'cf-op-btn', text: label }, () => {
         saveMatrixCells();
@@ -1323,6 +1578,7 @@
         buildMatrixGrid();
         formChanged();
       });
+      b.dataset.op = op;
       b.classList.toggle('on', op === M.op);
       ops.append(b);
     }
@@ -1344,6 +1600,7 @@
       for (let j = 0; j < M.cols; j++) {
         const k = 'c' + i + '_' + j;
         const b = makeFormBox(k, '0', 'cell');
+        b.setAttribute('enterkeyhint', 'next');
         b.setAttribute('aria-label', tr('Row ', '') + (i + 1) + tr(', column ', '行') + (j + 1) + tr('', '列'));
         b.value = M.vals[k] || '';
         CF.boxes[k] = b; CF.order.push(k);
@@ -1352,6 +1609,7 @@
       if (sys) {
         const k = 'b' + i;
         const b = makeFormBox(k, '0', 'cell rhs');
+        b.setAttribute('enterkeyhint', 'next');
         b.setAttribute('aria-label', 'b' + (i + 1));
         b.value = M.vals[k] || '';
         CF.boxes[k] = b; CF.order.push(k);
@@ -1363,10 +1621,24 @@
     if (CF.nodes.hint) CF.nodes.hint.textContent = MAT_HINT[M.op] || '';
     editTarget = CF.boxes[keep] || CF.boxes[CF.order[0]];
     if (document.body.classList.contains('cform-open')) focusExpr();
+    showCellPos(editTarget);
+  }
+  // [row, column] of a cell (the column of b: the number of columns), or null
+  function cellPos(b) {
+    const k = b && b.dataset ? b.dataset.k : '';
+    let m = /^c(\d+)_(\d+)$/.exec(k || '');
+    if (m) return [Number(m[1]), Number(m[2])];
+    m = /^b(\d+)$/.exec(k || '');
+    return m && CF.mat ? [Number(m[1]), CF.mat.cols] : null;
+  }
+  function showCellPos(b) {
+    if (!CF.nodes || !CF.nodes.pos) return;
+    const p = cellPos(b);
+    CF.nodes.pos.textContent = !p ? '' : p[1] === CF.mat.cols ? 'b' + (p[0] + 1) : tr(`Row ${p[0] + 1}, column ${p[1] + 1}`, `${p[0] + 1} 行 ${p[1] + 1} 列`);
   }
   function matrixExpr() {
     const M = CF.mat;
-    const v = (k) => normalizeExpr(CF.boxes[k] ? CF.boxes[k].value : '') || '0';
+    const v = (k) => boxText(k) || '0';
     const rows = [];
     for (let i = 0; i < M.rows; i++) {
       const r = [];
@@ -1381,7 +1653,7 @@
       case 'inv': return m + '^(−1)';
       case 'tr': return 'transpose(' + m + ')';
       case 'rk': return 'rk(' + m + ')';
-      case 'eig': return 'solve(det(' + m + ' − x × identity(' + M.rows + ')) = 0)';
+      case 'eig': { const x = formUnknown('x'); return 'solve(det(' + m + ' − ' + x + ' × identity(' + M.rows + ')) = 0' + (x === 'x' ? '' : ', ' + x) + ')'; }
       case 'sys': {
         const b = [];
         for (let i = 0; i < M.rows; i++) b.push(v('b' + i));
@@ -1412,7 +1684,9 @@
       const l = makeFormBox('l' + i, tr('left side', '左辺'), 'wide'), r = makeFormBox('r' + i, '0', 'wide');
       l.value = E.vals['l' + i] || ''; r.value = E.vals['r' + i] || '';
       CF.boxes['l' + i] = l; CF.boxes['r' + i] = r; CF.order.push('l' + i, 'r' + i);
-      CF.nodes.eqs.append(cfRow(l, cfT('='), r));
+      // × takes this equation away (the ones below move up)
+      const del = E.n > 1 ? tapButton({ class: 'cf-eq-del', text: '×', 'aria-label': tr('Remove equation ', '式を消す：') + (i + 1) }, () => removeEquation(i)) : null;
+      CF.nodes.eqs.append(cfRow(l, cfT('='), r, del));
     }
     // the variables: x, or x, y (, z …) for a system; tap the letters to choose others
     const v = makeFormBox('v', E.n > 1 ? 'x, y' : 'x', '');
@@ -1437,12 +1711,38 @@
   }
   const eqHint = () => (CF.eq.n > 1 ? tr('A system of equations: the result is the values of the variables in their order', '連立方程式：結果は「解く文字」の順の値です')
     : tr('An empty right side is 0', '右辺が空なら 0 です'));
+  function removeEquation(i) {
+    const E = CF.eq;
+    if (E.n < 2) return;
+    saveEqCells();
+    for (let j = i; j + 1 < E.n; j++) { E.vals['l' + j] = E.vals['l' + (j + 1)] || ''; E.vals['r' + j] = E.vals['r' + (j + 1)] || ''; }
+    delete E.vals['l' + (E.n - 1)]; delete E.vals['r' + (E.n - 1)];
+    E.n--;
+    buildEquations();
+    formChanged();
+  }
+  // the letters to solve for as the engine reads them (\t)
+  const eqVarNames = () => {
+    const names = eqNames().map((t) => (/^\p{L}$/u.test(t) ? formUnknown(t) : t));
+    // (no letter given: x, or x, y, z … in "solveExpr"; they are named when one of them has a value)
+    const usual = ['x', 'y', 'z', 'w', 'u', 'v'].slice(0, CF.eq.n);
+    return names.length || !usual.some((l) => definedVars.has(l)) ? names : usual.map(formUnknown);
+  };
+  // one side of an equation, with those letters written the same way
+  function eqSide(k) {
+    let t = boxText(k);
+    for (const n of eqVarNames()) t = asUnknown(t, n);
+    return t;
+  }
   function solveExpr() {
     const E = CF.eq;
-    const v = (k) => normalizeExpr(CF.boxes[k] ? CF.boxes[k].value : '');
     const eqs = [];
-    for (let i = 0; i < E.n; i++) eqs.push((v('l' + i) || '□') + ' = ' + (v('r' + i) || '0'));
-    const names = v('v').split(',').map((t) => t.trim()).filter(Boolean).map((t) => (/^\p{L}$/u.test(t) ? varText(t) : t));
+    for (let i = 0; i < E.n; i++) {
+      const l = eqSide('l' + i), r = eqSide('r' + i);
+      // an equation typed as a whole into the first box ("x^2 = 4") is used as it is
+      eqs.push(!r && countEq(l) === 1 ? l : (l || '□') + ' = ' + (r || '0'));
+    }
+    const names = eqVarNames();
     if (E.n === 1) return names.length && names[0] !== 'x' ? `solve(${eqs[0]}, ${names[0]})` : `solve(${eqs[0]})`;
     const all = names.length ? names : ['x', 'y', 'z', 'w', 'u', 'v'].slice(0, E.n).map(varText);
     return `multisolve([${eqs.join(', ')}], [${all.join(', ')}])`;
@@ -1466,17 +1766,57 @@
   // "Next box": the box after the one that has the focus (from the last one back to the first)
   function formNext() {
     const i = CF.order.indexOf(editTarget && editTarget.dataset.k);
-    const b = CF.boxes[CF.order[(i + 1) % CF.order.length]];
+    focusBox(CF.boxes[CF.order[(i + 1) % CF.order.length]]);
+  }
+  // A box reached with "Next box", Enter or the arrows is selected as a whole, as a cell of a
+  // spreadsheet is: what is typed replaces it, the arrows (and ◀ ▶) go on to the next box, and a
+  // tap into the text edits it.
+  function focusBox(b) {
+    if (!b) return false;
     editTarget = b;
     b.focus();
-    b.setSelectionRange(b.value.length, b.value.length);
+    if (b.value) { b.select(); CF.navSel = b; } else CF.navSel = null;
+    try { b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { }
+    return true;
+  }
+  // to: 'next' or 'prev' (the order of "Next box", without going round), 'up' or 'down' (the cells of a matrix)
+  function formMove(b, to) {
+    const k = b.dataset.k;
+    if (to === 'next' || to === 'prev') {
+      const i = CF.order.indexOf(k) + (to === 'next' ? 1 : -1);
+      return i >= 0 && i < CF.order.length && focusBox(CF.boxes[CF.order[i]]);
+    }
+    const p = cellPos(b);
+    if (!p) return false;
+    const i = p[0] + (to === 'down' ? 1 : -1);
+    return focusBox(CF.boxes[p[1] === CF.mat.cols ? 'b' + i : 'c' + i + '_' + p[1]]);
+  }
+  // Enter. In a matrix as in a spreadsheet: the cell below (Shift: above); after the last row the
+  // top of the next column; after the last cell the matrix is calculated. In the other forms: the
+  // next box that still has to be filled in, and when there is none, calculate. Ctrl + Enter calculates.
+  function formEnter(b, e) {
+    if (e && (e.ctrlKey || e.metaKey)) { formCalculate(); return; }
+    const p = cellPos(b);
+    if (p) {
+      if (formMove(b, e && e.shiftKey ? 'up' : 'down') || (e && e.shiftKey)) return;
+      if (focusBox(CF.boxes[p[1] + 1 === CF.mat.cols && CF.boxes.b0 ? 'b0' : 'c0_' + (p[1] + 1)])) return;
+      formCalculate();
+      return;
+    }
+    // (the next one after this box in the order of "Next box", going round)
+    const missing = formMissing(), at = CF.order.indexOf(b.dataset.k);
+    for (let d = 1; d < CF.order.length; d++) {
+      const k = CF.order[(at + d) % CF.order.length];
+      if (missing.indexOf(k) >= 0) { focusBox(CF.boxes[k]); return; }
+    }
+    formCalculate();
   }
   function formChanged() {
     if (!CF.id) return;
     const F = FORMS[CF.id];
     for (const b of formBoxes()) {
       b.style.width = Math.max(b.classList.contains('wide') ? 7 : 3, textWidth(b.value || b.placeholder) + 1.5) + 'ch';
-      b.classList.remove('missing');
+      b.classList.remove('missing', 'bad');
     }
     if (F.update) F.update(formValue, CF.nodes);
     const expr = F.build(formValue, CF.dir);
@@ -1485,6 +1825,22 @@
     CF.nodes.msg.textContent = '';
     clearTimeout(CF.timer);
     const seq = ++CF.seq;
+    if (!CF.restoring) formRemember();
+    // (a letter the user gave a value stays the unknown of the form: said here, as the result shows it as 'x')
+    const dv = formDefinedVar();
+    CF.nodes.note.hidden = !dv;
+    CF.nodes.note.textContent = dv ? tr(`${dv} has a value of its own (a user variable). Here it is the unknown all the same`, `${dv} には値が定義されています（ユーザー定義の変数）。この画面では ${dv} を文字のまま扱います`) : '';
+    // a box that cannot be used as it is: marked, with what is wrong (nothing is calculated)
+    const bad = formProblems();
+    if (bad.length) {
+      for (const x of bad) CF.boxes[x.k].classList.add('bad');
+      CF.nodes.res.textContent = '';
+      CF.nodes.msg.className = 'cf-msg error';
+      CF.nodes.msg.textContent = bad[0].msg;
+      if (CF.nodes.graph) CF.nodes.graph.hidden = true;
+      revealResult();
+      return;
+    }
     const problem = F.matrix ? matrixProblem() : '';
     if (problem) {
       CF.nodes.res.textContent = '';
@@ -1508,7 +1864,7 @@
       CF.nodes.msg.className = 'cf-msg error';
       if (!r.ok) { CF.nodes.res.textContent = ''; CF.nodes.msg.textContent = localMessage(r.error) || ''; }
       else if (r.timeout) { CF.nodes.res.textContent = ''; CF.nodes.msg.className = 'cf-msg'; CF.nodes.msg.textContent = tr('Press "Calculate" to calculate it (it takes longer)', '時間がかかるため「計算する」で計算してください'); }
-      else if (err || !r.result) { CF.nodes.res.textContent = ''; CF.nodes.msg.textContent = err ? localMessage(err.text) : tr('Check the boxes', '欄を確認してください'); }
+      else if (err || !r.result) { CF.nodes.res.textContent = ''; CF.nodes.msg.textContent = err ? localMessage(err.text) : tr('Check the boxes', '欄を確認してください'); markFaultyBox(seq); }
       else {
         showResult(CF.nodes.res, resultText(r));
         const warn = (r.messages || []).find((m) => m.type === 'warning');
@@ -1530,16 +1886,19 @@
     const actions = f.querySelector('.cf-actions');
     const need = msg.getBoundingClientRect().bottom - (fr.bottom - (actions ? actions.offsetHeight : 0));
     if (need <= 0) return;
-    const room = why !== 'op' && editTarget && f.contains(editTarget) ? editTarget.getBoundingClientRect().top - fr.top - 6 : need;
+    const bar = f.querySelector('.cf-bar');
+    const room = why !== 'op' && editTarget && f.contains(editTarget) ? editTarget.getBoundingClientRect().top - fr.top - (bar ? bar.offsetHeight : 0) - 6 : need;
     const by = Math.min(need, room);
     if (by > 0) f.scrollTop += by;
   }
   // puts the expression into the input field; calc: and calculates it
   function formInsert(calc) {
     if (!CF.id) return;
-    const text = FORMS[CF.id].build(formValue, CF.dir);
+    const id = CF.id, text = FORMS[id].build(formValue, CF.dir);
     const [s, e] = CF.sel;
     closeForm();
+    if (!FORMS[id].matrix) delete formDrafts[id]; else if (formDrafts[id]) formDrafts[id].used = true;
+    saveDrafts();
     dropUndo();
     const v = exprEl.value;
     exprEl.value = v.slice(0, s) + text + v.slice(e);
@@ -1552,6 +1911,8 @@
   }
   function formCalculate() {
     if (!CF.id) return;
+    const bad = formProblems();
+    if (bad.length) { CF.reveal = true; formChanged(); focusBox(CF.boxes[bad[0].k]); CF.navSel = null; return; }
     if (FORMS[CF.id].matrix && matrixProblem()) { formChanged(); return; }
     const missing = formMissing();
     if (missing.length) {
@@ -1563,6 +1924,270 @@
       return;
     }
     formInsert(true);
+  }
+
+  // ---- kept, undone, redone, cleared
+  // What a form holds is kept while it is edited (formDrafts, saved with the page state): a form
+  // closed with × or Back, or by leaving the app, shows the same boxes when it is opened again. A
+  // form that was used ("Insert", "Calculate") starts empty the next time; the matrix form keeps
+  // its matrix, so that the determinant, the inverse… of the same matrix can follow one another
+  // ("Clear all boxes" in the ⋯ menu empties it). Every change is also a step of Undo and Redo.
+  const formDrafts = (() => { const d = store.get('qalc.forms', {}); return d && typeof d === 'object' ? d : {}; })();
+  const saveDrafts = debounce(() => store.set('qalc.forms', formDrafts), 400);
+  function formSnapshot() {
+    const F = FORMS[CF.id], vals = {};
+    const keep = (src) => { for (const k of Object.keys(src)) if (src[k]) vals[k] = src[k]; };
+    if (F.matrix) { saveMatrixCells(); keep(CF.mat.vals); return { vals, rows: CF.mat.rows, cols: CF.mat.cols, op: CF.mat.op }; }
+    if (F.eqs) { saveEqCells(); keep(CF.eq.vals); return { vals, n: CF.eq.n }; }
+    for (const k of CF.order) if (CF.boxes[k].value) vals[k] = CF.boxes[k].value;
+    return { vals, dir: CF.dir };
+  }
+  function formRestore(snap) {
+    const F = FORMS[CF.id];
+    if (F.matrix) { Object.assign(CF.mat, { rows: snap.rows, cols: snap.cols, op: snap.op || '', vals: Object.assign({}, snap.vals) }); buildMatrixGrid(); }
+    else if (F.eqs) { CF.eq.n = snap.n; CF.eq.vals = Object.assign({}, snap.vals); buildEquations(); }
+    else { for (const k of CF.order) CF.boxes[k].value = snap.vals[k] || ''; CF.dir = snap.dir || ''; }
+    if (CF.nodes.ops) for (const x of CF.nodes.ops.children) x.classList.toggle('on', x.dataset.op === CF.mat.op);
+    if (CF.nodes.seg) for (const x of CF.nodes.seg.children) x.classList.toggle('on', x.dataset.d === CF.dir);
+  }
+  // called for every change (formChanged): a new step, or the same step while one box is being typed in
+  function formRemember() {
+    const obj = formSnapshot(), snap = JSON.stringify(obj);
+    const typing = CF.typing, now = Date.now(), k = editTarget ? editTarget.dataset.k : '';
+    CF.typing = false;
+    if (CF.hi < 0 || CF.hist[CF.hi] !== snap) {
+      if (typing && CF.hi > 0 && CF.hi === CF.hist.length - 1 && k === CF.histK && now - CF.histT < 1000 && now - CF.histT0 < 4000) CF.hist[CF.hi] = snap;
+      else {
+        CF.hist.length = CF.hi + 1;
+        CF.hist.push(snap);
+        if (CF.hist.length > 200) CF.hist.shift();
+        CF.hi = CF.hist.length - 1;
+        CF.histT0 = now;
+      }
+      CF.histK = typing ? k : '';
+      CF.histT = now;
+    }
+    keepDraft(obj);
+    updateFormBar();
+  }
+  // The draft of the open form. None for an empty form, and none for a form that holds only what
+  // its key put there (CF.base: order 2 for d²/dx², y for ∂/∂y, the determinant for det): the
+  // next key then starts from its own settings, not from those of the key before.
+  function keepDraft(obj) {
+    const empty = !Object.keys(obj.vals).length && !obj.dir && !obj.op && (obj.n === undefined || obj.n === 1) && (obj.rows === undefined || (obj.rows === 2 && obj.cols === 2));
+    if (empty || JSON.stringify(obj) === CF.base) delete formDrafts[CF.id]; else formDrafts[CF.id] = obj;
+    saveDrafts();
+  }
+  function updateFormBar() {
+    if (!CF.nodes || !CF.nodes.undo) return;
+    CF.nodes.undo.disabled = CF.hi <= 0;
+    CF.nodes.redo.disabled = CF.hi >= CF.hist.length - 1;
+  }
+  // Undo (−1) and Redo (+1)
+  function formStep(d) {
+    const i = CF.hi + d;
+    if (!CF.id || i < 0 || i >= CF.hist.length) return;
+    CF.hi = i;
+    const obj = JSON.parse(CF.hist[i]);
+    CF.restoring = true;
+    formRestore(obj);
+    CF.reveal = true; CF.navSel = null;
+    formChanged();
+    CF.restoring = false;
+    keepDraft(obj);
+    updateFormBar();
+    focusExpr();
+  }
+  function formClear() {
+    const F = FORMS[CF.id];
+    if (F.matrix) { CF.mat.vals = {}; buildMatrixGrid(); }
+    else if (F.eqs) { CF.eq.vals = {}; buildEquations(); }
+    else { for (const k of CF.order) CF.boxes[k].value = ''; }
+    editTarget = CF.boxes[CF.order[0]];
+    CF.navSel = null;
+    formChanged();
+    focusExpr();
+  }
+  // the ⋯ menu of a form
+  async function formMenu() {
+    const F = FORMS[CF.id], items = [['clear', tr('Clear all boxes', 'すべての欄を消去')]];
+    const p = F.matrix ? cellPos(editTarget) || [0, 0] : null;
+    if (p) {
+      const M = CF.mat, i = p[0], j = Math.min(p[1], M.cols - 1);
+      if (M.rows < MAT_MAX) items.push(['rowIns', tr(`Insert a row above row ${i + 1}`, `${i + 1} 行目の上に行を入れる`)]);
+      if (M.rows > 1) items.push(['rowDel', tr(`Delete row ${i + 1}`, `${i + 1} 行目を削除`)]);
+      if (M.cols < MAT_MAX) items.push(['colIns', tr(`Insert a column left of column ${j + 1}`, `${j + 1} 列目の左に列を入れる`)]);
+      if (M.cols > 1) items.push(['colDel', tr(`Delete column ${j + 1}`, `${j + 1} 列目を削除`)]);
+      items.push(['copy', tr('Copy as a table (for a spreadsheet)', '表としてコピー（表計算ソフトに貼り付け用）')]);
+    }
+    const id = CF.id, a = await sheet(F.title, items);
+    if (!a || CF.id !== id) { focusExpr(); return; }
+    if (a === 'clear') formClear();
+    else if (a === 'copy') {
+      const c = matrixCells();
+      copyText(c.rows.map((r, i) => r.map((x) => normalizeExpr(x) || '0').concat(CF.mat.op === 'sys' ? [normalizeExpr(c.b[i]) || '0'] : []).join('\t')).join('\n'));
+      toast(tr('Copied: paste it into a spreadsheet', 'コピーしました（表計算ソフトに貼り付けられます）'), 2400);
+      focusExpr();
+    } else matrixEdit(a, p[0], Math.min(p[1], CF.mat.cols - 1));
+  }
+  // the cells of the matrix as rows (and the column b), and back
+  function matrixCells() {
+    saveMatrixCells();
+    const M = CF.mat, rows = [], b = [];
+    for (let i = 0; i < M.rows; i++) {
+      const r = [];
+      for (let j = 0; j < M.cols; j++) r.push(M.vals['c' + i + '_' + j] || '');
+      rows.push(r); b.push(M.vals['b' + i] || '');
+    }
+    return { rows, b };
+  }
+  function setMatrixCells(rows, b, focus) {
+    const M = CF.mat;
+    M.vals = {};
+    rows.forEach((r, i) => { r.forEach((x, j) => { if (x) M.vals['c' + i + '_' + j] = x; }); if (b[i]) M.vals['b' + i] = b[i]; });
+    M.rows = rows.length; M.cols = rows[0].length;
+    buildMatrixGrid();
+    if (focus && CF.boxes[focus]) editTarget = CF.boxes[focus];
+    CF.navSel = null;
+    formChanged();
+    focusExpr();
+    showCellPos(editTarget);
+  }
+  // a row or a column put in or taken out at the cell that is being edited
+  function matrixEdit(what, i, j) {
+    const c = matrixCells(), cols = c.rows[0].length;
+    if (what === 'rowIns') { c.rows.splice(i, 0, new Array(cols).fill('')); c.b.splice(i, 0, ''); }
+    else if (what === 'rowDel') { c.rows.splice(i, 1); c.b.splice(i, 1); i = Math.min(i, c.rows.length - 1); }
+    else if (what === 'colIns') for (const r of c.rows) r.splice(j, 0, '');
+    else if (what === 'colDel') { for (const r of c.rows) r.splice(j, 1); j = Math.min(j, cols - 2); }
+    setMatrixCells(c.rows, c.b, 'c' + i + '_' + j);
+  }
+  // Text pasted into a box. A table from a spreadsheet (cells separated by tabs, rows by line
+  // breaks), a CSV, numbers separated by spaces or a matrix "[1, 2; 3, 4]" fills the cells of the
+  // matrix form from the cell that is being edited, and the matrix grows as far as needed. Several
+  // lines pasted into the equations form are one equation each. Returns false for anything else
+  // (the text is then pasted as usual).
+  const NUM_RE = /^[−+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][−+-]?\d+)?$/;
+  function parseBlock(text) {
+    const t = text.replace(/\r\n?/g, '\n').replace(/[\s;]+$/, '');
+    const m = parseMatrix(normalizeExpr(t));
+    if (m) return m.rows;
+    let lines = t.split('\n').filter((l) => l.trim() !== '');
+    if (lines.length === 1 && t.indexOf('\t') < 0 && t.indexOf(';') >= 0) lines = t.split(';');
+    let cut;
+    if (t.indexOf('\t') >= 0) cut = (l) => l.split('\t');
+    else if (lines.every((l) => l.indexOf(',') >= 0)) cut = (l) => l.split(',');
+    else if (lines.every((l) => l.trim().split(/\s+/).every((x) => NUM_RE.test(x)))) cut = (l) => l.trim().split(/\s+/);
+    else cut = (l) => [l];
+    const rows = lines.map((l) => cut(l).map((x) => normalizeExpr(x)));
+    if (!rows.length || (rows.length === 1 && rows[0].length === 1)) return null;
+    const w = Math.max(...rows.map((r) => r.length));
+    return rows.map((r) => r.concat(new Array(w - r.length).fill('')));
+  }
+  function formPaste(b, text) {
+    const F = FORMS[CF.id];
+    if (F.matrix) {
+      const block = parseBlock(text), p = cellPos(b);
+      if (!block || !p) return false;
+      const c = matrixCells(), M = CF.mat, sys = M.op === 'sys';
+      const i0 = p[0], j0 = p[1];
+      let cut = false;
+      const rowsN = Math.min(MAT_MAX, Math.max(M.rows, i0 + block.length));
+      // with "Ax = b" the column after the last one is b, and the matrix does not grow sideways
+      const colsN = sys ? M.cols : Math.min(MAT_MAX, Math.max(M.cols, j0 + block[0].length));
+      while (c.rows.length < rowsN) { c.rows.push(new Array(M.cols).fill('')); c.b.push(''); }
+      for (const r of c.rows) while (r.length < colsN) r.push('');
+      block.forEach((r, di) => r.forEach((x, dj) => {
+        const i = i0 + di, j = j0 + dj;
+        if (i >= rowsN || j > colsN || (j === colsN && !sys)) { if (x) cut = true; return; }
+        if (j === colsN) c.b[i] = x; else c.rows[i][j] = x;
+      }));
+      setMatrixCells(c.rows, c.b, b.dataset.k);
+      if (cut) toast(tr('The part that did not fit was left out', '入りきらない分は入れていません'), 2600);
+      return true;
+    }
+    if (F.eqs) {
+      const lines = text.replace(/\r\n?/g, '\n').split('\n').map((l) => normalizeExpr(l)).filter(Boolean);
+      const m = /^[lr](\d+)$/.exec(b.dataset.k);
+      if (lines.length < 2 || !m) return false;
+      saveEqCells();
+      const E = CF.eq, i0 = Number(m[1]);
+      lines.slice(0, EQ_MAX - i0).forEach((l, d) => {
+        const q = /^(.*?)\s*=\s*(.*)$/.exec(l);
+        E.vals['l' + (i0 + d)] = countEq(l) === 1 && q ? q[1] : l;
+        E.vals['r' + (i0 + d)] = countEq(l) === 1 && q ? q[2] : '';
+      });
+      E.n = Math.min(EQ_MAX, Math.max(E.n, i0 + lines.length));
+      buildEquations();
+      CF.navSel = null;
+      formChanged();
+      if (i0 + lines.length > EQ_MAX) toast(tr(`Up to ${EQ_MAX} equations: the rest was left out`, `式は ${EQ_MAX} つまでです（残りは入れていません）`), 2600);
+      return true;
+    }
+    return false;
+  }
+  // An expression that a form made, read back into the boxes of that form (the values for
+  // openForm), or null: "integrate(x^2, 0, 1)" is x^2, 0 and 1 in the integral form again.
+  function splitTop(t, sep) {
+    const out = []; let d = 0, cur = '';
+    for (const c of t) {
+      if ('([{'.indexOf(c) >= 0) d++;
+      else if (')]}'.indexOf(c) >= 0 && --d < 0) return null;
+      if (c === sep && d === 0) { out.push(cur.trim()); cur = ''; } else cur += c;
+    }
+    if (d !== 0) return null;
+    out.push(cur.trim());
+    return out;
+  }
+  function formFromExpr(id, text) {
+    const t = normalizeExpr(text);
+    const args = (name) => (t.slice(0, name.length + 1) === name + '(' && t[t.length - 1] === ')' ? splitTop(t.slice(name.length + 1, -1), ',') : null);
+    const letter = (v) => (v || '').replace(/^\\/, ''); // \k is shown as k in the variable box
+    const opt = (v) => (v && v !== 'undefined' ? v : '');
+    let a;
+    switch (id) {
+      case 'int': a = args('integrate'); return a && a.length <= 4 && a[0] ? { f: a[0], a: opt(a[1]), b: opt(a[2]), v: letter(a[3]) } : null;
+      case 'diff': a = args('diff'); return a && a.length <= 4 && a[0] ? { f: a[0], v: letter(a[1]), n: a[2] || '', at: a[3] || '' } : null;
+      case 'lim': a = args('limit'); return a && a.length >= 2 && a.length <= 4 ? { f: a[0], a: a[1], v: letter(a[2]), dir: a[3] === '1' ? '1' : /^[−-]1$/.test(a[3] || '') ? '−1' : '' } : null;
+      case 'sum': case 'prod': a = args(id === 'sum' ? 'sum' : 'product'); return a && (a.length === 3 || a.length === 4) ? { f: a[0], a: a[1], b: a[2], v: letter(a[3]) } : null;
+      case 'dsolve': {
+        a = args('dsolve');
+        const m = a && a.length <= 2 ? /^diff\(y(?:, x)?\) = (.*)$/.exec(a[0]) : null;
+        return m ? { r: m[1], y0: a[1] || '' } : null;
+      }
+      case 'solve': {
+        a = args('solve');
+        if (a && a.length <= 2 && a[0]) return { eqs: [a[0]], vars: letter(a[1]) };
+        a = args('multisolve');
+        const inner = (x) => (x && x[0] === '[' && x[x.length - 1] === ']' ? splitTop(x.slice(1, -1), ',') : null);
+        const es = a && a.length === 2 ? inner(a[0]) : null, vs = es ? inner(a[1]) : null;
+        return es && vs && es.length <= EQ_MAX ? { eqs: es, vars: vs.map(letter).join(', ') } : null;
+      }
+      case 'subst': {
+        const m = /^(.*) where (\\?[\p{L}_][\p{L}\p{Nd}_]*) = (.*)$/u.exec(t);
+        return m ? { f: outerParens(m[1]) ? m[1].slice(1, -1) : m[1], v: letter(m[2]), a: m[3] } : null;
+      }
+      case 'mat': {
+        const one = (name) => { const x = args(name); return x && x.length === 1 ? x[0] : ''; };
+        let op = '', m = t;
+        if ((a = one('det'))) { op = 'det'; m = a; }
+        else if ((a = one('transpose'))) { op = 'tr'; m = a; }
+        else if ((a = one('rk'))) { op = 'rk'; m = a; }
+        else if (t.slice(-5) === '^(−1)') { op = 'inv'; m = t.slice(0, -5); }
+        return parseMatrix(m) ? { matrix: m, op } : null;
+      }
+    }
+    return null;
+  }
+  // The engine found an error in the expression of the form: the box it comes from is marked, when
+  // one box alone has the error too (boxes that hold only a number are not asked about).
+  async function markFaultyBox(seq) {
+    const ks = CF.order.filter((k) => { const t = boxText(k); return t && !NUM_RE.test(t) && !(k === 'v'); }).slice(0, 12);
+    for (const k of ks) {
+      const r = await Bridge.send('calc', { expr: boxText(k), opts: engineOpts(), timeout: 800 });
+      if (seq !== CF.seq || !CF.id) return;
+      if (r.ok && !r.timeout && (r.messages || []).some((m) => m.type === 'error') && CF.boxes[k]) { CF.boxes[k].classList.add('bad'); return; }
+    }
   }
 
   // ---- 📈 in a form: the graph that goes with it. A function and its derivative (with the tangent
@@ -1614,11 +2239,11 @@
     const sorry = (en, ja) => toast(tr(en, ja), 2600);
     if (F.matrix) {
       const M = CF.mat, m = matrixExpr();
-      const cell = (i, j) => normalizeExpr(CF.boxes['c' + i + '_' + j].value) || '0';
+      const cell = (i, j) => boxText('c' + i + '_' + j) || '0';
       if (M.op === 'sys') {
         const vs = ['x', 'y', 'z'].slice(0, M.rows);
         const eqs = [];
-        for (let i = 0; i < M.rows; i++) eqs.push(vs.map((v, j) => `(${cell(i, j)}) × ${v}`).join(' + ') + ` = (${normalizeExpr(CF.boxes['b' + i].value) || '0'})`);
+        for (let i = 0; i < M.rows; i++) eqs.push(vs.map((v, j) => `(${cell(i, j)}) × ${v}`).join(' + ') + ` = (${boxText('b' + i) || '0'})`);
         return plotSystem(eqs, await resultNumbers(m));
       }
       if (M.op === 'eig') {
@@ -1635,7 +2260,7 @@
       return plotMatrixRows(rows);
     }
     if (F.eqs) {
-      const E = CF.eq, v = (k) => normalizeExpr(CF.boxes[k].value);
+      const E = CF.eq, v = (k) => eqSide(k);
       if (E.n > 1) {
         const eqs = [];
         for (let i = 0; i < E.n; i++) eqs.push(v('l' + i) + ' = ' + (v('r' + i) || '0'));
@@ -2196,7 +2821,7 @@
     tr('The solve key opens a form for an equation (left side = right side); "+ Add an equation" makes a system of equations.', 'solve キーで方程式を入力する画面（左辺 = 右辺）が開きます。「＋ 式を追加」で連立方程式になります。'),
     tr('With x in the expression, 📈 next to the input field draws its graph.', '式に x があるときは、入力欄の上の 📈 でグラフを描けます。'),
     tr('In the graph, "Area" finds the area between a function and the x axis or between two functions (the crossing points are offered as ranges), and "Length" the length of a curve or the perimeter between two functions. "Example" draws a circle or an ellipse.', 'グラフの「面積を求める」で、関数と x 軸の間や 2 つの関数の間の面積（交点の間の範囲を選べます）、「長さ・周」で曲線の長さや 2 つの関数に囲まれた部分の周の長さが求められます。「図形の例」で円や楕円を描けます。'),
-    tr('In the 3D graph, "Volume and surface" finds the volume under a surface or between two surfaces and their surface area, over the rectangle or over a disk x² + y² ≤ R². "Example: Sphere" draws a sphere and gives 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」で、曲面の下や 2 つの曲面の間の体積と表面積が、長方形か円 x² + y² ≤ R² の範囲で求められます。「図形の例：球」で球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
+    tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
     tr('1:1 in the graph makes one unit as long on every axis, so a circle or a sphere looks round. In 3D it turns on by itself when the ranges are about the same.', 'グラフの「1:1」で、どの軸も 1 目盛りの長さがそろい、円や球が丸く見えます。3D では範囲の長さが近いときに自動でオンになります。'),
     tr('"Calculus" under a 2D graph draws f′ and ∫f, the tangent at x = a, and marks zeros and extrema; in 3D, "Partial derivatives" draws ∂f/∂x and ∂f/∂y.', '2D グラフの「微分・接線・極値」で f′ と ∫f、x = a での接線を描き、零点と極値に印を付けます。3D の「偏微分」では ∂f/∂x と ∂f/∂y を描きます。'),
     tr('📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.', '入力フォームの 📈 で、その計算に合うグラフを描きます。微分なら接線、定積分なら面積、連立方程式なら直線や平面と解の点、行列なら各行の点です。'),
@@ -2212,7 +2837,9 @@
     tr('Find functions, units and constants in the lists in the menu (search by name or description, for example "integral", "mile" or "speed of light").', '関数・単位・定数は、メニューの一覧から日本語でも探せます（例：「積分」「マイル」「光速」）。'),
     tr('Draw graphs with "Graph" in the menu: 2D graphs of y = f(x) and 3D graphs of z = f(x, y). Expressions with derivatives or integrals such as diff(x^3 − 3x) can be drawn as they are.', 'グラフはメニューの「グラフ」から。y = f(x) の 2D と、z = f(x, y) の 3D が描けます。diff(x^3 − 3x) のように、微分や積分の式もそのまま描けます。'),
     tr('An expression cleared with AC comes back with "Undo", which appears right after.', 'AC で消した式は、すぐ後に出る「元に戻す」で戻せます。'),
-    tr('Areas, lengths and volumes of shapes: "Shapes" in the menu. Choose a circle, a triangle, a cylinder and so on, type the sizes, and the results appear at once. In a graph, "Area and length" shades the area, and its edges can be dragged.', '図形の面積・長さ・体積は、メニューの「図形」で求められます。円・三角形・円柱などを選んで大きさを入れると、結果がすぐに出ます。グラフでは「面積・長さ」で面積に色が付き、両端をドラッグして範囲を変えられます。')
+    tr('Areas, lengths and volumes of shapes: "Shapes" in the menu. Choose a circle, a triangle, a cylinder and so on, type the sizes, and the results appear at once. In a graph, "Area and length" shades the area, and its edges can be dragged.', '図形の面積・長さ・体積は、メニューの「図形」で求められます。円・三角形・円柱などを選んで大きさを入れると、結果がすぐに出ます。グラフでは「面積・長さ」で面積に色が付き、両端をドラッグして範囲を変えられます。'),
+    tr('Below a graph there is a row of samples (a heart, waves, a doughnut, a ripple …): tap one to draw it, then change its functions and ranges as you like.', 'グラフの下にサンプル（ハート、波、ドーナツ、波紋など）が並んでいます。タップすると描けるので、式や範囲を変えて試せます。'),
+    tr('In a form, ↶ and ↷ undo and redo, and ⋯ clears all boxes. A form closed without being used keeps its boxes. The matrix form keeps its matrix for the next calculation, takes a table pasted from a spreadsheet, and its ⋯ menu inserts or deletes a row or a column.', 'フォームでは ↶ ↷ で「元に戻す」「やり直す」、⋯ で「すべての欄を消去」ができます。使わずに閉じたフォームは、次に開くと欄がそのまま残っています。行列の画面は入れた行列を次の計算まで覚えていて、表計算ソフトの表を貼り付けでまとめて入れられ、⋯ から行や列の挿入・削除もできます。')
   ];
   function useExample(text) {
     while (panelStack.length) closePanel();
@@ -2773,7 +3400,7 @@
       const msg = el('div', { class: 'form-hint' });
       f2.append(el('div', { class: 'plot-form' }, ta,
         el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr('to', '〜') }), xmax, go)),
-      wrap, legend, msg, buildCalc2d(), buildArea2d(),
+      wrap, legend, msg, el('div', { class: 'tools' }, buildCalc2d(), buildArea2d()), P.samples = buildSamples(SAMPLES2D, false, drawSample2d),
       el('div', { class: 'form-hint', text: tr('Drag to move, pinch to zoom, tap to show the coordinates. The functions are the same as on the calculator.', 'ドラッグで移動、2本指で拡大・縮小、タップで座標を表示します。式に使える関数は計算画面と同じです。') }));
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Type of graph', 'グラフの種類') }, b2, b3), f2, f3);
       P.canvas = canvas; P.tip = tip; P.legend = legend; P.msg = msg; P.wrap = wrap;
@@ -2782,16 +3409,16 @@
         store.set('qalc.plot.exprs', ta.value); store.set('qalc.plot.min', xmin.value); store.set('qalc.plot.max', xmax.value);
         document.activeElement && document.activeElement.blur();
         // points and marks belong to the graph they were made for (a matrix, a form), not to one drawn by hand
-        if (!P.keep) { P.points = null; P.marks = []; P.pending = null; P.guides = null; P.equal = store.get('qalc.plot.equal', false) === true; }
+        if (!P.keep) { P.points = null; P.marks = []; P.pending = null; P.guides = null; P.equal = store.get('qalc.plot.equal', false) === true; if (P.samples) P.samples.clearChoice(); }
         P.keep = false;
-        P.exprs = ta.value.split('\n').map(normalizeExpr).filter(Boolean).slice(0, 6);
+        P.exprs = plotExprs(ta.value, 6);
         P.view = null;
         P.mark = null; P.tip.style.display = 'none'; // the point that was tapped belongs to the graph before
         compute(normalizeExpr(xmin.value), normalizeExpr(xmax.value));
       });
       setupPlotGestures(wrap);
       window.addEventListener('resize', debounce(() => { draw(); draw3d(); }, 120));
-      P.exprs = ta.value.split('\n').map(normalizeExpr).filter(Boolean).slice(0, 6);
+      P.exprs = plotExprs(ta.value, 6);
       setMode(store.get('qalc.plot.mode', '2d') === '3d' ? '3d' : '2d');
     });
     return p;
@@ -2886,18 +3513,29 @@
         P.msg.textContent = '';
         draw();
         applyPending();
-      }
+      } else P.msg.textContent = tr('Enter a function (for example sin(x)), or tap a sample', '関数を入れてください（例：sin(x)）。下のサンプルもタップで描けます');
       return;
     }
     P.msg.textContent = tr('Calculating…', '計算中…');
     const r = await Bridge.send('plot', { exprs: P.exprs, min: String(min), max: String(max), steps: 600, var: 'x', opts: engineOpts(), timeout: 12000 });
+    if (!r.ok && r.error === 'invalid range' && !keepView && !P.swapped) {
+      // the range the wrong way round ("5 to 1"): the two ends change places
+      const a = await numValue(min), b = await numValue(max);
+      if (isFinite(a) && isFinite(b) && a > b && P.xmin) {
+        const t = P.xmin.value; P.xmin.value = P.xmax.value; P.xmax.value = t;
+        store.set('qalc.plot.min', P.xmin.value); store.set('qalc.plot.max', P.xmax.value);
+        P.swapped = true;
+        try { await compute(max, min); } finally { P.swapped = false; }
+        return;
+      }
+    }
     if (!r.ok) { P.msg.textContent = r.error === 'invalid range' ? tr('Check the range of x', 'x の範囲を確認してください') : (localMessage(r.error) || tr('Could not calculate the graph', 'グラフを計算できませんでした')); return; }
     if (!Array.isArray(r.series)) { P.msg.textContent = tr('The calculation took too long and was stopped', '時間がかかりすぎたため計算を中止しました'); return; }
     // moving or zooming the graph only reads its values again: the shaded area and its results stay
     const kept = keepView && P.area ? [P.series.indexOf(P.area.f), P.area.g ? P.series.indexOf(P.area.g) : -1] : null;
     P.series = r.series.map((s, i) => ({ expr: P.exprs[i], x: s.x, y: s.y, color: COLORS[i % COLORS.length] }));
     const err = (r.messages || []).find((m) => m.type === 'error');
-    P.msg.textContent = err ? localMessage(err.text) : '';
+    P.msg.textContent = plotNote(err, P.exprs, P.series.filter((q) => !q.y.some((v) => v !== null)).map((q) => q.expr), 6, false);
     let x0 = Infinity, x1 = -Infinity;
     for (const s of P.series) for (const x of s.x) { if (x < x0) x0 = x; if (x > x1) x1 = x; }
     P.dataX = isFinite(x0) ? [x0, x1] : null;
@@ -3770,6 +4408,10 @@
   // and the lower half). The engine is asked for the exact value (polar coordinates for a disk);
   // the numeric value checks it, or is the answer when there is no exact one. The parts below
   // count as positive.
+  // The values are those of the surfaces that are drawn: when the box is opened, when another
+  // surface or region is chosen and when the graph is drawn again, the volume and then the surface
+  // area are calculated at once (volumeAuto). The example (a sphere) at the bottom of the box is
+  // the only thing that draws another graph.
   const VOL_N = 101;
   const SHAPES3D = [['sphere', tr('Sphere', '球'), ['r'], ['2']]];
   function buildVolume3d() {
@@ -3782,30 +4424,52 @@
     const R = el('input', { inputmode: 'text', autocapitalize: 'off', placeholder: 'R', 'aria-label': tr('Radius R', '半径 R') });
     const bRect = tapButton({ text: tr('Rectangle', '長方形') }, () => setRegion('rect')), bDisk = tapButton({ text: tr('Disk', '円') }, () => setRegion('disk'));
     const diskRow = el('span', { class: 'disk-row' }, el('span', { text: 'x² + y² ≤ R²,  R =' }), R);
-    const setRegion = (k) => {
+    // quiet: only set (the caller calculates afterwards)
+    const setRegion = (k, quiet) => {
       Q3.volUI.region = k;
       bRect.classList.toggle('on', k === 'rect'); bDisk.classList.toggle('on', k === 'disk');
       rangeText.hidden = k !== 'rect'; diskRow.hidden = k !== 'disk';
       out.textContent = ''; ins.hidden = true;
+      if (!quiet) volumeAuto();
     };
     const box = el('div', { class: 'area-box' },
-      buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
-      tapButton({ class: 'btn geo-link', text: tr('More shapes: cylinder, cone, box… ›', 'ほかの図形（円柱・円錐・直方体など）›') }, () => openShapes()),
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk), rangeText, diskRow),
       el('div', { class: 'calc-btns' }, go, sur), out, ins,
-      el('div', { class: 'form-hint', text: tr('Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.', '平面（またはもう一方の曲面）より下の部分もプラスとして数えます。表面積は 2 つの曲面（または曲面と z = 0 の底面）の面積の和で、側面は含みません。') }));
+      el('div', { class: 'form-hint', text: tr('The values are those of the graph that is drawn. Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.', 'いま描いているグラフの値です。平面（またはもう一方の曲面）より下の部分もプラスとして数えます。表面積は 2 つの曲面（または曲面と z = 0 の底面）の面積の和で、側面は含みません。') }),
+      buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
+      tapButton({ class: 'btn geo-link', text: tr('More shapes: cylinder, cone, box… ›', 'ほかの図形（円柱・円錐・直方体など）›') }, () => openShapes()));
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Volume and surface ▾', '体積・表面積 ▾') });
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) volumeSurfacesChanged(); });
+    // opened: the volume and the surface area of the drawn surface are shown at once
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) volumeSurfacesChanged(); else Q3.volUI.seq++; });
+    s1.addEventListener('change', () => { if (s2.value === s1.value) s2.value = 'plane'; volumeAuto(); });
+    s2.addEventListener('change', () => volumeAuto());
+    R.addEventListener('change', () => volumeAuto());
+    R.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); R.blur(); } });
     ins.addEventListener('click', () => { if (Q3.volExpr) useExample(Q3.volExpr); });
-    Q3.volUI = { s1, s2, out, ins, box, rangeText, R, toggle, setRegion };
-    setRegion('rect');
+    Q3.volUI = { s1, s2, out, ins, box, rangeText, R, toggle, setRegion, seq: 0, timer: 0 };
+    setRegion('rect', true);
     return el('div', { class: 'area-wrap' }, toggle, box);
+  }
+  // the volume and then the surface area of the surfaces that are chosen (the drawn ones), a moment
+  // after the last change; a newer change or calculation stops the older one from writing its result
+  function volumeAuto() {
+    const U = Q3.volUI;
+    if (!U || U.box.hidden) return;
+    U.seq++;
+    clearTimeout(U.timer);
+    U.timer = setTimeout(async () => {
+      if (U.box.hidden) return;
+      const seq = U.seq;
+      await computeVolume(seq);
+      if (seq === U.seq && !U.box.hidden) await computeSurface(true, seq);
+    }, 80);
   }
   // a sphere of radius r: the upper and the lower half over the disk of radius r, round (the same
   // scale on all axes), with its volume and surface area
   async function drawSphere(r) {
+    clearVolume();
     const n = await numValue(r);
     if (!(n > 0)) { toast(tr('The size must be a positive number', '大きさは正の数にしてください'), 2000); return; }
     const r2 = (await symText(`(${r})^2`)) || `(${r})^2`;
@@ -3819,15 +4483,26 @@
     Q3.pending = async () => {
       const U = Q3.volUI;
       U.box.hidden = false; U.toggle.classList.add('on');
-      volumeSurfacesChanged();
+      volumeSurfacesChanged(true);
       U.s1.value = '0'; U.s2.value = '1';
-      U.setRegion('disk'); U.R.value = r;
-      Q3.pendingSurface = true;
-      await computeVolume();
+      U.setRegion('disk', true); U.R.value = r;
+      clearTimeout(U.timer);
+      const seq = ++U.seq;
+      await computeVolume(seq);
+      if (seq === U.seq) await computeSurface(true, seq);
     };
     Q3.go.click();
   }
-  function volumeSurfacesChanged() {
+  // a calculation that is running is given up and its place emptied (another graph is on its way)
+  function clearVolume() {
+    const U = Q3.volUI;
+    if (!U) return;
+    U.seq++;
+    clearTimeout(U.timer);
+    U.out.textContent = ''; U.ins.hidden = true;
+  }
+  // the lists of surfaces follow the graph; quiet: without calculating (the caller does)
+  function volumeSurfacesChanged(quiet) {
     const U = Q3.volUI;
     if (!U) return;
     const k1 = U.s1.value, k2 = U.s2.value, D = Q3.data;
@@ -3845,6 +4520,7 @@
     U.rangeText.textContent = 'x ' + (x0 || '-5') + ' 〜 ' + (x1 || '5') + tr(', ', '、') + 'y ' + (y0 || '-5') + ' 〜 ' + (y1 || '5');
     if (!U.R.value) U.R.value = r6(Math.min(Math.abs(Number(x0) || 5), Math.abs(Number(x1) || 5), Math.abs(Number(y0) || 5), Math.abs(Number(y1) || 5)));
     U.out.textContent = ''; U.ins.hidden = true;
+    if (!quiet) volumeAuto();
   }
   // the chosen surfaces and region, or null (with a message)
   function volumeSetup() {
@@ -3859,62 +4535,280 @@
   }
   const polar = (e) => subXY(e, '\\r cos(\\θ)', '\\r sin(\\θ)');
   // ∬ F over the region: the exact double integral (as text), its value if the engine finds it, the numeric value
-  async function regionIntegral(S, F, signedF) {
-    const exprF = signedF || F;
+  // ∬ F over the region as an expression for the engine (polar coordinates for a disk)
+  function regionExpr(S, exprF) {
     const turn = fullTurn();
-    const ix = S.disk ? `integrate(integrate((${polar(exprF)}) × \\r, 0, ${S.R}, \\r), 0, ${turn}, \\θ)` + (turn === '2π' ? '' : ` × 2π/${turn}`)
+    return S.disk ? `integrate(integrate((${polar(exprF)}) × \\r, 0, ${S.R}, \\r), 0, ${turn}, \\θ)` + (turn === '2π' ? '' : ` × 2π/${turn}`)
       : `integrate(integrate(${exprF}, ${S.x0}, ${S.x1}, x), ${S.y0}, ${S.y1}, y)`;
-    // the exact value is tried for a few seconds only (some double integrals keep the engine busy)
-    const ex = await exactIntegral(signedF ? `abs(${ix})` : ix, Math.min(8000, timeLimit() * 1000));
-    let num, missing = 0;
-    if (S.disk) num = await tsDisk(F, S.R);
-    else { const r = await simpsonRect(F, S.x0, S.x1, S.y0, S.y1); num = r.v; missing = r.missing; }
-    // Simpson's rule on 101 × 101 points: about 8 correct digits for a smooth surface
-    return { expr: ix, val: bestValue(ex, num, S.disk ? 10 : 8), missing };
   }
-  async function computeVolume() {
+  // its numeric value: { num, missing } (Simpson's rule on 101 × 101 points for a rectangle: about
+  // 8 correct digits for a smooth surface)
+  async function regionNumeric(S, F) {
+    if (S.disk) return { num: await tsDisk(F, S.R), missing: 0 };
+    const r = await simpsonRect(F, S.x0, S.x1, S.y0, S.y1);
+    return { num: r.v, missing: r.missing };
+  }
+  const regionDigits = (S) => (S.disk ? 10 : 8);
+  // the exact value is tried for a few seconds only (some double integrals keep the engine busy)
+  const regionExact = (S, ix) => exactIntegral(ix, Math.min(8000, timeLimit() * 1000));
+  // early(value, missing): called with the numeric value as soon as it is known, before the exact
+  // value is looked for
+  async function regionIntegral(S, F, signedF, early) {
+    const ix = regionExpr(S, signedF || F);
+    const n = await regionNumeric(S, F);
+    if (early) early(bestValue(null, n.num, regionDigits(S)), n.missing);
+    const ex = await regionExact(S, signedF ? `abs(${ix})` : ix);
+    return { expr: ix, val: bestValue(ex, n.num, regionDigits(S)), missing: n.missing };
+  }
+  // a value shown before the exact one has been looked for: "about 39.939589 (checking…)"
+  const aboutValue = (name, val) => name + tr(' about ', ' 約 ') + val.text.replace(/^≈ /, '') + tr(' (checking for an exact value…)', '（厳密な値を確かめています…）');
+  // seq: the number of this calculation (a button press takes a new one); a result is written only
+  // while no newer calculation has started
+  async function computeVolume(seq) {
     const S = volumeSetup();
     if (!S) return;
     const { U, f, g } = S;
+    if (seq === undefined) { clearTimeout(U.timer); seq = ++U.seq; }
     U.out.textContent = tr('Calculating…', '計算中…');
     U.ins.hidden = true;
     const d = g ? `(${f.expr}) − (${g.expr})` : f.expr;
-    const r = await regionIntegral(S, `abs(${d})`, d);
+    const r = await regionIntegral(S, `abs(${d})`, d, (v) => { if (v && seq === U.seq) U.out.textContent = aboutValue(tr('Volume', '体積'), v); });
+    if (seq !== U.seq) return;
     if (!r.val) { U.out.textContent = tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
     U.out.textContent = '';
     showResult(U.out, tr('Volume ', '体積 ') + shownValue(r.val));
     if (r.missing) U.out.append(el('div', { class: 'form-hint', text: tr(`${r.missing} points without a real value were left out (for a round region, choose "Disk")`, `実数の値がない ${r.missing} 点を除いています（丸い範囲なら「円」を選んでください）`) }));
     Q3.volExpr = r.expr;
     U.ins.hidden = false;
-    if (Q3.pendingSurface) { Q3.pendingSurface = false; await computeSurface(true); }
   }
   // the area of the surfaces: ∬ √(1 + f_x² + f_y²), for each surface (the floor z = 0: the area of the region)
-  async function computeSurface(append) {
+  // append: below the volume that is shown (else in its place)
+  async function computeSurface(append, seq) {
     const S = volumeSetup();
     if (!S) return;
     const { U, f, g } = S;
+    if (seq === undefined) { clearTimeout(U.timer); seq = ++U.seq; }
     const out = append ? el('div', { class: 'area-out' }) : U.out;
     if (append) U.out.append(out); else { U.out.textContent = ''; U.ins.hidden = true; }
-    out.textContent = tr('Calculating…', '計算中…');
-    const parts = [], names = [];
+    out.textContent = tr('Calculating the surface area…', '表面積を計算中…');
+    const fail = () => { if (seq === U.seq) out.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); };
+    const parts = [], names = [], items = [];
     let missing = 0;
+    const floor = g ? null : S.disk ? await exactIntegral(`π × (${S.R})^2`, 3000) : await exactIntegral(`abs(((${S.x1}) − (${S.x0})) × ((${S.y1}) − (${S.y0})))`, 3000);
+    if (seq !== U.seq) return;
+    // the numeric value of each surface first: their sum is shown while the exact values are looked for
     for (const s1 of g ? [f, g] : [f]) {
       const A = recipSqrt(await symText(`√(1 + (diff(${s1.expr}, x))^2 + (diff(${s1.expr}, y))^2)`));
-      if (!A) { out.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); return; }
-      const r = await regionIntegral(S, A);
-      if (!r.val) { out.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); return; }
-      parts.push(r.val); names.push(clip(s1.expr, 24));
-      missing += r.missing;
+      if (seq !== U.seq) return;
+      if (!A) { fail(); return; }
+      const n = await regionNumeric(S, A);
+      if (seq !== U.seq) return;
+      items.push({ A, n, name: clip(s1.expr, 24) });
     }
-    if (!g) {
-      const floor = S.disk ? await exactIntegral(`π × (${S.R})^2`, 3000) : await exactIntegral(`abs(((${S.x1}) − (${S.x0})) × ((${S.y1}) − (${S.y0})))`, 3000);
-      if (floor) { parts.push(floor); names.push(tr('floor z = 0', '底面 z = 0')); }
+    if (items.every((it) => isFinite(it.n.num))) {
+      const sum = items.reduce((t, it) => t + it.n.num, floor ? floor.v : 0);
+      out.textContent = aboutValue(tr('Surface area', '表面積'), { text: fmtV(+sum.toPrecision(regionDigits(S))) });
     }
+    for (const it of items) {
+      const val = bestValue(await regionExact(S, regionExpr(S, it.A)), it.n.num, regionDigits(S));
+      if (seq !== U.seq) return;
+      if (!val) { fail(); return; }
+      parts.push(val); names.push(it.name);
+      missing += it.n.missing;
+    }
+    if (floor) { parts.push(floor); names.push(tr('floor z = 0', '底面 z = 0')); }
     const total = await sumValues(parts);
+    if (seq !== U.seq) return;
     out.textContent = '';
     showResult(out, tr('Surface area ', '表面積 ') + shownValue(total));
     out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
     if (missing) out.append(el('div', { class: 'form-hint', text: tr(`${missing} points without a real value were left out (for a round region, choose "Disk")`, `実数の値がない ${missing} 点を除いています（丸い範囲なら「円」を選んでください）`) }));
+  }
+
+  // the functions of a graph: one in each line; a line "sin(x), cos(x)" is two (a "," or ";" outside
+  // parentheses). Returns the first `max` of them; .more is how many were left out.
+  function plotExprs(text, max) {
+    const all = [];
+    for (const line of text.split('\n')) {
+      let d = 0, cur = '';
+      for (const c of line) {
+        if ('([{'.indexOf(c) >= 0) d++; else if (')]}'.indexOf(c) >= 0) d--;
+        if ((c === ',' || c === ';') && d <= 0) { all.push(cur); cur = ''; } else cur += c;
+      }
+      all.push(cur);
+    }
+    const list = all.map(normalizeExpr).filter(Boolean);
+    const out = list.slice(0, max);
+    out.more = list.length - out.length;
+    return out;
+  }
+  // what to say below a graph: an error of the engine, functions that were left out, functions without values
+  function plotNote(err, exprs, empty, max, three) {
+    if (err) return localMessage(err.text);
+    const notes = [], vars = three ? tr('x and y', 'x と y') : 'x';
+    if (exprs.more > 0) notes.push(tr(`Up to ${max} functions are drawn: ${exprs.more} more left out`, `描けるのは ${max} つまでです（残りの ${exprs.more} つは描いていません）`));
+    if (empty.length) notes.push(tr(`No values for ${empty.map((e) => '"' + clip(e, 18) + '"').join(', ')}: check the expression and the range (the variable is ${vars})`, `${empty.map((e) => '「' + clip(e, 18) + '」').join('、')}は値が出ません。式と範囲を確認してください（変数は ${vars}）`));
+    // (a letter that has a value of its own is no longer the variable of the tools below the graph)
+    const dv = (three ? ['x', 'y'] : ['x']).find((l) => definedVars.has(l));
+    if (dv) notes.push(tr(`${dv} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: User-defined variables and functions)`, `${dv} に値が定義されています（ユーザー定義の変数）。下の微分・面積などの計算は、${dv} を削除するまで正しく出ないことがあります（メニュー「ユーザー定義の変数・関数」）`));
+    return notes.join(' ');
+  }
+
+  // ------------------------------------------------- samples for the graphs
+  // Graphs to try with one tap: a row of small pictures below the graph (2D and 3D). The pictures
+  // are drawn by the page itself (f: the same functions in JavaScript), so they need no image files
+  // and no calculation by the engine. In an expression "@" is where the angle unit goes: nothing
+  // when the angle setting is radians and " rad" otherwise, so a sample looks the same with every
+  // setting ({a + b} is an angle that is a sum: a + b, or (a + b) rad). r: the range of x (2D) or of x and y (3D); eq: the same scale on all axes; y: the
+  // range of y of the picture (a function with poles); n: grid points of the picture; res: the grid
+  // of the 3D graph; disk: the radius of the round region for "Volume and surface".
+  const hyp = Math.hypot;
+  const SAMPLES2D = [
+    { t: tr('Waves', '波'), e: ['sin(x@)', 'cos(x@)'], r: ['-7', '7'], f: [Math.sin, Math.cos] },
+    { t: tr('Parabola & line', '放物線と直線'), e: ['x^2', 'x + 2'], r: ['-3', '3'], f: [(x) => x * x, (x) => x + 2] },
+    { t: tr('Cubic', '3 次関数'), e: ['x^3 − 3x'], r: ['-2.5', '2.5'], f: [(x) => x * x * x - 3 * x] },
+    { t: tr('Heart', 'ハート'), e: ['√(1 − (abs(x) − 1)^2)', '−3 √(1 − √(abs(x) / 2))'], r: ['-2', '2'], eq: true,
+      f: [(x) => Math.sqrt(1 - (Math.abs(x) - 1) ** 2), (x) => -3 * Math.sqrt(1 - Math.sqrt(Math.abs(x) / 2))] },
+    { t: tr('Circle', '円'), e: ['√(4 − x^2)', '−√(4 − x^2)'], r: ['-2.6', '2.6'], eq: true, f: [(x) => Math.sqrt(4 - x * x), (x) => -Math.sqrt(4 - x * x)] },
+    { t: tr('Bell curve', 'ベルカーブ'), e: ['e^(−x^2 / 2) / √(2π)'], r: ['-4', '4'], f: [(x) => Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI)] },
+    { t: tr('Damped wave', '減衰する波'), e: ['e^(−x / 5) sin(3x@)', 'e^(−x / 5)', '−e^(−x / 5)'], r: ['0', '15'],
+      f: [(x) => Math.exp(-x / 5) * Math.sin(3 * x), (x) => Math.exp(-x / 5), (x) => -Math.exp(-x / 5)] },
+    { t: tr('Square wave', '矩形波に近づく'), e: ['sin(x@)', 'sin(x@) + sin(3x@) / 3', 'sin(x@) + sin(3x@) / 3 + sin(5x@) / 5 + sin(7x@) / 7'], r: ['-7', '7'],
+      f: [Math.sin, (x) => Math.sin(x) + Math.sin(3 * x) / 3, (x) => Math.sin(x) + Math.sin(3 * x) / 3 + Math.sin(5 * x) / 5 + Math.sin(7 * x) / 7] },
+    { t: tr('Beats', 'うなり'), e: ['sin(10x@) + sin(11x@)'], r: ['0', '13'], f: [(x) => Math.sin(10 * x) + Math.sin(11 * x)], n: 400 },
+    { t: 'sin(x) / x', e: ['sin(x@) / x'], r: ['-20', '20'], f: [(x) => (x ? Math.sin(x) / x : 1)] },
+    { t: tr('Wave packet', '波のかたまり'), e: ['e^(−x^2 / 8) cos(5x@)', 'e^(−x^2 / 8)', '−e^(−x^2 / 8)'], r: ['-7', '7'],
+      f: [(x) => Math.exp(-x * x / 8) * Math.cos(5 * x), (x) => Math.exp(-x * x / 8), (x) => -Math.exp(-x * x / 8)] },
+    { t: tr('eˣ and ln x', '指数と対数'), e: ['e^x', 'ln(x)', 'x'], r: ['-2.5', '2.5'], y: [-4, 8], f: [Math.exp, (x) => (x > 0 ? Math.log(x) : NaN), (x) => x] },
+    { t: tr('Five zeros', '5 つの零点'), e: ['x (x^2 − 1) (x^2 − 4)'], r: ['-2.3', '2.3'], f: [(x) => x * (x * x - 1) * (x * x - 4)] },
+    { t: tr('S-curve', 'S 字カーブ'), e: ['1 / (1 + e^(−x))'], r: ['-6', '6'], f: [(x) => 1 / (1 + Math.exp(-x))] },
+    { t: tr('Hanging chain', '懸垂線と放物線'), e: ['cosh(x)', '1 + x^2 / 2'], r: ['-2.5', '2.5'], f: [Math.cosh, (x) => 1 + x * x / 2] },
+    { t: tr('Chirp', 'だんだん速い波'), e: ['sin(x^2@)'], r: ['0', '7'], f: [(x) => Math.sin(x * x)], n: 400 },
+    { t: tr('Growing wave', '広がる波'), e: ['x sin(x@)', 'x', '−x'], r: ['-20', '20'], f: [(x) => x * Math.sin(x), (x) => x, (x) => -x] }
+  ];
+  const SAMPLES3D = [
+    { t: tr('Egg carton', '波（卵パック）'), e: ['sin(x@) cos(y@)'], r: ['-5', '5', '-5', '5'], f: [(x, y) => Math.sin(x) * Math.cos(y)] },
+    { t: tr('Ripple', '波紋'), e: ['cos(√(x^2 + y^2)@) e^(−(x^2 + y^2) / 60)'], r: ['-10', '10', '-10', '10'], res: '61', n: 29,
+      f: [(x, y) => Math.cos(hyp(x, y)) * Math.exp(-(x * x + y * y) / 60)] },
+    { t: tr('Sphere', '球'), e: ['√(4 − x^2 − y^2)', '−√(4 − x^2 − y^2)'], r: ['-2.2', '2.2', '-2.2', '2.2'], res: '61', eq: true, disk: '2', n: 41, one: true,
+      f: [(x, y) => Math.sqrt(4 - x * x - y * y), (x, y) => -Math.sqrt(4 - x * x - y * y)] },
+    { t: tr('Doughnut', 'ドーナツ'), e: ['√(1 − (√(x^2 + y^2) − 2)^2)', '−√(1 − (√(x^2 + y^2) − 2)^2)'], r: ['-3.3', '3.3', '-3.3', '3.3'], res: '61', eq: true, n: 45, one: true,
+      f: [(x, y) => Math.sqrt(1 - (hyp(x, y) - 2) ** 2), (x, y) => -Math.sqrt(1 - (hyp(x, y) - 2) ** 2)] },
+    { t: tr('Saddle', '鞍（くら）'), e: ['x^2 − y^2'], r: ['-2', '2', '-2', '2'], f: [(x, y) => x * x - y * y] },
+    { t: tr('Bowl and lid', 'おわんとふた'), e: ['x^2 + y^2', '4'], r: ['-2', '2', '-2', '2'], disk: '2', f: [(x, y) => x * x + y * y, () => 4] },
+    { t: tr('Hill', '山'), e: ['e^(−(x^2 + y^2))'], r: ['-2.5', '2.5', '-2.5', '2.5'], f: [(x, y) => Math.exp(-(x * x + y * y))] },
+    { t: tr('Peaks', '山と谷'), e: ['3 (1 − x)^2 e^(−x^2 − (y + 1)^2) − 10 (x / 5 − x^3 − y^5) e^(−x^2 − y^2) − e^(−(x + 1)^2 − y^2) / 3'], r: ['-3', '3', '-3', '3'], res: '61', n: 25,
+      f: [(x, y) => 3 * (1 - x) ** 2 * Math.exp(-x * x - (y + 1) ** 2) - 10 * (x / 5 - x ** 3 - y ** 5) * Math.exp(-x * x - y * y) - Math.exp(-((x + 1) ** 2) - y * y) / 3] },
+    { t: tr('Double cone', '2 つの円錐'), e: ['√(x^2 + y^2)', '−√(x^2 + y^2)'], r: ['-2', '2', '-2', '2'], eq: true, f: [(x, y) => hyp(x, y), (x, y) => -hyp(x, y)] },
+    { t: tr('Monkey saddle', 'モンキーサドル'), e: ['x^3 − 3x y^2'], r: ['-1.5', '1.5', '-1.5', '1.5'], f: [(x, y) => x * x * x - 3 * x * y * y] },
+    { t: tr('Crossing waves', '交わる波'), e: ['sin(x@) + sin(y@)'], r: ['-6', '6', '-6', '6'], f: [(x, y) => Math.sin(x) + Math.sin(y)] },
+    { t: tr('Twisted plane', 'ねじれた面'), e: ['x y'], r: ['-2', '2', '-2', '2'], f: [(x, y) => x * y] },
+    { t: tr('Pyramid', 'ピラミッド'), e: ['2 − abs(x) − abs(y)'], r: ['-2', '2', '-2', '2'], f: [(x, y) => 2 - Math.abs(x) - Math.abs(y)] },
+    { t: tr('Rings', '輪の波'), e: ['sin({x^2 + y^2}) / (1 + x^2 + y^2)'], r: ['-3', '3', '-3', '3'], res: '61', n: 33, f: [(x, y) => Math.sin(x * x + y * y) / (1 + x * x + y * y)] }
+  ];
+  // the expressions of a sample for the angle setting in use
+  // ({…}: a sum that is an angle as a whole)
+  const sampleExprs = (d) => d.e.map((t) => (S.angle === 'rad' ? t.replace(/[@{}]/g, '') : t.replace(/\{([^}]*)\}/g, '($1) rad').replace(/@/g, ' rad')));
+  const THUMB_W = 84, THUMB_H = 60;
+  function thumbContext(c) {
+    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    c.width = Math.round(THUMB_W * dpr); c.height = Math.round(THUMB_H * dpr);
+    const g = c.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, THUMB_W, THUMB_H);
+    return g;
+  }
+  function thumb2d(c, d) {
+    const g = thumbContext(c), W = THUMB_W, H = THUMB_H, N = d.n || 140;
+    const x0 = Number(d.r[0]), x1 = Number(d.r[1]);
+    const ys = d.f.map((f) => { const a = []; for (let i = 0; i <= N; i++) { const v = f(x0 + (x1 - x0) * i / N); a.push(isFinite(v) ? v : NaN); } return a; });
+    let lo = Infinity, hi = -Infinity;
+    if (d.y) { lo = d.y[0]; hi = d.y[1]; } else for (const a of ys) for (const v of a) if (v === v) { if (v < lo) lo = v; if (v > hi) hi = v; }
+    if (!(hi > lo)) { lo -= 1; hi += 1; }
+    const pad = 5;
+    let sx = (W - 2 * pad) / (x1 - x0), sy = (H - 2 * pad) / (hi - lo);
+    if (d.eq) sx = sy = Math.min(sx, sy);
+    const X = (x) => W / 2 + (x - (x0 + x1) / 2) * sx, Y = (y) => H / 2 - (y - (lo + hi) / 2) * sy;
+    g.strokeStyle = 'rgba(128,128,128,0.5)'; g.lineWidth = 1; g.beginPath();
+    if (lo < 0 && hi > 0) { g.moveTo(0, Y(0)); g.lineTo(W, Y(0)); }
+    if (x0 < 0 && x1 > 0) { g.moveTo(X(0), 0); g.lineTo(X(0), H); }
+    g.stroke();
+    ys.forEach((a, si) => {
+      g.strokeStyle = COLORS[si % COLORS.length]; g.lineWidth = 1.7; g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath();
+      let pen = false, prev = NaN;
+      a.forEach((v, i) => {
+        // outside the picture, or a jump across a pole: the line stops
+        if (v !== v || v < lo - (hi - lo) * 0.2 || v > hi + (hi - lo) * 0.2 || (pen && Math.abs(v - prev) > (hi - lo) * 0.8)) { pen = false; prev = v; return; }
+        const px = X(x0 + (x1 - x0) * i / N), py = Y(v);
+        if (pen) g.lineTo(px, py); else g.moveTo(px, py);
+        pen = true; prev = v;
+      });
+      g.stroke();
+    });
+  }
+  // a small surface: the cells of a coarse grid from back to front, seen as the 3D graph is at first
+  function thumb3d(c, d) {
+    const g = thumbContext(c), W = THUMB_W, H = THUMB_H, n = d.n || 19;
+    const ca = Math.cos(VIEW3D.az), sa = Math.sin(VIEW3D.az), ce = Math.cos(VIEW3D.el), se = Math.sin(VIEW3D.el);
+    const [x0, x1, y0, y1] = d.r.map(Number);
+    const surf = d.f.map((f) => { const z = []; for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const v = f(x0 + (x1 - x0) * i / (n - 1), y0 + (y1 - y0) * j / (n - 1)); z.push(isFinite(v) ? v : NaN); } return z; });
+    let z0 = Infinity, z1 = -Infinity;
+    for (const z of surf) for (const v of z) if (v === v) { if (v < z0) z0 = v; if (v > z1) z1 = v; }
+    if (!(z1 > z0)) { z0 -= 1; z1 += 1; }
+    let EX = 1, EY = 1, EZ = ZS;
+    if (d.eq) { const M = Math.max(x1 - x0, y1 - y0, z1 - z0); EX = (x1 - x0) / M; EY = (y1 - y0) / M; EZ = (z1 - z0) / M; }
+    const EH = Math.hypot(EX, EY);
+    const sc = Math.min((W - 4) / (2 * EH), (H - 4) / (2 * (EZ * Math.abs(ce) + EH * Math.abs(se))));
+    const proj = (u, v, w) => { const xr = u * ca - v * sa, yr = u * sa + v * ca; return [W / 2 + xr * sc, H / 2 - (w * ce + yr * se) * sc, yr * ce - w * se]; };
+    const cells = [];
+    surf.forEach((z, si) => {
+      const pt = z.map((v, k) => (v === v ? proj(((k % n) / (n - 1) * 2 - 1) * EX, (Math.floor(k / n) / (n - 1) * 2 - 1) * EY, ((v - z0) / (z1 - z0) * 2 - 1) * EZ) : null));
+      for (let j = 0; j + 1 < n; j++) for (let i = 0; i + 1 < n; i++) {
+        const k = j * n + i, a = pt[k], b = pt[k + 1], e = pt[k + n + 1], f = pt[k + n];
+        if (!a || !b || !e || !f) continue;
+        cells.push([(a[2] + b[2] + e[2] + f[2]) / 4, a, b, e, f, ((z[k] + z[k + 1] + z[k + n + 1] + z[k + n]) / 4 - z0) / (z1 - z0), si]);
+      }
+    });
+    cells.sort((p, q) => q[0] - p[0]);
+    const many = d.f.length > 1 && !d.one;
+    g.lineWidth = 0.5; g.lineJoin = 'round';
+    for (const [, a, b, e, f, t, si] of cells) {
+      const col = (many ? hexRgb(COLORS[si % COLORS.length]).map((v) => v * (0.6 + 0.4 * t)) : viridis(t)).map(Math.round).join(',');
+      g.fillStyle = 'rgb(' + col + ')'; g.strokeStyle = 'rgba(0,0,0,0.16)';
+      g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(e[0], e[1]); g.lineTo(f[0], f[1]); g.closePath(); g.fill(); g.stroke();
+    }
+  }
+  // the row of samples; run(sample) draws one
+  function buildSamples(defs, is3d, run) {
+    const row = el('div', { class: 'samples', role: 'group', 'aria-label': tr('Samples', 'サンプル') });
+    for (const d of defs) {
+      const c = el('canvas', { 'aria-hidden': 'true' });
+      const b = tapButton({ class: 'sample', title: d.t }, () => {
+        for (const x of row.children) x.classList.toggle('on', x === b);
+        run(d);
+      });
+      b.append(c, el('span', { text: d.t }));
+      row.append(b);
+      try { (is3d ? thumb3d : thumb2d)(c, d); } catch (e) { /* a picture is not needed to use the sample */ }
+    }
+    const wrap = el('div', { class: 'smp-wrap' }, el('div', { class: 'smp-cap', text: tr('Samples (tap one to draw it)', 'サンプル（タップすると描きます）') }), row);
+    wrap.clearChoice = () => { for (const x of row.children) x.classList.remove('on'); };
+    return wrap;
+  }
+  function drawSample2d(d) {
+    openPlotWith(sampleExprs(d), { range: d.r, equal: !!d.eq });
+  }
+  function drawSample3d(d) {
+    Q3.ta.value = sampleExprs(d).join('\n');
+    Q3.inputs.forEach((e, i) => { e.value = d.r[i]; });
+    if (Q3.resEl) Q3.resEl.value = d.res || '41';
+    Q3.points = null; Q3.pending = null;
+    Q3.equalOnce = !!d.eq; // round for this drawing; the 1:1 setting itself stays as it was
+    // "Volume and surface" measures over the region that fits the sample (a disk for a sphere)
+    const U = Q3.volUI;
+    if (U) { U.setRegion(d.disk ? 'disk' : 'rect', true); if (d.disk) U.R.value = d.disk; }
+    Q3.keep = true;
+    Q3.go.click();
   }
 
   // ----------------------------------------------------------- 3D plot
@@ -3955,12 +4849,12 @@
     const msg = el('div', { class: 'form-hint' });
     Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res });
     const read = () => {
-      Q3.exprs = ta.value.split('\n').map(normalizeExpr).filter(Boolean).slice(0, 4);
+      Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
       Q3.res = Number(res.value) || 41;
     };
     go.addEventListener('click', () => {
-      if (!Q3.keep) { Q3.points = null; Q3.pending = null; Q3.equalOnce = false; } // they belong to the graph they were made for
+      if (!Q3.keep) { Q3.points = null; Q3.pending = null; Q3.equalOnce = false; if (Q3.samples) Q3.samples.clearChoice(); } // they belong to the graph they were made for
       Q3.keep = false;
       store.set('qalc.plot3d.exprs', ta.value); store.set('qalc.plot3d.res', res.value);
       store.set('qalc.plot3d.xmin', xmin.value); store.set('qalc.plot3d.xmax', xmax.value);
@@ -3983,7 +4877,7 @@
           el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr('to', '〜') }), xmax),
           el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr('to', '〜') }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
-      wrap, legend, msg, buildPartial3d(), buildVolume3d(),
+      wrap, legend, msg, el('div', { class: 'tools' }, buildPartial3d(), buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
@@ -4039,11 +4933,24 @@
       draw3d();
       return;
     }
-    if (!Q3.exprs.length) { Q3.msg.textContent = tr('Enter a function', '関数を入力してください'); return; }
+    if (!Q3.exprs.length) { Q3.msg.textContent = tr('Enter a function (for example sin(x) cos(y)), or tap a sample', '関数を入れてください（例：sin(x) cos(y)）。下のサンプルもタップで描けます'); return; }
     Q3.msg.textContent = tr('Calculating…', '計算中…');
+    clearVolume();
     const seq = Q3.seq = (Q3.seq || 0) + 1;
     const [x0, x1, y0, y1] = Q3.range;
     const r = await Bridge.send('plot3d', { exprs: Q3.exprs, xmin: x0 || '-5', xmax: x1 || '5', ymin: y0 || '-5', ymax: y1 || '5', nx: Q3.res, ny: Q3.res, opts: engineOpts(), timeout: 15000 });
+    if (!r.ok && /^invalid [xy] range$/.test(r.error || '') && !Q3.swapped) {
+      const k = r.error === 'invalid x range' ? 0 : 2;
+      const a = await numValue(Q3.range[k] || '-5'), b = await numValue(Q3.range[k + 1] || '5');
+      if (seq === Q3.seq && isFinite(a) && isFinite(b) && a > b) {
+        const t = Q3.inputs[k].value; Q3.inputs[k].value = Q3.inputs[k + 1].value; Q3.inputs[k + 1].value = t;
+        const q = Q3.range[k]; Q3.range[k] = Q3.range[k + 1]; Q3.range[k + 1] = q;
+        ['xmin', 'xmax', 'ymin', 'ymax'].forEach((n, i) => store.set('qalc.plot3d.' + n, Q3.inputs[i].value));
+        Q3.swapped = true;
+        try { await compute3d(); } finally { Q3.swapped = false; }
+        return;
+      }
+    }
     if (!r.ok) {
       Q3.msg.textContent = r.error === 'invalid x range' ? tr('Check the range of x', 'x の範囲を確認してください') : r.error === 'invalid y range' ? tr('Check the range of y', 'y の範囲を確認してください') : (localMessage(r.error) || tr('Could not calculate the graph', 'グラフを計算できませんでした'));
       return;
@@ -4066,7 +4973,8 @@
     const err = (r.messages || []).find((m) => m.type === 'error');
     const note = err ? localMessage(err.text)
       : series.some((s) => !s.complete) ? tr('The calculation took too long: only part of the graph was calculated', '時間がかかりすぎたため、途中までしか計算できませんでした')
-      : vals.length ? '' : tr('There are no real values (check the ranges of x and y)', '実数の値がありません（x と y の範囲を確認してください）');
+      : !vals.length ? tr('There are no real values (check the expression and the ranges of x and y)', '実数の値がありません（式と、x と y の範囲を確認してください）')
+      : plotNote(null, Q3.exprs, series.filter((q) => !q.z.some((v) => v === v)).map((q) => q.expr), 4, true);
     let shown = false;
     const show = () => {
       if (shown || seq !== Q3.seq) return;
@@ -4483,10 +5391,35 @@
   // a size as it goes into an expression: with the unit of the panel when it has none of its own
   function geoValue(v, kind, unit) {
     v = normalizeExpr(v);
+    v += ')'.repeat(scanBox(v).open); // a "(" that was not closed
     if (!kind && unit && !/\p{L}/u.test(v.replace(/π/g, ''))) return `(${v} ${unit})`;
     return /^[\d.]+$/.test(v) ? v : `(${v})`;
   }
-  // what is wrong with the sizes (plain numbers only; other sizes are left to the engine), or ''
+  // A size that is not a plain number (√2, 1/3, 2 cm, −2, abc): the engine works it out. It must
+  // be a positive number, or (a length) a positive number with a unit of length. Returns what is
+  // wrong, or ''. (Without this, a negative radius gave an area, and letters were read as units.)
+  async function geoSizeProblem(t, kind) {
+    const sc = scanBox(t);
+    if (sc.extra || sc.comma || sc.bracket) return tr('A size is one number or expression (the decimal point is ".")', '大きさは 1 つの数か式で入れてください（小数点は「.」）');
+    if (/^[\d.]+$/.test(t)) return '';
+    const txt = t + ')'.repeat(sc.open);
+    const val = async (e) => {
+      const r = await Bridge.send('calc', { expr: e, opts: Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, base: 10 }), timeout: 1500 });
+      if (!r.ok || r.timeout || !r.result || (r.messages || []).some((m) => m.type === 'error')) return null;
+      const m = /^(?:≈\s*)?([−-]?(?:\d+\.?\d*|\.\d+)(?:E[−+-]?\d+)?)\s*(.*)$/.exec(r.result.replace(/[\u202f\u2009]/g, '').trim());
+      return m ? { n: Number(m[1].replace(/−/g, '-')), unit: m[2].trim() } : null;
+    };
+    const check = tr('Check the sizes: a size is a positive number, such as 2, 1/3 or √2', '大きさを確認してください（2、1/3、√2 のような正の数で入れます）');
+    const a = await val(txt);
+    if (!a || !isFinite(a.n)) return check;
+    if (!(a.n > 0)) return tr('The sizes must be positive numbers', '大きさは正の数にしてください');
+    if (!a.unit) return '';
+    if (kind) return check;
+    // with a unit: it must be a length (2 cm, 1 in), not a mass or letters read as units
+    const b = await val(`(${txt}) to m`);
+    return b && b.unit === 'm' && b.n > 0 ? '' : tr('A size with a unit needs a unit of length, such as cm, m or in', '単位を付けるときは、cm・m・in のような長さの単位にしてください');
+  }
+  // what is wrong with the sizes that are plain numbers (the others: geoSizeProblem), or ''
   function geoProblem(sh, v) {
     const num = {};
     for (const [n, , kind] of sh.p) {
@@ -4532,7 +5465,14 @@
         G.vals[sh.k] = sh.p.map(([n]) => inputs[n].value);
         save();
         if (typeof sh.pic === 'function') pic.innerHTML = svg(sh, v);
-        const problem = sh.p.some(([n]) => !v[n]) ? tr('Enter the sizes', '大きさを入れてください') : geoProblem(sh, v);
+        let problem = sh.p.some(([n]) => !v[n]) ? tr('Enter the sizes', '大きさを入れてください') : geoProblem(sh, v);
+        if (!problem) {
+          for (const [n, , kind] of sh.p) {
+            problem = await geoSizeProblem(v[n], kind);
+            if (seq !== G.seq) return;
+            if (problem) break;
+          }
+        }
         outs.classList.toggle('bad', !!problem);
         msg.textContent = problem;
         for (const row of rows) { row.expr = ''; row.result = ''; row.node.dataset.value = ''; if (problem) { row.val.textContent = '—'; row.val.classList.remove('math'); } }
@@ -4677,6 +5617,8 @@
     return p;
   }
   function invalidateCatalogs() {
+    callKind.clear();
+    refreshDefined(); // (the user's variables may have changed)
     for (const k of Object.keys(catalogs)) delete catalogs[k];
     sugData = null; sugLoading = null; // the suggestions read the lists again when they are needed
     for (const k of ['cat-functions', 'cat-variables', 'cat-units']) {
@@ -5157,6 +6099,7 @@
       return;
     }
     engineReady = true;
+    refreshDefined();
     if (r.ans_defined === false && history.length) {
       const t = insertText(history[history.length - 1]);
       if (t) Bridge.send('set_ans', { expr: t });
