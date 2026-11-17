@@ -69,6 +69,30 @@ Android 7.0 or later on a 64-bit ARM (arm64) device.
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
 each user the notes in their language: put both blocks into the field.
 
+1.8.2 (when 1.8.1 was already released):
+
+<en-US>
+• 3D graph: "Volume and surface" gives its final values much sooner, and at once when you draw the same surface again
+• Fixed: the mark on a sample stayed after drawing an example shape
+</en-US>
+<ja-JP>
+・3D グラフ：「体積・表面積」の値が早く確定し、同じ曲面を描き直したときはすぐに出るようになりました
+・修正：図形の例を描いたあとも、サンプルの印が残っていた不具合
+</ja-JP>
+
+1.8.2, when 1.8.0 was the last release (the changes of 1.8.1 and 1.8.2):
+
+<en-US>
+• 3D graph: no more "Volume" and "Surface area" buttons in "Volume and surface". Both values appear by themselves, become final much sooner, and appear at once when you draw the same surface again
+• Fixed: the mark on a sample stayed after drawing an example shape
+</en-US>
+<ja-JP>
+・3D グラフ：「体積・表面積」の中の「体積」「表面積」のボタンをなくしました。2 つの値はひとりでに出て、早く確定し、同じ曲面を描き直したときはすぐに出ます
+・修正：図形の例を描いたあとも、サンプルの印が残っていた不具合
+</ja-JP>
+
+1.8.2, when 1.7.0 or 1.7.1 was the last release: the same notes as for 1.8.1 below ("when 1.7.0 or 1.7.1 was the last release"). When the last release was 1.6.0: the same notes as for 1.8.0 below ("when the last release was 1.6.0").
+
 1.8.1 (when 1.8.0 was already released):
 
 <en-US>

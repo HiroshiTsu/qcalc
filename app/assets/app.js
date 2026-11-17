@@ -3433,6 +3433,8 @@
   //   roots true         the crossing points of the first two functions are marked
   function openPlotWith(exprs, opts) {
     opts = opts || {};
+    // another graph than the sample whose card is marked (an example shape, a form): the mark goes (1.8.2)
+    if (!opts.sample && P.samples) P.samples.clearChoice();
     const list = (Array.isArray(exprs) ? exprs : [exprs]).filter(Boolean).slice(0, 6);
     store.set('qalc.plot.exprs', list.join('\n'));
     if (opts.range) { store.set('qalc.plot.min', String(opts.range[0])); store.set('qalc.plot.max', String(opts.range[1])); }
@@ -3978,13 +3980,30 @@
     const t = r.result.split(' ≈ ')[0].trim();
     return /integrate|∫|diff\(|=/.test(t) ? '' : t;
   }
+  // exact values already looked for (1.8.2): drawing a surface again, or going back to a region,
+  // shows them at once. Emptied when the user's definitions change (invalidateCatalogs); the
+  // settings are part of the key. The oldest go when there are more than EXACT_CACHE_MAX.
+  const exactCache = new Map(), EXACT_CACHE_MAX = 200;
   // the exact value of an integral: { text: "8π ≈ 25.13274123", v }, or null
   async function exactIntegral(expr, ms) {
-    const r = await Bridge.send('calc', { expr, opts: iOpts(), timeout: ms || 6000 });
-    if (!r.ok || !r.result || r.timeout || /∫|integrate/.test(r.result)) return null;
-    if ((r.messages || []).some((m) => m.type === 'error' || /integrate|approximated/i.test(m.text))) return null;
-    const v = Number(numberPart(r.result));
-    return isFinite(v) ? { text: r.result, exact: r.result.split(' ≈ ')[0].trim(), v } : null;
+    ms = ms || 6000;
+    // the same expression with the same settings has the same answer: it is kept (exactCache), also
+    // "none" when the time ran out, which is used again for a time limit that is not longer
+    const key = JSON.stringify(iOpts()) + '\n' + expr;
+    const kept = exactCache.get(key);
+    if (kept && (kept.res || kept.ms >= ms)) { exactCache.delete(key); exactCache.set(key, kept); return kept.res; }
+    const r = await Bridge.send('calc', { expr, opts: iOpts(), timeout: ms });
+    let res = null;
+    if (r.ok && r.result && !/∫|integrate/.test(r.result) && !(r.messages || []).some((m) => m.type === 'error' || /integrate|approximated/i.test(m.text))) {
+      const v = Number(numberPart(r.result));
+      if (isFinite(v)) res = { text: r.result, exact: r.result.split(' ≈ ')[0].trim(), v };
+    }
+    // (an engine that did not answer, after a restart or a lost request, is not remembered)
+    if (r.ok || r.timeout) {
+      exactCache.set(key, { res, ms: r.timeout ? ms : Infinity });
+      if (exactCache.size > EXACT_CACHE_MAX) exactCache.delete(exactCache.keys().next().value);
+    }
+    return res;
   }
   // a sum worked out by the engine with many digits (the ends of x = m + h tanh(…) come very close
   // to a and b, and 1 − tanh must not round to 0 there), as a number or NaN
@@ -4175,12 +4194,15 @@
     const U = P.areaUI, f = P.series[Number(U.f1.value)], g = areaG();
     const auto = U.auto;
     U.auto = false;
+    // a newer call (another graph, another pair, an example) makes this one stop before it writes
+    // a and b, whatever order the engine answers in (1.8.2)
+    const seq = U.pairSeq = (U.pairSeq || 0) + 1;
     P.area = null; U.out.textContent = ''; U.ins.hidden = true; U.len.textContent = ''; U.lenShown = false;
     U.cross.textContent = '';
     draw();
     if (!f) return;
     const pts = await findCrossings(f, g);
-    if (U.f1.value !== String(P.series.indexOf(f))) return; // changed in the meantime
+    if (seq !== U.pairSeq || U.f1.value !== String(P.series.indexOf(f))) return; // changed in the meantime
     P.areaCross = pts;
     if (pts.length) {
       U.cross.append(el('span', { class: 'area-lbl', text: tr('Crossing points: ', '交点：') + pts.map((p) => short(p.x)).join(', ') }));
@@ -4479,6 +4501,7 @@
     Q3.inputs.forEach((e, i) => { e.value = r6(i % 2 ? w : -w); });
     if (Q3.resEl && Number(Q3.resEl.value) < 61) Q3.resEl.value = '61';
     Q3.equalOnce = true; // round for this drawing; the 1:1 setting itself stays as it was
+    if (Q3.samples) Q3.samples.clearChoice(); // (the sphere is not the sample that was marked, 1.8.2)
     Q3.keep = true;
     Q3.pending = async () => {
       const U = Q3.volUI;
@@ -4549,8 +4572,12 @@
     return { num: r.v, missing: r.missing };
   }
   const regionDigits = (S) => (S.disk ? 10 : 8);
-  // the exact value is tried for a few seconds only (some double integrals keep the engine busy)
-  const regionExact = (S, ix) => exactIntegral(ix, Math.min(8000, timeLimit() * 1000));
+  // the exact value is tried for a few seconds only (some double integrals keep the engine busy).
+  // 1.8.2: 3 s for the volume and 2 s for each surface (8 s until 1.8.1). Every exact value of the
+  // samples is found in 0.11 s or less on a PC, and a search that finds none uses all the time, so
+  // the numeric value now becomes final much sooner and no exact value of the samples is lost.
+  const VOLUME_EXACT_MS = 3000, SURFACE_EXACT_MS = 2000;
+  const regionExact = (S, ix, ms) => exactIntegral(ix, Math.min(ms || VOLUME_EXACT_MS, timeLimit() * 1000));
   // early(value, missing): called with the numeric value as soon as it is known, before the exact
   // value is looked for
   async function regionIntegral(S, F, signedF, early) {
@@ -4610,7 +4637,7 @@
       out.textContent = aboutValue(tr('Surface area', '表面積'), { text: fmtV(+sum.toPrecision(regionDigits(S))) });
     }
     for (const it of items) {
-      const val = bestValue(await regionExact(S, regionExpr(S, it.A)), it.n.num, regionDigits(S));
+      const val = bestValue(await regionExact(S, regionExpr(S, it.A), SURFACE_EXACT_MS), it.n.num, regionDigits(S));
       if (seq !== U.seq) return;
       if (!val) { fail(); return; }
       parts.push(val); names.push(it.name);
@@ -4796,7 +4823,7 @@
     return wrap;
   }
   function drawSample2d(d) {
-    openPlotWith(sampleExprs(d), { range: d.r, equal: !!d.eq });
+    openPlotWith(sampleExprs(d), { range: d.r, equal: !!d.eq, sample: true });
   }
   function drawSample3d(d) {
     Q3.ta.value = sampleExprs(d).join('\n');
@@ -4897,6 +4924,7 @@
   function openPlot3dWith(exprs, opts) {
     if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です')); return; }
     opts = opts || {};
+    if (Q3.samples) Q3.samples.clearChoice(); // (another graph than a sample, 1.8.2)
     const list = exprs.filter(Boolean).slice(0, 4);
     store.set('qalc.plot3d.exprs', list.join('\n'));
     if (opts.range) ['xmin', 'xmax', 'ymin', 'ymax'].forEach((k, i) => store.set('qalc.plot3d.' + k, String(opts.range[i])));
@@ -5618,6 +5646,7 @@
   }
   function invalidateCatalogs() {
     callKind.clear();
+    exactCache.clear(); // (a name in a kept integral may mean something else now)
     refreshDefined(); // (the user's variables may have changed)
     for (const k of Object.keys(catalogs)) delete catalogs[k];
     sugData = null; sugLoading = null; // the suggestions read the lists again when they are needed
