@@ -70,6 +70,39 @@ Paste in Play Console under "Release notes" (up to 500 characters per language).
 each user the notes in their language: put all the blocks into the field (from 1.9.0 also the Spanish one,
 es-419, after the Spanish translation of the listing has been added; listing-es.md).
 
+1.9.1 (when 1.9.0 was already released):
+
+<en-US>
+• 3D graph: the solid measured by "Volume and surface" now looks like a real pale liquid in a clear, glossy film: the lamps of a room are mirrored on it, its color is deeper where it is thicker, and what is behind it is seen through it, bent
+</en-US>
+<ja-JP>
+・3D グラフ：「体積・表面積」で計測している立体を、つやのある透明な膜に満たした本物の薄い色の液体のように表示します。照明が映り込み、厚いところほど色が濃く、後ろにあるものが曲がって透けて見えます
+</ja-JP>
+<es-419>
+• Gráfico 3D: el sólido que mide "Volumen y superficie" ahora se ve como un líquido claro real dentro de una película transparente y brillante: refleja las luces, su color es más intenso donde es más grueso y lo que está detrás se ve a través de él, curvado
+</es-419>
+
+1.9.1, when the last release was 1.8.0, 1.8.1, 1.8.2, 1.8.3 or 1.8.4 (the changes of 1.8.1 to 1.9.1):
+
+<en-US>
+• New: Spanish (menu → Language / 言語 / Idioma → Español). A phone set to Spanish starts in Spanish
+• 3D graph: "Volume and surface" has no buttons; its values come at once, and the measured solid looks like a real pale liquid in a clear, glossy film
+• 📈 draws expressions in x and y, equations and matrices, also from the history and saved functions
+• Fixed: the pictures of "Sphere" and "Doughnut"; round samples keep their shape
+</en-US>
+<ja-JP>
+・新機能：スペイン語に対応（メニュー →「Language / 言語 / Idioma」→ Español）。スペイン語の端末ではスペイン語で始まります
+・3D グラフ：「体積・表面積」のボタンをなくし、値はすぐに出ます。計測している立体は、透明な膜に満たした本物の薄い色の液体のように示します
+・📈 で x と y の式、方程式、行列を描けます。履歴や保存した関数からも同じです
+・修正：「球」「ドーナツ」の絵、丸いサンプルの形
+</ja-JP>
+<es-419>
+• Nuevo: español (menú → Language / 言語 / Idioma → Español). Un teléfono en español empieza en español
+• Gráfico 3D: "Volumen y superficie" ya no tiene botones; los valores salen al instante y el sólido medido se ve como un líquido claro real en una película transparente
+• 📈 dibuja expresiones en x e y, ecuaciones y matrices, también desde el historial y las funciones guardadas
+• Corregido: los dibujos de "Esfera" y "Dona"; las muestras redondas mantienen su forma
+</es-419>
+
 1.9.0 (when 1.8.4 was already released):
 
 <en-US>

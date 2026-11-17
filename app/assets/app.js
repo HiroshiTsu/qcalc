@@ -4663,7 +4663,7 @@
       if (!quiet) volumeAuto();
     };
     // the color of the solid that is measured, as it is shown in the graph (1.8.4; draw3d sets it)
-    const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('In the graph, the solid that is measured looks filled with a pale liquid of this color (hidden edges dashed)', 'グラフでは、計測している立体を、この色の薄い液体で満たしたように示しています（隠れた辺は破線）') }));
+    const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('In the graph, the solid that is measured looks like a clear, glossy film filled with a pale liquid of this color', 'グラフでは、計測している立体を、つやのある透明な膜にこの色の薄い液体を満たしたように示しています') }));
     const box = el('div', { class: 'area-box' },
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk), rangeText, diskRow),
@@ -4674,7 +4674,7 @@
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Volume and surface ▾', '体積・表面積 ▾') });
     // opened: the volume and the surface area of the drawn surface are shown at once
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) volumeSurfacesChanged(); else { Q3.volUI.seq++; Q3.volShade = null; requestDraw3d(); } });
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) volumeSurfacesChanged(); else { Q3.volUI.seq++; Q3.volShade = null; Q3.liqBuf = null; requestDraw3d(); } });
     s1.addEventListener('change', () => { if (s2.value === s1.value) s2.value = 'plane'; volumeAuto(); });
     s2.addEventListener('change', () => volumeAuto());
     R.addEventListener('change', () => volumeAuto());
@@ -5351,8 +5351,6 @@
   const VOL_FADE = 0.5; // how far the parts that are not measured fade into the background
   // a CSS color (#rgb, #rrggbb or rgb()) as [r, g, b], or null
   const cssRgb = (s) => { let m = /^#([0-9a-f]{3})$/i.exec(s); if (m) return m[1].split('').map((h) => parseInt(h + h, 16)); m = /^#([0-9a-f]{6})$/i.exec(s); if (m) return hexRgb(s); m = /rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)/.exec(s); return m ? [+m[1], +m[2], +m[3]] : null; };
-  // a unit normal turned toward the viewer (depth grows away from the viewer)
-  const towardViewer = (x, y, d, len) => { const s = d > 0 ? -1 / len : 1 / len; return [x * s, y * s, d * s]; };
   const mixRgb = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
   const hslRgb = (h, s, l) => {
     const a = s * Math.min(l, 1 - l), f = (n) => { const k = (n + h / 30) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); };
@@ -5361,7 +5359,7 @@
   // Its color is chosen for each graph: the hue farthest from the colors of the surfaces in the
   // picture (the hues of the cells, weighted by how colorful they are; the measured surfaces count
   // twice), so that it stands out from them. Among equally good hues, the one farthest from every
-  // color (the middle of the widest gap). The liquid is a pale shade of it, its edges a deeper one.
+  // color (the middle of the widest gap). The liquid is a pale shade of it (liquidPaint).
   function volumeColor(D, cells, single, dark, vf, vg) {
     const key = [dark, single, D.series.indexOf(vf), vg ? D.series.indexOf(vg) : -1].join();
     if (Q3.volColor && Q3.volColor.D === D && Q3.volColor.key === key) return Q3.volColor;
@@ -5388,129 +5386,414 @@
       }
       if (p < bestP - total * 1e-6 || (p <= bestP + total * 1e-6 && gap > bestGap)) { bestP = p; best = h; bestGap = gap; }
     }
-    // the liquid in a pale (pastel) shade of the hue, a little deeper lower down; its edges in a deeper one, so that the shape stays clear
+    // the liquid in a pale (pastel) shade of the hue (the box in the panel); a deeper one for the edge of the box and the shadow
     const rgb = hslRgb(best, 0.7, dark ? 0.74 : 0.72), cs = rgb.join(','), ln = hslRgb(best, 0.8, dark ? 0.68 : 0.45).join(','), deep = hslRgb(best, 0.75, dark ? 0.58 : 0.52);
-    return (Q3.volColor = { D, key, hue: best, rgb, css: 'rgb(' + cs + ')', swatch: 'rgba(' + cs + ',0.5)', deep, alpha: dark ? 0.3 : 0.32, mesh: 'rgba(' + ln + (dark ? ',0.2)' : ',0.18)'), line: 'rgba(' + ln + ',0.9)', hidden: 'rgba(' + ln + (dark ? ',0.55)' : ',0.45)') });
+    return (Q3.volColor = { D, key, hue: best, rgb, css: 'rgb(' + cs + ')', swatch: 'rgba(' + cs + ',0.5)', deep, line: 'rgba(' + ln + ',0.9)' });
   }
-  // the side walls (from the lower surface or z = 0 up to the upper one, along the edge of the
-  // region), the floor z = 0 and the edges of the solid, added to the cells of draw3d so that they
-  // are sorted with them. The walls are cut into 4 slices up the height for a better order and
-  // for the color of the liquid, which is a little deeper lower down.
-  // Values outside the box of the graph are drawn at its top or bottom.
-  function volumeSolid(D, VS, vf, vg, cells, Pj) {
-    const { proj, U, V, Wz, EZ, T } = Pj, xs = D.xs, ys = D.ys, x0 = xs[0], x1 = xs[D.nx - 1], y0 = ys[0], y1 = ys[D.ny - 1];
-    const ok = (z) => z !== null && z === z;
-    const P3 = (x, y, z) => { proj(U(x), V(y), Math.max(-EZ, Math.min(EZ, Wz(z)))); return { x: T[0], y: T[1], d: T[2] }; };
-    // the value of a surface between the grid points (bilinear), or null
-    const zAt = (s, x, y) => {
-      const fi = (x - x0) / (x1 - x0) * (D.nx - 1), fj = (y - y0) / (y1 - y0) * (D.ny - 1);
-      if (!(fi >= 0 && fi <= D.nx - 1 && fj >= 0 && fj <= D.ny - 1)) return null;
-      const i = Math.min(D.nx - 2, Math.floor(fi)), j = Math.min(D.ny - 2, Math.floor(fj)), a = fi - i, b = fj - j, k = j * D.nx + i;
-      const z = [s.z[k], s.z[k + 1], s.z[k + D.nx], s.z[k + D.nx + 1]];
-      if (!z.every(ok)) return null;
-      return z[0] * (1 - a) * (1 - b) + z[1] * a * (1 - b) + z[2] * (1 - a) * b + z[3] * a * b;
+  // ---- the measured solid as a real liquid (1.9.1)
+  // While "Volume and surface" is open, the solid that is measured looks like a pale liquid held by a
+  // clear, glossy film: its top (the measured part of the surface), its side walls and its floor. It
+  // is traced for every pixel instead of being painted face by face: a closed mesh of the solid is laid
+  // over the pixels with the depth of every face it crosses, so that the thickness of liquid along
+  // each line of sight is known, and the other surfaces in front of it hide it. As in a real liquid,
+  // the color deepens with the thickness (the light is absorbed on its way, Beer–Lambert) and a little
+  // light is scattered inside; the film mirrors a bright room (a sky above, a floor below, a large soft
+  // lamp and a sharp glint), more at a slant (Fresnel); and what lies behind is seen bent (refraction).
+
+  // The mesh: the cells of the grid inside the region, cut along the circle of a disk and along the
+  // edge found for a surface that ends (a sphere, refineRims), each with a face on sheet A (the
+  // measured surface) and on sheet B (the second surface, or the floor z = 0), and walls where the
+  // region ends. Neighbouring cells share their points, so that the mesh has no gaps: every line of
+  // sight goes in and out of the liquid by turns. Values outside the box are taken at its top or
+  // bottom. The normals of the sheets come from the slopes at the grid points (a smooth surface).
+  function liquidMesh(D, VS, vf, vg, M) {
+    const { U, V, Wz, EZ } = M, xs = D.xs, ys = D.ys, nx = D.nx, ny = D.ny, n = nx * ny;
+    const cw = (z) => Math.max(-EZ, Math.min(EZ, Wz(z)));
+    const real = (z) => z !== null && z !== undefined && z === z;
+    const R2 = VS.disk ? VS.R * VS.R : Infinity, w0 = cw(0);
+    const okA = new Uint8Array(n), okB = new Uint8Array(n), inside = new Uint8Array(n);
+    const wa = new Float64Array(n), wb = new Float64Array(n);
+    for (let k = 0; k < n; k++) {
+      const za = vf.z[k], zb = vg ? vg.z[k] : 0, x = xs[k % nx], y = ys[(k / nx) | 0];
+      okA[k] = real(za) ? 1 : 0; okB[k] = real(zb) ? 1 : 0;
+      if (okA[k]) wa[k] = cw(za);
+      if (okB[k]) wb[k] = vg ? cw(zb) : w0;
+      inside[k] = okA[k] && okB[k] && x * x + y * y <= R2 ? 1 : 0;
+    }
+    // the normal of a sheet at a grid point, from the slopes to its neighbours
+    const gridNormal = (w, ok, k) => {
+      const i = k % nx, j = (k / nx) | 0;
+      const il = i > 0 && ok[k - 1] ? i - 1 : i, ir = i < nx - 1 && ok[k + 1] ? i + 1 : i;
+      const jl = j > 0 && ok[k - nx] ? j - 1 : j, jr = j < ny - 1 && ok[k + nx] ? j + 1 : j;
+      const du = ir > il ? (w[j * nx + ir] - w[j * nx + il]) / (U(xs[ir]) - U(xs[il])) : 0;
+      const dv = jr > jl ? (w[jr * nx + i] - w[jl * nx + i]) / (V(ys[jr]) - V(ys[jl])) : 0;
+      return [-du, -dv, 1];
     };
-    // points along the edge of the region with the upper (a) and the lower (b) value
-    const B = [];
-    if (!VS.disk) {
-      const at = (i, j) => { const k = j * D.nx + i; B.push({ x: xs[i], y: ys[j], a: vf.z[k], b: vg ? vg.z[k] : 0 }); };
-      for (let i = 0; i < D.nx; i++) at(i, 0);
-      for (let j = 1; j < D.ny; j++) at(D.nx - 1, j);
-      for (let i = D.nx - 2; i >= 0; i--) at(i, D.ny - 1);
-      for (let j = D.ny - 2; j >= 0; j--) at(0, j);
-    } else {
-      // where a surface ends on the circle (a sphere and its disk), the values of its edge (refineRims)
-      const cell = Math.max(xs[1] - xs[0], ys[1] - ys[0]);
-      const rimOf = (s) => {
-        const r = [];
-        if (s && s.rim) for (const key in s.rim) { const e = s.rim[key]; if (Math.abs(Math.hypot(e.x, e.y) - VS.R) <= cell * 1.5) r.push({ t: Math.atan2(e.y, e.x), z: e.z }); }
-        return r.sort((p, q) => p.t - q.t);
-      };
-      const ra = rimOf(vf), rb = rimOf(vg);
-      const rimAt = (r, th) => {
-        let best = null, bd = 0.06;
-        for (const e of r) { let d = Math.abs(e.t - th); if (d > Math.PI) d = 2 * Math.PI - d; if (d < bd) { bd = d; best = e.z; } }
-        return best;
-      };
-      const N = 120;
-      for (let n = 0; n <= N; n++) {
-        const th = 2 * Math.PI * n / N, x = VS.R * Math.cos(th), y = VS.R * Math.sin(th), ta = Math.atan2(y, x);
-        let a = zAt(vf, x, y), b = vg ? zAt(vg, x, y) : 0;
-        if (a === null && ra.length) a = rimAt(ra, ta);
-        if (b === null && rb.length) b = rimAt(rb, ta);
-        B.push({ x, y, a, b });
-      }
-    }
-    const sum = (ps) => ps.reduce((t, p) => t + p.d, 0) * 4 / ps.length;
-    // the light and the slant of a face with the normal (nu, nv, nw), as for the cells of draw3d
-    const ca = Math.cos(Q3.az), sa = Math.sin(Q3.az), ce = Math.cos(Q3.el), se = Math.sin(Q3.el), L = [-0.42, 0.62, -0.66];
-    const lit = (nu, nv, nw) => {
-      const yr = nu * sa + nv * ca, ncx = nu * ca - nv * sa, ncy = nw * ce + yr * se, ncd = yr * ce - nw * se, len = Math.hypot(ncx, ncy, ncd) || 1;
-      return { shade: Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len, facing: Math.abs(ncd) / len, hl: Math.abs(ncx * -0.2306 + ncy * 0.3405 + ncd * -0.9116) / len, nrm: towardViewer(ncx, ncy, ncd, len) };
+    const lerp = (a, b, t) => a + (b - a) * t, lerp3 = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+    // the points: x, y, the values on sheets A and B, and their normals
+    const PX = [], PY = [], PA = [], PB = [], NA = [], NB = [];
+    const add = (x, y, a, b, na, nb) => { PX.push(x); PY.push(y); PA.push(a); PB.push(b); NA.push(na); NB.push(nb); return PX.length - 1; };
+    const gid = new Int32Array(n).fill(-1);
+    const gridPoint = (k) => {
+      if (gid[k] < 0) gid[k] = add(xs[k % nx], ys[(k / nx) | 0], wa[k], wb[k], gridNormal(wa, okA, k), vg ? gridNormal(wb, okB, k) : [0, 0, 1]);
+      return gid[k];
     };
-    const up = lit(0, 0, 1);
-    const hgt = (z) => (Math.max(-EZ, Math.min(EZ, Wz(z))) / EZ + 1) / 2; // the height in the box, 0 to 1, as the t of the cells
-    let walls = 0, lines = 0, floor = 0;
-    for (let n = 0; n + 1 < B.length; n++) {
-      const p = B[n], q = B[n + 1];
-      if (!ok(p.a) || !ok(p.b) || !ok(q.a) || !ok(q.b)) continue;
-      const lv = (e, t) => e.b + (e.a - e.b) * t;
-      // (no wall where the two surfaces meet, as at the edge of a sphere)
-      const side = lit(V(q.y) - V(p.y), U(p.x) - U(q.x), 0);
-      if (Math.max(Math.abs(p.a - p.b), Math.abs(q.a - q.b)) > (D.z1 - D.z0) * 0.002) for (let m = 0; m < 4; m++) {
-        const poly = [P3(p.x, p.y, lv(p, m / 4)), P3(q.x, q.y, lv(q, m / 4)), P3(q.x, q.y, lv(q, (m + 1) / 4)), P3(p.x, p.y, lv(p, (m + 1) / 4))];
-        const zm = (lv(p, (m + 0.5) / 4) + lv(q, (m + 0.5) / 4)) / 2;
-        cells.push({ vol: 'wall', poly, depth: sum(poly), shade: side.shade, facing: side.facing, hl: side.hl, nrm: side.nrm, t: hgt(zm) }); walls++;
+    // where a grid edge leaves the region: the nearest of the circle and the edges of the two surfaces
+    const cuts = new Map();
+    const cutPoint = (key, k1, k2) => {
+      let c = cuts.get(key);
+      if (c) return c;
+      const p = inside[k1] ? k1 : k2, q = p === k1 ? k2 : k1;
+      const xp = xs[p % nx], yp = ys[(p / nx) | 0], xq = xs[q % nx], yq = ys[(q / nx) | 0];
+      const along = (e) => (xq !== xp ? (e.x - xp) / (xq - xp) : (e.y - yp) / (yq - yp));
+      let t = 1, circ = false;
+      if (xq * xq + yq * yq > R2) {
+        const dx = xq - xp, dy = yq - yp, A = dx * dx + dy * dy, B = 2 * (xp * dx + yp * dy), C = xp * xp + yp * yp - R2;
+        t = Math.max(0, Math.min(1, (-B + Math.sqrt(Math.max(0, B * B - 4 * A * C))) / (2 * A))); circ = true;
       }
-      // the edges on the upper and the lower surface, a little to the front so that the cells beside them do not cover them
-      for (const e of [[p.a, q.a], [p.b, q.b]]) {
-        const poly = [P3(p.x, p.y, e[0]), P3(q.x, q.y, e[1])];
-        cells.push({ vol: 'line', poly, depth: sum(poly) - 0.08 }); lines++;
+      const rimA = !okA[q] ? (vf.rim && vf.rim[key]) || null : null, rimB = vg && !okB[q] ? (vg.rim && vg.rim[key]) || null : null;
+      const tA = !okA[q] ? (rimA ? Math.max(0, Math.min(1, along(rimA))) : 0) : 2, tB = vg && !okB[q] ? (rimB ? Math.max(0, Math.min(1, along(rimB))) : 0) : 2;
+      if (tA < t) { t = tA; circ = false; }
+      if (tB < t) { t = tB; circ = false; }
+      // the values at t: along the edge to the far end, or to the edge of the surface that was found
+      const at = (w, ok, rim, tr, k) => (ok[q] ? lerp(w[p], w[q], t) : rim && tr > 0 ? lerp(w[p], cw(rim.z), Math.min(1, t / tr)) : w[p]);
+      const a = at(wa, okA, rimA, tA), b = vg ? at(wb, okB, rimB, tB) : w0;
+      // (where a surface ends, as a sphere at its rim, it stands upright: its normal is level, the way
+      // the surface falls toward its edge)
+      const level = (n) => { const h = Math.hypot(n[0], n[1]); return h > 0.05 ? [n[0] / h, n[1] / h, 0] : [U(xq) - U(xp), V(yq) - V(yp), 0]; };
+      const na = okA[q] ? lerp3(gridNormal(wa, okA, p), gridNormal(wa, okA, q), t) : rimA ? level(gridNormal(wa, okA, p)) : gridNormal(wa, okA, p);
+      const nb = !vg ? [0, 0, 1] : okB[q] ? lerp3(gridNormal(wb, okB, p), gridNormal(wb, okB, q), t) : rimB ? level(gridNormal(wb, okB, p)) : gridNormal(wb, okB, p);
+      c = { id: add(lerp(xp, xq, t), lerp(yp, yq, t), a, b, na, nb), circ };
+      cuts.set(key, c);
+      return c;
+    };
+    const TV = [], TN = [], TK = [];   // triangles: 3 points (2 × point + sheet), 9 normal values, kind (1 A, 2 B, 3 wall)
+    const tri = (v0, v1, v2, n0, n1, n2, kind) => { TV.push(v0, v1, v2); TN.push(n0[0], n0[1], n0[2], n1[0], n1[1], n1[2], n2[0], n2[1], n2[2]); TK.push(kind); };
+    const kx = (D.xs[nx - 1] - D.xs[0]) / (2 * M.EX), ky = (D.ys[ny - 1] - D.ys[0]) / (2 * M.EY);
+    let walls = 0, floor = 0;
+    // a disk with hardly any grid points inside it: rings and sectors of its own, with the values
+    // between the grid points (bilinear), and the normals of the nearest grid point
+    if (VS.disk) {
+      let pin = 0;
+      for (let k = 0; k < n; k++) if (xs[k % nx] ** 2 + ys[(k / nx) | 0] ** 2 <= R2) pin++;
+      if (pin < 9) {
+        const at = (x, y) => {
+          const fi = (x - xs[0]) / (xs[nx - 1] - xs[0]) * (nx - 1), fj = (y - ys[0]) / (ys[ny - 1] - ys[0]) * (ny - 1);
+          if (!(fi >= 0 && fi <= nx - 1 && fj >= 0 && fj <= ny - 1)) return null;
+          const i = Math.min(nx - 2, Math.floor(fi)), j = Math.min(ny - 2, Math.floor(fj)), fa = fi - i, fb = fj - j, k = j * nx + i, C = [k, k + 1, k + nx + 1, k + nx];
+          if (!C.every((c) => okA[c] && okB[c])) return null;
+          const bil = (w) => w[C[0]] * (1 - fa) * (1 - fb) + w[C[1]] * fa * (1 - fb) + w[C[2]] * fa * fb + w[C[3]] * (1 - fa) * fb;
+          const kn = Math.round(fj) * nx + Math.round(fi);
+          return add(x, y, bil(wa), bil(wb), gridNormal(wa, okA, kn), vg ? gridNormal(wb, okB, kn) : [0, 0, 1]);
+        };
+        const NR = 6, NS = 64, ids = [at(0, 0)];
+        for (let r = 1; r <= NR; r++) for (let m = 0; m < NS; m++) ids.push(at(VS.R * r / NR * Math.cos(2 * Math.PI * m / NS), VS.R * r / NR * Math.sin(2 * Math.PI * m / NS)));
+        if (ids.some((v) => v === null)) return { PX, PY, PA, PB, TV, TN, TK, walls, floor, tris: 0 };
+        const id = (r, m) => (r ? ids[1 + (r - 1) * NS + (m % NS)] : ids[0]);
+        const face = (a, b, c) => { tri(2 * a, 2 * b, 2 * c, NA[a], NA[b], NA[c], 1); tri(2 * a + 1, 2 * b + 1, 2 * c + 1, NB[a], NB[b], NB[c], 2); if (!vg) floor++; };
+        for (let m = 0; m < NS; m++) {
+          face(id(0, 0), id(1, m), id(1, m + 1));
+          for (let r = 1; r < NR; r++) { face(id(r, m), id(r + 1, m), id(r + 1, m + 1)); face(id(r, m), id(r + 1, m + 1), id(r, m + 1)); }
+          const p = id(NR, m), q = id(NR, m + 1), np = [PX[p] * kx, PY[p] * ky, 0], nq = [PX[q] * kx, PY[q] * ky, 0];
+          tri(2 * p, 2 * q, 2 * q + 1, np, nq, nq, 3); tri(2 * p, 2 * q + 1, 2 * p + 1, np, nq, np, 3); walls++;
+        }
+        return { PX, PY, PA, PB, TV, TN, TK, walls, floor, tris: TK.length };
       }
     }
-    // vertical edges: at the corners of a rectangle, and at the left and the right side of a disk as
-    // it is seen (in 3 pieces)
-    const vert = [];
-    if (!VS.disk) vert.push(0, D.nx - 1, D.nx + D.ny - 2, 2 * D.nx + D.ny - 3);
-    else {
-      let lo = -1, hi = -1, xl = Infinity, xh = -Infinity;
-      B.forEach((p, n) => { if (!ok(p.a) || !ok(p.b)) return; const sx = P3(p.x, p.y, 0).x; if (sx < xl) { xl = sx; lo = n; } if (sx > xh) { xh = sx; hi = n; } });
-      if (lo >= 0) vert.push(lo, hi);
+    for (let j = 0; j < ny - 1; j++) {
+      for (let i = 0; i < nx - 1; i++) {
+        const k0 = j * nx + i, K = [k0, k0 + 1, k0 + nx + 1, k0 + nx];
+        const nIn = inside[K[0]] + inside[K[1]] + inside[K[2]] + inside[K[3]];
+        if (!nIn) continue;
+        const E = [['h' + k0, k0, k0 + 1], ['v' + (k0 + 1), k0 + 1, k0 + 1 + nx], ['h' + (k0 + nx), k0 + nx, k0 + nx + 1], ['v' + k0, k0, k0 + nx]];
+        const outer = (j === 0 ? 1 : 0) | (i === nx - 2 ? 2 : 0) | (j === ny - 2 ? 4 : 0) | (i === 0 ? 8 : 0);
+        // the outline of the part inside, around the cell (corners, then where an edge leaves or enters)
+        let poly = [];
+        for (let e = 0; e < 4; e++) {
+          const kc = K[e], kn = K[(e + 1) % 4];
+          if (inside[kc]) poly.push({ id: gridPoint(kc), mask: (1 << e) | (1 << ((e + 3) % 4)), cut: false });
+          if (inside[kc] !== inside[kn]) { const c = cutPoint(E[e][0], E[e][1], E[e][2]); poly.push({ id: c.id, mask: 1 << e, cut: true, circ: c.circ, enter: !inside[kc] }); }
+        }
+        // along the circle between where it leaves the cell's part and where it comes back: points of the arc
+        if (VS.disk && nIn < 4) {
+          const out = [];
+          poly.forEach((p, m) => {
+            out.push(p);
+            const q = poly[(m + 1) % poly.length];
+            if (!(p.cut && p.circ && !p.enter && q.cut && q.circ && q.enter)) return;
+            const ta = Math.atan2(PY[p.id], PX[p.id]);
+            let dt = Math.atan2(PY[q.id], PX[q.id]) - ta;
+            while (dt <= 0) dt += 2 * Math.PI;
+            if (dt > Math.PI) return;
+            const steps = Math.ceil(dt / 0.05);
+            const all = (ok) => ok[K[0]] && ok[K[1]] && ok[K[2]] && ok[K[3]];
+            const xa = xs[i], xb = xs[i + 1], ya = ys[j], yb = ys[j + 1];
+            for (let s = 1; s < steps; s++) {
+              const th = ta + dt * s / steps, x = VS.R * Math.cos(th), y = VS.R * Math.sin(th), f = s / steps;
+              const fa = (x - xa) / (xb - xa), fb = (y - ya) / (yb - ya);
+              const bil = (w) => w[K[0]] * (1 - fa) * (1 - fb) + w[K[1]] * fa * (1 - fb) + w[K[2]] * fa * fb + w[K[3]] * (1 - fa) * fb;
+              const a = all(okA) ? bil(wa) : lerp(PA[p.id], PA[q.id], f), b = !vg ? w0 : all(okB) ? bil(wb) : lerp(PB[p.id], PB[q.id], f);
+              out.push({ id: add(x, y, a, b, lerp3(NA[p.id], NA[q.id], f), lerp3(NB[p.id], NB[q.id], f)), mask: 0, cut: true, circ: true, arc: true });
+            }
+          });
+          poly = out;
+        }
+        if (poly.length < 3) continue;
+        // the faces on the two sheets (fans: the outline is convex in x and y)
+        for (let m = 1; m + 1 < poly.length; m++) {
+          const a = poly[0].id, b = poly[m].id, c = poly[m + 1].id;
+          tri(2 * a, 2 * b, 2 * c, NA[a], NA[b], NA[c], 1);
+          tri(2 * a + 1, 2 * b + 1, 2 * c + 1, NB[a], NB[b], NB[c], 2);
+          if (!vg) floor++;
+        }
+        // walls along the edge of the region
+        for (let m = 0; m < poly.length; m++) {
+          const p = poly[m], q = poly[(m + 1) % poly.length];
+          if (!(p.cut && q.cut) && !(p.mask & q.mask & outer)) continue;
+          let np, nq;
+          if (p.circ && q.circ) { np = [PX[p.id] * kx, PY[p.id] * ky, 0]; nq = [PX[q.id] * kx, PY[q.id] * ky, 0]; }
+          else { const du = U(PX[q.id]) - U(PX[p.id]), dv = V(PY[q.id]) - V(PY[p.id]); np = nq = [dv, -du, 0]; }
+          tri(2 * p.id, 2 * q.id, 2 * q.id + 1, np, nq, nq, 3);
+          tri(2 * p.id, 2 * q.id + 1, 2 * p.id + 1, np, nq, np, 3);
+          walls++;
+        }
+      }
     }
-    for (const n of vert) {
-      const p = B[n];
-      if (!p || !ok(p.a) || !ok(p.b) || Math.abs(p.a - p.b) <= (D.z1 - D.z0) * 0.002) continue;
+    return { PX, PY, PA, PB, TV, TN, TK, walls, floor, tris: TK.length };
+  }
+
+  // A triangle laid over the pixels of a layer: calls px(index, l0, l1, l2) for every pixel whose
+  // centre it covers, with the weights of its corners (pixels on an edge shared by two triangles go
+  // to one of them only, so that a line of sight crosses a closed mesh an even number of times).
+  function rasterTri(ax, ay, bx, by, cx, cy, LW, LH, px) {
+    // (the corners on a grid of 1/256 pixel: the sums below are then exact, and the same for the two
+    // triangles beside an edge)
+    ax = Math.round(ax * 256) / 256; ay = Math.round(ay * 256) / 256; bx = Math.round(bx * 256) / 256;
+    by = Math.round(by * 256) / 256; cx = Math.round(cx * 256) / 256; cy = Math.round(cy * 256) / 256;
+    let area = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+    if (!(Math.abs(area) > 1e-12)) return;
+    let sw = false;
+    if (area < 0) { let t = bx; bx = cx; cx = t; t = by; by = cy; cy = t; area = -area; sw = true; }
+    const x0 = Math.max(0, Math.floor(Math.min(ax, bx, cx) - 0.5)), x1 = Math.min(LW - 1, Math.ceil(Math.max(ax, bx, cx) - 0.5));
+    const y0 = Math.max(0, Math.floor(Math.min(ay, by, cy) - 0.5)), y1 = Math.min(LH - 1, Math.ceil(Math.max(ay, by, cy) - 0.5));
+    if (x0 > x1 || y0 > y1) return;
+    // edge functions (b, c), (c, a), (a, b); a pixel exactly on an edge counts for the "top-left" ones
+    const e0x = cx - bx, e0y = cy - by, e1x = ax - cx, e1y = ay - cy, e2x = bx - ax, e2y = by - ay;
+    const b0 = e0y < 0 || (e0y === 0 && e0x > 0) ? 0 : -1e-300, b1 = e1y < 0 || (e1y === 0 && e1x > 0) ? 0 : -1e-300;
+    const b2 = e2y < 0 || (e2y === 0 && e2x > 0) ? 0 : -1e-300, inv = -1 / area;
+    for (let y = y0; y <= y1; y++) {
+      const py = y + 0.5, row = y * LW, qx = x0 + 0.5;
+      const v0 = (qx - bx) * e0y - (py - by) * e0x, v1 = (qx - cx) * e1y - (py - cy) * e1x, v2 = (qx - ax) * e2y - (py - ay) * e2x;
+      // the pixels of the row inside: from where all three edge functions are ≤ 0 (with y down and the
+      // corners turned so that the area is positive), found for each edge, then tested exactly
+      let lo = 0, hi = x1 - x0;
+      if (e0y > 0) hi = Math.min(hi, Math.floor(-v0 / e0y) + 1); else if (e0y < 0) lo = Math.max(lo, Math.ceil(-v0 / e0y) - 1); else if (v0 > b0) continue;
+      if (e1y > 0) hi = Math.min(hi, Math.floor(-v1 / e1y) + 1); else if (e1y < 0) lo = Math.max(lo, Math.ceil(-v1 / e1y) - 1); else if (v1 > b1) continue;
+      if (e2y > 0) hi = Math.min(hi, Math.floor(-v2 / e2y) + 1); else if (e2y < 0) lo = Math.max(lo, Math.ceil(-v2 / e2y) - 1); else if (v2 > b2) continue;
+      if (lo < 0) lo = 0;
+      if (hi > x1 - x0) hi = x1 - x0;
+      let w0 = v0 + lo * e0y, w1 = v1 + lo * e1y, w2 = v2 + lo * e2y;
+      for (let x = x0 + lo; x <= x0 + hi; x++, w0 += e0y, w1 += e1y, w2 += e2y) {
+        if (w0 > b0 || w1 > b1 || w2 > b2) continue;
+        if (sw) px(row + x, w0 * inv, w2 * inv, w1 * inv); else px(row + x, w0 * inv, w1 * inv, w2 * inv);
+      }
+    }
+  }
+
+  let EXPT = null;
+  // The liquid: laid over the pixels of the part of the canvas it covers (q pixels for each CSS
+  // pixel), then shaded and put over what is drawn behind it. Along each line of sight, from the eye:
+  // at every face of the film a little light is mirrored (more at a slant) and a little scattered by
+  // the film itself; between a face where it goes in and the next where it comes out, the liquid
+  // absorbs light (its color deepens with the thickness) and scatters a little of its own pale color;
+  // at the end, what is drawn behind, seen bent by the liquid in front of it.
+  function liquidPaint(g, c, M, mesh, opaque, vc, dark, q) {
+    const { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S } = M;
+    const np = mesh.PX.length, none = { shown: 0, odd: 0, q, thick: 0 };
+    if (!np) return none;
+    const sx = new Float64Array(2 * np), sy = new Float64Array(2 * np), sd = new Float64Array(2 * np);
+    let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity;
+    for (let p = 0; p < np; p++) {
+      const u = U(mesh.PX[p]), v = V(mesh.PY[p]);
+      for (let h = 0; h < 2; h++) {
+        proj(u, v, h ? mesh.PB[p] : mesh.PA[p]);
+        const k = 2 * p + h;
+        sx[k] = T[0]; sy[k] = T[1]; sd[k] = T[2];
+        if (T[0] < mnx) mnx = T[0]; if (T[0] > mxx) mxx = T[0]; if (T[1] < mny) mny = T[1]; if (T[1] > mxy) mxy = T[1];
+      }
+    }
+    const bx0 = Math.max(0, Math.floor(mnx) - 2), by0 = Math.max(0, Math.floor(mny) - 2), bx1 = Math.min(W, Math.ceil(mxx) + 2), by1 = Math.min(H, Math.ceil(mxy) + 2);
+    if (bx1 <= bx0 || by1 <= by0) return none;
+    const LW = Math.ceil((bx1 - bx0) * q), LH = Math.ceil((by1 - by0) * q), NP = LW * LH;
+    const lx = (x) => (x - bx0) * q, ly = (y) => (y - by0) * q;
+    // (the buffers are kept for the next drawing: the graph is drawn again and again while it is turned)
+    const K = 6, B = Q3.liqBuf && Q3.liqBuf.n >= NP ? Q3.liqBuf : (Q3.liqBuf = { n: NP, zop: new Float32Array(NP), cnt: new Uint8Array(NP), dep: new Float32Array(NP * K), shd: new Uint32Array(NP * K), near: new Float32Array(NP), nrm: new Float32Array(NP * 2) });
+    const zop = B.zop, cnt = B.cnt, dep = B.dep, shd = B.shd, near = B.near, nrm = B.nrm;
+    zop.fill(Infinity, 0, NP); cnt.fill(0, 0, NP); near.fill(Infinity, 0, NP);
+    // the nearest of the other surfaces at each pixel (what is drawn in front of the liquid hides it)
+    let ad, bd, cd;
+    const opx = (i, l0, l1, l2) => { const d = l0 * ad + l1 * bd + l2 * cd; if (d < zop[i]) zop[i] = d; };
+    for (const o of opaque) {
+      const pr = o.s && o.s.proj;
+      const P = o.poly ? o.poly.map((p) => [p.x, p.y, p.d]) : o.pts.map((k) => [pr.px[k], pr.py[k], pr.pd[k]]);
+      for (let m = 1; m + 1 < P.length; m++) {
+        ad = P[0][2]; bd = P[m][2]; cd = P[m + 1][2];
+        rasterTri(lx(P[0][0]), ly(P[0][1]), lx(P[m][0]), ly(P[m][1]), lx(P[m + 1][0]), ly(P[m + 1][1]), LW, LH, opx);
+      }
+    }
+    // the room mirrored by the film: sky above and floor below, a large soft lamp at the upper left (the
+    // light of the graph) with a sharp glint, and a smaller lamp at the right; much brighter than the
+    // page, as real lamps are
+    const skyI = dark ? 0.42 : 0.98, groundI = dark ? 0.12 : 0.58, AF = dark ? 0.1 : 0.08;
+    const Lx = -0.42, Ly = 0.62, Lz = -0.66, F0 = 0.035, lampI = dark ? 24 : 18;
+    const sm = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    // a lamp: a lit rectangle (half width w, half height h, seen from the liquid, with soft edges) in
+    // the direction (x, y, z) of the camera's axes, upright
+    const lamp = (x, y, z, w, h) => {
+      const l = Math.sqrt(x * x + y * y + z * z); x /= l; y /= l; z /= l;
+      const e = Math.sqrt(z * z + x * x), ax = z / e, az = -x / e;      // across: level, at right angles to it
+      const bx = y * az, by = z * ax - x * az, bz = -y * ax;            // up: at right angles to both
+      return [x, y, z, ax, az, bx, by, bz, w, h];
+    };
+    const [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9] = lamp(-0.42, 0.62, -0.66, 0.26, 0.36), [B0, B1, B2, B3, B4, B5, B6, B7, B8, B9] = lamp(0.8, 0.22, -0.55, 0.07, 0.42);
+    const edge = (lim, v) => { v = v < 0 ? -v : v; if (v >= lim) return 0; const t = (lim - v) / (lim * 0.28); return t >= 1 ? 1 : t * t * (3 - 2 * t); };
+    const lampAt = (rx, ry, rz) => {
+      let s = 0, d = rx * A0 + ry * A1 + rz * A2;
+      if (d > 0.2) s += edge(A8, (rx * A3 + rz * A4) / d) * edge(A9, (rx * A5 + ry * A6 + rz * A7) / d);
+      d = rx * B0 + ry * B1 + rz * B2;
+      if (d > 0.2) s += 0.5 * edge(B8, (rx * B3 + rz * B4) / d) * edge(B9, (rx * B5 + ry * B6 + rz * B7) / d);
+      return s;
+    };
+    // The light of a face depends only on its normal in the camera's axes (x right, y up, z away, toward
+    // the eye): it is worked out once for a grid of normals (x and y from −1 to 1) for this view, and
+    // packed: the light it mirrors (16 bits), the share of light that goes through it (8 bits) and how
+    // much light falls on it (8 bits).
+    const NL = q < 1 ? 128 : 256, lutKey = [NL, ce, se, dark].join();
+    if (!Q3.liqLut || Q3.liqLut.key !== lutKey) {
+      const lut = new Uint32Array(NL * NL);
+      for (let iy = 0; iy < NL; iy++) {
+        for (let ix = 0; ix < NL; ix++) {
+          let cx = ix / (NL - 1) * 2 - 1, cy = iy / (NL - 1) * 2 - 1, r2 = cx * cx + cy * cy;
+          if (r2 > 1) { const r = Math.sqrt(r2); cx /= r; cy /= r; r2 = 1; }
+          const cz = -Math.sqrt(1 - r2), cosT = -cz, om = 1 - cosT, fr = F0 + (1 - F0) * om * om * om * om * om;
+          const rx = 2 * cosT * cx, ry = 2 * cosT * cy, rz = 2 * cosT * cz + 1;
+          const rl = rx * Lx + ry * Ly + rz * Lz;
+          const env = groundI + (skyI - groundI) * sm(-0.3, 0.45, ry * ce - rz * se) + lampI * lampAt(rx, ry, rz) + (rl > 0.99 ? 60 * Math.pow(rl, 1500) : 0);
+          lut[iy * NL + ix] = (Math.min(65535, Math.round(fr * env * 9000)) << 16 | Math.round(255 * (1 - fr) * (1 - AF)) << 8 | Math.round(255 * (0.55 + 0.45 * Math.max(0, cx * Lx + cy * Ly + cz * Lz)))) >>> 0;
+        }
+      }
+      Q3.liqLut = { key: lutKey, lut };
+    }
+    const lut = Q3.liqLut.lut, half = (NL - 1) / 2;
+    // each face crossed: its depth and its light; for the nearest, its normal (for the bending of what is behind)
+    const TV = mesh.TV, TN = mesh.TN, CN = new Float64Array(9);
+    const lpx = (i, l0, l1, l2) => {
+      const d = l0 * ad + l1 * bd + l2 * cd;
+      let cx = l0 * CN[0] + l1 * CN[3] + l2 * CN[6], cy = l0 * CN[1] + l1 * CN[4] + l2 * CN[7], cz = l0 * CN[2] + l1 * CN[5] + l2 * CN[8];
+      const nl = Math.sqrt(cx * cx + cy * cy + cz * cz), sg = cz > 0 ? -1 / nl : 1 / nl;
+      cx *= sg; cy *= sg;
+      const pk = lut[((cy + 1) * half + 0.5 | 0) * NL + ((cx + 1) * half + 0.5 | 0)];
+      const n0 = cnt[i];
+      if (n0 < K) { dep[i * K + n0] = d; shd[i * K + n0] = pk; cnt[i] = n0 + 1; }
+      else {
+        // (more faces than kept: the farthest one gives way)
+        let far = 0;
+        for (let m = 1; m < K; m++) if (dep[i * K + m] > dep[i * K + far]) far = m;
+        if (d < dep[i * K + far]) { dep[i * K + far] = d; shd[i * K + far] = pk; }
+      }
+      if (d < near[i]) { near[i] = d; nrm[2 * i] = cx; nrm[2 * i + 1] = cy; }
+    };
+    for (let t = 0; t < mesh.TK.length; t++) {
+      const a = TV[3 * t], b = TV[3 * t + 1], cc = TV[3 * t + 2];
+      ad = sd[a]; bd = sd[b]; cd = sd[cc];
+      // the normals of the corners in the camera's axes
       for (let m = 0; m < 3; m++) {
-        const poly = [P3(p.x, p.y, p.b + (p.a - p.b) * m / 3), P3(p.x, p.y, p.b + (p.a - p.b) * (m + 1) / 3)];
-        cells.push({ vol: 'line', poly, depth: sum(poly) - 0.08 }); lines++;
+        const nu = TN[9 * t + 3 * m], nv = TN[9 * t + 3 * m + 1], nw = TN[9 * t + 3 * m + 2];
+        CN[3 * m] = nu * ca - nv * sa; CN[3 * m + 1] = nu * sa * se + nv * ca * se + nw * ce; CN[3 * m + 2] = nu * sa * ce + nv * ca * ce - nw * se;
       }
+      rasterTri(lx(sx[a]), ly(sy[a]), lx(sx[b]), ly(sy[b]), lx(sx[cc]), ly(sy[cc]), LW, LH, lpx);
     }
-    // the floor z = 0 under one surface, when z = 0 is inside the box
-    const w0 = Wz(0);
-    if (!vg && w0 >= -EZ * 1.0001 && w0 <= EZ * 1.0001) {
-      const fl = (pts) => { const poly = pts.map(([x, y]) => P3(x, y, 0)); cells.push({ vol: 'floor', poly, depth: sum(poly), shade: up.shade, facing: up.facing, hl: up.hl, nrm: up.nrm, t: hgt(0) }); floor++; };
-      if (!VS.disk) {
-        const nf = Math.min(20, D.nx - 1), mf = Math.min(20, D.ny - 1);
-        for (let j = 0; j < mf; j++) {
-          for (let i = 0; i < nf; i++) {
-            const xa = x0 + (x1 - x0) * i / nf, xb = x0 + (x1 - x0) * (i + 1) / nf, ya = y0 + (y1 - y0) * j / mf, yb = y0 + (y1 - y0) * (j + 1) / mf;
-            fl([[xa, ya], [xb, ya], [xb, yb], [xa, yb]]);
-          }
+    // what is drawn behind (device pixels), to be seen through the liquid
+    const DX0 = Math.floor(bx0 * dpr), DY0 = Math.floor(by0 * dpr), DW = Math.min(c.width, Math.ceil(bx1 * dpr)) - DX0, DH = Math.min(c.height, Math.ceil(by1 * dpr)) - DY0;
+    const bg = g.getImageData(DX0, DY0, DW, DH).data;
+    // the liquid: a strong color for what it absorbs, a pale one for the light it scatters; the film: nearly white
+    const ab = hslRgb(vc.hue, 0.9, 0.5).map((v) => 1 - v / 255), sc = hslRgb(vc.hue, 0.8, dark ? 0.7 : 0.8).map((v) => v / 255);
+    const film = sc.map((v) => (1 + v) / 2), tint = dark ? [0.92, 0.96, 1.08] : [0.97, 0.99, 1.03];
+    const KAP = 0.3, BETA = 0.8, SCAT = dark ? 0.85 : 0.1, ETA = 0.25, KA0 = KAP * ab[0], KA1 = KAP * ab[1], KA2 = KAP * ab[2], AF1 = AF / (1 - AF);
+    // e^−x from a table (x from 0 to 16 in steps of 1/64, between them on a straight line): far quicker
+    // than Math.exp for every stretch of liquid
+    if (!EXPT) { EXPT = new Float64Array(1026); for (let n = 0; n < 1026; n++) EXPT[n] = Math.exp(-n / 64); }
+    const ex = (x) => { x *= 64; if (x >= 1024) return EXPT[1024]; const n = x | 0, f = x - n; return EXPT[n] + (EXPT[n + 1] - EXPT[n]) * f; };
+    const out = new ImageData(LW, LH), od = out.data, idx = new Uint8Array(K);
+    let shown = 0, odd = 0, thick = 0;
+    for (let i = 0; i < NP; i++) {
+      const n0 = cnt[i];
+      if (n0 & 1) odd++;  // (a line of sight that goes in and does not come out: a gap in the mesh; for the tests)
+      // (a face of the liquid that meets another surface, as along the circle of a disk, counts as in front of it)
+      const z = zop[i] + 0.01;
+      if (!n0 || near[i] >= z) continue;
+      // the faces in order from the eye
+      for (let m = 0; m < n0; m++) idx[m] = m;
+      for (let m = 1; m < n0; m++) { const v = idx[m], dv = dep[i * K + v]; let r = m - 1; while (r >= 0 && dep[i * K + idx[r]] > dv) { idx[r + 1] = idx[r]; r--; } idx[r + 1] = v; }
+      let t0 = 1, t1 = 1, t2 = 1, c0 = 0, c1 = 0, c2 = 0, inl = false, from = 0, th = 0, m = 0;
+      for (; m <= n0; m++) {
+        const k = i * K + idx[m], d = m < n0 ? dep[k] : Infinity, end = d >= z;
+        // (with no face left before what is drawn behind: an odd number of faces in all is a gap at an
+        // edge, not counted; otherwise the liquid goes on to what is drawn behind)
+        if (end && (!inl || m === n0)) break;
+        // two faces at nearly the same depth (a sliver, where two sheets meet at an edge): neither counts
+        if (!end && m + 1 < n0 && dep[i * K + idx[m + 1]] - d < 0.004 && dep[i * K + idx[m + 1]] < z) { m++; continue; }
+        if (inl) {
+          // a stretch of liquid: it scatters its pale color and absorbs what comes through
+          const len = (end ? z : d) - from, s = SCAT * (1 - ex(BETA * len));
+          c0 += t0 * sc[0] * s; c1 += t1 * sc[1] * s; c2 += t2 * sc[2] * s;
+          t0 *= ex(KA0 * len); t1 *= ex(KA1 * len); t2 *= ex(KA2 * len);
+          th += len;
         }
-      } else {
-        // rings and sectors of the disk, kept inside the drawn range
-        const cl = (v, a, b) => Math.max(a, Math.min(b, v)), pt = (r, t) => [cl(r * Math.cos(t), x0, x1), cl(r * Math.sin(t), y0, y1)];
-        for (let r = 0; r < 6; r++) {
-          for (let n = 0; n < 48; n++) {
-            const ra = VS.R * r / 6, rb = VS.R * (r + 1) / 6, ta = 2 * Math.PI * n / 48, tb = 2 * Math.PI * (n + 1) / 48;
-            const cx = (ra + rb) / 2 * Math.cos((ta + tb) / 2), cy = (ra + rb) / 2 * Math.sin((ta + tb) / 2);
-            if (cx < x0 || cx > x1 || cy < y0 || cy > y1) continue;
-            fl(r ? [pt(ra, ta), pt(rb, ta), pt(rb, tb), pt(ra, tb)] : [pt(0, 0), pt(rb, ta), pt(rb, tb)]);
-          }
-        }
+        if (end) break;
+        // the face: the light it mirrors, and its own pale glow
+        const pk = shd[k], refl = (pk >>> 16) / 9000, pass = ((pk >>> 8) & 255) / 255, fs = AF1 * pass * (pk & 255) / 255;
+        c0 += t0 * (refl * tint[0] + fs * film[0]); c1 += t1 * (refl * tint[1] + fs * film[1]); c2 += t2 * (refl * tint[2] + fs * film[2]);
+        t0 *= pass; t1 *= pass; t2 *= pass;
+        inl = !inl; from = d;
       }
+      // what is behind, seen bent: toward the middle of a rounded front, more where the liquid is thicker
+      let X = ((i % LW) + 0.5) / q + bx0, Y = (((i / LW) | 0) + 0.5) / q + by0;
+      const k = ETA * Math.min(th, 2.2) * S * 0.3, ox = -nrm[2 * i] * k, oy = nrm[2 * i + 1] * k;
+      const li = Math.round(lx(X + ox) - 0.5), lj = Math.round(ly(Y + oy) - 0.5);
+      if (li >= 0 && lj >= 0 && li < LW && lj < LH && zop[lj * LW + li] > near[i]) { X += ox; Y += oy; }
+      let bxp = X * dpr - DX0 - 0.5, byp = Y * dpr - DY0 - 0.5;
+      bxp = bxp < 0 ? 0 : bxp > DW - 1.001 ? DW - 1.001 : bxp; byp = byp < 0 ? 0 : byp > DH - 1.001 ? DH - 1.001 : byp;
+      const xi = bxp | 0, yi = byp | 0, fx = bxp - xi, fy = byp - yi, b4 = (yi * DW + xi) * 4, o4 = i * 4;
+      const w00 = (1 - fx) * (1 - fy) / 255, w10 = fx * (1 - fy) / 255, w01 = (1 - fx) * fy / 255, w11 = fx * fy / 255, r4 = DW * 4;
+      const r = c0 + t0 * (bg[b4] * w00 + bg[b4 + 4] * w10 + bg[b4 + r4] * w01 + bg[b4 + r4 + 4] * w11);
+      const gg = c1 + t1 * (bg[b4 + 1] * w00 + bg[b4 + 5] * w10 + bg[b4 + r4 + 1] * w01 + bg[b4 + r4 + 5] * w11);
+      const bb = c2 + t2 * (bg[b4 + 2] * w00 + bg[b4 + 6] * w10 + bg[b4 + r4 + 2] * w01 + bg[b4 + r4 + 6] * w11);
+      // (a soft knee instead of a hard clip, so that bright glints keep their shape)
+      od[o4] = 255 * (r < 0.9 ? r : 1 - 0.1 * ex((r - 0.9) * 10)) + 0.5; od[o4 + 1] = 255 * (gg < 0.9 ? gg : 1 - 0.1 * ex((gg - 0.9) * 10)) + 0.5;
+      od[o4 + 2] = 255 * (bb < 0.9 ? bb : 1 - 0.1 * ex((bb - 0.9) * 10)) + 0.5;
+      od[o4 + 3] = 255;
+      shown++; thick += th;
     }
-    return { walls, lines, floor };
+    // soft edges: a pixel of the liquid beside pixels without it lets a little of the background through
+    const DS = [];
+    for (let i = 0; i < NP; i++) {
+      if (!od[i * 4 + 3]) continue;
+      const x = i % LW;
+      let e = 0;
+      if (x > 0 && !od[(i - 1) * 4 + 3]) e++; if (x < LW - 1 && !od[(i + 1) * 4 + 3]) e++;
+      if (i >= LW && !od[(i - LW) * 4 + 3]) e++; if (i + LW < NP && !od[(i + LW) * 4 + 3]) e++;
+      if (e) DS.push(i, e);
+    }
+    for (let m = 0; m < DS.length; m += 2) od[DS[m] * 4 + 3] = Math.round(255 * (1 - 0.2 * DS[m + 1]));
+    const off = document.createElement('canvas');
+    off.width = LW; off.height = LH;
+    off.getContext('2d').putImageData(out, 0, 0);
+    g.save();
+    g.imageSmoothingEnabled = true;
+    g.drawImage(off, bx0, by0, LW / q, LH / q);
+    g.restore();
+    return { shown, odd, q, thick: shown ? Math.round(thick / shown * 1000) / 1000 : 0 };
   }
   function draw3d() {
     const c = Q3.canvas;
@@ -5570,27 +5853,11 @@
     for (const y of gy) { line(-EX, V(y), wb, EX, V(y), wb); line(ub, V(y), -EZ, ub, V(y), EZ); }
     for (const z of gz) { line(ub, -EY, Wz(z), ub, EY, Wz(z)); line(-EX, vb, Wz(z), EX, vb, Wz(z)); }
     g.stroke();
-    // a soft shadow of the measured solid on the floor of the box, seen from above (1.8.4)
-    if (Q3.volUI && !Q3.volUI.box.hidden && Q3.volShade && Q3.volShade.D === D && se > 0.05) {
-      g.save();
-      g.filter = 'blur(7px)';
-      g.fillStyle = dark ? 'rgba(0,0,0,0.32)' : 'rgba(20,30,60,0.11)';
-      g.beginPath();
-      if (!Q3.volShade.disk) pane0([[-EX, -EY], [EX, -EY], [EX, EY], [-EX, EY]]);
-      else {
-        const R = Q3.volShade.R, ok = [];
-        for (let n = 0; n <= 72; n++) { const th = 2 * Math.PI * n / 72, x = Math.max(x0, Math.min(x1, R * Math.cos(th))), y = Math.max(y0, Math.min(y1, R * Math.sin(th))); ok.push([U(x), V(y)]); }
-        pane0(ok);
-      }
-      g.fill();
-      g.restore();
-    }
     // the surfaces: project every grid point once, then draw the cells from back to front
     const cells = [];
     const L = [-0.42, 0.62, -0.66];  // light from the upper left, in front
-    const HV = [-0.2306, 0.3405, -0.9116]; // halfway between the light and the viewer (the shine of the liquid, 1.8.4)
-    // the solid that is measured while "Volume and surface" is open (1.8.4): it looks filled with a
-    // pale liquid (its surfaces inside the region, its side walls and its floor z = 0, see-through)
+    // the solid that is measured while "Volume and surface" is open (1.8.4): drawn as a liquid (1.9.1,
+    // liquidPaint); the measured parts of the surfaces are not drawn as cells (inR)
     const VS = Q3.volUI && !Q3.volUI.box.hidden && Q3.volShade && Q3.volShade.D === D ? Q3.volShade : null;
     const vf = VS ? D.series[VS.fi] || null : null, vg = vf && VS.gi >= 0 ? D.series[VS.gi] || null : null;
     // a cell counts as inside the region when any part of it is (its point nearest to the centre of a disk)
@@ -5651,7 +5918,7 @@
             const yr = su * sa + sv * ca;
             const ncx = su * ca - sv * sa, ncy = sw * ce + yr * se, ncd = yr * ce - sw * se;
             const len = Math.hypot(ncx, ncy, ncd) || 1;
-            cells.push({ s, poly, depth: dd * 4 / poly.length, shade: Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len, facing: Math.abs(ncd) / len, hl: Math.abs(ncx * HV[0] + ncy * HV[1] + ncd * HV[2]) / len, nrm: towardViewer(ncx, ncy, ncd, len), t: (ww / (poly.length * EZ) + 1) / 2, inR: chosen && inRegion(i, j) });
+            cells.push({ s, poly, depth: dd * 4 / poly.length, shade: Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len, t: (ww / (poly.length * EZ) + 1) / 2, inR: chosen && inRegion(i, j) });
             continue;
           }
           if (real < 3) continue;
@@ -5671,30 +5938,81 @@
           const yr = nu * sa + nv * ca;
           const ncx = nu * ca - nv * sa, ncy = nw * ce + yr * se, ncd = yr * ce - nw * se;
           const len = Math.hypot(ncx, ncy, ncd) || 1;
-          const shade = Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len, facing = Math.abs(ncd) / len, hl = Math.abs(ncx * HV[0] + ncy * HV[1] + ncd * HV[2]) / len, nrm = towardViewer(ncx, ncy, ncd, len);
+          const shade = Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len;
           let dsum = 0, wsum = 0;
           for (const k of pts) { dsum += pd[k]; wsum += pw[k]; }
           if (chosen && real === 4 && crossing(i, j)) {
-            // a cell across the circle of the disk: cut into 6 × 6 pieces (each inside or not), so
-            // that the measured part ends close to the circle
-            const za = s.z[a], zb = s.z[b], zc = s.z[c2], zd = s.z[d], N = 6;
-            const P = (fa, fb) => { const z = za * (1 - fa) * (1 - fb) + zb * fa * (1 - fb) + zc * fa * fb + zd * (1 - fa) * fb; proj(U(xs[i] + (xs[i + 1] - xs[i]) * fa), V(ys[j] + (ys[j + 1] - ys[j]) * fb), Wz(z)); return { x: T[0], y: T[1], d: T[2], w: Wz(z) }; };
-            for (let m = 0; m < N; m++) {
-              for (let n = 0; n < N; n++) {
-                const poly = [P(n / N, m / N), P((n + 1) / N, m / N), P((n + 1) / N, (m + 1) / N), P(n / N, (m + 1) / N)];
-                const xm = xs[i] + (xs[i + 1] - xs[i]) * (n + 0.5) / N, ym = ys[j] + (ys[j + 1] - ys[j]) * (m + 0.5) / N;
-                cells.push({ s, poly, piece: true, depth: (poly[0].d + poly[1].d + poly[2].d + poly[3].d), shade, facing, hl, nrm, t: ((poly[0].w + poly[1].w + poly[2].w + poly[3].w) / (4 * EZ) + 1) / 2, inR: xm * xm + ym * ym <= VS.R * VS.R });
-              }
+            // a cell across the circle of the disk (1.9.1): the part outside it is drawn as the surface,
+            // cut along the circle at the same points as the liquid (liquidMesh), so that the two meet
+            // without a gap; the part inside is the liquid's
+            const K4 = [a, b, c2, d], R2 = VS.R * VS.R, xa = xs[i], xb = xs[i + 1], ya = ys[j], yb = ys[j + 1];
+            const X = (k) => xs[k % D.nx], Y = (k) => ys[(k / D.nx) | 0], isIn = (k) => X(k) * X(k) + Y(k) * Y(k) <= R2;
+            const pt = (x, y, w) => { proj(U(x), V(y), w); return { x: T[0], y: T[1], d: T[2], w, gx: x, gy: y }; };
+            const cut = (k1, k2) => {
+              const p = isIn(k1) ? k1 : k2, q = p === k1 ? k2 : k1, xp = X(p), yp = Y(p), xq = X(q), yq = Y(q);
+              const ddx = xq - xp, ddy = yq - yp, A = ddx * ddx + ddy * ddy, B = 2 * (xp * ddx + yp * ddy), C = xp * xp + yp * yp - R2;
+              const t = Math.max(0, Math.min(1, (-B + Math.sqrt(Math.max(0, B * B - 4 * A * C))) / (2 * A)));
+              return pt(xp + (xq - xp) * t, yp + (yq - yp) * t, pw[p] + (pw[q] - pw[p]) * t);
+            };
+            let poly = [];
+            for (let e = 0; e < 4; e++) {
+              const kc = K4[e], kn = K4[(e + 1) % 4];
+              if (!isIn(kc)) poly.push(Object.assign(pt(X(kc), Y(kc), pw[kc]), { corner: true }));
+              if (isIn(kc) !== isIn(kn)) poly.push(Object.assign(cut(kc, kn), { leave: !isIn(kc) }));
             }
+            // along the circle, from where the outline leaves the outside part to where it comes back:
+            // the points of the liquid's arc (from the second to the first), in the opposite order
+            const full = [];
+            poly.forEach((p, m) => {
+              full.push(p);
+              const q = poly[(m + 1) % poly.length];
+              if (p.leave !== true || q.leave !== false) return;
+              const ta = Math.atan2(q.gy, q.gx);
+              let dt = Math.atan2(p.gy, p.gx) - ta;
+              while (dt <= 0) dt += 2 * Math.PI;
+              if (dt > Math.PI) return;
+              const steps = Math.ceil(dt / 0.05), arc = [];
+              for (let n = 1; n < steps; n++) {
+                const th = ta + dt * n / steps, x = VS.R * Math.cos(th), y = VS.R * Math.sin(th);
+                const fa = (x - xa) / (xb - xa), fb = (y - ya) / (yb - ya);
+                arc.push(pt(x, y, pw[K4[0]] * (1 - fa) * (1 - fb) + pw[K4[1]] * fa * (1 - fb) + pw[K4[2]] * fa * fb + pw[K4[3]] * (1 - fa) * fb));
+              }
+              full.push(...arc.reverse());
+            });
+            if (full.length >= 3) {
+              // (starting at the corner farthest from the circle, from which the whole part is seen: the
+              // depths of the other surfaces are laid over the pixels as a fan from there)
+              let f0 = 0;
+              full.forEach((p, m) => { if (p.corner && p.gx * p.gx + p.gy * p.gy > full[f0].gx * full[f0].gx + full[f0].gy * full[f0].gy) f0 = m; });
+              const ring = full.slice(f0).concat(full.slice(0, f0));
+              cells.push({ s, poly: ring, piece: true, depth: ring.reduce((t, p) => t + p.d, 0) * 4 / ring.length, shade, t: (ring.reduce((t, p) => t + p.w, 0) / (ring.length * EZ) + 1) / 2, inR: false });
+            }
+            cells.push({ s, pts, depth: dsum * 4 / pts.length, shade, t: (wsum / (pts.length * EZ) + 1) / 2, inR: true });
             continue;
           }
-          cells.push({ s, pts, depth: dsum * 4 / pts.length, shade, facing, hl, nrm, t: (wsum / (pts.length * EZ) + 1) / 2, inR: chosen && inRegion(i, j) });
+          cells.push({ s, pts, depth: dsum * 4 / pts.length, shade, t: (wsum / (pts.length * EZ) + 1) / 2, inR: chosen && inRegion(i, j) });
         }
       }
     }
     const single = D.series.length === 1, mesh = D.nx <= 45;
     const vc = vf ? volumeColor(D, cells, single, dark, vf, vg) : null;
-    const vsol = vf ? volumeSolid(D, VS, vf, vg, cells, { proj, U, V, Wz, EZ, T }) : null;
+    const lmesh = vf ? liquidMesh(D, VS, vf, vg, { U, V, Wz, EZ, EX, EY }) : null;
+    // a soft shadow of the measured solid on the floor of the box, seen from above (1.8.4), tinted
+    // by the liquid as the light that goes through a colored liquid is (1.9.1)
+    if (vc && se > 0.05) {
+      g.save();
+      g.filter = 'blur(7px)';
+      g.fillStyle = dark ? 'rgba(0,0,0,0.32)' : 'rgba(' + vc.deep.map((v) => Math.round(v * 0.55)).join(',') + ',0.16)';
+      g.beginPath();
+      if (!Q3.volShade.disk) pane0([[-EX, -EY], [EX, -EY], [EX, EY], [-EX, EY]]);
+      else {
+        const R = Q3.volShade.R, ok = [];
+        for (let n = 0; n <= 72; n++) { const th = 2 * Math.PI * n / 72, x = Math.max(x0, Math.min(x1, R * Math.cos(th))), y = Math.max(y0, Math.min(y1, R * Math.sin(th))); ok.push([U(x), V(y)]); }
+        pane0(ok);
+      }
+      g.fill();
+      g.restore();
+    }
     // the parts that are not measured (other surfaces, outside the disk) fade into the background
     let fadeTo = null;
     if (vc && cells.some((q) => !q.vol && !q.inR)) fadeTo = cssRgb(css.getPropertyValue('--plot-bg').trim()) || (dark ? [24, 26, 32] : [255, 255, 255]);
@@ -5707,32 +6025,9 @@
       g.beginPath();
       if (q.poly) q.poly.forEach((p, n) => { if (n) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); });
       else q.pts.forEach((k, n) => { if (n) g.lineTo(pr.px[k], pr.py[k]); else g.moveTo(pr.px[k], pr.py[k]); });
-      if (q.vol === 'line') { g.strokeStyle = vc.line; g.lineWidth = 1.3; g.stroke(); continue; }
       g.closePath();
-      if (q.vol || q.inR) {
-        // a face of the solid that is measured (1.8.4): the measured parts of the surfaces, the
-        // walls and the floor. The solid looks filled with a pale liquid: one body color, a little deeper lower down (as
-        // a real liquid looks deeper where it is deep), lit like a real see-through material: the
-        // side toward the light bright and the side away from it darker (Lambert), the sky above
-        // mirrored on faces that look up, a sharp shine and a soft sheen where a face mirrors the
-        // light to the eye (Blinn-Phong), and more reflection and less see-through at a slant
-        // (Fresnel), as at the edge of water in a glass.
-        const n = q.nrm, deep = 1 - q.t;
-        const diff = Math.max(0, n[0] * L[0] + n[1] * L[1] + n[2] * L[2]), amb = 0.42 + 0.12 * n[1];
-        const nh = Math.max(0, n[0] * HV[0] + n[1] * HV[1] + n[2] * HV[2]), sp = Math.pow(nh, 90) * 0.95 + Math.pow(nh, 12) * 0.12;
-        const fres = 0.04 + 0.96 * Math.pow(1 - Math.max(0, -n[2]), 5), sky = 0.1 * Math.max(0, n[1]);
-        const body = mixRgb(vc.rgb, vc.deep, 0.6 * deep), k = amb + 0.62 * diff, w = Math.min(1, sp + fres * 0.3 + sky);
-        const c3 = body.map((v) => Math.round(Math.min(255, v * k + (255 - v * k) * w)));
-        const a = vc.alpha + 0.12 * deep + 0.36 * fres + 0.4 * sp;
-        g.fillStyle = 'rgba(' + c3.join(',') + ',' + Math.min(0.94, a).toFixed(3) + ')';
-        g.fill();
-        if (q.inR) {
-          jelly++;
-          // fine lines of the grid on the measured surfaces, so that their shape can be followed
-          if (!q.piece && mesh) { g.lineWidth = 0.6; g.strokeStyle = vc.mesh; g.stroke(); }
-        }
-        continue;
-      }
+      // the measured parts of the surfaces: drawn as the liquid, below
+      if (q.inR) { jelly++; continue; }
       const base = single ? viridis(q.t) : q.s.rgb;
       const k = single ? 0.5 + 0.5 * q.shade : 0.42 + 0.58 * q.shade;
       let rgb = base.map((v) => v * k);
@@ -5741,17 +6036,13 @@
       g.fillStyle = col; g.fill();
       g.lineWidth = 0.7; g.strokeStyle = mesh && !q.piece ? meshColor : col; g.stroke();
     }
-    if (vc) {
-      // the edges of the solid once more, dashed and over everything: the hidden ones show through
-      // (as in a technical drawing; the ones in sight are already drawn solid)
-      g.save(); g.setLineDash([4, 4]); g.strokeStyle = vc.hidden; g.lineWidth = 1.2; g.beginPath();
-      for (const q of cells) if (q.vol === 'line') { g.moveTo(q.poly[0].x, q.poly[0].y); g.lineTo(q.poly[1].x, q.poly[1].y); }
-      g.stroke(); g.restore();
-    }
+    // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
+    let liquid = null;
+    if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
     // the color of the solid in the box, and what was drawn (for the tests)
     const lg = Q3.volUI && Q3.volUI.legend;
     if (lg) { lg.hidden = !vc; if (vc) { lg.firstChild.style.background = vc.swatch; lg.firstChild.style.borderColor = vc.line; } }
-    if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: vsol.walls, floor: vsol.floor, lines: vsol.lines, jelly, faded });
+    if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: lmesh.walls, floor: lmesh.floor, tris: lmesh.tris, jelly, liquid: liquid.shown, thick: liquid.thick, odd: liquid.odd, q: liquid.q, faded });
     else delete c.dataset.vol;
     // axes on the front edges of the floor and the leftmost vertical edge, with labels
     const un = -ub, vn = -vb;
@@ -5847,6 +6138,8 @@
         Q3.zoom = Math.max(0.4, Math.min(6, start.zoom * d1 / d0));
       }
       clearMark3d();
+      // while the graph is turned, the liquid is drawn with fewer pixels; in full when the finger is lifted
+      Q3.turning = true;
       requestDraw3d();
     });
     const end = (e) => {
@@ -5854,6 +6147,7 @@
       pts.delete(e.pointerId);
       if (!moved && pts.size === 0 && e.type === 'pointerup') pick3d(e.clientX, e.clientY);
       start = pts.size ? snapshot() : null;
+      if (!pts.size && Q3.turning) { Q3.turning = false; requestDraw3d(); }
     };
     wrap.addEventListener('pointerup', end);
     wrap.addEventListener('pointercancel', end);
