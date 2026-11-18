@@ -1366,3 +1366,14 @@ body.hselect #history { padding-bottom: 150px; }
 .area-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
 .area-toggles > .area-toggle { margin: 0; }
 .tools .area-toggles { display: contents; } /* in the row of the graph's tools, like the other switches */
+
+/* ⟳ 3D among the round buttons of the 2D graph (1.12.0, B0) */
+.plot-ctl button.rev3d { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; gap: 0; }
+.plot-ctl button.rev3d .rev3d-i { font-size: 18px; }
+.plot-ctl button.rev3d small { font-size: 10px; font-weight: 700; }
+.plot-ctl button.rev3d.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); opacity: 1; }
+/* the solid: the volume first and large, the method small below it, the surfaces under "More ▾" */
+.rev-out .geo-row .geo-val { font-size: 1.45em; font-weight: 700; }
+.rev-more { margin: 6px 0; }
+.rev-more > summary { cursor: pointer; padding: 12px 4px; min-height: 48px; box-sizing: border-box; color: var(--accent); font-weight: 600; list-style: none; }
+.rev-more > summary::-webkit-details-marker { display: none; }

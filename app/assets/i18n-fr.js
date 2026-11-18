@@ -1018,7 +1018,13 @@
     "Assumes the ideal shape of the picture (no tilt, dents or fittings).": "Hypothèse : la forme idéale du dessin (sans inclinaison, bosses ni accessoires).",
     "The densities of the list are typical values.": "Hypothèse : les masses volumiques de la liste sont des valeurs typiques.",
     "Between the measured values the shape is filled in by the formulas shown.": "Hypothèse : entre les valeurs mesurées, la forme est complétée par les formules indiquées.",
-    "Terms of use": "Conditions d’utilisation"
+    "Terms of use": "Conditions d’utilisation",
+    "Turn into a solid": "Faire tourner en solide",
+    "Axis: {0}": "Axe : {0}",
+    "x from {0} to {1}": "x de {0} à {1}",
+    "More: surface areas ▾": "Plus : aires des surfaces ▾",
+    "Tap an axis to turn around it. Drag an edge ↔ to change the range.": "Touchez un axe pour tourner autour. Faites glisser un bord ↔ pour changer l’intervalle.",
+    "⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis at once and gives the volume. Tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.": "⟳ 3D, parmi les boutons ronds d’un graphique 2D, fait tourner aussitôt la région colorée autour de l’axe x et donne le volume. Touchez la ligne de l’axe y (ou de l’axe x) pour tourner autour ; avec y = k ou x = k, faites glisser sa ligne. La région reflétée de l’autre côté montre la coupe du solide. « ↶ Annuler » dans le message défait un changement."
   },
   messages: {
     "rates-old": (p1) => "Les taux de change n’ont pas été mis à jour depuis " + p1 + " " + (p1 === '1' ? "jour" : "jours") + " (Paramètres → « Mettre à jour les taux de change maintenant »)",

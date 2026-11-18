@@ -1022,7 +1022,13 @@
     "Assumes the ideal shape of the picture (no tilt, dents or fittings).": "前提：依圖所示的理想形狀（不含傾斜、凹陷或附屬物）。",
     "The densities of the list are typical values.": "前提：清單中的密度為代表值。",
     "Between the measured values the shape is filled in by the formulas shown.": "前提：測量值之間以所示公式補足。",
-    "Terms of use": "使用條款"
+    "Terms of use": "使用條款",
+    "Turn into a solid": "旋轉成立體",
+    "Axis: {0}": "軸：{0}",
+    "x from {0} to {1}": "x：{0} ～ {1}",
+    "More: surface areas ▾": "詳細：表面積 ▾",
+    "Tap an axis to turn around it. Drag an edge ↔ to change the range.": "點一下軸即可改變旋轉軸。拖曳邊緣 ↔ 可改變範圍。",
+    "⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis at once and gives the volume. Tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.": "2D 圖形右側圓形按鈕「⟳ 3D」可立即求出著色部分繞 x 軸旋轉的體積。點一下 y 軸（或 x 軸）的線，即改為繞該軸旋轉；y = k、x = k 可拖曳其線移動。軸另一側淡淡映出的形狀，就是以軸切開立體的截面。變更後訊息中的「↶ 復原」可還原。"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",

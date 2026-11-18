@@ -1018,7 +1018,13 @@
     "Assumes the ideal shape of the picture (no tilt, dents or fittings).": "Annahme: die ideale Form des Bildes (keine Neigung, Dellen oder Anbauteile).",
     "The densities of the list are typical values.": "Annahme: Die Dichten der Liste sind typische Werte.",
     "Between the measured values the shape is filled in by the formulas shown.": "Annahme: Zwischen den Messwerten wird die Form mit den gezeigten Formeln ergänzt.",
-    "Terms of use": "Nutzungsbedingungen"
+    "Terms of use": "Nutzungsbedingungen",
+    "Turn into a solid": "Zu einem Körper drehen",
+    "Axis: {0}": "Achse: {0}",
+    "x from {0} to {1}": "x von {0} bis {1}",
+    "More: surface areas ▾": "Mehr: Oberflächen ▾",
+    "Tap an axis to turn around it. Drag an edge ↔ to change the range.": "Tippe auf eine Achse, um um sie zu drehen. Ziehe einen Rand ↔, um den Bereich zu ändern.",
+    "⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis at once and gives the volume. Tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.": "⟳ 3D bei den runden Schaltflächen eines 2D-Graphen dreht den eingefärbten Bereich sofort um die x-Achse und gibt das Volumen. Tippe auf die Linie der y-Achse (oder der x-Achse), um um sie zu drehen; bei y = k oder x = k ziehe ihre Linie. Der auf die andere Seite gespiegelte Bereich zeigt den Schnitt durch den Körper. „↶ Rückgängig“ in der Meldung nimmt eine Änderung zurück."
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",

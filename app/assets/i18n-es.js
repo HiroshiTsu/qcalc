@@ -1030,7 +1030,13 @@
     "Assumes the ideal shape of the picture (no tilt, dents or fittings).": "Supone la forma ideal del dibujo (sin inclinación, abolladuras ni accesorios).",
     "The densities of the list are typical values.": "Las densidades de la lista son valores típicos.",
     "Between the measured values the shape is filled in by the formulas shown.": "Entre los valores medidos, la forma se completa con las fórmulas mostradas.",
-    "Terms of use": "Términos de uso"
+    "Terms of use": "Términos de uso",
+    "Turn into a solid": "Girar para formar un sólido",
+    "Axis: {0}": "Eje: {0}",
+    "x from {0} to {1}": "x de {0} a {1}",
+    "More: surface areas ▾": "Más: áreas de superficie ▾",
+    "Tap an axis to turn around it. Drag an edge ↔ to change the range.": "Toca un eje para girar alrededor de él. Arrastra un borde ↔ para cambiar el intervalo.",
+    "⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis at once and gives the volume. Tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.": "⟳ 3D, entre los botones redondos de una gráfica 2D, gira al instante la región coloreada alrededor del eje x y da el volumen. Toca la línea del eje y (o del eje x) para girar alrededor de él; con y = k o x = k, arrastra su línea. La región reflejada al otro lado muestra el corte del sólido. «↶ Deshacer» en el mensaje revierte un cambio."
   },
   messages: {
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (Ajustes → "Actualizar los tipos de cambio ahora")',

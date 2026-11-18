@@ -3322,6 +3322,7 @@
     tr('The solve key opens a form for an equation (left side = right side); "+ Add an equation" makes a system of equations.', 'solve キーで方程式を入力する画面（左辺 = 右辺）が開きます。「＋ 式を追加」で連立方程式になります。'),
     tr('📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.', '入力欄の上の 📈 で、入力した式のグラフを描けます。x の式は 2D、x と y の式は 3D、y = 2x + 1、x² + y² = 4、z = x y のような方程式、2 列か 3 列の数の行列（点）も描けます。履歴の行を長押ししても同じことができます。'),
     tr('In the graph, "Area" finds the area between a function and the x axis or between two functions (the crossing points are offered as ranges), and "Length" the length of a curve or the perimeter between two functions. "Example" draws a circle or an ellipse.', 'グラフの「面積を求める」で、関数と x 軸の間や 2 つの関数の間の面積（交点の間の範囲を選べます）、「長さ・周」で曲線の長さや 2 つの関数に囲まれた部分の周の長さが求められます。「図形の例」で円や楕円を描けます。'),
+    tr('⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis at once and gives the volume. Tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.', '2D グラフの右の丸いボタン「⟳ 3D」で、色の付いた部分を x 軸のまわりに回した体積がすぐ出ます。y 軸（または x 軸）の線をタップすると、その軸のまわりに回します。y = k・x = k は線をドラッグして動かせます。軸の反対側に薄く映った形が、立体を軸で切った形です。変えたあとのメッセージの「↶ 元に戻す」で戻せます。'),
     tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks like a pale gelatin in a skin of a deeper shade in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで濃い色の皮に包まれた薄い色のゼラチンのように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
     tr('Its region "Enclosed" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.',
       '範囲の「囲まれた部分」は、一方の曲面がもう一方より上にある部分（または z = 0 より上の部分）を、交線から自動で見つけます。例：z = x² + y² と z = 4 なら 8π。範囲を式（x² + y² ≤ 4）で示して床に輪郭を描き、部分が複数あれば部分ごとに出します。'),
@@ -3909,7 +3910,13 @@
           store.set('qalc.plot.equal', P.equal);
           P.view = null; P.mark = null; P.tip.style.display = 'none';
           draw();
-        } }));
+        } }),
+        // 1.12.0 (B0): "Make a solid" with one tap: the shaded region turned around the x axis, the
+        // volume at once (in the corner of the graph and below it); tapped again, closed
+        P.revBtn = el('button', { class: 'rev3d', type: 'button', 'aria-label': tr('Turn into a solid', '回して立体にする'), 'aria-pressed': 'false', onclick: () => {
+          const R = P.areaUI && P.areaUI.rev;
+          if (R) R.toggle.click();
+        } }, el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' })));
       P.equal = P.equal || store.get('qalc.plot.equal', false) === true;
       const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
       const legend = el('div', { class: 'legend' });
@@ -4194,6 +4201,7 @@
       const tx = Math.min(Math.max(ax + 4, 2), W - 40);
       g.fillText(fmt(y, stepY), tx, py);
     }
+    c.dataset.view = [P.view.x0, P.view.x1, P.view.y0, P.view.y1].map((t) => +t.toPrecision(10)).join(','); // (what is shown, for the tests and screen readers' tools)
     if (P.area) drawArea(g, sx, sy);
     if (P.revAxis && P.areaUI && !P.areaUI.box.hidden && !P.areaUI.rev.box.hidden) { drawRevAxis(g, sx, sy, W, H); c.dataset.rev = P.revAxis.kind + ':' + P.revAxis.v; } else delete c.dataset.rev;
     g.lineWidth = 2.2;
@@ -4249,7 +4257,8 @@
       g.fillStyle = A.f.color; g.font = '700 11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText('↔', px, H * GRIP_Y + 0.5);
     }
-    const lines = P.areaUI && !P.areaUI.areaOpen ? [] : [P.areaUI && P.areaUI.mode === 'len' ? A.lenText : A.text].filter(Boolean); // the value the switch shows (1.12.0); none with only the solid open (B0a)
+    // the value the switch shows (1.12.0); with only the solid open, its volume (B0)
+    const lines = P.areaUI && !P.areaUI.areaOpen ? [revOpen() ? P.revVolText : ''].filter(Boolean) : [P.areaUI && P.areaUI.mode === 'len' ? A.lenText : A.text].filter(Boolean);
     P.canvas.dataset.area = lines.join(' / '); // what the graph shows, as text
     if (lines.length) {
       g.font = '600 13px system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
@@ -4310,10 +4319,34 @@
       const da = Math.abs(cx - px(P.area.a)), db = Math.abs(cx - px(P.area.b));
       return Math.min(da, db) > 22 ? '' : (da <= db ? 'a' : 'b');
     };
+    // 1.12.0 (B0), with "Make a solid" open: a tap on the line of the x axis or the y axis turns
+    // around it; the line of y = k or x = k can be dragged (k follows). Only a tap (no move) on an
+    // axis line, and a drag that starts on the line of k, are taken: anything else moves the graph
+    // as before, and the edges ↔ of the range come first.
+    let kdrag = null, axisTap = '', edgeBefore = null;
+    const revHit = (cx, cy) => {
+      if (!revOpen() || !P.view) return null;
+      const R = P.areaUI.rev, r = P.canvas.getBoundingClientRect(), v = P.view;
+      const px = (x) => r.left + (x - v.x0) / (v.x1 - v.x0) * r.width, py = (y) => r.top + (v.y1 - y) / (v.y1 - v.y0) * r.height;
+      if ((R.axis === 'h' || R.axis === 'v') && P.revAxis) {
+        const d = R.axis === 'h' ? Math.abs(cy - py(P.revAxis.v)) : Math.abs(cx - px(P.revAxis.v));
+        if (d <= 18) return { k: true };
+      }
+      const dx = Math.abs(cy - py(0)), dy = Math.abs(cx - px(0)); // to the line of the x axis, of the y axis
+      if (Math.min(dx, dy) > 14) return null;
+      return { axis: dx <= dy ? 'x' : 'y' };
+    };
     wrap.addEventListener('pointerdown', (e) => {
-      if (e.target.tagName === 'BUTTON' || !P.view) return;
+      if (e.target.closest('button') || !P.view) return;
       try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* the pointer is already gone */ }
-      if (!pts.size) edge = edgeAt(e.clientX);
+      if (!pts.size) {
+        edge = edgeAt(e.clientX);
+        edgeBefore = edge && revOpen() ? revState() : null;
+        // (an edge on an axis line, as a = 0 on the y axis: a drag moves the edge, a tap picks the axis)
+        const h = revHit(e.clientX, e.clientY);
+        kdrag = !edge && h && h.k ? { before: revState() } : null;
+        axisTap = h && h.axis ? h.axis : '';
+      } else { kdrag = null; axisTap = ''; }
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       start = { view: Object.assign({}, P.view), pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) };
       moved = false;
@@ -4323,7 +4356,24 @@
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const r = P.canvas.getBoundingClientRect(), v0 = start.view;
       const ids = Array.from(pts.keys());
+      if (kdrag && ids.length === 1 && P.revAxis) {
+        // the line of k follows the finger, in steps of about 1/40 of the graph
+        const p0 = start.pts.get(ids[0]), p1 = pts.get(ids[0]);
+        if (p0 && Math.abs(p1.x - p0.x) + Math.abs(p1.y - p0.y) > 4) moved = true;
+        if (!moved) return;
+        const R = P.areaUI.rev, d = toData(e.clientX, e.clientY), span = R.axis === 'h' ? v0.y1 - v0.y0 : v0.x1 - v0.x0;
+        const raw = span / 40, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = [1, 2, 5, 10].map((m) => m * mag).find((x) => x >= raw);
+        const val = Math.round((R.axis === 'h' ? d.y : d.x) / step) * step;
+        R.k.value = toDisplay(fmtK(val, step));
+        P.revAxis.v = val; P.revVolText = '';
+        P.mark = null; P.tip.style.display = 'none';
+        draw();
+        return;
+      }
       if (edge && ids.length === 1 && P.area) {
+        // (on an axis line, a tap that shakes a little stays a tap)
+        const q0 = start.pts.get(ids[0]), q1 = pts.get(ids[0]);
+        if (axisTap && !moved && q0 && Math.abs(q1.x - q0.x) + Math.abs(q1.y - q0.y) <= 6) return;
         // the edge follows the finger; the other edge stays, and the two never cross
         const A = P.area, x = toData(e.clientX, e.clientY).x, min = (v0.x1 - v0.x0) / r.width * 4;
         moved = true;
@@ -4359,10 +4409,26 @@
     const end = (e) => {
       if (!pts.has(e.pointerId)) return;
       pts.delete(e.pointerId);
-      if (edge) {
+      if (kdrag) {
+        const before = kdrag.before;
+        kdrag = null;
+        if (moved && P.areaUI) { start = null; revUndoable(before); P.areaUI.rev.setAxis(P.areaUI.rev.axis, true); computeRevolution(); return; }
+      }
+      if (edge && moved) {
         const k = edge;
         if (!pts.size) edge = '';
-        if (moved && P.area) { start = null; areaEdgeMoved(k, true); return; }
+        axisTap = '';
+        if (P.area) { start = null; if (edgeBefore) revUndoable(edgeBefore); edgeBefore = null; areaEdgeMoved(k, true); return; }
+      }
+      if (edge && !pts.size) edge = '';
+      if (axisTap) {
+        const a = axisTap;
+        axisTap = '';
+        if (!moved && !pts.size && e.type === 'pointerup' && P.areaUI) {
+          start = null;
+          if (a !== P.areaUI.rev.axis) { revUndoable(); P.areaUI.rev.setAxis(a); }
+          return;
+        }
       }
       if (!moved && pts.size === 0 && P.view && e.type === 'pointerup') showPoint(toData(e.clientX, e.clientY));
       if (pts.size) start = { view: Object.assign({}, P.view), pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) };
@@ -5008,6 +5074,7 @@
     U.box.hidden = !(U.areaOpen || !U.rev.box.hidden);
     U.areaOnly.hidden = !U.areaOpen;
     U.toggle.classList.toggle('on', U.areaOpen); U.toggle.setAttribute('aria-expanded', String(U.areaOpen));
+    if (P.revBtn) { const on = !U.rev.box.hidden; P.revBtn.classList.toggle('on', on); P.revBtn.setAttribute('aria-pressed', String(on)); }
   }
   // "Area and length ▾" opened or closed: opened, the area between the first function and the x axis
   // (or the second function), between crossing points when there are some, is shown at once
@@ -5366,23 +5433,71 @@
     const A = P.area, f = A.f, gs = A.g;
     const yAt = seriesY;
     const xs = [A.a].concat(f.x.filter((x) => x > A.a && x < A.b), [A.b]);
+    // the outline of the region, with the point (x, y) put at px(x, y), py(x, y)
+    const path = (px, py) => {
+      g.beginPath();
+      let open = false;
+      const close = (back) => { if (!open) return; for (let i = back.length - 1; i >= 0; i--) { const y = yAt(gs, back[i]); g.lineTo(px(back[i], y), py(back[i], y)); } g.closePath(); open = false; };
+      let seg = [];
+      for (const x of xs) {
+        const y1 = yAt(f, x), y2 = yAt(gs, x);
+        if (!isFinite(y1) || !isFinite(y2)) { close(seg); seg = []; continue; }
+        if (!open) { g.moveTo(px(x, y1), py(x, y1)); open = true; } else g.lineTo(px(x, y1), py(x, y1));
+        seg.push(x);
+      }
+      close(seg);
+    };
     g.save();
     g.fillStyle = f.color;
     g.globalAlpha = 0.22;
-    g.beginPath();
-    let open = false;
-    const close = (back) => { if (!open) return; for (let i = back.length - 1; i >= 0; i--) g.lineTo(sx(back[i]), sy(yAt(gs, back[i]))); g.closePath(); open = false; };
-    let seg = [];
-    for (const x of xs) {
-      const y1 = yAt(f, x), y2 = yAt(gs, x);
-      if (!isFinite(y1) || !isFinite(y2)) { close(seg); seg = []; continue; }
-      if (!open) { g.moveTo(sx(x), sy(y1)); open = true; } else g.lineTo(sx(x), sy(y1));
-      seg.push(x);
-    }
-    close(seg);
+    path((x) => sx(x), (x, y) => sy(y));
     g.fill();
+    // 1.12.0 (B0): what turning makes, seen in 2D: the region mirrored on the other side of the axis,
+    // faint (the solid cut by a plane through the axis)
+    const M = P.revAxis;
+    if (M && revOpen()) {
+      const mx = M.kind === 'v' ? (x) => sx(2 * M.v - x) : (x) => sx(x), my = M.kind === 'h' ? (x, y) => sy(2 * M.v - y) : (x, y) => sy(y);
+      g.globalAlpha = 0.1;
+      path(mx, my);
+      g.fill();
+      g.globalAlpha = 0.45; g.strokeStyle = f.color; g.lineWidth = 1; g.setLineDash([4, 3]);
+      g.stroke();
+      P.canvas.dataset.mirror = M.kind + ':' + M.v;
+    } else delete P.canvas.dataset.mirror;
     g.restore();
   }
+  // k of y = k or x = k as typed back into its box: rounded to the step it was dragged in
+  function fmtK(v, step) {
+    const d = step ? Math.max(0, -Math.floor(Math.log10(step) + 1e-9)) : 2;
+    const t = (+v.toFixed(Math.min(6, d))).toString();
+    return t[0] === '-' ? '−' + t.slice(1) : t;
+  }
+  // the axis, k and the range of the solid, to undo a change (1.12.0, B0: ↶ as for the expression)
+  function revState() {
+    const U = P.areaUI, R = U && U.rev;
+    return R ? { axis: R.axis, k: R.k.value, a: U.a.value, b: U.b.value } : null;
+  }
+  function revUndoable(prev) {
+    const U = P.areaUI, R = U && U.rev;
+    if (!R) return;
+    prev = prev || revState();
+    setTimeout(() => {
+      const now = revState();
+      if (!now || JSON.stringify(now) === JSON.stringify(prev)) return;
+      const axisName = (st) => (st.axis === 'h' ? 'y = ' + st.k : st.axis === 'v' ? 'x = ' + st.k : (REV_AXES.find((x) => x[0] === st.axis) || ['', ''])[1]);
+      const text = now.axis !== prev.axis || now.k !== prev.k ? trf('Axis: {0}', '軸：{0}', axisName(now)) : trf('x from {0} to {1}', 'x：{0} 〜 {1}', now.a, now.b);
+      toast(text, 5000, [tr('↶ Undo', '↶ 元に戻す'), () => revRestore(prev)]);
+    }, 0);
+  }
+  function revRestore(st) {
+    const U = P.areaUI, R = U && U.rev;
+    if (!R || !st) return;
+    R.k.value = st.k; U.a.value = st.a; U.b.value = st.b;
+    R.setAxis(st.axis, true);
+    computeArea();
+  }
+  // "Make a solid" is open (and the tools of the 2D graph shown)
+  function revOpen() { const U = P.areaUI; return !!(U && !U.box.hidden && U.rev && !U.rev.box.hidden); }
 
   // ------------------------------------------ solids of revolution (2D graph, 1.11.0)
   // The region of the area tools (between f and g, or between f and the x axis, x from a to b)
@@ -5558,7 +5673,7 @@
     else { R3 = `max(abs(${u}), abs(${v}))`; r3 = hole ? `max(0, sgn((${u}) × (${v})) × min(abs(${u}), abs(${v})))` : ''; }
     const exprs = [`√((${R3})^2 − y^2)`, `−√((${R3})^2 − y^2)`].concat(hole && r3 ? [`√((${r3})^2 − y^2)`, `−√((${r3})^2 − y^2)`] : []);
     const lo = parts[0].lo, hi = parts[parts.length - 1].hi, w = r6((Rmax || 1) * 1.08);
-    const three = { exprs, range: [parts[0].a, parts[parts.length - 1].b, '−' + w, w] };
+    const three = { exprs, range: [parts[0].a, parts[parts.length - 1].b, '−' + w, w], axis: 'h' };
     const one = cases.size === 1 && pieces.length === 1;
     const method = hole ? tr('Washers (thin rings stacked along the axis): V = π∫(R² − r²) dx (R, r: the distances of the outer and the inner curve from the axis)', 'ワッシャー法（穴のあいた薄い円板を軸に沿って重ねる）：V = π∫(R² − r²) dx（R・r：外側・内側の曲線と軸の距離）')
       : tr('Disks (thin disks stacked along the axis): V = π∫R² dx (R: the distance of the curve from the axis)', '円板の方法（薄い円板を軸に沿って重ねる）：V = π∫R² dx（R：曲線と軸の距離）');
@@ -5667,7 +5782,7 @@
       exprs.push(`max(${F}, ${G}) + ${cut}`, `min(${F}, ${G}) + ${cut}`);
     }
     const w = r6((X.hi - kv) * 1.06);
-    const three = { exprs, range: ['−' + w, w, '−' + w, w] };
+    const three = { exprs, range: ['−' + w, w, '−' + w, w], axis: 'v' };
     const method = tr('Shells (thin cylinders around the axis): V = 2π∫ρ h dρ (ρ: the distance from the axis, h: the height of the region there)', '殻の方法（薄い円筒を軸のまわりに重ねる）：V = 2π∫ρ h dρ（ρ：軸からの距離、h：その距離での領域の高さ）');
     const one = pieces.length === 1;
     const detail = (one ? 'ρ = ' + revPretty(k === '0' ? rho : (await exactText(rho)) || rho) + ', h = ' + revPretty(pieces[0].h) : trf('h changes at {0}: calculated in {1} pieces', 'h は {0} で替わるので、{1} 個に分けて計算', pieces.slice(1).map((p) => p.a).slice(0, 4).join(', '), pieces.length))
@@ -5698,7 +5813,7 @@
     const k = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: 'k', value: typeof saved.k === 'string' ? saved.k : '−1', 'aria-label': tr('k of the axis', '軸の k') });
     const kErr = el('div', { class: 'form-hint warn', role: 'alert' });
     const kRow = el('span', { class: 'rev-k' }, el('span', { class: 'rev-k-lbl', text: 'k =' }), k);
-    const btns = REV_AXES.map(([key, label]) => tapButton({ text: label, 'aria-label': tr('Axis: ', '軸：') + label }, () => setAxis(key)));
+    const btns = REV_AXES.map(([key, label]) => tapButton({ text: label, 'aria-label': tr('Axis: ', '軸：') + label }, () => { if (key !== R.axis) { revUndoable(); setAxis(key); } }));
     const save = () => store.set('qalc.rev', { axis: R.axis, k: k.value, open: !box.hidden });
     const setAxis = (key, quiet) => {
       R.axis = key;
@@ -5708,12 +5823,16 @@
       save();
       if (!quiet) computeRevolution();
     };
-    k.addEventListener('change', () => { save(); computeRevolution(); });
+    k.addEventListener('focus', () => { R.kBefore = revState(); });
+    k.addEventListener('change', () => { if (R.kBefore) revUndoable(R.kBefore); save(); computeRevolution(); });
     const msg = el('div', { class: 'area-out', 'aria-live': 'polite' });
     const outs = el('div', { class: 'geo-out rev-out' });
     const method = el('div', { class: 'form-hint rev-method' });
+    const moreOuts = el('div', { class: 'geo-out rev-more-out' });
+    const more = el('details', { class: 'rev-more' }, el('summary', { text: tr('More: surface areas ▾', '詳しく：表面積 ▾') }), moreOuts);
     const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, () => {
-      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: true, res: 61 });
+      // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion")
+      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: true, res: 61, grow: R.three.axis });
     });
     // one tap: a graph, its range and the axis
     const EX = [
@@ -5733,7 +5852,7 @@
       el('button', { class: 'on', 'aria-pressed': 'true', text: tr('Revolution (turned around an axis)', '回転体（軸のまわりに回す）') }));
     const box = el('div', { class: 'rev-box' }, kinds,
       el('div', { class: 'plot-range' }, el('span', { text: tr('Axis', '軸') }), el('span', { class: 'seg mini rev-axes' }, ...btns), kRow),
-      kErr, msg, outs, method, view, exRow,
+      kErr, msg, outs, method, more, view, exRow,
       el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
     box.hidden = true;
     const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Make a solid ▾', '立体にする ▾'), 'aria-expanded': 'false' }, () => {
@@ -5741,8 +5860,12 @@
       box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); save();
       if (box.hidden) R.seq++;
       revToggled(!box.hidden);
+      if (!box.hidden && !store.get('qalc.revhint', false)) {
+        store.set('qalc.revhint', true);
+        setTimeout(() => toast(tr('Tap an axis to turn around it. Drag an edge ↔ to change the range.', '軸をタップすると、回す軸が変わります。端の ↔ をドラッグすると、範囲が変わります'), 6000), 400);
+      }
     });
-    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, method, view, setAxis, open: () => { if (box.hidden) toggle.click(); } });
+    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, method, view, setAxis, open: () => { if (box.hidden) toggle.click(); } });
     setAxis(R.axis, true);
     if (saved.open) { box.hidden = false; toggle.classList.add('on'); toggle.setAttribute('aria-expanded', 'true'); }
     return R;
@@ -5768,6 +5891,7 @@
     if (!R || R.box.hidden || U.box.hidden) return;
     const seq = ++R.seq, stale = () => seq !== R.seq;
     R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.k.removeAttribute('aria-invalid'); R.outs.textContent = ''; R.method.textContent = '';
+    R.moreOuts.textContent = ''; P.revVolText = '';
     const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '回転体を計算できませんでした'); R.outs.textContent = ''; } };
     const f = P.series[Number(U.f1.value)];
     if (!f) return fail(tr('Draw a function first', '先に関数を描いてください'));
@@ -5803,7 +5927,9 @@
     if (!solid || solid.error) return fail(solid && solid.error);
     const vrow = revRow(R, tr('Volume', '体積'), ax.kind === 'h' ? 'π∫(R² − r²) dx' : '2π∫ρ h dρ');
     const srow = revRow(R, tr('Surface area (curved surfaces)', '表面積（曲面だけ）'), '2π∫ρ ds');
+    R.moreOuts.append(srow.node); // (1.12.0, B0: the surfaces under "More ▾")
     const erow = revRow(R, tr('Surface area (with the end faces)', '表面積（端の面も含む）'), ax.kind === 'h' ? tr('+ the flat faces at x = a and b', '＋ x = a、b の平らな面') : tr('+ the faces the sides at x = a and b make', '＋ x = a、b の辺が作る面'));
+    R.moreOuts.append(erow.node);
     R.msg.textContent = '';
     R.method.textContent = solid.method + '\n' + solid.detail + (rp && rp.clipped ? '\n' + realNote(!!g, parts) : '');
     // the volume
@@ -5819,6 +5945,7 @@
     }
     if (vols.length) { const V = await sumValues(vols); if (stale()) return; revShow(vrow, V, vexpr.join(' + ')); }
     else if (!solid.pieces.some((p) => p.vol !== '0')) revShow(vrow, { text: '0', v: 0 }, '0');
+    if (vrow.result) { P.revVolText = shortValue('V', vrow.result); draw(); } // also in the corner of the graph
     R.three = solid.three; R.view.hidden = false;
     // the surfaces: each curve that bounds the solid, turned: 2π ∫ (its distance) √(1 + f′²) dx
     const curved = [], sexpr = [];
@@ -5857,13 +5984,16 @@
   function drawRevAxis(g, sx, sy, W, H) {
     const A = P.revAxis, css = getComputedStyle(document.documentElement);
     g.save();
-    g.strokeStyle = g.fillStyle = css.getPropertyValue('--text').trim() || '#222';
-    g.globalAlpha = 0.8;
-    g.lineWidth = 1.8;
+    // 1.12.0 (B0): thick and in the accent color (tap an axis line to turn around it; y = k and
+    // x = k can be dragged), with k beside it
+    g.strokeStyle = g.fillStyle = css.getPropertyValue('--accent').trim() || '#2563eb';
+    g.globalAlpha = 0.95;
+    g.lineWidth = 3;
     g.setLineDash([10, 4, 2, 4]);
     g.beginPath();
-    const label = '↻ ' + tr('axis', '回転軸');
-    g.font = '12px system-ui, sans-serif';
+    const R = P.areaUI && P.areaUI.rev, kv = R && (R.axis === 'h' || R.axis === 'v') ? toDisplay(fmtK(A.v)) : '';
+    const label = '↻ ' + (kv ? (A.kind === 'h' ? 'y = ' : 'x = ') + kv : tr('axis', '回転軸'));
+    g.font = '700 12px system-ui, sans-serif';
     if (A.kind === 'h') {
       const y = sy(A.v);
       g.moveTo(0, y); g.lineTo(W, y); g.stroke();
@@ -7488,6 +7618,7 @@
     store.set('qalc.plot3d.ok', true);
     Q3.points = opts.points || null;
     Q3.equalOnce = !!opts.equal;
+    Q3.growNext = opts.grow || null;
     Q3.pending = null;
     // (1.11.0: a finer grid when asked for, as for a solid of revolution with its round rims)
     if (opts.res && (Number(store.get('qalc.plot3d.res', '41')) || 41) < opts.res) store.set('qalc.plot3d.res', String(opts.res));
@@ -7571,6 +7702,7 @@
       shown = true;
       Q3.data = data;
       clearMark3d();
+      if (Q3.growNext) { const ax = Q3.growNext; Q3.growNext = null; startGrow(ax); }
       Q3.msg.textContent = note;
       legend3d(data, vals.length > 0);
       if (Q3.volUI && !Q3.volUI.box.hidden) volumeSurfacesChanged();
@@ -8777,6 +8909,25 @@
     g.restore();
     return { shown, odd, q, thick: shown ? Math.round(thick / shown * 1000) / 1000 : 0 };
   }
+  // The solid of revolution growing from its region (1.12.0, B0): the parts of the surfaces at an angle
+  // around the axis of up to theta are drawn, theta from 0 to 360° in 2 s; then the graph is turned
+  // with a finger as always. A touch stops it; with "reduce motion" the solid is shown at once.
+  // ax: 'h', the axis along x (the angle of (y, z)), 'v', along z (the angle of (x, y)).
+  function startGrow(ax) {
+    Q3.grow = null;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { if (Q3.canvas) Q3.canvas.dataset.grow = 'still'; return; }
+    const G = Q3.grow = { ax, theta: 0, t0: 0 };
+    const step = (now) => {
+      if (Q3.grow !== G) return;
+      if (!G.t0) G.t0 = now;
+      G.theta = Math.min(2 * Math.PI, (now - G.t0) / 2000 * 2 * Math.PI);
+      if (Q3.canvas) Q3.canvas.dataset.grow = String(Math.round(G.theta * 180 / Math.PI));
+      if (G.theta >= 2 * Math.PI) Q3.grow = null;
+      draw3d();
+      if (Q3.grow === G) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
   function draw3d() {
     const c = Q3.canvas;
     if (!c || !c.clientWidth) return;
@@ -8791,6 +8942,7 @@
     g.fillRect(0, 0, W, H);
     const D = Q3.data;
     if (!D) return;
+    const GR = Q3.grow; // the solid growing (startGrow)
     const dark = document.documentElement.classList.contains('dark');
     const gridColor = css.getPropertyValue('--plot-grid').trim(), axisColor = css.getPropertyValue('--plot-axis').trim();
     const ca = Math.cos(Q3.az), sa = Math.sin(Q3.az), ce = Math.cos(Q3.el), se = Math.sin(Q3.el);
@@ -8868,6 +9020,7 @@
         for (let i = 0; i < D.nx; i++) {
           const k = j * D.nx + i, z = s.z[k];
           if (z === null || z !== z) continue;
+          if (GR) { let ph = GR.ax === 'h' ? Math.atan2(z, ys[j]) : Math.atan2(ys[j], xs[i]); if (ph < 0) ph += 2 * Math.PI; if (ph > GR.theta + 1e-9) continue; }
           const w = Wz(z);
           if (w > EZ * 1.0001 || w < -EZ * 1.0001) { st[k] = 2; continue; }  // outside the z range
           proj(U(xs[i]), v, w);
@@ -9295,6 +9448,7 @@
     wrap.addEventListener('pointerdown', (e) => {
       if (e.target.tagName === 'BUTTON' || !Q3.data) return;
       try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* the pointer is already gone */ }
+      if (Q3.grow) { Q3.grow = null; if (Q3.canvas) Q3.canvas.dataset.grow = 'stopped'; draw3d(); } // a touch shows the whole solid at once
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       start = snapshot();
       if (pts.size > 1) moved = true; else moved = false;

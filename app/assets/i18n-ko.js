@@ -1021,7 +1021,13 @@
     "Assumes the ideal shape of the picture (no tilt, dents or fittings).": "전제: 그림대로의 이상적인 모양(기울기·찌그러짐·부속품은 포함하지 않음).",
     "The densities of the list are typical values.": "전제: 목록의 밀도는 대표적인 값입니다.",
     "Between the measured values the shape is filled in by the formulas shown.": "전제: 측정값 사이는 표시한 공식으로 보완합니다.",
-    "Terms of use": "이용 약관"
+    "Terms of use": "이용 약관",
+    "Turn into a solid": "돌려서 입체로 만들기",
+    "Axis: {0}": "축: {0}",
+    "x from {0} to {1}": "x: {0} ~ {1}",
+    "More: surface areas ▾": "자세히: 겉넓이 ▾",
+    "Tap an axis to turn around it. Drag an edge ↔ to change the range.": "축을 탭하면 돌리는 축이 바뀝니다. 가장자리 ↔를 끌면 범위가 바뀝니다.",
+    "⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis at once and gives the volume. Tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.": "2D 그래프 오른쪽의 둥근 버튼 ‘⟳ 3D’를 누르면 색칠한 부분을 x축 둘레로 돌린 부피가 바로 나옵니다. y축(또는 x축) 선을 탭하면 그 축 둘레로 돌립니다. y = k·x = k는 선을 끌어서 움직일 수 있습니다. 축 반대쪽에 흐리게 비친 모양이 입체를 축으로 자른 모양입니다. 바꾼 뒤 메시지의 ‘↶ 실행 취소’로 되돌릴 수 있습니다."
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",
