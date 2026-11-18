@@ -4921,12 +4921,16 @@
     const rangeText = el('span', { class: 'form-hint' });
     const R = el('input', { inputmode: 'text', autocapitalize: 'off', placeholder: 'R', 'aria-label': tr('Radius R', '半径 R') });
     const bRect = tapButton({ text: tr('Rectangle', '長方形') }, () => setRegion('rect')), bDisk = tapButton({ text: tr('Disk', '円') }, () => setRegion('disk'));
+    // 1.11.0: the part enclosed by the surfaces (computeEnclosed), found by itself; encText says what it is
+    const bEnc = tapButton({ text: tr('Enclosed', '囲まれた部分'), 'aria-label': tr('The part enclosed by the surfaces', '曲面で囲まれた部分') }, () => setRegion('enc'));
+    const encText = el('span', { class: 'form-hint enc-text', 'aria-live': 'polite' });
     const diskRow = el('span', { class: 'disk-row' }, el('span', { text: 'x² + y² ≤ R²,  R =' }), R);
     // quiet: only set (the caller calculates afterwards)
     const setRegion = (k, quiet) => {
       Q3.volUI.region = k;
-      bRect.classList.toggle('on', k === 'rect'); bDisk.classList.toggle('on', k === 'disk');
-      rangeText.hidden = k !== 'rect'; diskRow.hidden = k !== 'disk';
+      bEnc.classList.toggle('on', k === 'enc'); bRect.classList.toggle('on', k === 'rect'); bDisk.classList.toggle('on', k === 'disk');
+      rangeText.hidden = k !== 'rect'; diskRow.hidden = k !== 'disk'; encText.hidden = k !== 'enc';
+      if (k === 'enc') encText.textContent = '';
       out.textContent = ''; ins.hidden = true;
       if (!quiet) volumeAuto();
     };
@@ -4934,7 +4938,7 @@
     const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('In the graph, the solid that is measured looks like a pale gelatin of this color in a clear, glossy skin of a deeper shade', 'グラフでは、計測している立体を、この色の薄いゼラチンを、濃い色のつやのある透明な皮で包んだように示しています') }));
     const box = el('div', { class: 'area-box' },
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
-      el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk), rangeText, diskRow),
+      el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bEnc, bRect, bDisk), rangeText, diskRow, encText),
       legend, out, ins,
       el('div', { class: 'form-hint', text: tr('The values are those of the graph that is drawn. Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.', 'いま描いているグラフの値です。平面（またはもう一方の曲面）より下の部分もプラスとして数えます。表面積は 2 つの曲面（または曲面と z = 0 の底面）の面積の和で、側面は含みません。') }),
       buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
@@ -4948,7 +4952,7 @@
     R.addEventListener('change', () => volumeAuto());
     R.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); R.blur(); } });
     ins.addEventListener('click', () => { if (Q3.volExpr) useExample(Q3.volExpr); });
-    Q3.volUI = { s1, s2, out, ins, box, rangeText, R, toggle, setRegion, legend, seq: 0, timer: 0 };
+    Q3.volUI = { s1, s2, out, ins, box, rangeText, encText, R, toggle, setRegion, legend, seq: 0, timer: 0 };
     setRegion('rect', true);
     return el('div', { class: 'area-wrap' }, toggle, box);
   }
@@ -5011,6 +5015,12 @@
     let R = 0;
     if (S.disk) { R = Number(S.R); if (!isFinite(R)) R = await numValue(S.R); }
     Q3.volShade = S.disk && !(R > 0) ? null : { D, fi: D.series.indexOf(S.f), gi: S.g ? D.series.indexOf(S.g) : -1, disk: S.disk, R };
+    // 1.11.0: the enclosed part: d (above 0 inside, with the sign found) at the points of the drawn grid
+    if (Q3.volShade && S.enc) {
+      const f = S.f.z, g = S.g ? S.g.z : null, sg = S.enc.sign, d = new Float64Array(f.length);
+      for (let k = 0; k < f.length; k++) { const a = f[k], b = g ? g[k] : 0; d[k] = a === null || b === null ? NaN : sg * (a - b); }
+      Q3.volShade.enc = d;
+    }
     requestDraw3d();
   }
   // the lists of surfaces follow the graph; quiet: without calculating (the caller does)
@@ -5032,16 +5042,23 @@
     U.rangeText.textContent = 'x ' + (x0 || '-5') + ' 〜 ' + (x1 || '5') + tr(', ', '、') + 'y ' + (y0 || '-5') + ' 〜 ' + (y1 || '5');
     if (!U.R.value) U.R.value = r6(Math.min(Math.abs(Number(x0) || 5), Math.abs(Number(x1) || 5), Math.abs(Number(y0) || 5), Math.abs(Number(y1) || 5)));
     U.out.textContent = ''; U.ins.hidden = true;
+    // (1.11.0: for a new graph, "Enclosed" when the chosen surfaces cross or end inside the drawn
+    // range, else the rectangle as before; a sample or the sphere of the shapes sets its own region after this)
+    if (U.dataSeen !== D) {
+      U.dataSeen = D;
+      if (U.regionSet) U.regionSet = false; // (a sample: its own region, as before)
+      else { const S = volumeSetup(true); U.setRegion(S && encFits(S) ? 'enc' : 'rect', true); }
+    }
     if (!quiet) volumeAuto();
   }
-  // the chosen surfaces and region, or null (with a message)
-  function volumeSetup() {
+  // the chosen surfaces and region, or null (with a message; none when silent)
+  function volumeSetup(silent) {
     const U = Q3.volUI, D = Q3.data;
-    if (!D || !D.series.length) { U.out.textContent = tr('Draw a graph first', '先にグラフを描いてください'); return null; }
+    if (!D || !D.series.length) { if (!silent) U.out.textContent = tr('Draw a graph first', '先にグラフを描いてください'); return null; }
     const f = D.series[Number(U.s1.value)], g = U.s2.value === 'plane' ? null : D.series[Number(U.s2.value)];
     if (!f) return null;
     const disk = U.region === 'disk', R = normalizeExpr(U.R.value);
-    if (disk && !R) { U.out.textContent = tr('Enter the radius R', '半径 R を入れてください'); return null; }
+    if (disk && !R) { if (!silent) U.out.textContent = tr('Enter the radius R', '半径 R を入れてください'); return null; }
     const [x0, x1, y0, y1] = Q3.range.map((v, i) => v || ['-5', '5', '-5', '5'][i]);
     return { U, f, g, disk, R, x0, x1, y0, y1, es: g ? [f.expr, g.expr] : [f.expr] };
   }
@@ -5175,6 +5192,7 @@
   // seq: the number of this calculation (a button press takes a new one); a result is written only
   // while no newer calculation has started
   async function computeVolume(seq) {
+    if (Q3.volUI && Q3.volUI.region === 'enc') return computeEnclosed(seq);
     const S = volumeSetup();
     if (!S) { setVolumeShade(null); return; }
     const { U, f, g } = S;
@@ -5200,6 +5218,7 @@
   // the area of the surfaces: ∬ √(1 + f_x² + f_y²), for each surface (the floor z = 0: the area of the region)
   // append: below the volume that is shown (else in its place)
   async function computeSurface(append, seq) {
+    if (Q3.volUI && Q3.volUI.region === 'enc') return; // (computeEnclosed gives both)
     const S = volumeSetup();
     if (!S) return;
     const { U, f, g } = S;
@@ -5254,6 +5273,371 @@
     out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
     if (S.real && S.real.note && !append) out.append(el('div', { class: 'form-hint', text: S.real.note }));
     if (missing) out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', missing) }));
+  }
+
+  // ---- the part enclosed by two surfaces (1.11.0)
+  // "Enclosed" measures the solid between two surfaces where one is above the other, bounded by where
+  // they meet (or by where they end, as the two halves of a sphere), or the part of a surface above
+  // the plane z = 0: z = x² + y² and z = 4 give the disk x² + y² ≤ 4 without choosing it. The surfaces
+  // are read on a grid of ENC_N × ENC_N points over the drawn range (d = f − g, and the integrands of
+  // the surface area), the points where d > 0 and the surfaces are real are joined into parts
+  // (neighbours across and down), and each part is looked at in turn:
+  // - a disk or a ring around a centre (x² + y² ≤ 4, (x − 1)² + y² ≤ 1): the distances of its edge
+  //   from its centre of mass take one or two values; the centre and the squares of the radii are made
+  //   simple numbers, and the engine checks that d is 0 on those circles. Then the integrals are
+  //   taken in polar coordinates around the centre, exactly when the engine finds them (else by the
+  //   rule of tsAnnulus);
+  // - a rectangle (it fills the rectangle around it): each side is a line where the surfaces meet
+  //   (made a simple number and checked) or an edge of the drawn range; iterated integrals;
+  // - anything else: each cell of the grid is cut into two triangles, which are cut along d = 0, and
+  //   the integrand is taken as linear on each piece; the same on every other point tells the digits
+  //   that can be trusted.
+  // A part that reaches the edge of the drawn range is cut there: that is said, and its value inside
+  // is given. Several parts are given one by one and their sum.
+  const ENC_N = 161;
+  // d = f − g (or f above z = 0), with the sign that makes the parts closed (two surfaces: the one
+  // that is above inside where they meet, z = 4 above z = x² + y²; with the plane: the surface above it)
+  const encD = (S, sign) => (S.g ? (sign > 0 ? `(${S.f.expr}) − (${S.g.expr})` : `(${S.g.expr}) − (${S.f.expr})`) : S.f.expr);
+  // the grid: { xs, ys, z: [d, …integrands] } or null
+  async function encGrid(S, exprs) {
+    const r = await Bridge.send('plot3d', { exprs, xmin: S.x0, xmax: S.x1, ymin: S.y0, ymax: S.y1, nx: ENC_N, ny: ENC_N, opts: iOpts(), timeout: Math.max(20000, timeLimit() * 1000) });
+    if (!r.ok || !Array.isArray(r.series) || r.series.length !== exprs.length || r.series.some((s) => s.complete === false)) return null;
+    return { xs: r.x, ys: r.y, z: r.series.map((s) => s.z.map((v) => (typeof v === 'number' && isFinite(v) ? v : NaN))) };
+  }
+  // the parts where d (a list of values on the grid nx × ny) is above 0: [{ ks, i0, i1, j0, j1, cut }]
+  function encParts(d, nx, ny) {
+    let dmax = 0;
+    for (const v of d) if (v === v && Math.abs(v) > dmax) dmax = Math.abs(v);
+    const tol = dmax * 1e-12, lab = new Int32Array(nx * ny).fill(-1), parts = [];
+    const inn = (k) => d[k] > tol;
+    for (let k0 = 0; k0 < nx * ny; k0++) {
+      if (lab[k0] >= 0 || !inn(k0)) continue;
+      const p = { ks: [], i0: nx, i1: -1, j0: ny, j1: -1, cut: false }, stack = [k0];
+      lab[k0] = parts.length;
+      while (stack.length) {
+        const k = stack.pop(), i = k % nx, j = (k / nx) | 0;
+        p.ks.push(k);
+        if (i < p.i0) p.i0 = i; if (i > p.i1) p.i1 = i; if (j < p.j0) p.j0 = j; if (j > p.j1) p.j1 = j;
+        if (i === 0 || j === 0 || i === nx - 1 || j === ny - 1) p.cut = true;
+        for (const q of [i > 0 ? k - 1 : -1, i < nx - 1 ? k + 1 : -1, j > 0 ? k - nx : -1, j < ny - 1 ? k + nx : -1]) {
+          if (q >= 0 && lab[q] < 0 && inn(q)) { lab[q] = parts.length; stack.push(q); }
+        }
+      }
+      parts.push(p);
+    }
+    return { parts, lab, dmax };
+  }
+  // the points on the edge of a part (between a point inside and one outside: where d is 0 by the
+  // straight line between them, or halfway when the outside one has no real value): [[x, y], …]
+  function encEdge(p, lab, id, d, xs, ys) {
+    const nx = xs.length, ny = ys.length, out = [];
+    for (const k of p.ks) {
+      const i = k % nx, j = (k / nx) | 0;
+      for (const [qi, qj] of [[i - 1, j], [i + 1, j], [i, j - 1], [i, j + 1]]) {
+        if (qi < 0 || qj < 0 || qi >= nx || qj >= ny) continue;
+        const q = qj * nx + qi;
+        if (lab[q] === id) continue;
+        const t = d[q] === d[q] ? d[k] / (d[k] - d[q]) : 0.5;
+        out.push([xs[i] + t * (xs[qi] - xs[i]), ys[j] + t * (ys[qj] - ys[j])]);
+      }
+    }
+    return out;
+  }
+  // the simple numbers near v (within tol), the nearest first: p/q and (withPi) pπ/q, q ≤ 12: [{ v, text }]
+  function nearSimples(v, tol, withPi) {
+    const out = [], seen = new Set();
+    const sign = (p) => (p < 0 ? '−' : '');
+    const take = (w, text) => { if (Math.abs(w - v) <= tol && !seen.has(text)) { seen.add(text); out.push({ v: w, text }); } };
+    for (let q = 1; q <= 12; q++) {
+      const p = Math.round(v * q), g = (a, b) => (b ? g(b, a % b) : a), c = g(Math.abs(p), q) || 1;
+      take(p / q, p === 0 ? '0' : sign(p) + Math.abs(p / c) + (q / c === 1 ? '' : '/' + q / c));
+      const r = Math.round(v * q / Math.PI), e = g(Math.abs(r), q) || 1;
+      if (withPi && r) take(r * Math.PI / q, sign(r) + (Math.abs(r / e) === 1 ? '' : Math.abs(r / e)) + 'π' + (q / e === 1 ? '' : '/' + q / e));
+    }
+    return out.sort((a, b) => Math.abs(a.v - v) - Math.abs(b.v - v)).slice(0, 4);
+  }
+  const nearSimple = (v, tol, withPi) => nearSimples(v, tol, withPi !== false)[0] || null;
+  // (x − a)² written for the text of a region: x², (x − 1)², (y + 1/2)²
+  const shiftSq = (v, a) => (a.v === 0 ? v + '²' : '(' + v + (a.v > 0 ? ' − ' + a.text : ' + ' + a.text.replace(/^−/, '')) + ')²');
+  // the values of expressions at points, by the engine with many digits: [numbers] or null
+  const encValues = (list) => sumVector('[' + list.join(', ') + ']', 40);
+  // a disk or a ring: { a, b (simple numbers), radii: [{ v, sq (the square as text), text }] } or null
+  async function encRound(p, lab, id, d, G, dExpr, scale) {
+    if (p.cut || p.ks.length < 12) return null;
+    const { xs, ys } = G, nx = xs.length, h = Math.max(xs[1] - xs[0], ys[1] - ys[0]);
+    let mx = 0, my = 0;
+    for (const k of p.ks) { mx += xs[k % nx]; my += ys[(k / nx) | 0]; }
+    mx /= p.ks.length; my /= p.ks.length;
+    const a = nearSimple(mx, 0.6 * h, false), b = nearSimple(my, 0.6 * h, false);
+    if (!a || !b) return null;
+    const ds = encEdge(p, lab, id, d, xs, ys).map(([x, y]) => Math.hypot(x - a.v, y - b.v)).sort((u, v) => u - v);
+    if (ds.length < 8) return null;
+    // one or two groups of distances, each narrow
+    const groups = [[ds[0]]];
+    for (let m = 1; m < ds.length; m++) { if (ds[m] - ds[m - 1] > 3 * h) groups.push([]); groups[groups.length - 1].push(ds[m]); }
+    if (groups.length > 2 || groups.some((g) => g[g.length - 1] - g[0] > 1.5 * h || g.length < 4)) return null;
+    // the centre must be outside a ring and inside a disk
+    const kc = Math.round((b.v - ys[0]) / (ys[1] - ys[0])) * nx + Math.round((a.v - xs[0]) / (xs[1] - xs[0]));
+    if ((lab[kc] === id) !== (groups.length === 1)) return null;
+    // each radius: the nearest square that is a simple fraction for which d is 0 on the circle (at 8
+    // angles that are not special)
+    const radii = [];
+    for (const g of groups) {
+      const r = g.reduce((t, v) => t + v, 0) / g.length;
+      let found = null;
+      for (const sq of nearSimples(r * r, 2 * r * h, false)) {
+        if (!(sq.v > 0)) continue;
+        const root = Math.sqrt(sq.v), whole = nearSimples(root, 1e-12, false)[0];
+        const rr = { v: root, sq: sq.text, text: whole ? whole.text : '√(' + sq.text + ')' }, pts = [];
+        for (let m = 0; m < 8; m++) {
+          const q = `(${m}/8 + 1/37) × ${fullTurn()}`;
+          pts.push(`abs(${subXY(dExpr, `(${a.text}) + (${rr.text}) × cos(${q})`, `(${b.text}) + (${rr.text}) × sin(${q})`)})`);
+        }
+        const v = await encValues(pts);
+        if (v && v.length === pts.length && v.every((x) => Math.abs(x) <= 1e-12 * Math.max(1, scale))) { found = rr; break; }
+      }
+      if (!found) return null;
+      radii.push(found);
+    }
+    return { a, b, radii };
+  }
+  // a rectangle: { sides: [x0, x1, y0, y1] as { v, text, cut } } or null. A side where the part is
+  // cut by the drawn range is that edge (cut: true)
+  async function encRect(p, lab, id, d, G, S, dExpr, scale) {
+    const { xs, ys } = G, nx = xs.length, ny = ys.length;
+    if (p.ks.length !== (p.i1 - p.i0 + 1) * (p.j1 - p.j0 + 1)) return null;
+    const h = Math.max(xs[1] - xs[0], ys[1] - ys[0]);
+    // where the line between the last point inside and the next one meets d = 0, on every row (or column)
+    const side = async (inner, outer, at, edgeText, edgeV, vertical) => {
+      if (outer < 0 || outer >= (vertical ? nx : ny)) return { v: edgeV, text: edgeText, cut: true };
+      let lo = Infinity, hi = -Infinity;
+      for (let m = vertical ? p.j0 : p.i0; m <= (vertical ? p.j1 : p.i1); m++) {
+        const ki = vertical ? m * nx + inner : inner * nx + m, ko = vertical ? m * nx + outer : outer * nx + m;
+        if (!(d[ko] === d[ko])) return null;
+        const t = d[ki] / (d[ki] - d[ko]), c = at(inner) + t * (at(outer) - at(inner));
+        lo = Math.min(lo, c); hi = Math.max(hi, c);
+      }
+      if (hi - lo > 0.05 * h) return null; // not a straight line across
+      // the nearest simple number on which d is 0 at three points along the side
+      const span = vertical ? [ys[p.j0], ys[p.j1]] : [xs[p.i0], xs[p.i1]];
+      for (const s of nearSimples((lo + hi) / 2, 0.1 * h, true)) {
+        const list = [];
+        for (const f of [0.17, 0.5, 0.83]) {
+          const u = engineNum(span[0] + (span[1] - span[0]) * f);
+          list.push(`abs(${vertical ? subXY(dExpr, `(${s.text})`, u) : subXY(dExpr, u, `(${s.text})`)})`);
+        }
+        const v = await encValues(list);
+        if (v && v.every((x) => Math.abs(x) <= 1e-12 * Math.max(1, scale))) return { v: s.v, text: s.text, cut: false };
+      }
+      return null;
+    };
+    const X = (i) => xs[i], Y = (j) => ys[j];
+    const sides = [await side(p.i0, p.i0 - 1, X, S.x0, xs[0], true), await side(p.i1, p.i1 + 1, X, S.x1, xs[nx - 1], true),
+      await side(p.j0, p.j0 - 1, Y, S.y0, ys[0], false), await side(p.j1, p.j1 + 1, Y, S.y1, ys[ny - 1], false)];
+    return sides.every(Boolean) ? { sides } : null;
+  }
+  // ∬ of the values F (on the grid) over the part (label id), with d cut along d = 0 inside each cell:
+  // step 1 every point, 2 every other one
+  function encSum(G, lab, id, d, F, step) {
+    const { xs, ys } = G, nx = xs.length, ny = ys.length;
+    let sum = 0;
+    const inn = (k) => lab[k] === id;
+    // a triangle (corners k: values of d and of F, places x and y), the part where d > 0 of it
+    const tri = (A, B, C) => {
+      const P = [A, B, C], poly = [];
+      for (let m = 0; m < 3; m++) {
+        const p = P[m], q = P[(m + 1) % 3];
+        if (p.in) poly.push(p);
+        if (p.in !== q.in) {
+          const t = q.d === q.d && p.d === p.d ? p.d / (p.d - q.d) : 0.5;
+          poly.push({ x: p.x + t * (q.x - p.x), y: p.y + t * (q.y - p.y), f: p.in ? (q.f === q.f ? p.f + t * (q.f - p.f) : p.f) : (p.f === p.f ? p.f + t * (q.f - p.f) : q.f) });
+        }
+      }
+      for (let m = 1; m + 1 < poly.length; m++) {
+        const a = poly[0], b = poly[m], c = poly[m + 1];
+        sum += Math.abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) / 2 * (a.f + b.f + c.f) / 3;
+      }
+    };
+    const pt = (i, j) => { const k = j * nx + i; return { x: xs[i], y: ys[j], d: d[k], f: F ? F[k] : 1, in: inn(k) }; };
+    for (let j = 0; j + step < ny; j += step) for (let i = 0; i + step < nx; i += step) {
+      const a = pt(i, j), b = pt(i + step, j), c = pt(i + step, j + step), e = pt(i, j + step);
+      if (!a.in && !b.in && !c.in && !e.in) continue;
+      tri(a, b, c); tri(a, c, e);
+    }
+    return sum;
+  }
+  // the number of the parts of ENC_N, joined again on every other point (for encSum with step 2):
+  // the labels of the points that are on the coarser grid are those of the finer one
+  function encNumeric(G, lab, id, d, F) {
+    const v = encSum(G, lab, id, d, F, 1), v2 = encSum(G, lab, id, d, F, 2);
+    if (!isFinite(v)) return { v: NaN, digits: 0 };
+    // (the error of the finer one: about a third of the difference, for a rule good to the square of the step)
+    return { v, digits: trustedDigits(Math.abs(v - v2) / 3 / Math.max(Math.abs(v), 1e-300)) };
+  }
+  // the text of a part's region
+  function encText(shape) {
+    if (shape.round) {
+      const { a, b, radii } = shape.round, lhs = shiftSq('x', a) + ' + ' + shiftSq('y', b);
+      if (radii.length === 1) return trf('{0} ≤ {1} (a disk of radius {2})', '{0} ≤ {1}（半径 {2} の円）', lhs, radii[0].sq, radii[0].text);
+      return trf('{0} ≤ {1} ≤ {2} (a ring of radii {3} and {4})', '{0} ≤ {1} ≤ {2}（半径 {3} と {4} の環）', radii[0].sq, lhs, radii[1].sq, radii[0].text, radii[1].text);
+    }
+    if (shape.rect) {
+      const [x0, x1, y0, y1] = shape.rect.sides.map((s) => String(s.text).replace(/-/g, '−'));
+      return x0 + ' ≤ x ≤ ' + x1 + tr(', ', '、') + y0 + ' ≤ y ≤ ' + y1;
+    }
+    return tr('the part enclosed by where the surfaces meet', '交線で囲まれた部分');
+  }
+  // ∬ F over a part: the exact expression (a disk or ring in polar coordinates around its centre, a
+  // rectangle as an iterated integral), or '' for any other shape
+  function encExpr(shape, F) {
+    if (shape.round) {
+      const { a, b, radii } = shape.round, turn = fullTurn();
+      const Fs = polar(subXY(F, `(${a.text}) + x`, `(${b.text}) + y`));
+      const [r0, r1] = radii.length === 1 ? ['0', radii[0].text] : [radii[0].text, radii[1].text];
+      return `integrate(integrate((${Fs}) × \\r, ${r0}, ${r1}, \\r), 0, ${turn}, \\θ)` + (turn === '2π' ? '' : ` × 2π/${turn}`);
+    }
+    if (shape.rect) {
+      const [x0, x1, y0, y1] = shape.rect.sides;
+      return `integrate(integrate(${F}, ${x0.text}, ${x1.text}, x), ${y0.text}, ${y1.text}, y)`;
+    }
+    return '';
+  }
+  // ∬ F over a part: { val, expr } (val as bestValue gives it). Fgrid: the values of F on the grid
+  // (for a shape that is neither round nor a rectangle), ms: the time for the exact value
+  async function encIntegral(shape, F, Fgrid, G, lab, id, d, ms) {
+    let n;
+    if (shape.round) {
+      const { a, b, radii } = shape.round;
+      const Fs = subXY(F, `(${a.text}) + x`, `(${b.text}) + y`);
+      n = await tsAnnulus(Fs, radii.length === 1 ? '0' : radii[0].text, radii[radii.length - 1].text);
+    } else if (shape.rect) {
+      const [x0, x1, y0, y1] = shape.rect.sides;
+      n = await simpsonRect(F, x0.text, x1.text, y0.text, y1.text, null, true);
+    } else n = encNumeric(G, lab, id, d, Fgrid);
+    const expr = encExpr(shape, F);
+    if (!n || !isFinite(n.v)) return { val: null, expr };
+    if (!expr) return { val: bestValue(null, n.v, Math.min(8, n.digits || 4)), expr: '' };
+    const ex = await exactIntegral(expr, Math.min(ms, timeLimit() * 1000));
+    return { val: bestValue(ex, n.v, Math.min(10, n.digits || 8)), expr };
+  }
+  // the parts of the enclosed region with their shapes: { sign, G, lab, d, parts: [{ id, shape, cut }],
+  // dExpr, scale } or { error }. Kept for the same surfaces, range and settings
+  const encCache = new Map();
+  async function encRegion(S) {
+    const key = JSON.stringify([S.es, S.x0, S.x1, S.y0, S.y1, iOpts()]);
+    if (encCache.has(key)) return encCache.get(key);
+    const dPlus = encD(S, 1);
+    const G = await encGrid(S, [dPlus]);
+    if (!G) return { error: tr('Could not read the surfaces in the drawn range', '描いている範囲の曲面の値を読めませんでした'), again: true };
+    const nx = G.xs.length, ny = G.ys.length;
+    // the sign: two surfaces cross both ways round; the one whose parts are closed (not cut by the
+    // drawn range) is taken, else the first above the second. With the plane: above it
+    let sign = 1, d = G.z[0], E = encParts(d, nx, ny);
+    if (S.g) {
+      const dm = d.map((v) => -v), Em = encParts(dm, nx, ny);
+      const closed = (X) => X.parts.length > 0 && X.parts.every((p) => !p.cut);
+      if ((!closed(E) && closed(Em)) || (!E.parts.length && Em.parts.length)) { sign = -1; d = dm; E = Em; }
+    }
+    if (!E.parts.length) return { error: S.g ? tr('The surfaces do not enclose anything in the drawn range', '描いている範囲では、曲面で囲まれた部分がありません')
+      : tr('The surface is not above z = 0 anywhere in the drawn range', '描いている範囲では、曲面が z = 0 より上にある部分がありません') };
+    const dExpr = encD(S, sign), parts = [];
+    // (the largest first; parts of a few points only are left out when there are larger ones: they are
+    // what the grid catches of a touch, not a solid)
+    const order = E.parts.map((p, id) => ({ p, id })).sort((u, v) => v.p.ks.length - u.p.ks.length);
+    const big = order[0].p.ks.length;
+    for (const { p, id } of order) {
+      if (p.ks.length < Math.max(4, big * 1e-3) && parts.length) continue;
+      if (parts.length >= 12) break;
+      const round = await encRound(p, E.lab, id, d, G, dExpr, E.dmax);
+      const rect = round ? null : await encRect(p, E.lab, id, d, G, S, dExpr, E.dmax);
+      parts.push({ id, shape: { round, rect }, cut: p.cut, n: p.ks.length });
+    }
+    const res = { sign, G, lab: E.lab, d, parts, dExpr, scale: E.dmax, cut: parts.some((q) => q.cut) };
+    encCache.set(key, res);
+    if (encCache.size > 20) encCache.delete(encCache.keys().next().value);
+    return res;
+  }
+  // "Enclosed": the volume and the surface area, part by part
+  async function computeEnclosed(seq) {
+    const S = volumeSetup();
+    if (!S) { setVolumeShade(null); return; }
+    const { U } = S;
+    if (seq === undefined) { clearTimeout(U.timer); seq = ++U.seq; }
+    U.out.textContent = tr('Finding the part enclosed by the surfaces…', '曲面で囲まれた部分を探しています…');
+    U.ins.hidden = true;
+    const E = await encRegion(S);
+    if (seq !== U.seq) return;
+    if (E.error) { if (E.again) encCache.clear(); U.out.textContent = E.error; U.encText.textContent = ''; setVolumeShade(null); return; }
+    await setVolumeShade(Object.assign({}, S, { enc: E }));
+    if (seq !== U.seq) return;
+    const many = E.parts.length > 1, names = E.parts.map((q, m) => (many ? trf('Part {0}', '部分 {0}', m + 1) + tr(': ', '：') : '') + encText(q.shape));
+    U.encText.textContent = names.join(tr(' / ', ' ／ '));
+    U.out.textContent = '';
+    if (E.cut) U.out.append(el('div', { class: 'form-hint warn', text: tr('The part is cut at the edge of the drawn range: widen the range of the graph. The values below are those inside the range.', '範囲の端で切れています。描く範囲を広げてください。下の値は範囲の中の値です。') }));
+    const vol = el('div', { class: 'area-out' }), surf = el('div', { class: 'area-out' });
+    U.out.append(vol, surf);
+    // the volume: ∬ d over each part
+    vol.textContent = tr('Calculating…', '計算中…');
+    const vals = [], exprs = [];
+    for (const q of E.parts) {
+      const r = await encIntegral(q.shape, E.dExpr, E.d, E.G, E.lab, q.id, E.d, VOLUME_EXACT_MS);
+      if (seq !== U.seq) return;
+      if (!r.val) { vol.textContent = tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
+      vals.push(r.val); exprs.push(r.expr || r.val.exact || numberPart(r.val.text));
+    }
+    const total = await sumValues(vals);
+    if (seq !== U.seq) return;
+    vol.textContent = '';
+    showResult(vol, tr('Volume ', '体積 ') + shownValue(total));
+    if (many) vol.append(el('div', { class: 'form-hint', text: vals.map((v, m) => trf('Part {0}', '部分 {0}', m + 1) + tr(': ', '：') + shownValue(v).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+    Q3.volExpr = exprs.join(' + ');
+    U.ins.hidden = false;
+    // the surface area: the upper and the lower surface over each part (the floor z = 0: the area of the part)
+    surf.textContent = tr('Calculating the surface area…', '表面積を計算中…');
+    const A = [];
+    for (const s1 of S.g ? [S.f, S.g] : [S.f]) {
+      const a = recipSqrt(await symText(`√(1 + (diff(${s1.expr}, x))^2 + (diff(${s1.expr}, y))^2)`));
+      if (seq !== U.seq) return;
+      if (!a) { surf.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); return; }
+      A.push({ a, name: clip(s1.expr, 24) });
+    }
+    if (!S.g) A.push({ a: '1', name: tr('floor z = 0', '底面 z = 0') });
+    // (the values of the integrands on the grid, for parts that are neither round nor rectangles)
+    let AG = null;
+    if (E.parts.some((q) => !q.shape.round && !q.shape.rect)) {
+      const G2 = await encGrid(S, A.map((x) => x.a));
+      if (seq !== U.seq) return;
+      AG = G2 ? G2.z : null;
+    }
+    const sums = [];
+    for (let m = 0; m < A.length; m++) {
+      const pv = [];
+      for (const q of E.parts) {
+        const general = !q.shape.round && !q.shape.rect;
+        if (general && !AG) { surf.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); return; }
+        const r = await encIntegral(q.shape, A[m].a, general ? AG[m] : null, E.G, E.lab, q.id, E.d, SURFACE_EXACT_MS);
+        if (seq !== U.seq) return;
+        if (!r.val) { surf.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); return; }
+        pv.push(r.val);
+      }
+      sums.push(await sumValues(pv));
+      if (seq !== U.seq) return;
+    }
+    const all = await sumValues(sums);
+    if (seq !== U.seq) return;
+    surf.textContent = '';
+    showResult(surf, tr('Surface area ', '表面積 ') + shownValue(all));
+    surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+  }
+  // whether "Enclosed" fits the surfaces that are chosen: f − g takes both signs on the drawn grid, or
+  // f − g ≥ 0 where they are real but they are not real everywhere (they end, as a sphere's halves)
+  function encFits(S) {
+    if (signChanges(S)) return true;
+    if (!S.g) return false;
+    const f = S.f.z, g = S.g.z;
+    let real = 0, not = 0;
+    for (let k = 0; k < f.length; k++) { if (f[k] === f[k] && g[k] === g[k] && f[k] !== null && g[k] !== null) real++; else not++; }
+    return real > 0 && not > 0;
   }
 
   // the functions of a graph: one in each line; a line "sin(x), cos(x)" is two (a "," or ";" outside
@@ -5474,7 +5858,7 @@
     Q3.equalOnce = !!d.eq; // round for this drawing; the 1:1 setting itself stays as it was
     // "Volume and surface" measures over the region that fits the sample (a disk for a sphere)
     const U = Q3.volUI;
-    if (U) { U.setRegion(d.disk ? 'disk' : 'rect', true); if (d.disk) U.R.value = d.disk; }
+    if (U) { U.setRegion(d.disk ? 'disk' : 'rect', true); if (d.disk) U.R.value = d.disk; U.regionSet = true; }
     Q3.keep = true;
     Q3.go.click();
   }
@@ -6472,7 +6856,7 @@
       okA[k] = real(za) ? 1 : 0; okB[k] = real(zb) ? 1 : 0;
       if (okA[k]) wa[k] = cw(za);
       if (okB[k]) wb[k] = vg ? cw(zb) : w0;
-      inside[k] = okA[k] && okB[k] && x * x + y * y <= R2 ? 1 : 0;
+      inside[k] = okA[k] && okB[k] && x * x + y * y <= R2 && (!VS.enc || VS.enc[k] > 0) ? 1 : 0;
     }
     // the normal of a sheet at a grid point: the one found for the surface (gridNormals, 1.9.2: a
     // parabola through the neighbours or the rim) where the point is in the box; otherwise from the
@@ -6505,6 +6889,8 @@
       const xp = xs[p % nx], yp = ys[(p / nx) | 0], xq = xs[q % nx], yq = ys[(q / nx) | 0];
       const along = (e) => (xq !== xp ? (e.x - xp) / (xq - xp) : (e.y - yp) / (yq - yp));
       let t = 1, circ = false;
+      // (1.11.0: the enclosed part ends where d = 0, by the straight line between the two points)
+      if (VS.enc && okA[q] && okB[q] && !(VS.enc[q] > 0)) t = Math.max(0, Math.min(1, VS.enc[p] / (VS.enc[p] - VS.enc[q])));
       if (xq * xq + yq * yq > R2) {
         const dx = xq - xp, dy = yq - yp, A = dx * dx + dy * dy, B = 2 * (xp * dx + yp * dy), C = xp * xp + yp * yp - R2;
         t = Math.max(0, Math.min(1, (-B + Math.sqrt(Math.max(0, B * B - 4 * A * C))) / (2 * A))); circ = true;
@@ -6931,7 +7317,10 @@
     const VS = Q3.volUI && !Q3.volUI.box.hidden && Q3.volShade && Q3.volShade.D === D ? Q3.volShade : null;
     const vf = VS ? D.series[VS.fi] || null : null, vg = vf && VS.gi >= 0 ? D.series[VS.gi] || null : null;
     // a cell counts as inside the region when any part of it is (its point nearest to the centre of a disk)
-    const inRegion = (i, j) => { if (!VS.disk) return true; const cx = Math.max(xs[i], Math.min(xs[i + 1], 0)), cy = Math.max(ys[j], Math.min(ys[j + 1], 0)); return cx * cx + cy * cy <= VS.R * VS.R; };
+    const inRegion = (i, j) => {
+      // (1.11.0: the enclosed part: a cell whose four corners are inside)
+      if (VS.enc) { const k = j * D.nx + i, e = VS.enc; return e[k] > 0 && e[k + 1] > 0 && e[k + D.nx] > 0 && e[k + D.nx + 1] > 0; }
+      if (!VS.disk) return true; const cx = Math.max(xs[i], Math.min(xs[i + 1], 0)), cy = Math.max(ys[j], Math.min(ys[j + 1], 0)); return cx * cx + cy * cy <= VS.R * VS.R; };
     // a cell partly inside and partly outside the disk (its nearest point inside, its farthest corner outside)
     const crossing = (i, j) => VS.disk && inRegion(i, j) && Math.max(Math.hypot(xs[i], ys[j]), Math.hypot(xs[i + 1], ys[j]), Math.hypot(xs[i], ys[j + 1]), Math.hypot(xs[i + 1], ys[j + 1])) > VS.R;
     for (const s of D.series) {
@@ -7131,6 +7520,7 @@
     // rectangle, as when the app was opened again with the sphere). Only a mesh with no faces (no
     // solid can be drawn) leaves the region as before.
     let shadowFaces = 0, shadowArea = 0;
+    const outline = [];  // (the closed paths of the shadow, 1.11.0: drawn as a line too for the enclosed part)
     if (vc && se > 0.05) {
       g.save();
       g.filter = 'blur(7px)';
@@ -7169,7 +7559,9 @@
               if (!l || !l.length) break;
               p = l.pop();
             }
-            pane0(loop.map((p) => [U(PX[p]), V(PY[p])]));
+            const uv = loop.map((p) => [U(PX[p]), V(PY[p])]);
+            pane0(uv);
+            outline.push(uv);
           }
         }
       }
@@ -7181,6 +7573,13 @@
       }
       g.fill();
       g.restore();
+      // the outline of the enclosed part on the floor (1.11.0), so that what is measured is seen
+      if (VS.enc && outline.length) {
+        g.save();
+        g.strokeStyle = vc.line; g.lineWidth = 1.3; g.setLineDash([5, 3]);
+        g.beginPath(); outline.forEach(pane0); g.stroke();
+        g.restore();
+      }
     }
     // the parts that are not measured (other surfaces, outside the disk) fade into the background
     let fadeTo = null;
