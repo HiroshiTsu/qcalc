@@ -70,6 +70,36 @@ Paste in Play Console under "Release notes" (up to 500 characters per language).
 each user the notes in their language: put all the blocks into the field (from 1.9.0 also the Spanish one,
 es-419, after the Spanish translation of the listing has been added; listing-es.md).
 
+1.9.5 (when 1.9.4 was already released):
+
+<en-US>
+• 3D graph: a sphere drawn together with other surfaces, such as ∂f/∂x from "Partial derivatives", stays one ball in one color
+• A surface that rises out of the box is cut smoothly at the top and bottom of the box, not in jagged spikes
+</en-US>
+<ja-JP>
+・3D グラフ：「偏微分」の ∂f/∂x など、ほかの曲面と一緒に描いても、球は 1 色の 1 つの球のままです
+・箱の上や下にはみ出す曲面を、ぎざぎざのとげにせず、箱の上面・下面でなめらかに切ります
+</ja-JP>
+<es-419>
+• Gráfico 3D: una esfera dibujada junto con otras superficies, como ∂f/∂x de "Derivadas parciales", sigue siendo una sola bola de un color
+• Una superficie que sale de la caja se corta de forma suave en la parte superior e inferior de la caja, sin picos dentados
+</es-419>
+
+1.9.5 (when 1.9.0, 1.9.1 or 1.9.2 was already released; the changes of 1.9.3 to 1.9.5):
+
+<en-US>
+• Fixed: area, length, volume and surface area are measured only where the functions have real values: the sample "Circle" gives the area and the perimeter 4π, the "Doughnut" the volume 4π². Only the digits that are right are shown
+• 3D graph: a sphere is one round, smooth ball, also with other surfaces; surfaces leaving the box are cut smoothly; "1:1" set for one graph no longer flattens later ones
+</en-US>
+<ja-JP>
+・修正：面積・長さ・体積・表面積は、関数に実数の値がある部分だけで計算します。サンプル「円」の面積と周の長さは 4π、「ドーナツ」の体積は 4π² になり、正しい桁だけを示します
+・3D グラフ：球はほかの曲面と一緒でも 1 つのなめらかな球に。箱からはみ出す曲面はなめらかに切ります。あるグラフで「1:1」を切っても、ほかのグラフはつぶれません
+</ja-JP>
+<es-419>
+• Corregido: el área, la longitud, el volumen y el área superficial se miden solo donde las funciones tienen valores reales: la muestra "Círculo" da el área y el perímetro 4π, la "Dona" el volumen 4π². Solo se muestran las cifras correctas
+• Gráfico 3D: una esfera es una sola bola suave, también con otras superficies; las superficies que salen de la caja se cortan suavemente; "1:1" de un gráfico ya no aplana los siguientes
+</es-419>
+
 1.9.4 (when 1.9.3 was already released):
 
 <en-US>
