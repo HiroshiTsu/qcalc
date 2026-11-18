@@ -4146,7 +4146,9 @@
     if (kept && (kept.res || kept.ms >= ms)) { exactCache.delete(key); exactCache.set(key, kept); return kept.res; }
     const r = await Bridge.send('calc', { expr, opts: iOpts(), timeout: ms });
     let res = null;
-    if (r.ok && r.result && !/∫|integrate/.test(r.result) && !(r.messages || []).some((m) => m.type === 'error' || /integrate|approximated/i.test(m.text))) {
+    // (1.11.0: nor a decimal the engine marks as approximate without saying so, as for
+    // integrate(2π x² √(4x² + 1), 0, 1) = 3.809729705: it was shown with "=" as if it were exact)
+    if (r.ok && r.result && !/∫|integrate/.test(r.result) && !(r.approx && r.result.indexOf(' ≈ ') < 0) && !(r.messages || []).some((m) => m.type === 'error' || /integrate|approximated/i.test(m.text))) {
       const v = Number(numberPart(r.result));
       if (isFinite(v)) res = { text: r.result, exact: r.result.split(' ≈ ')[0].trim(), v };
     }
@@ -4296,13 +4298,24 @@
   async function sumValues(parts) {
     const v = parts.reduce((t, p) => t + p.v, 0);
     if (parts.length > 1 && parts.every((p) => p.exact)) {
-      const r = await exactIntegral(parts.map((p) => '(' + p.exact + ')').join(' + '), 3000);
+      const expr = parts.map((p) => '(' + p.exact + ')').join(' + ');
+      const r = await exactIntegral(expr, 3000);
       if (r && Math.abs(r.v - v) <= 1e-6 * Math.max(1, Math.abs(v))) return r;
+      // 1.11.0: a sum that the setting "auto" shows as a decimal only (√2 π + π): its exact form
+      const x = await exactForm(expr);
+      if (x) return { text: x + ' ≈ ' + fmtV(+v.toPrecision(10)), exact: x, v };
     }
     const digits = Math.min(...parts.map((p) => p.digits || 10));
     return parts.length === 1 ? parts[0] : { text: '≈ ' + fmtV(+v.toPrecision(digits)), exact: '', v, digits };
   }
   const shownValue = (val) => (val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text);
+  // the exact form of an expression of exact values (calculated with "exact"), or ''
+  async function exactForm(expr) {
+    const r = await Bridge.send('calc', { expr, opts: iOpts({ approx: 'exact' }), timeout: 3000 });
+    if (!r.ok || !r.result || r.timeout || r.approx || (r.messages || []).some((m) => m.type === 'error')) return '';
+    const t = r.result.split(' ≈ ')[0].split(' = ')[0].trim();
+    return /integrate|∫|^[−-]?[\d.]+(e[−+-]?\d+)?$/.test(t) ? '' : t;
+  }
 
   // ------------------------- only where the functions have real values (1.9.3)
   // A range (2D) or a region (3D) can reach where a function has no real value: √(4 − x²) beyond
