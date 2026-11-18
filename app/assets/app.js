@@ -5932,7 +5932,9 @@
   // there are no seams between the cells. The surface is lit like a smooth, glossy object: light from
   // the sky above and less from the floor, a lamp at the upper left with a highlight, and a little of
   // the bright surroundings mirrored at a slant. The lines of the grid (a coarse grid) are drawn in
-  // the same pass, so the ones that are hidden stay hidden. The edges are smoothed.
+  // the same pass, so the ones that are hidden stay hidden. The edges are smoothed. From 1.11.0 the
+  // lamp also casts shadows, on the surfaces themselves and on the floor of the box (lampMap,
+  // lampLit, floorShadow).
   // The triangles: 11 numbers for each corner (CV), x and y (CSS pixels), depth (larger is farther),
   // the normal in the camera's axes (x right, y up, z away from the eye; any length: it is blended in a
   // straight line across the triangle and then made of length 1), the color (r, g, b) and the grid
@@ -5948,9 +5950,193 @@
     };
     return a;
   }
+  // the lamp of the 3D graph, the light at the upper left in front that gives the highlight, as the
+  // direction toward it in the camera's axes (x right, y up, z away from the eye), of length 1
+  const LAMP = (() => { const l = Math.hypot(-0.42, 0.62, -0.66); return [-0.42 / l, 0.62 / l, -0.66 / l]; })();
+  // ---- shadows from the lamp (1.11.0)
+  // The surfaces as the lamp sees them, for the shadows that they cast on themselves and on each other
+  // (a hill on the valley behind it, one wave on the next): looking along the light, every point of a
+  // surface has a place (a, b) across the light and a distance toward it; the map keeps, for each cell
+  // of a grid over (a, b), the distance of the point nearest the lamp. A point lies in the shadow when
+  // the map has a point nearer the lamp in its cell. The light is parallel (the lamp far away), as the
+  // projection is. tri: the triangles (triBuf.f; x and y in CSS pixels, the depth), nt their number,
+  // cam: { cx, cy, S } (the screen's centre and the scale, from the box's axes to CSS pixels); the
+  // cells are about one CSS pixel. C keeps the buffer. Returns the map, or null.
+  function lampMap(tri, nt, cam, C) {
+    const [lx, ly, lz] = LAMP;
+    // two directions across the light: A level (no y), B = L × A
+    let ax = lz, az = -lx;
+    const al = Math.hypot(ax, az); ax /= al; az /= al;
+    const bx = ly * az, by = lz * ax - lx * az, bz = -ly * ax;
+    const n3 = nt * 3, pa = new Float32Array(n3), pb = new Float32Array(n3), pd = new Float32Array(n3);
+    let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
+    for (let v = 0; v < n3; v++) {
+      const x = (tri[v * CV] - cam.cx) / cam.S, y = (cam.cy - tri[v * CV + 1]) / cam.S, z = tri[v * CV + 2];
+      const a = x * ax + z * az, b = x * bx + y * by + z * bz;
+      pa[v] = a; pb[v] = b; pd[v] = -(x * lx + y * ly + z * lz);
+      if (a < a0) a0 = a; if (a > a1) a1 = a; if (b < b0) b0 = b; if (b > b1) b1 = b;
+    }
+    if (!(a1 > a0 && b1 > b0)) return null;
+    // (cells of one CSS pixel, at most 900 on a side)
+    const cell = Math.max(1 / cam.S, (a1 - a0) / 900, (b1 - b0) / 900);
+    const MW = Math.ceil((a1 - a0) / cell) + 6, MH = Math.ceil((b1 - b0) / cell) + 6, n = MW * MH;
+    if (!C.lampBuf || C.lampBuf.length < n) C.lampBuf = new Float32Array(n);
+    const map = C.lampBuf;
+    map.fill(Infinity, 0, n);
+    let d0 = 0, d1 = 0, d2 = 0;
+    const px = (i, l0, l1, l2) => { const d = l0 * d0 + l1 * d1 + l2 * d2; if (d < map[i]) map[i] = d; };
+    const ox = 3 - a0 / cell, oy = 3 - b0 / cell, ic = 1 / cell;
+    for (let t = 0; t < nt; t++) {
+      const v = 3 * t;
+      d0 = pd[v]; d1 = pd[v + 1]; d2 = pd[v + 2];
+      rasterTri(pa[v] * ic + ox, pb[v] * ic + oy, pa[v + 1] * ic + ox, pb[v + 1] * ic + oy, pa[v + 2] * ic + ox, pb[v + 2] * ic + oy, MW, MH, px);
+    }
+    // the nearest and the farthest distance in each block of 4 × 4 cells (from the cell on, right and
+    // down): a point whose block is all nearer than itself, or all farther, needs no more than one look
+    if (!C.lampMin || C.lampMin.length < n) { C.lampMin = new Float32Array(n); C.lampMax = new Float32Array(n); C.lampT = new Float32Array(2 * n); }
+    const mn = C.lampMin, mx = C.lampMax, tn = C.lampT;
+    for (let j = 0; j < MH; j++) {
+      const r = j * MW;
+      for (let i = 0; i + 3 < MW; i++) {
+        const k = r + i, a = map[k], b2 = map[k + 1], c2 = map[k + 2], d = map[k + 3];
+        tn[k] = Math.min(a, b2, c2, d); tn[n + k] = Math.max(a, b2, c2, d);
+      }
+    }
+    for (let j = 0; j + 3 < MH; j++) {
+      for (let i = 0; i + 3 < MW; i++) {
+        const k = j * MW + i;
+        mn[k] = Math.min(tn[k], tn[k + MW], tn[k + 2 * MW], tn[k + 3 * MW]);
+        mx[k] = Math.max(tn[n + k], tn[n + k + MW], tn[n + k + 2 * MW], tn[n + k + 3 * MW]);
+      }
+    }
+    return { map, mn, mx, MW, MH, cell, ic, ox, oy, ax, az, bx, by, bz, cam, w: new Float64Array(8), k0: 0.8, k1: 1.2, k2: 0.6, k3: 0.9 };
+  }
+  // How much of the lamp reaches a point (x, y, z in the camera's axes, the box's scale) whose normal
+  // (toward the eye, length 1) is n and whose light from the lamp is dif (n · L, > 0): 1 in the light,
+  // 0 in the shadow, between them at the edge of a shadow. The point is first moved off its surface
+  // along its normal, by an amount that grows as the light comes at a slant, and its distance is
+  // compared with a margin that grows the same way: otherwise a surface would shade itself in stripes
+  // ("shadow acne"), the map being coarser than the screen. The edge is soft: the answer is blended
+  // from the cells around the point, with weights that fall off over one and a half cells.
+  function lampLit(M, x, y, z, nx, ny, nz, dif) {
+    const lx = LAMP[0], ly = LAMP[1], lz = LAMP[2], c = M.cell;
+    const sl = Math.sqrt(Math.max(0, 1 - dif * dif)), tg = Math.min(6, sl / dif);
+    const off = c * (M.k0 + M.k1 * sl);
+    x += nx * off; y += ny * off; z += nz * off;
+    const d = -(x * lx + y * ly + z * lz) - c * (M.k2 + M.k3 * tg);
+    const ma = (x * M.ax + z * M.az) * M.ic + M.ox, mb = (x * M.bx + y * M.by + z * M.bz) * M.ic + M.oy;
+    const ia = Math.floor(ma - 1), ib = Math.floor(mb - 1), MW = M.MW;
+    if (!(ia >= 0 && ib >= 0 && ia + 3 < MW && ib + 3 < M.MH)) return 1;  // (nothing there casts a shadow)
+    let k = ib * MW + ia;
+    if (M.mn[k] >= d) return 1;
+    if (M.mx[k] < d) return 0;
+    const w = M.w, map = M.map;
+    let sa = 0, sb = 0;
+    for (let m = 0; m < 4; m++) {
+      const wa = 1 - Math.abs(ma - (ia + m + 0.5)) / 1.5, wb = 1 - Math.abs(mb - (ib + m + 0.5)) / 1.5;
+      w[m] = wa > 0 ? wa : 0; w[4 + m] = wb > 0 ? wb : 0; sa += w[m]; sb += w[4 + m];
+    }
+    let lit = 0;
+    for (let j = 0; j < 4; j++, k += MW) {
+      const wb = w[4 + j];
+      if (!wb) continue;
+      let row = 0;
+      for (let m = 0; m < 4; m++) if (w[m] && map[k + m] >= d) row += w[m];
+      lit += row * wb;
+    }
+    return lit / (sa * sb);
+  }
+  // a blur of the values a (n = w × h) into b, about r cells wide: a box of 2r + 1 cells across and
+  // then down, twice (close to a Gaussian); t is a buffer of the same size
+  function boxBlur(a, b, t, w, h, r) {
+    const pass = (src, dst, len, count, step, stride) => {
+      const k = 1 / (2 * r + 1);
+      for (let c = 0; c < count; c++) {
+        const o = c * stride;
+        let s = 0;
+        for (let i = -r; i <= r; i++) s += src[o + Math.min(len - 1, Math.max(0, i)) * step];
+        for (let i = 0; i < len; i++) {
+          dst[o + i * step] = s * k;
+          s += src[o + Math.min(len - 1, i + r + 1) * step] - src[o + Math.max(0, i - r) * step];
+        }
+      }
+    };
+    pass(a, t, w, h, 1, w); pass(t, b, h, w, w, 1);
+    pass(b, t, w, h, 1, w); pass(t, b, h, w, w, 1);
+  }
+  // The shadow of the surfaces on the floor of the box, from the lamp: each triangle is laid on the
+  // floor along the light, so the shadow falls to the side away from the lamp and not straight down
+  // (from straight above, a surface z = f(x, y) would only darken the whole floor). Where it is cast
+  // by a part of a surface near the floor it is dark and sharp, and where by a high part pale and
+  // soft, as a shadow is: on a layer of half the size, every point of the floor keeps the height of
+  // the lowest part of a surface above it along the light; the strength follows that height, and the
+  // softness too, from three blurs of the shadow (about 2, 6 and 14 CSS pixels) blended by the height
+  // of the surfaces around the point. tb: the triangles; o: the turn of the camera (ca, sa, ce, se),
+  // the half sizes of the box (EX, EY, EZ), cam ({ cx, cy, S }), W and H of the canvas, dark, cache,
+  // pane0 (a path on the floor). Returns what was drawn, or null when the lamp is not above the floor.
+  function floorShadow(g, tb, o) {
+    const { ca, sa, ce, se, EX, EY, EZ, cam } = o;
+    const lx = LAMP[0], ly = LAMP[1], lz = LAMP[2];
+    // the direction of the lamp in the box's axes (u, v, w): the camera's axes turned back (camN)
+    const lu = ca * lx + sa * se * ly + sa * ce * lz, lv = -sa * lx + ca * se * ly + ca * ce * lz, lw = ce * ly - se * lz;
+    if (!(lw > 0.2)) return null;
+    const T = tb.f, nt = tb.n, K = 0.5, LW = Math.ceil(o.W * K), LH = Math.ceil(o.H * K), n = LW * LH;
+    const C = o.cache;
+    if (!C.floorBuf || C.floorBuf.n < n) C.floorBuf = { n, h: new Float32Array(n), a: new Float32Array(n), m: new Float32Array(n), b1: new Float32Array(n), b2: new Float32Array(n), b3: new Float32Array(n), hb: new Float32Array(n), t: new Float32Array(n) };
+    const B = C.floorBuf, fh = B.h;
+    fh.fill(Infinity, 0, n);
+    let h0 = 0, h1 = 0, h2 = 0;
+    const px = (i, l0, l1, l2) => { const h = l0 * h0 + l1 * h1 + l2 * h2; if (h < fh[i]) fh[i] = h; };
+    const fx = [0, 0, 0], fy = [0, 0, 0], fz = [0, 0, 0], iS = 1 / cam.S;
+    for (let t = 0; t < nt; t++) {
+      for (let m = 0; m < 3; m++) {
+        const k = t * CT + m * CV;
+        const xc = (T[k] - cam.cx) * iS, yc = (cam.cy - T[k + 1]) * iS, zc = T[k + 2];
+        const u = ca * xc + sa * se * yc + sa * ce * zc, v = -sa * xc + ca * se * yc + ca * ce * zc, w = ce * yc - se * zc;
+        // along the light down to the floor, then on the screen (proj with w = −EZ), on the layer
+        const h = w + EZ > 0 ? w + EZ : 0, f = h / lw, fu = u - lu * f, fv = v - lv * f;
+        fx[m] = (cam.cx + (fu * ca - fv * sa) * cam.S) * K; fy[m] = (cam.cy - (-EZ * ce + (fu * sa + fv * ca) * se) * cam.S) * K; fz[m] = h;
+      }
+      h0 = fz[0]; h1 = fz[1]; h2 = fz[2];
+      rasterTri(fx[0], fy[0], fx[1], fy[1], fx[2], fy[2], LW, LH, px);
+    }
+    // the strength (1 under a surface on the floor, 0.28 under one at the top of the box) and the height
+    const A = B.a, M = B.m, H2 = 2 * EZ;
+    let any = 0;
+    for (let i = 0; i < n; i++) {
+      const h = fh[i];
+      if (h === Infinity) { A[i] = 0; M[i] = 0; fh[i] = 0; continue; }
+      const f = h < H2 ? h / H2 : 1;
+      A[i] = 1 - 0.72 * f; M[i] = 1; fh[i] = h; any++;
+    }
+    if (!any) return { px: 0 };
+    boxBlur(A, B.b1, B.t, LW, LH, 1); boxBlur(A, B.b2, B.t, LW, LH, 3); boxBlur(A, B.b3, B.t, LW, LH, 7);
+    boxBlur(fh, B.hb, B.t, LW, LH, 7); boxBlur(M, M, B.t, LW, LH, 7);
+    const img = new ImageData(LW, LH), d = img.data, col = o.dark ? [0, 0, 0] : [28, 38, 66], A0 = (o.dark ? 0.5 : 0.3) * 255;
+    for (let i = 0; i < n; i++) {
+      const m = M[i];
+      if (!(m > 0.002)) continue;
+      // (the height of the surfaces around: 0 near the floor, 1 at the top; it picks the blur)
+      let f = B.hb[i] / m / H2;
+      f = f < 0 ? 0 : f > 1 ? 1 : f;
+      const s = f < 0.5 ? B.b1[i] + (B.b2[i] - B.b1[i]) * f * 2 : B.b2[i] + (B.b3[i] - B.b2[i]) * (f * 2 - 1);
+      const o4 = i * 4;
+      d[o4] = col[0]; d[o4 + 1] = col[1]; d[o4 + 2] = col[2]; d[o4 + 3] = s * A0;
+    }
+    const L = C.floorLayer || (C.floorLayer = document.createElement('canvas'));
+    if (L.width !== LW || L.height !== LH) { L.width = LW; L.height = LH; }
+    L.getContext('2d').putImageData(img, 0, 0);
+    g.save();
+    g.beginPath(); o.pane0([[-EX, -EY], [EX, -EY], [EX, EY], [-EX, EY]]); g.clip();
+    g.imageSmoothingEnabled = true;
+    g.drawImage(L, 0, 0, LW / K, LH / K);
+    g.restore();
+    return { px: any };
+  }
   // tb: the triangles (triBuf); o: W and H of the canvas (CSS pixels), q (pixels of the layer for each
   // CSS pixel), dark, mesh (the color of the grid lines [r, g, b, alpha] and their width, or null), fade
-  // (a color the surfaces fade halfway to, or null), cache (an object that keeps the buffers)
+  // (a color the surfaces fade halfway to, or null), cache (an object that keeps the buffers), shadow
+  // ({ cx, cy, S }: the surfaces cast shadows from the lamp, 1.11.0; or null)
   function surfacePaint(g, tb, o) {
     const T = tb.f, nt = tb.n, q = o.q, none = { shown: 0, q };
     if (!nt) return none;
@@ -5996,10 +6182,9 @@
         }
       }
     }
-    // the light (camera's axes): a lamp at the upper left in front, the eye looking along +z
+    // the light (camera's axes): a lamp at the upper left in front (LAMP), the eye looking along +z
     const dark = !!o.dark;
-    let Lx = -0.42, Ly = 0.62, Lz = -0.66;
-    const ll = Math.hypot(Lx, Ly, Lz); Lx /= ll; Ly /= ll; Lz /= ll;
+    const Lx = LAMP[0], Ly = LAMP[1], Lz = LAMP[2];
     let Hx = Lx, Hy = Ly, Hz = Lz - 1;
     const hl = Math.hypot(Hx, Hy, Hz); Hx /= hl; Hy /= hl; Hz /= hl;
     const AMB = dark ? 0.3 : 0.34, SKY = 0.08, DIF = dark ? 0.66 : 0.62, KS = dark ? 0.42 : 0.38, SH = 56;
@@ -6013,6 +6198,13 @@
     const out = new ImageData(LW, LH), od = out.data;
     let shown = 0;
     const halfW = mesh ? mesh[4] * q / 2 : 0;
+    // the shadows from the lamp (1.11.0): the map of the surfaces as the lamp sees them, and for each
+    // pixel its point in the camera's axes (from its place on the screen and its depth)
+    const t0 = performance.now();
+    const SM = o.shadow ? lampMap(T, nt, o.shadow, C) : null;
+    const tMap = performance.now() - t0;
+    const scx = SM ? SM.cam.cx : 0, scy = SM ? SM.cam.cy : 0, iS = SM ? 1 / SM.cam.S : 0;
+    let inShadow = 0, edge = 0;
     for (let i = 0; i < NP; i++) {
       const s = id[i];
       if (s < 0) continue;
@@ -6030,8 +6222,19 @@
       // the surroundings mirrored more at a slant (Fresnel)
       const dif = nx * Lx + ny * Ly + nz * Lz, nh = nx * Hx + ny * Hy + nz * Hz;
       const fil = nx * Fx + ny * Fy + nz * Fz;
-      const kd = AMB + SKY * ny + DIF * (dif > 0 ? dif : 0) + FILL * (fil > 0 ? fil : 0);
-      const sp = nh > 0 ? KS * Math.pow(nh, SH) * 255 : 0;
+      // (in a shadow the lamp's light and its highlight are gone; the light of the sky, the light from
+      // below and what is mirrored stay. Where the lamp only grazes the surface it gives little light
+      // anyway, and there the shadow fades out: the map is least sure there, and it saves time)
+      let lit = 1;
+      if (SM && dif > 0.04) {
+        const py = (i / LW) | 0, pxl = i - py * LW;
+        lit = lampLit(SM, ((lx0 + pxl + 0.5) / q - scx) * iS, (scy - (ly0 + py + 0.5) / q) * iS, zb[i], nx, ny, nz, dif);
+        if (dif < 0.12) lit = 1 - (1 - lit) * (dif - 0.04) / 0.08;
+        if (lit < 0.5) inShadow++;
+        if (lit > 0 && lit < 1) edge++;
+      }
+      const kd = AMB + SKY * ny + DIF * (dif > 0 ? dif * lit : 0) + FILL * (fil > 0 ? fil : 0);
+      const sp = nh > 0 && lit > 0 ? KS * Math.pow(nh, SH) * 255 * lit : 0;
       const c = -nz, om = 1 - (c > 0 ? c : 0), fr = ENV * (0.04 + 0.96 * om * om * om * om * om);
       r = (r * kd) * (1 - fr) + env[0] * fr + sp; gg = (gg * kd) * (1 - fr) + env[1] * fr + sp; b = (b * kd) * (1 - fr) + env[2] * fr + sp;
       // the lines of the grid
@@ -6103,7 +6306,7 @@
     g.imageSmoothingEnabled = true;
     g.drawImage(off, lx0 / q, ly0 / q, LW / q, LH / q);
     g.restore();
-    return { shown, q };
+    return { shown, q, shadow: SM ? { px: inShadow, edge, map: [SM.MW, SM.MH], ms: Math.round(tMap * 10) / 10 } : null };
   }
   // the slope at p0 (value w0) from the points on its two sides, [place, value] (a: before, b: after;
   // null if none): the parabola through the three, or the line to the one there is
@@ -7043,9 +7246,20 @@
       }
       for (let m = 1; m + 1 < vs.length; m++) tb.add(vs[0], vs[m], vs[m + 1]);
     }
-    const surf = surfacePaint(g, tb, { W, H, q: Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3 });
-    // (what was drawn, for the tests)
-    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid });
+    // shadows from the lamp of the highlight (1.11.0): on the floor of the box (while it is at the
+    // back, seen from above) and of the surfaces on themselves and on each other. Not while the graph
+    // is turned (they come with the full drawing when the finger is lifted), so that turning is as
+    // smooth as before; and not while "Volume and surface" shows the measured solid, which keeps its
+    // own look (the liquid casts no shadow from the lamp, and the shadows of the other surfaces alone
+    // looked out of place there).
+    const shadows = !Q3.turning && !vc;
+    const tf = performance.now();
+    const floor = shadows && wb === -EZ ? floorShadow(g, tb, { ca, sa, ce, se, EX, EY, EZ, cam: { cx, cy, S }, W, H, dark, cache: Q3, pane0 }) : null;
+    if (floor) floor.ms = Math.round((performance.now() - tf) * 10) / 10;
+    const surf = surfacePaint(g, tb, { W, H, q: Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S } : null });
+    // (what was drawn, for the tests; shadow: the pixels in a shadow and at the soft edge of one, the
+    // size of the lamp's map and the time to make it; floor: the cells of the floor's layer in a shadow)
+    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
     if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
