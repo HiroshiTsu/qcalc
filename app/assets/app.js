@@ -5635,16 +5635,11 @@
     showResult(surf, tr('Surface area ', '表面積 ') + shownValue(all));
     surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
   }
-  // whether "Enclosed" fits the surfaces that are chosen: f − g takes both signs on the drawn grid, or
-  // f − g ≥ 0 where they are real but they are not real everywhere (they end, as a sphere's halves)
-  function encFits(S) {
-    if (signChanges(S)) return true;
-    if (!S.g) return false;
-    const f = S.f.z, g = S.g.z;
-    let real = 0, not = 0;
-    for (let k = 0; k < f.length; k++) { if (f[k] === f[k] && g[k] === g[k] && f[k] !== null && g[k] !== null) real++; else not++; }
-    return real > 0 && not > 0;
-  }
+  // whether "Enclosed" is the first choice for the surfaces that are chosen: two surfaces that cross
+  // in the drawn range (f − g takes both signs on its grid). One surface with z = 0, or two that only
+  // meet where they end (the halves of a sphere), keep the rectangle as before (it gives the same values
+  // there); "Enclosed" can be chosen for them
+  const encFits = (S) => !!S.g && signChanges(S);
 
   // the functions of a graph: one in each line; a line "sin(x), cos(x)" is two (a "," or ";" outside
   // parentheses). Returns the first `max` of them; .more is how many were left out.
