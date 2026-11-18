@@ -2967,6 +2967,8 @@
     tr('Find functions, units and constants in the lists in the menu (search by name or description, for example "integral", "mile" or "speed of light").', '関数・単位・定数は、メニューの一覧から日本語でも探せます（例：「積分」「マイル」「光速」）。'),
     tr('Draw graphs with "Graph" in the menu: 2D graphs of y = f(x) and 3D graphs of z = f(x, y). Expressions with derivatives or integrals such as diff(x^3 − 3x) can be drawn as they are.', 'グラフはメニューの「グラフ」から。y = f(x) の 2D と、z = f(x, y) の 3D が描けます。diff(x^3 − 3x) のように、微分や積分の式もそのまま描けます。'),
     tr('An expression cleared with AC comes back with "Undo", which appears right after.', 'AC で消した式は、すぐ後に出る「元に戻す」で戻せます。'),
+    tr('"Shapes" also has a frustum of a cone, a hemisphere, a spherical cap, an ellipsoid, prisms and a pipe, and "Tanks": the amount of liquid in a tank lying down or standing, a sphere or a cone with its point down from the height of the liquid (with how full it is), and the height for an amount (1000 L). Round sizes can be typed as diameters; volumes can be shown in L, mL, m³, cm³, US gal or ft³, and a material (water, concrete, iron…) gives the weight.',
+      '「図形」には円錐台・半球・球欠・楕円体・角柱・パイプもあります。「容器の液量」では、横置き・縦置きの円筒、球形、下向きの円錐のタンクの液面の高さから液量（満杯に対する割合も）を出し、液量（1000 L など）から高さも出します。丸い形の大きさは直径でも入れられ、体積は L・mL・m³・cm³・US gal・ft³ で表示でき、材料（水・コンクリート・鉄など）を選ぶと重さも出ます。'),
     tr('Areas, lengths and volumes of shapes: "Shapes" in the menu. Choose a circle, a triangle, a cylinder and so on, type the sizes, and the results appear at once. In a graph, "Area and length" shades the area, and its edges can be dragged.', '図形の面積・長さ・体積は、メニューの「図形」で求められます。円・三角形・円柱などを選んで大きさを入れると、結果がすぐに出ます。グラフでは「面積・長さ」で面積に色が付き、両端をドラッグして範囲を変えられます。'),
     tr('Below a graph there is a row of samples (a heart, waves, a doughnut, a ripple …): tap one to draw it, then change its functions and ranges as you like.', 'グラフの下にサンプル（ハート、波、ドーナツ、波紋など）が並んでいます。タップすると描けるので、式や範囲を変えて試せます。'),
     tr('In a form, ↶ and ↷ undo and redo, and ⋯ clears all boxes. A form closed without being used keeps its boxes. The matrix form keeps its matrix for the next calculation, takes a table pasted from a spreadsheet, and its ⋯ menu inserts or deletes a row or a column.', 'フォームでは ↶ ↷ で「元に戻す」「やり直す」、⋯ で「すべての欄を消去」ができます。使わずに閉じたフォームは、次に開くと欄がそのまま残っています。行列の画面は入れた行列を次の計算まで覚えていて、表計算ソフトの表を貼り付けでまとめて入れられ、⋯ から行や列の挿入・削除もできます。')
@@ -7821,14 +7823,14 @@
   const GEO_TRI = '<path class="g" d="M20 90H140L95 20Z"/>';
   const GEO_S = '(({a} + {b} + {c}) / 2)';
   const GEO = [
-    { k: 'circle', d: 2, name: tr('Circle', '円'), graph: true, p: [['r', tr('Radius', '半径')]], def: ['2'],
+    { k: 'circle', d: 2, name: tr('Circle', '円'), graph: true, p: [['r', tr('Radius', '半径'), '', 'r', tr('Diameter', '直径')]], def: ['2'],
       out: [[tr('Area', '面積'), 'π r²', 'π × {r}^2', 2], [tr('Circumference', '円周'), '2π r', '2π × {r}', 1], [tr('Diameter', '直径'), '2 r', '2 × {r}', 1]],
       pic: '<circle class="g" cx="80" cy="55" r="42"/><path class="d" d="M80 55H122"/><circle class="c" cx="80" cy="55" r="2.5"/><text x="97" y="49">r</text>' },
     { k: 'ellipse', d: 2, name: tr('Ellipse', '楕円'), graph: true, p: [['a', tr('Half width', '横の半径')], ['b', tr('Half height', '縦の半径')]], def: ['3', '2'],
       out: [[tr('Area', '面積'), 'π a b', 'π × {a} × {b}', 2],
         [tr('Perimeter', '周の長さ'), tr('no simple formula: by a sum', '簡単な公式がないため数値で計算'), 'sum(√({a}^2 × sin(\\k × {turn}/360)^2 + {b}^2 × cos(\\k × {turn}/360)^2), 1, 360, \\k) × 2π/360', 1, true]],
       pic: '<ellipse class="g" cx="80" cy="55" rx="62" ry="38"/><path class="d" d="M80 55H142M80 55V17"/><circle class="c" cx="80" cy="55" r="2.5"/><text x="108" y="50">a</text><text x="66" y="38">b</text>' },
-    { k: 'sector', d: 2, name: tr('Sector', '扇形'), p: [['r', tr('Radius', '半径')], ['t', tr('Angle (degrees)', '中心角（度）'), 'deg', 'θ']], def: ['3', '60'],
+    { k: 'sector', d: 2, name: tr('Sector', '扇形'), p: [['r', tr('Radius', '半径'), '', 'r', tr('Diameter', '直径')], ['t', tr('Angle (degrees)', '中心角（度）'), 'deg', 'θ']], def: ['3', '60'],
       out: [[tr('Area', '面積'), 'π r² × θ/360', 'π × {r}^2 × {t} / 360', 2], [tr('Arc length', '弧の長さ'), '2π r × θ/360', '2π × {r} × {t} / 360', 1], [tr('Perimeter', '周の長さ'), tr('arc + 2 r', '弧 + 2 r'), '2π × {r} × {t} / 360 + 2 × {r}', 1]],
       pic: '<path class="g" d="M36 92H132A96 96 0 0 0 97.7 18.5Z"/><path class="d" d="M62 92A26 26 0 0 0 52.7 72.1"/><text x="80" y="106">r</text><text x="66" y="80">θ</text>' },
     { k: 'rect', d: 2, name: tr('Rectangle', '長方形'), p: [['a', tr('Width', '横')], ['b', tr('Height', '縦')]], def: ['4', '3'],
@@ -7853,13 +7855,13 @@
         for (let i = 0; i < n; i++) { const t = Math.PI / 2 + Math.PI / n + i * 2 * Math.PI / n; pt.push((80 + 44 * Math.cos(t)).toFixed(1) + ' ' + (52 + 44 * Math.sin(t)).toFixed(1)); }
         return `<path class="g" d="M${pt.join('L')}Z"/><text x="76" y="${(52 + 44 * Math.cos(Math.PI / n) + 13).toFixed(0)}">a</text>`;
       } },
-    { k: 'sphere', d: 3, name: tr('Sphere', '球'), graph: true, p: [['r', tr('Radius', '半径')]], def: ['2'],
+    { k: 'sphere', d: 3, name: tr('Sphere', '球'), graph: true, p: [['r', tr('Radius', '半径'), '', 'r', tr('Diameter', '直径')]], def: ['2'],
       out: [[tr('Volume', '体積'), '4/3 π r³', '4/3 × π × {r}^3', 3], [tr('Surface area', '表面積'), '4π r²', '4π × {r}^2', 2]],
       pic: '<circle class="g" cx="80" cy="55" r="44"/><path class="e" d="M36 55A44 13 0 0 0 124 55"/><path class="e h" d="M36 55A44 13 0 0 1 124 55"/><path class="d" d="M80 55H124"/><circle class="c" cx="80" cy="55" r="2.5"/><text x="98" y="49">r</text>' },
-    { k: 'cyl', d: 3, name: tr('Cylinder', '円柱'), p: [['r', tr('Radius', '半径')], ['h', tr('Height', '高さ')]], def: ['2', '5'],
+    { k: 'cyl', d: 3, name: tr('Cylinder', '円柱'), p: [['r', tr('Radius', '半径'), '', 'r', tr('Diameter', '直径')], ['h', tr('Height', '高さ')]], def: ['2', '5'],
       out: [[tr('Volume', '体積'), 'π r² h', 'π × {r}^2 × {h}', 3], [tr('Surface area', '表面積'), '2π r (r + h)', '2π × {r} × ({r} + {h})', 2], [tr('Side area', '側面積'), '2π r h', '2π × {r} × {h}', 2]],
       pic: '<path class="g" d="M38 24V88A42 12 0 0 0 122 88V24"/><ellipse class="g" cx="80" cy="24" rx="42" ry="12"/><path class="e h" d="M38 88A42 12 0 0 1 122 88"/><path class="d" d="M80 24H122"/><text x="96" y="20">r</text><text x="128" y="62">h</text>' },
-    { k: 'cone', d: 3, name: tr('Cone', '円錐'), p: [['r', tr('Radius', '半径')], ['h', tr('Height', '高さ')]], def: ['3', '4'],
+    { k: 'cone', d: 3, name: tr('Cone', '円錐'), p: [['r', tr('Radius', '半径'), '', 'r', tr('Diameter', '直径')], ['h', tr('Height', '高さ')]], def: ['3', '4'],
       out: [[tr('Volume', '体積'), 'π r² h / 3', 'π × {r}^2 × {h} / 3', 3], [tr('Surface area', '表面積'), 'π r (r + s)', 'π × {r} × ({r} + √({r}^2 + {h}^2))', 2], [tr('Side area', '側面積'), 'π r s', 'π × {r} × √({r}^2 + {h}^2)', 2], [tr('Slant height s', '母線 s'), '√(r² + h²)', '√({r}^2 + {h}^2)', 1]],
       pic: '<path class="g" d="M34 88L80 12L126 88A46 12 0 0 1 34 88"/><path class="e h" d="M34 88A46 12 0 0 1 126 88"/><path class="d" d="M80 12V88H126"/><text x="85" y="54">h</text><text x="99" y="82">r</text><text x="110" y="46">s</text>' },
     { k: 'box', d: 3, name: tr('Box', '直方体'), p: [['a', tr('Width', '横')], ['b', tr('Depth', '奥行き')], ['c', tr('Height', '高さ')]], def: ['4', '3', '2'],
@@ -7868,16 +7870,161 @@
     { k: 'pyr', d: 3, name: tr('Square pyramid', '正四角錐'), p: [['a', tr('Side of the base', '底面の 1 辺')], ['h', tr('Height', '高さ')]], def: ['4', '3'],
       out: [[tr('Volume', '体積'), 'a² h / 3', '{a}^2 × {h} / 3', 3], [tr('Surface area', '表面積'), 'a² + 2 a √((a/2)² + h²)', '{a}^2 + 2 × {a} × √(({a} / 2)^2 + {h}^2)', 2]],
       pic: '<path class="g" d="M22 88H104L136 66L80 12Z"/><path class="g" d="M80 12L104 88"/><path class="e h" d="M22 88L54 66H136M80 12L54 66"/><path class="d" d="M80 12V77"/><text x="58" y="103">a</text><text x="85" y="52">h</text>' },
-    { k: 'torus', d: 3, name: tr('Torus (ring)', 'トーラス（輪）'), p: [['R', tr('Radius of the ring', '輪の半径')], ['r', tr('Radius of the tube', '管の半径')]], def: ['3', '1'],
+    { k: 'torus', d: 3, name: tr('Torus (ring)', 'トーラス（輪）'), p: [['R', tr('Radius of the ring', '輪の半径'), '', 'R', tr('Diameter of the ring', '輪の直径')], ['r', tr('Radius of the tube', '管の半径'), '', 'r', tr('Diameter of the tube', '管の直径')]], def: ['3', '1'],
       out: [[tr('Volume', '体積'), '2π² R r²', '2π^2 × {R} × {r}^2', 3], [tr('Surface area', '表面積'), '4π² R r', '4π^2 × {R} × {r}', 2]],
-      pic: '<ellipse class="g" cx="80" cy="55" rx="66" ry="38"/><path class="g hole" d="M52 52Q80 72 108 52Q80 38 52 52Z"/><path class="d" d="M80 55H127"/><path class="d r" d="M127 55H146"/><text x="98" y="49">R</text><text x="133" y="49">r</text>' }
+      pic: '<ellipse class="g" cx="80" cy="55" rx="66" ry="38"/><path class="g hole" d="M52 52Q80 72 108 52Q80 38 52 52Z"/><path class="d" d="M80 55H127"/><path class="d r" d="M127 55H146"/><text x="98" y="49">R</text><text x="133" y="49">r</text>' },
+    // 1.11.0: more solids, for real containers and parts: a frustum of a cone (a bucket, a pot), a
+    // hemisphere, a spherical cap, an ellipsoid, prisms and a pipe
+    { k: 'frustum', d: 3, name: tr('Frustum of a cone', '円錐台'), p: [['R', tr('Radius at the bottom', '下の半径'), '', 'R', tr('Diameter at the bottom', '下の直径')], ['r', tr('Radius at the top', '上の半径'), '', 'r', tr('Diameter at the top', '上の直径')], ['h', tr('Height', '高さ')]], def: ['3', '1', '4'],
+      out: [[tr('Volume', '体積'), 'π h (R² + R r + r²) / 3', 'π × {h} × ({R}^2 + {R} × {r} + {r}^2) / 3', 3],
+        [tr('Surface area', '表面積'), 'π (R + r) s + π (R² + r²)', 'π × ({R} + {r}) × √(({R} − {r})^2 + {h}^2) + π × ({R}^2 + {r}^2)', 2],
+        [tr('Side area', '側面積'), 'π (R + r) s', 'π × ({R} + {r}) × √(({R} − {r})^2 + {h}^2)', 2],
+        [tr('Slant height s', '母線 s'), '√((R − r)² + h²)', '√(({R} − {r})^2 + {h}^2)', 1]],
+      pic: '<path class="g" d="M30 90L54 22H106L130 90A50 12 0 0 1 30 90"/><ellipse class="g" cx="80" cy="22" rx="26" ry="7"/><path class="e h" d="M30 90A50 12 0 0 1 130 90"/><path class="d" d="M80 22H106M80 22V90H130"/><text x="88" y="17">r</text><text x="102" y="84">R</text><text x="66" y="60">h</text>' },
+    { k: 'hemi', d: 3, name: tr('Hemisphere', '半球'), p: [['r', tr('Radius', '半径'), '', 'r', tr('Diameter', '直径')]], def: ['2'],
+      out: [[tr('Volume', '体積'), '2/3 π r³', '2/3 × π × {r}^3', 3], [tr('Curved surface', '曲面の面積'), '2π r²', '2π × {r}^2', 2], [tr('Whole surface', '表面積（全体）'), '3π r²', '3π × {r}^2', 2]],
+      pic: '<path class="g" d="M34 78A46 46 0 0 1 126 78A46 12 0 0 1 34 78"/><path class="e h" d="M34 78A46 12 0 0 1 126 78"/><path class="d" d="M80 78H126"/><circle class="c" cx="80" cy="78" r="2.5"/><text x="98" y="72">r</text>' },
+    { k: 'cap', d: 3, name: tr('Spherical cap', '球欠'), p: [['r', tr('Radius of the sphere', '球の半径'), '', 'r', tr('Diameter of the sphere', '球の直径')], ['h', tr('Height', '高さ')]], def: ['5', '2'],
+      out: [[tr('Volume', '体積'), 'π h² (3r − h) / 3', 'π × {h}^2 × (3 × {r} − {h}) / 3', 3], [tr('Curved surface', '曲面の面積'), '2π r h', '2π × {r} × {h}', 2],
+        [tr('Radius of the base a', '底面の半径 a'), '√(h (2r − h))', '√({h} × (2 × {r} − {h}))', 1], [tr('Whole surface', '表面積（全体）'), '2π r h + π a²', '2π × {r} × {h} + π × {h} × (2 × {r} − {h})', 2]],
+      pic: '<path class="e h" d="M22 80A58 58 0 0 1 138 80"/><path class="g" d="M40 52A58 58 0 0 1 120 52A40 9 0 0 1 40 52"/><path class="e h" d="M40 52A40 9 0 0 1 120 52"/><path class="d" d="M80 23V52H120"/><text x="85" y="42">h</text><text x="98" y="66">a</text>' },
+    { k: 'ellipsoid', d: 3, name: tr('Ellipsoid', '楕円体'), p: [['a', tr('Half axis', '半軸')], ['b', tr('Half axis', '半軸')], ['c', tr('Half axis', '半軸')]], def: ['3', '2', '1'],
+      out: [[tr('Volume', '体積'), '4/3 π a b c', '4/3 × π × {a} × {b} × {c}', 3], [tr('Surface area', '表面積'), tr('no exact formula: by a double integral', '厳密な公式がないため数値で計算'), ellipsoidArea, 2, true]],
+      pic: '<ellipse class="g" cx="80" cy="55" rx="62" ry="38"/><path class="e" d="M18 55A62 12 0 0 0 142 55"/><path class="e h" d="M18 55A62 12 0 0 1 142 55"/><path class="d" d="M80 55H142M80 55V17M80 55L62 66"/><text x="108" y="50">a</text><text x="66" y="36">c</text><text x="58" y="80">b</text>' },
+    { k: 'nprism', d: 3, name: tr('Regular prism', '正 n 角柱'), p: [['n', tr('Number of sides', '辺の数'), 'n'], ['a', tr('Side', '1 辺の長さ')], ['h', tr('Height', '高さ')]], def: ['6', '2', '5'],
+      out: [[tr('Volume', '体積'), 'n a² h / (4 tan(180°/n))', '{n} × {a}^2 × {h} / (4 × tan({turn} / (2 × {n})))', 3],
+        [tr('Surface area', '表面積'), tr('2 × base + n a h', '2 × 底面積 + n a h'), '2 × {n} × {a}^2 / (4 × tan({turn} / (2 × {n}))) + {n} × {a} × {h}', 2],
+        [tr('Area of the base', '底面積'), 'n a² / (4 tan(180°/n))', '{n} × {a}^2 / (4 × tan({turn} / (2 × {n})))', 2]],
+      pic: '<path class="g" d="M38 30L59 18H101L122 30V84L101 96H59L38 84Z"/><path class="e" d="M38 30L59 42H101L122 30M59 42V96M101 42V96"/><path class="e h" d="M38 84L59 72H101L122 84M59 72V18M101 72V18"/><text x="74" y="110">a</text><text x="128" y="60">h</text>' },
+    { k: 'prism', d: 3, name: tr('Prism (base area × height)', '角柱（底面積 × 高さ）'), p: [['A', tr('Area of the base', '底面積'), 'a2', 'A'], ['h', tr('Height', '高さ')]], def: ['6', '5'],
+      out: [[tr('Volume', '体積'), 'A h', '{A} × {h}', 3]],
+      pic: '<path class="g" d="M30 34L70 20L130 30L118 46L46 50ZM30 34V84L46 100H118L130 80V30M46 50V100M118 46V100"/><path class="e h" d="M30 84L70 70L130 80M70 20V70"/><text x="74" y="40">A</text><text x="136" y="66">h</text>' },
+    { k: 'pipe', d: 3, name: tr('Pipe', 'パイプ（管）'), p: [['R', tr('Outer radius', '外側の半径'), '', 'R', tr('Outer diameter', '外径')], ['r', tr('Inner radius', '内側の半径'), '', 'r', tr('Inner diameter', '内径')], ['L', tr('Length', '長さ'), '', 'L']], def: ['3', '2', '10'],
+      out: [[tr('Volume of the wall', '管の材料の体積'), 'π (R² − r²) L', 'π × ({R}^2 − {r}^2) × {L}', 3], [tr('Volume inside', '中の容積'), 'π r² L', 'π × {r}^2 × {L}', 3],
+        [tr('Outer surface', '外側の面積'), '2π R L', '2π × {R} × {L}', 2], [tr('Inner surface', '内側の面積'), '2π r L', '2π × {r} × {L}', 2]],
+      pic: '<path class="g" d="M34 24A16 30 0 0 0 34 84H126A16 30 0 0 0 126 24Z"/><ellipse class="g" cx="34" cy="54" rx="16" ry="30"/><ellipse class="g hole" cx="34" cy="54" rx="10" ry="19"/><path class="d" d="M34 54V24M34 54H44"/><text x="16" y="42">R</text><text x="44" y="68">r</text><text x="78" y="100">L</text>' },
+    // the amount in a tank from the height of the liquid (1.11.0): lying cylinder, standing cylinder,
+    // sphere, cone with its point down. The picture shows the liquid; the amount can also be turned
+    // into the height (tankHeight)
+    { k: 'htank', d: 4, name: tr('Cylinder lying down', '横置きの円筒'), p: [['r', tr('Radius', '半径'), '', 'r', tr('Diameter', '直径')], ['L', tr('Length', '長さ'), '', 'L'], ['h', tr('Height of the liquid', '液面の高さ'), '', 'h']], def: ['1', '2', '1/2'],
+      out: [[tr('Liquid', '液量'), 'L (r² acos((r − h)/r) − (r − h) √(2rh − h²))', '{L} × ({r}^2 × acos(({r} − {h}) / {r}) × 2π / {turn} − ({r} − {h}) × √(2 × {r} × {h} − {h}^2))', 3],
+        [tr('Full', '満杯に対して'), tr('liquid ÷ capacity', '液量 ÷ 満杯の量'), '({L} × ({r}^2 × acos(({r} − {h}) / {r}) × 2π / {turn} − ({r} − {h}) × √(2 × {r} × {h} − {h}^2))) / (π × {r}^2 × {L}) × 100', 0, true, '%'],
+        [tr('Capacity (full)', '満杯の量'), 'π r² L', 'π × {r}^2 × {L}', 3]],
+      pic: (v) => tankPic('h', v) },
+    { k: 'vtank', d: 4, name: tr('Cylinder standing', '縦置きの円筒'), p: [['r', tr('Radius', '半径'), '', 'r', tr('Diameter', '直径')], ['H', tr('Height of the tank', 'タンクの高さ'), '', 'H'], ['h', tr('Height of the liquid', '液面の高さ'), '', 'h']], def: ['1', '3', '1'],
+      out: [[tr('Liquid', '液量'), 'π r² h', 'π × {r}^2 × {h}', 3], [tr('Full', '満杯に対して'), tr('liquid ÷ capacity', '液量 ÷ 満杯の量'), '{h} / {H} × 100', 0, true, '%'], [tr('Capacity (full)', '満杯の量'), 'π r² H', 'π × {r}^2 × {H}', 3]],
+      pic: (v) => tankPic('v', v) },
+    { k: 'stank', d: 4, name: tr('Sphere', '球形'), p: [['r', tr('Radius', '半径'), '', 'r', tr('Diameter', '直径')], ['h', tr('Height of the liquid', '液面の高さ'), '', 'h']], def: ['1', '1/2'],
+      out: [[tr('Liquid', '液量'), 'π h² (3r − h) / 3', 'π × {h}^2 × (3 × {r} − {h}) / 3', 3], [tr('Full', '満杯に対して'), tr('liquid ÷ capacity', '液量 ÷ 満杯の量'), '({h}^2 × (3 × {r} − {h}) / 4) / {r}^3 × 100', 0, true, '%'], [tr('Capacity (full)', '満杯の量'), '4/3 π r³', '4/3 × π × {r}^3', 3]],
+      pic: (v) => tankPic('s', v) },
+    { k: 'ctank', d: 4, name: tr('Cone, point down', '下向きの円錐'), p: [['R', tr('Radius at the top', '上の半径'), '', 'R', tr('Diameter at the top', '上の直径')], ['H', tr('Height of the cone', '円錐の高さ'), '', 'H'], ['h', tr('Height of the liquid', '液面の高さ'), '', 'h']], def: ['1', '3', '3/2'],
+      out: [[tr('Liquid', '液量'), 'π R² h³ / (3 H²)', 'π × {R}^2 × {h}^3 / (3 × {H}^2)', 3], [tr('Full', '満杯に対して'), tr('liquid ÷ capacity', '液量 ÷ 満杯の量'), '({h} / {H})^3 × 100', 0, true, '%'], [tr('Capacity (full)', '満杯の量'), 'π R² H / 3', 'π × {R}^2 × {H} / 3', 3]],
+      pic: (v) => tankPic('c', v) }
   ];
+  // ---- containers and more solids (1.11.0)
+  // the picture of a tank with the liquid up to its height (kind h: a cylinder lying down, v: standing,
+  // s: a sphere, c: a cone with its point down); v: the sizes typed (the level is shown halfway when
+  // they are not plain numbers)
+  function tankPic(kind, v) {
+    const num = (s) => { const m = /^\s*([\d.]+)(?:\s*\/\s*([\d.]+))?\s*$/.exec(String(s || '')); return m ? Number(m[1]) / (m[2] ? Number(m[2]) : 1) : NaN; };
+    const V = v || {};
+    let f = kind === 'h' || kind === 's' ? num(V.h) / (2 * num(V.r)) : num(V.h) / num(V.H);
+    if (!(f >= 0 && f <= 1)) f = 0.5;
+    const id = 'qtk-' + kind, y = +(95 - 80 * f).toFixed(1), mid = +((95 + y) / 2 + 4).toFixed(1);
+    if (kind === 'h') {
+      return `<defs><clipPath id="${id}"><circle cx="46" cy="55" r="40"/></clipPath></defs><path class="g" d="M46 15H140V95H46"/><rect class="liq" x="46" y="${y}" width="94" height="${95 - y}"/>`
+        + `<circle class="g" cx="46" cy="55" r="40"/><rect class="liq" x="6" y="${y}" width="80" height="${+(95 - y).toFixed(1)}" clip-path="url(#${id})"/><path class="e" d="M46 ${y}H140"/>`
+        + `<path class="d" d="M100 95V${y}"/><text x="104" y="${mid}">h</text><path class="d" d="M46 55H86"/><text x="60" y="50">r</text>`;
+    }
+    if (kind === 'v') {
+      return `<path class="g" d="M50 18V92A30 7 0 0 0 110 92V18"/><rect class="liq" x="50" y="${y}" width="60" height="${+(92 - y).toFixed(1)}"/><ellipse class="liq" cx="80" cy="92" rx="30" ry="7"/>`
+        + `<ellipse class="liq" cx="80" cy="${y}" rx="30" ry="7"/><ellipse class="g" cx="80" cy="18" rx="30" ry="7"/><path class="d" d="M118 92V${y}"/><text x="122" y="${mid}">h</text><path class="d r" d="M136 92V18"/><text x="140" y="58">H</text>`;
+    }
+    if (kind === 's') {
+      return `<defs><clipPath id="${id}"><circle cx="80" cy="55" r="40"/></clipPath></defs><circle class="g" cx="80" cy="55" r="40"/><rect class="liq" x="40" y="${y}" width="80" height="${+(95 - y).toFixed(1)}" clip-path="url(#${id})"/>`
+        + `<path class="d" d="M128 95V${y}"/><text x="132" y="${mid}">h</text><path class="d r" d="M80 55H120"/><text x="96" y="50">r</text>`;
+    }
+    const w = 40 * f;
+    return `<path class="g" d="M40 15H120L80 95Z"/><path class="liq" d="M${80 - w} ${y}H${80 + w}L80 95Z"/><path class="d" d="M128 95V${y}"/><text x="132" y="${mid}">h</text><path class="d r" d="M80 15H120"/><text x="96" y="11">R</text><path class="d r" d="M140 95V15"/><text x="144" y="58">H</text>`;
+  }
+  // the nodes and weights of the Gauss–Legendre rule with n points on [−1, 1]
+  const glCache = {};
+  function gaussLegendre(n) {
+    if (glCache[n]) return glCache[n];
+    const x = [], w = [];
+    for (let i = 1; i <= n; i++) {
+      let z = Math.cos(Math.PI * (i - 0.25) / (n + 0.5)), dp = 0;
+      for (let it = 0; it < 100; it++) {
+        let p0 = 1, p1 = z;
+        for (let k = 2; k <= n; k++) { const p2 = ((2 * k - 1) * z * p1 - (k - 1) * p0) / k; p0 = p1; p1 = p2; }
+        dp = n * (z * p1 - p0) / (z * z - 1);
+        const dz = p1 / dp;
+        z -= dz;
+        if (Math.abs(dz) < 1e-16) break;
+      }
+      x.push(z); w.push(2 / ((1 - z * z) * dp * dp));
+    }
+    return (glCache[n] = { x, w });
+  }
+  // the surface area of an ellipsoid with half axes a, b, c (numbers): there is no formula with
+  // elementary functions, so ∫₀^2π ∫₋₁¹ √(a²b²u² + c²(1 − u²)(b² cos²φ + a² sin²φ)) du dφ is taken by the
+  // Gauss–Legendre rule in u and evenly spaced points in φ (the integrand is periodic), twice; the
+  // difference tells the digits that can be trusted. { v, digits }
+  function ellipsoidAreaNum(a, b, c) {
+    const rule = (n, m) => {
+      const { x, w } = gaussLegendre(n);
+      let s = 0;
+      for (let j = 0; j < m; j++) {
+        const ph = 2 * Math.PI * (j + 0.5) / m, q = b * b * Math.cos(ph) ** 2 + a * a * Math.sin(ph) ** 2;
+        for (let i = 0; i < n; i++) { const u = x[i]; s += w[i] * Math.sqrt(a * a * b * b * u * u + c * c * (1 - u * u) * q); }
+      }
+      return s * 2 * Math.PI / m;
+    };
+    const v1 = rule(24, 48), v2 = rule(48, 96);
+    return { v: v2, digits: trustedDigits(Math.abs(v2 - v1) / Math.max(Math.abs(v2), 1e-300)) };
+  }
+  // the row "Surface area" of the ellipsoid: the sizes as numbers in the unit of the panel (or in
+  // metres when they have units of their own), then the rule above: { result, shown } or null
+  async function ellipsoidArea(v, ctx) {
+    const nums = [];
+    for (const n of ['a', 'b', 'c']) {
+      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) to ${ctx.base}` : geoValue(v[n], '', '');
+      const x = await numValue(e);
+      if (!(x > 0)) return null;
+      nums.push(x);
+    }
+    const r = ellipsoidAreaNum(nums[0], nums[1], nums[2]);
+    if (!isFinite(r.v)) return null;
+    const unit = ctx.base ? ' ' + ctx.base + '²' : '', text = '≈ ' + fmtV(+r.v.toPrecision(Math.min(10, r.digits))) + unit;
+    return { result: text, shown: text, expr: fmtV(+r.v.toPrecision(Math.min(10, r.digits))) + (ctx.base ? ' ' + ctx.base + '^2' : '') };
+  }
+  // the volume of the liquid in a tank at height h (numbers in one unit), for the height from an amount
+  const TANK_V = {
+    htank: (s, h) => s.L * (s.r * s.r * Math.acos((s.r - h) / s.r) - (s.r - h) * Math.sqrt(Math.max(0, 2 * s.r * h - h * h))),
+    vtank: (s, h) => Math.PI * s.r * s.r * h,
+    stank: (s, h) => Math.PI * h * h * (3 * s.r - h) / 3,
+    ctank: (s, h) => Math.PI * s.R * s.R * h * h * h / (3 * s.H * s.H)
+  };
+  const tankTop = (k, s) => (k === 'htank' || k === 'stank' ? 2 * s.r : s.H);
+  // the density of a material: [key, label, value with its unit] (typical values, said so)
+  const DENSITIES = [
+    ['water', tr('Water 1.000 g/cm³', '水 1.000 g/cm³'), '1.000 g/cm^3'],
+    ['sea', tr('Seawater 1.025 g/cm³ (typical)', '海水 1.025 g/cm³（目安）'), '1.025 g/cm^3'],
+    ['kerosene', tr('Kerosene about 0.80 g/cm³ (typical)', '灯油 約 0.80 g/cm³（目安）'), '0.80 g/cm^3'],
+    ['gasoline', tr('Gasoline about 0.75 g/cm³ (typical)', 'ガソリン 約 0.75 g/cm³（目安）'), '0.75 g/cm^3'],
+    ['concrete', tr('Concrete about 2.3 t/m³ (typical)', 'コンクリート 約 2.3 t/m³（目安）'), '2.3 t/m^3'],
+    ['iron', tr('Iron 7.85 g/cm³ (typical)', '鉄 7.85 g/cm³（目安）'), '7.85 g/cm^3']
+  ];
+  // the units a volume or an area can be shown in
+  const VOL_UNITS = [['L', 'L'], ['mL', 'mL'], ['m^3', 'm³'], ['cm^3', 'cm³'], ['gal', 'US gal'], ['ft^3', 'ft³']];
+  const AREA_UNITS = [['m^2', 'm²'], ['cm^2', 'cm²'], ['mm^2', 'mm²'], ['ft^2', 'ft²'], ['in^2', 'in²']];
   const GEO_UNITS = ['', 'mm', 'cm', 'm', 'km', 'in', 'ft'];
   // a size as it goes into an expression: with the unit of the panel when it has none of its own
   function geoValue(v, kind, unit) {
     v = normalizeExpr(v);
     v += ')'.repeat(scanBox(v).open); // a "(" that was not closed
     if (!kind && unit && !/\p{L}/u.test(v.replace(/π/g, ''))) return `(${v} ${unit})`;
+    if (kind === 'a2' && unit && !/\p{L}/u.test(v.replace(/π/g, ''))) return `(${v} ${unit}^2)`; // (an area, 1.11.0)
     return /^[\d.]+$/.test(v) ? v : `(${v})`;
   }
   // A size that is not a plain number (√2, 1/3, 2 cm, −2, abc): the engine works it out. It must
@@ -7899,17 +8046,19 @@
     if (!a || !isFinite(a.n)) return check;
     if (!(a.n > 0)) return tr('The sizes must be positive numbers', '大きさは正の数にしてください');
     if (!a.unit) return '';
+    if (kind === 'a2') { const b = await val(`(${txt}) to m^2`); return b && b.unit === 'm²' && b.n > 0 ? '' : tr('An area with a unit needs a unit of area, such as cm² or m²', '面積に単位を付けるときは、cm²・m² のような面積の単位にしてください'); }
     if (kind) return check;
     // with a unit: it must be a length (2 cm, 1 in), not a mass or letters read as units
     const b = await val(`(${txt}) to m`);
     return b && b.unit === 'm' && b.n > 0 ? '' : tr('A size with a unit needs a unit of length, such as cm, m or in', '単位を付けるときは、cm・m・in のような長さの単位にしてください');
   }
   // what is wrong with the sizes that are plain numbers (the others: geoSizeProblem), or ''
-  function geoProblem(sh, v) {
+  function geoProblem(sh, v, dia) {
     const num = {};
-    for (const [n, , kind] of sh.p) {
-      if (!/^[\d.]+$/.test(v[n])) continue;
-      num[n] = Number(v[n]);
+    for (const [n, , kind, , dl] of sh.p) {
+      const m = /^([\d.]+)(?:\/([\d.]+))?$/.exec(v[n]);
+      if (!m) continue;
+      num[n] = Number(m[1]) / (m[2] ? Number(m[2]) : 1) / (dia && dl ? 2 : 1);
       if (!(num[n] > 0)) return tr('The sizes must be positive numbers', '大きさは正の数にしてください');
       if (kind === 'n' && (num[n] < 3 || num[n] % 1)) return tr('The number of sides is a whole number from 3', '辺の数は 3 以上の整数にしてください');
       if (kind === 'deg' && num[n] > 360) return tr('The angle is from 0 to 360 degrees', '中心角は 0〜360 度にしてください');
@@ -7917,15 +8066,49 @@
     const { a, b, c } = num;
     if (sh.k === 'tri3' && [a, b, c].every(isFinite) && (a + b <= c || b + c <= a || c + a <= b)) return tr('These three sides do not make a triangle (each side must be shorter than the other two together)', 'この 3 辺では三角形になりません（どの辺も、ほかの 2 辺の和より短くします）');
     if (sh.k === 'torus' && isFinite(num.R) && isFinite(num.r) && num.r > num.R) return tr('The tube must not be wider than the ring (r ≤ R)', '管の半径は輪の半径以下にしてください（r ≤ R）');
+    // (1.11.0)
+    if (sh.k === 'cap' && num.h > 2 * num.r) return tr('The height of the cap is at most the diameter of the sphere (h ≤ 2r)', '球欠の高さは球の直径以下にしてください（h ≤ 2r）');
+    if (sh.k === 'pipe' && num.r >= num.R) return tr('The inner size must be smaller than the outer one', '内側の大きさは外側より小さくしてください');
+    if ((sh.k === 'htank' || sh.k === 'stank') && num.h > 2 * num.r) return tr('The liquid cannot be higher than the tank (h ≤ 2r)', '液面はタンクの高さ以下にしてください（h ≤ 2r）');
+    if ((sh.k === 'vtank' || sh.k === 'ctank') && num.h > num.H) return tr('The liquid cannot be higher than the tank (h ≤ H)', '液面はタンクの高さ以下にしてください（h ≤ H）');
     return '';
   }
   function openShapes() {
     const p = panel('shapes', tr('Shapes: area, length, volume', '図形：面積・長さ・体積'), (p) => {
       const saved = store.get('qalc.shapes', {}) || {};
-      const G = { k: GEO.some((s) => s.k === saved.k) ? saved.k : 'circle', unit: GEO_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : '', vals: saved.v || {}, seq: 0, last: {} };
+      // (1.11.0: dia, sizes of round shapes typed as diameters; vu and au, the units of the volumes and
+      // areas shown; dens, the material for the weight (dv: its density when typed); amt, an amount
+      // of liquid whose height is found)
+      const G = { k: GEO.some((s) => s.k === saved.k) ? saved.k : 'circle', unit: GEO_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : '', vals: saved.v || {}, seq: 0, last: {},
+        dia: !!saved.dia, vu: VOL_UNITS.some((u) => u[0] === saved.vu) ? saved.vu : '', au: AREA_UNITS.some((u) => u[0] === saved.au) ? saved.au : '',
+        dens: saved.dens === 'own' || DENSITIES.some((d) => d[0] === saved.dens) ? saved.dens : '', dv: saved.dv || '', amt: saved.amt || {} };
       const cur = () => GEO.find((s) => s.k === G.k);
-      const save = () => store.set('qalc.shapes', { k: G.k, unit: G.unit, v: G.vals });
-      const b2 = el('button', { text: tr('Flat shapes', '平面の図形') }), b3 = el('button', { text: tr('Solids', '立体の図形') });
+      const save = () => store.set('qalc.shapes', { k: G.k, unit: G.unit, v: G.vals, dia: G.dia, vu: G.vu, au: G.au, dens: G.dens, dv: G.dv, amt: G.amt });
+      const b2 = el('button', { text: tr('Flat shapes', '平面の図形') }), b3 = el('button', { text: tr('Solids', '立体の図形') }), b4 = el('button', { text: tr('Tanks', '容器の液量') });
+      // radius or diameter for round shapes (on site a diameter is what is measured)
+      const bRad = tapButton({ text: tr('Radius', '半径') }, () => { if (G.dia) { typed(); G.dia = false; choose(G.k); } });
+      const bDia = tapButton({ text: tr('Diameter', '直径') }, () => { if (!G.dia) { typed(); G.dia = true; choose(G.k); } });
+      const rdSeg = el('div', { class: 'seg mini geo-rd', role: 'group', 'aria-label': tr('Round sizes are typed as', '丸い形の大きさの入れ方') }, bRad, bDia);
+      // the units of the volumes and areas shown (when the lengths have a unit), the material and the
+      // weight, and the height from an amount of liquid (tanks)
+      const vUnit = el('select', { 'aria-label': tr('Unit of the volumes', '体積の単位') }), aUnit = el('select', { 'aria-label': tr('Unit of the areas', '面積の単位') });
+      vUnit.append(el('option', { value: '', text: tr('Volume: auto', '体積：自動') }));
+      for (const [u, s] of VOL_UNITS) vUnit.append(el('option', { value: u, text: s }));
+      aUnit.append(el('option', { value: '', text: tr('Area: auto', '面積：自動') }));
+      for (const [u, s] of AREA_UNITS) aUnit.append(el('option', { value: u, text: s }));
+      vUnit.value = G.vu; aUnit.value = G.au;
+      const outUnits = el('div', { class: 'geo-units' }, vUnit, aUnit);
+      const dens = el('select', { 'aria-label': tr('Material (density)', '材料（密度）') });
+      dens.append(el('option', { value: '', text: tr('Weight: choose a material', '重さ：材料を選ぶ') }));
+      for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: s }));
+      dens.append(el('option', { value: 'own', text: tr('Another density…', 'ほかの密度…') }));
+      dens.value = G.dens;
+      const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³'), value: G.dv, 'aria-label': tr('Density', '密度') });
+      const weightVal = el('span', { class: 'geo-val' });
+      const weightRow = el('div', { class: 'geo-weight' }, dens, densIn, weightVal);
+      const amtIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: tr('e.g. 1000 L', '例：1000 L'), 'aria-label': tr('Amount of liquid', '液量') });
+      const amtVal = el('span', { class: 'geo-val' });
+      const amtRow = el('label', { class: 'geo-amt' }, el('span', { class: 'geo-lbl', text: tr('Height for the amount', '液量から高さ') }), amtIn, amtVal);
       const chips = el('div', { class: 'geo-chips', role: 'group', 'aria-label': tr('Shape', '図形') });
       const pic = el('div', { class: 'geo-pic' }), sizes = el('div', { class: 'geo-sizes' });
       const outs = el('div', { class: 'geo-out', 'aria-live': 'polite' });
@@ -7939,6 +8122,44 @@
       });
       let inputs = {}, rows = [];
       const values = () => { const v = {}; for (const [n] of cur().p) v[n] = normalizeExpr(inputs[n].value); return v; };
+      // the height of the liquid for the amount typed (tanks): the sizes as numbers in one unit, the
+      // amount in that unit cubed, and the height found by halving the range (the amount grows with the height)
+      const tankHeight = async (sh, v, base, seq) => {
+        const a = normalizeExpr(amtIn.value);
+        amtVal.textContent = '';
+        if (!a) return;
+        const s = {};
+        for (const [n, , kind, , dl] of sh.p) {
+          if (n === 'h') continue;
+          const e = geoValue(v[n], kind, G.unit), x = await numValue(base ? `(${e}) / (1 ${base})` : e);
+          if (seq !== G.seq) return;
+          s[n] = x / (G.dia && dl ? 2 : 1);
+        }
+        const withUnit = /\p{L}/u.test(a.replace(/π/g, '')), ve = withUnit && base ? `(${a}) / (1 ${base}^3)` : !withUnit && base && G.vu ? `(${a} ${G.vu}) / (1 ${base}^3)` : a;
+        const want = await numValue(ve);
+        if (seq !== G.seq) return;
+        const top = tankTop(sh.k, s), full = TANK_V[sh.k](s, top);
+        if (!(want >= 0) || !Object.values(s).every((x) => x > 0)) { amtVal.textContent = tr('Enter an amount, such as 1000 L', '1000 L のように液量を入れてください'); return; }
+        if (want > full * (1 + 1e-12)) { amtVal.textContent = tr('More than the tank holds', 'タンクに入る量より多いです'); return; }
+        let lo = 0, hi = top;
+        for (let i = 0; i < 200 && hi - lo > top * 1e-15; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; }
+        const h = (lo + hi) / 2;
+        amtVal.textContent = 'h ≈ ' + fmtV(+h.toPrecision(6)) + (base ? ' ' + base : '') + tr(' (', '（') + fmtV(+(want / full * 100).toPrecision(4)) + ' %' + tr(' full)', '）');
+      };
+      // the weight of the first volume of the list (the liquid of a tank) with the density chosen
+      const weight = async (rows, seq) => {
+        weightVal.textContent = '';
+        const d = G.dens === 'own' ? normalizeExpr(densIn.value) : (DENSITIES.find((x) => x[0] === G.dens) || [])[2];
+        if (!d) return;
+        const row = rows.find((r) => r.def[3] === 3 && r.vol);
+        if (!row) { weightVal.textContent = tr('Give the lengths a unit to get the weight', '重さは、長さに単位を付けると出ます'); return; }
+        const r = await Bridge.send('calc', { expr: `(${row.vol}) × (${d}) to kg`, opts: Object.assign(engineOpts(), { approx: 'approx' }), timeout: 4000 });
+        if (seq !== G.seq) return;
+        const ok = r.ok && r.result && !r.timeout && !(r.messages || []).some((m) => m.type === 'error') && / kg$/.test(r.result);
+        if (!ok) { weightVal.textContent = tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）'); return; }
+        const kg = Number(numberPart(r.result.replace(/ kg$/, '')));
+        weightVal.textContent = tr('Weight ', '重さ ') + resultText(r) + (kg >= 1000 ? tr(' = ', ' = ') + fmtV(+(kg / 1000).toPrecision(8)) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
+      };
       const svg = (sh, v, small) => {
         let t = typeof sh.pic === 'function' ? sh.pic(v || {}) : sh.pic;
         if (small) t = t.replace(/<text[^>]*>[^<]*<\/text>/g, '').replace(/<path class="d[^>]*>/g, '').replace(/<circle class="c"[^>]*>/g, '');
@@ -7950,7 +8171,7 @@
         G.vals[sh.k] = sh.p.map(([n]) => inputs[n].value);
         save();
         if (typeof sh.pic === 'function') pic.innerHTML = svg(sh, v);
-        let problem = sh.p.some(([n]) => !v[n]) ? tr('Enter the sizes', '大きさを入れてください') : geoProblem(sh, v);
+        let problem = sh.p.some(([n]) => !v[n]) ? tr('Enter the sizes', '大きさを入れてください') : geoProblem(sh, v, G.dia);
         if (!problem) {
           for (const [n, , kind] of sh.p) {
             problem = await geoSizeProblem(v[n], kind);
@@ -7960,35 +8181,59 @@
         }
         outs.classList.toggle('bad', !!problem);
         msg.textContent = problem;
-        for (const row of rows) { row.expr = ''; row.result = ''; row.node.dataset.value = ''; if (problem) { row.val.textContent = '—'; row.val.classList.remove('math'); } }
-        if (problem) return;
+        for (const row of rows) { row.expr = ''; row.vol = ''; row.result = ''; row.node.dataset.value = ''; if (problem) { row.val.textContent = '—'; row.val.classList.remove('math'); } }
+        if (problem) { weightVal.textContent = ''; amtVal.textContent = ''; return; }
         // Units: sizes that are plain numbers are calculated as numbers, so that exact values stay
         // (12π), and the unit of the panel is written after the result (cm³). Sizes with units of
         // their own are calculated with them; the result is asked for in their unit when they all
         // have the same one (else the engine chooses, and "2π × 2 in" would come out in feet and inches).
-        const own = Array.from(new Set([].concat(...sh.p.map(([n, , kind]) => (kind ? [] : v[n].replace(/π/g, '').match(/\p{L}+/gu) || [])))));
+        const own = Array.from(new Set([].concat(...sh.p.map(([n, , kind]) => (kind && kind !== 'a2' ? [] : v[n].replace(/π/g, '').match(/\p{L}+/gu) || [])))));
         const target = own.length === 1 ? own[0] : G.unit;
+        // (1.11.0: the length unit the sizes are turned into for a row worked out here, and for the height)
+        const base = G.unit || (own.length ? target || 'm' : '');
         for (const row of rows) {
           const pow = row.def[3], to = (u) => ' to ' + u + (pow > 1 ? '^' + pow : '');
-          const sub = (unit) => row.def[2].replace(/\{(\w+)\}/g, (m, n) => (n === 'turn' ? fullTurn() : geoValue(v[n], (sh.p.find((q) => q[0] === n) || [])[2], unit)));
-          let expr = sub(''), full = expr, suffix = '';
-          if (!own.length && G.unit) { full = `(${sub(G.unit)})` + to(G.unit); suffix = ' ' + G.unit + ['', '', '²', '³'][pow]; }
-          else if (own.length) { expr = sub(G.unit || target); if (target) expr = `(${expr})` + to(target); full = expr; } // "2 in" and "4": both in inches
+          // a diameter is halved where a radius goes (1.11.0)
+          const sub = (unit) => row.def[2].replace(/\{(\w+)\}/g, (m, n) => { if (n === 'turn') return fullTurn(); const q = sh.p.find((x) => x[0] === n) || [], g = geoValue(v[n], q[2], unit); return G.dia && q[4] ? `(${g} / 2)` : g; });
+          // a row worked out by the page itself (the surface of an ellipsoid, 1.11.0)
+          if (typeof row.def[2] === 'function') {
+            const rr = await row.def[2](G.dia ? Object.fromEntries(Object.entries(v).map(([n, x]) => [n, (sh.p.find((q) => q[0] === n) || [])[4] ? `(${x}) / 2` : x])) : v, { unit: G.unit, base });
+            if (seq !== G.seq) return;
+            if (!rr) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
+            row.expr = rr.expr; row.result = rr.result; row.shown = rr.shown;
+            row.node.dataset.value = row.shown; showResult(row.val, row.shown);
+            continue;
+          }
+          let expr = sub(''), full = expr, suffix = row.def[5] ? ' ' + row.def[5] : '';
+          // the unit chosen for volumes or areas (1.11.0), when the lengths have one
+          const ru = pow === 3 ? G.vu : pow === 2 ? G.au : '';
+          if (ru && (G.unit || own.length)) { expr = `(${sub(G.unit || target)}) to ${ru}`; full = expr; }
+          else if (!own.length && G.unit) { if (pow) { full = `(${sub(G.unit)})` + to(G.unit); suffix = ' ' + G.unit + ['', '', '²', '³'][pow]; } }
+          else if (own.length && pow) { expr = sub(G.unit || target); if (target) expr = `(${expr})` + to(target); full = expr; } // "2 in" and "4": both in inches
+          else if (own.length) { expr = sub(G.unit || target); full = expr; }
           const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), row.def[4] ? { approx: 'approx' } : {}), timeout: 4000 });
           if (seq !== G.seq) return;
           const bad = !r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error') || /(^|[^\p{L}])i($|[^\p{L}])|undefined/u.test(r.result);
           if (bad) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
-          row.expr = full; row.result = r.result + suffix; row.shown = resultText(r) + suffix;
+          row.expr = full; row.vol = pow === 3 && (G.unit || own.length) ? `(${sub(G.unit || target)})` : ''; row.result = r.result + suffix; row.shown = resultText(r) + suffix;
           row.node.dataset.value = row.shown;
           showResult(row.val, row.shown);
         }
+        // (1.11.0) the weight, and the height for an amount of liquid
+        await weight(rows, seq);
+        if (seq !== G.seq) return;
+        if (sh.d === 4) await tankHeight(sh, v, base, seq);
       }, 220);
       const choose = (k) => {
         G.k = k;
         const sh = cur();
         G.last[sh.d] = k;
-        b2.classList.toggle('on', sh.d === 2); b3.classList.toggle('on', sh.d === 3);
-        b2.setAttribute('aria-pressed', String(sh.d === 2)); b3.setAttribute('aria-pressed', String(sh.d === 3));
+        b2.classList.toggle('on', sh.d === 2); b3.classList.toggle('on', sh.d === 3); b4.classList.toggle('on', sh.d === 4);
+        b2.setAttribute('aria-pressed', String(sh.d === 2)); b3.setAttribute('aria-pressed', String(sh.d === 3)); b4.setAttribute('aria-pressed', String(sh.d === 4));
+        const round = sh.p.some((q) => q[4]);
+        rdSeg.hidden = !round; bRad.classList.toggle('on', !G.dia); bDia.classList.toggle('on', G.dia);
+        outUnits.hidden = sh.d === 2 && !sh.out.some((o) => o[3] === 2); weightRow.hidden = sh.d === 2; amtRow.hidden = sh.d !== 4;
+        densIn.hidden = G.dens !== 'own'; amtIn.value = G.amt[k] || '';
         chips.textContent = '';
         for (const s of GEO.filter((x) => x.d === sh.d)) {
           chips.append(tapButton({ class: 'geo-chip' + (s.k === k ? ' on' : ''), 'aria-pressed': String(s.k === k), html: svg(s, null, true) + '<span></span>' }, () => { if (s.k !== G.k) { typed(); choose(s.k); } }));
@@ -7996,12 +8241,14 @@
         }
         const old = G.vals[k] || [];
         inputs = {}; sizes.textContent = '';
-        sh.p.forEach(([n, label, kind, sym], i) => {
+        sh.p.forEach(([n, label0, kind, sym0, dl], i) => {
+          // (a size of a round shape typed as a diameter: its label and its letter, D for R and d for r)
+          const label = G.dia && dl ? dl : label0, sym = G.dia && dl ? ((sym0 || n) === 'R' ? 'D' : 'd') : sym0;
           inputs[n] = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: old[i] !== undefined ? old[i] : sh.def[i], 'aria-label': label });
           inputs[n].addEventListener('input', run);
           inputs[n].addEventListener('focus', () => inputs[n].select());
           sizes.append(el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl' }, label, kind === 'n' ? '' : el('i', { text: ' ' + (sym || n) })), inputs[n],
-            el('span', { class: 'geo-unit', text: kind ? (kind === 'deg' ? '°' : '') : G.unit })));
+            el('span', { class: 'geo-unit', text: kind === 'a2' ? (G.unit ? G.unit + '²' : '') : kind ? (kind === 'deg' ? '°' : '') : G.unit })));
         });
         pic.innerHTML = svg(sh, values());
         rows = sh.out.map((def) => {
@@ -8027,10 +8274,16 @@
       unit.addEventListener('change', () => { G.unit = unit.value; typed(); choose(G.k); });
       b2.addEventListener('click', () => { if (cur().d !== 2) { typed(); choose(G.last[2] || 'circle'); } });
       b3.addEventListener('click', () => { if (cur().d !== 3) { typed(); choose(G.last[3] || 'sphere'); } });
-      p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3), chips,
-        el('div', { class: 'geo-main' }, pic, el('div', { class: 'geo-side' }, sizes,
+      b4.addEventListener('click', () => { if (cur().d !== 4) { typed(); choose(G.last[4] || 'htank'); } });
+      vUnit.addEventListener('change', () => { G.vu = vUnit.value; save(); run(); });
+      aUnit.addEventListener('change', () => { G.au = aUnit.value; save(); run(); });
+      dens.addEventListener('change', () => { G.dens = dens.value; densIn.hidden = G.dens !== 'own'; save(); run(); if (G.dens === 'own') densIn.focus(); });
+      densIn.addEventListener('input', () => { G.dv = densIn.value; save(); run(); });
+      amtIn.addEventListener('input', () => { G.amt[G.k] = amtIn.value; save(); run(); });
+      p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips,
+        el('div', { class: 'geo-main' }, pic, el('div', { class: 'geo-side' }, rdSeg, sizes,
           el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
-        msg, outs, graph,
+        outUnits, msg, outs, amtRow, weightRow, graph,
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
       p.run = run;
       choose(G.k);
