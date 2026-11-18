@@ -308,6 +308,10 @@
   let history = store.get('qalc.history', []);
   if (!Array.isArray(history)) history = [];
   fitHistory();
+  // the page was used before this start (a history or settings were saved): the notes on what moved
+  // in 1.12.0 are for those users only; a new user is marked as having seen them
+  const usedBefore = history.length > 0 || store.get('qalc.settings', null) !== null;
+  if (!usedBefore && !store.get('qalc.moved112', false)) store.set('qalc.moved112', true);
   const saveHistory = debounce(() => store.set('qalc.history', history.slice(-300)), 300);
   // the beginning of a long text, for titles and announcements
   function clip(t, n) { t = String(t || ''); return t.length > n ? t.slice(0, n) + '…' : t; }
@@ -924,7 +928,7 @@
   // of the app's own Java code and engine: [the English message, its Japanese text, the name of its
   // text in the files of the other languages (messages in i18n-es.js …)]
   const MESSAGES = [
-    [/^It has been (\d+) days? since the exchange rates last were updated\.?$/, (m, d) => '為替レートが ' + d + ' 日間更新されていません（メニュー →「為替レートの更新」）', 'rates-old'],
+    [/^It has been (\d+) days? since the exchange rates last were updated\.?$/, (m, d) => '為替レートが ' + d + ' 日間更新されていません（設定 →「為替レートを今すぐ更新」）', 'rates-old'],
     [/^Misplaced operator\(s\) "(.+)" ignored\.?$/, (m, o) => '余分な演算子「' + o + '」を無視しました', 'extra-operator'],
     [/^Misplaced '(.+)' ignored\.?$/, (m, o) => '余分な「' + o + '」を無視しました', 'extra-sign'],
     [/^Division by zero\.?$/, () => 'ゼロで割っています', 'division-by-zero'],
@@ -2611,7 +2615,7 @@
         el('div', { class: 'empty-t', html: tr('Type an expression and press <b>=</b>: the results stay here', '式を入力して <b>=</b> を押すと、ここに結果が残ります') }),
         el('div', { text: tr('Tap a result to insert it into the expression, or touch and hold it to copy it.', '結果をタップで式に挿入、長押しでコピーできます。') }),
         el('div', { class: 'empty-try', text: tr('Tap an example to try it', '例をタップして試す') }), chips,
-        tapButton({ class: 'btn', text: tr('Examples and tips', '式の例・使い方を見る') }, () => openExamples())));
+        tapButton({ class: 'btn', text: tr('Examples and tips', '使い方と例を見る') }, () => openExamples())));
       histEl.scrollTop = 0; // read from the top (results are followed at the bottom)
       histPinned = false;
       return;
@@ -2647,7 +2651,11 @@
     showResult(res, displayResult(h));
     const item = el('div', { class: 'h-item' }, el('div', { class: 'h-expr', text: h.expr }), res);
     for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
+    // ⋯ opens the same menu as touching and holding the line (1.12.0: nothing only by a long touch);
+    // the dots are drawn by style.css, so that the text of the line stays the expression and the result
+    item.append(el('button', { class: 'h-more', type: 'button', 'aria-label': tr('Menu of this result', 'この結果のメニュー') }));
     bindLongPress(item, () => historyMenu(h), (target) => {
+      if (target.closest('.h-more')) { historyMenu(h); return; }
       if (target.closest('.h-expr')) setExpr(h.expr);
       else insertResult(h);
       focusExpr();
@@ -2809,27 +2817,39 @@
     return sheet(title, [['ok', okLabel, 'danger']]).then((k) => k === 'ok');
   }
 
+  // The menu (1.12.0: eight items at most, so that each is easy to find). The shapes and every
+  // later tool are in "Tools", the four lists in "Lists" (with tabs), updating the exchange rates is
+  // in the settings, and exporting and clearing the history are in the history's own menu (the
+  // clock at the top right; see MOVED for the note shown once to those who knew the old menu).
   const MENU = [
-    ['examples', '💡', tr('Examples and tips', '式の例・使い方')],
-    ['functions', 'ƒ', tr('Functions', '関数の一覧')],
-    ['units', '㎏', tr('Units and currencies', '単位・通貨の一覧')],
-    ['variables', 'π', tr('Variables and constants', '変数・定数の一覧')],
+    ['examples', '💡', tr('Examples and tips', '使い方と例')],
+    ['tools', '🧰', tr('Tools', '道具')],
     ['plot', '📈', tr('Graph', 'グラフ')],
-    ['shapes', '📐', tr('Shapes: area, volume, length', '図形（面積・体積・長さ）')],
-    ['defs', '✎', tr('User-defined variables and functions', 'ユーザー定義の変数・関数')],
-    ['rates', tr('$', '¥'), tr('Update exchange rates', '為替レートの更新')],
+    ['lists', '📚', tr('Lists: functions, units, constants', '一覧（関数・単位・定数）')],
     null,
     ['pro', '⭐', 'QCalc Pro', { when: proOffered }],
     ['settings', '⚙', tr('Settings', '設定')],
     ['language', '🌐', LANG_TITLE],
-    ['export', '📤', tr('Export history (CSV)', '履歴を書き出す（CSV）'), { pro: true }],
-    ['clear', '🗑', tr('Clear history', '履歴を消去')],
     ['about', 'ⓘ', tr('About this app', 'このアプリについて')]
+  ];
+  // Shown once at the top of the menu to those who used an earlier version: where the moved items are now.
+  const MOVED = () => [
+    tr('Shapes and tanks → Tools', '図形・容器の液量 → 道具'),
+    tr('Functions, units, constants and your own definitions → Lists', '関数・単位・定数・自分の定義 → 一覧'),
+    tr('Updating the exchange rates → Settings', '為替レートの更新 → 設定'),
+    tr('Exporting and clearing the history → 🕘 at the top right', '履歴の書き出し・消去 → 右上の 🕘')
   ];
   function buildDrawer() {
     const d = $('#drawer');
     d.append(el('div', { class: 'head' }, el('div', { class: 'name', text: 'QCalc' }),
       el('div', { class: 'sub', id: 'drawer-sub', text: tr('Calculation engine libqalculate', '計算エンジン libqalculate') })));
+    if (usedBefore && !store.get('qalc.moved112', false)) {
+      const note = el('div', { class: 'moved-note', role: 'note' },
+        el('div', { class: 'moved-t', text: tr('The menu is shorter now. Moved:', 'メニューを整理しました。移った項目：') }),
+        el('ul', {}, ...MOVED().map((t) => el('li', { text: t }))),
+        el('button', { class: 'btn moved-ok', text: tr('OK', 'わかった'), onclick: () => { note.remove(); store.set('qalc.moved112', true); } }));
+      d.append(note);
+    }
     for (const m of MENU) {
       if (!m) { d.append(el('hr')); continue; }
       const o = m[3] || {};
@@ -2840,7 +2860,11 @@
         el('span', { class: 'ico', text: m[1] }), label));
     }
   }
-  function openDrawer() { $('#drawer').classList.add('open'); $('#drawer').inert = false; $('#scrim').classList.add('show'); }
+  function openDrawer() {
+    $('#drawer').classList.add('open'); $('#drawer').inert = false; $('#scrim').classList.add('show');
+    // the note on the moved items is shown once: seen when the menu is opened with it
+    if ($('#drawer .moved-note')) store.set('qalc.moved112', true);
+  }
   function closeDrawer() {
     const d = $('#drawer');
     if (!d.classList.contains('open')) return;
@@ -2850,10 +2874,20 @@
     if (!panelStack.length) focusExpr();
   }
   $('#btn-menu').addEventListener('click', openDrawer);
+  // the history's own menu (1.12.0; until 1.11.0 exporting and clearing were in the main menu)
+  async function historyActions() {
+    const k = await sheet(tr('History', '履歴'), [
+      ['export', tr('Export the history (CSV file)', '履歴を書き出す（CSV ファイル）') + (hasPro() ? '' : '  ⭐ Pro')],
+      ['clear', tr('Clear the whole history', '履歴をすべて消去')]]);
+    if (k) menuAction(k);
+  }
+  $('#btn-hist').addEventListener('click', historyActions);
   $('#scrim').addEventListener('click', () => { if ($('#sheet').classList.contains('open')) closeSheet(null); closeDrawer(); });
 
   async function menuAction(k) {
     if (k === 'functions' || k === 'units' || k === 'variables') openCatalog(k);
+    else if (k === 'lists') openLists();
+    else if (k === 'tools') openTools();
     else if (k === 'plot') openPlot();
     else if (k === 'shapes') openShapes();
     else if (k === 'defs') openDefs();
@@ -2864,6 +2898,7 @@
     else if (k === 'language') chooseLanguage();
     else if (k === 'pro') openPro();
     else if (k === 'export') exportHistory();
+    else if (k === 'history') historyActions();
     else if (k === 'clear') {
       if (!history.length) { toast(tr('The history is empty', '履歴はありません'), 1400); return; }
       if (!(await confirmSheet(tr('Clear the whole history?', '計算履歴をすべて消去しますか？'), tr('Clear', '消去する')))) return;
@@ -3039,19 +3074,20 @@
     tr('The calculus keys (d/dx, ∫, lim, Σ …) open a form with boxes where the mathematics is written: the limits above and below ∫, the variable under lim. Tap a box (or "Next box ▶") and type with the keys; the result is shown at once. "Insert" puts the expression into the input field.', '解析のキー（d/dx、∫、lim、Σ など）を押すと、数式の形に欄が並んだ入力フォームが開きます（∫ の上下に上端・下端、lim の下に変数など）。欄をタップするか「次の欄 ▶」で選んでキーで入力すると、結果がすぐに表示されます。「式に入れる」で入力欄に入ります。'),
     tr('An empty box of a form becomes □ in the input field: it is selected, so the next key types over it, and "Next box ▶" goes to the next □.', 'フォームで空のままの欄は、入力欄では □ になります。□ は選ばれた状態なので、そのままキーを押すと置き換わります。「次の欄 ▶」で次の □ に移ります。'),
     tr('Above the input field the expression is shown in math notation (fractions, powers, roots, integrals), so you can check what you typed. It can be turned off in the settings.', '入力欄の上に、式が数式の形（分数・べき乗・根号・積分など）で表示されるので、入力した内容を確かめられます。設定で表示しないこともできます。'),
-    tr('Touch and hold a result with x (x³ − 3x) to differentiate or integrate it, draw its graph or put in a value for x.', 'x を含む結果（x³ − 3x など）を長押しすると、微分・積分・グラフ・x への値の代入ができます。'),
+    tr('Touch and hold a result with x (x³ − 3x), or tap its ⋯, to differentiate or integrate it, draw its graph or put in a value for x.', 'x を含む結果（x³ − 3x など）を長押しするか ⋯ をタップすると、微分・積分・グラフ・x への値の代入ができます。'),
     tr('Type the "=" of an equation with the a=b key (the large = key calculates). Example: solve(x^2 = 16)', '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)'),
     tr('Type a matrix as [1, 2; 3, 4]: "," between the elements and ";" between the rows. Matrix results are shown as tables in the history.', '行列は [1, 2; 3, 4] のように、要素を「,」、行を「;」で区切って入力します。結果の行列は履歴に表の形で表示されます。'),
     tr('The ▦ key of the Matrix page opens a grid of cells: set the rows and columns with + and −, type the elements and choose what to calculate (determinant, inverse, transpose, rank, eigenvalues, linear system). det, Aᵀ and A⁻¹ open it too when the input field is empty. Touch and hold a matrix result to edit it there.', '「行列」ページの ▦ キーで、行列を表の形で入力する画面が開きます。行と列の数を + と − で決めて要素を入れ、計算（行列式・逆行列・転置・階数・固有値・連立方程式）を選びます。入力欄が空のときは det・Aᵀ・A⁻¹ のキーでも開きます。結果の行列を長押しすると、その画面で編集できます。'),
     tr('Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.', '上の「RAD」「自動」「10進」をタップすると、角度の単位、厳密・近似、結果の進数が切り替わります。'),
-    tr('Find functions, units and constants in the lists in the menu (search by name or description, for example "integral", "mile" or "speed of light").', '関数・単位・定数は、メニューの一覧から日本語でも探せます（例：「積分」「マイル」「光速」）。'),
+    tr('Find functions, units and constants in "Lists" in the menu (search by name or description, for example "integral", "mile" or "speed of light").', '関数・単位・定数は、メニューの「一覧」から日本語でも探せます（例：「積分」「マイル」「光速」）。'),
+    tr('The 🕘 at the top right is the menu of the history (export, clear). The ⋯ at the left of a result is the menu of that result, the same as touching and holding it.', '右上の 🕘 は履歴のメニュー（書き出し・消去）です。結果の左の ⋯ は、その結果のメニューです（長押しと同じ）。'),
     tr('Draw graphs with "Graph" in the menu: 2D graphs of y = f(x) and 3D graphs of z = f(x, y). Expressions with derivatives or integrals such as diff(x^3 − 3x) can be drawn as they are.', 'グラフはメニューの「グラフ」から。y = f(x) の 2D と、z = f(x, y) の 3D が描けます。diff(x^3 − 3x) のように、微分や積分の式もそのまま描けます。'),
     tr('An expression cleared with AC comes back with "Undo", which appears right after.', 'AC で消した式は、すぐ後に出る「元に戻す」で戻せます。'),
-    tr('"Shapes" also has a frustum of a cone, a hemisphere, a spherical cap, an ellipsoid, prisms and a pipe, and "Tanks": the amount of liquid in a tank lying down or standing, a sphere or a cone with its point down from the height of the liquid (with how full it is), and the height for an amount (1000 L). Round sizes can be typed as diameters; volumes can be shown in L, mL, m³, cm³, US gal or ft³, and a material (water, concrete, iron…) gives the weight.',
-      '「図形」には円錐台・半球・球欠・楕円体・角柱・パイプもあります。「容器の液量」では、横置き・縦置きの円筒、球形、下向きの円錐のタンクの液面の高さから液量（満杯に対する割合も）を出し、液量（1000 L など）から高さも出します。丸い形の大きさは直径でも入れられ、体積は L・mL・m³・cm³・US gal・ft³ で表示でき、材料（水・コンクリート・鉄など）を選ぶと重さも出ます。'),
-    tr('Areas, lengths and volumes of shapes: "Shapes" in the menu. Choose a circle, a triangle, a cylinder and so on, type the sizes, and the results appear at once. In a graph, "Area and length" shades the area, and its edges can be dragged.', '図形の面積・長さ・体積は、メニューの「図形」で求められます。円・三角形・円柱などを選んで大きさを入れると、結果がすぐに出ます。グラフでは「面積・長さ」で面積に色が付き、両端をドラッグして範囲を変えられます。'),
-    tr('In "Area and length" of a 2D graph, "Solid of revolution" turns the shaded region once around the x axis, the y axis, y = k or x = k: the volume, the curved surfaces and the surface with the end faces, exact when possible, with the formula used (washers or shells) and a 3D view. Where the region is on both sides of the axis, the overlap counts once. Tap a result to put its integral into the input field or to copy it.', '2D グラフの「面積・長さ」の「回転体」では、色の付いた部分を x 軸・y 軸・y = k・x = k のまわりに 1 回転させた立体の体積、曲面の面積、端の面を含む表面積を出します（できるときは厳密な値）。使った式（ワッシャー法・殻の方法）も示し、3D でも見られます。領域が軸の両側にあるときは、重なる部分を 1 回だけ数えます。結果をタップすると、積分の式を入力欄に入れたり、コピーしたりできます。'),
-    tr('"Shapes" also leads to "Volume from measured values": a table of cross sections (the average end area method and Simpson’s rule, with the reason when Simpson’s rule cannot be used) or the heights at the corners of a grid (the method of point heights, V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)). A table can be pasted from a spreadsheet; the volume is given in m³ and L.', '「図形」からは「測った値から体積」も開けます：断面積の表から平均断面法とシンプソンの公式（使えないときは理由も）、格子の角の高さから点高法（V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)）で体積を出します。表は表計算ソフトから貼り付けられ、結果は m³ と L で出ます。'),
+    tr('The solids in "Tools" include a frustum of a cone, a hemisphere, a spherical cap, an ellipsoid, prisms and a pipe, and "Tanks: liquid and level" gives the amount of liquid in a tank lying down or standing, a sphere or a cone with its point down from the height of the liquid (with how full it is), and the height for an amount (1000 L). Round sizes can be typed as diameters; volumes can be shown in L, mL, m³, cm³, US gal or ft³, and a material (water, concrete, iron…) gives the weight.',
+      '「道具」の「立体の図形」には円錐台・半球・球欠・楕円体・角柱・パイプもあります。「容器の液量」では、横置き・縦置きの円筒、球形、下向きの円錐のタンクの液面の高さから液量（満杯に対する割合も）を出し、液量（1000 L など）から高さも出します。丸い形の大きさは直径でも入れられ、体積は L・mL・m³・cm³・US gal・ft³ で表示でき、材料（水・コンクリート・鉄など）を選ぶと重さも出ます。'),
+    tr('Areas, lengths and volumes of shapes: "Tools" in the menu. Search for what you want to do (for example "tank" or "volume") or choose a tool from its group, type the sizes, and the results appear at once. Tap a result to put its expression into the input field, keep it in the history or copy it. In a graph, "Area and length" shades the area, and its edges can be dragged.', '図形の面積・長さ・体積は、メニューの「道具」で求められます。やりたいこと（例：「タンク」「体積」）で探すか、まとまりから道具を選び、大きさを入れると結果がすぐに出ます。結果をタップすると、式を入力欄に入れる・履歴に残す・コピーができます。グラフでは「面積・長さ」で面積に色が付き、両端をドラッグして範囲を変えられます。'),
+    tr('In "Area and length" of a 2D graph, the switch shows the area or the length (the perimeter between two functions), calculated again whenever the range changes. "Make a solid ▾" turns the shaded region once around the x axis, the y axis, y = k or x = k: the volume, the curved surfaces and the surface with the end faces, exact when possible, with the formula used (thin disks, rings or cylinders) and a 3D view. Where the region is on both sides of the axis, the overlap counts once.', '2D グラフの「面積・長さ」では、切り替えで面積か長さ（2 つの関数の間なら周の長さ）を出し、範囲を変えると計算し直します。「立体にする ▾」では、色の付いた部分を x 軸・y 軸・y = k・x = k のまわりに 1 回転させた立体の体積、曲面の面積、端の面を含む表面積を出します（できるときは厳密な値）。使った式（薄い円板・穴のあいた円板・薄い円筒を重ねる方法）も示し、3D でも見られます。領域が軸の両側にあるときは、重なる部分を 1 回だけ数えます。'),
+    tr('"Volume from measured values" in "Tools": a table of cross sections (the average end area method and Simpson’s rule, with the reason when Simpson’s rule cannot be used) or the heights at the corners of a grid (the method of point heights, V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)). A table can be pasted from a spreadsheet; the volume is given in m³ and L.', '「道具」の「測った値から体積」では、断面積の表から平均断面法とシンプソンの公式（使えないときは理由も）、格子の角の高さから点高法（V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)）で体積を出します。表は表計算ソフトから貼り付けられ、結果は m³ と L で出ます。'),
     tr('Below a graph there is a row of samples (a heart, waves, a doughnut, a ripple …): tap one to draw it, then change its functions and ranges as you like.', 'グラフの下にサンプル（ハート、波、ドーナツ、波紋など）が並んでいます。タップすると描けるので、式や範囲を変えて試せます。'),
     tr('In a form, ↶ and ↷ undo and redo, and ⋯ clears all boxes. A form closed without being used keeps its boxes. The matrix form keeps its matrix for the next calculation, takes a table pasted from a spreadsheet, and its ⋯ menu inserts or deletes a row or a column.', 'フォームでは ↶ ↷ で「元に戻す」「やり直す」、⋯ で「すべての欄を消去」ができます。使わずに閉じたフォームは、次に開くと欄がそのまま残っています。行列の画面は入れた行列を次の計算まで覚えていて、表計算ソフトの表を貼り付けでまとめて入れられ、⋯ から行や列の挿入・削除もできます。')
   ];
@@ -3061,7 +3097,7 @@
     focusExpr();
   }
   function openExamples() {
-    return panel('examples', tr('Examples and tips', '式の例・使い方'), (p) => {
+    return panel('examples', tr('Examples and tips', '使い方と例'), (p) => {
       p.body.append(el('div', { class: 'section-title', text: tr('Examples (tap one to put it in the input field)', '式の例（タップすると入力欄に入ります）') }));
       for (const [group, rows] of EXAMPLES) {
         const box = el('div', { class: 'card ex-group' }, el('div', { class: 'ex-title', text: group }));
@@ -3073,7 +3109,7 @@
       }
       p.body.append(el('div', { class: 'section-title', text: tr('Tips', '使い方のヒント') }),
         el('div', { class: 'card' }, el('ul', { class: 'tips' }, ...TIPS.map((t) => el('li', { text: t })))),
-        el('div', { class: 'form-hint', text: tr('Expressions are written as in Qalculate!. See "Functions" in the menu for the functions, and "Units and currencies" for the units and currencies.', '式の書き方は Qalculate! と同じです。使える関数は「関数の一覧」、単位と通貨は「単位・通貨の一覧」にあります。') }));
+        el('div', { class: 'form-hint', text: tr('Expressions are written as in Qalculate!. The functions, units and currencies are in "Lists" in the menu.', '式の書き方は Qalculate! と同じです。使える関数・単位・通貨は、メニューの「一覧」にあります。') }));
     });
   }
 
@@ -3236,7 +3272,7 @@
       const cats = el('div', { class: 'cats' });
       const count = el('div', { class: 'count' });
       const list = el('div');
-      p.body.append(search, cats, count, list);
+      p.body.append(listTabs(kind), search, cats, count, list);
       p.state = { cat: kind === 'units' ? 'Currency' : '', q: '' };
       const render = () => {
         const items = catalogs[kind] || [];
@@ -3724,8 +3760,7 @@
       await areaPairChanged();
       U.a.value = String(o.area.a); U.b.value = String(o.area.b);
       if (o.area.rev && U.rev) U.rev.open();
-      await computeArea();
-      if (o.area.length) computeLength();
+      await computeArea(); // the result the switch shows (the area or the length/perimeter)
     }
     draw();
   }
@@ -3952,7 +3987,7 @@
       g.fillStyle = A.f.color; g.font = '700 11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText('↔', px, H * GRIP_Y + 0.5);
     }
-    const lines = [A.text, A.lenText].filter(Boolean);
+    const lines = [P.areaUI && P.areaUI.mode === 'len' ? A.lenText : A.text].filter(Boolean); // the value the switch shows (1.12.0)
     P.canvas.dataset.area = lines.join(' / '); // what the graph shows, as text
     if (lines.length) {
       g.font = '600 13px system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
@@ -3970,7 +4005,9 @@
   function shortValue(name, result, approx) {
     const t = String(result).trim(), bare = t.replace(/^[=≈]\s*/, ''), v = Number(numberPart(bare)), ex = bare.split(' ≈ ')[0].split(' = ')[0].trim(); // "32/3 = 10 + 2/3 ≈ …": 32/3
     if (!isFinite(v)) return name + ' ' + clip(bare, 26);
-    const num = (+v.toPrecision(6)).toLocaleString('en-US', { maximumSignificantDigits: 6 });
+    // (1.12.0: grouped like the results, with commas only when "Digit grouping" is on; until 1.11.0 the
+    // graph showed 1,436.1 beside a result of 1436.1039293776)
+    const num = (+v.toPrecision(6)).toLocaleString('en-US', { maximumSignificantDigits: 6, useGrouping: !!S.grouping });
     if (bare.indexOf(' ≈ ') > 0) return name + (ex.length <= 12 ? ' = ' + ex : '') + ' ≈ ' + num;
     if (approx || t[0] === '≈') return name + ' ≈ ' + num;
     return name + ' = ' + (ex.length <= 14 ? ex : num);
@@ -4117,7 +4154,8 @@
       out);
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Calculus ▾', '微分・接線・極値 ▾') });
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) calcFunctionsChanged(); });
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); if (!box.hidden) calcFunctionsChanged(); });
     P.calcUI = { f, out, box, toggle };
     return el('div', { class: 'area-wrap' }, toggle, box);
   }
@@ -4592,9 +4630,13 @@
     if (!f) return;
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
     if (!a || !b) { U.len.textContent = tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'); return; }
-    const g = areaG();
+    const g = areaG(), key = areaKey();
     U.len.textContent = tr('Calculating…', '計算中…');
-    const fail = (text) => { U.len.textContent = text || tr('Could not calculate the length', '長さを計算できませんでした'); };
+    U.lenKey = ''; P.lenExpr = ''; showAreaMode();
+    const fail = (text) => { U.len.textContent = text || tr('Could not calculate the length', '長さを計算できませんでした'); U.lenKey = key; };
+    // the integral for the input field: the curve, or both curves and the vertical sides
+    const arc = (e) => `integrate(√(1 + (diff(${e}, x))^2), ${a}, ${b})`;
+    const lenExpr = g ? `${arc(f.expr)} + ${arc(g.expr)} + ${subXY(`abs((${f.expr}) − (${g.expr}))`, '(' + a + ')', 'y')} + ${subXY(`abs((${f.expr}) − (${g.expr}))`, '(' + b + ')', 'y')}` : arc(f.expr);
     const rn = await rangeNums(a, b);
     let parts = [{ a, b, lo: NaN, hi: NaN }], clipped = false;
     if (rn) {
@@ -4625,12 +4667,13 @@
       }
     }
     const lf = await sumValues(lfs);
-    const onGraph = (name, val) => { U.lenShown = true; if (P.area) { P.area.lenText = shortValue(name, val.text); draw(); } };
+    const onGraph = (name, val) => { U.lenShown = true; U.lenKey = key; P.lenExpr = lenExpr; showAreaMode(); if (P.area) { P.area.lenText = shortValue(name, val.text); draw(); } };
     const note = () => { if (clipped) U.len.append(el('div', { class: 'form-hint', text: realNote(!!g, parts) })); };
-    if (!g) { U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + shownValue(lf)); note(); onGraph(tr('Length', '長さ'), lf); return; }
+    if (!g) { U.lenText = shownValue(lf); U.lenName = tr('Length of the curve', '曲線の長さ'); U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + shownValue(lf)); note(); onGraph(tr('Length', '長さ'), lf); return; }
     const lg = await sumValues(lgs);
     const total = await sumValues(lfs.concat(lgs, sides));
     U.len.textContent = '';
+    U.lenText = shownValue(total); U.lenName = tr('Perimeter', '周の長さ');
     showResult(U.len, tr('Perimeter ', '周の長さ ') + shownValue(total));
     onGraph(tr('Perimeter', '周の長さ'), total);
     U.len.append(el('div', { class: 'form-hint', text: tr('Curves: ', '曲線：') + shownValue(lf).replace(/^= /, '') + ' + ' + shownValue(lg).replace(/^= /, '') +
@@ -4650,26 +4693,42 @@
     const cross = el('div', { class: 'area-cross' });
     const out = el('div', { class: 'area-out', 'aria-live': 'polite' });
     const ins = el('button', { class: 'btn', text: tr('Put into the input field', '式を入力欄に入れる'), hidden: true });
-    const go = el('button', { class: 'btn primary', text: tr('Area', '面積') });
-    const lenBtn = tapButton({ class: 'btn', text: tr('Length', '長さ・周') }, () => computeLength());
+    // 1.12.0 (BG05): "Area" and "Length" are one switch. Until 1.11.0 they were two buttons that each
+    // calculated once (and looked like a switch that did not switch); the length was added below the
+    // area, out of sight, and the graph showed both. Now the chosen one is shown, in the results and
+    // in the graph, and calculated again by itself when the range, the functions or an edge change.
+    const go = tapButton({ class: 'area-mode', 'aria-pressed': 'false', text: tr('Area', '面積') }, () => setAreaMode('area'));
+    const lenBtn = tapButton({ class: 'area-mode', 'aria-pressed': 'false', text: tr('Length', '長さ・周') }, () => setAreaMode('len'));
+    const modes = el('span', { class: 'seg mini area-modes', role: 'group', 'aria-label': tr('Result to show', '出す結果') }, go, lenBtn);
     const len = el('div', { class: 'area-out', 'aria-live': 'polite' });
     const rev = buildRevolution(); // 1.11.0: solids of revolution
     const box = el('div', { class: 'area-box' },
       el('div', { class: 'plot-range' }, f1, el('span', { text: tr('and', 'と') }), f2, el('span', { text: tr('', 'の間') })),
-      el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), a, el('span', { text: tr(' to ', ' 〜 ').trim() }), b, go, lenBtn),
-      cross, out, ins, len, rev.toggle, rev.box,
+      el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), a, el('span', { text: tr(' to ', ' 〜 ').trim() }), b),
+      el('div', { class: 'plot-range area-mode-row' }, modes),
+      cross, out, len, ins, rev.toggle, rev.box,
       el('div', { class: 'form-hint', text: tr('The area is shaded in the graph. Drag one of its two edges (↔) to change the range, or tap a range between crossing points. Parts below the x axis (or below the other function) count as positive. "Length" gives the length of the curve, or the perimeter of the region between two functions.', '面積を求める部分はグラフに色が付きます。両端の ↔ をドラッグすると範囲を変えられ、交点の間の範囲はタップでも選べます。x 軸（またはもう一方の関数）より下の部分もプラスとして数えます。「長さ・周」は曲線の長さ（2 つの関数の間なら囲まれた部分の周の長さ）です。') }),
       buildShapes2d(),
       tapButton({ class: 'btn geo-link', text: tr('More shapes: rectangle, triangle, cylinder… ›', 'ほかの図形（長方形・三角形・円柱など）›') }, () => openShapes()));
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Area and length ▾', '面積・長さ ▾') });
     // opened: the area between the first function and the x axis (or the second function) is shown at once
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) { P.areaUI.auto = true; areaFunctionsChanged(); } else { P.area = null; P.revAxis = null; rev.seq++; draw(); } });
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); if (!box.hidden) { P.areaUI.auto = true; areaFunctionsChanged(); } else { P.area = null; P.revAxis = null; rev.seq++; draw(); } });
     f1.addEventListener('change', () => { P.areaUI.auto = true; areaPairChanged(); });
     f2.addEventListener('change', () => { P.areaUI.auto = true; areaPairChanged(); });
-    go.addEventListener('click', () => computeArea());
-    ins.addEventListener('click', () => { if (P.areaExpr) useExample(P.areaExpr); });
-    P.areaUI = { f1, f2, a, b, cross, out, ins, box, len, rev };
+    // a typed range is calculated when it is left (or Enter): the chosen result follows by itself
+    for (const inp of [a, b]) {
+      inp.addEventListener('change', () => computeArea());
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
+    }
+    // the expression of the result shown: the integral of the area, or of the length
+    ins.addEventListener('click', () => { const e = P.areaUI.mode === 'len' ? P.lenExpr : P.areaExpr; if (e) useExample(e); });
+    // a tap on the result offers the three actions of every tool
+    out.addEventListener('click', () => { const U = P.areaUI; if (P.areaExpr && U.areaText && U.areaKey) resultSheet(tr('Area', '面積'), P.areaExpr, U.areaText); });
+    len.addEventListener('click', () => { const U = P.areaUI; if (P.lenExpr && U.lenText && U.lenKey) resultSheet(U.lenName || tr('Length', '長さ・周'), P.lenExpr, U.lenText); });
+    P.areaUI = { f1, f2, a, b, cross, out, ins, box, len, rev, toggle, go, lenBtn, mode: store.get('qalc.area.mode', 'area') === 'len' ? 'len' : 'area' };
+    showAreaMode();
     return el('div', { class: 'area-wrap' }, toggle, box);
   }
   // shapes to draw and measure: a circle (radius r), an ellipse (half axes a and b)
@@ -4742,7 +4801,7 @@
     // a newer call (another graph, another pair, an example) makes this one stop before it writes
     // a and b, whatever order the engine answers in (1.8.2)
     const seq = U.pairSeq = (U.pairSeq || 0) + 1;
-    P.area = null; U.out.textContent = ''; U.ins.hidden = true; U.len.textContent = ''; U.lenShown = false;
+    P.area = null; U.out.textContent = ''; U.ins.hidden = true; U.len.textContent = ''; U.lenShown = false; U.areaKey = U.lenKey = '';
     U.cross.textContent = '';
     draw();
     if (!f) return;
@@ -4804,8 +4863,7 @@
     U[k].value = text;
     if (!done) return;
     A[k] = x;
-    const again = !!U.lenShown;
-    computeArea().then(() => { if (again) computeLength(); });
+    computeArea(); // the result the switch shows (1.12.0; until 1.11.0 the area, and the length only if it had been shown)
   }
   // Where f and g (or the x axis) cross, in the drawn values, made exact with solve() or precise
   // with secantsolve(): [{ x, text }] (text is the exact value when there is one)
@@ -4874,19 +4932,56 @@
   }
   // auto: asked for by opening the tools or drawing a graph, not with the "Area" button (a short time
   // limit). 1.11.0: then the solid of revolution, when its part of the tools is open
+  // the area or the length (whichever the switch shows), then the solid if it is open
   async function computeArea(auto) {
-    await computeAreaOnly(auto);
     const U = P.areaUI;
-    if (U && U.rev && !U.rev.box.hidden) await computeRevolution(auto);
+    if (!U) return;
+    if (U.mode === 'len') { await computeAreaOnly(auto, true); await computeLength(); }
+    else await computeAreaOnly(auto);
+    if (U.rev && !U.rev.box.hidden) await computeRevolution(auto);
+    revealArea();
   }
-  async function computeAreaOnly(auto) {
+  // what the result depends on: when it is the same, a result already calculated is shown at once
+  function areaKey() {
+    const U = P.areaUI, f = P.series[Number(U.f1.value)], g = areaG();
+    return f ? [f.expr, g ? g.expr : '', U.a.value, U.b.value, JSON.stringify(engineOpts())].join('\u0001') : '';
+  }
+  function showAreaMode() {
+    const U = P.areaUI, m = U.mode;
+    U.go.classList.toggle('on', m === 'area'); U.lenBtn.classList.toggle('on', m === 'len');
+    U.go.setAttribute('aria-pressed', String(m === 'area')); U.lenBtn.setAttribute('aria-pressed', String(m === 'len'));
+    U.out.hidden = m !== 'area'; U.len.hidden = m !== 'len';
+    U.ins.hidden = !(m === 'len' ? U.lenKey && P.lenExpr : U.areaKey && P.areaExpr);
+  }
+  function setAreaMode(m) {
+    const U = P.areaUI;
+    if (!U) return;
+    U.mode = m;
+    store.set('qalc.area.mode', m);
+    showAreaMode();
+    if (P.area) draw(); // the graph shows the value chosen
+    const key = areaKey();
+    if (key && (m === 'len' ? U.lenKey : U.areaKey) === key) { revealArea(); return; }
+    computeArea();
+  }
+  // the result in view (the panel scrolls to it when it is below the screen)
+  function revealArea() {
+    const U = P.areaUI, node = U && (U.mode === 'len' ? U.len : U.out);
+    if (!node || node.hidden || !node.textContent) return;
+    const r = node.getBoundingClientRect(), vh = window.innerHeight || document.documentElement.clientHeight;
+    if (r.bottom > vh || r.top < 0) {
+      const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      try { node.scrollIntoView({ block: 'nearest', behavior: still ? 'auto' : 'smooth' }); } catch (e) { node.scrollIntoView(false); }
+    }
+  }
+  // shadeOnly: only the shaded region in the graph (for the length), not the area itself
+  async function computeAreaOnly(auto, shadeOnly) {
     const U = P.areaUI, f = P.series[Number(U.f1.value)];
     if (!f) return;
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
-    if (!a || !b) { U.out.textContent = tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'); return; }
-    const g = areaG();
-    U.out.textContent = tr('Calculating…', '計算中…');
-    U.ins.hidden = true;
+    if (!a || !b) { (shadeOnly ? U.len : U.out).textContent = tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'); return; }
+    const g = areaG(), key = areaKey();
+    if (!shadeOnly) { U.out.textContent = tr('Calculating…', '計算中…'); U.areaKey = ''; U.ins.hidden = true; }
     // the limits as numbers, for the shading and to find the crossing points between them
     const lim = await Bridge.send('calc', { expr: `[${a}, ${b}]`, opts: Object.assign(engineOpts(), { approx: 'approx', precision: 15, grouping: false }), timeout: 1500 });
     const nums = lim.ok && lim.result ? (parseMatrix(numberPartVec(lim.result)) || { rows: [[]] }).rows[0].map((x) => Number(x.replace(/−/g, '-'))) : [];
@@ -4898,8 +4993,16 @@
     if (nums.length === 2 && nums.every(isFinite) && nums[0] !== nums[1]) {
       const lo = Math.min(nums[0], nums[1]), hi = Math.max(nums[0], nums[1]);
       real = await realParts(g ? [f.expr, g.expr] : [f.expr], nums[0] < nums[1] ? a : b, nums[0] < nums[1] ? b : a, lo, hi);
-      if (real && !real.parts.length) { U.out.textContent = noRealText(); P.area = null; draw(); return; }
+      if (real && !real.parts.length) { if (!shadeOnly) { U.out.textContent = noRealText(); U.areaKey = key; } P.area = null; draw(); return; }
       if (real && !real.clipped) real = null;
+    }
+    if (shadeOnly) {
+      const keep = P.area && P.area.f === f && P.area.g === g ? P.area : null;
+      if (nums.length === 2 && nums.every(isFinite)) {
+        P.area = { f, g, a: Math.min(nums[0], nums[1]), b: Math.max(nums[0], nums[1]), text: keep && keep.a === Math.min(nums[0], nums[1]) && keep.b === Math.max(nums[0], nums[1]) ? keep.text : '', lenText: '' };
+        draw();
+      }
+      return;
     }
     const pieces = [];
     const crossIn = (lo, hi) => { const eps = (hi - lo) * 1e-9; return (P.areaCross || []).filter((p) => p.x > lo + eps && p.x < hi - eps).map((p) => p.text); };
@@ -4923,18 +5026,21 @@
     // a result the engine could not integrate exactly still has its approximate value after ≈
     if (r.ok && r.result && /∫|integrate\(/.test(r.result) && r.result.indexOf('≈') > 0) r.result = '≈ ' + r.result.split('≈').pop().trim();
     if (!r.ok || r.timeout || err || !r.result || /integrate\(|∫/.test(r.result)) {
-      U.out.textContent = r.timeout ? (auto ? tr('Press "Area" to calculate the area', '「面積」を押すと面積を計算します') : tr('It took too long (the time limit can be changed in the settings)', '時間がかかりすぎました（制限時間は設定で変えられます）'))
+      U.out.textContent = r.timeout ? (auto ? tr('It takes long: tap "Area" again to calculate it with the full time limit', '時間がかかります。もう一度「面積」をタップすると、制限時間いっぱいまで計算します') : tr('It took too long (the time limit can be changed in the settings)', '時間がかかりすぎました（制限時間は設定で変えられます）'))
         : localMessage((err && err.text) || r.error) || tr('Could not calculate the area', '面積を計算できませんでした');
+      if (!(r.timeout && auto)) U.areaKey = key; // an automatic try that ran out of time: a tap on "Area" tries again
       P.area = null; draw();
       return;
     }
     U.out.textContent = '';
-    showResult(U.out, tr('Area ', '面積 ') + (r.result.indexOf('≈ ') === 0 ? r.result : resultText(r)));
+    U.areaText = r.result.indexOf('≈ ') === 0 ? r.result : resultText(r);
+    showResult(U.out, tr('Area ', '面積 ') + U.areaText);
     if (real) U.out.append(el('div', { class: 'form-hint', text: realNote(!!g, real.parts) }));
     P.areaExpr = expr;
-    U.ins.hidden = false;
+    U.areaKey = key;
+    showAreaMode();
     if (nums.length === 2 && nums.every(isFinite)) {
-      P.area = { f, g, a: Math.min(nums[0], nums[1]), b: Math.max(nums[0], nums[1]), text: shortValue(tr('Area', '面積'), r.result, r.approx) };
+      P.area = { f, g, a: Math.min(nums[0], nums[1]), b: Math.max(nums[0], nums[1]), text: shortValue(tr('Area', '面積'), r.result, r.approx), lenText: P.area && P.area.lenText };
       draw();
     }
   }
@@ -5150,8 +5256,8 @@
     const lo = parts[0].lo, hi = parts[parts.length - 1].hi, w = r6((Rmax || 1) * 1.08);
     const three = { exprs, range: [parts[0].a, parts[parts.length - 1].b, '−' + w, w] };
     const one = cases.size === 1 && pieces.length === 1;
-    const method = hole ? tr('Washers: V = π∫(R² − r²) dx (R, r: the distances of the outer and the inner curve from the axis)', 'ワッシャー法：V = π∫(R² − r²) dx（R・r：外側・内側の曲線と軸の距離）')
-      : tr('Disks: V = π∫R² dx (R: the distance of the curve from the axis)', '円板の方法：V = π∫R² dx（R：曲線と軸の距離）');
+    const method = hole ? tr('Washers (thin rings stacked along the axis): V = π∫(R² − r²) dx (R, r: the distances of the outer and the inner curve from the axis)', 'ワッシャー法（穴のあいた薄い円板を軸に沿って重ねる）：V = π∫(R² − r²) dx（R・r：外側・内側の曲線と軸の距離）')
+      : tr('Disks (thin disks stacked along the axis): V = π∫R² dx (R: the distance of the curve from the axis)', '円板の方法（薄い円板を軸に沿って重ねる）：V = π∫R² dx（R：曲線と軸の距離）');
     const simple = async (e) => revPretty(ax.k === '0' ? e : (await exactText(e)) || e);
     const detail = one ? 'R = ' + await simple(pieces[0].R) + (pieces[0].r ? ', r = ' + await simple(pieces[0].r) : '')
       : trf('R and r change at {0}: calculated in {1} pieces', 'R と r は x = {0} で替わるので、{1} 個に分けて計算', pieceCuts(pieces, parts), pieces.length);
@@ -5258,7 +5364,7 @@
     }
     const w = r6((X.hi - kv) * 1.06);
     const three = { exprs, range: ['−' + w, w, '−' + w, w] };
-    const method = tr('Shells: V = 2π∫ρ h dρ (ρ: the distance from the axis, h: the height of the region there)', '殻の方法（円筒分割）：V = 2π∫ρ h dρ（ρ：軸からの距離、h：その距離での領域の高さ）');
+    const method = tr('Shells (thin cylinders around the axis): V = 2π∫ρ h dρ (ρ: the distance from the axis, h: the height of the region there)', '殻の方法（薄い円筒を軸のまわりに重ねる）：V = 2π∫ρ h dρ（ρ：軸からの距離、h：その距離での領域の高さ）');
     const one = pieces.length === 1;
     const detail = (one ? 'ρ = ' + revPretty(k === '0' ? rho : (await exactText(rho)) || rho) + ', h = ' + revPretty(pieces[0].h) : trf('h changes at {0}: calculated in {1} pieces', 'h は {0} で替わるので、{1} 個に分けて計算', pieces.slice(1).map((p) => p.a).slice(0, 4).join(', '), pieces.length))
       + (sides.length === 2 ? tr(' (the region is on both sides of the axis: the two sides turned make one solid, the overlap counted once)', '（領域が軸の両側にあるので、両側を回した立体の和として、重なりは 1 回だけ数えています）') : '');
@@ -5317,17 +5423,21 @@
         setAxis(axis, true);
         openPlotWith(exprs, { range, equal: !!equal, area: { a, b, between, rev: true } });
       })));
-    const box = el('div', { class: 'rev-box' },
+    // 1.12.0: "Make a solid ▾" holds the kinds of solids made from the shaded region (the solid of
+    // revolution now; the solid with known cross sections follows)
+    const kinds = el('div', { class: 'seg mini solid-kinds', role: 'group', 'aria-label': tr('Kind of solid', '立体の種類') },
+      el('button', { class: 'on', 'aria-pressed': 'true', text: tr('Revolution (turned around an axis)', '回転体（軸のまわりに回す）') }));
+    const box = el('div', { class: 'rev-box' }, kinds,
       el('div', { class: 'plot-range' }, el('span', { text: tr('Axis', '軸') }), el('span', { class: 'seg mini rev-axes' }, ...btns), kRow),
       kErr, msg, outs, method, view, exRow,
       el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
     box.hidden = true;
-    const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Solid of revolution ▾', '回転体 ▾'), 'aria-expanded': 'false' }, () => {
+    const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Make a solid ▾', '立体にする ▾'), 'aria-expanded': 'false' }, () => {
       if (box.hidden && !proGate('revolution')) return;
       box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); save();
       if (!box.hidden) computeRevolution(true); else { R.seq++; P.revAxis = null; draw(); }
     });
-    Object.assign(R, { box, toggle, k, kErr, kRow, msg, outs, method, view, setAxis, open: () => { if (box.hidden) toggle.click(); } });
+    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, method, view, setAxis, open: () => { if (box.hidden) toggle.click(); } });
     setAxis(R.axis, true);
     if (saved.open) { box.hidden = false; toggle.classList.add('on'); toggle.setAttribute('aria-expanded', 'true'); }
     return R;
@@ -5339,9 +5449,7 @@
     const row = { val, expr: '', result: '' };
     row.node = tapButton({ class: 'geo-row' }, async () => {
       if (!row.expr) return;
-      const key = await sheet(name + '  ' + clip(row.result, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'], ['copy', tr('Copy the result', '結果をコピー')]]);
-      if (key === 'use') useExample(row.expr);
-      else if (key === 'copy') copyText(row.result);
+      resultSheet(name, row.expr, row.result);
     });
     row.node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), val);
     R.outs.append(row.node);
@@ -5493,7 +5601,8 @@
         tapButton({ class: 'btn', text: tr('Draw ∂f/∂y', '∂f/∂y を描く') }, () => add('y'))));
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Partial derivatives ▾', '偏微分 ▾') });
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) partialSurfacesChanged(); });
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); if (!box.hidden) partialSurfacesChanged(); });
     Q3.partUI = { f, box };
     return el('div', { class: 'area-wrap' }, toggle, box);
   }
@@ -5617,6 +5726,7 @@
     const setRegion = (k, quiet) => {
       Q3.volUI.region = k;
       bEnc.classList.toggle('on', k === 'enc'); bRect.classList.toggle('on', k === 'rect'); bDisk.classList.toggle('on', k === 'disk'); bCus.classList.toggle('on', k === 'custom');
+      for (const [b, kk] of [[bEnc, 'enc'], [bRect, 'rect'], [bDisk, 'disk'], [bCus, 'custom']]) b.setAttribute('aria-pressed', String(k === kk)); // a switch: read out as one (1.12.0)
       rangeText.hidden = k !== 'rect'; diskRow.hidden = k !== 'disk'; encText.hidden = k !== 'enc'; hint.hidden = k === 'enc'; hintEnc.hidden = k !== 'enc';
       cusBox.hidden = k !== 'custom'; signRow.hidden = k === 'enc';
       if (k === 'custom') { kindSel.value = C.kind; buildFields(); C.clearErr(); cusText.textContent = ''; }
@@ -5639,7 +5749,8 @@
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Volume and surface ▾', '体積・表面積 ▾') });
     // opened: the volume and the surface area of the drawn surface are shown at once
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) volumeSurfacesChanged(); else { Q3.volUI.seq++; Q3.volShade = null; Q3.liqBuf = null; requestDraw3d(); } });
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); if (!box.hidden) volumeSurfacesChanged(); else { Q3.volUI.seq++; Q3.volShade = null; Q3.liqBuf = null; requestDraw3d(); } });
     s1.addEventListener('change', () => { if (s2.value === s1.value) s2.value = 'plane'; volumeAuto(); });
     s2.addEventListener('change', () => volumeAuto());
     R.addEventListener('change', () => volumeAuto());
@@ -6772,8 +6883,8 @@
       JA ? empty.map((e) => '「' + clip(e, 18) + '」').join('、') : empty.map((e) => '"' + clip(e, 18) + '"').join(', '), vars));
     // (a letter that has a value of its own is no longer the variable of the tools below the graph)
     const dv = (three ? ['x', 'y'] : ['x']).find((l) => definedVars.has(l));
-    if (dv) notes.push(trf('{0} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: User-defined variables and functions)',
-      '{0} に値が定義されています（ユーザー定義の変数）。下の微分・面積などの計算は、{0} を削除するまで正しく出ないことがあります（メニュー「ユーザー定義の変数・関数」）', dv));
+    if (dv) notes.push(trf('{0} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: Lists → My own)',
+      '{0} に値が定義されています（ユーザー定義の変数）。下の微分・面積などの計算は、{0} を削除するまで正しく出ないことがあります（メニュー「一覧」→「自分の定義」）', dv));
     return notes.join(' ');
   }
 
@@ -9182,7 +9293,10 @@
     if ((sh.k === 'vtank' || sh.k === 'ctank') && num.h > num.H) return tr('The liquid cannot be higher than the tank (h ≤ H)', '液面はタンクの高さ以下にしてください（h ≤ H）');
     return '';
   }
-  function openShapes() {
+  // the shapes shown first in each kind (1.12.0); the others are behind "More shapes"
+  const GEO_COMMON = { 2: ['circle', 'rect', 'tri', 'trap', 'ellipse', 'sector'], 3: ['sphere', 'cyl', 'cone', 'box', 'pyr', 'hemi'] };
+  // kind (from "Tools", 1.12.0): 2 flat shapes, 3 solids, 4 tanks; without it the last one used
+  function openShapes(kind) {
     const p = panel('shapes', tr('Shapes: area, length, volume', '図形：面積・長さ・体積'), (p) => {
       const saved = store.get('qalc.shapes', {}) || {};
       // (1.11.0: dia, sizes of round shapes typed as diameters; vu and au, the units of the volumes and
@@ -9190,7 +9304,7 @@
       // of liquid whose height is found)
       const G = { k: GEO.some((s) => s.k === saved.k) ? saved.k : 'circle', unit: GEO_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : '', vals: saved.v || {}, seq: 0, last: {},
         dia: !!saved.dia, vu: VOL_UNITS.some((u) => u[0] === saved.vu) ? saved.vu : '', au: AREA_UNITS.some((u) => u[0] === saved.au) ? saved.au : '',
-        dens: saved.dens === 'own' || DENSITIES.some((d) => d[0] === saved.dens) ? saved.dens : '', dv: saved.dv || '', amt: saved.amt || {} };
+        dens: saved.dens === 'own' || DENSITIES.some((d) => d[0] === saved.dens) ? saved.dens : '', dv: saved.dv || '', amt: saved.amt || {}, more: {} };
       const cur = () => GEO.find((s) => s.k === G.k);
       const save = () => store.set('qalc.shapes', { k: G.k, unit: G.unit, v: G.vals, dia: G.dia, vu: G.vu, au: G.au, dens: G.dens, dv: G.dv, amt: G.amt });
       const b2 = el('button', { text: tr('Flat shapes', '平面の図形') }), b3 = el('button', { text: tr('Solids', '立体の図形') }), b4 = el('button', { text: tr('Tanks', '容器の液量') });
@@ -9341,12 +9455,22 @@
         b2.setAttribute('aria-pressed', String(sh.d === 2)); b3.setAttribute('aria-pressed', String(sh.d === 3)); b4.setAttribute('aria-pressed', String(sh.d === 4));
         const round = sh.p.some((q) => q[4]);
         rdSeg.hidden = !round; bRad.classList.toggle('on', !G.dia); bDia.classList.toggle('on', G.dia);
+        bRad.setAttribute('aria-pressed', String(!G.dia)); bDia.setAttribute('aria-pressed', String(G.dia));
         outUnits.hidden = sh.d === 2 && !sh.out.some((o) => o[3] === 2); weightRow.hidden = sh.d === 2; amtRow.hidden = sh.d !== 4;
         densIn.hidden = G.dens !== 'own'; amtIn.value = G.amt[k] || '';
         chips.textContent = '';
-        for (const s of GEO.filter((x) => x.d === sh.d)) {
+        // 1.12.0: the six most used shapes of a kind first, the others behind "More shapes" (and the
+        // one chosen, wherever it is), so that no more than about seven are offered at once
+        const all = GEO.filter((x) => x.d === sh.d), common = GEO_COMMON[sh.d];
+        const shown = common && !G.more[sh.d] ? all.filter((x) => common.indexOf(x.k) >= 0 || x.k === k) : all;
+        for (const s of shown) {
           chips.append(tapButton({ class: 'geo-chip' + (s.k === k ? ' on' : ''), 'aria-pressed': String(s.k === k), html: svg(s, null, true) + '<span></span>' }, () => { if (s.k !== G.k) { typed(); choose(s.k); } }));
           chips.lastChild.lastChild.textContent = s.name;
+        }
+        if (shown.length < all.length) {
+          chips.append(tapButton({ class: 'geo-chip geo-more', 'aria-expanded': 'false', text: trf('More shapes ({0}) ▾', 'ほかの形（{0}）▾', all.length - shown.length) }, () => { G.more[sh.d] = true; choose(G.k); }));
+        } else if (common && G.more[sh.d]) {
+          chips.append(tapButton({ class: 'geo-chip geo-more', 'aria-expanded': 'true', text: tr('Fewer ▴', '閉じる ▴') }, () => { G.more[sh.d] = false; choose(G.k); }));
         }
         const old = G.vals[k] || [];
         inputs = {}; sizes.textContent = '';
@@ -9365,9 +9489,7 @@
           const row = { def, val, expr: '', result: '' };
           row.node = tapButton({ class: 'geo-row' }, async () => {
             if (!row.expr) return;
-            const key = await sheet(def[0] + '  ' + clip(row.shown, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'], ['copy', tr('Copy the result', '結果をコピー')]]);
-            if (key === 'use') useExample(row.expr);
-            else if (key === 'copy') copyText(row.result);
+            resultSheet(def[0], row.expr, row.shown || row.result, row.result);
           });
           row.node.append(el('span', { class: 'geo-name' }, def[0], el('small', { text: def[1] })), val);
           return row;
@@ -9384,6 +9506,7 @@
       b2.addEventListener('click', () => { if (cur().d !== 2) { typed(); choose(G.last[2] || 'circle'); } });
       b3.addEventListener('click', () => { if (cur().d !== 3) { typed(); choose(G.last[3] || 'sphere'); } });
       b4.addEventListener('click', () => { if (cur().d !== 4 && proGate('tanks')) { typed(); choose(G.last[4] || 'htank'); } });
+      p.showKind = (d) => { const b = { 2: b2, 3: b3, 4: b4 }[d]; if (b && cur().d !== d) b.click(); };
       vUnit.addEventListener('change', () => { G.vu = vUnit.value; save(); run(); });
       aUnit.addEventListener('change', () => { G.au = aUnit.value; save(); run(); });
       dens.addEventListener('change', () => { G.dens = dens.value; densIn.hidden = G.dens !== 'own'; save(); run(); if (G.dens === 'own') densIn.focus(); });
@@ -9401,6 +9524,7 @@
     });
     // opened again: the precision or the angle unit of the settings may have changed
     if (p.run) p.run();
+    if (kind && p.showKind) p.showKind(kind);
     return p;
   }
   // ------------------------------------------ volume from measured values (1.11.0)
@@ -9498,8 +9622,7 @@
         const r = { val, expr: '', result: '' };
         r.node = tapButton({ class: 'geo-row' }, async () => {
           if (!r.expr) return;
-          const k = await sheet(name + '  ' + clip(r.result, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'], ['copy', tr('Copy the result', '結果をコピー')]]);
-          if (k === 'use') useExample(r.expr); else if (k === 'copy') copyText(r.result);
+          resultSheet(name, r.expr, r.result);
         });
         r.node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), val);
         outs.append(r.node);
@@ -9639,7 +9762,7 @@
       const fExpr = el('input', { placeholder: tr('e.g. pi*x^2 (arguments x, y, z)', '例：pi*x^2（引数は x, y, z）'), autocapitalize: 'off' });
       const addVar = el('button', { class: 'btn primary', text: tr('Save variable', '変数を保存') });
       const addFn = el('button', { class: 'btn primary', text: tr('Save function', '関数を保存') });
-      p.body.append(
+      p.body.append(listTabs('defs'),
         el('div', { class: 'section-title', text: tr('Saved', '保存済み') }), list,
         el('div', { class: 'section-title', text: tr('Add or change a variable', '変数を追加・変更') }),
         el('div', { class: 'form-row' }, el('label', { text: tr('Name', '名前') }), vName),
@@ -9738,6 +9861,145 @@
     return p;
   }
 
+  // ---------------------------------------------------------------- tools
+  // "Tools" (1.12.0): every tool in one place, found by what one wants to do. A search box on top
+  // (the words of all seven languages find a tool, whatever the language of the page: VAT,
+  // Mehrwertsteuer, IVA …), the tools used last, then the tools by purpose. A group without tools
+  // yet is not shown. Each tool: [id, group, icon, name, what it does (one line), words to find it by,
+  // how to open it]. Graph tools are listed too, so that "volume" also finds the solid of revolution.
+  const TOOL_GROUPS = [['shop', tr('Shopping', '買い物')], ['money', tr('Money', 'お金')], ['time', tr('Dates and times', '日付と時間')],
+    ['convert', tr('Conversion', '換算')], ['geo', tr('Shapes and volumes', '図形と体積')], ['data', tr('Data', 'データ')]];
+  const TOOLS = [
+    ['flat', 'geo', '📐', tr('Flat shapes', '平面の図形'), tr('Area and perimeter of a circle, rectangle, triangle, trapezoid…', '円・長方形・三角形・台形などの面積と周の長さ'),
+      'area perimeter circle rectangle triangle trapezoid ellipse sector polygon 面積 周 円 長方形 三角形 台形 楕円 扇形 めんせき えん さんかくけい Fläche Umfang Kreis Rechteck Dreieck Trapez área perímetro círculo rectángulo triángulo aire périmètre cercle rectangle triangle 넓이 둘레 원 직사각형 삼각형 面積 周長 圓 長方形 三角形 梯形',
+      () => openShapes(2)],
+    ['solids', 'geo', '🧊', tr('Solids', '立体の図形'), tr('Volume and surface of a sphere, cylinder, cone, box, pyramid…', '球・円柱・円錐・直方体・角錐などの体積と表面積'),
+      'volume surface sphere cylinder cone cube box pyramid frustum torus pipe weight density 体積 表面積 球 円柱 円錐 直方体 立方体 角錐 円錐台 パイプ 重さ 密度 たいせき Volumen Oberfläche Kugel Zylinder Kegel Quader Pyramide Gewicht volumen superficie esfera cilindro cono pirámide peso volume surface sphère cylindre cône pyramide poids 부피 겉넓이 구 원기둥 원뿔 무게 體積 表面積 球 圓柱 圓錐 重量',
+      () => openShapes(3)],
+    ['tanks', 'geo', '🛢', tr('Tanks: liquid and level', '容器の液量'), tr('Amount of liquid from its height in a tank, and the height for an amount', 'タンクの液面の高さから液量、液量から高さ'),
+      'tank liquid level height amount litre liter fuel water oil container タンク 容器 液量 液面 水位 灯油 たんく えきりょう Tank Füllstand Flüssigkeit Liter tanque depósito nivel líquido litros réservoir cuve niveau liquide litres 탱크 용기 수위 액량 油槽 水塔 液位 容量',
+      () => openShapes(4)],
+    ['sections', 'geo', '📏', tr('Volume from measured values', '測った値から体積'), tr('Cross sections or a grid of heights (earthwork, ponds)', '断面積の表や、格子の点の高さから（土量・池など）'),
+      'cross section measured earthwork soil grid heights simpson average end area 断面 土量 点高法 平均断面法 シンプソン 盛土 切土 どりょう Querschnitt Erdmasse Aushub sección transversal movimiento de tierras profil en travers cubature terrassement 단면 토량 斷面 土方',
+      () => openSections()],
+    ['revolution', 'geo', '🔄', tr('Solid of revolution (graph)', '回転体（グラフ）'), tr('Turn the region between two curves around an axis', '2 つの曲線の間を軸のまわりに回した立体'),
+      'revolution solid rotate axis washer shell volume 回転体 回転 体積 軸 かいてんたい Rotationskörper Drehkörper sólido de revolución solide de révolution 회전체 旋轉體',
+      () => openRevolutionTool()],
+    ['area2d', 'geo', '📈', tr('Area and length in a graph', 'グラフの面積・長さ'), tr('Area between curves and the length of a curve', '曲線の間の面積、曲線の長さ'),
+      'area integral between curves length curve graph 面積 積分 曲線 長さ めんせき Fläche Integral Kurvenlänge área integral longitud de curva aire intégrale longueur 넓이 적분 곡선 길이 面積 積分 曲線 長度',
+      () => openAreaTool()]
+  ];
+  // what is typed in the search box and the words of the tools, made comparable: width, case,
+  // katakana as hiragana (タンク and たんく), no spaces
+  const toolNorm = (t) => String(t || '').normalize('NFKC').toLowerCase().replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60)).replace(/\s+/g, ' ').trim();
+  function toolMatches(t, q) {
+    const words = toolNorm(q).split(' ').filter(Boolean);
+    if (!words.length) return false;
+    const hay = toolNorm(t[3] + ' ' + t[4] + ' ' + t[5]);
+    return words.every((w) => hay.indexOf(w) >= 0);
+  }
+  function useTool(t) {
+    const recent = (store.get('qalc.tools.recent', []) || []).filter((id) => id !== t[0] && TOOLS.some((x) => x[0] === id));
+    recent.unshift(t[0]);
+    store.set('qalc.tools.recent', recent.slice(0, 4));
+    t[6]();
+    // "Used last" is up to date when Tools is seen again (after the tool's panel has covered it)
+    setTimeout(() => { if (panels.tools && panels.tools.refresh) panels.tools.refresh(); }, 400);
+  }
+  function toolRow(t) {
+    return tapButton({ class: 'tool-row', 'data-tool': t[0] }, () => useTool(t))
+      .appendChild(el('span', { class: 'ico', text: t[2] })).parentNode
+      .appendChild(el('span', { class: 'tool-t' }, el('span', { class: 'n', text: t[3] }), el('span', { class: 'd', text: t[4] }))).parentNode;
+  }
+  function openTools() {
+    const p = panel('tools', tr('Tools', '道具'), (p) => {
+      const search = el('input', { class: 'search', type: 'search', autocomplete: 'off', spellcheck: 'false',
+        placeholder: tr('What do you want to do?', 'やりたいことで探す'), 'aria-label': tr('Find a tool by what you want to do', 'やりたいことで道具を探す') });
+      const found = el('div', { class: 'tool-found', 'aria-live': 'polite' });
+      const lists = el('div', { class: 'tool-lists' });
+      p.body.append(search, el('div', { class: 'form-hint tool-eg', text: tr('For example: tank, volume, area', '例：タンク、体積、面積') }), found, lists);
+      const fill = () => {
+        lists.textContent = '';
+        const recent = (store.get('qalc.tools.recent', []) || []).map((id) => TOOLS.find((t) => t[0] === id)).filter(Boolean);
+        if (recent.length) lists.append(el('div', { class: 'section-title', text: tr('Used last', '最近使った道具') }), el('div', { class: 'card tool-list' }, ...recent.map(toolRow)));
+        for (const [g, name] of TOOL_GROUPS) {
+          const in_ = TOOLS.filter((t) => t[1] === g);
+          if (in_.length) lists.append(el('div', { class: 'section-title', text: name }), el('div', { class: 'card tool-list' }, ...in_.map(toolRow)));
+        }
+      };
+      const find = () => {
+        const q = search.value;
+        found.textContent = '';
+        lists.hidden = !!q.trim();
+        if (!q.trim()) return;
+        const hits = TOOLS.filter((t) => toolMatches(t, q));
+        if (hits.length) found.append(el('div', { class: 'card tool-list' }, ...hits.map(toolRow)));
+        else found.append(el('div', { class: 'card muted', text: tr('No tool was found for this. Try another word, or choose from the list below the search box after clearing it. Many calculations can also be typed directly, for example 5 km to mi.', 'この言葉では道具が見つかりませんでした。別の言葉で探すか、検索欄を空にして一覧から選んでください。5 km to mi のように、計算画面に直接入れて計算できることも多くあります。') }));
+      };
+      search.addEventListener('input', find);
+      p.refresh = () => { fill(); find(); };
+    });
+    p.refresh();
+    return p;
+  }
+  // the area and the solid of revolution of a 2D graph, opened from "Tools"
+  function openAreaTool() {
+    openPlot();
+    if (P.setMode) P.setMode('2d');
+    const U = P.areaUI;
+    if (U && U.box.hidden && U.toggle) U.toggle.click();
+    return U;
+  }
+  function openRevolutionTool() {
+    const U = openAreaTool();
+    if (U && U.rev && U.rev.open) U.rev.open();
+  }
+
+  // ---------------------------------------------------------------- lists
+  // "Lists" (1.12.0): the functions, the units and currencies, the constants and the user's own
+  // variables and functions, as four tabs above each of the four lists; the last tab used opens.
+  const LIST_TABS = [['functions', tr('Functions', '関数')], ['units', tr('Units', '単位・通貨')], ['variables', tr('Constants', '定数')], ['defs', tr('My own', '自分の定義')]];
+  function listTabs(active) {
+    return el('div', { class: 'seg list-tabs', role: 'tablist', 'aria-label': tr('Lists', '一覧') },
+      ...LIST_TABS.map(([k, label]) => tapButton({ class: k === active ? 'on' : '', role: 'tab', 'aria-selected': String(k === active), text: label }, () => {
+        if (k === active) return;
+        closePanel();
+        openLists(k);
+      })));
+  }
+  function openLists(kind) {
+    const k = kind || store.get('qalc.lists.tab', 'functions');
+    const tab = LIST_TABS.some((t) => t[0] === k) ? k : 'functions';
+    store.set('qalc.lists.tab', tab);
+    return tab === 'defs' ? openDefs() : openCatalog(tab);
+  }
+
+  // ------------------------------------------------------- result actions
+  // A tap on a result of a tool offers the same three things in every tool (1.12.0): put its
+  // expression into the input field, keep it in the history (staying in the tool), copy it.
+  // (copy: the text copied, when not the result as shown)
+  async function resultSheet(title, expr, result, copy) {
+    const shown = String(result || '');
+    const k = await sheet(title + '  ' + clip(shown, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'],
+      ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy the result', '結果をコピー')]]);
+    if (k === 'use') useExample(expr);
+    else if (k === 'keep') keepResult(expr, shown);
+    else if (k === 'copy') copyText(copy || shown);
+  }
+  // a result of a tool as a line of the history, as the tool showed it ("= 8π ≈ 25.13274123")
+  function keepResult(expr, shown) {
+    let t = String(shown || '').trim(), approx = false;
+    if (t.indexOf('= ') === 0) t = t.slice(2);
+    else if (t.indexOf('≈ ') === 0) { t = t.slice(2); approx = true; }
+    if (!expr || !t) return;
+    history.push({ expr, result: t, approx, base: 10, msgs: [], t: Date.now() });
+    if (history.length > 300) history = history.slice(-300);
+    historyChanged();
+    histEl.scrollTop = histEl.scrollHeight;
+    histPinned = true;
+    toast(tr('Kept in the history', '履歴に残しました'), 1600);
+  }
+
   // ------------------------------------------------------------ settings
   // color themes (QCalc Pro): the colors of the keys and the highlights (style.css)
   const THEMES = [['blue', tr('Blue', 'ブルー')], ['green', tr('Green', 'グリーン')], ['teal', tr('Teal', 'ティール')],
@@ -9776,11 +10038,17 @@
     ]],
     [tr('Input', '操作'), [
       ['preview', tr('Show the result while typing', '入力中に結果を表示'), 'bool'],
-      ['auto_rates', tr('Update exchange rates automatically (every 7 days)', '為替レートを自動更新（7日ごと）'), 'bool'],
       ['auto_ans', tr('An operator in an empty field continues from ans', '空欄で演算子を押すと ans から続ける'), 'bool'],
       ['haptics', tr('Vibrate when a key is pressed', 'キーを押したときに振動'), 'bool']
+    ]],
+    // 1.12.0: updating the rates was an item of the menu until 1.11.0
+    [tr('Exchange rates', '為替レート'), [
+      ['auto_rates', tr('Update exchange rates automatically (every 7 days)', '為替レートを自動更新（7日ごと）'), 'bool'],
+      ['rates_now', tr('Update exchange rates now', '為替レートを今すぐ更新'), 'link']
     ]]
   ];
+  // the settings that most people never change are under "More settings" (1.12.0), closed at first
+  const ADV_SETTINGS = ['structuring', 'complex', 'units', 'mixed_units', 'time_limit', 'max_decimals', 'base', 'notation', 'grouping', 'math_view', 'auto_ans'];
   // the settings that are numbers: smallest, largest (now, and with QCalc Pro) and default value
   const NUMBER_RANGE = {
     precision: { min: 2, max: maxPrecision, limit: MAX_PRECISION, def: 10 },
@@ -9788,10 +10056,22 @@
   };
   function openSettings() {
     const p = panel('settings', tr('Settings', '設定'), (p) => {
+      const adv = el('details', { class: 'adv-settings' }, el('summary', { text: tr('More settings', '詳しい設定') }));
       for (const [group, rows] of SETTINGS) {
-        p.body.append(el('div', { class: 'section-title', text: group }));
-        for (const [key, label, type, sub] of rows) {
+        const main = rows.filter((r) => ADV_SETTINGS.indexOf(r[0]) < 0), more = rows.filter((r) => ADV_SETTINGS.indexOf(r[0]) >= 0);
+        for (const [part, list] of [[p.body, main], [adv, more]]) {
+        if (!list.length) continue;
+        part.append(el('div', { class: 'section-title', text: group }));
+        for (const [key, label, type, sub] of list) {
           let input;
+          if (type === 'link') {
+            const when = el('div', { class: 's' });
+            p.ratesWhen = () => { when.textContent = tr('Last updated: ', '最終更新：') + fmtTime(ratesTime); };
+            p.ratesWhen();
+            part.append(tapButton({ class: 'setting setting-link' }, () => openRates()).appendChild(el('div', { class: 'lbl' }, el('div', { text: label }), when)).parentNode
+              .appendChild(el('span', { class: 'chev', text: '›', 'aria-hidden': 'true' })).parentNode);
+            continue;
+          }
           if (type === 'bool') {
             input = el('input', { type: 'checkbox' });
             input.checked = !!S[key];
@@ -9825,11 +10105,13 @@
           }
           const name = el('div', { text: label });
           if (key === 'theme' || key === 'precision') name.dataset.pro = '';
-          p.body.append(el('label', { class: 'setting' },
+          part.append(el('label', { class: 'setting' },
             el('div', { class: 'lbl' }, name, sub ? el('div', { class: 's', text: sub }) : null), input));
           (p.inputs = p.inputs || {})[key] = input;
         }
+        }
       }
+      p.body.append(adv);
       p.body.append(el('div', { class: 'section-title', text: '' }),
         el('button', { class: 'btn', text: tr('Reset all settings', '設定を初期値に戻す'), onclick: async () => {
           if (!(await confirmSheet(tr('Reset all settings to their defaults?', '設定を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
@@ -9885,7 +10167,7 @@
           'Expressions are written in the same way as in Qalculate!.',
           '計算はすべて、オープンソースの電卓 Qalculate! の計算エンジン <b>libqalculate</b> が行います。QCalc は、その公式ソースコードを Android（arm64）向けにビルドして組み込んだ、スマホ向けの電卓です。Qalculate! の開発者が作ったアプリではありません。<br><br>' +
           '式の書き方は Qalculate! と同じです。') },
-          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Examples and tips', '式の例・使い方を見る'), onclick: (e) => { e.preventDefault(); openExamples(); } }))),
+          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Examples and tips', '使い方と例を見る'), onclick: (e) => { e.preventDefault(); openExamples(); } }))),
         el('div', { class: 'card', html: tr(
           '<b>Privacy</b><br>QCalc collects no personal data and sends nothing anywhere. It uses the internet only to download exchange rates (from three sources such as the European Central Bank), and sends no information about you then either. The history and the settings are kept on your device and are never sent to the developer.',
           '<b>プライバシー</b><br>QCalc は個人情報を集めず、どこにも送りません。インターネットを使うのは為替レートの取得（欧州中央銀行など 3 か所からのダウンロード）だけで、そのときもあなたの情報は送りません。計算の履歴や設定は端末の中に保存し、開発者に送ることはありません。') },
@@ -10113,6 +10395,7 @@
     if (LANG === 'en') return;
     const set = (sel, attr, en, ja) => { const e = $(sel); if (e) e.setAttribute(attr, tr(en, ja)); };
     set('#btn-menu', 'aria-label', 'Menu', 'メニュー');
+    set('#btn-hist', 'aria-label', 'History', '履歴');
     set('#chip-angle', 'title', 'Angle unit', '角度の単位');
     set('#chip-approx', 'title', 'Exact or approximate', '厳密計算・近似');
     set('#chip-base', 'title', 'Number base of results', '結果の進数');

@@ -1195,3 +1195,53 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 /* (1.11.0: a link of the tools may take two lines: "Volume from measured values (cross sections, grid
    of heights) ›" made the panel of the shapes wider than a 320-pixel screen) */
 .geo-link { white-space: normal; }
+
+/* ------------------------------------------------------------ 1.12.0 (A2) */
+/* the menu of a history line: ⋯ at its left, where the right-aligned text leaves room */
+.h-item { position: relative; padding-left: 34px; }
+.h-more {
+  position: absolute; left: -6px; top: 2px; width: 40px; height: 40px;
+  border: 0; border-radius: 20px; background: transparent; color: var(--muted);
+}
+.h-more::before { content: "⋯"; font-size: 20px; line-height: 1; }
+.h-more:active { background: var(--surface-2); }
+#btn-hist { flex: 0 0 auto; color: var(--text); }
+.bar .title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the note on what moved in the menu (shown once) */
+.moved-note { margin: 8px 12px 4px; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft, #e8efff); font-size: 13.5px; line-height: 1.45; }
+.moved-note .moved-t { font-weight: 700; margin-bottom: 4px; }
+.moved-note ul { margin: 0 0 6px; padding-left: 18px; }
+#drawer .moved-note .moved-ok { display: inline-block; width: auto; min-height: 36px; padding: 4px 16px; margin: 0; }
+/* Tools */
+.tool-list { padding: 4px 0; }
+.tool-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 12px;
+  border: 0; background: transparent; text-align: left; color: var(--text);
+}
+.tool-row + .tool-row { border-top: 1px solid var(--line); }
+.tool-row:active { background: var(--surface-2); }
+.tool-row .ico { font-size: 22px; width: 28px; text-align: center; flex: 0 0 auto; }
+.tool-row .tool-t { display: flex; flex-direction: column; min-width: 0; }
+.tool-row .n { font-weight: 600; font-size: 15px; }
+.tool-row .d { color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.tool-found:not(:empty) { margin-top: 8px; }
+/* the tabs of the lists */
+.seg.list-tabs { display: flex; margin-bottom: 10px; }
+.seg.list-tabs button { flex: 1 1 0; min-width: 0; padding-left: 4px; padding-right: 4px; font-size: 13px; overflow-wrap: anywhere; }
+.seg.mini.solid-kinds { display: flex; flex-wrap: wrap; margin: 2px 0 8px; }
+.seg.mini.solid-kinds button { flex: 1 1 auto; }
+.adv-settings { margin-top: 14px; }
+.adv-settings > summary { cursor: pointer; padding: 12px 4px; font-weight: 600; color: var(--accent); min-height: 48px; box-sizing: border-box; list-style: none; }
+.adv-settings > summary::-webkit-details-marker { display: none; }
+.adv-settings > summary::after { content: " ▾"; }
+.adv-settings[open] > summary::after { content: " ▴"; }
+.setting-link { width: 100%; text-align: left; border: 0; background: transparent; color: var(--text); font: inherit; }
+.setting-link .chev { font-size: 22px; color: var(--muted); padding: 0 6px; }
+.geo-chip.geo-more { justify-content: center; color: var(--accent); font-weight: 600; min-height: 44px; }
+/* the switch of the area tool: Area or Length (1.12.0, BG05) */
+.area-mode-row { margin-top: 2px; }
+.seg.mini.area-modes { display: inline-flex; }
+.seg.mini.area-modes button { min-width: 96px; min-height: 40px; }
+.area-out[hidden] { display: none; }
+.area-out { cursor: pointer; }
+.tool-eg { margin: 4px 2px 0; }
