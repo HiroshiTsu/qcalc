@@ -1013,7 +1013,12 @@
     "Same as device": "Comme l’appareil",
     "(now {0})": "(actuellement {0})",
     "When QCalc does not have the language of the device, it is in English": "Si QCalc n’a pas la langue de l’appareil, il s’affiche en anglais",
-    "Language (in the menu or the settings): \"Same as device\" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone's language changes.": "Langue (dans le menu ou les paramètres) : « Comme l’appareil » suit la langue du téléphone, même quand elle change ; si QCalc n’a pas cette langue, il s’affiche en anglais. Une langue choisie dans la liste reste quand la langue du téléphone change."
+    "Language (in the menu or the settings): \"Same as device\" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone's language changes.": "Langue (dans le menu ou les paramètres) : « Comme l’appareil » suit la langue du téléphone, même quand elle change ; si QCalc n’a pas cette langue, il s’affiche en anglais. Une langue choisie dans la liste reste quand la langue du téléphone change.",
+    "For reference only (not for trade, certification, design, construction or tax).": "À titre indicatif (pas pour le commerce, la certification, la conception, la construction ou les impôts).",
+    "Assumes the ideal shape of the picture (no tilt, dents or fittings).": "Hypothèse : la forme idéale du dessin (sans inclinaison, bosses ni accessoires).",
+    "The densities of the list are typical values.": "Hypothèse : les masses volumiques de la liste sont des valeurs typiques.",
+    "Between the measured values the shape is filled in by the formulas shown.": "Hypothèse : entre les valeurs mesurées, la forme est complétée par les formules indiquées.",
+    "Terms of use": "Conditions d’utilisation"
   },
   messages: {
     "rates-old": (p1) => "Les taux de change n’ont pas été mis à jour depuis " + p1 + " " + (p1 === '1' ? "jour" : "jours") + " (Paramètres → « Mettre à jour les taux de change maintenant »)",

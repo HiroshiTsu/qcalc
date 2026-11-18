@@ -9595,6 +9595,9 @@
       const amtRow = el('label', { class: 'geo-amt' }, el('span', { class: 'geo-lbl', text: tr('Height for the amount', '液量から高さ') }), amtIn, amtVal);
       const chips = el('div', { class: 'geo-chips', role: 'group', 'aria-label': tr('Shape', '図形') });
       const pic = el('div', { class: 'geo-pic' }), sizes = el('div', { class: 'geo-sizes' });
+      // the note under the results (A7): tanks (the shape is the ideal one), and the weight (a typical density)
+      const cautionTank = cautionLine(tr('Assumes the ideal shape of the picture (no tilt, dents or fittings).', '前提：図のとおりの理想的な形（傾き・へこみ・付属物は含みません）。'));
+      const cautionWeight = cautionLine(tr('The densities of the list are typical values.', '前提：一覧の密度は代表的な値です。'));
       const outs = el('div', { class: 'geo-out', 'aria-live': 'polite' });
       const unit = el('select', { 'aria-label': tr('Unit of the lengths', '長さの単位') });
       for (const u of GEO_UNITS) unit.append(el('option', { value: u, text: u || tr('no unit', '単位なし') }));
@@ -9719,6 +9722,7 @@
         bRad.setAttribute('aria-pressed', String(!G.dia)); bDia.setAttribute('aria-pressed', String(G.dia));
         outUnits.hidden = sh.d === 2 && !sh.out.some((o) => o[3] === 2); weightRow.hidden = sh.d === 2; amtRow.hidden = sh.d !== 4;
         densIn.hidden = G.dens !== 'own'; amtIn.value = G.amt[k] || '';
+        showCaution();
         chips.textContent = '';
         // 1.12.0: the six most used shapes of a kind first, the others behind "More shapes" (and the
         // one chosen, wherever it is), so that no more than about seven are offered at once
@@ -9770,13 +9774,14 @@
       p.showKind = (d) => { const b = { 2: b2, 3: b3, 4: b4 }[d]; if (b && cur().d !== d) b.click(); };
       vUnit.addEventListener('change', () => { G.vu = vUnit.value; save(); run(); });
       aUnit.addEventListener('change', () => { G.au = aUnit.value; save(); run(); });
-      dens.addEventListener('change', () => { G.dens = dens.value; densIn.hidden = G.dens !== 'own'; save(); run(); if (G.dens === 'own') densIn.focus(); });
+      const showCaution = () => { const d = cur().d; cautionTank.hidden = d !== 4; cautionWeight.hidden = d !== 3 || !G.dens; };
+      dens.addEventListener('change', () => { G.dens = dens.value; densIn.hidden = G.dens !== 'own'; showCaution(); save(); run(); if (G.dens === 'own') densIn.focus(); });
       densIn.addEventListener('input', () => { G.dv = densIn.value; save(); run(); });
       amtIn.addEventListener('input', () => { G.amt[G.k] = amtIn.value; save(); run(); });
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips,
         el('div', { class: 'geo-main' }, pic, el('div', { class: 'geo-side' }, rdSeg, sizes,
           el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
-        outUnits, msg, outs, amtRow, weightRow, graph,
+        outUnits, msg, outs, amtRow, weightRow, cautionTank, cautionWeight, graph,
         // 1.11.0: the volume from measured values (a table of cross sections, a grid of heights)
         tapButton({ class: 'btn geo-link', text: tr('Volume from measured values (cross sections, grid of heights) ›', '測った値から体積（断面積の表・点高法）›') }, () => openSections()),
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
@@ -9997,7 +10002,9 @@
         ...EX.map(([label, f]) => tapButton({ class: 'area-chip', text: label }, () => { f(); unit.value = M.unit; setMode(M.mode); })));
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Method', '方法') }, bSec, bGrid),
         el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit of the lengths', '長さの単位') }), unit),
-        ab, table, tools, msg, outs, how, ex,
+        ab, table, tools, msg, outs, how,
+        // the note under the results (A7): between the measured values the shape is filled in by the formulas
+        cautionLine(tr('Between the measured values the shape is filled in by the formulas shown.', '前提：測った値の間は、表示した公式で補っています。')), ex,
         el('div', { class: 'form-hint', text: tr('Type the values or paste a table from a spreadsheet (columns separated by tabs or commas) into a box: it fills the table from there. Tap a result to put its expression into the input field or to copy it. The tables are kept for the next time.', '値を入れるか、表計算ソフトの表（タブかカンマ区切り）を欄に貼り付けると、そこから表に入ります。結果をタップすると、式を入力欄に入れたりコピーしたりできます。表は次回のために残ります。') }));
       p.run = run;
       setMode(M.mode);
@@ -10648,7 +10655,9 @@
         el('div', { class: 'card', html: tr(
           '<b>Privacy</b><br>QCalc collects no personal data and sends nothing anywhere. It uses the internet only to download exchange rates (from three sources such as the European Central Bank), and sends no information about you then either. The history and the settings are kept on your device and are never sent to the developer.',
           '<b>プライバシー</b><br>QCalc は個人情報を集めず、どこにも送りません。インターネットを使うのは為替レートの取得（欧州中央銀行など 3 か所からのダウンロード）だけで、そのときもあなたの情報は送りません。計算の履歴や設定は端末の中に保存し、開発者に送ることはありません。') },
-          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Privacy policy', 'プライバシーポリシー'), onclick: (e) => { e.preventDefault(); openUrl(PRIVACY_URL); } }))),
+          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Privacy policy', 'プライバシーポリシー'), onclick: (e) => { e.preventDefault(); openUrl(PRIVACY_URL); } })),
+          // the terms of use: shown when they have been read by a lawyer (TERMS_READY, A7)
+          TERMS_READY ? el('div', {}, el('a', { href: '#', text: tr('Terms of use', '利用規約'), onclick: (e) => { e.preventDefault(); openTerms(); } })) : null),
         el('div', { class: 'card' },
           el('div', { text: tr('License: GNU GPL v2 or later (the same as libqalculate)', 'ライセンス：GNU GPL v2 以降（libqalculate と同じ）') }),
           el('div', { class: 'muted', style: 'font-size:13px', text: tr('The calculation engine also contains GMP, MPFR, libxml2 and more. Because MPFR is LGPL v3 or later, the engine as a whole is distributed under the GNU GPL v3 or later.', '計算エンジンには GMP・MPFR・libxml2 なども組み込んでいます。MPFR が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。') }),
@@ -10731,7 +10740,19 @@
     return el('div', { class: 'form-hint terms-notice' }, a,
       tapButton({ class: 'linkish', text: tr('terms of use', '利用規約') }, () => { closeSheet(null); openTerms(); }), b || '');
   }
-  function openTerms() { if (typeof openAbout === 'function') openAbout(); }
+  // The terms of use (a draft in design/terms-draft/ until a lawyer has read them; then on the site
+  // beside the privacy policy, docs/terms.html, English first and the other languages below)
+  const TERMS_URL = 'https://hiroshitsu.github.io/qcalc/terms.html' + (LANG === 'en' ? '' : '#' + LANG);
+  function openTerms() { openUrl(TERMS_URL); }
+  // The note of the tools whose results may be used for money or safety (1.12.0, A7): always the
+  // same short line in the same place, under the results, with what the result assumes. The terms
+  // of use (draft) say the same: the app is a tool for learning and everyday reference, not for
+  // trade or certification under the Measurement Act, design or construction, tax returns, medicine
+  // or decisions about safety.
+  function cautionLine(premise) {
+    return el('div', { class: 'caution', role: 'note' }, el('span', { class: 'caution-i', 'aria-hidden': 'true', text: 'ⓘ' }),
+      el('span', { class: 'caution-t', text: tr('For reference only (not for trade, certification, design, construction or tax).', '参考値です（取引・証明、設計・施工、税務には使えません）。') + (premise ? ' ' + premise : '') }));
+  }
   // the Pro features that are not tools: icon, name, what it gives, key of the prompt
   const PRO_FIXED = () => [
     ['🎯', tr('High precision', '高精度'), tr('Up to 200000 significant digits (free: up to 1000)', '有効桁数は最大 200000 桁（無料版は 1000 桁まで）'), 'precision'],

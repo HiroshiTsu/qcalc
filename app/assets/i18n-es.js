@@ -1025,7 +1025,12 @@
     "Same as device": "Igual que el dispositivo",
     "(now {0})": "(ahora {0})",
     "When QCalc does not have the language of the device, it is in English": "Si QCalc no tiene el idioma del dispositivo, se muestra en inglés",
-    "Language (in the menu or the settings): \"Same as device\" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone's language changes.": "Idioma (en el menú o en los ajustes): «Igual que el dispositivo» sigue el idioma del teléfono, también cuando cambia; si QCalc no tiene ese idioma, se muestra en inglés. Un idioma elegido en la lista se mantiene aunque cambie el idioma del teléfono."
+    "Language (in the menu or the settings): \"Same as device\" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone's language changes.": "Idioma (en el menú o en los ajustes): «Igual que el dispositivo» sigue el idioma del teléfono, también cuando cambia; si QCalc no tiene ese idioma, se muestra en inglés. Un idioma elegido en la lista se mantiene aunque cambie el idioma del teléfono.",
+    "For reference only (not for trade, certification, design, construction or tax).": "Solo como referencia (no para comercio, certificación, diseño, construcción ni impuestos).",
+    "Assumes the ideal shape of the picture (no tilt, dents or fittings).": "Supone la forma ideal del dibujo (sin inclinación, abolladuras ni accesorios).",
+    "The densities of the list are typical values.": "Las densidades de la lista son valores típicos.",
+    "Between the measured values the shape is filled in by the formulas shown.": "Entre los valores medidos, la forma se completa con las fórmulas mostradas.",
+    "Terms of use": "Términos de uso"
   },
   messages: {
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (Ajustes → "Actualizar los tipos de cambio ahora")',

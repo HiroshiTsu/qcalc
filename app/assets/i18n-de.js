@@ -1013,7 +1013,12 @@
     "Same as device": "Wie das Gerät",
     "(now {0})": "(jetzt {0})",
     "When QCalc does not have the language of the device, it is in English": "Wenn QCalc die Sprache des Geräts nicht hat, ist es auf Englisch",
-    "Language (in the menu or the settings): \"Same as device\" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone's language changes.": "Sprache (im Menü oder in den Einstellungen): „Wie das Gerät“ folgt der Sprache des Telefons, auch wenn sie geändert wird; hat QCalc diese Sprache nicht, ist es auf Englisch. Eine in der Liste gewählte Sprache bleibt, wenn sich die Sprache des Telefons ändert."
+    "Language (in the menu or the settings): \"Same as device\" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone's language changes.": "Sprache (im Menü oder in den Einstellungen): „Wie das Gerät“ folgt der Sprache des Telefons, auch wenn sie geändert wird; hat QCalc diese Sprache nicht, ist es auf Englisch. Eine in der Liste gewählte Sprache bleibt, wenn sich die Sprache des Telefons ändert.",
+    "For reference only (not for trade, certification, design, construction or tax).": "Nur zur Orientierung (nicht für Handel, Nachweise, Planung, Bau oder Steuern).",
+    "Assumes the ideal shape of the picture (no tilt, dents or fittings).": "Annahme: die ideale Form des Bildes (keine Neigung, Dellen oder Anbauteile).",
+    "The densities of the list are typical values.": "Annahme: Die Dichten der Liste sind typische Werte.",
+    "Between the measured values the shape is filled in by the formulas shown.": "Annahme: Zwischen den Messwerten wird die Form mit den gezeigten Formeln ergänzt.",
+    "Terms of use": "Nutzungsbedingungen"
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",

@@ -1017,7 +1017,12 @@
     "Same as device": "與裝置相同",
     "(now {0})": "（目前為 {0}）",
     "When QCalc does not have the language of the device, it is in English": "若 QCalc 沒有裝置的語言，會以英文顯示",
-    "Language (in the menu or the settings): \"Same as device\" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone's language changes.": "語言（選單或設定）：選「與裝置相同」會跟隨手機的語言（變更時也一樣）；若 QCalc 沒有該語言，會以英文顯示。從清單選擇語言後，即使變更手機的語言也會維持該語言。"
+    "Language (in the menu or the settings): \"Same as device\" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone's language changes.": "語言（選單或設定）：選「與裝置相同」會跟隨手機的語言（變更時也一樣）；若 QCalc 沒有該語言，會以英文顯示。從清單選擇語言後，即使變更手機的語言也會維持該語言。",
+    "For reference only (not for trade, certification, design, construction or tax).": "僅供參考（不可用於交易、證明、設計、施工或稅務）。",
+    "Assumes the ideal shape of the picture (no tilt, dents or fittings).": "前提：依圖所示的理想形狀（不含傾斜、凹陷或附屬物）。",
+    "The densities of the list are typical values.": "前提：清單中的密度為代表值。",
+    "Between the measured values the shape is filled in by the formulas shown.": "前提：測量值之間以所示公式補足。",
+    "Terms of use": "使用條款"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",
