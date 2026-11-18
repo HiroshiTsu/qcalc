@@ -6190,7 +6190,7 @@
     });
     if (!jobs.length || jobs.length > 2400) return false;
     const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect', base: 10, notation: 'auto', max_decimals: -1 });
-    const B = 300;
+    const B = batchOf(series.map((s) => s.expr));
     for (let step = 0; step < 12; step++) {
       for (let b0 = 0; b0 < jobs.length; b0 += B) {
         const part = jobs.slice(b0, b0 + B);
@@ -6217,6 +6217,11 @@
     }
     return true;
   }
+  // How many values one calculation asks for (1.11.0): the engine refuses a vector of more than about
+  // 15 000 characters ("The expression is nested too deeply"), so the values of a long expression are
+  // asked for in smaller batches. Until 1.10.x it was always 300: the edge of a long surface (a solid
+  // of revolution around a vertical axis) was not found, and the surface was drawn with saw teeth
+  const batchOf = (es) => Math.max(8, Math.min(300, Math.floor(9000 / (Math.max(...es.map((e) => subXY(e, '0.1234567890123', '0.1234567890123').length)) + 4))));
   // The edge of a surface with no real values beyond it (a sphere: √(r² − x² − y²)). On each grid
   // line from a point with a value to one without, the last point with a real value is found by
   // halving the step 12 times (all such lines at once, in one calculation per step), so the drawing
@@ -6238,7 +6243,7 @@
     }
     // (plain decimal numbers whatever the settings of the results are: base 16 or 2 decimals, 1.8.3)
     const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect', base: 10, notation: 'auto', max_decimals: -1 });
-    const B = 300;
+    const B = batchOf(series.map((s) => s.expr));
     for (let step = 0; step < 12; step++) {
       for (let b0 = 0; b0 < jobs.length; b0 += B) {
         const part = jobs.slice(b0, b0 + B);
@@ -7700,7 +7705,8 @@
     const surf = surfacePaint(g, tb, { W, H, q: Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S } : null });
     // (what was drawn, for the tests; shadow: the pixels in a shadow and at the soft edge of one, the
     // size of the lamp's map and the time to make it; floor: the cells of the floor's layer in a shadow)
-    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor });
+    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor,
+      rims: (D.series || []).reduce((n, s) => n + (s.rim ? Object.keys(s.rim).length : 0), 0) });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
     if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
