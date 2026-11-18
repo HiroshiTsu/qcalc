@@ -955,7 +955,15 @@
     "{0} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: Lists → My own)": "{0} tiene un valor propio (una variable del usuario): la derivada, el área y las otras herramientas de abajo pueden salir mal hasta que se elimine (menú: Listas → Propias)",
     "What do you want to do?": "¿Qué quieres hacer?",
     "Find a tool by what you want to do": "Buscar una herramienta según lo que quieres hacer",
-    "For example: tank, volume, area": "Por ejemplo: depósito, volumen, área"
+    "For example: tank, volume, area": "Por ejemplo: depósito, volumen, área",
+    "Number format": "Formato de números",
+    "Automatic: as in your region ({0})": "Automático: como en tu región ({0})",
+    "The decimal sign of the numbers you type and see. With 1,5 the arguments are separated by \";\": max(1,5; 2)": "El signo decimal de los números que escribes y ves. Con 1,5 los argumentos se separan con \";\": max(1,5; 2)",
+    "The decimal sign is \",\" in your number format: type 1,5, and no \".\" between digits (Settings → Number format)": "En tu formato de números el signo decimal es \",\": escribe 1,5, sin \".\" entre las cifras (Ajustes → Formato de números)",
+    "A space between digits would multiply them: type 1234,5 without spaces": "Un espacio entre cifras las multiplicaría: escribe 1234,5 sin espacios",
+    "Decimal comma": "Coma decimal",
+    "Separator of the arguments (;)": "Separador de los argumentos (;)",
+    "With a decimal comma (Settings → Number format: 1.234,5 or 1 234,5, or automatically in such a region) type 1,5 and separate the arguments with \";\": max(1,5; 2). In a matrix the elements are separated by spaces: [1,5 2; 3 4]. The history stays as it was when the setting is changed.": "Con coma decimal (Ajustes → Formato de números: 1.234,5 o 1 234,5, o automático en una región así) escribe 1,5 y separa los argumentos con \";\": max(1,5; 2). En una matriz los elementos se separan con espacios: [1,5 2; 3 4]. El historial no cambia al cambiar el ajuste."
   },
   messages: {
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (Ajustes → "Actualizar los tipos de cambio ahora")',

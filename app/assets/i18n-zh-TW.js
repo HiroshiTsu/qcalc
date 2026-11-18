@@ -947,7 +947,15 @@
     "{0} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: Lists → My own)": "{0} 已定義了值（自訂變數）：在刪除它之前，下方的導數、面積等工具可能算不正確（選單：清單 → 自訂）",
     "What do you want to do?": "想做什麼？",
     "Find a tool by what you want to do": "依想做的事尋找工具",
-    "For example: tank, volume, area": "例如：水槽、體積、面積"
+    "For example: tank, volume, area": "例如：水槽、體積、面積",
+    "Number format": "數字格式",
+    "Automatic: as in your region ({0})": "自動：依所在地區（{0}）",
+    "The decimal sign of the numbers you type and see. With 1,5 the arguments are separated by \";\": max(1,5; 2)": "輸入與顯示的數字所用的小數點。使用 1,5 時，引數以「;」分隔：max(1,5; 2)",
+    "The decimal sign is \",\" in your number format: type 1,5, and no \".\" between digits (Settings → Number format)": "目前的數字格式中，小數點是「,」：請輸入 1,5，數字之間不能使用「.」（設定 → 數字格式）",
+    "A space between digits would multiply them: type 1234,5 without spaces": "數字之間的空格會變成乘法：請輸入 1234,5，不要加空格",
+    "Decimal comma": "小數點（,）",
+    "Separator of the arguments (;)": "引數分隔（;）",
+    "With a decimal comma (Settings → Number format: 1.234,5 or 1 234,5, or automatically in such a region) type 1,5 and separate the arguments with \";\": max(1,5; 2). In a matrix the elements are separated by spaces: [1,5 2; 3 4]. The history stays as it was when the setting is changed.": "使用小數逗號時（設定 → 數字格式：1.234,5 或 1 234,5，或在這類地區自動），請輸入 1,5，並以「;」分隔引數：max(1,5; 2)。矩陣的元素以空格分隔：[1,5 2; 3 4]。變更設定時，記錄保持不變。"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",

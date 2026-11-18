@@ -704,6 +704,22 @@ public class MainActivity extends Activity {
         }
 
         /**
+         * The device's first language with its region ("de-DE", "es-MX"), for the number format of
+         * the page (setting "Number format": automatic, 1.12.0). It is the region of the device, not
+         * the language chosen for QCalc.
+         */
+        @JavascriptInterface
+        public String deviceLocale() {
+            try {
+                List<Locale> l = deviceLocales();
+                return l.isEmpty() ? "" : l.get(0).toLanguageTag();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "deviceLocale", e);
+                return "";
+            }
+        }
+
+        /**
          * The user chose a language in the app ("Language", 1.11.0). It is kept as qalc.lang (the
          * page saves it too) and, on Android 13 and later, set for QCalc in the system settings.
          */

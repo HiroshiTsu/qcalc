@@ -946,7 +946,15 @@
     "{0} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: Lists → My own)": "{0}에 값이 정의되어 있습니다(사용자 정의 변수). 아래의 미분, 넓이 등의 계산은 {0}을(를) 삭제할 때까지 바르게 나오지 않을 수 있습니다(메뉴 ‘목록’ → ‘내 정의’)",
     "What do you want to do?": "하고 싶은 일로 찾기",
     "Find a tool by what you want to do": "하고 싶은 일로 도구 찾기",
-    "For example: tank, volume, area": "예: 탱크, 부피, 넓이"
+    "For example: tank, volume, area": "예: 탱크, 부피, 넓이",
+    "Number format": "숫자 표기",
+    "Automatic: as in your region ({0})": "자동: 지역의 표기({0})",
+    "The decimal sign of the numbers you type and see. With 1,5 the arguments are separated by \";\": max(1,5; 2)": "입력하고 표시하는 수의 소수점입니다. 1,5 표기에서는 인수를 ‘;’로 구분합니다: max(1,5; 2)",
+    "The decimal sign is \",\" in your number format: type 1,5, and no \".\" between digits (Settings → Number format)": "숫자 표기 설정에서 소수점은 ‘,’입니다. 1,5처럼 입력하세요(숫자 사이에 ‘.’는 쓸 수 없습니다. 설정 → 숫자 표기)",
+    "A space between digits would multiply them: type 1234,5 without spaces": "숫자 사이의 공백은 곱셈이 됩니다. 1234,5처럼 공백 없이 입력하세요",
+    "Decimal comma": "소수점(,)",
+    "Separator of the arguments (;)": "인수 구분(;)",
+    "With a decimal comma (Settings → Number format: 1.234,5 or 1 234,5, or automatically in such a region) type 1,5 and separate the arguments with \";\": max(1,5; 2). In a matrix the elements are separated by spaces: [1,5 2; 3 4]. The history stays as it was when the setting is changed.": "소수점을 ‘,’로 쓰는 경우(설정 → 숫자 표기에서 1.234,5나 1 234,5, 또는 그런 지역에서 자동)에는 1,5처럼 입력하고 인수는 ‘;’로 구분합니다: max(1,5; 2). 행렬의 원소는 공백으로 구분합니다: [1,5 2; 3 4]. 설정을 바꿔도 기록은 그대로입니다."
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",

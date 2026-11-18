@@ -217,7 +217,7 @@
     angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1, time_limit: 20, math_view: true,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: false, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
-    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system'
+    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto'
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
   const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
@@ -229,6 +229,103 @@
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
   S.lang = LANG; // the language in use (qalc.lang), whatever qalc.settings says
   function saveSettings() { store.set('qalc.settings', S); }
+
+  // ------------------------------------------------------- number format
+  // 1.12.0: how numbers are written, setting "Number format": 1,234.5, 1.234,5 or 1 234,5, or
+  // automatically as in the region of the device (not its language: es-ES writes 1.234,5, es-MX
+  // 1,234.5; the app gives the device's first locale, QalcNative.deviceLocale). The engine always
+  // works with "." as the decimal point and "," between arguments; the page changes only what is
+  // typed and what is shown. With a decimal comma:
+  //   typed  1,5 is 1.5; ";" separates arguments, max(1,5; 2); in [ ] it ends a row of a matrix and
+  //          the elements are separated by spaces, [1,5 2; 3 4]; "1.5" is not taken (formatProblem)
+  //   shown  3,75; 1.234,5 or 1 234,5 with digit grouping; root(8; 3)
+  // The history, the variables, the functions and the expression being typed are kept in the
+  // engine's form, so changing the setting changes nothing that was saved.
+  const NUMFMT_SAMPLE = { dot: '1,234.5', comma: '1.234,5', space: '1 234,5' };
+  const NUMFMTS = { dot: { dec: '.', group: ',' }, comma: { dec: ',', group: '.' }, space: { dec: ',', group: '\u202f' } };
+  function deviceLocale() {
+    try { if (window.QalcNative && QalcNative.deviceLocale) { const t = QalcNative.deviceLocale(); if (t) return t; } } catch (e) { }
+    return (navigator.languages && navigator.languages[0]) || navigator.language || 'en-US';
+  }
+  // the format of a locale ("de-DE" → comma), from the separators Intl gives for it
+  function localeFormat(tag) {
+    try {
+      const parts = new Intl.NumberFormat(tag).formatToParts(1234567.5);
+      const dec = (parts.find((x) => x.type === 'decimal') || {}).value, group = (parts.find((x) => x.type === 'group') || {}).value || '';
+      if (dec !== ',') return 'dot';
+      return /^[\s\u00a0\u202f\u2009]$/.test(group) ? 'space' : 'comma';
+    } catch (e) { return 'dot'; }
+  }
+  let NF = NUMFMTS.dot, commaMode = false;
+  function applyNumFmt() {
+    const k = S.numfmt === 'auto' || !own(NUMFMTS, S.numfmt) ? localeFormat(deviceLocale()) : S.numfmt;
+    NF = NUMFMTS[k];
+    commaMode = NF.dec === ',';
+  }
+  applyNumFmt();
+  // Goes through a text, outside quotes, knowing for each place whether it is inside [ ] (the
+  // innermost bracket); fn(char, i, inBracket) gives the replacement of a character.
+  function mapSeps(t, fn) {
+    let out = '', q = '';
+    const stack = [];
+    for (let i = 0; i < t.length; i++) {
+      const c = t[i];
+      if (q) { out += c; if (c === q) q = ''; continue; }
+      if (c === '"' || c === "'") { q = c; out += c; continue; }
+      if (c === '(' || c === '[' || c === '{') stack.push(c);
+      else if ((c === ')' || c === ']' || c === '}') && stack.length) stack.pop();
+      out += fn(c, i, stack.length && stack[stack.length - 1] === '[');
+    }
+    return out;
+  }
+  const isDigit = (c) => c >= '0' && c <= '9';
+  // typed (with a decimal comma) → the engine's form
+  function toInternal(t) {
+    if (!commaMode || !t) return t;
+    return mapSeps(t, (c, i, inB) => {
+      if (c === ',') return (isDigit(t[i + 1] || '') && (isDigit(t[i - 1] || '') || !/[\p{L}\p{N}_)\]]/u.test(t[i - 1] || ''))) ? '.' : ',';
+      if (c === ';') return inB ? ';' : ',';
+      if ((c === '\u202f' || c === '\u00a0') && NF.group === '\u202f' && isDigit(t[i - 1] || '') && isDigit(t[i + 1] || '')) return '';
+      return c;
+    });
+  }
+  // the engine's form → as typed and shown (decimal comma, ";" between arguments, spaces in [ ])
+  function toDisplay(t) {
+    if (!commaMode || !t) return t;
+    return mapSeps(t, (c, i, inB) => {
+      if (c === '.') return isDigit(t[i + 1] || '') ? ',' : '.';
+      if (c === ',') return inB ? (t[i + 1] === ' ' ? ' ' : '  ') : ';';
+      return c;
+    });
+  }
+  // a result as shown → the engine's form, for the math notation (mathview.js reads the engine's syntax)
+  function mathSource(t) {
+    if (!commaMode) return t;
+    if (NF.group === '.') t = t.replace(/(\d)\.(?=\d{3})/g, '$1');
+    return toInternal(t.replace(/(\d)[\u202f\u2009](?=\d)/g, '$1'));
+  }
+  // the numbers drawn by KaTeX with a decimal comma (and ";" between arguments)
+  function commaMath(node) {
+    if (!commaMode || !node) return;
+    const w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) {
+      const v = n.nodeValue;
+      if (v.indexOf('.') >= 0 || v === ',') n.nodeValue = v === ',' ? ';' : v.replace(/(\d)\.(?=\d)|^\.(?=\d)/g, (m, d) => (d || '') + ',');
+    }
+  }
+  // a number made by the page (a value in a graph, a size): its decimal sign
+  const decSign = (t) => (commaMode ? String(t).replace(/(\d)\.(?=\d)/g, '$1,') : String(t));
+  // input that would mean something else than meant with a decimal comma: "1.5" (or 1.234 grouped)
+  function formatProblem(raw) {
+    if (commaMode && /\d\.\d/.test(raw.replace(/"[^"]*"|'[^']*'/g, ''))) {
+      return tr('The decimal sign is "," in your number format: type 1,5, and no "." between digits (Settings → Number format)', '数の書き方の設定で、小数点は「,」です。1,5 のように入れてください（数字の間に「.」は使えません。設定 →「数の書き方」）');
+    }
+    // "1 234" would be 1 × 234: digit groups are not typed
+    if (NF.group === '\u202f' && /\d[ \u00a0\u202f]\d{3}(?![\d,])/.test(raw)) {
+      return tr('A space between digits would multiply them: type 1234,5 without spaces', '数字の間の空白は掛け算になります。1234,5 のように空白なしで入れてください');
+    }
+    return '';
+  }
 
   // ---------------------------------------------------------------- Pro
   // QCalc Pro is a one-time purchase in Google Play. It unlocks a precision above
@@ -412,10 +509,14 @@
   };
 
   function makeKey(def, inToolbar) {
-    const [label, o] = [def[0], def[1] || {}];
+    let [label, o] = [def[0], def[1] || {}];
+    // a decimal comma (setting "Number format", 1.12.0): the "." key types ",", and "," between
+    // arguments becomes ";"
+    if (commaMode && label === '.') { label = ','; o = Object.assign({}, o, { ins: ',', title: tr('Decimal comma', '小数点（,）') }); }
+    else if (commaMode && label === ',' && inToolbar) { label = ';'; o = Object.assign({}, o, { ins: '; ', title: tr('Separator of the arguments (;)', '引数の区切り（;）') }); }
     let cls = 'key';
     if (o.cls) cls += ' ' + o.cls;
-    else if (!inToolbar && !/^[0-9.]$/.test(label)) cls += ' fn';
+    else if (!inToolbar && !/^[0-9.,]$/.test(label)) cls += ' fn';
     const b = el('button', { class: cls, id: o.id, title: o.title, 'aria-label': o.title || KEY_NAMES[label] || label });
     if (o.small) b.append(el('small', { text: o.label }));
     else if (o.html) b.innerHTML = '<span>' + o.html + '</span>'; // a fixed label with <sub>/<sup>, from the tables above
@@ -541,7 +642,9 @@
     focusExpr();
   });
   // Replaces the whole expression (a history entry, an example). What was typed can be brought back.
+  // text: in the engine's form (an example, a line of the history, a tool's expression)
   function setExpr(text) {
+    text = toDisplay(text);
     const prev = exprEl.value;
     exprEl.value = text;
     exprEl.setSelectionRange(text.length, text.length);
@@ -715,7 +818,7 @@
       .replace(/(^|[\d)\s])ー(?=[\d(\s]|$)/g, '$1−');
   }
   function normalizeExpr(s) {
-    return normalizeJa(s).trim();
+    return toInternal(normalizeJa(s)).trim();
   }
   function normalizeField() {
     const v = exprEl.value, n = normalizeJa(v);
@@ -729,7 +832,7 @@
   // ======================================================= live preview
   let previewBusy = false, previewAgain = false, previewTimer = null, engineReady = false;
   // the expression being typed survives closing the app or the page being reloaded
-  const saveDraft = debounce(() => store.set('qalc.draft', exprEl.value), 500);
+  const saveDraft = debounce(() => store.set('qalc.draft', toInternal(exprEl.value)), 500); // (in the engine's form, 1.12.0)
   // typed: the change was typed with the phone's keyboard (names are then offered, see updateSuggest)
   function exprChanged(typed) {
     saveDraft();
@@ -752,6 +855,7 @@
     const t = exprEl.value;
     let ok = false;
     if (S.math_view && t.trim() && window.QMath) ok = QMath.render(mathEl, normalizeExpr(t), { richOnly: true });
+    if (ok) commaMath(mathEl);
     mathEl.hidden = !ok;
     parsedEl.hidden = ok;
     if (ok) mathEl.scrollLeft = mathEl.scrollWidth;
@@ -765,7 +869,7 @@
     const notes = [];
     let d = 0, top = false;
     for (const c of expr) { if ('([{'.indexOf(c) >= 0) d++; else if (')]}'.indexOf(c) >= 0) d--; else if (c === ',' && d <= 0) top = true; }
-    if (top) {
+    if (top && !commaMode) {
       const m = /(?:^|[^\d.,])(\d{1,3}(?:,\d{3})+)(?![\d,])/.exec(expr);
       notes.push(m ? trf('The "," in {0} separates values, it does not group digits: type {1}', '「{0}」の「,」は桁区切りではなく、値の区切りとして扱われます。{1} と続けて入れてください',
         m[1], m[1].replace(/,/g, ''))
@@ -803,6 +907,8 @@
     const raw = exprEl.value.trim();
     const expr = raw && withoutOpenTo(normalizeExpr(raw));
     if (!expr) { showPreview(null); return; }
+    const fp = formatProblem(raw);
+    if (fp) { showPreview(null); msgEl.textContent = fp; msgEl.className = 'msg error'; return; }
     if (expr.indexOf('□') >= 0) { // a template with boxes still to fill in
       showPreview(null);
       msgEl.textContent = tr('Fill in the boxes □ ("Next box ▶" goes to the next one)', '□ の欄を埋めてください（「次の欄 ▶」で次の欄へ）');
@@ -822,12 +928,14 @@
   // inDecimals: the text continues the decimals of a number (the end of a shortened preview).
   function displayText(t, inDecimals) {
     if (!t) return '';
+    // (1.12.0) the number format: the decimal sign and the separators first, then the digit groups
+    t = toDisplay(t);
     if (t.indexOf('\u202f') >= 0 || t.indexOf('\u2009') >= 0) {
-      t = t.replace(/[\d\u202f\u2009.]+/g, (tok, at) => {
+      t = t.replace(commaMode ? /[\d\u202f\u2009,]+/g : /[\d\u202f\u2009.]+/g, (tok, at) => {
         if (inDecimals && at === 0) return tok;
-        const dot = tok.indexOf('.');
+        const dot = tok.indexOf(NF.dec);
         const int = dot < 0 ? tok : tok.slice(0, dot);
-        return int.replace(/(\d)[\u202f\u2009](?=\d)/g, '$1,') + (dot < 0 ? '' : tok.slice(dot));
+        return int.replace(/(\d)[\u202f\u2009](?=\d)/g, '$1' + NF.group) + (dot < 0 ? '' : tok.slice(dot));
       });
     }
     const d = /^"(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?)"$/.exec(t);
@@ -902,7 +1010,7 @@
     node.classList.remove('math');
     if (parts.every((x) => typeof x === 'string')) {
       // fractions, roots and powers in math notation (setting "math notation"): 1/6 as a stacked fraction
-      if (S.math_view && mathResult(text) && window.QMath && QMath.render(node, text, { richOnly: true, mathml: true })) { node.classList.add('math'); return; }
+      if (S.math_view && mathResult(text) && window.QMath && QMath.render(node, mathSource(text), { richOnly: true, mathml: true })) { node.classList.add('math'); commaMath(node); return; }
       node.textContent = text;
       return;
     }
@@ -1023,7 +1131,7 @@
     msgEl.className = 'msg';
     if (!r) { parsedEl.textContent = ''; previewEl.textContent = ''; return; }
     if (!r.ok) { previewEl.textContent = ''; msgEl.textContent = localMessage(r.error) || ''; msgEl.className = 'msg error'; return; }
-    parsedEl.textContent = r.parsed || '';
+    parsedEl.textContent = toDisplay(r.parsed || '');
     const err = (r.messages || []).find((m) => m.type === 'error');
     if (r.deferred) previewEl.textContent = tr('Press = to run it (definitions are not previewed)', '＝ を押すと実行します（定義など）');
     else if (r.timeout) previewEl.textContent = '…';
@@ -1055,6 +1163,8 @@
     if (!engineReady) { commitWaiting = true; previewEl.textContent = tr('Starting the calculation engine… the result follows', '計算エンジンを準備中です。準備ができたら計算します'); return; }
     const expr = withoutOpenTo(normalizeExpr(raw));
     if (!expr) return;
+    const fp = formatProblem(raw);
+    if (fp) { msgEl.textContent = fp; msgEl.className = 'msg error'; return; }
     if (expr.indexOf('□') >= 0) {
       selectBox(false);
       msgEl.textContent = tr('Fill in the boxes □ first', '先に □ の欄を埋めてください');
@@ -1480,13 +1590,13 @@
     } else {
       // a matrix: from init.matrix, else from a matrix that is selected in the input field, else
       // the matrix that was entered last (kept until "Clear"), else 2 × 2
-      const m = parseMatrix(init.matrix || (selected && selected.trim()));
+      const m = parseMatrix(init.matrix || (selected && toInternal(selected.trim())));
       const size = (n) => Math.max(1, Math.min(Number(n) || 2, MAT_MAX));
       if (!m && D) CF.mat = { rows: size(D.rows), cols: size(D.cols), op: init.op !== undefined ? init.op : D.op || '', vals: Object.assign({}, D.vals) };
       else {
         const rows = m ? m.rows : [['', ''], ['', '']];
         CF.mat = { rows: rows.length, cols: rows[0].length, op: init.op || '', vals: {} };
-        rows.forEach((r, i) => r.forEach((x, j) => { CF.mat.vals['c' + i + '_' + j] = x; }));
+        rows.forEach((r, i) => r.forEach((x, j) => { CF.mat.vals['c' + i + '_' + j] = toDisplay(x); }));
       }
     }
     CF.hist = []; CF.hi = -1; CF.typing = false; CF.navSel = null; CF.base = null;
@@ -1991,7 +2101,7 @@
   // puts the expression into the input field; calc: and calculates it
   function formInsert(calc) {
     if (!CF.id) return;
-    const id = CF.id, text = FORMS[id].build(formValue, CF.dir);
+    const id = CF.id, text = toDisplay(FORMS[id].build(formValue, CF.dir));
     const [s, e] = CF.sel;
     closeForm();
     if (!FORMS[id].matrix) delete formDrafts[id]; else if (formDrafts[id]) formDrafts[id].used = true;
@@ -2165,6 +2275,15 @@
   // lines pasted into the equations form are one equation each. Returns false for anything else
   // (the text is then pasted as usual).
   const NUM_RE = /^[−+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][−+-]?\d+)?$/;
+  // A table pasted from a spreadsheet of a region with a decimal comma (3,5 TAB 2,1) while the
+  // number format has a decimal point (1.12.0): when every number with a "," has a decimal part that
+  // is not three digits long (3,5, 12,25, not 1,000), the "," is the decimal sign
+  function pastedDecimals(rows) {
+    if (commaMode) return rows;
+    const cells = [].concat(...rows).filter((x) => /^[−+-]?\d+,\d+$/.test(x));
+    if (!cells.length || cells.some((x) => /,\d{3}$/.test(x))) return rows;
+    return rows.map((r) => r.map((x) => (/^[−+-]?\d+,\d+$/.test(x) ? x.replace(',', '.') : x)));
+  }
   function parseBlock(text) {
     const t = text.replace(/\r\n?/g, '\n').replace(/[\s;]+$/, '');
     const m = parseMatrix(normalizeExpr(t));
@@ -2172,11 +2291,12 @@
     let lines = t.split('\n').filter((l) => l.trim() !== '');
     if (lines.length === 1 && t.indexOf('\t') < 0 && t.indexOf(';') >= 0) lines = t.split(';');
     let cut;
+    const num = (x) => NUM_RE.test(x) || (commaMode && /^[−+-]?(?:\d+,?\d*|,\d+)(?:[eE][−+-]?\d+)?$/.test(x));
     if (t.indexOf('\t') >= 0) cut = (l) => l.split('\t');
-    else if (lines.every((l) => l.indexOf(',') >= 0)) cut = (l) => l.split(',');
-    else if (lines.every((l) => l.trim().split(/\s+/).every((x) => NUM_RE.test(x)))) cut = (l) => l.trim().split(/\s+/);
+    else if (!commaMode && lines.every((l) => l.indexOf(',') >= 0)) cut = (l) => l.split(',');
+    else if (lines.every((l) => l.trim().split(/\s+/).every(num))) cut = (l) => l.trim().split(/\s+/);
     else cut = (l) => [l];
-    const rows = lines.map((l) => cut(l).map((x) => normalizeExpr(x)));
+    const rows = pastedDecimals(lines.map((l) => cut(l).map((x) => x.trim()))).map((r) => r.map((x) => normalizeExpr(x)));
     if (!rows.length || (rows.length === 1 && rows[0].length === 1)) return null;
     const w = Math.max(...rows.map((r) => r.length));
     return rows.map((r) => r.concat(new Array(w - r.length).fill('')));
@@ -2197,7 +2317,7 @@
       block.forEach((r, di) => r.forEach((x, dj) => {
         const i = i0 + di, j = j0 + dj;
         if (i >= rowsN || j > colsN || (j === colsN && !sys)) { if (x) cut = true; return; }
-        if (j === colsN) c.b[i] = x; else c.rows[i][j] = x;
+        if (j === colsN) c.b[i] = toDisplay(x); else c.rows[i][j] = toDisplay(x); // (as typed: 3,5 with a decimal comma)
       }));
       setMatrixCells(c.rows, c.b, b.dataset.k);
       if (cut) toast(tr('The part that did not fit was left out', '入りきらない分は入れていません'), 2600);
@@ -2594,7 +2714,7 @@
   function insertResult(h) {
     const t = insertText(h);
     if (t === null) { toast(tr('This result is too long to insert (use the ans key)', 'この結果はそのまま挿入できません（ans キーで使えます）'), 2600); return; }
-    insert(t, 0, false);
+    insert(toDisplay(t), 0, false);
   }
   // The history is drawn in chunks (1.12.0): the newest HIST_CHUNK lines at once, then the older
   // ones a chunk at a time, at the top, when the page is idle, keeping what is on the screen in
@@ -2610,7 +2730,7 @@
     if (!history.length) {
       // nothing calculated yet: say what to do and offer a few examples to try
       const chips = el('div', { class: 'ex-chips' });
-      for (const x of STARTERS) chips.append(tapButton({ class: 'ex-chip', text: x }, () => { setExpr(x); focusExpr(); }));
+      for (const x of STARTERS) chips.append(tapButton({ class: 'ex-chip', text: toDisplay(x) }, () => { setExpr(x); focusExpr(); }));
       histEl.append(el('div', { class: 'empty' },
         el('div', { class: 'empty-t', html: tr('Type an expression and press <b>=</b>: the results stay here', '式を入力して <b>=</b> を押すと、ここに結果が残ります') }),
         el('div', { text: tr('Tap a result to insert it into the expression, or touch and hold it to copy it.', '結果をタップで式に挿入、長押しでコピーできます。') }),
@@ -2649,7 +2769,7 @@
   function historyItem(h) {
     const res = el('div', { class: 'h-res' });
     showResult(res, displayResult(h));
-    const item = el('div', { class: 'h-item' }, el('div', { class: 'h-expr', text: h.expr }), res);
+    const item = el('div', { class: 'h-item' }, el('div', { class: 'h-expr', text: toDisplay(h.expr) }), res);
     for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
     // ⋯ opens the same menu as touching and holding the line (1.12.0: nothing only by a long touch);
     // the dots are drawn by style.css, so that the text of the line stays the expression and the result
@@ -3076,6 +3196,7 @@
     tr('Above the input field the expression is shown in math notation (fractions, powers, roots, integrals), so you can check what you typed. It can be turned off in the settings.', '入力欄の上に、式が数式の形（分数・べき乗・根号・積分など）で表示されるので、入力した内容を確かめられます。設定で表示しないこともできます。'),
     tr('Touch and hold a result with x (x³ − 3x), or tap its ⋯, to differentiate or integrate it, draw its graph or put in a value for x.', 'x を含む結果（x³ − 3x など）を長押しするか ⋯ をタップすると、微分・積分・グラフ・x への値の代入ができます。'),
     tr('Type the "=" of an equation with the a=b key (the large = key calculates). Example: solve(x^2 = 16)', '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)'),
+    tr('With a decimal comma (Settings → Number format: 1.234,5 or 1 234,5, or automatically in such a region) type 1,5 and separate the arguments with ";": max(1,5; 2). In a matrix the elements are separated by spaces: [1,5 2; 3 4]. The history stays as it was when the setting is changed.', '小数点を「,」にした場合（設定 →「数の書き方」で 1.234,5 か 1 234,5、または自動でその地域）は、1,5 のように入れ、引数は「;」で区切ります：max(1,5; 2)。行列の要素は空白で区切ります：[1,5 2; 3 4]。設定を変えても履歴はそのままです。'),
     tr('Type a matrix as [1, 2; 3, 4]: "," between the elements and ";" between the rows. Matrix results are shown as tables in the history.', '行列は [1, 2; 3, 4] のように、要素を「,」、行を「;」で区切って入力します。結果の行列は履歴に表の形で表示されます。'),
     tr('The ▦ key of the Matrix page opens a grid of cells: set the rows and columns with + and −, type the elements and choose what to calculate (determinant, inverse, transpose, rank, eigenvalues, linear system). det, Aᵀ and A⁻¹ open it too when the input field is empty. Touch and hold a matrix result to edit it there.', '「行列」ページの ▦ キーで、行列を表の形で入力する画面が開きます。行と列の数を + と − で決めて要素を入れ、計算（行列式・逆行列・転置・階数・固有値・連立方程式）を選びます。入力欄が空のときは det・Aᵀ・A⁻¹ のキーでも開きます。結果の行列を長押しすると、その画面で編集できます。'),
     tr('Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.', '上の「RAD」「自動」「10進」をタップすると、角度の単位、厳密・近似、結果の進数が切り替わります。'),
@@ -3103,7 +3224,7 @@
         const box = el('div', { class: 'card ex-group' }, el('div', { class: 'ex-title', text: group }));
         for (const [text, note] of rows) {
           box.append(el('button', { class: 'ex-row', onclick: () => useExample(text) },
-            el('span', { class: 'mono ex-expr', text }), el('span', { class: 'ex-note', text: note })));
+            el('span', { class: 'mono ex-expr', text: toDisplay(text) }), el('span', { class: 'ex-note', text: note })));
         }
         p.body.append(box);
       }
@@ -3863,9 +3984,9 @@
   function fmt(v, step) {
     if (Math.abs(v) < step * 1e-9) return '0';
     const a = Math.abs(v);
-    if (a >= 1e-4 && a < 1e6) return v.toFixed(Math.max(0, Math.min(10, Math.ceil(-Math.log10(step) - 1e-9))));
+    if (a >= 1e-4 && a < 1e6) return decSign(v.toFixed(Math.max(0, Math.min(10, Math.ceil(-Math.log10(step) - 1e-9)))));
     const d = Math.max(1, Math.min(15, Math.floor(Math.log10(a)) - Math.floor(Math.log10(step)) + 1));
-    return v.toPrecision(d).replace(/e\+?/, 'E');
+    return decSign(v.toPrecision(d).replace(/e\+?/, 'E'));
   }
   // grid positions between a and b; nothing when the step is too small for the numbers
   // (adding the step would no longer change the value, and a loop would never end)
@@ -4004,13 +4125,13 @@
   // "6"; approx: a number alone is not exact)
   function shortValue(name, result, approx) {
     const t = String(result).trim(), bare = t.replace(/^[=≈]\s*/, ''), v = Number(numberPart(bare)), ex = bare.split(' ≈ ')[0].split(' = ')[0].trim(); // "32/3 = 10 + 2/3 ≈ …": 32/3
-    if (!isFinite(v)) return name + ' ' + clip(bare, 26);
+    if (!isFinite(v)) return name + ' ' + clip(toDisplay(bare), 26);
     // (1.12.0: grouped like the results, with commas only when "Digit grouping" is on; until 1.11.0 the
     // graph showed 1,436.1 beside a result of 1436.1039293776)
-    const num = (+v.toPrecision(6)).toLocaleString('en-US', { maximumSignificantDigits: 6, useGrouping: !!S.grouping });
-    if (bare.indexOf(' ≈ ') > 0) return name + (ex.length <= 12 ? ' = ' + ex : '') + ' ≈ ' + num;
+    const num = toDisplay((+v.toPrecision(6)).toLocaleString('en-US', { maximumSignificantDigits: 6, useGrouping: false })).replace(/\d+/, (int) => (S.grouping && int.length > 3 ? int.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group) : int));
+    if (bare.indexOf(' ≈ ') > 0) return name + (ex.length <= 12 ? ' = ' + toDisplay(ex) : '') + ' ≈ ' + num;
     if (approx || t[0] === '≈') return name + ' ≈ ' + num;
-    return name + ' = ' + (ex.length <= 14 ? ex : num);
+    return name + ' = ' + (ex.length <= 14 ? toDisplay(ex) : num);
   }
   function zoom(f, cx, cy) {
     if (!P.view) return;
@@ -9477,7 +9598,7 @@
         sh.p.forEach(([n, label0, kind, sym0, dl], i) => {
           // (a size of a round shape typed as a diameter: its label and its letter, D for R and d for r)
           const label = G.dia && dl ? dl : label0, sym = G.dia && dl ? ((sym0 || n) === 'R' ? 'D' : 'd') : sym0;
-          inputs[n] = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: old[i] !== undefined ? old[i] : sh.def[i], 'aria-label': label });
+          inputs[n] = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: old[i] !== undefined ? old[i] : toDisplay(sh.def[i]), 'aria-label': label });
           inputs[n].addEventListener('input', run);
           inputs[n].addEventListener('focus', () => inputs[n].select());
           sizes.append(el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl' }, label, kind === 'n' ? '' : el('i', { text: ' ' + (sym || n) })), inputs[n],
@@ -9572,8 +9693,9 @@
           if (lines.length > 1 && !/\d/.test(lines[0])) lines.shift();
           // (pasted into the first box: the table is the pasted one, the rows below it go)
           if (r === 0 && c === 0 && lines.length >= 2) list.length = Math.min(list.length, lines.length);
+          const table = pastedDecimals(lines.map((l) => (/\t/.test(l) ? l.split('\t') : /;/.test(l) ? l.split(';') : !commaMode && /,/.test(l) ? l.split(',') : l.trim().split(/\s+/)).map((s) => s.trim())));
           lines.forEach((l, i) => {
-            const vals = (/\t/.test(l) ? l.split('\t') : /;/.test(l) ? l.split(';') : /,/.test(l) ? l.split(',') : l.trim().split(/\s+/)).map((s) => s.trim());
+            const vals = table[i];
             while (list.length <= r + i) list.push(new Array(list[0].length).fill(''));
             vals.forEach((v, j) => { if (M.mode === 'sec' ? c + j < 2 : true) { while (list[r + i].length <= c + j) { for (const row of list) row.push(''); } list[r + i][c + j] = v; } });
           });
@@ -10021,6 +10143,9 @@
           '1〜3600 秒（既定 20）。「=」の計算がこの時間を過ぎると中止します。「計算中…」をタップすれば途中でも止められます')]
     ]],
     [tr('Display', '表示'), [
+      ['numfmt', tr('Number format', '数の書き方'), [['auto', trf('Automatic: as in your region ({0})', '自動：地域の書き方（{0}）', NUMFMT_SAMPLE[localeFormat(deviceLocale())])],
+        ['dot', NUMFMT_SAMPLE.dot], ['comma', NUMFMT_SAMPLE.comma], ['space', NUMFMT_SAMPLE.space]],
+        tr('The decimal sign of the numbers you type and see. With 1,5 the arguments are separated by ";": max(1,5; 2)', '入力・表示する数の小数点。1,5 の書き方では、引数を「;」で区切ります：max(1,5; 2)')],
       ['fraction', tr('Fractions', '分数の表示'), [['auto', tr('Automatic', '自動')], ['decimal', tr('Decimal', '小数')], ['exact', tr('Decimal (when exact)', '小数（厳密なときだけ）')], ['fraction', tr('Fraction', '分数')], ['combined', tr('Mixed fraction', '帯分数')]]],
       ['precision', tr('Precision (significant digits)', '有効桁数'), 'number', proOffered()
         ? tr('2 to 200000 digits (default 10; above 1000 with QCalc Pro). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 10。1000 桁を超えるには QCalc Pro）。大きくするほど計算に時間がかかります')
@@ -10124,6 +10249,16 @@
   function settingsChanged() {
     saveSettings();
     if (S.lang !== LANG) { setLanguage(S.lang); return; }
+    // another number format: the expression being typed is written again in it, the keys and the
+    // history follow (what is saved is in the engine's form and does not change)
+    const field = toInternal(exprEl.value), wasNF = NF;
+    applyNumFmt();
+    if (NF !== wasNF) {
+      exprEl.value = toDisplay(field);
+      buildKeypad();
+      renderHistory(false);
+      draw();
+    }
     updateChips();
     applyTextSize();
     applyTheme();
@@ -10303,11 +10438,14 @@
     };
     const z = (n) => String(n).padStart(2, '0');
     const when = (t) => { const d = new Date(t); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); };
-    const rows = [[tr('Date', '日時'), tr('Expression', '式'), tr('Result', '結果'), tr('Number', '数値')].map((x) => cell(x)).join(',')];
+    // (1.12.0) with a decimal comma the cells are separated by ";", as spreadsheets in such regions
+    // (Excel in German, French, Spanish …) read a CSV file, and the numbers have the decimal comma
+    const sep = commaMode ? ';' : ',';
+    const rows = [[tr('Date', '日時'), tr('Expression', '式'), tr('Result', '結果'), tr('Number', '数値')].map((x) => cell(x)).join(sep)];
     for (const h of history) {
       if (!h || typeof h !== 'object' || typeof h.expr !== 'string') continue;
       const shown = displayResult(h).replace(/^= /, '');
-      rows.push([h.t ? when(h.t) : '', cell(h.expr, true), cell(shown, true), plainNumber(h)].map((x, i) => (i === 1 || i === 2 ? x : cell(x))).join(','));
+      rows.push([h.t ? when(h.t) : '', cell(toDisplay(h.expr), true), cell(shown, true), decSign(plainNumber(h))].map((x, i) => (i === 1 || i === 2 ? x : cell(x))).join(sep));
     }
     return '\ufeff' + rows.join('\r\n') + '\r\n';
   }
@@ -10349,7 +10487,7 @@
   };
   window.qalcPause = function () {
     store.set('qalc.history', history.slice(-300));
-    store.set('qalc.draft', exprEl.value);
+    store.set('qalc.draft', toInternal(exprEl.value));
   };
 
   // ---------------------------------------------------------------- boot
@@ -10444,8 +10582,8 @@
     renderHistory(true);
     const draft = store.get('qalc.draft', '');
     if (draft && typeof draft === 'string' && !exprEl.value) {
-      exprEl.value = draft;
-      exprEl.setSelectionRange(draft.length, draft.length);
+      exprEl.value = toDisplay(draft);
+      exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length);
     }
     autosize();
     focusExpr();

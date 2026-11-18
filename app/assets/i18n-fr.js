@@ -943,7 +943,15 @@
     "{0} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: Lists → My own)": "{0} a une valeur propre (une variable de l’utilisateur) : la dérivée, l’aire et les autres outils ci-dessous peuvent être faux tant qu’elle n’est pas supprimée (menu : Listes → Les miennes)",
     "What do you want to do?": "Que voulez-vous faire ?",
     "Find a tool by what you want to do": "Chercher un outil selon ce que vous voulez faire",
-    "For example: tank, volume, area": "Par exemple : cuve, volume, aire"
+    "For example: tank, volume, area": "Par exemple : cuve, volume, aire",
+    "Number format": "Format des nombres",
+    "Automatic: as in your region ({0})": "Automatique : comme dans votre région ({0})",
+    "The decimal sign of the numbers you type and see. With 1,5 the arguments are separated by \";\": max(1,5; 2)": "Le séparateur décimal des nombres saisis et affichés. Avec 1,5, les arguments sont séparés par « ; » : max(1,5; 2)",
+    "The decimal sign is \",\" in your number format: type 1,5, and no \".\" between digits (Settings → Number format)": "Dans votre format des nombres, le séparateur décimal est « , » : saisissez 1,5, sans « . » entre les chiffres (Paramètres → Format des nombres)",
+    "A space between digits would multiply them: type 1234,5 without spaces": "Une espace entre des chiffres les multiplierait : saisissez 1234,5 sans espace",
+    "Decimal comma": "Virgule décimale",
+    "Separator of the arguments (;)": "Séparateur des arguments (;)",
+    "With a decimal comma (Settings → Number format: 1.234,5 or 1 234,5, or automatically in such a region) type 1,5 and separate the arguments with \";\": max(1,5; 2). In a matrix the elements are separated by spaces: [1,5 2; 3 4]. The history stays as it was when the setting is changed.": "Avec la virgule décimale (Paramètres → Format des nombres : 1.234,5 ou 1 234,5, ou automatique dans une telle région), saisissez 1,5 et séparez les arguments par « ; » : max(1,5; 2). Dans une matrice, les éléments sont séparés par des espaces : [1,5 2; 3 4]. L’historique reste tel quel quand le réglage change."
   },
   messages: {
     "rates-old": (p1) => "Les taux de change n’ont pas été mis à jour depuis " + p1 + " " + (p1 === '1' ? "jour" : "jours") + " (Paramètres → « Mettre à jour les taux de change maintenant »)",

@@ -943,7 +943,15 @@
     "{0} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: Lists → My own)": "{0} hat einen eigenen Wert (eine eigene Variable): Ableitung, Fläche und die anderen Werkzeuge unten können falsch sein, bis es gelöscht ist (Menü: Listen → Eigene)",
     "What do you want to do?": "Was möchtest du tun?",
     "Find a tool by what you want to do": "Ein Werkzeug nach dem suchen, was du tun möchtest",
-    "For example: tank, volume, area": "Zum Beispiel: Tank, Volumen, Fläche"
+    "For example: tank, volume, area": "Zum Beispiel: Tank, Volumen, Fläche",
+    "Number format": "Zahlenformat",
+    "Automatic: as in your region ({0})": "Automatisch: wie in deiner Region ({0})",
+    "The decimal sign of the numbers you type and see. With 1,5 the arguments are separated by \";\": max(1,5; 2)": "Das Dezimalzeichen der Zahlen, die du eingibst und siehst. Bei 1,5 werden die Argumente mit „;“ getrennt: max(1,5; 2)",
+    "The decimal sign is \",\" in your number format: type 1,5, and no \".\" between digits (Settings → Number format)": "In deinem Zahlenformat ist das Dezimalzeichen „,“: Gib 1,5 ein, ohne „.“ zwischen Ziffern (Einstellungen → Zahlenformat)",
+    "A space between digits would multiply them: type 1234,5 without spaces": "Ein Leerzeichen zwischen Ziffern würde sie multiplizieren: Gib 1234,5 ohne Leerzeichen ein",
+    "Decimal comma": "Dezimalkomma",
+    "Separator of the arguments (;)": "Trennzeichen der Argumente (;)",
+    "With a decimal comma (Settings → Number format: 1.234,5 or 1 234,5, or automatically in such a region) type 1,5 and separate the arguments with \";\": max(1,5; 2). In a matrix the elements are separated by spaces: [1,5 2; 3 4]. The history stays as it was when the setting is changed.": "Mit Dezimalkomma (Einstellungen → Zahlenformat: 1.234,5 oder 1 234,5, oder automatisch in einer solchen Region) gibst du 1,5 ein und trennst die Argumente mit „;“: max(1,5; 2). In einer Matrix werden die Elemente durch Leerzeichen getrennt: [1,5 2; 3 4]. Der Verlauf bleibt erhalten, wenn die Einstellung geändert wird."
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",
