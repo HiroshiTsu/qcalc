@@ -9374,6 +9374,10 @@
           if (!/[\t\n,;]/.test(t.trim())) return;
           e.preventDefault();
           const lines = t.replace(/\r/g, '').split('\n').filter((l) => l.trim() !== '');
+          // (a first row of headings, such as "distance, area", without any number in it, is left out)
+          if (lines.length > 1 && !/\d/.test(lines[0])) lines.shift();
+          // (pasted into the first box: the table is the pasted one, the rows below it go)
+          if (r === 0 && c === 0 && lines.length >= 2) list.length = Math.min(list.length, lines.length);
           lines.forEach((l, i) => {
             const vals = (/\t/.test(l) ? l.split('\t') : /;/.test(l) ? l.split(';') : /,/.test(l) ? l.split(',') : l.trim().split(/\s+/)).map((s) => s.trim());
             while (list.length <= r + i) list.push(new Array(list[0].length).fill(''));
