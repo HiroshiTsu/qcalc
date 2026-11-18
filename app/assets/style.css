@@ -77,6 +77,9 @@ body {
   -webkit-user-select: none;
   user-select: none;
 }
+/* Korean and Traditional Chinese (1.10.0): the CJK font of the language, not the Japanese one */
+html:lang(ko) body { font-family: system-ui, -apple-system, "Roboto", "Noto Sans KR", "Noto Sans CJK KR", sans-serif; }
+html:lang(zh-TW) body { font-family: system-ui, -apple-system, "Roboto", "Noto Sans TC", "Noto Sans CJK TC", sans-serif; }
 button { font: inherit; color: inherit; }
 input, select, textarea { font: inherit; color: inherit; }
 

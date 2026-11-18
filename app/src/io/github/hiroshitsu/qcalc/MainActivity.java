@@ -101,7 +101,15 @@ public class MainActivity extends Activity {
                     "画面の表示に必要な「Android System WebView」を利用できません。"
                     + "Play ストアで更新するか、設定アプリで有効にしてから、もう一度開いてください。",
                     "QCalc necesita Android System WebView, que no está disponible. "
-                    + "Actualízalo en Play Store o actívalo en la app Ajustes, y vuelve a abrir QCalc."));
+                    + "Actualízalo en Play Store o actívalo en la app Ajustes, y vuelve a abrir QCalc.",
+                    "QCalc braucht Android System WebView, das nicht verfügbar ist. "
+                    + "Aktualisiere es im Play Store oder aktiviere es in der App Einstellungen und öffne QCalc dann erneut.",
+                    "QCalc a besoin d’Android System WebView, qui n’est pas disponible. "
+                    + "Mettez-le à jour dans le Play Store ou activez-le dans l’app Paramètres, puis rouvrez QCalc.",
+                    "화면 표시에 필요한 ‘Android System WebView’를 쓸 수 없습니다. "
+                    + "Play 스토어에서 업데이트하거나 설정 앱에서 사용 설정한 뒤 QCalc를 다시 여세요.",
+                    "QCalc 需要 Android System WebView，但目前無法使用。"
+                    + "請在 Play 商店更新它，或在「設定」App 中啟用，然後再次開啟 QCalc。"));
             return;
         }
         WebSettings s = web.getSettings();
@@ -134,7 +142,11 @@ public class MainActivity extends Activity {
                 lastRendererGone = now;
                 if (again) showMessage(tr("The screen stopped again and again. Close the app and open it again.",
                         "画面の表示が繰り返し停止しました。アプリを閉じて、もう一度開いてください。",
-                        "La pantalla se detuvo una y otra vez. Cierra la app y vuelve a abrirla."));
+                        "La pantalla se detuvo una y otra vez. Cierra la app y vuelve a abrirla.",
+                        "Die Anzeige ist immer wieder abgestürzt. Schließe die App und öffne sie erneut.",
+                        "L’écran s’est arrêté à plusieurs reprises. Fermez l’app et rouvrez-la.",
+                        "화면 표시가 계속 멈췄습니다. 앱을 닫고 다시 여세요.",
+                        "畫面一再停止。請關閉 App 後再重新開啟。"));
                 else recreate();
                 return true;
             }
@@ -203,18 +215,33 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** The languages of the app, in the order of the texts given to tr(). */
+    private static final String[] LANGS = {"en", "ja", "es", "de", "fr", "ko", "zh-TW"};
+
     /**
-     * The text in the language of the app, as the page chooses it: the language the user chose in
-     * the page ("Language / 言語 / Idioma", saved by the page as qalc.lang, the JSON text "ja", "es"
-     * or "en"); without a choice, Spanish on a device set to Spanish, otherwise English.
+     * The text in the language of the app, as the page chooses it (LANG in app.js): the language the
+     * user chose in the page ("Language", saved by the page as qalc.lang, the JSON text "ja", "de" …);
+     * without a choice, the language of the device when it is Spanish, German, French, Korean or
+     * Chinese in Traditional characters (or of Taiwan, Hong Kong or Macau), otherwise English.
      */
-    private String tr(String en, String ja, String es) {
+    private String tr(String en, String ja, String es, String de, String fr, String ko, String zh) {
+        String[] texts = {en, ja, es, de, fr, ko, zh};
         String s = StateStore.load(this, "qalc.lang");
         String chosen = s == null ? "" : s.trim();
-        if ("\"ja\"".equals(chosen)) return ja;
-        if ("\"es\"".equals(chosen)) return es;
-        if ("\"en\"".equals(chosen)) return en;
-        return "es".equals(java.util.Locale.getDefault().getLanguage()) ? es : en;
+        for (int i = 0; i < LANGS.length; i++) {
+            if (("\"" + LANGS[i] + "\"").equals(chosen)) return texts[i];
+        }
+        java.util.Locale l = java.util.Locale.getDefault();
+        String lang = l.getLanguage(), script = l.getScript(), country = l.getCountry();
+        if ("zh".equals(lang)) {
+            boolean hant = "Hant".equals(script) || script.isEmpty()
+                    && ("TW".equals(country) || "HK".equals(country) || "MO".equals(country));
+            return hant ? zh : en;
+        }
+        for (int i = 2; i < 6; i++) {
+            if (LANGS[i].equals(lang)) return texts[i];
+        }
+        return en;
     }
 
     private void showMessage(String text) {
@@ -521,11 +548,12 @@ public class MainActivity extends Activity {
                         if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("QCalc", text));
                     } catch (RuntimeException e) {
                         // the system passes the text in one transaction of at most about 1 MB
-                        Toast.makeText(MainActivity.this, tr("Too long to copy", "長すぎてコピーできませんでした", "Es demasiado largo para copiarlo"), Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, tr("Too long to copy", "長すぎてコピーできませんでした", "Es demasiado largo para copiarlo",
+                                "Zu lang zum Kopieren", "Trop long pour être copié", "너무 길어서 복사하지 못했습니다", "太長了，無法複製"), Toast.LENGTH_LONG).show();
                         return;
                     }
                     // Android 13 and later show their own confirmation
-                    if (Build.VERSION.SDK_INT < 33) Toast.makeText(MainActivity.this, tr("Copied", "コピーしました", "Copiado"), Toast.LENGTH_SHORT).show();
+                    if (Build.VERSION.SDK_INT < 33) Toast.makeText(MainActivity.this, tr("Copied", "コピーしました", "Copiado", "Kopiert", "Copié", "복사했습니다", "已複製"), Toast.LENGTH_SHORT).show();
                 }
             });
         }

@@ -41,26 +41,49 @@
       try { localStorage.setItem(k, text); } catch (e) { /* storage full or blocked */ }
     }
   };
-  // The language of the user interface: English (the default), Japanese or Spanish (1.9.0). Only a
-  // language the user chose with "Language / 言語 / Idioma" (in the menu or the settings) is kept, as
-  // qalc.lang. The language that test builds of 1.3.0 saved with the other settings (qalc.settings)
-  // is not used. Without a choice, the app starts in Spanish on a device set to Spanish, and in
-  // English otherwise (also on a device set to Japanese, as before). It is read once when the page
-  // starts; choosing another language reloads the page.
-  const LANGS = ['en', 'ja', 'es'];
+  // The language of the user interface: English (the default), Japanese, Spanish (1.9.0), German,
+  // French, Korean or Traditional Chinese (1.10.0). Only a language the user chose with "Language"
+  // (in the menu or the settings) is kept, as qalc.lang. The language that test builds of 1.3.0 saved
+  // with the other settings (qalc.settings) is not used. Without a choice, the app starts in the
+  // language of the device when it is Spanish, German, French, Korean or Traditional Chinese
+  // (deviceLang), and in English otherwise (also on a device set to Japanese, as before, and on one
+  // set to Simplified Chinese). It is read once when the page starts; choosing another language
+  // reloads the page.
+  const LANG_NAMES = [['en', 'English'], ['ja', '日本語'], ['es', 'Español'], ['de', 'Deutsch'], ['fr', 'Français'], ['ko', '한국어'], ['zh-TW', '繁體中文']];
+  const LANGS = LANG_NAMES.map((l) => l[0]);
+  // the language that a device's language (navigator.language: "es-PE", "de", "zh-Hant-TW" …) starts
+  // the app in: Chinese in Traditional characters (Hant) or of Taiwan, Hong Kong or Macau is zh-TW
+  function deviceLang(tag) {
+    const m = /^([a-z]+)(?:-([a-z0-9]+))?/.exec(String(tag || '').toLowerCase().replace(/_/g, '-'));
+    if (!m) return 'en';
+    if (['es', 'de', 'fr', 'ko'].indexOf(m[1]) >= 0) return m[1];
+    if (m[1] === 'zh' && ['hant', 'tw', 'hk', 'mo'].indexOf(m[2]) >= 0) return 'zh-TW';
+    return 'en';
+  }
   const LANG = (() => {
     const chosen = store.get('qalc.lang', '');
     if (LANGS.indexOf(chosen) >= 0) return chosen;
-    return /^es(?:[-_]|$)/i.test(String(navigator.language || '')) ? 'es' : 'en';
+    return deviceLang(navigator.language);
   })();
-  const JA = LANG === 'ja', ES = LANG === 'es';
-  // the Spanish texts by their English text (i18n-es.js, which index.html loads before this file)
-  const ES_TEXT = (ES && window.QCALC_ES) || {};
-  // the text in the language of the user interface. In Spanish: the Spanish text given (for texts
-  // made of parts), else the one in i18n-es.js, else the English text (expressions and code-like
-  // texts are the same in every language)
-  const tr = (en, ja, es) => (JA ? ja : !ES ? en : es !== undefined ? es
-    : Object.prototype.hasOwnProperty.call(ES_TEXT, en) ? ES_TEXT[en] : en);
+  const JA = LANG === 'ja';
+  // The texts of a language other than English and Japanese (i18n-es.js, i18n-de.js … , which
+  // index.html loads before this file; each one gives a function, called only for the language in
+  // use): { texts, messages, keys, categories, date }, described in i18n-es.js.
+  const I18N = (() => {
+    const f = LANG !== 'en' && !JA && window.QCALC_I18N && window.QCALC_I18N[LANG];
+    try { return (typeof f === 'function' && f()) || {}; } catch (e) { return {}; }
+  })();
+  const TEXTS = I18N.texts || {};
+  // the text in the language of the user interface: the Japanese text given, else the text in the
+  // file of the language, else the English text (expressions and code-like texts are the same in
+  // every language)
+  const tr = (en, ja) => (JA ? ja : Object.prototype.hasOwnProperty.call(TEXTS, en) ? TEXTS[en] : en);
+  // a text made of parts: {0}, {1} … in the English and the Japanese text (and in the translations)
+  // stand for the parts, in this order
+  const trf = (en, ja, ...parts) => tr(en, ja).replace(/\{(\d)\}/g, (all, i) => (Number(i) < parts.length ? String(parts[i]) : all));
+  // "Language" for the menu and the settings: in the language of the page, and in English beside it,
+  // so that it is found whatever the language
+  const LANG_TITLE = LANG === 'en' ? 'Language' : tr('Language', '言語') + ' / Language';
   document.documentElement.lang = LANG;
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
   function vibrate() { if (S.haptics && navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { } } }
@@ -325,18 +348,7 @@
     '極値': '極値', 'solve': '方程式を解く', '∞': '無限大', 'ほか…': 'ほかの関数を一覧から選ぶ',
     '[': '左角かっこ（行列の始まり）', ']': '右角かっこ（行列の終わり）', ';': 'セミコロン（行列の行の区切り）',
     'det': '行列式', 'Aᵀ': '転置行列', 'A⁻¹': '逆行列', '▦': '行列を入力する画面を開く', 'a/b': '分数（分子と分母の欄）'
-  } : ES ? {
-    '⌫': 'Borrar', 'AC': 'Borrar todo', '◀': 'Cursor a la izquierda', '▶': 'Cursor a la derecha', '⌨': 'Escribir con el teclado',
-    'xʸ': 'Potencia', '√': 'Raíz cuadrada', '∛': 'Raíz cúbica', 'E': 'Por diez elevado a', '÷': 'Dividir', '×': 'Multiplicar', '−': 'Menos',
-    '+': 'Más', '=': 'Calcular', 'π': 'Pi', 'x²': 'Al cuadrado', 'x⁻¹': 'Recíproco', 'n!': 'Factorial', '|x|': 'Valor absoluto',
-    'eˣ': 'e elevado a', '∫': 'Integral', 'd/dx': 'Derivada', 'Σ': 'Sumatoria', ',': 'Coma',
-    '°': 'Grados', '%': 'Por ciento', '(': 'Abrir paréntesis', ')': 'Cerrar paréntesis', '.': 'Punto decimal',
-    'd²/dx²': 'Segunda derivada', '∂/∂y': 'Derivada parcial respecto a y', '∫ₐᵇ': 'Integral definida', 'lim': 'Límite',
-    'Π': 'Productoria', 'dsolve': 'Resolver una ecuación diferencial', 'máx/mín': 'Extremo (máximo o mínimo)', 'solve': 'Resolver una ecuación',
-    '∞': 'Infinito', 'más…': 'Elegir otra función de la lista',
-    '[': 'Abrir corchete (inicio de una matriz)', ']': 'Cerrar corchete (fin de una matriz)', ';': 'Punto y coma (fin de una fila de la matriz)',
-    'det': 'Determinante', 'Aᵀ': 'Transpuesta', 'A⁻¹': 'Matriz inversa', '▦': 'Abrir el formulario de matrices', 'a/b': 'Fracción (casillas para el numerador y el denominador)'
-  } : {
+  } : I18N.keys || {
     '⌫': 'Backspace', 'AC': 'Clear all', '◀': 'Cursor left', '▶': 'Cursor right', '⌨': 'Type with the keyboard',
     'xʸ': 'Power', '√': 'Square root', '∛': 'Cube root', 'E': 'Times ten to the power', '÷': 'Divide', '×': 'Multiply', '−': 'Minus',
     '+': 'Plus', '=': 'Calculate', 'π': 'Pi', 'x²': 'Square', 'x⁻¹': 'Reciprocal', 'n!': 'Factorial', '|x|': 'Absolute value',
@@ -705,8 +717,8 @@
     for (const c of expr) { if ('([{'.indexOf(c) >= 0) d++; else if (')]}'.indexOf(c) >= 0) d--; else if (c === ',' && d <= 0) top = true; }
     if (top) {
       const m = /(?:^|[^\d.,])(\d{1,3}(?:,\d{3})+)(?![\d,])/.exec(expr);
-      notes.push(m ? tr(`The "," in ${m[1]} separates values, it does not group digits: type ${m[1].replace(/,/g, '')}`, `「${m[1]}」の「,」は桁区切りではなく、値の区切りとして扱われます。${m[1].replace(/,/g, '')} と続けて入れてください`,
-        `La "," en ${m[1]} separa valores, no agrupa dígitos: escribe ${m[1].replace(/,/g, '')}`)
+      notes.push(m ? trf('The "," in {0} separates values, it does not group digits: type {1}', '「{0}」の「,」は桁区切りではなく、値の区切りとして扱われます。{1} と続けて入れてください',
+        m[1], m[1].replace(/,/g, ''))
         : tr('"," separates values, so the result is a list of values (the decimal point is ".")', '「,」は値の区切りなので、結果は値の並びになります（小数点は「.」）'));
     }
     const names = new Set();
@@ -723,8 +735,7 @@
         }
         callKind.set(n, fn);
       }
-      if (!callKind.get(n)) notes.push(tr(`"${n}" is not a function: it was read as letters multiplied (units and constants). Check the spelling`, `「${n}」という関数はありません（文字ごとの掛け算＝単位や定数として計算しました）。つづりを確認してください`,
-        `"${n}" no es una función: se leyó como letras multiplicadas (unidades y constantes). Revisa cómo está escrito`));
+      if (!callKind.get(n)) notes.push(trf('"{0}" is not a function: it was read as letters multiplied (units and constants). Check the spelling', '「{0}」という関数はありません（文字ごとの掛け算＝単位や定数として計算しました）。つづりを確認してください', n));
     }
     return notes;
   }
@@ -862,160 +873,98 @@
     const words = t.match(/[\p{L}_][\p{L}\p{Nd}_]+/gu) || [];
     return words.every((w) => MATH_WORDS.test(w));
   }
-  // The engine's messages are in English (libqalculate has no Japanese or Spanish translation). In
-  // Japanese and Spanish, the common ones are translated, and so are the messages of the app's own
-  // Java code and engine: [the English message, its Japanese text, its Spanish text]
+  // The engine's messages are in English (the engine is built without the translations of
+  // libqalculate). In the other languages, the common ones are translated, and so are the messages
+  // of the app's own Java code and engine: [the English message, its Japanese text, the name of its
+  // text in the files of the other languages (messages in i18n-es.js …)]
   const MESSAGES = [
-    [/^It has been (\d+) days? since the exchange rates last were updated\.?$/, (m, d) => '為替レートが ' + d + ' 日間更新されていません（メニュー →「為替レートの更新」）',
-      (m, d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (menú → "Actualizar tipos de cambio")'],
-    [/^Misplaced operator\(s\) "(.+)" ignored\.?$/, (m, o) => '余分な演算子「' + o + '」を無視しました',
-      (m, o) => 'Se ignoró el operador sobrante "' + o + '"'],
-    [/^Misplaced '(.+)' ignored\.?$/, (m, o) => '余分な「' + o + '」を無視しました',
-      (m, o) => 'Se ignoró el "' + o + '" sobrante'],
-    [/^Division by zero\.?$/, () => 'ゼロで割っています',
-      () => 'División entre cero'],
-    [/^Misplaced decimal separator ignored\.?$/, () => '余分な小数点を無視しました',
-      () => 'Se ignoró el separador decimal sobrante'],
-    [/^Floating point overflow\.?$/, () => '数が大きすぎて、小数では表せません',
-      () => 'El número es demasiado grande para escribirlo como decimal'],
-    [/^Floating point underflow\.?$/, () => '数が小さすぎて、小数では表せません',
-      () => 'El número es demasiado pequeño para escribirlo como decimal'],
+    [/^It has been (\d+) days? since the exchange rates last were updated\.?$/, (m, d) => '為替レートが ' + d + ' 日間更新されていません（メニュー →「為替レートの更新」）', 'rates-old'],
+    [/^Misplaced operator\(s\) "(.+)" ignored\.?$/, (m, o) => '余分な演算子「' + o + '」を無視しました', 'extra-operator'],
+    [/^Misplaced '(.+)' ignored\.?$/, (m, o) => '余分な「' + o + '」を無視しました', 'extra-sign'],
+    [/^Division by zero\.?$/, () => 'ゼロで割っています', 'division-by-zero'],
+    [/^Misplaced decimal separator ignored\.?$/, () => '余分な小数点を無視しました', 'extra-decimal-point'],
+    [/^Floating point overflow\.?$/, () => '数が大きすぎて、小数では表せません', 'overflow'],
+    [/^Floating point underflow\.?$/, () => '数が小さすぎて、小数では表せません', 'underflow'],
     [/^log\(\) with a single argument is considered ambiguous\. Please use ln\(\) or log10\(\) instead\.?$/,
-      () => 'log() は底があいまいなので、自然対数（ln）として計算しました。自然対数は ln()、常用対数は log10() を使ってください',
-      () => 'log() sin base se calculó como logaritmo natural (ln). Para el logaritmo decimal, usa log10()'],
-    [/^Definite integral was approximated\.?$/, () => '定積分は数値計算による近似値です',
-      () => 'La integral definida es un valor aproximado, calculado numéricamente'],
-    [/^Empty expression in parentheses interpreted as zero\.?$/, () => '空のかっこは 0 として計算しました',
-      () => 'Los paréntesis vacíos se tomaron como 0'],
-    [/^A global unit or variable was deactivated\..*$/, () => '同じ名前の組み込みの単位・変数を一時的に置き換えました（新しい変数を削除すると元に戻ります）',
-      () => 'Se reemplazó por ahora la unidad o variable integrada del mismo nombre (vuelve al eliminar la nueva variable)'],
-    [/^You need at least (\d+) argument\(s\) \((.+)\) in function (.+)\(\)\.?$/, (m, n, a, f) => f + '() には引数が ' + n + ' 個以上必要です（' + a + '）',
-      (m, n, a, f) => f + '() necesita al menos ' + n + (n === '1' ? ' argumento (' : ' argumentos (') + a + ')'],
-    [/^You need at least (\d+) argument \((.+)\) in function (.+)\(\)\.?$/, (m, n, a, f) => f + '() には引数が ' + n + ' 個以上必要です（' + a + '）',
-      (m, n, a, f) => f + '() necesita al menos ' + n + (n === '1' ? ' argumento (' : ' argumentos (') + a + ')'],
-    [/^Did you mean "(.+)" \(instead of "(.+)"\)\?$/, (m, a, b) => '「' + b + '」ではなく「' + a + '」のことですか？',
-      (m, a, b) => '¿Quisiste decir "' + a + '" (en lugar de "' + b + '")?'],
-    [/^limit\(\) is incomplete and unreliable\.?$/, () => 'limit() は完全ではなく、結果が正しくない場合があります',
-      () => 'limit() no está completo y el resultado puede no ser correcto'],
-    [/^No unknown variable\/symbol was found\.?$/, () => '解く対象の未知数（変数）が見つかりません',
-      () => 'No se encontró la incógnita (la variable) que se debe resolver'],
-    [/^Conversion of only part of an expression is not supported.*$/, () => '式の一部だけを変換することはできません',
-      () => 'No se puede convertir solo una parte de la expresión'],
-    [/^Unable to find a solution\.?$/, () => '解が見つかりませんでした',
-      () => 'No se encontró ninguna solución'],
+      () => 'log() は底があいまいなので、自然対数（ln）として計算しました。自然対数は ln()、常用対数は log10() を使ってください', 'log-base'],
+    [/^Definite integral was approximated\.?$/, () => '定積分は数値計算による近似値です', 'integral-approximated'],
+    [/^Empty expression in parentheses interpreted as zero\.?$/, () => '空のかっこは 0 として計算しました', 'empty-parentheses'],
+    [/^A global unit or variable was deactivated\..*$/, () => '同じ名前の組み込みの単位・変数を一時的に置き換えました（新しい変数を削除すると元に戻ります）', 'name-replaced'],
+    [/^You need at least (\d+) argument\(s\) \((.+)\) in function (.+)\(\)\.?$/, (m, n, a, f) => f + '() には引数が ' + n + ' 個以上必要です（' + a + '）', 'too-few-arguments'],
+    [/^You need at least (\d+) argument \((.+)\) in function (.+)\(\)\.?$/, (m, n, a, f) => f + '() には引数が ' + n + ' 個以上必要です（' + a + '）', 'too-few-arguments'],
+    [/^Did you mean "(.+)" \(instead of "(.+)"\)\?$/, (m, a, b) => '「' + b + '」ではなく「' + a + '」のことですか？', 'did-you-mean'],
+    [/^limit\(\) is incomplete and unreliable\.?$/, () => 'limit() は完全ではなく、結果が正しくない場合があります', 'limit-unreliable'],
+    [/^No unknown variable\/symbol was found\.?$/, () => '解く対象の未知数（変数）が見つかりません', 'no-unknown'],
+    [/^Conversion of only part of an expression is not supported.*$/, () => '式の一部だけを変換することはできません', 'part-conversion'],
+    [/^Unable to find a solution\.?$/, () => '解が見つかりませんでした', 'no-solution-found'],
     // analysis
-    [/^Unable to integrate the expression\.?$/, () => 'この式は積分できませんでした',
-      () => 'No se pudo integrar esta expresión'],
-    [/^Unable to integrate the expression exactly\.?$/, () => 'この式は厳密には積分できませんでした',
-      () => 'No se pudo integrar esta expresión de forma exacta'],
-    [/^Unable to find limit\.?$/, () => '極限を求められませんでした',
-      () => 'No se pudo hallar el límite'],
-    [/^No differential equation found\.?$/, () => '微分方程式が見つかりません（例：dsolve(diff(y, x) = y)）',
-      () => 'No se encontró ninguna ecuación diferencial (por ejemplo: dsolve(diff(y, x) = y))'],
-    [/^Unable to solve differential equation\.?$/, () => 'この微分方程式は解けませんでした',
-      () => 'No se pudo resolver esta ecuación diferencial'],
-    [/^To avoid division by zero, the following must be true: (.+)\.$/, (m, c) => 'ゼロで割らないための条件：' + c,
-      (m, c) => 'Condición para no dividir entre cero: ' + c],
+    [/^Unable to integrate the expression\.?$/, () => 'この式は積分できませんでした', 'cannot-integrate'],
+    [/^Unable to integrate the expression exactly\.?$/, () => 'この式は厳密には積分できませんでした', 'cannot-integrate-exactly'],
+    [/^Unable to find limit\.?$/, () => '極限を求められませんでした', 'no-limit'],
+    [/^No differential equation found\.?$/, () => '微分方程式が見つかりません（例：dsolve(diff(y, x) = y)）', 'no-differential-equation'],
+    [/^Unable to solve differential equation\.?$/, () => 'この微分方程式は解けませんでした', 'cannot-solve-differential-equation'],
+    [/^To avoid division by zero, the following must be true: (.+)\.$/, (m, c) => 'ゼロで割らないための条件：' + c, 'division-condition'],
     [/^Was unable to isolate (.+) with the current assumptions\. The assumed (?:type and )?sign was therefore temporarily set as unknown\.?$/,
-      (m, x) => x + ' を実数として求められなかったため、その仮定を外して解きました（複素数の解を含むことがあります）',
-      (m, x) => 'No se pudo hallar ' + x + ' como número real, así que se resolvió sin esa suposición (puede haber soluciones complejas)'],
-    [/^Was unable to completely isolate (.+)\.$/, (m, x) => x + ' について完全には解けませんでした',
-      (m, x) => 'No se pudo despejar ' + x + ' por completo'],
-    [/^Was unable to isolate (.+)\.$/, (m, x) => x + ' について解けませんでした',
-      (m, x) => 'No se pudo despejar ' + x],
-    [/^"(.+)" is not a valid variable\/function\/unit\.?$/, (m, a) => '「' + a + '」という変数・関数・単位はありません',
-      (m, a) => 'No existe ninguna variable, función o unidad "' + a + '"'],
-    [/^No possible solution was found \(with current assumptions\)\.?$/, () => '条件に合う解はありません',
-      () => 'No hay ninguna solución que cumpla las condiciones'],
-    [/^Argument (\d+), (.+), in (.+)\(\) must be an unknown variable\/symbol\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は、x のような変数（文字）でなければなりません',
-      (m, n, a, f) => 'El argumento ' + n + ' de ' + f + '() debe ser una variable (una letra como x)'],
-    [/^Argument (\d+), (.+), in (.+)\(\) must be an integer >= (-?\d+)(?: and <= \d+)?\.?$/, (m, n, a, f, lo) => f + '() の ' + n + ' 番目の引数は、' + lo + ' 以上の整数でなければなりません',
-      (m, n, a, f, lo) => 'El argumento ' + n + ' de ' + f + '() debe ser un número entero mayor o igual que ' + lo],
-    [/^Argument (\d+), (.+), in (.+)\(\) must be an integer\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は整数でなければなりません（∞ は使えません）',
-      (m, n, a, f) => 'El argumento ' + n + ' de ' + f + '() debe ser un número entero (no se puede usar ∞)'],
+      (m, x) => x + ' を実数として求められなかったため、その仮定を外して解きました（複素数の解を含むことがあります）', 'solved-without-assumption'],
+    [/^Was unable to completely isolate (.+)\.$/, (m, x) => x + ' について完全には解けませんでした', 'not-completely-isolated'],
+    [/^Was unable to isolate (.+)\.$/, (m, x) => x + ' について解けませんでした', 'not-isolated'],
+    [/^"(.+)" is not a valid variable\/function\/unit\.?$/, (m, a) => '「' + a + '」という変数・関数・単位はありません', 'unknown-name'],
+    [/^No possible solution was found \(with current assumptions\)\.?$/, () => '条件に合う解はありません', 'no-possible-solution'],
+    [/^Argument (\d+), (.+), in (.+)\(\) must be an unknown variable\/symbol\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は、x のような変数（文字）でなければなりません', 'argument-variable'],
+    [/^Argument (\d+), (.+), in (.+)\(\) must be an integer >= (-?\d+)(?: and <= \d+)?\.?$/, (m, n, a, f, lo) => f + '() の ' + n + ' 番目の引数は、' + lo + ' 以上の整数でなければなりません', 'argument-integer-from'],
+    [/^Argument (\d+), (.+), in (.+)\(\) must be an integer\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は整数でなければなりません（∞ は使えません）', 'argument-integer'],
     // matrices and vectors
-    [/^Inverse of singular matrix\.?$/, () => '逆行列がありません（行列式が 0 の行列です）',
-      () => 'La matriz no tiene inversa (su determinante es 0)'],
+    [/^Inverse of singular matrix\.?$/, () => '逆行列がありません（行列式が 0 の行列です）', 'singular-matrix'],
     [/^Please use the cross\(\), dot\(\), and hadamard\(\) functions for vector multiplication\.?$/,
-      () => 'ベクトルどうしの積は、cross()（外積）、dot()（内積）、hadamard()（要素ごとの積）を使ってください',
-      () => 'Para multiplicar vectores, usa cross() (producto vectorial), dot() (producto escalar) o hadamard() (producto elemento a elemento)'],
+      () => 'ベクトルどうしの積は、cross()（外積）、dot()（内積）、hadamard()（要素ごとの積）を使ってください', 'vector-product'],
     [/^The second matrix must have as many rows \(was (\d+)\) as the first has columns \(was (\d+)\) for matrix multiplication\.?$/,
-      (m, r, c) => '行列の積は、左の行列の列の数（' + c + '）と右の行列の行の数（' + r + '）が同じでなければ計算できません',
-      (m, r, c) => 'Para multiplicar matrices, el número de columnas de la matriz de la izquierda (' + c + ') debe ser igual al número de filas de la de la derecha (' + r + ')'],
-    [/^Argument (\d+), (.+), in (.+)\(\) must be a square matrix\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は正方行列（行と列の数が同じ行列）でなければなりません',
-      (m, n, a, f) => 'El argumento ' + n + ' de ' + f + '() debe ser una matriz cuadrada (con tantas filas como columnas)'],
-    [/^(.+)\(\) requires that all matrices\/vectors have the same dimensions\.?$/, (m, f) => f + '() に渡す行列・ベクトルは、すべて同じ大きさでなければなりません',
-      (m, f) => 'Las matrices o vectores de ' + f + '() deben tener todos el mismo tamaño'],
+      (m, r, c) => '行列の積は、左の行列の列の数（' + c + '）と右の行列の行の数（' + r + '）が同じでなければ計算できません', 'matrix-product-sizes'],
+    [/^Argument (\d+), (.+), in (.+)\(\) must be a square matrix\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は正方行列（行と列の数が同じ行列）でなければなりません', 'argument-square-matrix'],
+    [/^(.+)\(\) requires that all matrices\/vectors have the same dimensions\.?$/, (m, f) => f + '() に渡す行列・ベクトルは、すべて同じ大きさでなければなりません', 'matrix-sizes-differ'],
     // the app's Java code (Engine.java, RatesUpdater.java, MainActivity.java)
-    [/^Communication with the calculation engine failed \((.*)\)$/, (m, e) => '計算エンジンとのやりとりに失敗しました（' + e + '）',
-      (m, e) => 'Falló la comunicación con el motor de cálculo (' + e + ')'],
-    [/^Could not start the calculation engine \((.*)\)$/, (m, e) => '計算エンジンを起動できませんでした（' + e + '）',
-      (m, e) => 'No se pudo iniciar el motor de cálculo (' + e + ')'],
-    [/^The request is not valid$/, () => '要求の形式が正しくありません',
-      () => 'La solicitud no es válida'],
-    [/^The calculation was stopped$/, () => '計算を中止しました',
-      () => 'Se detuvo el cálculo'],
-    [/^The calculation took too long and was stopped$/, () => '時間がかかりすぎたため計算を中止しました',
-      () => 'El cálculo tardó demasiado y se detuvo'],
-    [/^The calculation engine stopped unexpectedly\. Try a simpler expression\.$/, () => '計算エンジンが異常終了しました。式を簡単にしてお試しください',
-      () => 'El motor de cálculo se detuvo de forma inesperada. Prueba con una expresión más simple.'],
-    [/^Could not update the exchange rates$/, () => '為替レートの更新に失敗しました',
-      () => 'No se pudieron actualizar los tipos de cambio'],
-    [/^Could not update the exchange rates \((.*)\)$/, (m, e) => '為替レートの更新に失敗しました（' + localMessage(e) + '）',
-      (m, e) => 'No se pudieron actualizar los tipos de cambio (' + localMessage(e) + ')'],
-    [/^Could not download the exchange rates\. Check the network connection\.$/, () => '為替レートをダウンロードできませんでした。通信状態を確認してください。',
-      () => 'No se pudieron descargar los tipos de cambio. Revisa la conexión a internet.'],
-    [/^The calculation engine could not load the new rates$/, () => '計算エンジンが新しいレートを読み込めませんでした',
-      () => 'El motor de cálculo no pudo cargar los nuevos tipos de cambio'],
+    [/^Communication with the calculation engine failed \((.*)\)$/, (m, e) => '計算エンジンとのやりとりに失敗しました（' + e + '）', 'engine-communication-failed'],
+    [/^Could not start the calculation engine \((.*)\)$/, (m, e) => '計算エンジンを起動できませんでした（' + e + '）', 'engine-not-started'],
+    [/^The request is not valid$/, () => '要求の形式が正しくありません', 'request-not-valid'],
+    [/^The calculation was stopped$/, () => '計算を中止しました', 'calculation-stopped'],
+    [/^The calculation took too long and was stopped$/, () => '時間がかかりすぎたため計算を中止しました', 'calculation-too-long'],
+    [/^The calculation engine stopped unexpectedly\. Try a simpler expression\.$/, () => '計算エンジンが異常終了しました。式を簡単にしてお試しください', 'engine-crashed'],
+    [/^Could not update the exchange rates$/, () => '為替レートの更新に失敗しました', 'rates-not-updated'],
+    [/^Could not update the exchange rates \((.*)\)$/, (m, e) => '為替レートの更新に失敗しました（' + localMessage(e) + '）', 'rates-not-updated-why'],
+    [/^Could not download the exchange rates\. Check the network connection\.$/, () => '為替レートをダウンロードできませんでした。通信状態を確認してください。', 'rates-not-downloaded'],
+    [/^The calculation engine could not load the new rates$/, () => '計算エンジンが新しいレートを読み込めませんでした', 'rates-not-loaded'],
     // the engine's own messages (qalc-engine.cc)
-    [/^Not enough memory for the calculation$/, () => '計算に必要なメモリが不足しました',
-      () => 'No hay suficiente memoria para el cálculo'],
-    [/^The expression is nested too deeply$/, () => '式の入れ子が深すぎます',
-      () => 'La expresión tiene demasiados niveles anidados'],
-    [/^Enter a name and a value$/, () => '名前と内容を入力してください',
-      () => 'Ingresa un nombre y un valor'],
-    [/^Check the value \((.*)\)$/, (m, p) => '内容を確認してください（' + localMessage(p) + '）',
-      (m, p) => 'Revisa el valor (' + localMessage(p) + ')'],
-    [/^The function name contains characters that cannot be used$/, () => '関数名に使えない文字が含まれています',
-      () => 'El nombre de la función tiene caracteres que no se pueden usar'],
-    [/^The variable name contains characters that cannot be used$/, () => '変数名に使えない文字が含まれています',
-      () => 'El nombre de la variable tiene caracteres que no se pueden usar'],
-    [/^"(.+)" is a built-in name and cannot be used$/, (m, n) => '「' + n + '」は組み込みの名前なので使えません',
-      (m, n) => '"' + n + '" es un nombre integrado y no se puede usar'],
-    [/^"to" cannot be used in the expression of a function$/, () => '関数の式に「to」は使えません',
-      () => 'No se puede usar "to" en la expresión de una función'],
-    [/^There is no user definition "(.+)"$/, (m, n) => 'ユーザー定義の「' + n + '」が見つかりません',
-      (m, n) => 'No existe la definición del usuario "' + n + '"'],
-    [/^Google Play is not available on this device$/, () => 'この端末では Google Play を利用できません',
-      () => 'Google Play no está disponible en este dispositivo'],
-    [/^Could not connect to Google Play\. Try again later\.$/, () => 'Google Play に接続できませんでした。しばらくしてから、もう一度お試しください。',
-      () => 'No se pudo conectar con Google Play. Inténtalo de nuevo más tarde.'],
-    [/^QCalc Pro cannot be bought right now$/, () => '現在 QCalc Pro を購入できません',
-      () => 'Ahora mismo no se puede comprar QCalc Pro'],
-    [/^No purchase of QCalc Pro was found$/, () => 'QCalc Pro の購入が見つかりませんでした',
-      () => 'No se encontró ninguna compra de QCalc Pro'],
-    [/^The purchase could not be completed \((.*)\)$/, (m, c) => '購入を完了できませんでした（' + c + '）',
-      (m, c) => 'No se pudo completar la compra (' + c + ')'],
-    [/^The payment is pending\. QCalc Pro will be unlocked when it is complete\.$/, () => '支払いの手続き中です。完了すると QCalc Pro が使えるようになります。',
-      () => 'El pago está pendiente. QCalc Pro se desbloqueará cuando se complete.'],
-    [/^Could not save the file$/, () => 'ファイルを保存できませんでした',
-      () => 'No se pudo guardar el archivo'],
-    [/^The middle of this long result is not shown \(([\d,]+) digits\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 桁）',
-      (m, n) => 'El resultado es largo y no se muestra la parte del medio (' + n + ' dígitos en total)'],
-    [/^The middle of this long result is not shown \(([\d,]+) characters\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 文字）',
-      (m, n) => 'El resultado es largo y no se muestra la parte del medio (' + n + ' caracteres en total)'],
-    [/^The middle of this long result is not shown$/, () => '長い結果のため、途中を省略しています',
-      () => 'El resultado es largo y no se muestra la parte del medio'],
+    [/^Not enough memory for the calculation$/, () => '計算に必要なメモリが不足しました', 'out-of-memory'],
+    [/^The expression is nested too deeply$/, () => '式の入れ子が深すぎます', 'nested-too-deeply'],
+    [/^Enter a name and a value$/, () => '名前と内容を入力してください', 'name-and-value-needed'],
+    [/^Check the value \((.*)\)$/, (m, p) => '内容を確認してください（' + localMessage(p) + '）', 'check-value'],
+    [/^The function name contains characters that cannot be used$/, () => '関数名に使えない文字が含まれています', 'function-name-characters'],
+    [/^The variable name contains characters that cannot be used$/, () => '変数名に使えない文字が含まれています', 'variable-name-characters'],
+    [/^"(.+)" is a built-in name and cannot be used$/, (m, n) => '「' + n + '」は組み込みの名前なので使えません', 'built-in-name'],
+    [/^"to" cannot be used in the expression of a function$/, () => '関数の式に「to」は使えません', 'to-in-function'],
+    [/^There is no user definition "(.+)"$/, (m, n) => 'ユーザー定義の「' + n + '」が見つかりません', 'no-user-definition'],
+    [/^Google Play is not available on this device$/, () => 'この端末では Google Play を利用できません', 'no-google-play'],
+    [/^Could not connect to Google Play\. Try again later\.$/, () => 'Google Play に接続できませんでした。しばらくしてから、もう一度お試しください。', 'google-play-not-connected'],
+    [/^QCalc Pro cannot be bought right now$/, () => '現在 QCalc Pro を購入できません', 'pro-not-for-sale'],
+    [/^No purchase of QCalc Pro was found$/, () => 'QCalc Pro の購入が見つかりませんでした', 'no-purchase-found'],
+    [/^The purchase could not be completed \((.*)\)$/, (m, c) => '購入を完了できませんでした（' + c + '）', 'purchase-not-completed'],
+    [/^The payment is pending\. QCalc Pro will be unlocked when it is complete\.$/, () => '支払いの手続き中です。完了すると QCalc Pro が使えるようになります。', 'payment-pending'],
+    [/^Could not save the file$/, () => 'ファイルを保存できませんでした', 'file-not-saved'],
+    [/^The middle of this long result is not shown \(([\d,]+) digits\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 桁）', 'result-cut-digits'],
+    [/^The middle of this long result is not shown \(([\d,]+) characters\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 文字）', 'result-cut-characters'],
+    [/^The middle of this long result is not shown$/, () => '長い結果のため、途中を省略しています', 'result-cut'],
     // (after the more exact ones above) an argument of another kind than the function takes
-    [/^Argument (\d+), (.+), in (.+)\(\) must be (.+?)\.?$/, (m, n, a, f, c) => f + '() の ' + n + ' 番目の引数が合っていません（' + c + '）',
-      (m, n, a, f, c) => 'El argumento ' + n + ' de ' + f + '() no es del tipo correcto (' + c + ')'],
+    [/^Argument (\d+), (.+), in (.+)\(\) must be (.+?)\.?$/, (m, n, a, f, c) => f + '() の ' + n + ' 番目の引数が合っていません（' + c + '）', 'argument-kind'],
   ];
-  // a message of the engine or of the app's Java code, in the language of the user interface
+  // a message of the engine or of the app's Java code, in the language of the user interface (in
+  // English when the file of the language has no text for it)
   function localMessage(text) {
     if (LANG === 'en' || typeof text !== 'string') return text;
-    for (const [re, ja, es] of MESSAGES) {
+    for (const [re, ja, name] of MESSAGES) {
       const m = re.exec(text);
-      if (m) return (JA ? ja : es)(...m);
+      if (!m) continue;
+      if (JA) return ja(...m);
+      const f = I18N.messages && Object.prototype.hasOwnProperty.call(I18N.messages, name) ? I18N.messages[name] : null;
+      return typeof f === 'function' ? f(...m.slice(1), localMessage) : text;
     }
     return text;
   }
@@ -1069,7 +1018,7 @@
     busyTimer = setInterval(() => {
       if (!committing || stopping) return;
       const s = Math.floor((Date.now() - started) / 1000);
-      if (s >= 1) previewEl.textContent = tr(`Calculating… ${s} s (tap here to stop)`, `計算中… ${s} 秒（ここをタップで中止）`, `Calculando… ${s} s (toca aquí para detener)`);
+      if (s >= 1) previewEl.textContent = trf('Calculating… {0} s (tap here to stop)', '計算中… {0} 秒（ここをタップで中止）', s);
     }, 1000);
     const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
     if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
@@ -1084,9 +1033,8 @@
     }
     if (r.timeout) {
       previewEl.textContent = '';
-      msgEl.textContent = tr(`The calculation took longer than the time limit (${limit} s) and was stopped. The time limit can be changed in Settings`,
-        `制限時間（${limit} 秒）を過ぎたため計算を中止しました。制限時間は設定で変えられます`,
-        `El cálculo superó el tiempo límite (${limit} s) y se detuvo. El tiempo límite se puede cambiar en Ajustes`);
+      msgEl.textContent = trf('The calculation took longer than the time limit ({0} s) and was stopped. The time limit can be changed in Settings',
+        '制限時間（{0} 秒）を過ぎたため計算を中止しました。制限時間は設定で変えられます', limit);
       msgEl.className = 'msg error';
       return;
     }
@@ -1156,15 +1104,14 @@
     const name = m[1], kind = new RegExp('^\\s*' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(').test(expr) ? 'function' : 'variable';
     invalidateCatalogs();
     const shown = kind === 'function' ? name + '()' : name;
-    toast(kind === 'function' ? tr(`${shown} is defined`, `${shown} を定義しました`, `Se definió ${shown}`)
-      : tr(`${shown} is now ${clip(r.result, 24)} in every expression`, `これ以降、${shown} は ${clip(r.result, 24)} として計算します`,
-        `Desde ahora, ${shown} vale ${clip(r.result, 24)} en todas las expresiones`), 9000,
+    toast(kind === 'function' ? trf('{0} is defined', '{0} を定義しました', shown)
+      : trf('{0} is now {1} in every expression', 'これ以降、{0} は {1} として計算します', shown, clip(r.result, 24)), 9000,
     [tr('Undo', '取り消す'), async () => {
       const d = await Bridge.send('delete_def', { kind, name });
       if (!d.ok) { toast(localMessage(d.error)); return; }
       invalidateCatalogs();
       await refreshDefined();
-      toast(tr(`The definition of ${shown} was taken back`, `${shown} の定義を取り消しました`, `Se deshizo la definición de ${shown}`));
+      toast(trf('The definition of {0} was taken back', '{0} の定義を取り消しました', shown));
       if (CF.id) formChanged(); else exprChanged();
     }]);
   }
@@ -1399,8 +1346,8 @@
       const names = eqNames(), n = CF.eq.n;
       if (names.some((x) => !isName(x))) add('v', tr('The letters to solve for are written like x, y', '解く文字は「x, y」のように文字で入れてください'));
       else if (names.length && names.length !== n) {
-        add('v', n > 1 ? tr(`${n} equations are solved for ${n} letters (for example ${['x', 'y', 'z', 'w', 'u', 'v'].slice(0, n).join(', ')})`, `式が ${n} つなので、解く文字も ${n} つ入れてください（例：${['x', 'y', 'z', 'w', 'u', 'v'].slice(0, n).join(', ')}）`,
-          `${n} ecuaciones se resuelven para ${n} letras (por ejemplo ${['x', 'y', 'z', 'w', 'u', 'v'].slice(0, n).join(', ')})`)
+        add('v', n > 1 ? trf('{0} equations are solved for {0} letters (for example {1})', '式が {0} つなので、解く文字も {0} つ入れてください（例：{1}）',
+          n, ['x', 'y', 'z', 'w', 'u', 'v'].slice(0, n).join(', '))
           : tr('One equation is solved for one letter', '式が 1 つのときは、解く文字も 1 つです'));
       }
     } else if (CF.boxes.v) {
@@ -1696,7 +1643,7 @@
         const k = 'c' + i + '_' + j;
         const b = makeFormBox(k, '0', 'cell');
         b.setAttribute('enterkeyhint', 'next');
-        b.setAttribute('aria-label', tr('Row ', '') + (i + 1) + tr(', column ', '行') + (j + 1) + tr('', '列'));
+        b.setAttribute('aria-label', trf('Row {0}, column {1}', '{0} 行 {1} 列', i + 1, j + 1));
         b.value = M.vals[k] || '';
         CF.boxes[k] = b; CF.order.push(k);
         CF.nodes.grid.append(b);
@@ -1729,7 +1676,7 @@
   function showCellPos(b) {
     if (!CF.nodes || !CF.nodes.pos) return;
     const p = cellPos(b);
-    CF.nodes.pos.textContent = !p ? '' : p[1] === CF.mat.cols ? 'b' + (p[0] + 1) : tr(`Row ${p[0] + 1}, column ${p[1] + 1}`, `${p[0] + 1} 行 ${p[1] + 1} 列`, `Fila ${p[0] + 1}, columna ${p[1] + 1}`);
+    CF.nodes.pos.textContent = !p ? '' : p[1] === CF.mat.cols ? 'b' + (p[0] + 1) : trf('Row {0}, column {1}', '{0} 行 {1} 列', p[0] + 1, p[1] + 1);
   }
   function matrixExpr() {
     const M = CF.mat;
@@ -1924,8 +1871,7 @@
     // (a letter the user gave a value stays the unknown of the form: said here, as the result shows it as 'x')
     const dv = formDefinedVar();
     CF.nodes.note.hidden = !dv;
-    CF.nodes.note.textContent = dv ? tr(`${dv} has a value of its own (a user variable). Here it is the unknown all the same`, `${dv} には値が定義されています（ユーザー定義の変数）。この画面では ${dv} を文字のまま扱います`,
-      `${dv} tiene un valor propio (una variable del usuario). Aquí es la incógnita de todos modos`) : '';
+    CF.nodes.note.textContent = dv ? trf('{0} has a value of its own (a user variable). Here it is the unknown all the same', '{0} には値が定義されています（ユーザー定義の変数）。この画面では {0} を文字のまま扱います', dv) : '';
     // a box that cannot be used as it is: marked, with what is wrong (nothing is calculated)
     const bad = formProblems();
     if (bad.length) {
@@ -2110,10 +2056,10 @@
     const p = F.matrix ? cellPos(editTarget) || [0, 0] : null;
     if (p) {
       const M = CF.mat, i = p[0], j = Math.min(p[1], M.cols - 1);
-      if (M.rows < MAT_MAX) items.push(['rowIns', tr(`Insert a row above row ${i + 1}`, `${i + 1} 行目の上に行を入れる`, `Insertar una fila encima de la fila ${i + 1}`)]);
-      if (M.rows > 1) items.push(['rowDel', tr(`Delete row ${i + 1}`, `${i + 1} 行目を削除`, `Eliminar la fila ${i + 1}`)]);
-      if (M.cols < MAT_MAX) items.push(['colIns', tr(`Insert a column left of column ${j + 1}`, `${j + 1} 列目の左に列を入れる`, `Insertar una columna a la izquierda de la columna ${j + 1}`)]);
-      if (M.cols > 1) items.push(['colDel', tr(`Delete column ${j + 1}`, `${j + 1} 列目を削除`, `Eliminar la columna ${j + 1}`)]);
+      if (M.rows < MAT_MAX) items.push(['rowIns', trf('Insert a row above row {0}', '{0} 行目の上に行を入れる', i + 1)]);
+      if (M.rows > 1) items.push(['rowDel', trf('Delete row {0}', '{0} 行目を削除', i + 1)]);
+      if (M.cols < MAT_MAX) items.push(['colIns', trf('Insert a column left of column {0}', '{0} 列目の左に列を入れる', j + 1)]);
+      if (M.cols > 1) items.push(['colDel', trf('Delete column {0}', '{0} 列目を削除', j + 1)]);
       items.push(['copy', tr('Copy as a table (for a spreadsheet)', '表としてコピー（表計算ソフトに貼り付け用）')]);
     }
     const id = CF.id, a = await sheet(F.title, items);
@@ -2217,7 +2163,7 @@
       buildEquations();
       CF.navSel = null;
       formChanged();
-      if (i0 + lines.length > EQ_MAX) toast(tr(`Up to ${EQ_MAX} equations: the rest was left out`, `式は ${EQ_MAX} つまでです（残りは入れていません）`, `Hasta ${EQ_MAX} ecuaciones: el resto se dejó fuera`), 2600);
+      if (i0 + lines.length > EQ_MAX) toast(trf('Up to {0} equations: the rest was left out', '式は {0} つまでです（残りは入れていません）', EQ_MAX), 2600);
       return true;
     }
     return false;
@@ -2796,7 +2742,7 @@
     null,
     ['pro', '⭐', 'QCalc Pro', { when: proOffered }],
     ['settings', '⚙', tr('Settings', '設定')],
-    ['language', '🌐', 'Language / 言語 / Idioma'],
+    ['language', '🌐', LANG_TITLE],
     ['export', '📤', tr('Export history (CSV)', '履歴を書き出す（CSV）'), { pro: true }],
     ['clear', '🗑', tr('Clear history', '履歴を消去')],
     ['about', 'ⓘ', tr('About this app', 'このアプリについて')]
@@ -2895,8 +2841,7 @@
   // ---------------------------------------------------------- examples
   // Expressions to try: tapping one puts it into the input field (the preview then shows the result).
   // They are written as the on-screen keys write them (×, −, π); a phone keyboard's * and - work too.
-  const STARTERS = JA ? ['60 mph to km/h', '100 USD to JPY', 'solve(x^2 − 5x + 6 = 0)', 'diff(x^3)']
-    : ['60 mph to km/h', '100 USD to EUR', 'solve(x^2 − 5x + 6 = 0)', 'diff(x^3)'];
+  const STARTERS = ['60 mph to km/h', tr('100 USD to EUR', '100 USD to JPY'), 'solve(x^2 − 5x + 6 = 0)', 'diff(x^3)'];
   // [title, [[expression, note], ...]]; a few expressions differ by language (the currencies)
   const EXAMPLES = [
     [tr('Basics', '基本の計算'), [
@@ -3065,7 +3010,7 @@
       const jt = JA && kind === 'units' ? own(JA_UNIT_TEXT, it.name) : undefined;
       if (jt) { it.title = jt[0]; it.description = jt[1]; }
       const ja = JA ? it._ja + ' ' + it._cat.split('/').map((c) => own(CATEGORY_JA, c) || '').join(' ')
-        : ES ? it._cat.split('/').map((c) => own(CATEGORY_ES, c) || '').join(' ') : '';
+        : it._cat.split('/').map((c) => own(CATEGORIES, c) || '').join(' ');
       it._q = [it.name, it.abbr, it.display, it.title, it.description, it._cat, ja].join(' ').toLowerCase();
     }
     items.sort((a, b) => (a.title || a.name).localeCompare(b.title || b.name));
@@ -3104,25 +3049,10 @@
     'Japanese Units': '日本の単位', 'Typography': '活字', 'Substance': '物質量', 'Basic Constants': '基本の定数',
     'Physical Constants': '物理定数', 'Special Numbers': '特別な数', 'Traditional Numbers': '昔からの数え方'
   };
-  // the same categories in Spanish (1.9.0): shown in the lists and found by the search
-  const CATEGORY_ES = {
-    'Currency': 'Monedas', 'Length': 'Longitud', 'Area': 'Área', 'Volume': 'Volumen', 'Mass': 'Masa', 'Time': 'Tiempo',
-    'Speed': 'Velocidad', 'Velocity': 'Velocidad', 'Temperature': 'Temperatura', 'Energy': 'Energía', 'Pressure': 'Presión', 'Force': 'Fuerza',
-    'Information': 'Información', 'Angle': 'Ángulo', 'Acceleration': 'Aceleración', 'Density': 'Densidad', 'Electricity': 'Electricidad',
-    'Magnetism': 'Magnetismo', 'Light': 'Luz', 'Radioactivity': 'Radiactividad', 'Ratio': 'Proporción', 'Frequency': 'Frecuencia',
-    'Fuel Consumption': 'Consumo de combustible', 'Mechanics': 'Mecánica', 'Thermodynamics': 'Termodinámica',
-    'Algebra': 'Álgebra', 'Calculus': 'Cálculo', 'Combinatorics': 'Combinatoria', 'Complex Numbers': 'Números complejos',
-    'Date & Time': 'Fecha y hora', 'Economics': 'Economía', 'Exponents & Logarithms': 'Exponentes y logaritmos', 'Geometry': 'Geometría',
-    'Logical': 'Lógica', 'Matrices & Vectors': 'Matrices y vectores', 'Miscellaneous': 'Varios', 'Number Theory': 'Teoría de números',
-    'Statistics': 'Estadística', 'Trigonometry': 'Trigonometría', 'Special Functions': 'Funciones especiales', 'Step Functions': 'Funciones escalón',
-    'Utilities': 'Utilidades', 'Unit Conversion': 'Conversión de unidades', 'Data Sets': 'Conjuntos de datos', 'Physics': 'Física',
-    'Constants': 'Constantes', 'Large Numbers': 'Números grandes', 'Small Numbers': 'Números pequeños', 'Unknowns': 'Incógnitas',
-    'User variables': 'Del usuario', 'User functions': 'Del usuario', 'Temporary': 'Temporales',
-    'Japanese Units': 'Unidades japonesas', 'Typography': 'Tipografía', 'Substance': 'Cantidad de sustancia', 'Basic Constants': 'Constantes básicas',
-    'Physical Constants': 'Constantes físicas', 'Special Numbers': 'Números especiales', 'Traditional Numbers': 'Números tradicionales'
-  };
+  // the categories in the other languages (categories in i18n-es.js …): shown in the lists and found by the search
+  const CATEGORIES = I18N.categories || {};
   // a category of the engine in the language of the user interface (English when there is no name for it)
-  const catName = (c) => (JA ? own(CATEGORY_JA, c) : ES ? own(CATEGORY_ES, c) : undefined) || c;
+  const catName = (c) => (JA ? own(CATEGORY_JA, c) : own(CATEGORIES, c)) || c;
   // Japanese names of units and currencies, by the engine's name or abbreviation of the unit:
   // the first word is shown beside the English title, all words are found by the search
   const JA_NAMES = {
@@ -3239,7 +3169,7 @@
           const ranks = new Map(shown.map((it) => [it, rank(it)]));
           shown.sort((x, y) => ranks.get(x) - ranks.get(y));
         }
-        count.textContent = tr(shown.length + (shown.length === 1 ? ' item' : ' items'), shown.length + ' 件', shown.length + (shown.length === 1 ? ' elemento' : ' elementos'));
+        count.textContent = (shown.length === 1 ? trf('{0} item', '{0} 件', 1) : trf('{0} items', '{0} 件', shown.length));
         list.textContent = '';
         const frag = document.createDocumentFragment();
         for (const it of shown.slice(0, 400)) frag.append(catalogRow(kind, it));
@@ -3350,7 +3280,7 @@
     'Area': ['m²', 'km²', 'ha', 'acre', 'ft²'],
     'Volume': ['L', 'mL', 'm³', 'cm³'],
     'Time': ['s', 'min', 'h', 'd', 'week', 'month'],
-    'Currency': JA ? ['JPY', 'USD', 'EUR', 'GBP', 'CNY', 'KRW', 'AUD', 'CAD', 'CHF'] : ['USD', 'EUR', 'JPY', 'GBP', 'CNY', 'CAD', 'AUD', 'CHF', 'KRW'],
+    'Currency': JA ? ['JPY', 'USD', 'EUR', 'GBP', 'CNY', 'KRW', 'AUD', 'CAD', 'CHF'] : I18N.currencies || ['USD', 'EUR', 'JPY', 'GBP', 'CNY', 'CAD', 'AUD', 'CHF', 'KRW'],
     'Information': ['B', 'kB', 'MB', 'GB', 'TB', 'bit', 'KiB', 'MiB', 'GiB'],
     'Energy': ['J', 'kJ', 'cal', 'kcal', 'kW⋅h', 'W⋅h', 'eV', 'Btu'],
     'Energy/Power': ['W', 'hp', 'PS'],
@@ -3602,7 +3532,7 @@
       const legend = el('div', { class: 'legend' });
       const msg = el('div', { class: 'form-hint' });
       f2.append(el('div', { class: 'plot-form' }, ta,
-        el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr('to', '〜') }), xmax, go)),
+        el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax, go)),
       wrap, legend, msg, el('div', { class: 'tools' }, buildCalc2d(), buildArea2d()), P.samples = buildSamples(SAMPLES2D, false, drawSample2d),
       el('div', { class: 'form-hint', text: tr('Drag to move, pinch to zoom, tap to show the coordinates. The functions are the same as on the calculator.', 'ドラッグで移動、2本指で拡大・縮小、タップで座標を表示します。式に使える関数は計算画面と同じです。') }));
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Type of graph', 'グラフの種類') }, b2, b3), f2, f3);
@@ -4499,12 +4429,11 @@
     return nums[0] < nums[1] ? { lo: nums[0], hi: nums[1], a, b } : { lo: nums[1], hi: nums[0], a: b, b: a };
   }
   // "x from −2 to 2", "x from 0 to 2.5 and from 3 to 4" for a note
-  const partsText = (parts) => parts.slice(0, 3).map((p) => p.a + tr(' to ', ' 〜 ', ' a ') + p.b).join(tr(' and ', '、', ' y ')) + (parts.length > 3 ? '…' : '');
-  const realNote = (two, parts) => tr((two ? 'Only where both functions have real values: x from ' : 'Only where the function has real values: x from ') + partsText(parts),
-    (two ? '2 つの関数に実数の値がある x = ' : '関数に実数の値がある x = ') + partsText(parts) + ' の部分だけで計算しました',
-    (two ? 'Solo donde ambas funciones tienen valores reales: x de ' : 'Solo donde la función tiene valores reales: x de ') + partsText(parts));
-  const noRealText = () => tr('There are no real values between a and b', 'a と b の間に実数の値がありません', 'No hay valores reales entre a y b');
-  const infiniteText = () => tr('The length is infinite in this range (the curve goes to infinity)', 'この範囲では長さが無限大です（曲線が無限に伸びています）', 'La longitud es infinita en este rango (la curva va al infinito)');
+  const partsText = (parts) => parts.slice(0, 3).map((p) => p.a + tr(' to ', ' 〜 ') + p.b).join(tr(' and ', '、')) + (parts.length > 3 ? '…' : '');
+  const realNote = (two, parts) => (two ? trf('Only where both functions have real values: x from {0}', '2 つの関数に実数の値がある x = {0} の部分だけで計算しました', partsText(parts))
+    : trf('Only where the function has real values: x from {0}', '関数に実数の値がある x = {0} の部分だけで計算しました', partsText(parts)));
+  const noRealText = () => tr('There are no real values between a and b', 'a と b の間に実数の値がありません');
+  const infiniteText = () => tr('The length is infinite in this range (the curve goes to infinity)', 'この範囲では長さが無限大です（曲線が無限に伸びています）');
 
   // an expression worked out, with the points the engine names as "x != …" in its warnings (where
   // it divides by zero: the ends of a circle, the corner of the heart at 0): { text, points }, or null
@@ -4622,7 +4551,7 @@
     const len = el('div', { class: 'area-out', 'aria-live': 'polite' });
     const box = el('div', { class: 'area-box' },
       el('div', { class: 'plot-range' }, f1, el('span', { text: tr('and', 'と') }), f2, el('span', { text: tr('', 'の間') })),
-      el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), a, el('span', { text: tr('to', '〜') }), b, go, lenBtn),
+      el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), a, el('span', { text: tr(' to ', ' 〜 ').trim() }), b, go, lenBtn),
       cross, out, ins, len,
       el('div', { class: 'form-hint', text: tr('The area is shaded in the graph. Drag one of its two edges (↔) to change the range, or tap a range between crossing points. Parts below the x axis (or below the other function) count as positive. "Length" gives the length of the curve, or the perimeter of the region between two functions.', '面積を求める部分はグラフに色が付きます。両端の ↔ をドラッグすると範囲を変えられ、交点の間の範囲はタップでも選べます。x 軸（またはもう一方の関数）より下の部分もプラスとして数えます。「長さ・周」は曲線の長さ（2 つの関数の間なら囲まれた部分の周の長さ）です。') }),
       buildShapes2d(),
@@ -5152,12 +5081,10 @@
     }
     const rmax = S.disk ? R : Math.sqrt(Math.max(X0 * X0, X1 * X1) + Math.max(Y0 * Y0, Y1 * Y1)), rmaxText = S.disk ? S.R : engineNum(rmax);
     const one = es.length === 1;
-    const ringsText = (rings) => rings.map((p) => (p.lo === 0 ? 'r ≤ ' + p.b : p.a + ' ≤ r ≤ ' + p.b)).join(tr(' and ', '、', ' y '));
-    const fit = (rings) => ({ rings, note: tr((one ? 'Only where the surface has real values: ' : 'Only where both surfaces have real values: ') + ringsText(rings) + ' (r = √(x² + y²))',
-      (one ? '曲面に実数の値がある ' : '2 つの曲面に実数の値がある ') + ringsText(rings) + ' の部分だけで計算しました（r = √(x² + y²)）',
-      (one ? 'Solo donde la superficie tiene valores reales: ' : 'Solo donde ambas superficies tienen valores reales: ') + ringsText(rings) + ' (r = √(x² + y²))') });
-    const notRound = () => (S.disk ? { error: tr('The surfaces have no real values in part of this disk: choose a smaller radius R, or the rectangle', '曲面に実数の値がない部分がこの円の中にあります。半径 R を小さくするか、長方形を選んでください',
-      'Las superficies no tienen valores reales en parte de este disco: elige un radio R más pequeño, o el rectángulo') } : { mask: true });
+    const ringsText = (rings) => rings.map((p) => (p.lo === 0 ? 'r ≤ ' + p.b : p.a + ' ≤ r ≤ ' + p.b)).join(tr(' and ', '、'));
+    const fit = (rings) => ({ rings, note: (one ? trf('Only where the surface has real values: {0} (r = √(x² + y²))', '曲面に実数の値がある {0} の部分だけで計算しました（r = √(x² + y²)）', ringsText(rings))
+      : trf('Only where both surfaces have real values: {0} (r = √(x² + y²))', '2 つの曲面に実数の値がある {0} の部分だけで計算しました（r = √(x² + y²)）', ringsText(rings))) });
+    const notRound = () => (S.disk ? { error: tr('The surfaces have no real values in part of this disk: choose a smaller radius R, or the rectangle', '曲面に実数の値がない部分がこの円の中にあります。半径 R を小さくするか、長方形を選んでください') } : { mask: true });
     // 16 rays: r from 0 to the edge of the disk or to the farthest corner of the rectangle
     const K = 16, exprs = [];
     for (let k = 0; k < K; k++) {
@@ -5185,7 +5112,7 @@
     if (!s0) return undefined;
     let rings = [{ lo: 0, hi: rmax, a: '0', b: rmaxText }];
     for (let m = 0; m < es.length; m++) rings = intersectParts(rings, await realIntervals(e0[m], s0[m], 0, rmax, '0', rmaxText, true));
-    if (!rings.length) return { error: tr('The surfaces have no real values in this region', 'この範囲では曲面に実数の値がありません', 'Las superficies no tienen valores reales en esta región') };
+    if (!rings.length) return { error: tr('The surfaces have no real values in this region', 'この範囲では曲面に実数の値がありません') };
     if (rings.length === 1 && rings[0].lo === 0 && rings[0].hi === rmax) return null; // real on every ray (the gaps of the grid are poles)
     if (rings.length !== rays[0].length) return notRound();
     if (S.disk) return fit(rings);
@@ -5266,8 +5193,7 @@
     U.out.textContent = '';
     showResult(U.out, tr('Volume ', '体積 ') + shownValue(r.val));
     if (S.real && S.real.note) U.out.append(el('div', { class: 'form-hint', text: S.real.note }));
-    if (r.missing) U.out.append(el('div', { class: 'form-hint', text: tr(`${r.missing} points without a real value were left out (the value is approximate)`, `実数の値がない ${r.missing} 点を除いています（おおよその値です）`,
-      `Se omitieron ${r.missing} puntos sin valor real (el valor es aproximado)`) }));
+    if (r.missing) U.out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', r.missing) }));
     Q3.volExpr = r.expr;
     U.ins.hidden = false;
   }
@@ -5293,8 +5219,7 @@
     // of a grid cannot follow that: √(1 − x²) on [−2, 2]² gave 19 for 4π + 8 ≈ 20.57. Not measured.
     if (mask) {
       fail(tr('The surface area cannot be measured here: the surfaces end inside the rectangle, where their real values end. Choose a rectangle inside them (or the disk, when they are round)',
-        '表面積はここでは測れません。曲面が長方形の中で終わっています（実数の値がなくなる所）。曲面の内側の長方形（丸い形なら円）を選んでください',
-        'El área superficial no se puede medir aquí: las superficies terminan dentro del rectángulo, donde terminan sus valores reales. Elige un rectángulo dentro de ellas (o el disco, si son redondas)'));
+        '表面積はここでは測れません。曲面が長方形の中で終わっています（実数の値がなくなる所）。曲面の内側の長方形（丸い形なら円）を選んでください'));
       return;
     }
     const floor = g ? null : rings ? await exactIntegral(rings.map((p) => `π × ((${p.b})^2 − (${p.a})^2)`).join(' + '), 3000)
@@ -5328,8 +5253,7 @@
     showResult(out, tr('Surface area ', '表面積 ') + shownValue(total));
     out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
     if (S.real && S.real.note && !append) out.append(el('div', { class: 'form-hint', text: S.real.note }));
-    if (missing) out.append(el('div', { class: 'form-hint', text: tr(`${missing} points without a real value were left out (the value is approximate)`, `実数の値がない ${missing} 点を除いています（おおよその値です）`,
-      `Se omitieron ${missing} puntos sin valor real (el valor es aproximado)`) }));
+    if (missing) out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', missing) }));
   }
 
   // the functions of a graph: one in each line; a line "sin(x), cos(x)" is two (a "," or ";" outside
@@ -5353,14 +5277,13 @@
   function plotNote(err, exprs, empty, max, three) {
     if (err) return localMessage(err.text);
     const notes = [], vars = three ? tr('x and y', 'x と y') : 'x';
-    if (exprs.more > 0) notes.push(tr(`Up to ${max} functions are drawn: ${exprs.more} more left out`, `描けるのは ${max} つまでです（残りの ${exprs.more} つは描いていません）`,
-      `Se dibujan hasta ${max} funciones: se omitieron ${exprs.more} más`));
-    if (empty.length) notes.push(tr(`No values for ${empty.map((e) => '"' + clip(e, 18) + '"').join(', ')}: check the expression and the range (the variable is ${vars})`, `${empty.map((e) => '「' + clip(e, 18) + '」').join('、')}は値が出ません。式と範囲を確認してください（変数は ${vars}）`,
-      `Sin valores para ${empty.map((e) => '"' + clip(e, 18) + '"').join(', ')}: revisa la expresión y el rango (la variable es ${vars})`));
+    if (exprs.more > 0) notes.push(trf('Up to {0} functions are drawn: {1} more left out', '描けるのは {0} つまでです（残りの {1} つは描いていません）', max, exprs.more));
+    if (empty.length) notes.push(trf('No values for {0}: check the expression and the range (the variable is {1})', '{0}は値が出ません。式と範囲を確認してください（変数は {1}）',
+      JA ? empty.map((e) => '「' + clip(e, 18) + '」').join('、') : empty.map((e) => '"' + clip(e, 18) + '"').join(', '), vars));
     // (a letter that has a value of its own is no longer the variable of the tools below the graph)
     const dv = (three ? ['x', 'y'] : ['x']).find((l) => definedVars.has(l));
-    if (dv) notes.push(tr(`${dv} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: User-defined variables and functions)`, `${dv} に値が定義されています（ユーザー定義の変数）。下の微分・面積などの計算は、${dv} を削除するまで正しく出ないことがあります（メニュー「ユーザー定義の変数・関数」）`,
-      `${dv} tiene un valor propio (una variable del usuario): la derivada, el área y las otras herramientas de abajo pueden salir mal hasta que se elimine (menú: Variables y funciones del usuario)`));
+    if (dv) notes.push(trf('{0} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: User-defined variables and functions)',
+      '{0} に値が定義されています（ユーザー定義の変数）。下の微分・面積などの計算は、{0} を削除するまで正しく出ないことがあります（メニュー「ユーザー定義の変数・関数」）', dv));
     return notes.join(' ');
   }
 
@@ -5628,8 +5551,8 @@
     return el('div', { class: 'plot-mode' },
       el('div', { class: 'plot-form' }, ta,
         el('div', { class: 'ranges3d' },
-          el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr('to', '〜') }), xmax),
-          el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr('to', '〜') }), ymax)),
+          el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax),
+          el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr(' to ', ' 〜 ').trim() }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
       wrap, legend, msg, el('div', { class: 'tools' }, buildPartial3d(), buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
@@ -7470,7 +7393,7 @@
             kind === 'function' && hasVar(body, 'x') && !hasVar(body, 'z') ? el('button', { class: 'btn', text: tr('Graph', 'グラフ'), onclick: () => graphOf(name + (hasVar(body, 'y') ? '(x, y)' : '(x)')) }) : '',
             el('button', { class: 'btn', text: tr('Insert', '挿入'), onclick: () => useItem(kind === 'function' ? name + '()' : name, kind === 'function' ? 1 : 0) }),
             el('button', { class: 'btn danger', text: tr('Delete', '削除'), onclick: async () => {
-              if (!(await confirmSheet(tr('Delete "' + name + '"?', '「' + name + '」を削除しますか？', '¿Eliminar "' + name + '"?'), tr('Delete', '削除する')))) return;
+              if (!(await confirmSheet(trf('Delete "{0}"?', '「{0}」を削除しますか？', name), tr('Delete', '削除する')))) return;
               const d = await Bridge.send('delete_def', { kind, name });
               if (!d.ok) toast(localMessage(d.error)); else { invalidateCatalogs(); refresh(); }
             } }))));
@@ -7515,9 +7438,10 @@
     if (!sec) return tr('unknown', '不明');
     const d = new Date(sec * 1000);
     const pad = (n) => String(n).padStart(2, '0');
-    if (ES) return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-    if (!JA) return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-    return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    if (JA) return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    // the other languages: date in i18n-es.js …, such as "{d}/{m}/{y} {H}:{M}"
+    const part = { y: d.getFullYear(), m: pad(d.getMonth() + 1), d: pad(d.getDate()), H: pad(d.getHours()), M: pad(d.getMinutes()) };
+    return String(I18N.date || '{y}-{m}-{d} {H}:{M}').replace(/\{([ymdHM])\}/g, (all, k) => part[k]);
   }
   function openRates() {
     const p = panel('rates', tr('Update exchange rates', '為替レートの更新'), (p) => {
@@ -7536,9 +7460,8 @@
         show();
         if (r.ok) {
           const failed = r.failed && r.failed.length ? r.failed : null;
-          result.textContent = JA
-            ? r.updated + ' / ' + r.total + ' 件の取得元から更新しました。' + (failed ? '（取得できなかったもの：' + failed.join('、') + '）' : '')
-            : 'Updated from ' + r.updated + ' of ' + r.total + ' sources.' + (failed ? ' (Not available: ' + failed.join(', ') + ')' : '');
+          result.textContent = trf('Updated from {0} of {1} sources.', '{0} / {1} 件の取得元から更新しました。', r.updated, r.total)
+            + (failed ? trf(' (Not available: {0})', '（取得できなかったもの：{0}）', failed.join(tr(', ', '、'))) : '');
         } else result.textContent = localMessage(r.error) || tr('Could not update', '更新できませんでした');
         if (r.ok) { invalidateCatalogs(); exprChanged(); }
       });
@@ -7554,7 +7477,7 @@
     ['purple', tr('Purple', 'パープル')], ['rose', tr('Rose', 'ローズ')], ['orange', tr('Orange', 'オレンジ')], ['graphite', tr('Graphite', 'グラファイト')]];
   const SETTINGS = [
     [tr('Language', '言語'), [
-      ['lang', 'Language / 言語 / Idioma', [['en', 'English'], ['ja', '日本語'], ['es', 'Español']]]
+      ['lang', LANG_TITLE, LANG_NAMES]
     ]],
     [tr('Calculation', '計算'), [
       ['angle', tr('Angle unit', '角度の単位'), [['rad', tr('Radians', 'ラジアン')], ['deg', tr('Degrees', '度')], ['gra', tr('Gradians', 'グラード')]]],
@@ -7675,11 +7598,11 @@
   for (const id of ['#chip-angle', '#chip-approx', '#chip-base']) $(id).addEventListener('pointerdown', (e) => e.preventDefault());
   $('#chip-angle').addEventListener('click', () => { vibrate(); cycle('angle', ['rad', 'deg', 'gra']); toast(tr('Angle: ', '角度：') + { rad: tr('radians', 'ラジアン'), deg: tr('degrees', '度'), gra: tr('gradians', 'グラード') }[S.angle], 1200); });
   $('#chip-approx').addEventListener('click', () => { vibrate(); cycle('approx', ['auto', 'exact', 'approx']); toast({ auto: tr('Exact and approximate values, automatically', '厳密値と近似値を自動で表示'), exact: tr('Always exact', '常に厳密に計算'), approx: tr('Always approximate (decimals)', '常に近似（小数）で計算') }[S.approx], 1400); });
-  $('#chip-base').addEventListener('click', () => { vibrate(); cycle('base', ['10', '16', '2', '8']); toast(tr('Results in ' + BASE_NAME[String(S.base)], '結果を ' + BASE_NAME[String(S.base)] + 'で表示', 'Resultados en ' + BASE_NAME[String(S.base)]), 1200); });
+  $('#chip-base').addEventListener('click', () => { vibrate(); cycle('base', ['10', '16', '2', '8']); toast(trf('Results in {0}', '結果を {0}で表示', BASE_NAME[String(S.base)]), 1200); });
 
   // --------------------------------------------------------------- about
   let engineName = '';
-  const PRIVACY_URL = 'https://hiroshitsu.github.io/qcalc/privacy.html' + (JA ? '#ja' : ''); // English first, then Japanese (English for Spanish)
+  const PRIVACY_URL = 'https://hiroshitsu.github.io/qcalc/privacy.html' + (JA ? '#ja' : ''); // English first, then Japanese (English for the other languages)
   const SOURCE_URL = 'https://github.com/HiroshiTsu/qcalc';
   function openAbout() {
     const p = panel('about', tr('About this app', 'このアプリについて'), (p) => {
@@ -7694,9 +7617,7 @@
           'All calculations are done by <b>libqalculate</b>, the calculation engine of the open-source calculator Qalculate!. QCalc builds its official source code for Android (arm64) and adds a user interface for phones. It is not made by the developers of Qalculate!.<br><br>' +
           'Expressions are written in the same way as in Qalculate!.',
           '計算はすべて、オープンソースの電卓 Qalculate! の計算エンジン <b>libqalculate</b> が行います。QCalc は、その公式ソースコードを Android（arm64）向けにビルドして組み込んだ、スマホ向けの電卓です。Qalculate! の開発者が作ったアプリではありません。<br><br>' +
-          '式の書き方は Qalculate! と同じです。',
-          'Todos los cálculos los hace <b>libqalculate</b>, el motor de cálculo de la calculadora de código abierto Qalculate!. QCalc compila su código fuente oficial para Android (arm64) y le añade una interfaz para teléfonos. No es obra de los desarrolladores de Qalculate!.<br><br>' +
-          'Las expresiones se escriben igual que en Qalculate!.') },
+          '式の書き方は Qalculate! と同じです。') },
           el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Examples and tips', '式の例・使い方を見る'), onclick: (e) => { e.preventDefault(); openExamples(); } }))),
         el('div', { class: 'card', html: tr(
           '<b>Privacy</b><br>QCalc collects no personal data and sends nothing anywhere. It uses the internet only to download exchange rates (from three sources such as the European Central Bank), and sends no information about you then either. The history and the settings are kept on your device and are never sent to the developer.',
@@ -7779,7 +7700,7 @@
       card.append(el('div', { class: 'pro-title', text: tr('Unlock all features with a one-time purchase', '1 回の購入で、すべての機能が使えます') }),
         el('div', { class: 'muted', text: tr('No subscription and no ads. The purchase belongs to your Google account, so it also works on your other devices.', 'サブスクリプションも広告もありません。購入は Google アカウントに記録されるので、ほかの端末でも使えます。') }));
       if (PRO.state === 'pending') card.append(el('div', { class: 'form-hint', text: tr('Your payment is being processed. QCalc Pro will be unlocked when it is complete.', '支払いの手続き中です。完了すると QCalc Pro が使えるようになります。') }));
-      card.append(el('button', { class: 'btn primary pro-buy', text: PRO.price ? tr('Buy QCalc Pro (' + PRO.price + ')', 'QCalc Pro を購入（' + PRO.price + '）', 'Comprar QCalc Pro (' + PRO.price + ')') : tr('Buy QCalc Pro', 'QCalc Pro を購入'), onclick: buyPro }),
+      card.append(el('button', { class: 'btn primary pro-buy', text: PRO.price ? trf('Buy QCalc Pro ({0})', 'QCalc Pro を購入（{0}）', PRO.price) : tr('Buy QCalc Pro', 'QCalc Pro を購入'), onclick: buyPro }),
         el('button', { class: 'btn pro-restore', text: tr('Restore a purchase', '購入を復元'), onclick: restorePro }));
     }
     body.append(card);
@@ -7920,29 +7841,28 @@
       if (exprEl.value.trim()) exprChanged();
     }
   }
-  // the texts of index.html are in English; in Japanese and Spanish they are replaced at start
+  // the texts of index.html are in English; in the other languages they are replaced at start
   function localizeStatic() {
     if (LANG === 'en') return;
-    const set = (sel, attr, ja, es) => { const e = $(sel); if (e) e.setAttribute(attr, JA ? ja : es); };
-    set('#btn-menu', 'aria-label', 'メニュー', 'Menú');
-    set('#chip-angle', 'title', '角度の単位', 'Unidad de ángulo');
-    set('#chip-approx', 'title', '厳密計算・近似', 'Exacto o aproximado');
-    set('#chip-base', 'title', '結果の進数', 'Base numérica de los resultados');
-    set('#history', 'aria-label', '計算の履歴', 'Historial de cálculos');
-    set('#expr', 'placeholder', '式を入力', 'Escribe una expresión');
-    set('#pages', 'aria-label', 'キーの種類', 'Tipos de teclas');
-    set('#drawer', 'aria-label', 'メニュー', 'Menú');
-    set('#suggest', 'aria-label', '候補', 'Sugerencias');
-    set('#cform', 'aria-label', '入力フォーム', 'Formulario');
-    set('#varpop', 'aria-label', '文字', 'Letras');
-    set('#plotbtn', 'aria-label', 'この式のグラフ', 'Gráfico de esta expresión');
-    undoEl.textContent = JA ? '↶ 元に戻す' : '↶ Deshacer';
-    nextBoxEl.textContent = JA ? '次の欄 ▶' : 'Siguiente ▶';
+    const set = (sel, attr, en, ja) => { const e = $(sel); if (e) e.setAttribute(attr, tr(en, ja)); };
+    set('#btn-menu', 'aria-label', 'Menu', 'メニュー');
+    set('#chip-angle', 'title', 'Angle unit', '角度の単位');
+    set('#chip-approx', 'title', 'Exact or approximate', '厳密計算・近似');
+    set('#chip-base', 'title', 'Number base of results', '結果の進数');
+    set('#history', 'aria-label', 'History', '計算の履歴');
+    set('#expr', 'placeholder', 'Enter an expression', '式を入力');
+    set('#pages', 'aria-label', 'Keys', 'キーの種類');
+    set('#drawer', 'aria-label', 'Menu', 'メニュー');
+    set('#suggest', 'aria-label', 'Suggestions', '候補');
+    set('#cform', 'aria-label', 'Form', '入力フォーム');
+    set('#varpop', 'aria-label', 'Letters', '文字');
+    set('#plotbtn', 'aria-label', 'Graph of this expression', 'この式のグラフ');
+    undoEl.textContent = tr('↶ Undo', '↶ 元に戻す');
+    nextBoxEl.textContent = tr('Next box ▶', '次の欄 ▶');
   }
-  // "Language / 言語 / Idioma" in the menu and in the settings: the page is loaded again in the new language
+  // "Language" in the menu and in the settings (LANG_TITLE): the page is loaded again in the new language
   async function chooseLanguage() {
-    const mark = (l) => (l === LANG ? '✓ ' : '');
-    const k = await sheet('Language / 言語 / Idioma', [['en', mark('en') + 'English'], ['ja', mark('ja') + '日本語'], ['es', mark('es') + 'Español']]);
+    const k = await sheet(LANG_TITLE, LANG_NAMES.map(([l, name]) => [l, (l === LANG ? '✓ ' : '') + name]));
     if (k) setLanguage(k);
   }
   function setLanguage(lang) {

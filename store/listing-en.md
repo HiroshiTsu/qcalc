@@ -5,9 +5,12 @@ From version 1.3.0 the app starts in English, so English (United States, en-US) 
 language** of the listing, and the Japanese texts (listing-ja.md) are its Japanese (ja-JP) translation.
 Limits: app name 30 characters, short description 80, full description 4000.
 
+The other translations: Spanish (listing-es.md, from 1.9.0), and German, French, Korean and
+Traditional Chinese (listing-de.md, listing-fr.md, listing-ko.md, listing-zh-TW.md, from 1.10.0).
+
 Screenshots for this listing: store/screenshots-en/ (1080 × 1920). Feature graphic:
 store/feature-graphic-en.png (1024 × 500; the Japanese listing uses store/feature-graphic-ja.png).
-App icon: store/icon-512.png (512 × 512, the same for both languages).
+App icon: store/icon-512.png (512 × 512, the same for every language).
 
 ## App name
 
@@ -33,7 +36,7 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Date calculations (today + 100 days)
 • Uncertainty propagation ((5 ± 0.2) m × (3 ± 0.1) m)
 • Exact results with fractions and square roots, and high precision with up to 200,000 significant digits (above 1000 digits with QCalc Pro). Long results are shown and copied in full
-• Special functions stay fast with many digits (zeta, gamma, erf, Bessel functions and more), and a long calculation can be given up to one hour
+• Special functions stay fast with many digits (zeta, gamma, erf, Bessel…); calculations of up to one hour
 • 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom. Derivatives, antiderivatives, tangents, zeros and extrema; areas (shown at once; drag the edges), curve lengths and perimeters; 17 samples to draw with one tap
 • 3D graphs of surfaces z = f(x, y) that you turn with a finger: partial derivatives, the volume and surface area of what you have drawn, 14 samples (QCalc Pro)
 • From the forms, the graph that goes with the calculation: tangents, areas, the lines or planes of a linear system with its solution, the rows of a matrix as points
@@ -47,7 +50,7 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Export the history as a CSV file for spreadsheets (QCalc Pro)
 • Four pages of keys (123, Functions, Calculus, Matrix) or your phone's keyboard
 • Light or dark display: the phone's setting or your own choice
-• English, Japanese, Spanish (menu → Language / 言語 / Idioma)
+• In English, Japanese, Spanish, German, French, Korean and Traditional Chinese (menu → Language)
 
 ■ QCalc Pro
 A one-time purchase in the app unlocks a precision above 1000 digits (up to 200,000), 3D graphs, the color themes, exporting the history, and the Pro features of later versions. There is no subscription, and everything else is free.
@@ -68,7 +71,117 @@ Android 7.0 or later on a 64-bit ARM (arm64) device.
 
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
 each user the notes in their language: put all the blocks into the field (from 1.9.0 also the Spanish one,
-es-419, after the Spanish translation of the listing has been added; listing-es.md).
+es-419, after the Spanish translation of the listing has been added; listing-es.md; from 1.10.0 also
+de-DE, fr-FR, ko-KR and zh-TW, after those translations have been added; listing-de.md …).
+The notes in German, French, Korean and Traditional Chinese were translated by machine (Claude) and
+have not been checked by native speakers.
+
+1.10.0 (when 1.9.5 was already released):
+
+<en-US>
+• New: the app is in German, French, Korean and Traditional Chinese too (menu → Language). A phone set to one of these languages starts in it
+</en-US>
+<ja-JP>
+・新機能：ドイツ語・フランス語・韓国語・繁体字中国語に対応しました（メニュー →「言語 / Language」）。これらの言語の端末では、その言語で始まります
+</ja-JP>
+<es-419>
+• Nuevo: la app también está en alemán, francés, coreano y chino tradicional (menú → Idioma / Language). Un teléfono en uno de estos idiomas empieza en él
+</es-419>
+<de-DE>
+• Neu: Die App gibt es jetzt auch auf Deutsch, Französisch, Koreanisch und in traditionellem Chinesisch (Menü → Sprache / Language). Ein Handy in einer dieser Sprachen startet in ihr
+</de-DE>
+<fr-FR>
+• Nouveau : l’app est aussi en allemand, français, coréen et chinois traditionnel (menu → Langue / Language). Un téléphone réglé dans l’une de ces langues démarre dans celle-ci
+</fr-FR>
+<ko-KR>
+• 새 기능: 독일어, 프랑스어, 한국어, 중국어 번체를 지원합니다(메뉴 → 언어 / Language). 이 언어로 설정한 휴대전화에서는 그 언어로 시작합니다
+</ko-KR>
+<zh-TW>
+• 新功能：支援德文、法文、韓文與繁體中文（選單 → 語言 / Language）。手機設定為這些語言時，App 會以該語言開啟
+</zh-TW>
+
+1.10.0 (when one of 1.9.0 to 1.9.4 was already released; the changes of 1.9.3 to 1.10.0):
+
+<en-US>
+• New: the app is in German, French, Korean and Traditional Chinese too (menu → Language). A phone set to one of these languages starts in it
+• Fixed: area, length, volume and surface area are measured only where the functions have real values (circle 4π, doughnut 4π²); only the right digits are shown
+• 3D graph: a sphere is one round, smooth ball, also with other surfaces; surfaces leaving the box are cut smoothly
+</en-US>
+<ja-JP>
+・新機能：ドイツ語・フランス語・韓国語・繁体字中国語に対応しました（メニュー →「言語 / Language」）。これらの言語の端末では、その言語で始まります
+・修正：面積・長さ・体積・表面積は、関数に実数の値がある部分だけで計算します（円 4π、ドーナツ 4π²）。正しい桁だけを示します
+・3D グラフ：球はほかの曲面と一緒でも 1 つのなめらかな球に。箱からはみ出す曲面はなめらかに切ります
+</ja-JP>
+<es-419>
+• Nuevo: la app también está en alemán, francés, coreano y chino tradicional (menú → Idioma / Language). Un teléfono en uno de estos idiomas empieza en él
+• Corregido: el área, la longitud, el volumen y el área superficial se miden solo donde las funciones tienen valores reales (círculo 4π, dona 4π²); solo cifras correctas
+• Gráfico 3D: una esfera es una sola bola suave, también con otras superficies; las superficies que salen de la caja se cortan suavemente
+</es-419>
+<de-DE>
+• Neu: Die App gibt es jetzt auch auf Deutsch, Französisch, Koreanisch und in traditionellem Chinesisch (Menü → Sprache / Language). Ein Handy in einer dieser Sprachen startet in ihr
+• Behoben: Fläche, Länge, Volumen und Oberfläche werden nur gemessen, wo die Funktionen reelle Werte haben (Kreis 4π, Donut 4π²); nur richtige Stellen
+• 3D-Graph: Eine Kugel ist eine runde, glatte Kugel, auch mit anderen Flächen; Flächen, die die Box verlassen, werden glatt abgeschnitten
+</de-DE>
+<fr-FR>
+• Nouveau : l’app est aussi en allemand, français, coréen et chinois traditionnel (menu → Langue / Language). Un téléphone réglé dans l’une de ces langues démarre dans celle-ci
+• Corrigé : aire, longueur, volume et surface ne sont mesurés que là où les fonctions ont des valeurs réelles (cercle 4π, beignet 4π²) ; chiffres justes seulement
+• Graphique 3D : une sphère est une seule boule lisse, même avec d’autres surfaces ; les surfaces qui sortent de la boîte sont coupées proprement
+</fr-FR>
+<ko-KR>
+• 새 기능: 독일어, 프랑스어, 한국어, 중국어 번체를 지원합니다(메뉴 → 언어 / Language). 이 언어로 설정한 휴대전화에서는 그 언어로 시작합니다
+• 수정: 넓이, 길이, 부피, 겉넓이는 함수에 실수 값이 있는 부분만으로 계산합니다(원 4π, 도넛 4π²). 맞는 자릿수만 표시합니다
+• 3D 그래프: 다른 곡면과 함께 그려도 구는 하나의 매끄러운 구입니다. 상자를 벗어나는 곡면은 매끄럽게 잘립니다
+</ko-KR>
+<zh-TW>
+• 新功能：支援德文、法文、韓文與繁體中文（選單 → 語言 / Language）。手機設定為這些語言時，App 會以該語言開啟
+• 修正：面積、長度、體積與表面積只在函數有實數值的部分計算（圓 4π、甜甜圈 4π²），只顯示正確的位數
+• 3D 圖形：球與其他曲面一起畫時，仍是一個平滑的球；超出方框的曲面會被平滑地切齊
+</zh-TW>
+
+1.10.0, when the last release was 1.8.0, 1.8.1, 1.8.2, 1.8.3 or 1.8.4 (the changes of 1.8.1 to 1.10.0):
+
+<en-US>
+• New: Spanish, German, French, Korean and Traditional Chinese (menu → Language). A phone set to one of these languages starts in it
+• 3D graph: smooth, glossy surfaces; a sphere is one round ball; the measured solid looks like a pale gelatin in a clear skin
+• Area, length, volume and surface only where the functions have real values (circle 4π, doughnut 4π²); right digits only
+• 📈 draws expressions in x and y, equations and matrices, also from the history
+</en-US>
+<ja-JP>
+・新機能：スペイン語・ドイツ語・フランス語・韓国語・繁体字中国語に対応（メニュー →「言語 / Language」）。これらの言語の端末では、その言語で始まります
+・3D グラフ：曲面をなめらかでつやのある姿で描き、球は 1 つの丸い球に、計測している立体は透明な皮に包まれた薄いゼラチンのように示します
+・面積・長さ・体積・表面積は実数の値がある部分だけで計算します（円 4π、ドーナツ 4π²）。正しい桁だけを示します
+・📈 で x と y の式、方程式、行列を描けます。履歴からも同じです
+</ja-JP>
+<es-419>
+• Nuevo: español, alemán, francés, coreano y chino tradicional (menú → Idioma / Language); un teléfono en uno de ellos empieza en él
+• Gráfico 3D: superficies suaves y brillantes; una esfera es una sola bola redonda; el sólido medido parece una gelatina clara
+• Área, longitud, volumen y superficie solo donde las funciones tienen valores reales (círculo 4π, dona 4π²); solo cifras correctas
+• 📈 dibuja expresiones en x e y, ecuaciones y matrices, también desde el historial
+</es-419>
+<de-DE>
+• Neu: Spanisch, Deutsch, Französisch, Koreanisch und traditionelles Chinesisch (Menü → Sprache / Language). Ein Handy in einer dieser Sprachen startet in ihr
+• 3D-Graph: glatte, glänzende Flächen; eine Kugel ist eine runde Kugel; der gemessene Körper wirkt wie helle Gelatine
+• Fläche, Länge, Volumen und Oberfläche nur, wo die Funktionen reelle Werte haben (Kreis 4π, Donut 4π²); nur richtige Stellen
+• 📈 zeichnet Ausdrücke in x und y, Gleichungen und Matrizen, auch aus dem Verlauf
+</de-DE>
+<fr-FR>
+• Nouveau : espagnol, allemand, français, coréen et chinois traditionnel (menu → Langue / Language). L’app démarre dans la langue du téléphone
+• Graphique 3D : surfaces lisses et brillantes ; une sphère est une seule boule ronde ; le solide mesuré ressemble à une gélatine pâle
+• Aire, longueur, volume et surface seulement là où les fonctions ont des valeurs réelles (cercle 4π, beignet 4π²)
+• 📈 trace des expressions en x et y, des équations et des matrices, aussi depuis l’historique
+</fr-FR>
+<ko-KR>
+• 새 기능: 스페인어, 독일어, 프랑스어, 한국어, 중국어 번체 지원(메뉴 → 언어 / Language). 이 언어로 설정한 휴대전화에서는 그 언어로 시작합니다
+• 3D 그래프: 매끄럽고 윤기 있는 곡면, 구는 하나의 둥근 구, 재는 입체는 투명한 껍질에 싸인 옅은 젤리처럼 표시
+• 넓이, 길이, 부피, 겉넓이는 실수 값이 있는 부분만으로 계산(원 4π, 도넛 4π²). 맞는 자릿수만 표시
+• 📈로 x와 y의 식, 방정식, 행렬을 그릴 수 있습니다. 기록에서도 가능
+</ko-KR>
+<zh-TW>
+• 新功能：支援西班牙文、德文、法文、韓文與繁體中文（選單 → 語言 / Language）。手機設定為這些語言時，App 會以該語言開啟
+• 3D 圖形：平滑而有光澤的曲面；球是一個圓球；所測量的立體看起來像包在透明外皮裡的淺色果凍
+• 面積、長度、體積與表面積只在函數有實數值的部分計算（圓 4π、甜甜圈 4π²），只顯示正確的位數
+• 📈 可畫出 x 與 y 的運算式、方程式與矩陣，也可從歷史紀錄畫出
+</zh-TW>
 
 1.9.5 (when 1.9.4 was already released):
 

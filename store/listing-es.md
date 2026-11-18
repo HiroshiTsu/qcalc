@@ -48,7 +48,7 @@ QCalc es una calculadora para Android basada en libqalculate, el motor de cálcu
 • Exporta el historial como archivo CSV para hojas de cálculo (QCalc Pro)
 • Cuatro páginas de teclas (123, Funciones, Cálculo, Matriz) o el teclado de tu teléfono
 • Modo claro u oscuro
-• En español, inglés y japonés (menú → Language / 言語 / Idioma). En un teléfono configurado en español, la app empieza en español
+• En español, inglés, japonés, alemán, francés, coreano y chino tradicional (menú → Idioma / Language); en un teléfono en español, empieza en español
 
 Nota: el separador decimal es el punto (1.5, no 1,5).
 
@@ -69,5 +69,5 @@ Android 7.0 o posterior en un dispositivo ARM de 64 bits (arm64).
 
 ## Notas de la versión
 
-The release notes of 1.9.0 in Spanish (es-419) are in listing-en.md under "Release notes", together with
-the English and Japanese ones: paste all the blocks into the field in Play Console.
+The release notes in Spanish (es-419) are in listing-en.md under "Release notes", together with
+the other languages: paste all the blocks into the field in Play Console.
