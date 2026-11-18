@@ -367,10 +367,24 @@
   // 1.11.0: the new volume features and whether they need Pro, in one place. None does now ('free');
   // 'pro' locks one (proGate asks for Pro where it is used). The 3D graph, where some of them are,
   // is Pro as before.
-  const PRO_GATES = { enclosed: 'free', tanks: 'free', revolution: 'free', regions: 'free', sections: 'free' };
+  // Which features need QCalc Pro: 'free' or 'pro'. 1.12.0: every feature of 1.11.0 and 1.12.0 is
+  // free for now; the comment says what is recommended (also in WORK-IN-PROGRESS.md, "要判断"). A key
+  // set to 'pro' is listed among the Pro features (PRO_INFO) and its tool asks for Pro (proGate).
+  const PRO_GATES = {
+    enclosed: 'free',      // the area enclosed by curves (1.10): recommended free (school maths)
+    tanks: 'free',         // the volume of liquid in tanks (1.10): recommended free (the heads of D1: Pro)
+    revolution: 'free',    // solids of revolution in the 2D graph (1.10): recommended free (the 3D view needs Pro)
+    regions: 'free',       // volumes of regions (1.10): recommended free
+    sections: 'free',      // solids with known cross sections (1.11): recommended free
+    history_tools: 'free', // the history: search, pin, notes, sum of lines (1.12 A5): recommended free (usability)
+    memkeys: 'free'        // the memory keys (1.12 A5): recommended free (usability)
+  };
+  // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
+  try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
   function proGate(k) {
     if (PRO_GATES[k] !== 'pro' || hasPro()) return true;
-    proPrompt(tr('This is a QCalc Pro feature', 'これは QCalc Pro の機能です'));
+    const info = PRO_INFO()[k];
+    proPrompt(info ? trf('{0} is a QCalc Pro feature', '{0}は QCalc Pro の機能です', info[1]) : tr('This is a QCalc Pro feature', 'これは QCalc Pro の機能です'), k);
     return false;
   }
   function maxPrecision() { return hasPro() ? MAX_PRECISION : FREE_MAX_PRECISION; }
@@ -2971,6 +2985,7 @@
         historyChanged();
       }]);
     }
+    else if ((a === 'star' || a === 'note') && !proGate('history_tools')) return;
     else if (a === 'star') { h.star = !h.star; if (!h.star) delete h.star; historyChanged(); if (h.star) toast(tr('Pinned at the top of the history', '履歴のいちばん上に固定しました'), 1800); }
     else if (a === 'note') {
       const t = await promptSheet(tr('A short note for this line', 'この行のひとことメモ'), h.note || '', tr('e.g. rent of March', '例：3 月の家賃'));
@@ -3857,7 +3872,7 @@
       b2.addEventListener('click', () => setMode('2d'));
       b3.dataset.pro = '';
       b3.addEventListener('click', () => {
-        if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です')); return; }
+        if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
         setMode('3d');
       });
       const ta = el('textarea', { rows: 2, placeholder: tr('Functions (one per line, variable x)', '関数（1行に1つ、変数は x）'), spellcheck: 'false', autocapitalize: 'off' });
@@ -7405,7 +7420,7 @@
   // The 3D graph of surfaces and points from elsewhere (a matrix: planes of a linear system, rows as
   // points). opts: points [{x, y, z, label}], range [x0, x1, y0, y1]. 3D graphs are a QCalc Pro feature.
   function openPlot3dWith(exprs, opts) {
-    if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です')); return; }
+    if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
     opts = opts || {};
     if (Q3.samples) Q3.samples.clearChoice(); // (another graph than a sample, 1.8.2)
     const list = exprs.filter(Boolean).slice(0, 4);
@@ -9977,7 +9992,7 @@
   }
   // a sphere of radius r in the 3D graph, with its volume and surface area (a QCalc Pro feature)
   async function showSphere(r) {
-    if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です')); return; }
+    if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
     const built = !!panels.plot;
     if (!built) { store.set('qalc.plot.mode', '3d'); store.set('qalc.plot3d.ok', false); }
     openPlot();
@@ -10108,6 +10123,7 @@
   $('.bar').append(hsBar);
   hsInput.addEventListener('input', () => { histQuery = hsInput.value; filterHistory(); });
   function openHistSearch() {
+    if (!proGate('history_tools')) return;
     closeHistSelect();
     drawAllOlder();
     document.body.classList.add('hsearching');
@@ -10148,6 +10164,7 @@
     el('button', { class: 'btn primary', type: 'button', text: tr('Done', '終わる'), onclick: () => closeHistSelect() })));
   document.body.append(selBar);
   function openHistSelect() {
+    if (!proGate('history_tools')) return;
     closeHistSearch();
     drawAllOlder();
     histSel = new Set();
@@ -10247,6 +10264,7 @@
     if (v) v.textContent = memory ? 'M = ' + clip(displayText(memory), 24) : tr('M: empty', 'M：空');
   }
   async function memOp(op) {
+    if (!proGate('memkeys')) return;
     if (op === 'MC') { memory = ''; store.set('qalc.memory', memory); showMemory(); return; }
     if (op === 'MR') { if (memory) insert(toDisplay(wrapValue(memory)), 0, false); else toast(tr('The memory is empty', 'メモリーは空です'), 1500); return; }
     const raw = exprEl.value.trim();
@@ -10327,6 +10345,7 @@
     return words.every((w) => hay.indexOf(w) >= 0);
   }
   function useTool(t) {
+    if (PRO_GATES[t[0]] && !proGate(t[0])) return; // a tool made a Pro feature asks first (1.12.0)
     const recent = (store.get('qalc.tools.recent', []) || []).filter((id) => id !== t[0] && TOOLS.some((x) => x[0] === id));
     recent.unshift(t[0]);
     store.set('qalc.tools.recent', recent.slice(0, 4));
@@ -10518,7 +10537,7 @@
               const locked = key === 'precision' && n > maxPrecision();
               if (locked) n = maxPrecision();
               S[key] = n; input.value = n; settingsChanged();
-              if (locked) proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'));
+              if (locked) proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'), 'precision');
             });
           } else {
             input = el('select');
@@ -10528,7 +10547,7 @@
               const v = input.value;
               if (key === 'theme' && v !== 'blue' && !hasPro()) {
                 input.value = 'blue'; S.theme = 'blue'; settingsChanged();
-                proPrompt(tr('Color themes are a QCalc Pro feature', '配色テーマは QCalc Pro の機能です'));
+                proPrompt(tr('Color themes are a QCalc Pro feature', '配色テーマは QCalc Pro の機能です'), 'themes');
                 return;
               }
               S[key] = (key === 'base' || key === 'max_decimals') ? Number(v) : v;
@@ -10662,17 +10681,73 @@
   }
 
   // ----------------------------------------------------------------- Pro
-  async function proPrompt(what) {
-    const k = await sheet(what, [['pro', tr('About QCalc Pro', 'QCalc Pro について'), 'accent']]);
-    if (k === 'pro') openPro();
+  // The Pro sheet (1.12.0): what a locked feature does, the price and "Buy" on one sheet, so that the
+  // purchase needs no other screen; "About QCalc Pro" shows everything. what: the title (the feature
+  // is a Pro feature), key: the feature (PRO_INFO) or one of the fixed Pro features.
+  // Until 1.11.0 the sheet had only the title and "About QCalc Pro".
+  const TERMS_READY = false; // the terms of use (A7) are a draft until a lawyer has read them: not shown
+  async function proPrompt(what, key) {
+    if (sheetResolve) closeSheet(null);
+    const info = PRO_INFO()[key] || PRO_FIXED().find((f) => f[3] === key);
+    const sh = $('#sheet');
+    sh.textContent = '';
+    sh.append(el('div', { class: 'stitle', text: what }));
+    if (info) sh.append(el('div', { class: 'pro-feat pro-sheet-feat' }, el('span', { class: 'ico', text: info[0], 'aria-hidden': 'true' }),
+      el('div', {}, el('div', { class: 'n', text: info[1] }), el('div', { class: 'muted', text: info[2] }))));
+    sh.append(el('div', { class: 'pro-sheet-note', text: tr('One purchase unlocks every Pro feature, also those of later updates. No subscription, no ads.', '1 回の購入で、すべての Pro 機能が使えます（今後増える機能も）。サブスクリプションも広告もありません。') }));
+    const done = (k) => closeSheet(k);
+    if (PRO.state === 'pending') sh.append(el('div', { class: 'form-hint', text: tr('Your payment is being processed. QCalc Pro will be unlocked when it is complete.', '支払いの手続き中です。完了すると QCalc Pro が使えるようになります。') }));
+    else sh.append(el('button', { class: 'accent pro-buy', text: PRO.price ? trf('Buy QCalc Pro ({0})', 'QCalc Pro を購入（{0}）', PRO.price) : tr('Buy QCalc Pro', 'QCalc Pro を購入'), onclick: () => done('buy') }));
+    sh.append(el('button', { text: tr('About QCalc Pro', 'QCalc Pro について'), onclick: () => done('pro') }));
+    if (TERMS_READY) sh.append(termsNotice());
+    sh.append(el('button', { text: tr('Not now', 'あとで'), onclick: () => done(null) }));
+    const k = await new Promise((resolve) => {
+      sheetResolve = resolve;
+      $('#scrim').classList.add('show', 'over-panels');
+      sh.classList.add('open');
+      sh.inert = false;
+    });
+    if (k === 'buy') buyPro();
+    else if (k === 'pro') openPro();
   }
-  const PRO_FEATURES = [
-    ['🎯', tr('High precision', '高精度'), tr('Up to 200000 significant digits (free: up to 1000)', '有効桁数は最大 200000 桁（無料版は 1000 桁まで）')],
-    ['🧊', tr('3D graphs', '3D グラフ'), tr('Surfaces z = f(x, y) that you can turn with a finger', '指で回せる曲面 z = f(x, y)')],
-    ['🎨', tr('Color themes', '配色テーマ'), tr('Seven colors for the keys and the highlights, in the light and the dark theme', 'キーや強調表示を 7 色から選べます（ライト・ダークの両方）')],
-    ['📤', tr('Export the history', '履歴の書き出し'), tr('Save the history as a CSV file that spreadsheets can open', '履歴を CSV ファイルに保存（表計算ソフトで開けます）')],
-    ['✨', tr('Future Pro features', '今後の Pro 機能'), tr('The Pro features of later updates, at no extra cost', '今後のアップデートで増える Pro 機能も、追加料金なしで使えます')]
+  // "By buying, you agree to the terms of use" with a link to them (shown when TERMS_READY)
+  function termsNotice() {
+    const [a, b] = trf('By buying QCalc Pro, you agree to the {0}.', 'QCalc Pro を購入すると、{0}に同意したものとみなします。', '\u0000').split('\u0000');
+    return el('div', { class: 'form-hint terms-notice' }, a,
+      tapButton({ class: 'linkish', text: tr('terms of use', '利用規約') }, () => { closeSheet(null); openTerms(); }), b || '');
+  }
+  function openTerms() { if (typeof openAbout === 'function') openAbout(); }
+  // the Pro features that are not tools: icon, name, what it gives, key of the prompt
+  const PRO_FIXED = () => [
+    ['🎯', tr('High precision', '高精度'), tr('Up to 200000 significant digits (free: up to 1000)', '有効桁数は最大 200000 桁（無料版は 1000 桁まで）'), 'precision'],
+    ['🧊', tr('3D graphs', '3D グラフ'), tr('Surfaces z = f(x, y) that you can turn with a finger', '指で回せる曲面 z = f(x, y)'), '3d'],
+    ['🎨', tr('Color themes', '配色テーマ'), tr('Seven colors for the keys and the highlights, in the light and the dark theme', 'キーや強調表示を 7 色から選べます（ライト・ダークの両方）'), 'themes'],
+    ['📤', tr('Export the history', '履歴の書き出し'), tr('Save the history as a CSV file that spreadsheets can open', '履歴を CSV ファイルに保存（表計算ソフトで開けます）'), 'export']
   ];
+  // the features that PRO_GATES can make Pro: icon, name, what it gives
+  const PRO_INFO = () => ({
+    enclosed: ['〰', tr('Area enclosed by curves', '曲線で囲まれた面積'), tr('The area between two or more curves in the 2D graph', '2D グラフで、2 本以上の曲線に囲まれた部分の面積')],
+    tanks: ['🛢', tr('Tanks', '容器'), tr('The volume of liquid at a level in horizontal and vertical tanks', '横置き・縦置きのタンクで、液面の高さから液の量')],
+    revolution: ['⟳', tr('Solids of revolution', '回転体'), tr('Turn a region of the 2D graph around an axis: volume and surface', '2D グラフの部分を軸のまわりに回した体積と表面積')],
+    regions: ['▦', tr('Volumes of regions', '領域の体積'), tr('Volumes over regions of the plane', '平面の領域の上の体積')],
+    sections: ['◪', tr('Solids with known cross sections', '断面が分かる立体'), tr('Squares, triangles or half discs on a base region', '底面の上に正方形・三角形・半円を立てた立体')],
+    history_tools: ['🕘', tr('History tools', '履歴の道具'), tr('Search, pin, notes, and the sum of lines', '検索・固定・メモ・選んだ行の合計')],
+    memkeys: ['M+', tr('Memory keys', 'メモリーキー'), 'M+ M− MR MC']
+  });
+  // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
+  function proFeatures() {
+    const info = PRO_INFO();
+    const gated = Object.keys(PRO_GATES).filter((k) => PRO_GATES[k] === 'pro' && info[k]).map((k) => info[k]);
+    return PRO_FIXED().map((f) => f.slice(0, 3)).concat(gated, [
+      ['✨', tr('Future Pro features', '今後の Pro 機能'), tr('The Pro features of later updates, at no extra cost', '今後のアップデートで増える Pro 機能も、追加料金なしで使えます')]]);
+  }
+  // what stays free (the Pro panel): the calculator itself and the tools that are not Pro
+  function freeFeatures() {
+    const info = PRO_INFO();
+    return [tr('The calculator: exact results, units, currencies, matrices, calculus', '計算：厳密な結果、単位、通貨、行列、微分と積分'),
+      tr('2D graphs, areas and lengths', '2D グラフ、面積と長さ'),
+      tr('Shapes: areas and volumes', '図形：面積と体積')].concat(Object.keys(PRO_GATES).filter((k) => PRO_GATES[k] !== 'pro' && info[k]).map((k) => info[k][1]));
+  }
   function openPro() {
     const p = panel('pro', 'QCalc Pro', (p) => { p.refresh = () => { p.body.textContent = ''; fillPro(p.body); }; });
     p.refresh();
@@ -10697,11 +10772,16 @@
     }
     body.append(card);
     const list = el('div', { class: 'card' });
-    for (const [ico, name, desc] of PRO_FEATURES) {
+    for (const [ico, name, desc] of proFeatures()) {
       list.append(el('div', { class: 'pro-feat' }, el('span', { class: 'ico', text: ico }),
         el('div', {}, el('div', { class: 'n', text: name }), el('div', { class: 'muted', text: desc }))));
     }
     body.append(list, el('div', { class: 'form-hint', text: tr('Everything else in QCalc stays free.', 'そのほかの機能は、すべて無料のまま使えます。') }));
+    // what is free, so that what the purchase adds is clear (1.12.0)
+    const free = el('ul', { class: 'free-list' });
+    for (const t of freeFeatures()) free.append(el('li', { text: t }));
+    body.append(el('div', { class: 'section-title', text: tr('Free', '無料で使えるもの') }), free);
+    if (TERMS_READY && !PRO.pro) body.append(termsNotice());
     if (PRO.billing === 'debug') {
       // test builds: see the app as without Pro
       const box = el('input', { type: 'checkbox' });
@@ -10764,7 +10844,7 @@
     return /^-?\d+(?:\.\d+)?(?:E-?\d+)?$/.test(t) ? t : '';
   }
   function exportHistory() {
-    if (!hasPro()) { proPrompt(tr('Exporting the history is a QCalc Pro feature', '履歴の書き出しは QCalc Pro の機能です')); return; }
+    if (!hasPro()) { proPrompt(tr('Exporting the history is a QCalc Pro feature', '履歴の書き出しは QCalc Pro の機能です'), 'export'); return; }
     if (!history.length) { toast(tr('The history is empty', '履歴はありません'), 1400); return; }
     const d = new Date(), z = (n) => String(n).padStart(2, '0');
     const name = 'QCalc-history-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.csv';
