@@ -1,6 +1,7 @@
 package io.github.hiroshitsu.qcalc;
 
 import android.app.Activity;
+import android.app.LocaleManager;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -8,12 +9,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.LocaleList;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
@@ -40,6 +43,9 @@ import org.json.JSONObject;
 
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
@@ -76,11 +82,16 @@ public class MainActivity extends Activity {
     private volatile String appearance = "system";
     /** The view behind the page; its colour shows behind the navigation bar. */
     private FrameLayout root;
+    /** The language of the app (see Lang), once the page has asked for it (QalcNative.startLang). */
+    private volatile String appLang;
+    /** The languages of the app's configuration when they were last looked at (onConfigurationChanged). */
+    private String configLocales;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         appearance = savedAppearance();
+        configLocales = getResources().getConfiguration().getLocales().toLanguageTags();
         // first: on its first start a build with billing looks for the data of older versions
         pro = new Pro(this, new Pro.Listener() {
             @Override
@@ -215,33 +226,124 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** The languages of the app, in the order of the texts given to tr(). */
-    private static final String[] LANGS = {"en", "ja", "es", "de", "fr", "ko", "zh-TW"};
-
     /**
-     * The text in the language of the app, as the page chooses it (LANG in app.js): the language the
-     * user chose in the page ("Language", saved by the page as qalc.lang, the JSON text "ja", "de" …);
-     * without a choice, the language of the device when it is Spanish, German, French, Korean or
-     * Chinese in Traditional characters (or of Taiwan, Hong Kong or Macau), otherwise English.
+     * The text in the language of the app (1.11.0: the language that Lang chooses, as the page has
+     * it; before the page has asked, the same choice is made without keeping anything). The texts
+     * are given in the order of Lang.CODES.
      */
     private String tr(String en, String ja, String es, String de, String fr, String ko, String zh) {
         String[] texts = {en, ja, es, de, fr, ko, zh};
-        String s = StateStore.load(this, "qalc.lang");
-        String chosen = s == null ? "" : s.trim();
-        for (int i = 0; i < LANGS.length; i++) {
-            if (("\"" + LANGS[i] + "\"").equals(chosen)) return texts[i];
-        }
-        java.util.Locale l = java.util.Locale.getDefault();
-        String lang = l.getLanguage(), script = l.getScript(), country = l.getCountry();
-        if ("zh".equals(lang)) {
-            boolean hant = "Hant".equals(script) || script.isEmpty()
-                    && ("TW".equals(country) || "HK".equals(country) || "MO".equals(country));
-            return hant ? zh : en;
-        }
-        for (int i = 2; i < 6; i++) {
-            if (LANGS[i].equals(lang)) return texts[i];
+        String lang = appLang;
+        if (lang == null) lang = chooseLang(false, false).lang;
+        for (int i = 0; i < Lang.CODES.length; i++) {
+            if (Lang.CODES[i].equals(lang)) return texts[i];
         }
         return en;
+    }
+
+    /**
+     * Chooses the language of the app (see Lang) from what is saved, the language set for QCalc in
+     * the system settings and the device's languages. With keep, what the choice changed is saved
+     * (qalc.lang, qalc.langsys, qalc.langinit), the system setting is made to agree, and the
+     * language becomes the app's (appLang).
+     *
+     * @param pageHad the page has history or settings of its own (in localStorage)
+     */
+    private synchronized Lang.Choice chooseLang(boolean pageHad, boolean keep) {
+        boolean perAppSupported = Build.VERSION.SDK_INT >= 33;
+        String saved = Lang.saved(StateStore.load(this, "qalc.lang"));
+        String sys = Lang.saved(StateStore.load(this, "qalc.langsys"));
+        boolean init = StateStore.has(this, "qalc.langinit");
+        boolean had = pageHad || StateStore.has(this, "qalc.history") || StateStore.has(this, "qalc.settings");
+        Lang.Choice c = Lang.choose(perAppSupported, perAppSupported ? appLocale() : null, saved, sys, init, had,
+                deviceLocales());
+        if (!keep) return c;
+        // the record of the system setting is changed only when the system took the language
+        if (c.system != null && !setAppLocale(c.system)) c.sys = sys;
+        if (!same(c.saved, saved)) StateStore.save(this, "qalc.lang", c.saved != null ? Lang.json(c.saved) : null);
+        if (!same(c.sys, sys)) StateStore.save(this, "qalc.langsys", c.sys != null ? Lang.json(c.sys) : null);
+        if (!init) StateStore.save(this, "qalc.langinit", "1");
+        appLang = c.lang;
+        return c;
+    }
+
+    private static boolean same(String a, String b) {
+        return a == null ? b == null : a.equals(b);
+    }
+
+    private static List<Locale> list(LocaleList l) {
+        List<Locale> out = new ArrayList<Locale>();
+        if (l != null) {
+            for (int i = 0; i < l.size(); i++) out.add(l.get(i));
+        }
+        return out;
+    }
+
+    /**
+     * The device's languages, the first first. On Android 13 and later they come from LocaleManager,
+     * because the app's own configuration then has the language set for QCalc instead.
+     */
+    private List<Locale> deviceLocales() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            try {
+                LocaleManager m = getSystemService(LocaleManager.class);
+                if (m != null) return list(m.getSystemLocales());
+            } catch (RuntimeException e) {
+                Log.w(TAG, "system locales", e);
+            }
+        }
+        return list(Resources.getSystem().getConfiguration().getLocales());
+    }
+
+    /** The language set for QCalc in the system settings (Android 13 and later), or null for none. */
+    private String appLocale() {
+        if (Build.VERSION.SDK_INT < 33) return null;
+        try {
+            LocaleManager m = getSystemService(LocaleManager.class);
+            return m != null ? Lang.first(list(m.getApplicationLocales())) : null;
+        } catch (RuntimeException e) {
+            Log.w(TAG, "app locales", e);
+            return null;
+        }
+    }
+
+    /** Sets the language for QCalc in the system settings (Android 13 and later); false if it could not be set. */
+    private boolean setAppLocale(String code) {
+        if (Build.VERSION.SDK_INT < 33) return false;
+        try {
+            LocaleManager m = getSystemService(LocaleManager.class);
+            if (m == null) return false;
+            if (!code.equals(Lang.first(list(m.getApplicationLocales())))) {
+                m.setApplicationLocales(LocaleList.forLanguageTags(code));
+            }
+            return true;
+        } catch (RuntimeException e) {
+            Log.w(TAG, "set app locales", e);
+            return false;
+        }
+    }
+
+    /**
+     * The configuration changed without the activity being made again (configChanges in the
+     * manifest; 1.11.0 adds locale and layoutDirection). When the languages changed (in the system
+     * settings, for the device or for QCalc) and the app's language with them, the page is told,
+     * and loads itself again in the new language, keeping the history and what is being typed.
+     */
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        String tags = newConfig.getLocales().toLanguageTags();
+        if (tags.equals(configLocales)) return;
+        configLocales = tags;
+        String before, now;
+        synchronized (this) {
+            before = appLang;
+            if (before == null || web == null) return;
+            now = chooseLang(false, true).lang;
+        }
+        if (!now.equals(before)) {
+            runScript("window.qalcLanguage && window.qalcLanguage(" + JSONObject.quote(now) + ")");
+        }
     }
 
     private void showMessage(String text) {
@@ -525,6 +627,31 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void cancel() {
             Engine.get(MainActivity.this).cancel();
+        }
+
+        /**
+         * The language of the app (see Lang), asked once by the page when it starts (1.11.0).
+         *
+         * @param had the page has history or settings in its localStorage
+         */
+        @JavascriptInterface
+        public String startLang(boolean had) {
+            return chooseLang(had, true).lang;
+        }
+
+        /**
+         * The user chose a language in the app ("Language", 1.11.0). It is kept as qalc.lang (the
+         * page saves it too) and, on Android 13 and later, set for QCalc in the system settings.
+         */
+        @JavascriptInterface
+        public void setLang(String code) {
+            if (!Lang.valid(code)) return;
+            synchronized (MainActivity.this) {
+                // first, so that the change of the configuration that follows finds nothing new
+                appLang = code;
+                StateStore.save(MainActivity.this, "qalc.lang", Lang.json(code));
+                if (setAppLocale(code)) StateStore.save(MainActivity.this, "qalc.langsys", Lang.json(code));
+            }
         }
 
         @JavascriptInterface

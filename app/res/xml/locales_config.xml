@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The languages of the app, for the language set for QCalc in the system settings (Android 13 and
+     later: Settings → Apps → QCalc → Language; 1.11.0). The same seven as Lang.CODES and LANGS in app.js. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="ja" />
+    <locale android:name="es" />
+    <locale android:name="de" />
+    <locale android:name="fr" />
+    <locale android:name="ko" />
+    <locale android:name="zh-TW" />
+</locale-config>

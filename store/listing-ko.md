@@ -3,7 +3,8 @@
 The texts to add in Play Console as a translation: "Grow users" → "Store presence" → "Main store listing"
 → "Manage translations" → add **Korean – ko-KR** and paste the texts below.
 The default language of the listing stays English (listing-en.md). From version 1.10.0 the app itself
-is in Korean too (it starts in Korean on a phone set to Korean).
+is in Korean too (it starts in Korean on a phone set to Korean; from 1.11.0, in the first language in the
+phone's list that it has).
 Limits: app name 30 characters, short description 80, full description 4000.
 The texts were translated by machine (Claude) and have not been checked by a native speaker.
 
@@ -49,7 +50,7 @@ QCalc는 오픈 소스 계산기 Qalculate!의 계산 엔진 libqalculate를 바
 • 기록을 스프레드시트용 CSV 파일로 내보내기(QCalc Pro)
 • 네 가지 키 페이지(123, 함수, 미적분, 행렬) 또는 휴대전화 키보드
 • 밝은 화면 또는 어두운 화면: 휴대전화 설정을 따르거나 직접 선택
-• 한국어, 영어, 일본어, 스페인어, 독일어, 프랑스어, 중국어 번체(메뉴 → 언어 / Language). 한국어로 설정한 휴대전화에서는 한국어로 시작
+• 한국어, 영어, 일본어, 스페인어, 독일어, 프랑스어, 중국어 번체(메뉴 → 언어 / Language). 휴대전화의 언어 목록에서 앱이 지원하는 첫 번째 언어로 시작(없으면 영어)
 
 참고: 소수점은 마침표입니다(1.5).
 

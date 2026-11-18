@@ -27,7 +27,7 @@ The design document set of QCalc 1.10.1 (versionCode 23, package name `io.github
 
 - At the user's request, the screens are also in German, French, Korean and Traditional Chinese (Taiwan): seven languages in all, with English, Japanese and Spanish.
 - Each language other than English and Japanese has a file of its own (app/assets/i18n-es.js, i18n-de.js, i18n-fr.js, i18n-ko.js and i18n-zh-TW.js, loaded before app.js) with the texts of the page, the common messages of the calculation engine and the Java code, the names of the keys read out, the categories of the lists, how a date is written and the currencies listed first. The Spanish texts moved into the same form.
-- A phone set to one of these languages starts in it (Traditional Chinese also for Hong Kong and Macau); a phone set to Simplified Chinese or to Japanese still starts in English. "Language" in the menu and in the settings is shown in the language of the screen with the English word beside it, such as "Sprache / Language". Korean and Chinese text use the fonts of their own language.
+- A phone set to one of these languages starts in it (Traditional Chinese also for Hong Kong and Macau); a phone set to Simplified Chinese or to Japanese still starts in English. (From 1.11.0 the app starts in the first language in the phone's list that it has, so a phone set to Japanese starts in Japanese; see the README.) "Language" in the menu and in the settings is shown in the language of the screen with the English word beside it, such as "Sprache / Language". Korean and Chinese text use the fonts of their own language.
 - The German, French, Korean and Traditional Chinese texts were translated by machine (Claude) and have not yet been checked by native speakers. The calculation engine did not change. The tests L01 to L38 check the four new languages on the screens.
 
 ### What changed in 1.9.5
@@ -63,7 +63,7 @@ The design document set of QCalc 1.10.1 (versionCode 23, package name `io.github
 ### What changed in 1.9.0
 
 - At the user's request, Spanish (Latin America) is the third language of the screens, next to English and Japanese. The texts of the page (in the new file app/assets/i18n-es.js), the common messages of the calculation engine and the Java code, the names of the keys read out, the categories of the lists and the dates are in Spanish.
-- "Language / 言語 / Idioma" in the menu and in the settings offers English, 日本語 and Español. With no language chosen, a phone set to Spanish starts in Spanish; a phone set to Japanese still starts in English.
+- "Language / 言語 / Idioma" in the menu and in the settings offers English, 日本語 and Español. With no language chosen, a phone set to Spanish starts in Spanish; a phone set to Japanese still starts in English. (From 1.11.0 the app starts in the first language in the phone's list that it has, so a phone set to Japanese starts in Japanese; see the README.)
 - The calculations, the way expressions are written and the names in the engine's lists do not change. The engine is the same as in 1.8.4; the Java code changed only in the four texts that MainActivity shows itself.
 
 ### What changed in 1.8.4
@@ -133,7 +133,7 @@ QCalc 1.10.1（versionCode 23、パッケージ名 `io.github.hiroshitsu.qcalc`�
 
 - 利用者の要望で、画面をドイツ語・フランス語・韓国語・繁体字中国語（台湾）にも対応させました。英語・日本語・スペイン語と合わせて 7 つの言語です。
 - 英語と日本語のほかの言語は、それぞれ 1 つのファイル（app/assets/i18n-es.js・i18n-de.js・i18n-fr.js・i18n-ko.js・i18n-zh-TW.js。app.js の前に読み込む）に、ページの文、計算エンジンと Java の主なメッセージ、読み上げるキーの名前、一覧の分類名、日付の書き方、最初に並べる通貨を持ちます。スペイン語の文もこの形に移しました。
-- これらの言語に設定した端末ではその言語で始まります（繁体字中国語は香港・マカオの設定でも）。簡体字中国語や日本語に設定した端末は、これまでどおり英語で始まります。メニューと設定の「言語」は、画面の言語の言葉の横に英語の「Language」を添えた名前（「Sprache / Language」など）です。韓国語と中国語の文は、それぞれの言語のフォントで表示します。
+- これらの言語に設定した端末ではその言語で始まります（繁体字中国語は香港・マカオの設定でも）。簡体字中国語や日本語に設定した端末は、これまでどおり英語で始まります（1.11.0 からは、端末の言語のリストで最初に当てはまった言語で始まるので、日本語の端末は日本語で始まります。README を参照）。メニューと設定の「言語」は、画面の言語の言葉の横に英語の「Language」を添えた名前（「Sprache / Language」など）です。韓国語と中国語の文は、それぞれの言語のフォントで表示します。
 - ドイツ語・フランス語・韓国語・繁体字中国語の文は機械（Claude）で訳したもので、それぞれの言語を母語とする人の確認はまだ受けていません。計算エンジンは変えていません。試験 L01〜L38 で、4 つの新しい言語の画面を確かめています。
 
 ### 1.9.5 で変えたところ
@@ -169,7 +169,7 @@ QCalc 1.10.1（versionCode 23、パッケージ名 `io.github.hiroshitsu.qcalc`�
 ### 1.9.0 で変えたところ
 
 - 利用者の要望で、スペイン語（中南米）を、英語と日本語に続く 3 つ目の画面の言語にしました。画面の文（新しいファイル app/assets/i18n-es.js）、計算エンジンと Java の主なメッセージ、読み上げるキーの名前、一覧の分類名、日付がスペイン語になります。
-- メニューと設定の「Language / 言語 / Idioma」で English・日本語・Español を選べます。言語を選んでいないときは、スペイン語に設定した端末ではスペイン語で始まります（日本語に設定した端末は、これまでどおり英語で始まります）。
+- メニューと設定の「Language / 言語 / Idioma」で English・日本語・Español を選べます。言語を選んでいないときは、スペイン語に設定した端末ではスペイン語で始まります（日本語に設定した端末は、これまでどおり英語で始まります。1.11.0 からは、端末の言語のリストで最初に当てはまった言語で始まるので、日本語の端末は日本語で始まります。README を参照）。
 - 計算、式の書き方、エンジンの一覧の名前は変わりません。計算エンジンは 1.8.4 と同じで、Java は MainActivity が自分で出す 4 つの文だけを変えました。
 
 ### 1.8.4 で変えたところ

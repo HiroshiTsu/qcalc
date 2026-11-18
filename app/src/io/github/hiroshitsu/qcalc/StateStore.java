@@ -74,6 +74,19 @@ final class StateStore {
         }
     }
 
+    /** Whether a text is stored under the name, without reading it (1.11.0). */
+    static boolean has(Context ctx, String name) {
+        if (!validName(name)) return false;
+        synchronized (StateStore.class) {
+            synchronized (pending) {
+                String p = pending.get(name);
+                if (p != null) return p != REMOVE;
+            }
+            File f = file(ctx, name);
+            return f != null && f.isFile();
+        }
+    }
+
     /** Stores the text (null removes it). */
     static void save(final Context ctx, final String name, String data) {
         if (!validName(name)) return;

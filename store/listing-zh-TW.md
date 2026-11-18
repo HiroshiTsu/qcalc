@@ -4,7 +4,7 @@ The texts to add in Play Console as a translation: "Grow users" → "Store prese
 → "Manage translations" → add **Chinese (Traditional) – zh-TW** and paste the texts below.
 The default language of the listing stays English (listing-en.md). From version 1.10.0 the app itself
 is in Traditional Chinese too (it starts in it on a phone set to Chinese in Traditional characters, or
-to Taiwan, Hong Kong or Macau).
+to Taiwan, Hong Kong or Macau; from 1.11.0, in the first language in the phone's list that it has).
 Limits: app name 30 characters, short description 80, full description 4000.
 The texts were translated by machine (Claude) and have not been checked by a native speaker.
 
@@ -50,7 +50,7 @@ QCalc 是以開放原始碼計算機 Qalculate! 的計算引擎 libqalculate 為
 • 將歷史紀錄匯出為試算表用的 CSV 檔（QCalc Pro）
 • 四頁按鍵（123、函數、微積分、矩陣）或手機鍵盤
 • 淺色或深色顯示：跟隨手機設定或自行選擇
-• 支援繁體中文、英文、日文、西班牙文、德文、法文與韓文（選單 → 語言 / Language）。手機設定為繁體中文（或台灣、香港、澳門）時，App 會以繁體中文開啟
+• 支援繁體中文、英文、日文、西班牙文、德文、法文與韓文（選單 → 語言 / Language）。App 會以手機語言清單中第一個支援的語言開啟（繁體中文也包含台灣、香港、澳門的設定；都沒有時為英文）
 
 注意：小數點是「.」（1.5）。
 
