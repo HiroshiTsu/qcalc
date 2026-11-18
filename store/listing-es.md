@@ -25,20 +25,20 @@ QCalc es una calculadora para Android basada en libqalculate, el motor de cálcu
 
 ■ Funciones
 • Conversión de unidades: longitud, masa, velocidad, temperatura y muchas más (5 km to mi, 20 °C to °F)
-• Conversión de monedas con tipos de cambio del Banco Central Europeo y otras fuentes (100 USD to PEN)
+• Conversión de monedas con tipos de cambio del Banco Central Europeo y otros (100 USD to PEN)
 • Ecuaciones y sistemas de ecuaciones (solve, multisolve)
-• Derivadas, integrales, límites, sumatorias y ecuaciones diferenciales (diff, integrate, limit, sum, dsolve) en formularios con la forma de la matemática, con el resultado al instante y Deshacer/Rehacer
-• La expresión se muestra en notación matemática (fracciones, potencias, raíces, integrales) mientras escribes
+• Derivadas, integrales, límites, sumatorias y ecuaciones diferenciales (diff, integrate, limit, sum, dsolve) en formularios como en papel, con el resultado al instante
+• La expresión se muestra en notación matemática mientras escribes
 • Ecuaciones y sistemas en un formulario; matrices de hasta 30 × 30 en una cuadrícula con determinante, inversa, rango, valores propios y sistemas lineales
-• Figuras: área, longitudes, volumen y área superficial de 15 figuras (círculo, triángulo, esfera, cilindro, cono…) a partir de sus medidas
+• Figuras: área, longitudes, volumen y área superficial de 22 figuras a partir de sus medidas; líquido en depósitos; volumen a partir de secciones medidas
 • Números complejos; números binarios, octales y hexadecimales
 • Cálculos con fechas (today + 100 days)
 • Propagación de incertidumbre ((5 ± 0.2) m × (3 ± 0.1) m)
 • Resultados exactos con fracciones y raíces, y alta precisión de hasta 200 000 cifras significativas (más de 1000 cifras con QCalc Pro). Los resultados largos se muestran y se copian completos
 • Funciones especiales rápidas con muchas cifras (zeta, gamma, erf, Bessel…); cálculos de hasta una hora
-• Gráficos 2D de y = f(x): varias funciones a la vez; arrastra para mover y pellizca para acercar. Derivadas, primitivas, tangentes, ceros y extremos; áreas (al instante; arrastra los bordes), longitudes de curvas y perímetros; 17 muestras
-• Gráficos 3D de superficies z = f(x, y) que giras con un dedo: derivadas parciales, el volumen y el área superficial de lo que dibujaste, 14 muestras (QCalc Pro)
-• 📈 dibuja lo que escribes: expresiones en x y en x e y, ecuaciones y matrices, también desde el historial y tus funciones guardadas
+• Gráficos 2D de y = f(x): varias funciones a la vez; arrastra para mover y pellizca para acercar. Derivadas, primitivas, tangentes, ceros y extremos; áreas (al instante; arrastra los bordes), longitudes de curvas y perímetros; sólidos de revolución; 17 muestras
+• Gráficos 3D de z = f(x, y) con sombras, que giras con un dedo: derivadas parciales, volumen y área superficial sobre un rectángulo, un disco, la parte entre dos superficies o una región escrita, 14 muestras (QCalc Pro)
+• 📈 dibuja lo que escribes: expresiones en x o en x e y, ecuaciones y matrices, también desde el historial
 • Unidades tradicionales japonesas (30 tsubo to m²)
 • Ejemplos y consejos dentro de la app: toca uno para probarlo
 • Listas de funciones, unidades y constantes con búsqueda

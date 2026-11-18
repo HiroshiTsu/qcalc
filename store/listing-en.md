@@ -29,19 +29,19 @@ QCalc is a calculator for Android built on libqalculate, the calculation engine 
 • Unit conversion: length, mass, speed, temperature, area, energy and many more units (5 km to mi, 20 °C to °F)
 • Currency conversion with exchange rates from the European Central Bank and other sources (100 USD to EUR)
 • Equations and systems of equations (solve, multisolve)
-• Derivatives, integrals, limits, sums and differential equations (diff, integrate, limit, sum, dsolve) in forms laid out like the math: the result at once, Undo and Redo, boxes that are checked and kept
+• Derivatives, integrals, limits, sums and differential equations (diff, integrate, limit, sum, dsolve) in forms laid out like the math: the result at once, Undo and Redo
 • The expression is shown in math notation (fractions, powers, roots, integrals) while you type
-• Equations and systems in a form (left side = right side); matrices up to 30 × 30 in a grid (paste a table from a spreadsheet) with determinant, inverse, rank, eigenvalues and linear systems
-• Shapes: area, lengths, volume and surface area of 15 shapes (circle, triangle, sphere, cylinder, cone…) from their sizes, with pictures, formulas and units
+• Equations and systems in a form (left side = right side); matrices up to 30 × 30 in a grid (paste from a spreadsheet) with determinant, inverse, rank, eigenvalues and linear systems
+• Shapes: area, lengths, volume and surface area of 22 shapes from their sizes, with pictures, formulas and units; liquid in tanks; volume from measured sections
 • Complex numbers; binary, octal and hexadecimal numbers
 • Date calculations (today + 100 days)
 • Uncertainty propagation ((5 ± 0.2) m × (3 ± 0.1) m)
 • Exact results with fractions and square roots, and high precision with up to 200,000 significant digits (above 1000 digits with QCalc Pro). Long results are shown and copied in full
 • Special functions stay fast with many digits (zeta, gamma, erf, Bessel…); calculations of up to one hour
-• 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom. Derivatives, antiderivatives, tangents, zeros and extrema; areas (shown at once; drag the edges), curve lengths and perimeters; 17 samples to draw with one tap
-• 3D graphs of surfaces z = f(x, y) that you turn with a finger: partial derivatives, the volume and surface area of what you have drawn, 14 samples (QCalc Pro)
-• From the forms, the graph that goes with the calculation: tangents, areas, the lines or planes of a linear system with its solution, the rows of a matrix as points
-• Traditional Japanese units: tsubo, tan, sun, shaku, ken, ri, gō, shō, monme, kan (30 tsubo to m²)
+• 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom. Derivatives, antiderivatives, tangents, zeros and extrema; areas (shown at once; drag the edges), curve lengths and perimeters; solids of revolution; 17 samples to draw with one tap
+• 3D graphs of z = f(x, y) with shadows, turned with a finger: partial derivatives, volume and surface area over a rectangle, a disk, the part between two surfaces or a typed region, 14 samples (QCalc Pro)
+• From the forms, the graph of the calculation: tangents, areas, the lines or planes of a linear system, the rows of a matrix as points
+• Traditional Japanese units such as tsubo, shaku and kan (30 tsubo to m²)
 • Examples and tips in the app: tap one to try it
 • Lists of functions, units and constants with search
 • Your own variables and functions
@@ -76,6 +76,79 @@ es-419, after the Spanish translation of the listing has been added; listing-es.
 de-DE, fr-FR, ko-KR and zh-TW, after those translations have been added; listing-de.md …).
 The notes in German, French, Korean and Traditional Chinese were translated by machine (Claude) and
 have not been checked by native speakers.
+
+1.11.0 (when 1.10.1 was already released):
+
+<en-US>
+• 3D volume: the part enclosed by two surfaces is found by itself
+• Shapes: liquid in tanks (amount ↔ height), 7 more solids, weight from density
+• 2D graph: solids of revolution about a horizontal or vertical line
+• 3D volume: regions typed as inequalities; the integral with its sign
+• Volume from measured cross sections or a grid of heights
+• 3D graph: surfaces cast shadows
+• Starts in your phone's language
+• Fixes: approximate values shown with "=", jagged 3D edges, sizes like 1/2
+</en-US>
+<ja-JP>
+・3D の体積：2 つの曲面で囲まれた部分を自動で見つけます
+・図形：容器の液量（液面の高さ⇔液量）、立体を 7 つ追加、密度から重さ
+・2D グラフ：回転体（x 軸・y 軸・y = k・x = k のまわり）
+・3D の体積：範囲を不等式などで指定、符号つきの積分の値
+・測った値から体積：断面積の表（平均断面法・シンプソンの公式）、点高法
+・3D グラフ：曲面に影がつきます
+・端末の言語で始まります
+・修正：近似値が「=」で表示される、3D の端がぎざぎざになる、1/2 などの大きさが読めない
+</ja-JP>
+<es-419>
+• Volumen 3D: se encuentra sola la parte entre dos superficies
+• Figuras: líquido en depósitos (cantidad ↔ altura), 7 sólidos más, peso por densidad
+• Gráfico 2D: sólidos de revolución en torno a una recta horizontal o vertical
+• Volumen 3D: regiones por desigualdades, integral con signo
+• Volumen a partir de secciones o alturas medidas
+• Gráfico 3D: las superficies dan sombra
+• Empieza en el idioma del teléfono
+• Correcciones: aproximados con "=", bordes 3D dentados, medidas como 1/2
+</es-419>
+<de-DE>
+• 3D-Volumen: Der von zwei Flächen eingeschlossene Teil wird erkannt
+• Figuren: Füllmenge in Behältern (Menge ↔ Höhe), 7 weitere Körper, Gewicht aus der Dichte
+• 2D-Graph: Rotationskörper um eine waagrechte oder senkrechte Gerade
+• 3D-Volumen: Bereiche aus Ungleichungen, Integral mit Vorzeichen
+• Volumen aus Querschnitten oder einem Höhenraster
+• 3D-Graph: Flächen werfen Schatten
+• Startet in der Sprache des Handys
+• Behoben: Näherungswerte mit „=“, gezackte 3D-Ränder, Maße wie 1/2
+</de-DE>
+<fr-FR>
+• Volume 3D : la partie enclose par deux surfaces est trouvée
+• Formes : liquide des cuves (volume ↔ hauteur), 7 solides de plus, masse par densité
+• Graphique 2D : solides de révolution autour d’une droite horizontale ou verticale
+• Volume 3D : domaines par inégalités, intégrale signée
+• Volume à partir de profils en travers ou de cotes
+• Graphique 3D : ombres des surfaces
+• Démarre dans la langue du téléphone
+• Corrigé : approximations avec « = », bords 3D dentelés, mesures comme 1/2
+</fr-FR>
+<ko-KR>
+• 3D 부피: 두 곡면으로 둘러싸인 부분을 자동으로 찾습니다
+• 도형: 용기의 액량(액면 높이 ↔ 액량), 입체 7가지 추가, 밀도로 무게 계산
+• 2D 그래프: 가로·세로 직선을 축으로 하는 회전체
+• 3D 부피: 부등식 등으로 범위 지정, 부호가 있는 적분값
+• 측정값으로 부피 구하기: 단면적 표, 점고법
+• 3D 그래프: 곡면에 그림자가 생깁니다
+• 휴대전화의 언어로 시작합니다
+• 수정: 근삿값이 ‘=’로 표시되던 문제, 3D 가장자리의 톱니, 1/2 같은 크기를 읽지 못하던 문제
+</ko-KR>
+<zh-TW>
+• 3D 體積：自動找出兩個曲面圍成的部分
+• 幾何圖形：容器液量（液面高度 ↔ 液量）、新增 7 種立體、由密度求重量
+• 2D 圖形：繞水平或鉛直直線的旋轉體
+• 3D 體積：以不等式等指定範圍，含正負號的積分值
+• 由實測值求體積：斷面積表、點高法
+• 3D 圖形：曲面會投下陰影
+• 以手機的語言開啟
+• 修正：近似值以「=」顯示、3D 邊緣呈鋸齒、無法讀取 1/2 等尺寸
+</zh-TW>
 
 1.10.1 (when 1.10.0 was already released):
 

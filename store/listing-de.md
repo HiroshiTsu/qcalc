@@ -29,15 +29,15 @@ QCalc ist ein Rechner für Android auf der Grundlage von libqalculate, dem Reche
 • Währungsumrechnung mit Kursen der Europäischen Zentralbank und anderer Quellen (100 USD to EUR)
 • Gleichungen und Gleichungssysteme (solve, multisolve)
 • Ableitungen, Integrale, Grenzwerte, Summen und Differentialgleichungen (diff, integrate, limit, sum, dsolve) in Formularen wie auf Papier, mit sofortigem Ergebnis
-• Der Ausdruck wird beim Tippen in mathematischer Schreibweise angezeigt (Brüche, Potenzen, Wurzeln, Integrale)
+• Der Ausdruck wird beim Tippen in mathematischer Schreibweise angezeigt
 • Matrizen bis 30 × 30 in einem Raster mit Determinante, Inverse, Rang, Eigenwerten und linearen Systemen
-• Figuren: Fläche, Volumen und Oberfläche von 15 Figuren (Kreis, Dreieck, Kugel, Zylinder …)
+• Figuren: Fläche, Volumen und Oberfläche von 22 Figuren (Kreis, Kugel, Kegelstumpf, Rohr …); Füllmenge in Behältern; Volumen aus Querschnitten
 • Komplexe Zahlen; Binär-, Oktal- und Hexadezimalzahlen
 • Datumsrechnung (today + 100 days) und Fehlerfortpflanzung
 • Exakte Ergebnisse mit Brüchen und Wurzeln und hohe Genauigkeit mit bis zu 200 000 signifikanten Stellen (über 1000 Stellen mit QCalc Pro). Lange Ergebnisse werden vollständig angezeigt und kopiert
 • Schnelle spezielle Funktionen mit vielen Stellen (zeta, gamma, erf, Bessel …)
-• 2D-Graphen von y = f(x): mehrere Funktionen auf einmal; ziehen zum Verschieben, spreizen zum Zoomen. Ableitungen, Stammfunktionen, Tangenten, Nullstellen und Extrema; Flächen (sofort; die Ränder lassen sich ziehen), Kurvenlängen und Umfänge; 17 Beispiele
-• 3D-Graphen von Flächen z = f(x, y), die du mit einem Finger drehst: partielle Ableitungen, Volumen und Oberfläche des Gezeichneten, 14 Beispiele (QCalc Pro)
+• 2D-Graphen von y = f(x): mehrere Funktionen auf einmal; ziehen zum Verschieben, spreizen zum Zoomen. Ableitungen, Stammfunktionen, Tangenten, Nullstellen und Extrema; Flächen (sofort; die Ränder lassen sich ziehen), Kurvenlängen und Umfänge; Rotationskörper; 17 Beispiele
+• 3D-Graphen von z = f(x, y) mit Schatten, mit dem Finger drehbar: partielle Ableitungen, Volumen und Oberfläche über Rechteck, Kreis, dem Teil zwischen zwei Flächen oder eigenem Bereich, 14 Beispiele (QCalc Pro)
 • 📈 zeichnet, was du eingibst: Ausdrücke in x und y, Gleichungen und Matrizen, auch aus dem Verlauf und den Formularen
 • Traditionelle japanische Einheiten (30 tsubo to m²)
 • Beispiele und Tipps in der App: tippe auf eines, um es auszuprobieren
@@ -48,7 +48,7 @@ QCalc ist ein Rechner für Android auf der Grundlage von libqalculate, dem Reche
 • Verlauf als CSV-Datei für Tabellenkalkulationen exportieren (QCalc Pro)
 • Vier Tastenseiten (123, Funktionen, Analysis, Matrix) oder die Tastatur deines Handys
 • Helle oder dunkle Darstellung
-• Auf Deutsch, Englisch, Japanisch, Spanisch, Französisch, Koreanisch und traditionellem Chinesisch (Menü → Sprache / Language). Die App startet in der Sprache des Handys: der ersten Sprache in seiner Liste, die sie kennt, sonst auf Englisch
+• Auf Deutsch, Englisch, Japanisch, Spanisch, Französisch, Koreanisch und traditionellem Chinesisch (Menü → Sprache / Language); die App startet in der Sprache des Handys
 
 Hinweis: Das Dezimaltrennzeichen ist der Punkt (1.5, nicht 1,5).
 

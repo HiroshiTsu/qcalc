@@ -26,19 +26,19 @@ QCalc est une calculatrice pour Android fondée sur libqalculate, le moteur de c
 
 ■ Fonctionnalités
 • Conversion d’unités : longueur, masse, température, énergie et bien d’autres (5 km to mi, 20 °C to °F)
-• Conversion de devises avec les taux de la Banque centrale européenne et d’autres sources (100 USD to EUR)
+• Conversion de devises aux taux de la Banque centrale européenne et d’autres (100 USD to EUR)
 • Équations et systèmes d’équations (solve, multisolve)
-• Dérivées, intégrales, limites, sommes et équations différentielles (diff, integrate, limit, sum, dsolve) dans des formulaires comme sur papier, avec le résultat aussitôt
-• L’expression s’affiche en notation mathématique (fractions, puissances, racines, intégrales) pendant la saisie
+• Dérivées, intégrales, limites, sommes et équations différentielles (diff, integrate, limit, sum, dsolve) dans des formulaires comme sur papier
+• L’expression s’affiche en notation mathématique pendant la saisie
 • Matrices jusqu’à 30 × 30 dans une grille, avec déterminant, inverse, rang, valeurs propres et systèmes linéaires
-• Formes : aire, volume et surface de 15 formes (cercle, triangle, sphère, cylindre…)
+• Formes : aire, volume et surface de 22 formes (cercle, sphère, tronc de cône…) ; liquide dans les cuves ; volume à partir de profils mesurés
 • Nombres complexes ; nombres binaires, octaux et hexadécimaux
 • Calculs de dates (today + 100 days) et propagation des incertitudes
 • Résultats exacts avec fractions et racines, et haute précision jusqu’à 200 000 chiffres significatifs (plus de 1000 chiffres avec QCalc Pro). Les résultats longs s’affichent et se copient en entier
 • Fonctions spéciales rapides avec beaucoup de chiffres (zeta, gamma, erf, Bessel…)
-• Graphiques 2D de y = f(x) : plusieurs fonctions à la fois ; faites glisser pour déplacer, pincez pour zoomer. Dérivées, primitives, tangentes, zéros et extremums ; aires (aussitôt ; bords déplaçables), longueurs de courbes et périmètres ; 17 exemples
-• Graphiques 3D de surfaces z = f(x, y) à faire pivoter du doigt : dérivées partielles, volume et aire de la surface de ce que vous avez tracé, 14 exemples (QCalc Pro)
-• 📈 trace ce que vous saisissez : expressions en x et y, équations et matrices, aussi depuis l’historique et les formulaires
+• Graphiques 2D de y = f(x) : plusieurs fonctions à la fois ; faites glisser pour déplacer, pincez pour zoomer. Dérivées, primitives, tangentes, zéros et extremums ; aires (aussitôt ; bords déplaçables), longueurs de courbes et périmètres ; solides de révolution ; 17 exemples
+• Graphiques 3D de z = f(x, y) avec ombres, à faire pivoter du doigt : dérivées partielles, volume et aire sur un rectangle, un disque, la partie entre deux surfaces ou un domaine saisi, 14 exemples (QCalc Pro)
+• 📈 trace ce que vous saisissez : expressions en x et y, équations et matrices, aussi depuis l’historique
 • Unités japonaises traditionnelles (30 tsubo to m²)
 • Exemples et astuces dans l’app : touchez-en un pour l’essayer
 • Listes de fonctions, d’unités et de constantes avec recherche ; vos propres variables et fonctions
@@ -48,7 +48,7 @@ QCalc est une calculatrice pour Android fondée sur libqalculate, le moteur de c
 • Export de l’historique en fichier CSV pour les tableurs (QCalc Pro)
 • Quatre pages de touches (123, Fonctions, Analyse, Matrice) ou le clavier de votre téléphone
 • Affichage clair ou sombre
-• En français, anglais, japonais, espagnol, allemand, coréen et chinois traditionnel (menu → Langue / Language). L’app démarre dans la langue du téléphone si elle la propose
+• En français, anglais, japonais, espagnol, allemand, coréen et chinois traditionnel (menu → Langue / Language) ; l’app démarre dans la langue du téléphone
 
 Remarque : le séparateur décimal est le point (1.5, et non 1,5).
 
