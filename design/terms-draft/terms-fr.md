@@ -8,7 +8,7 @@ Les présentes conditions d’utilisation (« Conditions ») régissent l’util
 
 ## Article 1 (Ce qu’est l’Application et à quoi elle peut servir)
 
-1. L’Application est un outil de calcul pour apprendre et pour se repérer au quotidien. Elle ne peut pas servir au commerce ou à la certification au sens des lois de métrologie (comme la loi japonaise sur les mesures), à la conception ou à la construction, aux déclarations d’impôts, à la médecine ni aux décisions qui touchent à la sécurité.
+1. L’Application est un outil de calcul pour apprendre et pour se repérer au quotidien. Elle ne peut pas servir au commerce ou à la certification au sens des lois de métrologie (comme la loi japonaise sur les mesures), à la conception ou à la construction, aux déclarations d’impôts, à la médecine ni aux décisions qui touchent à la sécurité. Pour de tels usages, vérifiez avec un instrument de mesure vérifié, une méthode officielle ou un spécialiste.
 2. L’Application calcule avec des moteurs de calcul libres comme libqalculate, à partir des expressions, valeurs et réglages saisis par l’utilisateur et de valeurs incluses dans l’Application (conversions d’unités, constantes, masses volumiques typiques, taux de change, etc.). Ces valeurs, et des hypothèses comme traiter les formes et les cuves comme des formes idéales, ne correspondent pas forcément aux objets ou situations réels.
 3. Les taux de change sont des valeurs indicatives obtenues de sources externes publiques, au moment de leur obtention. Ils diffèrent des taux des opérations réelles.
 
@@ -34,7 +34,7 @@ Nous faisons de notre mieux pour que l’Application fonctionne correctement, ma
 ## Article 6 (Responsabilité pour les dommages)
 
 1. Lorsque l’utilisateur subit un dommage du fait de notre faute intentionnelle ou de notre faute lourde, nous le réparons conformément à la loi.
-2. Uniquement lorsque l’utilisateur subit un dommage du fait de notre faute légère (qui n’est ni intentionnelle ni lourde), notre responsabilité est limitée au dommage direct et ordinaire, dans la limite du plus élevé de ces montants : ce que l’utilisateur nous a payé pour l’Application jusqu’à la survenance de la cause du dommage, et ○○ yens.
+2. Uniquement lorsque l’utilisateur subit un dommage du fait de notre faute légère (qui n’est ni intentionnelle ni lourde), notre responsabilité est limitée au dommage direct et ordinaire (à l’exclusion des dommages indirects, des dommages dus à des circonstances particulières et du manque à gagner), dans la limite du plus élevé de ces montants : ce que l’utilisateur nous a payé pour l’Application jusqu’à la survenance de la cause du dommage, et ○○ yens.
 3. Le paragraphe 2 ne s’applique pas lorsque le droit de la consommation ou une autre loi ne permet pas de limiter notre responsabilité. Son plafond ne s’applique pas non plus aux atteintes à la vie ou à l’intégrité physique des personnes.
 
 ## Article 7 (Modification des Conditions)

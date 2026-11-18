@@ -8,7 +8,7 @@ Diese Nutzungsbedingungen („Bedingungen“) regeln die Nutzung von „QCalc“
 
 ## Artikel 1 (Was die App ist und wofür sie genutzt werden darf)
 
-1. Die App ist ein Rechenwerkzeug zum Lernen und zur Orientierung im Alltag. Sie darf nicht verwendet werden für den geschäftlichen Verkehr oder Nachweise im Sinne von Messgesetzen (etwa des japanischen Messgesetzes), für Planung oder Bau, für Steuererklärungen, für Medizin oder für Entscheidungen, die die Sicherheit betreffen.
+1. Die App ist ein Rechenwerkzeug zum Lernen und zur Orientierung im Alltag. Sie darf nicht verwendet werden für den geschäftlichen Verkehr oder Nachweise im Sinne von Messgesetzen (etwa des japanischen Messgesetzes), für Planung oder Bau, für Steuererklärungen, für Medizin oder für Entscheidungen, die die Sicherheit betreffen. Für solche Zwecke prüfe mit einem geeichten Messgerät, einem offiziellen Verfahren oder einer Fachperson.
 2. Die App rechnet mit Open-Source-Rechenkernen wie libqalculate aus den Ausdrücken, Werten und Einstellungen des Nutzers und aus Werten, die in der App enthalten sind (Einheitenumrechnungen, Konstanten, typische Dichten, Wechselkurse usw.). Diese Werte und Annahmen wie ideale Formen von Körpern und Tanks stimmen nicht unbedingt mit wirklichen Gegenständen oder Lagen überein.
 3. Wechselkurse sind Richtwerte aus öffentlichen externen Quellen zum Zeitpunkt des Abrufs. Sie weichen von den Kursen tatsächlicher Geschäfte ab.
 
@@ -34,7 +34,7 @@ Wir bemühen uns, dass die App richtig funktioniert, sichern aber nicht zu, dass
 ## Artikel 6 (Haftung für Schäden)
 
 1. Für Schäden, die durch unseren Vorsatz oder unsere grobe Fahrlässigkeit entstehen, haften wir nach den gesetzlichen Bestimmungen.
-2. Nur bei leichter Fahrlässigkeit (die weder Vorsatz noch grobe Fahrlässigkeit ist) beschränkt sich unsere Haftung auf den gewöhnlichen, unmittelbaren Schaden, höchstens auf den höheren Betrag von dem, was der Nutzer uns bis zur Entstehung der Schadensursache für die App gezahlt hat, und ○○ Yen.
+2. Nur bei leichter Fahrlässigkeit (die weder Vorsatz noch grobe Fahrlässigkeit ist) beschränkt sich unsere Haftung auf den gewöhnlichen, unmittelbaren Schaden (nicht mittelbare Schäden, Schäden aus besonderen Umständen oder entgangenen Gewinn), höchstens auf den höheren Betrag von dem, was der Nutzer uns bis zur Entstehung der Schadensursache für die App gezahlt hat, und ○○ Yen.
 3. Absatz 2 gilt nicht, soweit das Verbraucherrecht oder ein anderes Gesetz eine Beschränkung unserer Haftung nicht zulässt. Die Höchstgrenze gilt auch nicht für Schäden an Leben oder Körper eines Menschen.
 
 ## Artikel 7 (Änderungen dieser Bedingungen)

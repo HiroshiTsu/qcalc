@@ -8,7 +8,7 @@ These terms of use ("Terms") govern the use of "QCalc", a calculator app for And
 
 ## Article 1 (What the App is, and what it may be used for)
 
-1. The App is a calculating tool for learning and for everyday reference. It may not be used for trade or certification under measurement laws (such as Japan's Measurement Act), for design or construction, for tax returns, for medicine, or for decisions that concern safety.
+1. The App is a calculating tool for learning and for everyday reference. It may not be used for trade or certification under measurement laws (such as Japan's Measurement Act), for design or construction, for tax returns, for medicine, or for decisions that concern safety. For such uses, check with a verified measuring instrument, an official method or an expert.
 2. The App calculates with open-source calculation engines such as libqalculate, from the expressions, values and settings the user enters and from values included in the App (unit conversions, constants, typical densities, exchange rates and so on). These values, and assumptions such as treating shapes and tanks as ideal shapes, do not necessarily match real objects or situations.
 3. Exchange rates are reference values obtained from public external sources, as of the time they were obtained. They differ from the rates of actual transactions.
 
@@ -34,7 +34,7 @@ We do our best for the App to work correctly, but we do not warrant that the App
 ## Article 6 (Liability for damages)
 
 1. When the user suffers damage through our intent or gross negligence, we compensate for it as the law provides.
-2. Only when the user suffers damage through our slight negligence (negligence that is neither intent nor gross negligence), our liability is limited to the ordinary, direct damage, up to the higher of the amount the user paid us for the App until the cause of the damage arose and ○○ yen.
+2. Only when the user suffers damage through our slight negligence (negligence that is neither intent nor gross negligence), our liability is limited to the ordinary, direct damage (not indirect damage, damage from special circumstances or lost profits), up to the higher of the amount the user paid us for the App until the cause of the damage arose and ○○ yen.
 3. Paragraph 2 does not apply where the Consumer Contract Act or another law does not allow our liability to be limited. Nor does its upper limit apply to injury to a person's life or body.
 
 ## Article 7 (Changes to these Terms)

@@ -8,7 +8,7 @@ Estos términos de uso («Términos») regulan el uso de «QCalc», una calculad
 
 ## Artículo 1 (Qué es la App y para qué puede usarse)
 
-1. La App es una herramienta de cálculo para aprender y como referencia en la vida diaria. No puede usarse para el comercio o la certificación según las leyes de metrología (como la Ley de Medidas de Japón), para el diseño o la construcción, para declaraciones de impuestos, para la medicina ni para decisiones que afecten a la seguridad.
+1. La App es una herramienta de cálculo para aprender y como referencia en la vida diaria. No puede usarse para el comercio o la certificación según las leyes de metrología (como la Ley de Medidas de Japón), para el diseño o la construcción, para declaraciones de impuestos, para la medicina ni para decisiones que afecten a la seguridad. Para esos usos, compruebe con un instrumento de medida verificado, un método oficial o un experto.
 2. La App calcula con motores de cálculo de código abierto como libqalculate, a partir de las expresiones, valores y ajustes que introduce el usuario y de valores incluidos en la App (conversiones de unidades, constantes, densidades típicas, tipos de cambio, etc.). Estos valores, y supuestos como tratar figuras y tanques como formas ideales, no coinciden necesariamente con los objetos o situaciones reales.
 3. Los tipos de cambio son valores de referencia obtenidos de fuentes externas públicas, en el momento de obtenerlos. Difieren de los tipos de las operaciones reales.
 
@@ -34,7 +34,7 @@ Hacemos lo posible para que la App funcione correctamente, pero no garantizamos 
 ## Artículo 6 (Responsabilidad por daños)
 
 1. Cuando el usuario sufra daños por nuestro dolo o culpa grave, los indemnizaremos según lo dispuesto por la ley.
-2. Solo cuando el usuario sufra daños por nuestra culpa leve (la que no es dolo ni culpa grave), nuestra responsabilidad se limita al daño directo y ordinario, hasta el mayor de estos importes: lo que el usuario nos haya pagado por la App hasta que surgió la causa del daño, y ○○ yenes.
+2. Solo cuando el usuario sufra daños por nuestra culpa leve (la que no es dolo ni culpa grave), nuestra responsabilidad se limita al daño directo y ordinario (no incluye daños indirectos, daños por circunstancias especiales ni lucro cesante), hasta el mayor de estos importes: lo que el usuario nos haya pagado por la App hasta que surgió la causa del daño, y ○○ yenes.
 3. El apartado 2 no se aplica cuando la ley de protección de los consumidores u otra ley no permita limitar nuestra responsabilidad. Su límite tampoco se aplica a los daños a la vida o a la integridad física de las personas.
 
 ## Artículo 7 (Cambios de estos Términos)

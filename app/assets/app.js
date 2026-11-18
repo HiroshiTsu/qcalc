@@ -10772,6 +10772,7 @@
     const done = (k) => closeSheet(k);
     if (PRO.state === 'pending') sh.append(el('div', { class: 'form-hint', text: tr('Your payment is being processed. QCalc Pro will be unlocked when it is complete.', '支払いの手続き中です。完了すると QCalc Pro が使えるようになります。') }));
     else sh.append(el('button', { class: 'accent pro-buy', text: PRO.price ? trf('Buy QCalc Pro ({0})', 'QCalc Pro を購入（{0}）', PRO.price) : tr('Buy QCalc Pro', 'QCalc Pro を購入'), onclick: () => done('buy') }));
+    sh.append(el('button', { text: tr('Restore a purchase', '購入を復元'), onclick: () => done('restore') })); // bought before, on another device or after reinstalling
     sh.append(el('button', { text: tr('About QCalc Pro', 'QCalc Pro について'), onclick: () => done('pro') }));
     if (TERMS_READY) sh.append(termsNotice());
     sh.append(el('button', { text: tr('Not now', 'あとで'), onclick: () => done(null) }));
@@ -10782,6 +10783,7 @@
       sh.inert = false;
     });
     if (k === 'buy') buyPro();
+    else if (k === 'restore') restorePro();
     else if (k === 'pro') openPro();
   }
   // "By buying, you agree to the terms of use" with a link to them (shown when TERMS_READY)
