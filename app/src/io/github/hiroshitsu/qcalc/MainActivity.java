@@ -786,6 +786,7 @@ public class MainActivity extends Activity {
                 o.put("android", Build.VERSION.RELEASE);
                 o.put("device", Build.MANUFACTURER + " " + Build.MODEL);
                 o.put("dark", isSystemDark()); // the phone's setting; the page applies its own setting
+                o.put("fontScale", (double) getResources().getConfiguration().fontScale); // the phone's font size (1.12.0)
             } catch (Exception ignored) {
             }
             return o.toString();

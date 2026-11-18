@@ -221,9 +221,24 @@
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
   const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
-  function textScale() { return own(TEXT_SCALE, S.text_size) || 1; }
+  // The phone's font size (1.12.0; Settings → Display → Font size, up to 200 %). The WebView itself
+  // keeps 100 % (MainActivity: setTextZoom), so that the keys keep their size; the page makes the
+  // history, the input field and the result larger by the phone's size up to 1.5 times (with "Text
+  // size" on top, up to 1.8 times), and the panels up to 1.15 times, so that nothing gets wider than
+  // the screen.
+  const SYS_FONT = (() => {
+    let f = 1;
+    try {
+      if (window.QalcNative) f = Number(JSON.parse(QalcNative.appInfo()).fontScale) || 1;
+      else f = Number(localStorage.getItem('qalc.dev.fontscale')) || 1; // (a desktop browser: for testing)
+    } catch (e) { f = 1; }
+    return Math.max(1, Math.min(2, f));
+  })();
+  function textScale() { return Math.min(1.8, (own(TEXT_SCALE, S.text_size) || 1) * Math.min(1.5, SYS_FONT)); }
   function applyTextSize() {
     document.documentElement.dataset.textSize = own(TEXT_SCALE, S.text_size) ? S.text_size : 'normal';
+    document.documentElement.style.setProperty('--fs', String(textScale()));
+    document.documentElement.style.setProperty('--pfs', String(Math.min(1.15, SYS_FONT)));
     autosize();
   }
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
@@ -768,6 +783,31 @@
   exprEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); commit(); }
   });
+  // A hardware keyboard (1.12.0; Chromebooks, tablets): Enter calculates (above), Esc closes what is
+  // open or clears the field (with "Undo"), Ctrl+Z and Ctrl+Y (or Ctrl+Shift+Z) undo and redo the
+  // changes of the field, Ctrl+C with nothing selected copies the result (of the preview, else the
+  // newest one in the history)
+  document.addEventListener('keydown', (e) => {
+    if (e.isComposing || e.keyCode === 229) return;
+    const inField = e.target === exprEl || e.target === document.body || !e.target.closest || !e.target.closest('input, textarea, select, [contenteditable]');
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (window.qalcBack && window.qalcBack()) return;
+      if (exprEl.value) action('clear');
+      return;
+    }
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || !inField) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) { if (stepField(true)) e.preventDefault(); }
+    else if (k === 'y' || (k === 'z' && e.shiftKey)) { if (stepField(false)) e.preventDefault(); }
+    else if (k === 'c' && exprEl.selectionStart === exprEl.selectionEnd) {
+      const pv = previewEl.textContent.trim(), last = history.length ? displayResult(history[history.length - 1]) : '';
+      const t = /^[=≈]/.test(pv) ? pv : last;
+      if (!t) return;
+      e.preventDefault();
+      copyText(t.replace(/^= /, ''));
+    }
+  });
   // some keyboards send a line break as text instead of an Enter key press
   exprEl.addEventListener('beforeinput', (e) => {
     if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') { e.preventDefault(); commit(); }
@@ -834,7 +874,32 @@
   // the expression being typed survives closing the app or the page being reloaded
   const saveDraft = debounce(() => store.set('qalc.draft', toInternal(exprEl.value)), 500); // (in the engine's form, 1.12.0)
   // typed: the change was typed with the phone's keyboard (names are then offered, see updateSuggest)
+  // The steps of the input field, for Ctrl+Z and Ctrl+Y of a hardware keyboard (1.12.0): every
+  // change, typing in a row (within 0.7 s) as one step
+  const fieldSteps = { past: [], future: [], last: '', t: 0, quiet: false };
+  function noteField() {
+    const v = exprEl.value;
+    if (fieldSteps.quiet || v === fieldSteps.last) return;
+    const now = Date.now();
+    if (now - fieldSteps.t > 700 || !fieldSteps.past.length) fieldSteps.past.push(fieldSteps.last);
+    if (fieldSteps.past.length > 100) fieldSteps.past.shift();
+    fieldSteps.future = [];
+    fieldSteps.last = v; fieldSteps.t = now;
+  }
+  function stepField(back) {
+    const from = back ? fieldSteps.past : fieldSteps.future, to = back ? fieldSteps.future : fieldSteps.past;
+    if (!from.length) return false;
+    to.push(exprEl.value);
+    const v = from.pop();
+    fieldSteps.quiet = true;
+    exprEl.value = v; exprEl.setSelectionRange(v.length, v.length);
+    fieldSteps.last = v; fieldSteps.t = 0;
+    exprChanged();
+    fieldSteps.quiet = false;
+    return true;
+  }
   function exprChanged(typed) {
+    noteField();
     saveDraft();
     autosize();
     updateSuggest(typed === true);
@@ -3751,8 +3816,8 @@
       });
       const ta = el('textarea', { rows: 2, placeholder: tr('Functions (one per line, variable x)', '関数（1行に1つ、変数は x）'), spellcheck: 'false', autocapitalize: 'off' });
       ta.value = store.get('qalc.plot.exprs', 'sin(x)\nx^2/10');
-      const xmin = el('input', { value: store.get('qalc.plot.min', '-10'), inputmode: 'text', autocapitalize: 'off' });
-      const xmax = el('input', { value: store.get('qalc.plot.max', '10'), inputmode: 'text', autocapitalize: 'off' });
+      const xmin = el('input', { value: store.get('qalc.plot.min', '-10'), inputmode: 'text', autocapitalize: 'off', 'aria-label': tr('Graph: x from', 'グラフの x の始め') });
+      const xmax = el('input', { value: store.get('qalc.plot.max', '10'), inputmode: 'text', autocapitalize: 'off', 'aria-label': tr('Graph: x to', 'グラフの x の終わり') });
       const go = el('button', { class: 'btn primary', text: tr('Draw', '描画') });
       const canvas = el('canvas', { role: 'img', 'aria-label': tr('2D graph', '2D グラフ') });
       const tip = el('div', { class: 'plot-tip', 'aria-live': 'polite' });

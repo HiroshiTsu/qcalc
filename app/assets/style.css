@@ -3,7 +3,7 @@
   --surface: #ffffff;
   --surface-2: #eef1f5;
   --text: #1b2130;
-  --muted: #687082;
+  --muted: #5f6778; /* 1.12.0: 5:1 on the key background (was #687082, 4.4:1) */
   --line: #dde2ea;
   --accent: #2563eb;
   --accent-text: #ffffff;
@@ -245,7 +245,7 @@ input, select, textarea { font: inherit; color: inherit; }
   user-select: text;
   caret-color: var(--accent);
 }
-#expr::placeholder { color: var(--muted); opacity: .6; }
+#expr::placeholder { color: var(--muted); opacity: .85; } /* (1.12.0: readable, was .6) */
 .preview {
   min-height: 24px;
   max-height: 4.6em; /* a very long result scrolls instead of pushing the keypad off the screen */
@@ -999,7 +999,7 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 
 /* ------------------------------------------------- area and volume (graphs) */
 .area-wrap { margin: 6px 0 4px; }
-.area-toggle.on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.area-toggle.on { background: var(--accent-soft); color: var(--key-op-text); border-color: var(--accent); } /* (1.12.0: the darker text of the theme, 5:1 and more) */
 .area-box { margin-top: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 .area-box[hidden] { display: none; }
 .area-box select { flex: 1 1 0; min-width: 0; max-width: 46%; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
@@ -1241,7 +1241,61 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 /* the switch of the area tool: Area or Length (1.12.0, BG05) */
 .area-mode-row { margin-top: 2px; }
 .seg.mini.area-modes { display: inline-flex; }
-.seg.mini.area-modes button { min-width: 96px; min-height: 40px; }
+.seg.mini.area-modes button { min-width: 96px; min-height: 48px; }
 .area-out[hidden] { display: none; }
 .area-out { cursor: pointer; }
 .tool-eg { margin: 4px 2px 0; }
+
+/* ------------------------------------------------------------ 1.12.0 (A4) */
+/* Touch areas of at least 48 × 48 dp (= CSS px in the WebView). Where a control is drawn smaller,
+   the area around it (::after) takes the touch; the drawings stay as they were or grow a little. */
+.icon-btn { width: 48px; height: 48px; border-radius: 24px; }
+.chip { position: relative; }
+.chip::after { content: ""; position: absolute; left: -1px; right: -1px; top: -10px; bottom: -10px; }
+.toolbar { margin-bottom: 6px; }
+.toolbar .key { height: 40px; position: relative; }
+/* (::before: the x key draws its mark with ::after) */
+.toolbar .key::before { content: ""; position: absolute; left: -3px; right: -3px; top: -4px; bottom: -4px; }
+.ptab { height: 38px; position: relative; }
+.ptab::before { content: ""; position: absolute; left: 0; right: 0; top: -4px; bottom: -6px; }
+#expr { min-height: 48px; }
+input.search { min-height: 48px; box-sizing: border-box; }
+.h-more { width: 48px; height: 48px; left: -10px; top: -4px; border-radius: 24px; }
+/* the phone's font size, in the panels (app.js applyTextSize: up to 1.15 times) */
+.panel-body { zoom: var(--pfs, 1); }
+/* Large screens and landscape (1.12.0): two columns, the history and the input field on the
+   left, the keys on the right. targetSdk 36: on a large screen the system ignores a fixed
+   orientation, so the page must work in any shape; changing the size (folding, a split screen)
+   keeps everything, as the activity is not made again (configChanges in the manifest). */
+@media (min-width: 600px) and (min-height: 300px), (orientation: landscape) and (min-width: 480px) and (max-height: 599px) {
+  #app {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 42%);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "bar bar" "hist keys" "entry keys" "form keys";
+  }
+  .bar { grid-area: bar; }
+  #history { grid-area: hist; }
+  .entry { grid-area: entry; }
+  #cform { grid-column: 1; grid-row: 2 / 5; }
+  .keypad { grid-area: keys; align-self: end; border-left: 1px solid var(--line); }
+}
+@media (orientation: landscape) and (max-height: 599px) {
+  /* a phone turned sideways: lower keys, so that all five rows fit beside the history */
+  .keypad .grid .key { height: 36px; font-size: 19px; }
+  .keypad .grid { gap: 4px; }
+  .keypad { padding-top: 4px; }
+}
+.toolbar .key:first-child::before { left: -8px; }
+.toolbar .key:last-child::before { right: -8px; }
+/* the controls of the panels: 48 dp high (buttons, fields, lists to choose from, switches);
+   chips keep their look and take the touches around them */
+.panel-body .btn, .panel-body select, .panel-body input:not([type="checkbox"]):not([type="radio"]),
+.panel-body .seg button, .panel-body .plot-ctl button, #sheet button { min-height: 48px; }
+.panel-body .plot-ctl button { min-width: 48px; }
+.panel-body .area-chip, .panel-body .ex-chip, .panel-body .sample { position: relative; }
+.panel-body .area-chip::before, .panel-body .ex-chip::before, .panel-body .cats button::before { content: ""; position: absolute; left: -5px; right: -5px; top: -10px; bottom: -10px; }
+.panel-body .cats button { position: relative; }
+.panel-body .card a { display: inline-block; padding: 14px 0; }
+.adv-settings > summary { min-height: 48px; }
+.panel-body .cats button { min-height: 48px; } /* (the row scrolls sideways and so clips anything around the chips) */
