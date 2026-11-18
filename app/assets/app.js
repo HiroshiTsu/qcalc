@@ -3594,8 +3594,11 @@
     }
   }
   // a number from an expression (π/2, √2, 1/3), or NaN
+  // (1.11.0: shown as a decimal whatever the setting "Fractions" is: with "auto" the engine shows the
+  // input 0.5 as "1/2" and 2.5 as "2 + 1/2", which were not read as numbers: the circle of radius 0.5
+  // in the 2D graph was refused with "The size must be a positive number")
   async function numValue(expr) {
-    const r = await Bridge.send('calc', { expr: String(expr), opts: Object.assign(engineOpts(), { approx: 'approx', precision: 15, grouping: false }), timeout: 1500 });
+    const r = await Bridge.send('calc', { expr: String(expr), opts: Object.assign(engineOpts(), { approx: 'approx', precision: 15, grouping: false, fraction: 'decimal', base: 10, notation: 'auto', max_decimals: -1 }), timeout: 1500 });
     return r.ok && r.result ? Number(numberPart(r.result)) : NaN;
   }
   // the exact text of a result, as an expression (the part before ≈ or "="), or ''
