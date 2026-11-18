@@ -1162,3 +1162,18 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .rev-ex { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 4px; }
 .rev-ex .area-chip { border: 1px solid var(--line); border-radius: 15px; padding: 6px 12px; background: var(--surface-2); font-size: 13px; color: var(--text); }
 .rev-box .form-hint.warn { color: var(--warn); }
+
+/* 1.11.0: regions typed as formulas in "Volume and surface" (3D) */
+.cus-box { margin: 6px 0; padding: 8px; border: 1px dashed var(--line); border-radius: 10px; }
+.cus-box[hidden], .sign-row[hidden] { display: none; }
+.cus-box select { max-width: none; width: 100%; }
+.cus-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; font-size: 14px; }
+.cus-row .cus-in { width: 5.2em; flex: 0 1 auto; min-width: 0; }
+.cus-row .cus-g1, .cus-row .cus-g2, .cus-row .cus-h1, .cus-row .cus-h2 { width: 7.5em; }
+.cus-row .cus-ineq { width: 100%; min-height: 2.6em; resize: vertical; }
+.cus-row input, .cus-row textarea { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font: inherit; }
+.cus-row [aria-invalid="true"] { border-color: var(--danger, #c62828); }
+.cus-err { color: var(--warn); }
+.cus-err:empty, .cus-text:empty { display: none; }
+.cus-formula { overflow-wrap: anywhere; }
+.sign-row .form-hint { margin-top: 0; }

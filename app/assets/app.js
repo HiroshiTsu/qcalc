@@ -2961,6 +2961,7 @@
     tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks like a pale gelatin in a skin of a deeper shade in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで濃い色の皮に包まれた薄い色のゼラチンのように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
     tr('Its region "Enclosed" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.',
       '範囲の「囲まれた部分」は、一方の曲面がもう一方より上にある部分（または z = 0 より上の部分）を、交線から自動で見つけます。例：z = x² + y² と z = 4 なら 8π。範囲を式（x² + y² ≤ 4）で示して床に輪郭を描き、部分が複数あれば部分ごとに出します。'),
+    tr('Its region "Custom" takes a region you type: a rectangle a ≤ x ≤ b, c ≤ y ≤ d, a disk with a centre, a ring, a sector (in degrees or radians), the region between two curves (g₁(x) ≤ y ≤ g₂(x) or h₁(y) ≤ x ≤ h₂(y)), or inequalities joined by "and" (x²/4 + y² ≤ 1 and y ≥ 0). The iterated integral is shown and can be put into the input field. "Volume" counts the parts below as positive, "Integral" as negative (sin x over [0, 2π] × [0, 1]: 4 and 0).', '範囲の「指定」では、範囲を式で入れられます：長方形 a ≤ x ≤ b・c ≤ y ≤ d、中心のある円、環、扇形（度でもラジアンでも）、2 本の曲線ではさむ範囲（g₁(x) ≤ y ≤ g₂(x) または h₁(y) ≤ x ≤ h₂(y)）、「かつ」でつないだ不等式（x²/4 + y² ≤ 1 かつ y ≥ 0）。累次積分の式を示し、入力欄に入れることもできます。「体積」は下の部分もプラス、「積分の値」はマイナスとして数えます（sin x、[0, 2π] × [0, 1] なら 4 と 0）。'),
     tr('1:1 in the graph makes one unit as long on every axis, so a circle or a sphere looks round. In 3D it turns on by itself when the ranges are about the same.', 'グラフの「1:1」で、どの軸も 1 目盛りの長さがそろい、円や球が丸く見えます。3D では範囲の長さが近いときに自動でオンになります。'),
     tr('"Calculus" under a 2D graph draws f′ and ∫f, the tangent at x = a, and marks zeros and extrema; in 3D, "Partial derivatives" draws ∂f/∂x and ∂f/∂y.', '2D グラフの「微分・接線・極値」で f′ と ∫f、x = a での接線を描き、零点と極値に印を付けます。3D の「偏微分」では ∂f/∂x と ∂f/∂y を描きます。'),
     tr('📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.', '入力フォームの 📈 で、その計算に合うグラフを描きます。微分なら接線、定積分なら面積、連立方程式なら直線や平面と解の点、行列なら各行の点です。'),
@@ -5460,11 +5461,94 @@
     const bEnc = tapButton({ text: tr('Enclosed', '囲まれた部分'), 'aria-label': tr('The part enclosed by the surfaces', '曲面で囲まれた部分') }, () => setRegion('enc'));
     const encText = el('span', { class: 'form-hint enc-text', 'aria-live': 'polite' });
     const diskRow = el('span', { class: 'disk-row' }, el('span', { text: 'x² + y² ≤ R²,  R =' }), R);
+    // 1.11.0: a region typed as formulas (computeCustom): its kind, its fields, examples. The kind and
+    // the values are remembered (qalc.vol.custom)
+    const bCus = tapButton({ text: tr('Custom', '指定'), 'aria-label': tr('A region given by formulas', '式で指定する範囲') }, () => setRegion('custom'));
+    const cusSaved = store.get('qalc.vol.custom', null) || {};
+    const C = { kind: CUS_KINDS.some((k) => k[0] === cusSaved.kind) ? cusSaved.kind : 'xs', vals: CUS_DEF(), unit: cusSaved.unit === 'rad' ? 'rad' : 'deg', inputs: {} };
+    for (const [k] of CUS_KINDS) if (cusSaved.vals && cusSaved.vals[k] && typeof cusSaved.vals[k] === 'object') C.vals[k] = Object.assign(C.vals[k], cusSaved.vals[k]);
+    const kindSel = el('select', { 'aria-label': tr('Kind of region', '範囲の種類') });
+    for (const [k, label] of CUS_KINDS) kindSel.append(el('option', { value: k, text: label }));
+    const cusFields = el('div', { class: 'cus-fields' });
+    const cusErr = el('div', { class: 'form-hint warn cus-err', role: 'alert' });
+    const cusText = el('div', { class: 'form-hint cus-text', 'aria-live': 'polite' });
+    const saveC = () => store.set('qalc.vol.custom', { kind: C.kind, vals: C.vals, unit: C.unit });
+    const bDeg = tapButton({ text: tr('degrees', '度') }, () => setUnit('deg')), bRad = tapButton({ text: tr('radians', 'ラジアン') }, () => setUnit('rad'));
+    const setUnit = (u) => { C.unit = u; bDeg.classList.toggle('on', u === 'deg'); bRad.classList.toggle('on', u === 'rad'); saveC(); if (Q3.volUI && Q3.volUI.region === 'custom') volumeAuto(); };
+    const buildFields = () => {
+      cusFields.textContent = ''; C.inputs = {};
+      const v = C.vals[C.kind];
+      // (a rectangle starts as the drawn range)
+      if (C.kind === 'rect') ['a', 'b', 'c', 'd'].forEach((k, i) => { if (!v[k]) v[k] = Q3.range[i] || ['-5', '5', '-5', '5'][i]; });
+      const kname = CUS_KINDS.find((k) => k[0] === C.kind)[1];
+      for (const row of CUS_ROWS[C.kind]) {
+        const r = el('div', { class: 'cus-row' });
+        for (const part of row) {
+          if (typeof part === 'string') { r.append(el('span', { text: part })); continue; }
+          const [key, ph] = part, area = key === 'ineq';
+          const inp = el(area ? 'textarea' : 'input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: ph, 'aria-label': kname + ' ' + ph, class: area ? 'cus-ineq' : 'cus-in cus-' + key });
+          if (area) inp.rows = 2;
+          inp.value = v[key] || '';
+          inp.addEventListener('input', () => { C.vals[C.kind][key] = inp.value; inp.removeAttribute('aria-invalid'); saveC(); });
+          inp.addEventListener('change', () => volumeAuto());
+          if (!area) inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
+          C.inputs[key] = inp;
+          r.append(inp);
+        }
+        cusFields.append(r);
+      }
+      if (C.kind === 'sector') cusFields.append(el('div', { class: 'cus-row' }, el('span', { text: tr('θ in', 'θ の単位') }), el('span', { class: 'seg mini' }, bDeg, bRad)));
+    };
+    kindSel.addEventListener('change', () => { C.kind = kindSel.value; saveC(); buildFields(); C.clearErr(); volumeAuto(); });
+    C.clearErr = () => { cusErr.textContent = ''; for (const k in C.inputs) C.inputs[k].removeAttribute('aria-invalid'); };
+    C.showErr = (field, text) => {
+      const inp = C.inputs[field];
+      cusErr.textContent = (inp ? inp.getAttribute('placeholder') + tr(': ', '：') : '') + text;
+      if (inp) inp.setAttribute('aria-invalid', 'true');
+      cusText.textContent = '';
+    };
+    C.text = cusText;
+    // one tap: a graph, the region and its kind
+    const CUS_EX = [
+      [tr('xy over x² ≤ y ≤ x', 'xy・x² ≤ y ≤ x'), 'x y', ['-0.25', '1.25', '-0.25', '1.25'], 'xs', { a: '0', b: '1', g1: 'x^2', g2: 'x' }],
+      [tr('Half an ellipse', '楕円の半分'), '1', ['-2.5', '2.5', '-1.5', '1.5'], 'ineq', { ineq: 'x^2/4 + y^2 ≤ 1 ' + AND_WORD() + ' y ≥ 0' }],
+      [tr('Quarter of a disk', '扇形（4 分の 1 の円）'), '1', ['-2.5', '2.5', '-2.5', '2.5'], 'sector', { cx: '0', cy: '0', R: '2', t1: '0', t2: '90' }],
+      [tr('sin x: integral and volume', 'sin x の積分と体積'), 'sin(x)', ['0', '2π', '0', '1'], 'rect', { a: '0', b: '2π', c: '0', d: '1' }]
+    ];
+    const cusEx = el('div', { class: 'rev-ex cus-ex' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
+      ...CUS_EX.map(([label, exprs, range, kind, vals]) => tapButton({ class: 'area-chip', text: label }, () => {
+        C.kind = kind; kindSel.value = kind; C.vals[kind] = Object.assign({}, vals);
+        if (kind === 'sector') setUnit('deg');
+        saveC(); buildFields(); C.clearErr();
+        Q3.ta.value = exprs;
+        Q3.inputs.forEach((e, i) => { e.value = range[i]; });
+        Q3.equalOnce = false;
+        if (Q3.samples) Q3.samples.clearChoice();
+        setRegion('custom', true);
+        Q3.volUI.regionSet = true;
+        Q3.keep = true;
+        Q3.go.click();
+      })));
+    const cusBox = el('div', { class: 'cus-box' }, el('div', { class: 'plot-range' }, kindSel), cusFields, cusErr, cusText, cusEx);
+    // the values: the volume (parts below count as positive) or the integral (they count as negative)
+    const bVol = tapButton({ text: tr('Volume', '体積'), 'aria-label': tr('Volume: parts below count as positive', '体積：下の部分もプラス') }, () => setSigned(false));
+    const bInt = tapButton({ text: tr('Integral', '積分の値'), 'aria-label': tr('Integral: parts below count as negative', '積分の値：下の部分はマイナス') }, () => setSigned(true));
+    const signHint = el('span', { class: 'form-hint' });
+    const signRow = el('div', { class: 'plot-range sign-row' }, el('span', { text: tr('Value', '値') }), el('span', { class: 'seg mini' }, bVol, bInt), signHint);
+    const setSigned = (s, quiet) => {
+      Q3.volUI.signed = s; bVol.classList.toggle('on', !s); bInt.classList.toggle('on', s);
+      bVol.setAttribute('aria-pressed', String(!s)); bInt.setAttribute('aria-pressed', String(s));
+      signHint.textContent = s ? tr('parts below count as negative', '下の部分はマイナス') : tr('parts below count as positive', '下の部分もプラス');
+      store.set('qalc.vol.signed', s);
+      if (!quiet) volumeAuto();
+    };
     // quiet: only set (the caller calculates afterwards)
     const setRegion = (k, quiet) => {
       Q3.volUI.region = k;
-      bEnc.classList.toggle('on', k === 'enc'); bRect.classList.toggle('on', k === 'rect'); bDisk.classList.toggle('on', k === 'disk');
+      bEnc.classList.toggle('on', k === 'enc'); bRect.classList.toggle('on', k === 'rect'); bDisk.classList.toggle('on', k === 'disk'); bCus.classList.toggle('on', k === 'custom');
       rangeText.hidden = k !== 'rect'; diskRow.hidden = k !== 'disk'; encText.hidden = k !== 'enc'; hint.hidden = k === 'enc'; hintEnc.hidden = k !== 'enc';
+      cusBox.hidden = k !== 'custom'; signRow.hidden = k === 'enc';
+      if (k === 'custom') { kindSel.value = C.kind; buildFields(); C.clearErr(); cusText.textContent = ''; }
       if (k === 'enc') encText.textContent = '';
       out.textContent = ''; ins.hidden = true;
       if (!quiet) volumeAuto();
@@ -5475,7 +5559,8 @@
     const hintEnc = el('div', { class: 'form-hint', hidden: true, text: tr('The values are those of the graph that is drawn: the solid between the two surfaces (or between the surface and z = 0) over the part found, and its whole surface, the upper and the lower surface over that part.', 'いま描いているグラフの値です。見つけた部分での 2 つの曲面（または曲面と z = 0）の間の立体の体積と、その表面全体（その部分の上と下の曲面）の面積です。') });
     const box = el('div', { class: 'area-box' },
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
-      el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk, bEnc), rangeText, diskRow, encText),
+      el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk, bEnc, bCus), rangeText, diskRow, encText),
+      cusBox, signRow,
       legend, out, ins,
       hint, hintEnc,
       buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
@@ -5489,8 +5574,10 @@
     R.addEventListener('change', () => volumeAuto());
     R.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); R.blur(); } });
     ins.addEventListener('click', () => { if (Q3.volExpr) useExample(Q3.volExpr); });
-    Q3.volUI = { s1, s2, out, ins, box, rangeText, encText, R, toggle, setRegion, legend, seq: 0, timer: 0 };
+    Q3.volUI = { s1, s2, out, ins, box, rangeText, encText, R, toggle, setRegion, legend, seq: 0, timer: 0, cus: C, signed: false, setSigned };
     setRegion('rect', true);
+    setSigned(store.get('qalc.vol.signed', false) === true, true);
+    setUnit(C.unit);
     return el('div', { class: 'area-wrap' }, toggle, box);
   }
   // the volume and then the surface area of the surfaces that are chosen (the drawn ones), a moment
@@ -5730,6 +5817,7 @@
   // while no newer calculation has started
   async function computeVolume(seq) {
     if (Q3.volUI && Q3.volUI.region === 'enc') return computeEnclosed(seq);
+    if (Q3.volUI && Q3.volUI.region === 'custom') return computeCustom(seq);
     const S = volumeSetup();
     if (!S) { setVolumeShade(null); return; }
     const { U, f, g } = S;
@@ -5742,11 +5830,13 @@
     if (seq !== U.seq) return;
     if (S.real && S.real.error) { U.out.textContent = S.real.error; return; }
     const d = g ? `(${f.expr}) − (${g.expr})` : f.expr;
-    const r = await regionIntegral(S, `abs(${d})`, d, (v) => { if (v && seq === U.seq) U.out.textContent = aboutValue(tr('Volume', '体積'), v); });
+    // 1.11.0: or the integral, where the parts below count as negative
+    const signed = U.signed;
+    const r = await regionIntegral(S, signed ? d : `abs(${d})`, signed ? null : d, (v) => { if (v && seq === U.seq) U.out.textContent = aboutValue(signed ? tr('Integral', '積分の値') : tr('Volume', '体積'), v); });
     if (seq !== U.seq) return;
-    if (!r.val) { U.out.textContent = tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
+    if (!r.val) { U.out.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
     U.out.textContent = '';
-    showResult(U.out, tr('Volume ', '体積 ') + shownValue(r.val));
+    showResult(U.out, (signed ? tr('Integral ', '積分の値 ') : tr('Volume ', '体積 ')) + shownValue(r.val));
     if (S.real && S.real.note) U.out.append(el('div', { class: 'form-hint', text: S.real.note }));
     if (r.missing) U.out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', r.missing) }));
     Q3.volExpr = r.expr;
@@ -5755,7 +5845,7 @@
   // the area of the surfaces: ∬ √(1 + f_x² + f_y²), for each surface (the floor z = 0: the area of the region)
   // append: below the volume that is shown (else in its place)
   async function computeSurface(append, seq) {
-    if (Q3.volUI && Q3.volUI.region === 'enc') return; // (computeEnclosed gives both)
+    if (Q3.volUI && (Q3.volUI.region === 'enc' || Q3.volUI.region === 'custom')) return; // (computeEnclosed and computeCustom give both)
     const S = volumeSetup();
     if (!S) return;
     const { U, f, g } = S;
@@ -6163,6 +6253,418 @@
     }
     const all = await sumValues(sums);
     if (seq !== U.seq) return;
+    surf.textContent = '';
+    showResult(surf, tr('Surface area ', '表面積 ') + shownValue(all));
+    surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+  }
+  // --------------------------------------- regions given by formulas (3D graph, 1.11.0)
+  // "Region: Custom" of "Volume and surface": a rectangle typed with numbers, a disk with a centre, a
+  // ring, a sector, a region between two curves (g₁(x) ≤ y ≤ g₂(x) or h₁(y) ≤ x ≤ h₂(y)), or
+  // inequalities joined by "and". Each becomes pieces that are iterated integrals: { t: 'rect' |
+  // 'polar' | 'xs' | 'ys', … }. The exact value is the engine's; the numeric one checks it (a 2D
+  // tanh-sinh rule on the engine's grid, which copes with a boundary such as √(1 − x²/4) that stands
+  // upright at its ends) or is the answer. d (in x and y, above 0 inside) is the same region for the
+  // graph, where the solid is shaded over it. Inequalities are cut into pieces between the curves
+  // where they hold with equality, solved for y (x²/4 + y² ≤ 1 and y ≥ 0: 0 ≤ y ≤ √(1 − x²/4) for x
+  // from −2 to 2); when that fails, they are measured on a fine grid only.
+  const CUS_KINDS = [
+    ['rect', tr('Rectangle', '長方形')], ['disk', tr('Disk with a centre', '中心のある円')], ['ring', tr('Ring', '環')], ['sector', tr('Sector', '扇形')],
+    ['xs', tr('Between curves g₁(x) ≤ y ≤ g₂(x)', '曲線ではさむ g₁(x) ≤ y ≤ g₂(x)')], ['ys', tr('Between curves h₁(y) ≤ x ≤ h₂(y)', '曲線ではさむ h₁(y) ≤ x ≤ h₂(y)')],
+    ['ineq', tr('Inequalities', '不等式')]
+  ];
+  // the word that joins conditions, as each language writes it in mathematics (Spanish "y" would be
+  // read as the variable y: "∧")
+  const AND_WORD = () => ({ ja: 'かつ', es: '∧', de: 'und', fr: 'et', ko: '그리고', 'zh-TW': '且' })[LANG] || 'and';
+  const CUS_DEF = () => ({ rect: {}, disk: { cx: '0', cy: '0', R: '1' }, ring: { cx: '0', cy: '0', r1: '1', r2: '2' }, sector: { cx: '0', cy: '0', R: '2', t1: '0', t2: '90' },
+    xs: { a: '0', b: '1', g1: 'x^2', g2: 'x' }, ys: { c: '0', d: '1', h1: 'y', h2: '1' }, ineq: { ineq: 'x^2/4 + y^2 ≤ 1 ' + AND_WORD() + ' y ≥ 0' } });
+  // the rows of fields of each kind: a field is [key, placeholder, aria-label], a text is put between
+  const CUS_ROWS = {
+    rect: [[['a', 'a'], '≤ x ≤', ['b', 'b']], [['c', 'c'], '≤ y ≤', ['d', 'd']]],
+    disk: [[tr('centre (', '中心 ('), ['cx', 'a'], ',', ['cy', 'b'], ')'], ['R =', ['R', 'R']]],
+    ring: [[tr('centre (', '中心 ('), ['cx', 'a'], ',', ['cy', 'b'], ')'], [['r1', 'r₁'], '≤ r ≤', ['r2', 'r₂']]],
+    sector: [[tr('centre (', '中心 ('), ['cx', 'a'], ',', ['cy', 'b'], ')', 'r ≤', ['R', 'R']], [['t1', 'θ₁'], '≤ θ ≤', ['t2', 'θ₂']]],
+    xs: [[['a', 'a'], '≤ x ≤', ['b', 'b']], [['g1', 'g₁(x)'], '≤ y ≤', ['g2', 'g₂(x)']]],
+    ys: [[['c', 'c'], '≤ y ≤', ['d', 'd']], [['h1', 'h₁(y)'], '≤ x ≤', ['h2', 'h₂(y)']]],
+    ineq: [[['ineq', 'x^2/4 + y^2 ≤ 1 ' + AND_WORD() + ' y ≥ 0']]]
+  };
+  // the conditions of "… ≤ … and … ≥ …" (chains such as 0 ≤ y ≤ 1 too): [{ L, op, R, d }] with d the
+  // amount by which the condition holds (above 0: inside), or null when it cannot be read
+  function parseIneqs(text) {
+    const parts = String(text || '').split(/\s*(?:∧|&&|&|;|,|、|，|\bかつ\b|かつ|\band\b|\bund\b|\bet\b|그리고|並且|且)\s*/i).map((s) => s.trim()).filter(Boolean);
+    if (!parts.length) return null;
+    const out = [];
+    for (const p of parts) {
+      const t = p.replace(/<=|=</g, '≤').replace(/>=|=>/g, '≥');
+      const seg = t.split(/(≤|≥|<|>)/).map((s) => s.trim());
+      if (seg.length < 3 || seg.length % 2 === 0) return null;
+      for (let i = 0; i + 2 < seg.length; i += 2) {
+        const L = normalizeExpr(seg[i]), op = seg[i + 1], R = normalizeExpr(seg[i + 2]);
+        if (!L || !R) return null;
+        out.push({ L, op, R, d: op === '≤' || op === '<' ? `(${R}) − (${L})` : `(${L}) − (${R})` });
+      }
+    }
+    return out;
+  }
+  // a whole number as text without a sign problem: −1 → "(−1)" inside sums
+  const cusP = (t) => (/^[\d.]+$|^[\p{L}π]+$/u.test(t) ? t : '(' + t + ')');
+  // the region of the kind with the typed values: { pieces, d, text, cutBox } or { error, field }
+  async function customRegion(kind, vals, unit) {
+    const need = (k, name) => { const t = normalizeExpr(vals[k] || ''); return t ? t : null; };
+    const bad = (field, text) => ({ error: text, field });
+    const nums = {};
+    const num = async (k) => {
+      const t = need(k);
+      if (t === null) return bad(k, tr('Enter a number', '数を入れてください'));
+      const v = await numValue(t);
+      if (!isFinite(v)) return bad(k, tr('This is not a number', '数になっていません'));
+      nums[k] = v;
+      return null;
+    };
+    const tx = (k) => normalizeExpr(vals[k]);
+    if (kind === 'rect' || kind === 'xs') {
+      for (const k of ['a', 'b']) { const e = await num(k); if (e) return e; }
+      if (!(nums.b > nums.a)) return bad('b', tr('b must be larger than a', 'b は a より大きくしてください'));
+    }
+    if (kind === 'rect' || kind === 'ys') {
+      for (const k of ['c', 'd']) { const e = await num(k); if (e) return e; }
+      if (!(nums.d > nums.c)) return bad('d', tr('d must be larger than c', 'd は c より大きくしてください'));
+    }
+    if (kind === 'rect') {
+      const [a, b, c, d] = ['a', 'b', 'c', 'd'].map(tx);
+      return { pieces: [{ t: 'rect', x0: a, x1: b, y0: c, y1: d }], d: `min(x − ${cusP(a)}, ${cusP(b)} − x, y − ${cusP(c)}, ${cusP(d)} − y)`,
+        text: a + ' ≤ x ≤ ' + b + tr(', ', '、') + c + ' ≤ y ≤ ' + d };
+    }
+    if (kind === 'disk' || kind === 'ring' || kind === 'sector') {
+      for (const k of ['cx', 'cy']) { const e = await num(k); if (e) return e; }
+      const cx = tx('cx'), cy = tx('cy'), turn = fullTurn();
+      let r0 = '0', r1;
+      if (kind === 'ring') {
+        for (const k of ['r1', 'r2']) { const e = await num(k); if (e) return e; }
+        if (!(nums.r1 >= 0)) return bad('r1', tr('r₁ must be 0 or more', 'r₁ は 0 以上にしてください'));
+        if (!(nums.r2 > nums.r1)) return bad('r2', tr('r₂ must be larger than r₁', 'r₂ は r₁ より大きくしてください'));
+        r0 = tx('r1'); r1 = tx('r2');
+      } else {
+        const e = await num('R'); if (e) return e;
+        if (!(nums.R > 0)) return bad('R', tr('The radius must be a positive number', '半径は正の数にしてください'));
+        r1 = tx('R');
+      }
+      const ex = (v) => ({ v: nums[v], text: tx(v) });
+      const lhs = shiftSq('x', ex('cx')) + ' + ' + shiftSq('y', ex('cy'));
+      const rho2 = `(x − ${cusP(cx)})^2 + (y − ${cusP(cy)})^2`;
+      let t0 = '0', t1 = turn, text, d;
+      if (kind === 'sector') {
+        for (const k of ['t1', 't2']) { const e = await num(k); if (e) return e; }
+        const full = unit === 'deg' ? 360 : 2 * Math.PI, span = nums.t2 - nums.t1;
+        if (!(span > 0)) return bad('t2', tr('θ₂ must be larger than θ₁', 'θ₂ は θ₁ より大きくしてください'));
+        if (span > full * (1 + 1e-12)) return bad('t2', tr('The angle must be one turn or less', '角度の幅は 1 回転以内にしてください'));
+        // the angles in the unit of the setting (the integral in θ is in it, times 2π/turn)
+        const same = (unit === 'deg' && S.angle === 'deg') || (unit === 'rad' && S.angle === 'rad');
+        const conv = async (k) => (same ? tx(k) : (await exactText(`${cusP(tx(k))} × ${cusP(turn)} / ${unit === 'deg' ? '360' : '(2π)'}`)) || `${cusP(tx(k))} × ${cusP(turn)} / ${unit === 'deg' ? '360' : '(2π)'}`);
+        t0 = await conv('t1'); t1 = await conv('t2');
+        const a1 = nums.t1 * 2 * Math.PI / full, a2 = nums.t2 * 2 * Math.PI / full;
+        const c1 = `${engineNum(-Math.sin(a1))} × (x − ${cusP(cx)}) + ${engineNum(Math.cos(a1))} × (y − ${cusP(cy)})`;
+        const c2 = `${engineNum(Math.sin(a2))} × (x − ${cusP(cx)}) − ${engineNum(Math.cos(a2))} × (y − ${cusP(cy)})`;
+        const wedge = span <= full / 2 + 1e-12 ? `min(${c1}, ${c2})` : `max(${c1}, ${c2})`;
+        d = `min(${cusP(r1)}^2 − (${rho2}), ${wedge})`;
+        const deg = unit === 'deg' ? '°' : '';
+        text = trf('{0} ≤ {1} and {2} ≤ θ ≤ {3} (a sector)', '{0} ≤ {1} かつ {2} ≤ θ ≤ {3}（扇形）', lhs, r1 === tx('R') && /^[\d.]+$/.test(r1) ? (nums.R * nums.R).toString() : cusP(r1) + '²', tx('t1') + deg, tx('t2') + deg);
+      } else if (kind === 'ring') {
+        d = `min((${rho2}) − ${cusP(r0)}^2, ${cusP(r1)}^2 − (${rho2}))`;
+        text = trf('{0} ≤ {1} ≤ {2} (a ring)', '{0} ≤ {1} ≤ {2}（環）', /^[\d.]+$/.test(r0) ? String(nums.r1 * nums.r1) : cusP(r0) + '²', lhs, /^[\d.]+$/.test(r1) ? String(nums.r2 * nums.r2) : cusP(r1) + '²');
+      } else {
+        d = `${cusP(r1)}^2 − (${rho2})`;
+        text = trf('{0} ≤ {1} (a disk)', '{0} ≤ {1}（円）', lhs, /^[\d.]+$/.test(r1) ? String(nums.R * nums.R) : cusP(r1) + '²');
+      }
+      return { pieces: [{ t: 'polar', cx, cy, r0, r1, t0, t1 }], d, text };
+    }
+    if (kind === 'xs' || kind === 'ys') {
+      const v = kind === 'xs' ? 'x' : 'y', w = kind === 'xs' ? 'y' : 'x';
+      const [k1, k2] = kind === 'xs' ? ['g1', 'g2'] : ['h1', 'h2'];
+      const [ka, kb] = kind === 'xs' ? ['a', 'b'] : ['c', 'd'];
+      const lo = need(k1), hi = need(k2);
+      if (!lo) return bad(k1, tr('Enter a function', '関数を入れてください'));
+      if (!hi) return bad(k2, tr('Enter a function', '関数を入れてください'));
+      for (const [k, e] of [[k1, lo], [k2, hi]]) if (new RegExp('(^|[^\\p{L}])' + w + '([^\\p{L}]|$)', 'u').test(e)) return bad(k, trf('Use only {0} here', 'ここでは {0} だけを使ってください', v));
+      // (sampled as functions of x: a function of y is read with y named x)
+      const asX = (e) => (v === 'x' ? e : subXY(e, 'y', 'x'));
+      const sm = await revSamplesOf([asX(lo), asX(hi), `(${asX(hi)}) − (${asX(lo)})`], tx(ka), tx(kb));
+      if (!sm) return bad(k2, tr('Could not read the functions', '関数の値を読めませんでした'));
+      const real = (s) => s.y.filter((q) => q !== null && isFinite(q));
+      if (real(sm[0]).length < sm[0].y.length * 0.9) return bad(k1, tr('The function has no real value in part of the range', '範囲の一部で関数に実数の値がありません'));
+      if (real(sm[1]).length < sm[1].y.length * 0.9) return bad(k2, tr('The function has no real value in part of the range', '範囲の一部で関数に実数の値がありません'));
+      const gap = real(sm[2]), scale = Math.max(1, ...gap.map(Math.abs));
+      if (gap.some((q) => q < -1e-9 * scale)) return bad(k2, kind === 'xs' ? tr('g₂(x) is below g₁(x) somewhere in the range', '範囲のどこかで g₂(x) が g₁(x) より下にあります') : tr('h₂(y) is left of h₁(y) somewhere in the range', '範囲のどこかで h₂(y) が h₁(y) より左にあります'));
+      const a = tx(ka), b = tx(kb);
+      const d = kind === 'xs' ? `min(x − ${cusP(a)}, ${cusP(b)} − x, y − (${lo}), (${hi}) − y)` : `min(y − ${cusP(a)}, ${cusP(b)} − y, x − (${lo}), (${hi}) − x)`;
+      const text = kind === 'xs' ? a + ' ≤ x ≤ ' + b + tr(', ', '、') + revPretty(lo) + ' ≤ y ≤ ' + revPretty(hi) : a + ' ≤ y ≤ ' + b + tr(', ', '、') + revPretty(lo) + ' ≤ x ≤ ' + revPretty(hi);
+      return { pieces: [{ t: kind, a, b, lo, hi }], d, text };
+    }
+    // inequalities
+    const conds = parseIneqs(vals.ineq);
+    if (!conds) return bad('ineq', trf('Write conditions such as {0}', '{0} のように書いてください', 'x^2 + y^2 ≤ 4 ' + AND_WORD() + ' y ≥ 0'));
+    const d = conds.length === 1 ? conds[0].d : `min(${conds.map((c) => c.d).join(', ')})`;
+    return { ineq: conds, d, text: conds.map((c) => revPretty(c.L) + ' ' + c.op + ' ' + revPretty(c.R)).join(' ' + AND_WORD() + ' '), box: true };
+  }
+  // inequalities cut into pieces between curves, inside the drawn range: [{ t: 'xs', a, b, lo, hi }]
+  // or null (the conditions cannot be solved for y, or a piece has no single interval of y)
+  async function ineqPieces(conds, S, seq) {
+    const X0 = await numValue(S.x0), X1 = await numValue(S.x1), Y0 = await numValue(S.y0), Y1 = await numValue(S.y1);
+    if (![X0, X1, Y0, Y1].every(isFinite)) return null;
+    const hasY = (e) => /(^|[^\p{L}\\])y([^\p{L}]|$)/u.test(e);
+    // the curves where a condition holds with equality, as functions of x (y = …); conditions in x
+    // alone give the places of x where they change
+    const curves = [S.y0, S.y1], xcuts = [];
+    for (const c of conds) {
+      const eq = `(${c.L}) = (${c.R})`;
+      if (!hasY(c.L) && !hasY(c.R)) {
+        const r = await revSolve(`(${c.L}) − (${c.R})`);
+        for (const q of r) if (q.v > X0 && q.v < X1) xcuts.push({ v: q.v, text: q.text });
+        continue;
+      }
+      const rs = await Bridge.send('calc', { expr: `solve(${eq}, y)`, opts: Object.assign(engineOpts(), { precision: 15, grouping: false, approx: 'exact' }), timeout: 3000 });
+      if (seq()) return null;
+      if (!rs.ok || !rs.result || rs.timeout || /solve\(|=|≠|∨|∧|\bor\b|\band\b/.test(rs.result) || (rs.messages || []).some((m) => m.type === 'error')) return null;
+      const m = parseMatrix(rs.result.trim());
+      const list = m ? m.rows[0] : [rs.result.trim()];
+      for (const t of list) { const e = t.replace(/^\((.*)\)$/, '$1').trim(); if (e && !hasY(e)) curves.push(e); else return null; }
+    }
+    if (curves.length > 10) return null;
+    // the places of x where the pieces change: where a curve begins or stops having real values, and
+    // where two curves meet
+    const rp = await realParts(curves.slice(2), S.x0, S.x1, X0, X1);
+    if (seq()) return null;
+    const cuts = [].concat(xcuts);
+    for (const e of curves.slice(2)) {
+      const p1 = await realParts([e], S.x0, S.x1, X0, X1);
+      if (p1) for (const p of p1.parts) for (const [v, text] of [[p.lo, p.a], [p.hi, p.b]]) if (v > X0 && v < X1) cuts.push({ v, text });
+    }
+    void rp;
+    const diffs = [];
+    for (let i = 0; i < curves.length; i++) for (let j = i + 1; j < curves.length; j++) if (i > 1 || j > 1) diffs.push(`(${curves[i]}) − (${curves[j]})`);
+    const dc = await revCuts(diffs, X0, X1, S.x0, S.x1, seq);
+    if (!dc) return null;
+    const span = X1 - X0;
+    const all = cuts.concat(dc).sort((p, q) => p.v - q.v).filter((c, i, arr) => i === 0 || c.v - arr[i - 1].v > span * 1e-10);
+    const pieces = [];
+    const bounds = [{ v: X0, text: S.x0 }].concat(all, [{ v: X1, text: S.x1 }]);
+    for (let i = 0; i + 1 < bounds.length; i++) {
+      const p = bounds[i], q = bounds[i + 1];
+      if (q.v - p.v <= span * 1e-10) continue;
+      const xm = engineNum((p.v + q.v) / 2);
+      const vals = await sumVector('[' + curves.map((e) => `re(${subXY(e, '(' + xm + ')', 'y')})`).join(', ') + ']', 20);
+      const ims = await sumVector('[' + curves.map((e) => `im(${subXY(e, '(' + xm + ')', 'y')})`).join(', ') + ']', 20);
+      if (seq()) return null;
+      if (!vals || !ims) return null;
+      // the real curves at xm, from below, without repeats
+      const ys = curves.map((e, n) => ({ e, v: vals[n], ok: Math.abs(ims[n]) <= 1e-12 * Math.max(1, Math.abs(vals[n])) && vals[n] >= Y0 - 1e-12 && vals[n] <= Y1 + 1e-12 }))
+        .filter((c) => c.ok).sort((u, v) => u.v - v.v).filter((c, n, arr) => n === 0 || c.v - arr[n - 1].v > 1e-12 * Math.max(1, Math.abs(c.v)));
+      if (ys.length < 2) continue;
+      // which of the intervals between them are inside (all conditions hold at their middle)
+      const mids = [];
+      for (let n = 0; n + 1 < ys.length; n++) mids.push((ys[n].v + ys[n + 1].v) / 2);
+      const tests = [];
+      for (const ym of mids) for (const c of conds) tests.push(subXY(c.d, '(' + xm + ')', '(' + engineNum(ym) + ')'));
+      const tv = await sumVector('[' + tests.join(', ') + ']', 20);
+      if (seq()) return null;
+      if (!tv) return null;
+      let open = -1;
+      for (let n = 0; n <= mids.length; n++) {
+        const inside = n < mids.length && conds.every((c, m) => tv[n * conds.length + m] > 0);
+        if (inside && open < 0) open = n;
+        if (!inside && open >= 0) { pieces.push({ t: 'xs', a: p.text, b: q.text, lo: ys[open].e, hi: ys[n].e }); open = -1; }
+      }
+    }
+    return pieces;
+  }
+  // the 2D tanh-sinh rule: ∬ G over [−3, 3]² in x and y (the substitutions are in G), the trapezoid
+  // sums with the steps h and 2h on the engine's grid. { v, digits, pos, neg, bad } or null
+  const TS2_N = 40;
+  async function tsGrid(G) {
+    const n = 2 * TS2_N + 1, h = 3 / TS2_N;
+    const r = await Bridge.send('plot3d', { exprs: [G], xmin: '−3', xmax: '3', ymin: '−3', ymax: '3', nx: n, ny: n, opts: iOpts(), timeout: Math.max(20000, timeLimit() * 1000) });
+    if (!r.ok || !Array.isArray(r.series) || !r.series[0] || r.series[0].complete === false) return null;
+    const z = r.series[0].z;
+    let s1 = 0, s2 = 0, bad = 0, pos = false, neg = false;
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+      const v = z[j * n + i];
+      if (typeof v !== 'number' || !isFinite(v)) { if (Math.abs(i - TS2_N) < TS2_N - 4 && Math.abs(j - TS2_N) < TS2_N - 4) bad++; continue; }
+      if (v > 0) pos = true; else if (v < 0) neg = true;
+      s1 += v;
+      if (i % 2 === 0 && j % 2 === 0) s2 += v;
+    }
+    const v1 = s1 * h * h, v2 = s2 * 4 * h * h;
+    if (!isFinite(v1)) return null;
+    return { v: v1, digits: trustedDigits(Math.abs(v1 - v2) / Math.max(Math.abs(v1), 1e-300)), pos, neg, bad };
+  }
+  const TS_T = (u) => `tanh(π/2 × sinh(${u}))`, TS_W = (u) => `π/2 × cosh(${u}) / cosh(π/2 × sinh(${u}))^2`;
+  // a piece as an iterated integral of F for the engine, and as the integrand of the rule above
+  function pieceExpr(p, F) {
+    const turn = fullTurn();
+    if (p.t === 'rect') return `integrate(integrate(${F}, ${p.y0}, ${p.y1}, y), ${p.x0}, ${p.x1}, x)`;
+    if (p.t === 'polar') return `integrate(integrate((${polar(subXY(F, `${cusP(p.cx)} + x`, `${cusP(p.cy)} + y`))}) × \\r, ${p.r0}, ${p.r1}, \\r), ${p.t0}, ${p.t1}, \\θ)` + (turn === '2π' ? '' : ` × 2π/${turn}`);
+    if (p.t === 'xs') return `integrate(integrate(${F}, ${p.lo}, ${p.hi}, y), ${p.a}, ${p.b}, x)`;
+    return `integrate(integrate(${F}, ${p.lo}, ${p.hi}, x), ${p.a}, ${p.b}, y)`;
+  }
+  function pieceGrid(p, F) {
+    const lin = (a, b, u) => `(${a}) + ((${b}) − (${a})) × (1 + ${TS_T(u)}) / 2`, wt = (a, b, u) => `((${b}) − (${a})) / 2 × ${TS_W(u)}`;
+    if (p.t === 'rect') return `(${subXY(F, lin(p.x0, p.x1, 'x'), lin(p.y0, p.y1, 'y'))}) × ${wt(p.x0, p.x1, 'x')} × ${wt(p.y0, p.y1, 'y')}`;
+    if (p.t === 'polar') {
+      const r = `(${lin(p.r0, p.r1, 'x')})`, q = `(${lin(p.t0, p.t1, 'y')})`, turn = fullTurn();
+      return `(${subXY(F, `${cusP(p.cx)} + ${r} × cos(${q})`, `${cusP(p.cy)} + ${r} × sin(${q})`)}) × ${r} × ${wt(p.r0, p.r1, 'x')} × ${wt(p.t0, p.t1, 'y')}` + (turn === '2π' ? '' : ` × 2π/${turn}`);
+    }
+    if (p.t === 'xs') {
+      const X = `(${lin(p.a, p.b, 'x')})`, lo = subXY(p.lo, X, 'y'), hi = subXY(p.hi, X, 'y');
+      return `(${subXY(F, X, lin(lo, hi, 'y'))}) × ${wt(p.a, p.b, 'x')} × ${wt(lo, hi, 'y')}`;
+    }
+    const Y = `(${lin(p.a, p.b, 'y')})`, lo = subXY(p.lo, 'x', Y), hi = subXY(p.hi, 'x', Y);
+    return `(${subXY(F, lin(lo, hi, 'x'), Y)}) × ${wt(lo, hi, 'x')} × ${wt(p.a, p.b, 'y')}`;
+  }
+  // the iterated integral as it is read: "∫[x: 0 → 1] ∫[y: x² → x] (x y) dy dx"
+  function pieceText(p, Ftext) {
+    const m = /^abs\((.*)\)$/.exec(Ftext), f = m ? '|' + clip(revPretty(m[1]), 40) + '|' : '(' + clip(revPretty(Ftext), 40) + ')';
+    if (p.t === 'rect') return `∫[x: ${p.x0} → ${p.x1}] ∫[y: ${p.y0} → ${p.y1}] ${f} dy dx`;
+    if (p.t === 'polar') return `∫[θ: ${p.t0} → ${p.t1}] ∫[r: ${p.r0} → ${p.r1}] ${f} r dr dθ` + tr(' (x = ', '（x = ') + (p.cx === '0' ? '' : p.cx + ' + ') + 'r cos θ, y = ' + (p.cy === '0' ? '' : p.cy + ' + ') + 'r sin θ' + tr(')', '）');
+    if (p.t === 'xs') return `∫[x: ${p.a} → ${p.b}] ∫[y: ${revPretty(p.lo)} → ${revPretty(p.hi)}] ${f} dy dx`;
+    return `∫[y: ${p.a} → ${p.b}] ∫[x: ${revPretty(p.lo)} → ${revPretty(p.hi)}] ${f} dx dy`;
+  }
+  // the exact value when it agrees with the numeric one as far as that can be trusted, else the numeric one
+  function cusBest(ex, n) {
+    if (ex && n && Math.abs(ex.v - n.v) <= Math.max(1e-5, 3 * Math.pow(10, -n.digits)) * Math.max(1, Math.abs(n.v))) return ex;
+    return n && isFinite(n.v) ? { text: '≈ ' + fmtV(+n.v.toPrecision(Math.min(10, Math.max(2, n.digits)))), exact: '', v: n.v, digits: n.digits } : null;
+  }
+  // ∬ F over the pieces: { val, expr, bad } (abs: F is |s| for the signed integrand s, whose exact
+  // value gives the volume when s keeps its sign)
+  async function cusIntegral(pieces, F, signedF, ms, seq) {
+    const vals = [], exprs = [];
+    for (const p of pieces) {
+      const n = await tsGrid(pieceGrid(p, F));
+      if (seq()) return null;
+      if (!n) return { val: null };
+      if (n.bad) return { val: null, bad: true };
+      const expr = pieceExpr(p, F);
+      let ex = await exactIntegral(expr, Math.min(ms, timeLimit() * 1000));
+      if (seq()) return null;
+      if (!ex && signedF) {
+        // |s| where s keeps one sign: the exact value of s, its size
+        const ns = await tsGrid(pieceGrid(p, signedF));
+        if (seq()) return null;
+        if (ns && !(ns.pos && ns.neg)) {
+          const es = await exactIntegral(pieceExpr(p, signedF), Math.min(ms, timeLimit() * 1000));
+          if (es) ex = es.v < 0 ? await exactIntegral(`abs(${es.exact})`, 3000) : es;
+        }
+      }
+      // (a kink inside, where s changes sign: the rule is good to fewer digits; a rectangle is also
+      // measured by Simpson's rule on 101 × 101 points, which copes better with it)
+      if (n.digits < 7 && p.t === 'rect') {
+        const s2 = await simpsonRect(F, p.x0, p.x1, p.y0, p.y1, null, false);
+        if (seq()) return null;
+        if (s2 && isFinite(s2.v) && !s2.missing && s2.digits > n.digits) { n.v = s2.v; n.digits = s2.digits; }
+      }
+      const val = cusBest(ex, n);
+      if (!val) return { val: null };
+      vals.push(val); exprs.push(expr);
+    }
+    return { val: await sumValues(vals), expr: exprs.join(' + ') };
+  }
+  // the inequalities on a fine grid of the drawn range when they cannot be cut into pieces: the
+  // values of d and F at its points, measured as computeEnclosed does with a part of no known shape
+  async function cusGridIntegral(S, dExpr, F) {
+    const G = await encGrid(S, [dExpr, F]);
+    if (!G) return null;
+    const E = encParts(G.z[0], G.xs.length, G.ys.length);
+    if (!E.parts.length) return { v: 0, digits: 10, none: true };
+    let v = 0, digits = 10;
+    for (let id = 0; id < E.parts.length; id++) { const r = encNumeric(G, E.lab, id, G.z[0], G.z[1]); v += r.v; digits = Math.min(digits, r.digits); }
+    return { v, digits: Math.min(6, digits), cut: E.parts.some((p) => p.cut) };
+  }
+  // the region shown in the graph: d at the points of the drawn grid
+  async function cusShade(S, dExpr) {
+    const D = Q3.data;
+    const r = await Bridge.send('plot3d', { exprs: [dExpr], xmin: S.x0, xmax: S.x1, ymin: S.y0, ymax: S.y1, nx: D.nx, ny: D.ny, opts: iOpts(), timeout: 15000 });
+    if (!r.ok || !r.series || !r.series[0] || r.x.length !== D.nx || r.y.length !== D.ny) { Q3.volShade = null; requestDraw3d(); return false; }
+    const z = r.series[0].z, d = new Float64Array(z.length);
+    for (let k = 0; k < z.length; k++) d[k] = typeof z[k] === 'number' && isFinite(z[k]) ? z[k] : NaN;
+    Q3.volShade = { D, fi: D.series.indexOf(S.f), gi: S.g ? D.series.indexOf(S.g) : -1, disk: false, R: 0, enc: d };
+    requestDraw3d();
+    return true;
+  }
+  // "Custom": the volume (or the integral with its sign) and the surface area over the region typed
+  async function computeCustom(seq) {
+    if (!proGate('regions')) return;
+    const S = volumeSetup();
+    if (!S) { setVolumeShade(null); return; }
+    const { U } = S, C = U.cus;
+    if (seq === undefined) { clearTimeout(U.timer); seq = ++U.seq; }
+    const stale = () => seq !== U.seq;
+    C.clearErr();
+    U.ins.hidden = true;
+    U.out.textContent = tr('Calculating…', '計算中…');
+    const R = await customRegion(C.kind, C.vals[C.kind], C.unit);
+    if (stale()) return;
+    if (R.error) { C.showErr(R.field, R.error); U.out.textContent = ''; Q3.volShade = null; requestDraw3d(); return; }
+    C.text.textContent = R.text;
+    await cusShade(S, R.d);
+    if (stale()) return;
+    let pieces = R.pieces, warn = '';
+    if (R.ineq) {
+      pieces = await ineqPieces(R.ineq, S, stale);
+      if (stale()) return;
+      const g = await cusGridIntegral(S, R.d, '1');
+      if (stale()) return;
+      if (g && g.none) { U.out.textContent = tr('No point of the drawn range meets the conditions', '描いている範囲には、条件をみたす点がありません'); return; }
+      if (g && g.cut) warn = tr('The region is cut at the edge of the drawn range: widen the range of the graph. The values below are those inside the range.', '範囲の端で切れています。描く範囲を広げてください。下の値は範囲の中の値です。');
+      // (the pieces are trusted when their area agrees with the area on the grid)
+      if (pieces && pieces.length && g) {
+        const a = await cusIntegral(pieces, '1', null, 2000, stale);
+        if (stale()) return;
+        if (!a || !a.val || Math.abs(a.val.v - g.v) > Math.max(3 * Math.pow(10, -g.digits), 2e-3) * Math.max(1, Math.abs(g.v))) pieces = null;
+      } else pieces = null;
+    }
+    const d = S.g ? `(${S.f.expr}) − (${S.g.expr})` : S.f.expr, signed = U.signed;
+    const F = signed ? d : `abs(${d})`;
+    const name = signed ? tr('Integral ', '積分の値 ') : tr('Volume ', '体積 ');
+    U.out.textContent = '';
+    if (warn) U.out.append(el('div', { class: 'form-hint warn', text: warn }));
+    const vol = el('div', { class: 'area-out' }), how = el('div', { class: 'form-hint cus-formula' }), surf = el('div', { class: 'area-out' });
+    U.out.append(vol, how, surf);
+    vol.textContent = tr('Calculating…', '計算中…');
+    let val, expr = '';
+    if (pieces && pieces.length) {
+      const r = await cusIntegral(pieces, F, signed ? null : d, VOLUME_EXACT_MS, stale);
+      if (stale() || !r) return;
+      if (r.bad) { vol.textContent = tr('The surfaces have no real values in part of this region', '曲面に実数の値がない所がこの範囲の中にあります'); return; }
+      val = r.val; expr = r.expr;
+      how.textContent = pieces.map((p) => pieceText(p, F)).join(' + ');
+    } else {
+      const g = await cusGridIntegral(S, R.d, F);
+      if (stale()) return;
+      val = g && !g.none ? cusBest(null, g) : null;
+      how.textContent = tr('On a fine grid of the drawn range (the conditions could not be solved for y)', '描いている範囲の細かい格子で計算しました（条件を y について解けなかったため）');
+    }
+    if (!val) { vol.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
+    vol.textContent = '';
+    showResult(vol, name + shownValue(val));
+    if (expr) { Q3.volExpr = expr; U.ins.hidden = false; }
+    // the surface area of the surfaces over the region (the floor z = 0: the area of the region)
+    surf.textContent = tr('Calculating the surface area…', '表面積を計算中…');
+    const A = [];
+    for (const s1 of S.g ? [S.f, S.g] : [S.f]) {
+      const a = recipSqrt(await symText(`√(1 + (diff(${s1.expr}, x))^2 + (diff(${s1.expr}, y))^2)`));
+      if (stale()) return;
+      if (!a) { surf.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); return; }
+      A.push({ a, name: clip(s1.expr, 24) });
+    }
+    if (!S.g) A.push({ a: '1', name: tr('floor z = 0', '底面 z = 0') });
+    const sums = [];
+    for (const x of A) {
+      let v;
+      if (pieces && pieces.length) { const r = await cusIntegral(pieces, x.a, null, SURFACE_EXACT_MS, stale); if (stale() || !r) return; v = r.val; }
+      else { const g = await cusGridIntegral(S, R.d, x.a); if (stale()) return; v = g ? cusBest(null, g) : null; }
+      if (!v) { surf.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); return; }
+      sums.push(v);
+    }
+    const all = await sumValues(sums);
+    if (stale()) return;
     surf.textContent = '';
     showResult(surf, tr('Surface area ', '表面積 ') + shownValue(all));
     surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
