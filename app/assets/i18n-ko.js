@@ -805,7 +805,7 @@
     "could not be calculated": "계산할 수 없습니다",
     "infinite": "무한대",
     "took too long": "시간이 너무 오래 걸렸습니다",
-    "In \"Area and length\" of a 2D graph, \"Solid of revolution\" turns the shaded region once around the x axis, the y axis, y = k or x = k: the volume, the curved surfaces and the surface with the end faces, exact when possible, with the formula used (washers or shells) and a 3D view. Where the region is on both sides of the axis, the overlap counts once. Tap a result to put its integral into the input field or to copy it.": "2D 그래프의 「넓이·길이」에서 「회전체」는 색칠된 영역을 x축, y축, y = k, x = k를 중심으로 한 바퀴 회전시킨 입체의 부피, 곡면의 넓이, 양 끝면을 포함한 겉넓이를 구합니다(가능하면 정확한 값). 사용한 식(와셔법·원통껍질법)과 3D 보기도 있습니다. 영역이 축의 양쪽에 있으면 겹치는 부분은 한 번만 셉니다. 결과를 누르면 적분식을 입력란에 넣거나 복사할 수 있습니다.",
+    "In \"Area and length\" of a 2D graph, \"Solid of revolution\" turns the shaded region once around the x axis, the y axis, y = k or x = k: the volume, the curved surfaces and the surface with the end faces, exact when possible, with the formula used (washers or shells) and a 3D view. Where the region is on both sides of the axis, the overlap counts once. Tap a result to put its integral into the input field or to copy it.": "2D 그래프의 ‘넓이·길이’에서 ‘회전체’는 색칠된 영역을 x축, y축, y = k, x = k를 중심으로 한 바퀴 회전시킨 입체의 부피, 곡면의 넓이, 양 끝면을 포함한 겉넓이를 구합니다(가능하면 정확한 값). 사용한 식(와셔법·원통껍질법)과 3D 보기도 있습니다. 영역이 축의 양쪽에 있으면 겹치는 부분은 한 번만 셉니다. 결과를 누르면 적분식을 입력란에 넣거나 복사할 수 있습니다.",
     "This is a QCalc Pro feature": "QCalc Pro 기능입니다",
     "axis": "회전축",
     "Custom": "직접 지정",
