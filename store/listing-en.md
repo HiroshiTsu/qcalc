@@ -76,6 +76,65 @@ de-DE, fr-FR, ko-KR and zh-TW, after those translations have been added; listing
 The notes in German, French, Korean and Traditional Chinese were translated by machine (Claude) and
 have not been checked by native speakers.
 
+1.10.1 (when 1.10.0 was already released):
+
+<en-US>
+• 3D graph: in "Volume and surface", the shadow on the floor now has the shape of the measured solid, also over "Rectangle" (a sphere, a doughnut)
+</en-US>
+<ja-JP>
+・3D グラフ：「体積・表面積」で箱の底に落ちる影を、「長方形」のときも計測している立体の形にしました（球、ドーナツなど）
+</ja-JP>
+<es-419>
+• Gráfico 3D: en "Volumen y superficie", la sombra en el piso tiene ahora la forma del sólido medido, también con "Rectángulo" (una esfera, una dona)
+</es-419>
+<de-DE>
+• 3D-Graph: In „Volumen und Oberfläche“ hat der Schatten auf dem Boden jetzt die Form des gemessenen Körpers, auch bei „Rechteck“ (Kugel, Donut)
+</de-DE>
+<fr-FR>
+• Graphique 3D : dans « Volume et surface », l’ombre au sol a maintenant la forme du solide mesuré, aussi avec « Rectangle » (sphère, beignet)
+</fr-FR>
+<ko-KR>
+• 3D 그래프: ‘부피·겉넓이’에서 바닥의 그림자가 ‘직사각형’일 때도 재는 입체의 모양이 됩니다(구, 도넛 등)
+</ko-KR>
+<zh-TW>
+• 3D 圖形：「體積與表面積」中地面上的陰影，選「長方形」時也會是所測量立體的形狀（球、甜甜圈等）
+</zh-TW>
+
+1.10.1 (when 1.9.5 was already released; the changes of 1.10.0 and 1.10.1):
+
+<en-US>
+• New: the app is in German, French, Korean and Traditional Chinese too (menu → Language). A phone set to one of these languages starts in it
+• 3D graph: in "Volume and surface", the shadow on the floor now has the shape of the measured solid, also over "Rectangle"
+</en-US>
+<ja-JP>
+・新機能：ドイツ語・フランス語・韓国語・繁体字中国語に対応しました（メニュー →「言語 / Language」）。これらの言語の端末では、その言語で始まります
+・3D グラフ：「体積・表面積」で箱の底に落ちる影を、「長方形」のときも計測している立体の形にしました
+</ja-JP>
+<es-419>
+• Nuevo: la app también está en alemán, francés, coreano y chino tradicional (menú → Idioma / Language). Un teléfono en uno de estos idiomas empieza en él
+• Gráfico 3D: en "Volumen y superficie", la sombra en el piso tiene ahora la forma del sólido medido, también con "Rectángulo"
+</es-419>
+<de-DE>
+• Neu: Die App gibt es jetzt auch auf Deutsch, Französisch, Koreanisch und in traditionellem Chinesisch (Menü → Sprache / Language). Ein Handy in einer dieser Sprachen startet in ihr
+• 3D-Graph: In „Volumen und Oberfläche“ hat der Schatten auf dem Boden jetzt die Form des gemessenen Körpers, auch bei „Rechteck“
+</de-DE>
+<fr-FR>
+• Nouveau : l’app est aussi en allemand, français, coréen et chinois traditionnel (menu → Langue / Language). Un téléphone réglé dans l’une de ces langues démarre dans celle-ci
+• Graphique 3D : dans « Volume et surface », l’ombre au sol a maintenant la forme du solide mesuré, aussi avec « Rectangle »
+</fr-FR>
+<ko-KR>
+• 새 기능: 독일어, 프랑스어, 한국어, 중국어 번체를 지원합니다(메뉴 → 언어 / Language). 이 언어로 설정한 휴대전화에서는 그 언어로 시작합니다
+• 3D 그래프: ‘부피·겉넓이’에서 바닥의 그림자가 ‘직사각형’일 때도 재는 입체의 모양이 됩니다
+</ko-KR>
+<zh-TW>
+• 新功能：支援德文、法文、韓文與繁體中文（選單 → 語言 / Language）。手機設定為這些語言時，App 會以該語言開啟
+• 3D 圖形：「體積與表面積」中地面上的陰影，選「長方形」時也會是所測量立體的形狀
+</zh-TW>
+
+For 1.10.1 when an older version was released (one of 1.9.0 to 1.9.4, or of 1.8.0 to 1.8.4), use
+the notes of 1.10.0 for that case below as they are: they are close to the limit of 500 characters,
+so the shadow is not mentioned.
+
 1.10.0 (when 1.9.5 was already released):
 
 <en-US>

@@ -6921,14 +6921,57 @@
     const vc = vf ? volumeColor(D, cells, single, dark, vf, vg) : null;
     const lmesh = vf ? liquidMesh(D, VS, vf, vg, { U, V, Wz, EZ, EX, EY }) : null;
     // a soft shadow of the measured solid on the floor of the box, seen from above (1.8.4), tinted
-    // by the liquid as the light that goes through a colored liquid is (1.9.1)
+    // by the liquid as the light that goes through a colored liquid is (1.9.1). Its shape is that of
+    // the solid: the faces of its top (sheet A of the mesh) laid flat on the floor, so that it follows
+    // the part of the region where the surfaces have values and the edge found for a surface that ends
+    // (1.10.1: until 1.10.0 the shadow was the whole region, a square under a sphere drawn over a
+    // rectangle, as when the app was opened again with the sphere). Only a mesh with no faces (no
+    // solid can be drawn) leaves the region as before.
+    let shadowFaces = 0, shadowArea = 0;
     if (vc && se > 0.05) {
       g.save();
       g.filter = 'blur(7px)';
       g.fillStyle = dark ? 'rgba(0,0,0,0.32)' : 'rgba(' + vc.deep.map((v) => Math.round(v * 0.55)).join(',') + ',0.16)';
       g.beginPath();
-      if (!Q3.volShade.disk) pane0([[-EX, -EY], [EX, -EY], [EX, EY], [-EX, EY]]);
-      else {
+      if (lmesh) {
+        // Only the outline of the faces is drawn (filling thousands of faces under the blur took longer
+        // than the rest of the drawing): with all faces turned the same way round, an edge that two
+        // faces share is gone over once each way and cancels, and the edges that remain, joined into
+        // closed paths, go around the shape (and the other way round around a hole, as in a doughnut,
+        // which then stays empty). The area in x and y is reported for the tests.
+        const { PX, PY, TV, TK } = lmesh, np = PX.length, net = new Map();
+        const edge = (a, b) => { const k = a < b ? a * np + b : b * np + a; net.set(k, (net.get(k) || 0) + (a < b ? 1 : -1)); };
+        for (let t = 0; t < TK.length; t++) {
+          if (TK[t] !== 1) continue;
+          const p = TV[3 * t] >> 1;
+          let q = TV[3 * t + 1] >> 1, r = TV[3 * t + 2] >> 1;
+          const turn = (PX[q] - PX[p]) * (PY[r] - PY[p]) - (PY[q] - PY[p]) * (PX[r] - PX[p]);
+          if (turn < 0) [q, r] = [r, q];
+          edge(p, q); edge(q, r); edge(r, p);
+          shadowArea += Math.abs(turn) / 2;
+          shadowFaces++;
+        }
+        const next = new Map();  // a point → the points that the edges of the outline go to from it
+        for (const [k, s] of net) {
+          if (!s) continue;
+          const a = Math.floor(k / np), b = k - a * np, from = s > 0 ? a : b, to = s > 0 ? b : a;
+          for (let m = Math.abs(s); m > 0; m--) { const l = next.get(from); if (l) l.push(to); else next.set(from, [to]); }
+        }
+        for (const [p0, l0] of next) {
+          while (l0.length) {
+            const loop = [p0];
+            for (let p = l0.pop(); p !== p0; ) {
+              loop.push(p);
+              const l = next.get(p);
+              if (!l || !l.length) break;
+              p = l.pop();
+            }
+            pane0(loop.map((p) => [U(PX[p]), V(PY[p])]));
+          }
+        }
+      }
+      if (!shadowFaces && !Q3.volShade.disk) pane0([[-EX, -EY], [EX, -EY], [EX, EY], [-EX, EY]]);
+      else if (!shadowFaces) {
         const R = Q3.volShade.R, ok = [];
         for (let n = 0; n <= 72; n++) { const th = 2 * Math.PI * n / 72, x = Math.max(x0, Math.min(x1, R * Math.cos(th))), y = Math.max(y0, Math.min(y1, R * Math.sin(th))); ok.push([U(x), V(y)]); }
         pane0(ok);
@@ -7009,7 +7052,7 @@
     // the color of the solid in the box, and what was drawn (for the tests)
     const lg = Q3.volUI && Q3.volUI.legend;
     if (lg) { lg.hidden = !vc; if (vc) { lg.firstChild.style.background = vc.swatch; lg.firstChild.style.borderColor = vc.line; } }
-    if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: lmesh.walls, floor: lmesh.floor, tris: lmesh.tris, jelly, liquid: liquid.shown, thick: liquid.thick, odd: liquid.odd, q: liquid.q, faded });
+    if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: lmesh.walls, floor: lmesh.floor, tris: lmesh.tris, jelly, liquid: liquid.shown, thick: liquid.thick, odd: liquid.odd, q: liquid.q, faded, shadow: shadowFaces, shadowArea: Number(shadowArea.toFixed(4)) });
     else delete c.dataset.vol;
     // axes on the front edges of the floor and the leftmost vertical edge, with labels
     const un = -ub, vn = -vb;
