@@ -10232,7 +10232,8 @@
       selInfo.append(el('div', { class: 'form-hint warn', text: tr('The units do not match, so they cannot be added up', '単位がそろっていないので、合計できません') }));
       return;
     }
-    const avg = await Bridge.send('calc', { expr: '(' + sum + ') / ' + list.length, opts: engineOpts(), timeout: 3000 });
+    // the average as a decimal (9/2 = 4 + 1/2 = 4.5 is more than the bar needs)
+    const avg = await Bridge.send('calc', { expr: '(' + sum + ') / ' + list.length, opts: Object.assign(engineOpts(), { approx: 'approx', fraction: 'decimal' }), timeout: 3000 });
     if (seq !== selSeq) return;
     const row = (name, rr, cls) => { const v = el('span', { class: 'hs-v' }); showResult(v, resultText(rr)); return el('div', { class: 'hs-row ' + (cls || '') }, el('span', { class: 'hs-l', text: name }), v); };
     selInfo.append(row(tr('Sum', '合計'), r, 'sum'));
@@ -10327,7 +10328,8 @@
     }
     newsCard = card;
     histEl.append(card);
-    histEl.scrollTop = histEl.scrollHeight;
+    // its title and × in sight, also when the history is short (memory keys, a small screen)
+    histEl.scrollTop = Math.max(0, card.offsetTop - histEl.offsetTop - 4);
   }
   // ---------------------------------------------------------------- tools
   // "Tools" (1.12.0): every tool in one place, found by what one wants to do. A search box on top
@@ -10751,7 +10753,12 @@
   // or decisions about safety.
   function cautionLine(premise) {
     return el('div', { class: 'caution', role: 'note' }, el('span', { class: 'caution-i', 'aria-hidden': 'true', text: 'ⓘ' }),
-      el('span', { class: 'caution-t', text: tr('For reference only (not for trade, certification, design, construction or tax).', '参考値です（取引・証明、設計・施工、税務には使えません）。') + (premise ? ' ' + premise : '') }));
+      el('span', { class: 'caution-t', text: joinSentences(tr('For reference only (not for trade, certification, design, construction or tax).', '参考値です（取引・証明、設計・施工、税務には使えません）。'), premise) }));
+  }
+  // two sentences: with a space, but none after a full stop of Japanese or Chinese (。)
+  function joinSentences(a, b) {
+    if (!b) return a;
+    return a + (/[。．！？]$/.test(a) ? '' : ' ') + b;
   }
   // the Pro features that are not tools: icon, name, what it gives, key of the prompt
   const PRO_FIXED = () => [

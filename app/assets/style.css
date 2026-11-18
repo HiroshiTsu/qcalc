@@ -1327,7 +1327,9 @@ body.hselect .h-item .h-more { visibility: hidden; }
 .hs-v { min-width: 0; overflow-wrap: anywhere; }
 .hs-btns { display: flex; gap: 6px; flex: 0 0 auto; }
 .hs-btns .btn { min-height: 48px; }
-body.hselect .keypad { visibility: hidden; }
+/* while choosing lines: the keys and the field make room for the history (the bar covers its bottom) */
+body.hselect .keypad, body.hselect .entry { display: none; }
+body.hselect #history { padding-bottom: 150px; }
 .sheet-input { display: block; width: 100%; box-sizing: border-box; height: 48px; font-size: 16px; padding: 0 12px; margin: 0 0 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
 /* memory keys */
 .memrow { display: grid; grid-template-columns: repeat(4, 1fr) 1.6fr; gap: 5px; margin-bottom: 5px; align-items: center; }
@@ -1336,7 +1338,8 @@ body.hselect .keypad { visibility: hidden; }
 .memrow .key.mem::before { content: ""; position: absolute; left: -3px; right: -3px; top: -6px; bottom: -6px; }
 .mem-val { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
 /* what is new */
-.news-card { background: var(--surface); border: 2px solid var(--accent); border-radius: 16px; padding: 4px 8px 6px 14px; margin: 8px 10px; }
+.news-card { background: var(--surface); border: 2px solid var(--accent); border-radius: 16px; padding: 2px 6px 4px 12px; margin: 6px 10px; }
+.news-row { padding: 0; }
 .news-t { display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 15px; }
 .news-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 14px; }
 .news-row .ico { flex: 0 0 auto; font-size: 18px; }
