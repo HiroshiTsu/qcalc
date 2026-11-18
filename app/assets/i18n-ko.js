@@ -852,7 +852,6 @@
     "The region is cut at the edge of the drawn range: widen the range of the graph. The values below are those inside the range.": "영역이 그린 범위의 가장자리에서 잘립니다. 그래프의 범위를 넓히세요. 아래 값은 범위 안의 값입니다.",
     "The surfaces have no real values in part of this region": "이 영역의 일부에서 곡면에 실수 값이 없습니다",
     "On a fine grid of the drawn range (the conditions could not be solved for y)": "그린 범위의 촘촘한 격자로 계산했습니다(조건을 y에 대해 풀 수 없어서)",
-<<<<<<< HEAD
     "Its region \"Custom\" takes a region you type: a rectangle a ≤ x ≤ b, c ≤ y ≤ d, a disk with a centre, a ring, a sector (in degrees or radians), the region between two curves (g₁(x) ≤ y ≤ g₂(x) or h₁(y) ≤ x ≤ h₂(y)), or inequalities joined by \"and\" (x²/4 + y² ≤ 1 and y ≥ 0). The iterated integral is shown and can be put into the input field. \"Volume\" counts the parts below as positive, \"Integral\" as negative (sin x over [0, 2π] × [0, 1]: 4 and 0).": "영역의 ‘직접 지정’에서는 영역을 식으로 입력합니다: 직사각형 a ≤ x ≤ b, c ≤ y ≤ d, 중심이 있는 원, 원환, 부채꼴(도 또는 라디안), 두 곡선 사이의 영역(g₁(x) ≤ y ≤ g₂(x) 또는 h₁(y) ≤ x ≤ h₂(y)), ‘그리고’로 이은 부등식(x²/4 + y² ≤ 1 그리고 y ≥ 0). 반복적분 식을 보여 주며 입력란에 넣을 수도 있습니다. ‘부피’는 아래쪽 부분도 양수로, ‘적분값’은 음수로 셉니다(sin x, [0, 2π] × [0, 1]이면 4와 0).",
     "Volume from measured values (cross sections, grid of heights) ›": "측정값으로 부피 구하기 (단면적 표·점고법) ›",
     "Volume from measured values": "측정값으로 부피 구하기",
@@ -898,9 +897,6 @@
     "Method": "방법",
     "Type the values or paste a table from a spreadsheet (columns separated by tabs or commas) into a box: it fills the table from there. Tap a result to put its expression into the input field or to copy it. The tables are kept for the next time.": "값을 입력하거나, 스프레드시트의 표(탭 또는 쉼표로 구분)를 칸에 붙여 넣으면 거기서부터 표가 채워집니다. 결과를 누르면 식을 입력란에 넣거나 복사할 수 있습니다. 표는 다음을 위해 남아 있습니다.",
     "\"Shapes\" also leads to \"Volume from measured values\": a table of cross sections (the average end area method and Simpson’s rule, with the reason when Simpson’s rule cannot be used) or the heights at the corners of a grid (the method of point heights, V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)). A table can be pasted from a spreadsheet; the volume is given in m³ and L.": "‘도형’에서 ‘측정값으로 부피 구하기’도 열 수 있습니다: 단면적 표로 평균단면법과 심프슨 공식(쓸 수 없으면 이유도), 격자 모서리의 높이로 점고법(V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄))을 써서 부피를 구합니다. 표는 스프레드시트에서 붙여 넣을 수 있고, 결과는 m³와 L로 나옵니다."
-=======
-    "Its region \"Custom\" takes a region you type: a rectangle a ≤ x ≤ b, c ≤ y ≤ d, a disk with a centre, a ring, a sector (in degrees or radians), the region between two curves (g₁(x) ≤ y ≤ g₂(x) or h₁(y) ≤ x ≤ h₂(y)), or inequalities joined by \"and\" (x²/4 + y² ≤ 1 and y ≥ 0). The iterated integral is shown and can be put into the input field. \"Volume\" counts the parts below as positive, \"Integral\" as negative (sin x over [0, 2π] × [0, 1]: 4 and 0).": "영역의 ‘직접 지정’에서는 영역을 식으로 입력합니다: 직사각형 a ≤ x ≤ b, c ≤ y ≤ d, 중심이 있는 원, 원환, 부채꼴(도 또는 라디안), 두 곡선 사이의 영역(g₁(x) ≤ y ≤ g₂(x) 또는 h₁(y) ≤ x ≤ h₂(y)), ‘그리고’로 이은 부등식(x²/4 + y² ≤ 1 그리고 y ≥ 0). 반복적분 식을 보여 주며 입력란에 넣을 수도 있습니다. ‘부피’는 아래쪽 부분도 양수로, ‘적분값’은 음수로 셉니다(sin x, [0, 2π] × [0, 1]이면 4와 0)."
->>>>>>> feature/vol-regions
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(메뉴 → ‘환율 업데이트’)",
