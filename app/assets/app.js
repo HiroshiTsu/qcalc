@@ -4166,13 +4166,27 @@
   const fullTurn = () => ({ deg: '360', gra: '400' })[S.angle] || '2π';
   // x and y of an expression replaced by other expressions; "2xy" (x times y) counts too
   function subXY(expr, xs, ys) {
-    return expr.replace(/[\p{L}_][\p{L}\p{Nd}_]*/gu, (tok, off, str) => {
+    return absBars(expr).replace(/[\p{L}_][\p{L}\p{Nd}_]*/gu, (tok, off, str) => {
       if (str[off - 1] === '\\' || str[off - 1] === "'" || !/^[xy]+$/.test(tok)) return tok;
       return Array.from(tok, (c) => '(' + (c === 'x' ? xs : ys) + ')').join(' × ');
     });
   }
+  // |x − 1| as the engine writes it, as abs(x − 1) (1.9.3): once a number is put in for x,
+  // "2 |a| − b" can be read wrongly ("|" is also "or"); this kept the length of the heart from
+  // being found. A bar after a number, a name or ")" closes the innermost one that is open.
+  function absBars(t) {
+    if (t.indexOf('|') < 0) return t;
+    let out = '', depth = 0;
+    for (const c of t) {
+      if (c !== '|') { out += c; continue; }
+      const prev = out.replace(/\s+$/, '').slice(-1);
+      if (depth > 0 && /[\p{L}\p{N}_)\]}²³¹⁰⁴⁵⁶⁷⁸⁹!′°.]/u.test(prev)) { out += ')'; depth--; } else { out += 'abs('; depth++; }
+    }
+    return depth === 0 ? out : t;
+  }
   // √(1 / (4 − x²)) as 1 / √(4 − x²): the engine integrates the second form exactly
   function recipSqrt(t) {
+    t = absBars(t);
     for (let i = t.indexOf('√(1 / '), guard = 0; i >= 0 && guard < 20; i = t.indexOf('√(1 / '), guard++) {
       let d = 0, j = i + 1;
       for (; j < t.length; j++) { if (t[j] === '(') d++; else if (t[j] === ')' && --d === 0) break; }
@@ -4213,42 +4227,134 @@
     }
     return res;
   }
-  // a sum worked out by the engine with many digits (the ends of x = m + h tanh(…) come very close
-  // to a and b, and 1 − tanh must not round to 0 there), as a number or NaN
-  async function sumValue(expr, digits) {
+  // sums worked out by the engine with many digits (the ends of x = m + h tanh(…) come very close
+  // to a and b, and 1 − tanh must not round to 0 there), several at once ("[s1, s2, …]"), or null
+  async function sumVector(expr, digits) {
     const r = await Bridge.send('calc', { expr, opts: iOpts({ approx: 'approx', precision: digits }), timeout: Math.max(20000, timeLimit() * 1000) });
-    if (!r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error')) return NaN;
-    return Number(numberPart(r.result));
+    if (!r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error')) return null;
+    const m = parseMatrix(numberPartVec(r.result));
+    if (!m || !m.rows.length) return null;
+    const v = (m.rows.length === 1 ? m.rows[0] : m.rows.map((x) => x[0])).map((x) => Number(String(x).replace(/−/g, '-').replace(/\s/g, '')));
+    return v.every(isFinite) ? v : null;
   }
-  // ∫ F dx from a to b, numerically: t from −4 to 4 in steps of 1/50
+  // ∫ F dx from a to b, numerically: t from −4 to 4 in steps of 1/50. 1.9.3: the even and the odd
+  // steps are summed apart (each is the rule with steps of 1/25: they agree when the rule is
+  // accurate, and differ when the integrand is not smooth inside the range), and the terms at the
+  // very ends (3.8 ≤ |t| ≤ 4) once more: they fade fast; when they do not, the integral is
+  // infinite, as for the length of ln(x) from 0. { v, digits (the digits that can be trusted), inf }, or null
   async function tsIntegral(F, a, b) {
-    const N = 200, H = '(4/200)', t = `\\k × ${H}`;
+    const H = '(4/200)', hh = 4 / 200;
     const m = `(((${a}) + (${b})) / 2)`, h = `(((${b}) − (${a})) / 2)`;
-    const g = `(${subXY(F, `${m} + ${h} × tanh(π/2 × sinh(${t}))`, 'y')}) × ${h} × π/2 × cosh(${t}) / cosh(π/2 × sinh(${t}))^2`;
-    return sumValue(`sum(${g}, −${N}, ${N}, \\k) × ${H}`, 50);
+    const G = (t) => `(${subXY(F, `${m} + ${h} × tanh(π/2 × sinh(${t}))`, 'y')}) × ${h} × π/2 × cosh(${t}) / cosh(π/2 × sinh(${t}))^2`;
+    const ev = G(`(2\\k) × ${H}`), od = G(`(2\\k + 1) × ${H}`), any = G(`\\k × ${H}`);
+    const r = await sumVector(`[sum(${ev}, −100, 100, \\k), sum(${od}, −100, 99, \\k), sum(${any}, 191, 200, \\k) + sum(${any}, −200, −191, \\k)]`, 50);
+    let res = r && r.length === 3 ? tsResult(r, hh) : null;
+    // a curve that bends sharply many times (the samples "Beats", "Chirp"): √(1 + f′²) is then
+    // singular close to the real axis (where f′ = ±i, about 1/|f″| away), and the rule above is not
+    // accurate: 1.9.2 showed 10 digits of which only 3 to 7 were right (Beats 27.39 for 27.50). The
+    // range is then cut into 32 and 64, then 128 and 256 equal parts with the 15-point Kronrod rule
+    // in each; the difference between the two counts of parts tells how many digits can be trusted.
+    for (const [n1, n2] of [[32, 64], [128, 256]]) {
+      if (!res || res.inf || res.digits >= 10) break;
+      const more = await gkParts(F, a, b, n1, n2);
+      if (more && more.digits > res.digits) res = more;
+    }
+    return res;
   }
-  // ∬ F over the disk x² + y² ≤ R², numerically: r by the rule above (t from −3.2 to 3.2), θ in 36
-  // even steps of a full turn (the integrand is periodic in θ; each step is 2π/36 in radians)
-  async function tsDisk(F, R) {
-    const N = 64, M = 36, H = '(3.2/64)', t = `\\k × ${H}`, q = `\\j × ${fullTurn()}/${M}`;
-    const rr = `((${R}) / 2 × (1 + tanh(π/2 × sinh(${t}))))`;
-    const g = `(${subXY(F, `${rr} × cos(${q})`, `${rr} × sin(${q})`)}) × ${rr} × (${R}) / 2 × π/2 × cosh(${t}) / cosh(π/2 × sinh(${t}))^2`;
-    return sumValue(`sum(sum(${g}, −${N}, ${N}, \\k), 1, ${M}, \\j) × ${H} × 2π/${M}`, 40);
+  // the value and the digits that can be trusted, from the sums of the even and the odd steps and of
+  // the terms at the very ends (step hh): the rule with the even steps alone differs by d
+  function tsResult([E, O, T2], hh) {
+    const v = (E + O) * hh;
+    if (!isFinite(v)) return null;
+    const scale = Math.max(Math.abs(v), 1e-300), tail = Math.abs(T2 * hh) / scale;
+    if (tail > 1e-4) return { inf: true, v, digits: 0 };
+    return { v, digits: trustedDigits(Math.max(Math.abs((O - E) * hh) / scale, tail)) };
   }
-  // ∬ F over a rectangle, numerically: Simpson's rule on 101 × 101 points (points without a value left out)
-  async function simpsonRect(F, x0, x1, y0, y1) {
-    const r = await Bridge.send('plot3d', { exprs: [F], xmin: x0, xmax: x1, ymin: y0, ymax: y1, nx: VOL_N, ny: VOL_N, opts: iOpts(), timeout: Math.max(15000, timeLimit() * 1000) });
-    if (!r.ok || !Array.isArray(r.series) || !r.series[0] || r.series[0].complete === false) return { v: NaN, missing: 0, error: r.error };
+  const trustedDigits = (err) => (err <= 1e-11 ? 10 : Math.max(2, Math.min(10, Math.floor(-Math.log10(err)) - 1)));
+  // the 15-point Gauss–Kronrod rule (nodes ±x and 0 on [−1, 1], with their weights)
+  const GK_X = ['0.991455371120812639206854697526329', '0.949107912342758524526189684047851', '0.864864423359769072789712788640926', '0.741531185599394439863864773280788',
+    '0.586087235467691130294144845693013', '0.405845151377397166906606412076961', '0.207784955007898467600689403773245'];
+  const GK_W = ['0.022935322010529224963732008058970', '0.063092092629978553290700663189204', '0.104790010322250183839876322541518', '0.140653259715525918745189590510238',
+    '0.169004726639267902826583426598550', '0.190350578064785409913256402421014', '0.204432940075298892414161999234649', '0.209482141084727828012999174891714'];
+  // ∫ F from a to b with that rule on n1 and on n2 equal parts: { v (with n2), digits }, or null
+  async function gkParts(F, a, b, n1, n2) {
+    const rule = (n) => {
+      const w = `(((${b}) − (${a})) / ${2 * n})`, mid = `((${a}) + (2\\p + 1) × ${w})`;
+      const at = (u) => `(${subXY(F, `${mid} + ${w} × ${u}`, 'y')})`;
+      const terms = GK_X.map((x, i) => `${GK_W[i]} × (${at(x)} + ${at('(−' + x + ')')})`).concat(`${GK_W[7]} × ${at('0')}`);
+      return `sum(${terms.join(' + ')}, 0, ${n - 1}, \\p) × ${w}`;
+    };
+    const r = await sumVector(`[${rule(n1)}, ${rule(n2)}]`, 25);
+    if (!r || r.length !== 2 || !r.every(isFinite)) return null;
+    // (the finer one is much closer than the difference: about its power 1.5, as in QUADPACK)
+    const scale = Math.max(Math.abs(r[1]), 1e-300);
+    return { v: r[1], digits: trustedDigits(Math.pow(Math.abs(r[1] - r[0]) / scale, 1.5)) };
+  }
+  // ∬ F over the ring r0 ≤ √(x² + y²) ≤ r1 (the disk when r0 = 0), numerically: r by the rule above
+  // (t from −3.2 to 3.2), θ in 36 even steps of a full turn (the integrand is periodic in θ; each
+  // step is 2π/36 in radians)
+  // 1.9.3: an integrand that is the same all around the origin (a sphere, the doughnut) needs one
+  // angle only: 2π ∫ F(r, 0) r dr by the rule of tsIntegral, 36 times faster (the surface of the
+  // doughnut took 28 s on a PC and could not be found). { v, digits }
+  async function tsAnnulus(F, r0, r1) {
+    if (await roundIntegrand(F, r0, r1)) {
+      const r = await tsIntegral(`(${subXY(F, 'x', '0')}) × x`, r0, r1);
+      return r && !r.inf ? { v: 2 * Math.PI * r.v, digits: r.digits } : { v: NaN, digits: 0 };
+    }
+    // (else 36 angles; also every other angle and every other step in r, to tell the digits that can
+    // be trusted: |x y| has kinks where the angle crosses an axis, which 36 angles do not follow)
+    const N = 64, M = 36, H = '(3.2/64)', w = `(((${r1}) − (${r0})) / 2)`;
+    const g = (k, j) => {
+      const t = `${k} × ${H}`, q = `${j} × ${fullTurn()}/${M}`, rr = `((${r0}) + ${w} × (1 + tanh(π/2 × sinh(${t}))))`;
+      return `(${subXY(F, `${rr} × cos(${q})`, `${rr} × sin(${q})`)}) × ${rr} × ${w} × π/2 × cosh(${t}) / cosh(π/2 × sinh(${t}))^2`;
+    };
+    const r = await sumVector(`[sum(sum(${g('\\k', '\\j')}, −${N}, ${N}, \\k), 1, ${M}, \\j), sum(sum(${g('\\k', '(2\\j)')}, −${N}, ${N}, \\k), 1, ${M / 2}, \\j), sum(sum(${g('(2\\k)', '\\j')}, −${N / 2}, ${N / 2}, \\k), 1, ${M}, \\j)]`, 40);
+    if (!r || r.length !== 3) return { v: NaN, digits: 0 };
+    const hh = 3.2 / 64, v = r[0] * hh * 2 * Math.PI / M, vq = r[1] * hh * 2 * Math.PI / (M / 2), vr = r[2] * 2 * hh * 2 * Math.PI / M;
+    const scale = Math.max(Math.abs(v), 1e-300);
+    return { v, digits: trustedDigits(Math.max(Math.abs(v - vq) / 3, Math.abs(v - vr)) / scale) };
+  }
+  const tsDisk = (F, R) => tsAnnulus(F, '0', R);
+  // true when F (in x and y) has the same value all around the origin, at two radii between r0 and r1
+  async function roundIntegrand(F, r0, r1) {
+    const vals = [];
+    for (const f of ['0.31', '0.77']) {
+      const r = `((${r0}) + ((${r1}) − (${r0})) × ${f})`;
+      for (const k of [0, 1, 2, 3, 5, 8]) { const q = `(${k} × ${fullTurn()} / 13)`; vals.push(subXY(F, `${r} × cos(${q})`, `${r} × sin(${q})`)); }
+    }
+    const v = await sumVector('[' + vals.join(', ') + ']', 20);
+    if (!v || v.length !== 12) return false;
+    const same = (a) => a.every((x) => Math.abs(x - a[0]) <= 1e-12 * Math.max(1, Math.abs(a[0])));
+    return same(v.slice(0, 6)) && same(v.slice(6));
+  }
+  // ∬ F over a rectangle, numerically: Simpson's rule on 101 × 101 points (points without a value left out).
+  // 1.9.3: masks, the surfaces themselves: a point counts only where they have real values too
+  async function simpsonRect(F, x0, x1, y0, y1, masks, smooth) {
+    const exprs = [F].concat(masks || []);
+    const r = await Bridge.send('plot3d', { exprs, xmin: x0, xmax: x1, ymin: y0, ymax: y1, nx: VOL_N, ny: VOL_N, opts: iOpts(), timeout: Math.max(15000, timeLimit() * 1000) });
+    if (!r.ok || !Array.isArray(r.series) || r.series.length !== exprs.length || r.series.some((s) => s.complete === false)) return { v: NaN, missing: 0, error: r.error };
     const nx = r.x.length, ny = r.y.length, z = r.series[0].z;
     const hx = (r.x[nx - 1] - r.x[0]) / (nx - 1), hy = (r.y[ny - 1] - r.y[0]) / (ny - 1);
     const w = (i, n) => (i === 0 || i === n - 1 ? 1 : i % 2 ? 4 : 2);
-    let sum = 0, missing = 0;
+    const real = (s, k) => typeof s.z[k] === 'number' && isFinite(s.z[k]);
+    // 1.9.3: the same rule on every other point (51 × 51) too. The volume of a surface that changes
+    // sign has a kink where it is 0 (abs(f)), and the rule is then good to 3 or 4 digits only (the
+    // sample "Egg carton": 39.939589 for 39.943457, shown with 8 digits until 1.9.2); the
+    // difference of the two tells how many digits can be trusted
+    const coarse = nx % 4 === 1 && ny % 4 === 1, nx2 = (nx + 1) / 2, ny2 = (ny + 1) / 2;
+    let sum = 0, sum2 = 0, missing = 0;
     for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
-      const v = z[j * nx + i];
-      if (typeof v !== 'number' || !isFinite(v)) { missing++; continue; }
+      const k = j * nx + i, v = z[k];
+      if (typeof v !== 'number' || !isFinite(v) || r.series.slice(1).some((s) => !real(s, k))) { missing++; continue; }
       sum += w(i, nx) * w(j, ny) * v;
+      if (coarse && i % 2 === 0 && j % 2 === 0) sum2 += w(i / 2, nx2) * w(j / 2, ny2) * v;
     }
-    return { v: sum * hx * hy / 9, missing };
+    const v = sum * hx * hy / 9, v2 = sum2 * hx * hy * 4 / 9, scale = Math.max(Math.abs(v), 1e-300);
+    // (the error of the finer rule: about a fifteenth of the difference for a smooth integrand, a
+    // third for a kink, all of it with points left out; checked on the samples against exact values)
+    const err = Math.abs(v - v2) / scale / (missing ? 1 : smooth ? 15 : 3);
+    const digits = !coarse ? 8 : err <= 1e-9 ? 8 : Math.max(2, Math.min(8, Math.round(-Math.log10(err))));
+    return { v, missing, digits };
   }
   const fmtV = (v) => (+(+v).toPrecision(10)).toLocaleString('en-US', { maximumSignificantDigits: 10 });
   // the exact value when it agrees with the numeric one, else the numeric one: { text, exact, v }
@@ -4268,16 +4374,186 @@
   }
   const shownValue = (val) => (val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text);
 
-  // the length of the curve of f from a to b: ∫ √(1 + f′²) dx
-  async function curveLength(f, a, b) {
-    const L = recipSqrt(await symText(`√(1 + (diff(${f}, x))^2)`));
-    if (!L) return null;
-    const ex = await exactIntegral(`integrate(${L}, ${a}, ${b})`);
-    const num = await tsIntegral(L, a, b);
-    return bestValue(ex, num);
+  // ------------------------- only where the functions have real values (1.9.3)
+  // A range (2D) or a region (3D) can reach where a function has no real value: √(4 − x²) beyond
+  // ±2, ln(x) below 0. Until 1.9.2 the engine then integrated complex numbers there: abs() made
+  // them a wrong size (the area of the sample "Circle" from −2.6 to 2.6 was 12.83, not 4π), and
+  // the length could not be found. Whether a value is real is told by the functions themselves,
+  // not by the integrand (abs(f − g) and √(1 + f′²) can be real where f is not). The engine samples
+  // them (its sampler finds the edge of the real values to about the precision of a double); a run
+  // of values that are not real cuts the range, a pole (1/x at 0) does not: the imaginary part in
+  // the middle of the run tells them apart. Each edge is narrowed down to about 13 digits and taken
+  // exactly when a simple number lies there (2, 0, 3/2, π/2, √5).
+
+  // the simplest number in [lo, hi] (0, an integer, p/q, a multiple of π or of a square root): { v, text }, or null
+  function simpleIn(lo, hi) {
+    if (!(lo <= hi) || hi - lo > 1e-9 * Math.max(1, Math.abs(lo), Math.abs(hi))) return null;
+    const mid = (lo + hi) / 2, inside = (v) => v >= lo && v <= hi;
+    const sign = (v) => (v < 0 ? '−' : '');
+    if (inside(0)) return { v: 0, text: '0' };
+    for (let q = 1; q <= 12; q++) {
+      const p = Math.round(mid * q);
+      if (p && Math.abs(p) <= 1e6 && inside(p / q)) return { v: p / q, text: sign(p) + Math.abs(p) + (q === 1 ? '' : '/' + q) };
+    }
+    for (let q = 1; q <= 12; q++) {
+      const p = Math.round(mid * q / Math.PI);
+      if (p && Math.abs(p) <= 1000 && inside(p * Math.PI / q)) return { v: p * Math.PI / q, text: sign(p) + (Math.abs(p) === 1 ? '' : Math.abs(p)) + 'π' + (q === 1 ? '' : '/' + q) };
+    }
+    for (let n = 2; n <= 99; n++) {
+      if (Number.isInteger(Math.sqrt(n))) continue;
+      for (let q = 1; q <= 4; q++) {
+        const p = Math.round(mid * q / Math.sqrt(n));
+        if (p && Math.abs(p) <= 20 && inside(p * Math.sqrt(n) / q)) return { v: p * Math.sqrt(n) / q, text: sign(p) + (Math.abs(p) === 1 ? '' : Math.abs(p)) + '√(' + n + ')' + (q === 1 ? '' : '/' + q) };
+      }
+    }
+    return null;
+  }
+  // the values of the functions es (in x) sampled by the engine on a..b: for each, [[x, real?]], or null
+  async function realSamples(es, a, b, steps) {
+    const r = await Bridge.send('plot', { exprs: es, min: String(a), max: String(b), steps: steps || 400, var: 'x', opts: iOpts({ complex: 'rect' }), timeout: 8000 });
+    if (!r.ok || !Array.isArray(r.series) || r.series.length !== es.length) return null;
+    return r.series.map((s) => s.x.map((x, i) => [x, s.y[i] !== null && s.y[i] !== undefined]));
+  }
+  // true when e (in x) has a value with an imaginary part at x = t; false at a pole (1/x at 0, ln(x) at 0)
+  async function nonRealAt(e, t) {
+    const r = await Bridge.send('calc', { expr: `im(${subXY(e, '(' + t + ')', 'y')})`, opts: iOpts({ approx: 'approx', precision: 12, complex: 'rect' }), timeout: 1500 });
+    const v = r.ok && r.result && !(r.messages || []).some((m) => m.type === 'error') ? Number(numberPart(r.result)) : NaN;
+    return isFinite(v) && Math.abs(v) > 1e-9;
+  }
+  // where e stops having real values, between xn (not real) and xr (real): { v, text } (the text
+  // is exact when a simple number lies there, else the number on the real side)
+  async function realEdge(e, xn, xr) {
+    for (let round = 0; round < 10; round++) {
+      if (Math.abs(xr - xn) <= 1e-13 * Math.max(1, Math.abs(xr))) break;
+      const s = await realSamples([e], engineNum(Math.min(xn, xr)), engineNum(Math.max(xn, xr)), 40);
+      if (!s) break;
+      const pts = s[0];
+      let k = -1;
+      if (xn < xr) { for (let i = 0; i < pts.length; i++) if (!pts[i][1]) k = i; } // the last point that is not real
+      else { for (let i = pts.length - 1; i >= 0; i--) if (!pts[i][1]) k = i; } // the first one
+      const j = xn < xr ? k + 1 : k - 1;
+      if (k < 0 || j < 0 || j >= pts.length || !pts[j][1]) break;
+      if (pts[k][0] === xn && pts[j][0] === xr) break; // no closer
+      xn = pts[k][0]; xr = pts[j][0];
+    }
+    return simpleIn(Math.min(xn, xr), Math.max(xn, xr)) || { v: xr, text: engineNum(xr) };
+  }
+  // the parts of lo..hi (texts a, b) where e is real, from its samples pts: [{ lo, hi, a, b }].
+  // exact: the edges are narrowed down and made exact (else they are those of the samples, and a
+  // run of one point counts as a pole without asking the engine)
+  async function realIntervals(e, pts, lo, hi, a, b, exact) {
+    const runs = [];
+    for (let i = 0; i < pts.length; i++) {
+      if (pts[i][1]) continue;
+      let j = i;
+      while (j + 1 < pts.length && !pts[j + 1][1]) j++;
+      runs.push([i, j]);
+      i = j;
+    }
+    if (!runs.length) return [{ lo, hi, a, b }];
+    const cuts = [];
+    for (const [i, j] of runs.slice(0, 16)) {
+      if (exact ? await nonRealAt(e, engineNum(pts[(i + j) >> 1][0])) : j > i || i === 0 || j === pts.length - 1) cuts.push([i, j]);
+    }
+    for (const r of runs.slice(16)) cuts.push(r);
+    const edge = async (n, k) => (exact ? realEdge(e, pts[n][0], pts[k][0]) : { v: pts[k][0], text: engineNum(pts[k][0]) });
+    const out = [];
+    let start = { v: lo, text: a };
+    for (const [i, j] of cuts) {
+      if (i > 0 && start) { const end = await edge(i, i - 1); out.push({ lo: start.v, hi: end.v, a: start.text, b: end.text }); }
+      start = j + 1 < pts.length ? await edge(j, j + 1) : null;
+    }
+    if (start) out.push({ lo: start.v, hi, a: start.text, b });
+    return out.filter((p) => p.hi > p.lo);
+  }
+  // the parts that two lists of parts have in common
+  function intersectParts(A, B) {
+    const out = [];
+    for (const p of A) for (const q of B) {
+      const lo = Math.max(p.lo, q.lo), hi = Math.min(p.hi, q.hi);
+      if (hi > lo) out.push({ lo, hi, a: p.lo >= q.lo ? p.a : q.a, b: p.hi <= q.hi ? p.b : q.b });
+    }
+    return out.sort((x, y) => x.lo - y.lo);
+  }
+  // the parts of the range a..b (lo < hi as numbers) where all the functions es are real:
+  // { parts, clipped } (no parts: no real value at all), or null when it cannot be told
+  // (kept for the same functions and range: the area, the length and the range to start with ask alike)
+  const realPartsCache = new Map();
+  async function realParts(es, a, b, lo, hi) {
+    const key = JSON.stringify([es, a, b, iOpts()]);
+    if (realPartsCache.has(key)) return realPartsCache.get(key);
+    const s = await realSamples(es, a, b, 400);
+    if (!s) return null;
+    let parts = [{ lo, hi, a, b }];
+    for (let i = 0; i < es.length; i++) parts = intersectParts(parts, await realIntervals(es[i], s[i], lo, hi, a, b, true));
+    const res = { parts, clipped: !(parts.length === 1 && parts[0].lo === lo && parts[0].hi === hi) };
+    realPartsCache.set(key, res);
+    if (realPartsCache.size > 50) realPartsCache.delete(realPartsCache.keys().next().value);
+    return res;
+  }
+  // the range a..b as numbers, smaller first, with the texts in the same order: { lo, hi, a, b }, or null
+  async function rangeNums(a, b) {
+    const lim = await Bridge.send('calc', { expr: `[${a}, ${b}]`, opts: Object.assign(engineOpts(), { approx: 'approx', precision: 15, grouping: false }), timeout: 1500 });
+    const nums = lim.ok && lim.result ? (parseMatrix(numberPartVec(lim.result)) || { rows: [[]] }).rows[0].map((x) => Number(x.replace(/−/g, '-'))) : [];
+    if (nums.length !== 2 || !nums.every(isFinite) || nums[0] === nums[1]) return null;
+    return nums[0] < nums[1] ? { lo: nums[0], hi: nums[1], a, b } : { lo: nums[1], hi: nums[0], a: b, b: a };
+  }
+  // "x from −2 to 2", "x from 0 to 2.5 and from 3 to 4" for a note
+  const partsText = (parts) => parts.slice(0, 3).map((p) => p.a + tr(' to ', ' 〜 ', ' a ') + p.b).join(tr(' and ', '、', ' y ')) + (parts.length > 3 ? '…' : '');
+  const realNote = (two, parts) => tr((two ? 'Only where both functions have real values: x from ' : 'Only where the function has real values: x from ') + partsText(parts),
+    (two ? '2 つの関数に実数の値がある x = ' : '関数に実数の値がある x = ') + partsText(parts) + ' の部分だけで計算しました',
+    (two ? 'Solo donde ambas funciones tienen valores reales: x de ' : 'Solo donde la función tiene valores reales: x de ') + partsText(parts));
+  const noRealText = () => tr('There are no real values between a and b', 'a と b の間に実数の値がありません', 'No hay valores reales entre a y b');
+  const infiniteText = () => tr('The length is infinite in this range (the curve goes to infinity)', 'この範囲では長さが無限大です（曲線が無限に伸びています）', 'La longitud es infinita en este rango (la curva va al infinito)');
+
+  // an expression worked out, with the points the engine names as "x != …" in its warnings (where
+  // it divides by zero: the ends of a circle, the corner of the heart at 0): { text, points }, or null
+  // (worked out exactly: with the setting "auto" the derivative of the heart's lower half came with
+  // 10-digit decimals, 1 − 0.7071067812 × √(|x|), which is not real a little before x = 2)
+  async function symInfo(expr) {
+    let r = await Bridge.send('calc', { expr, opts: iOpts({ approx: 'exact' }), timeout: 4000 });
+    const bad = (q) => !q.ok || !q.result || q.timeout || (q.messages || []).some((m) => m.type === 'error');
+    if (bad(r)) r = await Bridge.send('calc', { expr, opts: iOpts(), timeout: 4000 });
+    if (bad(r)) return null;
+    const text = r.result.split(' ≈ ')[0].trim();
+    if (/integrate|∫|diff\(|=/.test(text)) return null;
+    const points = [];
+    for (const m of r.messages || []) {
+      const k = /must be true:\s*(.*?)\.?\s*$/.exec(m.text || '');
+      if (k) for (const c of k[1].split(' and ')) { const q = /^x\s*(?:!=|≠)\s*(.+)$/.exec(c.trim()); if (q) points.push(q[1].trim()); }
+    }
+    return { text, points };
+  }
+  // the length of the curve of f from a to b: ∫ √(1 + f′²) dx. 1.9.3: cut at the points inside the
+  // range where √(1 + f′²) is infinite (the rule needs a smooth integrand inside: the heart has a
+  // corner at x = 0); { inf: true } when the length is infinite
+  async function curveLength(f, a, b, lo, hi) {
+    const s = await symInfo(`√(1 + (diff(${f}, x))^2)`);
+    if (!s) return null;
+    const L = recipSqrt(s.text);
+    const cuts = [];
+    if (isFinite(lo) && isFinite(hi)) {
+      for (const p of new Set(s.points)) {
+        const v = await numValue(p);
+        if (!(v > lo + (hi - lo) * 1e-12 && v < hi - (hi - lo) * 1e-12) || cuts.some((c) => Math.abs(c.v - v) < 1e-12 * Math.max(1, Math.abs(v)))) continue;
+        cuts.push({ v, text: /^[−-]?\d+(\.\d+)?$/.test(p) ? (niceNumber(v) || p) : p });
+      }
+      cuts.sort((x, y) => x.v - y.v);
+    }
+    const bounds = [a].concat(cuts.map((c) => c.text), [b]), pieces = [];
+    for (let i = 0; i + 1 < bounds.length; i++) {
+      const num = await tsIntegral(L, bounds[i], bounds[i + 1]);
+      if (num && num.inf) return { inf: true };
+      const ex = await exactIntegral(`integrate(${L}, ${bounds[i]}, ${bounds[i + 1]})`, cuts.length ? 3000 : 6000);
+      const val = bestValue(ex, num ? num.v : NaN, num ? num.digits : 10);
+      if (!val) return null;
+      pieces.push(val);
+    }
+    return sumValues(pieces);
   }
   // 2D: the length of the curve, or the perimeter of the region between two functions (both curves
-  // and the vertical sides at a and b, which are 0 when the curves meet there, as for a circle)
+  // and the vertical sides at a and b, which are 0 when the curves meet there, as for a circle).
+  // 1.9.3: only where the functions have real values (on each such part of the range)
   async function computeLength() {
     const U = P.areaUI, f = P.series[Number(U.f1.value)];
     if (!f) return;
@@ -4285,21 +4561,48 @@
     if (!a || !b) { U.len.textContent = tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'); return; }
     const g = areaG();
     U.len.textContent = tr('Calculating…', '計算中…');
-    const lf = await curveLength(f.expr, a, b);
-    if (!lf) { U.len.textContent = tr('Could not calculate the length', '長さを計算できませんでした'); return; }
+    const fail = (text) => { U.len.textContent = text || tr('Could not calculate the length', '長さを計算できませんでした'); };
+    const rn = await rangeNums(a, b);
+    let parts = [{ a, b, lo: NaN, hi: NaN }], clipped = false;
+    if (rn) {
+      parts = [rn];
+      const rp = await realParts(g ? [f.expr, g.expr] : [f.expr], rn.a, rn.b, rn.lo, rn.hi);
+      if (rp && !rp.parts.length) return fail(noRealText());
+      if (rp) { parts = rp.parts; clipped = rp.clipped; }
+    }
+    const lfs = [], lgs = [], sides = [];
+    for (const p of parts) {
+      const lf = await curveLength(f.expr, p.a, p.b, p.lo, p.hi);
+      if (!lf || lf.inf) return fail(lf && infiniteText());
+      lfs.push(lf);
+      if (!g) continue;
+      const lg = await curveLength(g.expr, p.a, p.b, p.lo, p.hi);
+      if (!lg || lg.inf) return fail(lg && infiniteText());
+      lgs.push(lg);
+      for (const x of [p.a, p.b]) {
+        const e = subXY(`abs((${f.expr}) − (${g.expr}))`, '(' + x + ')', 'y');
+        const n = await numValue(e);
+        if (!isFinite(n)) {
+          const t = await Bridge.send('calc', { expr: e, opts: iOpts({ approx: 'approx', precision: 12 }), timeout: 1500 });
+          if (t.ok && /∞/.test(t.result || '')) return fail(infiniteText());
+          return fail();
+        }
+        const side = bestValue(await exactIntegral(e, 3000), n);
+        if (side && Math.abs(side.v) > 1e-12) sides.push(side);
+      }
+    }
+    const lf = await sumValues(lfs);
     const onGraph = (name, val) => { U.lenShown = true; if (P.area) { P.area.lenText = shortValue(name, val.text); draw(); } };
-    if (!g) { U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + shownValue(lf)); onGraph(tr('Length', '長さ'), lf); return; }
-    const lg = await curveLength(g.expr, a, b);
-    if (!lg) { U.len.textContent = tr('Could not calculate the length', '長さを計算できませんでした'); return; }
-    const side = async (x) => bestValue(await exactIntegral(`abs((${f.expr}) − (${g.expr})) where x = ${x}`, 3000), await numValue(`abs((${f.expr}) − (${g.expr})) where x = ${x}`));
-    const sa = await side(a), sb = await side(b);
-    const parts = [lf, lg].concat([sa, sb].filter((p) => p && Math.abs(p.v) > 1e-12));
-    const total = await sumValues(parts);
+    const note = () => { if (clipped) U.len.append(el('div', { class: 'form-hint', text: realNote(!!g, parts) })); };
+    if (!g) { U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + shownValue(lf)); note(); onGraph(tr('Length', '長さ'), lf); return; }
+    const lg = await sumValues(lgs);
+    const total = await sumValues(lfs.concat(lgs, sides));
     U.len.textContent = '';
     showResult(U.len, tr('Perimeter ', '周の長さ ') + shownValue(total));
     onGraph(tr('Perimeter', '周の長さ'), total);
     U.len.append(el('div', { class: 'form-hint', text: tr('Curves: ', '曲線：') + shownValue(lf).replace(/^= /, '') + ' + ' + shownValue(lg).replace(/^= /, '') +
-      (parts.length > 2 ? tr(', with the vertical sides at a and b', '、a と b の縦の辺を含む') : '') }));
+      (sides.length ? tr(', with the vertical sides at a and b', '、a と b の縦の辺を含む') : '') }));
+    note();
   }
 
   // ------------------------------------------------------ area (2D graph)
@@ -4411,6 +4714,28 @@
     if (!f) return;
     const pts = await findCrossings(f, g);
     if (seq !== U.pairSeq || U.f1.value !== String(P.series.indexOf(f))) return; // changed in the meantime
+    // 1.9.3: the part of the range on the screen where the functions have real values. Where both
+    // stop together at the same height (the two halves of a circle at ±2), the curves meet without
+    // crossing: that point is a crossing point too, and the range to start with is the part with
+    // real values (until 1.9.2 it was the whole range on the screen: −2.6 to 2.6 for the circle)
+    let real = null, view = null;
+    if (P.dataX) {
+      // the part of the graph on the screen (the values reach further than the screen after moving it)
+      const v = P.view || {}, lo = Math.max(P.dataX[0], isFinite(v.x0) ? v.x0 : -Infinity), hi = Math.min(P.dataX[1], isFinite(v.x1) ? v.x1 : Infinity);
+      view = { lo: +lo.toPrecision(6), hi: +hi.toPrecision(6) };
+      if (view.hi > view.lo) real = await realParts(g ? [f.expr, g.expr] : [f.expr], engineNum(view.lo), engineNum(view.hi), view.lo, view.hi);
+      if (seq !== U.pairSeq || U.f1.value !== String(P.series.indexOf(f))) return;
+      if (real && real.clipped) {
+        const span = P.view ? Math.abs(P.view.y1 - P.view.y0) : 1;
+        for (const p of real.parts) for (const [x, t] of [[p.lo, p.a], [p.hi, p.b]]) {
+          if (x <= view.lo || x >= view.hi || pts.some((c) => Math.abs(c.x - x) < 1e-9 * Math.max(1, Math.abs(x)))) continue;
+          const dv = await numValue(subXY(`abs((${f.expr}) − (${g ? g.expr : '0'}))`, '(' + t + ')', 'y'));
+          if (isFinite(dv) && dv <= 1e-9 * Math.max(1, span)) pts.push({ x, text: t });
+        }
+        pts.sort((p, q) => p.x - q.x);
+        if (seq !== U.pairSeq || U.f1.value !== String(P.series.indexOf(f))) return;
+      }
+    }
     P.areaCross = pts;
     if (pts.length) {
       U.cross.append(el('span', { class: 'area-lbl', text: tr('Crossing points: ', '交点：') + pts.map((p) => short(p.x)).join(', ') }));
@@ -4421,13 +4746,11 @@
       for (let i = 0; i + 1 < pts.length && i < 6; i++) range(i, i + 1);
       if (pts.length > 2) range(0, pts.length - 1);
     }
-    // the range to start with: from the first to the last crossing point, or the drawn range
+    // the range to start with: from the first to the last crossing point, else the part of the
+    // drawn range where the functions have real values
     if (pts.length >= 2) { U.a.value = pts[0].text; U.b.value = pts[pts.length - 1].text; }
-    else if (P.dataX) {
-      // the part of the graph on the screen (the values reach further than the screen after moving it)
-      const v = P.view || {}, lo = Math.max(P.dataX[0], isFinite(v.x0) ? v.x0 : -Infinity), hi = Math.min(P.dataX[1], isFinite(v.x1) ? v.x1 : Infinity);
-      U.a.value = String(+lo.toPrecision(6)); U.b.value = String(+hi.toPrecision(6));
-    }
+    else if (real && real.clipped && real.parts.length) { U.a.value = real.parts[0].a; U.b.value = real.parts[real.parts.length - 1].b; }
+    else if (view) { U.a.value = String(view.lo); U.b.value = String(view.hi); }
     if (auto) await computeArea(true);
   }
   // An edge of the shaded area was dragged (setupPlotGestures): a or b follows it. When the finger
@@ -4529,16 +4852,31 @@
     // f − g keeps its sign between crossing points: the area is the sum of |∫(f − g)| over those
     // pieces, which the engine can often give exactly (with abs() inside it often cannot)
     const d = g ? `(${f.expr}) − (${g.expr})` : f.expr;
-    let cuts = [];
-    if (nums.length === 2 && nums.every(isFinite) && P.areaCross) {
-      const lo = Math.min(nums[0], nums[1]), hi = Math.max(nums[0], nums[1]), eps = (hi - lo) * 1e-9;
-      cuts = P.areaCross.filter((p) => p.x > lo + eps && p.x < hi - eps).map((p) => p.text);
-      if (nums[0] > nums[1]) cuts.reverse();
+    // 1.9.3: only where the functions have real values (the parts of a..b)
+    let real = null;
+    if (nums.length === 2 && nums.every(isFinite) && nums[0] !== nums[1]) {
+      const lo = Math.min(nums[0], nums[1]), hi = Math.max(nums[0], nums[1]);
+      real = await realParts(g ? [f.expr, g.expr] : [f.expr], nums[0] < nums[1] ? a : b, nums[0] < nums[1] ? b : a, lo, hi);
+      if (real && !real.parts.length) { U.out.textContent = noRealText(); P.area = null; draw(); return; }
+      if (real && !real.clipped) real = null;
     }
-    const bounds = [a].concat(cuts, [b]);
     const pieces = [];
-    for (let i = 0; i + 1 < bounds.length; i++) pieces.push(`abs(integrate(${d}, ${bounds[i]}, ${bounds[i + 1]}))`);
-    const expr = pieces.length <= 8 ? pieces.join(' + ') : `integrate(abs(${d}), ${a}, ${b})`;
+    const crossIn = (lo, hi) => { const eps = (hi - lo) * 1e-9; return (P.areaCross || []).filter((p) => p.x > lo + eps && p.x < hi - eps).map((p) => p.text); };
+    if (real) {
+      for (const p of real.parts) {
+        const bounds = [p.a].concat(crossIn(p.lo, p.hi), [p.b]);
+        for (let i = 0; i + 1 < bounds.length; i++) pieces.push(`abs(integrate(${d}, ${bounds[i]}, ${bounds[i + 1]}))`);
+      }
+    } else {
+      let cuts = [];
+      if (nums.length === 2 && nums.every(isFinite) && P.areaCross) {
+        cuts = crossIn(Math.min(nums[0], nums[1]), Math.max(nums[0], nums[1]));
+        if (nums[0] > nums[1]) cuts.reverse();
+      }
+      const bounds = [a].concat(cuts, [b]);
+      for (let i = 0; i + 1 < bounds.length; i++) pieces.push(`abs(integrate(${d}, ${bounds[i]}, ${bounds[i + 1]}))`);
+    }
+    const expr = pieces.length <= 8 ? pieces.join(' + ') : real ? real.parts.map((p) => `integrate(abs(${d}), ${p.a}, ${p.b})`).join(' + ') : `integrate(abs(${d}), ${a}, ${b})`;
     const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: auto ? Math.min(5000, timeLimit() * 1000) : timeLimit() * 1000 });
     const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
     // a result the engine could not integrate exactly still has its approximate value after ≈
@@ -4551,6 +4889,7 @@
     }
     U.out.textContent = '';
     showResult(U.out, tr('Area ', '面積 ') + (r.result.indexOf('≈ ') === 0 ? r.result : resultText(r)));
+    if (real) U.out.append(el('div', { class: 'form-hint', text: realNote(!!g, real.parts) }));
     P.areaExpr = expr;
     U.ins.hidden = false;
     if (nums.length === 2 && nums.every(isFinite)) {
@@ -4775,24 +5114,118 @@
     const disk = U.region === 'disk', R = normalizeExpr(U.R.value);
     if (disk && !R) { U.out.textContent = tr('Enter the radius R', '半径 R を入れてください'); return null; }
     const [x0, x1, y0, y1] = Q3.range.map((v, i) => v || ['-5', '5', '-5', '5'][i]);
-    return { U, f, g, disk, R, x0, x1, y0, y1 };
+    return { U, f, g, disk, R, x0, x1, y0, y1, es: g ? [f.expr, g.expr] : [f.expr] };
+  }
+  // 1.9.3: the part of the region where the surfaces have real values. The sample "Doughnut" has
+  // real values only on a ring: until 1.9.2 the points without them were counted all the same
+  // (abs(f − g) and √(1 + f_x² + f_y²) can be real there), and its volume was 76.85, not 4π². The
+  // grid of the graph tells whether a surface lacks real values somewhere in the region. Then the
+  // surfaces are read along 16 rays from the origin: when every ray has the same parts with real
+  // values, they are rings (or a disk) around the origin, and those rings are measured in polar
+  // coordinates, between radii found exactly along the x axis. Else a rectangle counts only the
+  // points where the surfaces are real (about 4 digits), and a disk is not measured.
+  // Returns null (the region as it is), { rings, note }, { mask: true } or { error }.
+  const realRegionCache = new Map();
+  async function realRegion(S) {
+    const key = JSON.stringify([S.es, S.disk, S.disk ? S.R : [S.x0, S.x1, S.y0, S.y1], iOpts()]);
+    if (realRegionCache.has(key)) return realRegionCache.get(key);
+    const res = await findRealRegion(S);
+    if (res === undefined) return null; // (the engine did not answer: not kept)
+    realRegionCache.set(key, res);
+    if (realRegionCache.size > 50) realRegionCache.delete(realRegionCache.keys().next().value);
+    return res;
+  }
+  async function findRealRegion(S) {
+    const D = Q3.data, es = S.es, zs = [S.f.z].concat(S.g ? [S.g.z] : []);
+    const X0 = D.xs[0], X1 = D.xs[D.nx - 1], Y0 = D.ys[0], Y1 = D.ys[D.ny - 1];
+    const inner = Math.min(-X0, X1, -Y0, Y1); // the largest disk around the origin in the grid (≤ 0: the origin is outside)
+    let R = NaN;
+    if (S.disk) { R = Number(S.R); if (!isFinite(R)) R = await numValue(S.R); if (!(R > 0)) return null; }
+    if (!S.disk || R <= inner) {
+      let gap = false;
+      for (let j = 0; j < D.ny && !gap; j++) for (let i = 0; i < D.nx; i++) {
+        if (S.disk && D.xs[i] * D.xs[i] + D.ys[j] * D.ys[j] > R * R) continue;
+        const k = j * D.nx + i;
+        if (zs.some((z) => !(z[k] === z[k]))) { gap = true; break; }
+      }
+      if (!gap) return null;
+    }
+    const rmax = S.disk ? R : Math.sqrt(Math.max(X0 * X0, X1 * X1) + Math.max(Y0 * Y0, Y1 * Y1)), rmaxText = S.disk ? S.R : engineNum(rmax);
+    const one = es.length === 1;
+    const ringsText = (rings) => rings.map((p) => (p.lo === 0 ? 'r ≤ ' + p.b : p.a + ' ≤ r ≤ ' + p.b)).join(tr(' and ', '、', ' y '));
+    const fit = (rings) => ({ rings, note: tr((one ? 'Only where the surface has real values: ' : 'Only where both surfaces have real values: ') + ringsText(rings) + ' (r = √(x² + y²))',
+      (one ? '曲面に実数の値がある ' : '2 つの曲面に実数の値がある ') + ringsText(rings) + ' の部分だけで計算しました（r = √(x² + y²)）',
+      (one ? 'Solo donde la superficie tiene valores reales: ' : 'Solo donde ambas superficies tienen valores reales: ') + ringsText(rings) + ' (r = √(x² + y²))') });
+    const notRound = () => (S.disk ? { error: tr('The surfaces have no real values in part of this disk: choose a smaller radius R, or the rectangle', '曲面に実数の値がない部分がこの円の中にあります。半径 R を小さくするか、長方形を選んでください',
+      'Las superficies no tienen valores reales en parte de este disco: elige un radio R más pequeño, o el rectángulo') } : { mask: true });
+    // 16 rays: r from 0 to the edge of the disk or to the farthest corner of the rectangle
+    const K = 16, exprs = [];
+    for (let k = 0; k < K; k++) {
+      const [c, s] = k % 4 === 0 ? [['1', '0'], ['0', '1'], ['−1', '0'], ['0', '−1']][k / 4] : [engineNum(Math.cos(2 * Math.PI * k / K)), engineNum(Math.sin(2 * Math.PI * k / K))];
+      for (const e of es) exprs.push(subXY(e, `x × (${c})`, `x × (${s})`));
+    }
+    const pts = [];
+    for (let i = 0; i < exprs.length; i += 12) {
+      const s = await realSamples(exprs.slice(i, i + 12), '0', rmaxText, 300);
+      if (!s) return undefined;
+      pts.push(...s);
+    }
+    const rays = [];
+    for (let k = 0; k < K; k++) {
+      let parts = [{ lo: 0, hi: rmax, a: '0', b: rmaxText }];
+      for (let m = 0; m < es.length; m++) parts = intersectParts(parts, await realIntervals(exprs[k * es.length + m], pts[k * es.length + m], 0, rmax, '0', rmaxText, false));
+      rays.push(parts);
+    }
+    const tol = 2.5 * rmax / 300;
+    const round = rays.every((p) => p.length === rays[0].length && p.every((q, i) => Math.abs(q.lo - rays[0][i].lo) <= tol && Math.abs(q.hi - rays[0][i].hi) <= tol));
+    if (!round) return notRound();
+    // the radii, exactly, along the x axis (y = 0, r = x)
+    const e0 = es.map((e) => subXY(e, 'x', '0'));
+    const s0 = await realSamples(e0, '0', rmaxText, 400);
+    if (!s0) return undefined;
+    let rings = [{ lo: 0, hi: rmax, a: '0', b: rmaxText }];
+    for (let m = 0; m < es.length; m++) rings = intersectParts(rings, await realIntervals(e0[m], s0[m], 0, rmax, '0', rmaxText, true));
+    if (!rings.length) return { error: tr('The surfaces have no real values in this region', 'この範囲では曲面に実数の値がありません', 'Las superficies no tienen valores reales en esta región') };
+    if (rings.length === 1 && rings[0].lo === 0 && rings[0].hi === rmax) return null; // real on every ray (the gaps of the grid are poles)
+    if (rings.length !== rays[0].length) return notRound();
+    if (S.disk) return fit(rings);
+    // a rectangle: the rings must lie in it
+    const last = rings[rings.length - 1];
+    return last.hi < rmax && last.hi <= inner * (1 + 1e-12) ? fit(rings) : notRound();
+  }
+  // true when f − g (or f) takes both signs at the points of the drawn grid (1.9.3)
+  function signChanges(S) {
+    const f = S.f.z, g = S.g ? S.g.z : null;
+    let pos = false, neg = false;
+    for (let k = 0; k < f.length && !(pos && neg); k++) {
+      const v = f[k] - (g ? g[k] : 0);
+      if (v > 0) pos = true; else if (v < 0) neg = true;
+    }
+    return pos && neg;
   }
   const polar = (e) => subXY(e, '\\r cos(\\θ)', '\\r sin(\\θ)');
   // ∬ F over the region: the exact double integral (as text), its value if the engine finds it, the numeric value
-  // ∬ F over the region as an expression for the engine (polar coordinates for a disk)
+  // ∬ F over the region as an expression for the engine (polar coordinates for a disk or rings)
   function regionExpr(S, exprF) {
     const turn = fullTurn();
-    return S.disk ? `integrate(integrate((${polar(exprF)}) × \\r, 0, ${S.R}, \\r), 0, ${turn}, \\θ)` + (turn === '2π' ? '' : ` × 2π/${turn}`)
-      : `integrate(integrate(${exprF}, ${S.x0}, ${S.x1}, x), ${S.y0}, ${S.y1}, y)`;
+    const ring = (r0, r1) => `integrate(integrate((${polar(exprF)}) × \\r, ${r0}, ${r1}, \\r), 0, ${turn}, \\θ)` + (turn === '2π' ? '' : ` × 2π/${turn}`);
+    if (S.real && S.real.rings) return S.real.rings.map((p) => ring(p.a, p.b)).join(' + ');
+    return S.disk ? ring(0, S.R) : `integrate(integrate(${exprF}, ${S.x0}, ${S.x1}, x), ${S.y0}, ${S.y1}, y)`;
   }
   // its numeric value: { num, missing } (Simpson's rule on 101 × 101 points for a rectangle: about
   // 8 correct digits for a smooth surface)
-  async function regionNumeric(S, F) {
-    if (S.disk) return { num: await tsDisk(F, S.R), missing: 0 };
-    const r = await simpsonRect(F, S.x0, S.x1, S.y0, S.y1);
-    return { num: r.v, missing: r.missing };
+  async function regionNumeric(S, F, smooth) {
+    if (S.real && S.real.rings) {
+      let t = 0, digits = 10;
+      for (const p of S.real.rings) { const r = await tsAnnulus(F, p.a, p.b); t += r.v; digits = Math.min(digits, r.digits); }
+      return { num: t, missing: 0, digits };
+    }
+    if (S.disk) { const r = await tsDisk(F, S.R); return { num: r.v, missing: 0, digits: r.digits }; }
+    const r = await simpsonRect(F, S.x0, S.x1, S.y0, S.y1, S.real && S.real.mask ? S.es : null, smooth);
+    return { num: r.v, missing: r.missing, digits: r.digits };
   }
-  const regionDigits = (S) => (S.disk ? 10 : 8);
+  // the digits shown: a rectangle with points left out where the surfaces have no real value gives about 4
+  const regionDigits = (S, n) => Math.min(S.disk || (S.real && S.real.rings) ? 10 : 8, (n && n.digits) || 10);
   // the exact value is tried for a few seconds only (some double integrals keep the engine busy).
   // 1.8.2: 3 s for the volume and 2 s for each surface (8 s until 1.8.1). Every exact value of the
   // samples is found in 0.11 s or less on a PC, and a search that finds none uses all the time, so
@@ -4803,10 +5236,12 @@
   // value is looked for
   async function regionIntegral(S, F, signedF, early) {
     const ix = regionExpr(S, signedF || F);
-    const n = await regionNumeric(S, F);
-    if (early) early(bestValue(null, n.num, regionDigits(S)), n.missing);
-    const ex = await regionExact(S, signedF ? `abs(${ix})` : ix);
-    return { expr: ix, val: bestValue(ex, n.num, regionDigits(S)), missing: n.missing };
+    // (abs(f − g) is smooth unless f − g takes both signs in the region: then it has a kink where it is 0)
+    const n = await regionNumeric(S, F, !(signedF && signChanges(S)));
+    if (early) early(bestValue(null, n.num, regionDigits(S, n)), n.missing);
+    // (with points left out, the exact integral over the whole rectangle would count them: not asked for)
+    const ex = S.real && S.real.mask ? null : await regionExact(S, signedF ? `abs(${ix})` : ix);
+    return { expr: ix, val: bestValue(ex, n.num, regionDigits(S, n)), missing: n.missing };
   }
   // a value shown before the exact one has been looked for: "about 39.939589 (checking…)"
   const aboutValue = (name, val) => name + tr(' about ', ' 約 ') + val.text.replace(/^≈ /, '') + tr(' (checking for an exact value…)', '（厳密な値を確かめています…）');
@@ -4821,14 +5256,18 @@
     if (seq !== U.seq) return;
     U.out.textContent = tr('Calculating…', '計算中…');
     U.ins.hidden = true;
+    S.real = await realRegion(S);
+    if (seq !== U.seq) return;
+    if (S.real && S.real.error) { U.out.textContent = S.real.error; return; }
     const d = g ? `(${f.expr}) − (${g.expr})` : f.expr;
     const r = await regionIntegral(S, `abs(${d})`, d, (v) => { if (v && seq === U.seq) U.out.textContent = aboutValue(tr('Volume', '体積'), v); });
     if (seq !== U.seq) return;
     if (!r.val) { U.out.textContent = tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
     U.out.textContent = '';
     showResult(U.out, tr('Volume ', '体積 ') + shownValue(r.val));
-    if (r.missing) U.out.append(el('div', { class: 'form-hint', text: tr(`${r.missing} points without a real value were left out (for a round region, choose "Disk")`, `実数の値がない ${r.missing} 点を除いています（丸い範囲なら「円」を選んでください）`,
-      `Se omitieron ${r.missing} puntos sin valor real (para una región redonda, elige "Disco")`) }));
+    if (S.real && S.real.note) U.out.append(el('div', { class: 'form-hint', text: S.real.note }));
+    if (r.missing) U.out.append(el('div', { class: 'form-hint', text: tr(`${r.missing} points without a real value were left out (the value is approximate)`, `実数の値がない ${r.missing} 点を除いています（おおよその値です）`,
+      `Se omitieron ${r.missing} puntos sin valor real (el valor es aproximado)`) }));
     Q3.volExpr = r.expr;
     U.ins.hidden = false;
   }
@@ -4842,26 +5281,41 @@
     const out = append ? el('div', { class: 'area-out' }) : U.out;
     if (append) U.out.append(out); else { U.out.textContent = ''; U.ins.hidden = true; }
     out.textContent = tr('Calculating the surface area…', '表面積を計算中…');
-    const fail = () => { if (seq === U.seq) out.textContent = tr('Could not calculate the surface area', '表面積を計算できませんでした'); };
+    const fail = (text) => { if (seq === U.seq) out.textContent = text || tr('Could not calculate the surface area', '表面積を計算できませんでした'); };
     const parts = [], names = [], items = [];
     let missing = 0;
-    const floor = g ? null : S.disk ? await exactIntegral(`π × (${S.R})^2`, 3000) : await exactIntegral(`abs(((${S.x1}) − (${S.x0})) × ((${S.y1}) − (${S.y0})))`, 3000);
+    S.real = await realRegion(S);
     if (seq !== U.seq) return;
+    if (S.real && S.real.error) { fail(S.real.error); return; }
+    // the floor z = 0 under one surface: the region, or (1.9.3) its part where the surface has real values
+    const rings = S.real && S.real.rings, mask = S.real && S.real.mask;
+    // a surface usually stands upright where its real values end (√(1 − x²) at x = ±1), and the points
+    // of a grid cannot follow that: √(1 − x²) on [−2, 2]² gave 19 for 4π + 8 ≈ 20.57. Not measured.
+    if (mask) {
+      fail(tr('The surface area cannot be measured here: the surfaces end inside the rectangle, where their real values end. Choose a rectangle inside them (or the disk, when they are round)',
+        '表面積はここでは測れません。曲面が長方形の中で終わっています（実数の値がなくなる所）。曲面の内側の長方形（丸い形なら円）を選んでください',
+        'El área superficial no se puede medir aquí: las superficies terminan dentro del rectángulo, donde terminan sus valores reales. Elige un rectángulo dentro de ellas (o el disco, si son redondas)'));
+      return;
+    }
+    const floor = g ? null : rings ? await exactIntegral(rings.map((p) => `π × ((${p.b})^2 − (${p.a})^2)`).join(' + '), 3000)
+      : S.disk ? await exactIntegral(`π × (${S.R})^2`, 3000) : await exactIntegral(`abs(((${S.x1}) − (${S.x0})) × ((${S.y1}) − (${S.y0})))`, 3000);
+    if (seq !== U.seq) return;
+    if (!g && rings && !floor) { fail(); return; }
     // the numeric value of each surface first: their sum is shown while the exact values are looked for
     for (const s1 of g ? [f, g] : [f]) {
       const A = recipSqrt(await symText(`√(1 + (diff(${s1.expr}, x))^2 + (diff(${s1.expr}, y))^2)`));
       if (seq !== U.seq) return;
       if (!A) { fail(); return; }
-      const n = await regionNumeric(S, A);
+      const n = await regionNumeric(S, A, true);
       if (seq !== U.seq) return;
       items.push({ A, n, name: clip(s1.expr, 24) });
     }
     if (items.every((it) => isFinite(it.n.num))) {
       const sum = items.reduce((t, it) => t + it.n.num, floor ? floor.v : 0);
-      out.textContent = aboutValue(tr('Surface area', '表面積'), { text: fmtV(+sum.toPrecision(regionDigits(S))) });
+      out.textContent = aboutValue(tr('Surface area', '表面積'), { text: fmtV(+sum.toPrecision(Math.min(...items.map((it) => regionDigits(S, it.n))))) });
     }
     for (const it of items) {
-      const val = bestValue(await regionExact(S, regionExpr(S, it.A), SURFACE_EXACT_MS), it.n.num, regionDigits(S));
+      const val = bestValue(await regionExact(S, regionExpr(S, it.A), SURFACE_EXACT_MS), it.n.num, regionDigits(S, it.n));
       if (seq !== U.seq) return;
       if (!val) { fail(); return; }
       parts.push(val); names.push(it.name);
@@ -4873,8 +5327,9 @@
     out.textContent = '';
     showResult(out, tr('Surface area ', '表面積 ') + shownValue(total));
     out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
-    if (missing) out.append(el('div', { class: 'form-hint', text: tr(`${missing} points without a real value were left out (for a round region, choose "Disk")`, `実数の値がない ${missing} 点を除いています（丸い範囲なら「円」を選んでください）`,
-      `Se omitieron ${missing} puntos sin valor real (para una región redonda, elige "Disco")`) }));
+    if (S.real && S.real.note && !append) out.append(el('div', { class: 'form-hint', text: S.real.note }));
+    if (missing) out.append(el('div', { class: 'form-hint', text: tr(`${missing} points without a real value were left out (the value is approximate)`, `実数の値がない ${missing} 点を除いています（おおよその値です）`,
+      `Se omitieron ${missing} puntos sin valor real (el valor es aproximado)`) }));
   }
 
   // the functions of a graph: one in each line; a line "sin(x), cos(x)" is two (a "," or ";" outside
@@ -6922,6 +7377,7 @@
   function invalidateCatalogs() {
     callKind.clear();
     exactCache.clear(); // (a name in a kept integral may mean something else now)
+    realRegionCache.clear(); realPartsCache.clear(); // (and a name in a function or a surface)
     refreshDefined(); // (the user's variables may have changed)
     for (const k of Object.keys(catalogs)) delete catalogs[k];
     sugData = null; sugLoading = null; // the suggestions read the lists again when they are needed
