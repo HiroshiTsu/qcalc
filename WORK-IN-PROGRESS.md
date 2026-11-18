@@ -52,6 +52,7 @@
 ## 要判断
 
 - 設計書（design/ の PDF と Claude Docs）の改訂：main に入れる段階が決まったら、その時点の内容でまとめて直す（いつもリリースのときに直しているため）。
+- **署名の付いた merge コミットが 2 つあります**：394f553（feature/shapes-containers）と 5843ce3（feature/revolution 以降）。merge のときに署名を止める指定を付け忘れ、作業環境の署名が付きました（ほかのコミットはすべて署名なし・HiroshiTsu 名義）。消すには履歴の書き換え（force push）が必要なので、そのままにしています。main に入れるときに squash merge にするか、署名なしで作り直したブランチを別名で push するか、ご判断ください（以後の merge・cherry-pick には必ず署名なしの指定を付けています）。
 - 言語の初期設定（feature/default-language）と影（feature/3d-shadow）のブランチは別々に push 済みで、体積の作業は影のブランチの上に積んでいる。言語のブランチはこの積み重ねに入っていない。
 
 ## 選んだことと理由
