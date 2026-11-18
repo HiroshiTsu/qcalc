@@ -41,29 +41,62 @@
       try { localStorage.setItem(k, text); } catch (e) { /* storage full or blocked */ }
     }
   };
-  // The language of the user interface: English (the default), Japanese, Spanish (1.9.0), German,
-  // French, Korean or Traditional Chinese (1.10.0). Only a language the user chose with "Language"
-  // (in the menu or the settings) is kept, as qalc.lang. The language that test builds of 1.3.0 saved
-  // with the other settings (qalc.settings) is not used. Without a choice, the app starts in the
-  // language of the device when it is Spanish, German, French, Korean or Traditional Chinese
-  // (deviceLang), and in English otherwise (also on a device set to Japanese, as before, and on one
-  // set to Simplified Chinese). It is read once when the page starts; choosing another language
-  // reloads the page.
+  // The language of the user interface: English, Japanese, Spanish (1.9.0), German, French, Korean
+  // or Traditional Chinese (1.10.0). From 1.11.0 the app chooses it in one place, Lang.java, which
+  // the page asks once when it starts (QalcNative.startLang); MainActivity uses the same choice for
+  // its own texts. In this order: the language set for QCalc in the system settings (Android 13 and
+  // later), the language the user chose with "Language" (in the menu or the settings, qalc.lang),
+  // the first language in the device's list that the app has (pickLang: Simplified Chinese and the
+  // languages the app does not have are passed over), English. Until 1.10.1 only the first language
+  // of the device was looked at, and Japanese started the app in English (oldDeviceLang); on the
+  // first start of 1.11.0 a user who already has history or settings and no qalc.lang keeps that
+  // language as qalc.lang (once: qalc.langinit). In a browser (no QalcNative) the page makes the
+  // same choice from navigator.languages, without the system settings. The language that test
+  // builds of 1.3.0 saved with the other settings (qalc.settings) is not used. It is read once when
+  // the page starts; choosing another language reloads the page.
   const LANG_NAMES = [['en', 'English'], ['ja', '日本語'], ['es', 'Español'], ['de', 'Deutsch'], ['fr', 'Français'], ['ko', '한국어'], ['zh-TW', '繁體中文']];
   const LANGS = LANG_NAMES.map((l) => l[0]);
-  // the language that a device's language (navigator.language: "es-PE", "de", "zh-Hant-TW" …) starts
-  // the app in: Chinese in Traditional characters (Hant) or of Taiwan, Hong Kong or Macau is zh-TW
-  function deviceLang(tag) {
-    const m = /^([a-z]+)(?:-([a-z0-9]+))?/.exec(String(tag || '').toLowerCase().replace(/_/g, '-'));
-    if (!m) return 'en';
-    if (['es', 'de', 'fr', 'ko'].indexOf(m[1]) >= 0) return m[1];
-    if (m[1] === 'zh' && ['hant', 'tw', 'hk', 'mo'].indexOf(m[2]) >= 0) return 'zh-TW';
+  // the app's language for one language of the device ("es-PE", "de", "zh-Hant-TW" …), or '' when
+  // the app does not have it: Chinese in Traditional characters (Hant) or of Taiwan, Hong Kong or
+  // Macau is zh-TW, Chinese in Simplified characters (Hans, or of China or Singapore) is passed over
+  // (Lang.match in Lang.java, 1.11.0)
+  function langOf(tag) {
+    const p = String(tag || '').replace(/_/g, '-').split('-');
+    const l = p[0].toLowerCase(), rest = p.slice(1);
+    if (l === 'zh') {
+      const script = (rest.find((s) => /^[a-z]{4}$/i.test(s)) || '').toLowerCase();
+      if (script) return script === 'hant' ? 'zh-TW' : '';
+      const region = (rest.find((s) => /^[a-z]{2}$/i.test(s)) || '').toUpperCase();
+      return ['TW', 'HK', 'MO'].indexOf(region) >= 0 ? 'zh-TW' : '';
+    }
+    return ['en', 'ja', 'es', 'de', 'fr', 'ko'].indexOf(l) >= 0 ? l : '';
+  }
+  // the first language of the device's list (navigator.languages) that the app has, else English (Lang.first)
+  function pickLang(tags) {
+    for (const tag of tags || []) { const l = langOf(tag); if (l) return l; }
     return 'en';
   }
+  // the language that versions up to 1.10.1 started in without a choice: only the first language
+  // of the device, and Japanese gave English (Lang.legacy)
+  function oldDeviceLang(tag) {
+    const l = langOf(tag);
+    return l && l !== 'ja' ? l : 'en';
+  }
   const LANG = (() => {
-    const chosen = store.get('qalc.lang', '');
+    // history or settings of an earlier version (Java also looks at its own files)
+    let had = false;
+    try { had = localStorage.getItem('qalc.history') !== null || localStorage.getItem('qalc.settings') !== null; } catch (e) { }
+    if (window.QalcNative && window.QalcNative.startLang) {
+      try { const l = window.QalcNative.startLang(had); if (LANGS.indexOf(l) >= 0) return l; } catch (e) { }
+    }
+    let chosen = store.get('qalc.lang', '');
+    if (!store.get('qalc.langinit', 0)) {
+      store.set('qalc.langinit', 1);
+      if (LANGS.indexOf(chosen) < 0 && had) { chosen = oldDeviceLang(navigator.language); store.set('qalc.lang', chosen); }
+    }
     if (LANGS.indexOf(chosen) >= 0) return chosen;
-    return deviceLang(navigator.language);
+    const list = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
+    return pickLang(list);
   })();
   const JA = LANG === 'ja';
   // The texts of a language other than English and Japanese (i18n-es.js, i18n-de.js … , which
@@ -7911,12 +7944,22 @@
   function setLanguage(lang) {
     if (LANGS.indexOf(lang) < 0) return;
     store.set('qalc.lang', lang); // the user's own choice (see LANG)
+    // on Android 13 and later it becomes the language set for QCalc in the system settings too (1.11.0)
+    try { if (window.QalcNative && window.QalcNative.setLang) window.QalcNative.setLang(lang); } catch (e) { }
     S.lang = lang;
     saveSettings();
     if (lang === LANG) return;
     window.qalcPause(); // the history and the expression being typed
     location.reload();
   }
+  // The app's language changed outside the page (in the system settings, for the device or for
+  // QCalc; MainActivity.onConfigurationChanged, 1.11.0): the page is loaded again in it, keeping the
+  // history and the expression being typed, as when the language is chosen in the app.
+  window.qalcLanguage = function (lang) {
+    if (LANGS.indexOf(lang) < 0 || lang === LANG) return;
+    window.qalcPause();
+    location.reload();
+  };
   async function boot() {
     localizeStatic();
     applyTheme();

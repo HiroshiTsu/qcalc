@@ -3,7 +3,8 @@
 The texts to add in Play Console as a translation: "Grow users" → "Store presence" → "Main store listing"
 → "Manage translations" → add **German – de-DE** and paste the texts below.
 The default language of the listing stays English (listing-en.md). From version 1.10.0 the app itself
-is in German too (it starts in German on a phone set to German).
+is in German too (it starts in German on a phone set to German; from 1.11.0, in the first language in the
+phone's list that it has).
 Limits: app name 30 characters, short description 80, full description 4000.
 The texts were translated by machine (Claude) and have not been checked by a native speaker.
 
@@ -47,7 +48,7 @@ QCalc ist ein Rechner für Android auf der Grundlage von libqalculate, dem Reche
 • Verlauf als CSV-Datei für Tabellenkalkulationen exportieren (QCalc Pro)
 • Vier Tastenseiten (123, Funktionen, Analysis, Matrix) oder die Tastatur deines Handys
 • Helle oder dunkle Darstellung
-• Auf Deutsch, Englisch, Japanisch, Spanisch, Französisch, Koreanisch und traditionellem Chinesisch (Menü → Sprache / Language). Auf einem Handy mit deutscher Spracheinstellung startet die App auf Deutsch
+• Auf Deutsch, Englisch, Japanisch, Spanisch, Französisch, Koreanisch und traditionellem Chinesisch (Menü → Sprache / Language). Die App startet in der Sprache des Handys: der ersten Sprache in seiner Liste, die sie kennt, sonst auf Englisch
 
 Hinweis: Das Dezimaltrennzeichen ist der Punkt (1.5, nicht 1,5).
 

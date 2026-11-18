@@ -1,7 +1,11 @@
 package io.github.hiroshitsu.qcalc;
 
+import android.app.LocaleManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.os.Build;
+import android.os.LocaleList;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -253,7 +257,7 @@ final class Engine {
         env.put("QALCULATE_USER_DIR", userDir().getAbsolutePath());
         env.put("TZ", posixTimeZone());
         env.put("LANG", "C.UTF-8");
-        String currency = localCurrency();
+        String currency = localCurrency(ctx);
         if (currency != null) env.put("QALC_CURRENCY", currency);
         pb.directory(ctx.getFilesDir());
         final Process p = pb.start();
@@ -338,10 +342,21 @@ final class Engine {
         }
     }
 
-    /** The currency of the phone's region (JPY in Japan), or null. */
-    private static String localCurrency() {
+    /**
+     * The currency of the phone's region (JPY in Japan), or null. It is taken from the device's
+     * first language, not from the app's: from 1.11.0 the app's language can be set apart from the
+     * device's (Android 13 and later), and "English" alone has no region.
+     */
+    private static String localCurrency(Context ctx) {
         try {
-            Currency c = Currency.getInstance(Locale.getDefault());
+            LocaleList l = null;
+            if (Build.VERSION.SDK_INT >= 33) {
+                LocaleManager m = ctx.getSystemService(LocaleManager.class);
+                if (m != null) l = m.getSystemLocales();
+            }
+            if (l == null || l.isEmpty()) l = Resources.getSystem().getConfiguration().getLocales();
+            Locale first = l.isEmpty() ? Locale.getDefault() : l.get(0);
+            Currency c = Currency.getInstance(first);
             return c != null ? c.getCurrencyCode() : null;
         } catch (RuntimeException e) {
             return null; // a language without a region

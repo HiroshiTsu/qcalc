@@ -1,8 +1,9 @@
 # QCalc — Google Play store listing (English)
 
 The texts to paste in Play Console under "Grow users" → "Store presence" → "Main store listing".
-From version 1.3.0 the app starts in English, so English (United States, en-US) is the **default
-language** of the listing, and the Japanese texts (listing-ja.md) are its Japanese (ja-JP) translation.
+English (United States, en-US) is the **default language** of the listing (versions 1.3.0 to 1.10.1 started
+in English; from 1.11.0 the app starts in the phone's language, and the listing stays in English for the
+languages without a translation), and the Japanese texts (listing-ja.md) are its Japanese (ja-JP) translation.
 Limits: app name 30 characters, short description 80, full description 4000.
 
 The other translations: Spanish (listing-es.md, from 1.9.0), and German, French, Korean and
