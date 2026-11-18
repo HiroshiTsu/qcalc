@@ -4916,7 +4916,7 @@
   // piece is then smooth, and the engine can often integrate it exactly.
   const REV_AXES = [['x', tr('x axis', 'x 軸')], ['y', tr('y axis', 'y 軸')], ['h', 'y = k'], ['v', 'x = k']];
   // "(k)" in a sum, and "x − k" (only "x" when k is 0)
-  const revParen = (t) => (/^[−-]?[\d.]+$|^[\p{L}π]+$/u.test(t) && t[0] !== '−' && t[0] !== '-' ? t : '(' + t + ')');
+  const revParen = (t) => (/^[\d.]+$|^[\p{L}π]+(\^\d+)?$/u.test(t) ? t : '(' + t + ')');
   const revMinus = (e, k) => (k === '0' ? e : `${revParen(e)} − ${revParen(k)}`);
   // x^2 as x² in a text that is read (not one that is calculated)
   const revPretty = (t) => String(t).replace(/\^2(?![\d.])/g, '²').replace(/\^3(?![\d.])/g, '³');
@@ -5384,8 +5384,10 @@
     } else {
       const x = sx(A.v);
       g.moveTo(x, 0); g.lineTo(x, H); g.stroke();
-      g.textAlign = 'left'; g.textBaseline = 'bottom';
-      if (x > -2 && x < W - 60) g.fillText(label, x + 4, H - 6);
+      // (on the left of the line: the numbers of the y axis are on its right)
+      g.textAlign = 'right'; g.textBaseline = 'bottom';
+      if (x > 60 && x < W + 2) g.fillText(label, x - 4, H - 6);
+      else if (x > -2 && x <= 60) { g.textAlign = 'left'; g.fillText(label, x + 34, H - 6); }
     }
     g.restore();
   }
