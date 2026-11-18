@@ -4015,12 +4015,13 @@
     }
     if (o.area && f && P.areaUI) {
       const U = P.areaUI;
-      U.box.hidden = false; U.box.previousSibling && U.box.previousSibling.classList.add('on');
+      // an example of a solid opens "Make a solid" (alone); the others "Area and length"
+      if (!o.area.rev) { U.areaOpen = true; } else if (U.rev.box.hidden) { U.rev.box.hidden = false; U.rev.toggle.classList.add('on'); U.rev.toggle.setAttribute('aria-expanded', 'true'); }
+      syncAreaBox();
       areaFunctionsChanged();
       U.f1.value = '0'; U.f2.value = o.area.between && P.series.length > 1 ? '1' : 'axis';
       await areaPairChanged();
       U.a.value = String(o.area.a); U.b.value = String(o.area.b);
-      if (o.area.rev && U.rev) U.rev.open();
       await computeArea(); // the result the switch shows (the area or the length/perimeter)
     }
     draw();
@@ -4248,7 +4249,7 @@
       g.fillStyle = A.f.color; g.font = '700 11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText('↔', px, H * GRIP_Y + 0.5);
     }
-    const lines = [P.areaUI && P.areaUI.mode === 'len' ? A.lenText : A.text].filter(Boolean); // the value the switch shows (1.12.0)
+    const lines = P.areaUI && !P.areaUI.areaOpen ? [] : [P.areaUI && P.areaUI.mode === 'len' ? A.lenText : A.text].filter(Boolean); // the value the switch shows (1.12.0); none with only the solid open (B0a)
     P.canvas.dataset.area = lines.join(' / '); // what the graph shows, as text
     if (lines.length) {
       g.font = '600 13px system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
@@ -4963,19 +4964,27 @@
     const modes = el('span', { class: 'seg mini area-modes', role: 'group', 'aria-label': tr('Result to show', '出す結果') }, go, lenBtn);
     const len = el('div', { class: 'area-out', 'aria-live': 'polite' });
     const rev = buildRevolution(); // 1.11.0: solids of revolution
-    const box = el('div', { class: 'area-box' },
+    // 1.12.0 (B0a): "Area and length ▾" and "Make a solid ▾" are two switches side by side, and
+    // each can be opened alone. The functions and the range (with the crossing points) are shared:
+    // shown when either is open, so a change in one is the other's too; the shading and the edges
+    // (↔) of the range work with either. Until 1.11.0 the solid was inside "Area and length".
+    const common = el('div', { class: 'area-common' },
       el('div', { class: 'plot-range' }, f1, el('span', { text: tr('and', 'と') }), f2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), a, el('span', { text: tr(' to ', ' 〜 ').trim() }), b),
+      cross);
+    const areaOnly = el('div', { class: 'area-only' },
       el('div', { class: 'plot-range area-mode-row' }, modes),
-      cross, out, len, ins, rev.toggle, rev.box,
+      out, len, ins,
       el('div', { class: 'form-hint', text: tr('The area is shaded in the graph. Drag one of its two edges (↔) to change the range, or tap a range between crossing points. Parts below the x axis (or below the other function) count as positive. "Length" gives the length of the curve, or the perimeter of the region between two functions.', '面積を求める部分はグラフに色が付きます。両端の ↔ をドラッグすると範囲を変えられ、交点の間の範囲はタップでも選べます。x 軸（またはもう一方の関数）より下の部分もプラスとして数えます。「長さ・周」は曲線の長さ（2 つの関数の間なら囲まれた部分の周の長さ）です。') }),
       buildShapes2d(),
-      tapButton({ class: 'btn geo-link', text: tr('More shapes: rectangle, triangle, cylinder… ›', 'ほかの図形（長方形・三角形・円柱など）›') }, () => openShapes()));
+      tapButton({ class: 'btn geo-link', text: tr('More shapes: rectangle, triangle, cylinder… ›', 'ほかの図形（長方形・三角形・円柱など）›') }, () => openShapes()))
+    const box = el('div', { class: 'area-box' }, common, areaOnly, rev.box);
+    areaOnly.hidden = true;
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Area and length ▾', '面積・長さ ▾') });
     // opened: the area between the first function and the x axis (or the second function) is shown at once
     toggle.setAttribute('aria-expanded', 'false');
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); if (!box.hidden) { P.areaUI.auto = true; areaFunctionsChanged(); } else { P.area = null; P.revAxis = null; rev.seq++; draw(); } });
+    toggle.addEventListener('click', () => setAreaOpen(!P.areaUI.areaOpen));
     f1.addEventListener('change', () => { P.areaUI.auto = true; areaPairChanged(); });
     f2.addEventListener('change', () => { P.areaUI.auto = true; areaPairChanged(); });
     // a typed range is calculated when it is left (or Enter): the chosen result follows by itself
@@ -4988,9 +4997,42 @@
     // a tap on the result offers the three actions of every tool
     out.addEventListener('click', () => { const U = P.areaUI; if (P.areaExpr && U.areaText && U.areaKey) resultSheet(tr('Area', '面積'), P.areaExpr, U.areaText); });
     len.addEventListener('click', () => { const U = P.areaUI; if (P.lenExpr && U.lenText && U.lenKey) resultSheet(U.lenName || tr('Length', '長さ・周'), P.lenExpr, U.lenText); });
-    P.areaUI = { f1, f2, a, b, cross, out, ins, box, len, rev, toggle, go, lenBtn, mode: store.get('qalc.area.mode', 'area') === 'len' ? 'len' : 'area' };
+    P.areaUI = { f1, f2, a, b, cross, out, ins, box, areaOnly, areaOpen: false, len, rev, toggle, go, lenBtn, mode: store.get('qalc.area.mode', 'area') === 'len' ? 'len' : 'area' };
     showAreaMode();
-    return el('div', { class: 'area-wrap' }, toggle, box);
+    syncAreaBox(); // "Make a solid" open since the last time (qalc.rev, also of 1.11.0)
+    return el('div', { class: 'area-wrap' }, el('div', { class: 'area-toggles' }, toggle, rev.toggle), box);
+  }
+  // the shared part is shown while either switch is open; the area's own part with "Area and length"
+  function syncAreaBox() {
+    const U = P.areaUI;
+    U.box.hidden = !(U.areaOpen || !U.rev.box.hidden);
+    U.areaOnly.hidden = !U.areaOpen;
+    U.toggle.classList.toggle('on', U.areaOpen); U.toggle.setAttribute('aria-expanded', String(U.areaOpen));
+  }
+  // "Area and length ▾" opened or closed: opened, the area between the first function and the x axis
+  // (or the second function), between crossing points when there are some, is shown at once
+  function setAreaOpen(on) {
+    const U = P.areaUI;
+    if (!U) return;
+    const wasShown = !U.box.hidden;
+    U.areaOpen = on;
+    syncAreaBox();
+    if (on && !wasShown) { U.auto = true; areaFunctionsChanged(); }
+    else if (on) computeArea();
+    else if (U.box.hidden) { P.area = null; P.revAxis = null; U.rev.seq++; draw(); }
+    else draw(); // the solid stays: the graph no longer shows the area's value
+  }
+  // "Make a solid ▾" opened or closed (buildRevolution): opened alone, the region is chosen as for the
+  // area (the first function and the x axis, between crossing points) and shaded, and the solid follows
+  function revToggled(open) {
+    const U = P.areaUI;
+    if (!U) return;
+    const wasShown = !U.box.hidden;
+    syncAreaBox();
+    if (open && !wasShown) { U.auto = true; areaFunctionsChanged(); }
+    else if (open) { if (P.area) computeRevolution(true); else computeArea(true); }
+    else if (U.box.hidden) { P.area = null; P.revAxis = null; draw(); }
+    else draw();
   }
   // shapes to draw and measure: a circle (radius r), an ellipse (half axes a and b)
   const PARAM_NAMES = { r: tr('radius r', '半径 r'), a: tr('half axis a (x)', 'x 方向の半径 a'), b: tr('half axis b (y)', 'y 方向の半径 b') };
@@ -5197,7 +5239,8 @@
   async function computeArea(auto) {
     const U = P.areaUI;
     if (!U) return;
-    if (U.mode === 'len') { await computeAreaOnly(auto, true); await computeLength(); }
+    if (!U.areaOpen) await computeAreaOnly(auto, true); // only "Make a solid" open: the shaded region (B0a)
+    else if (U.mode === 'len') { await computeAreaOnly(auto, true); await computeLength(); }
     else await computeAreaOnly(auto);
     if (U.rev && !U.rev.box.hidden) await computeRevolution(auto);
     revealArea();
@@ -5696,7 +5739,8 @@
     const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Make a solid ▾', '立体にする ▾'), 'aria-expanded': 'false' }, () => {
       if (box.hidden && !proGate('revolution')) return;
       box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); save();
-      if (!box.hidden) computeRevolution(true); else { R.seq++; P.revAxis = null; draw(); }
+      if (box.hidden) R.seq++;
+      revToggled(!box.hidden);
     });
     Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, method, view, setAxis, open: () => { if (box.hidden) toggle.click(); } });
     setAxis(R.axis, true);
@@ -10353,7 +10397,7 @@
       'cross section measured earthwork soil grid heights simpson average end area 断面 土量 点高法 平均断面法 シンプソン 盛土 切土 どりょう Querschnitt Erdmasse Aushub sección transversal movimiento de tierras profil en travers cubature terrassement 단면 토량 斷面 土方',
       () => openSections()],
     ['revolution', 'geo', '🔄', tr('Solid of revolution (graph)', '回転体（グラフ）'), tr('Turn the region between two curves around an axis', '2 つの曲線の間を軸のまわりに回した立体'),
-      'revolution solid rotate axis washer shell volume 回転体 回転 体積 軸 かいてんたい Rotationskörper Drehkörper sólido de revolución solide de révolution 회전체 旋轉體',
+      'revolution solid rotate axis washer shell volume make 回転体 回転 体積 軸 立体 立体にする かいてんたい りったい Rotationskörper Drehkörper Körper Volumen sólido de revolución sólido volumen solide de révolution solide volume 회전체 입체 부피 旋轉體 立體 體積',
       () => openRevolutionTool()],
     ['area2d', 'geo', '📈', tr('Area and length in a graph', 'グラフの面積・長さ'), tr('Area between curves and the length of a curve', '曲線の間の面積、曲線の長さ'),
       'area integral between curves length curve graph 面積 積分 曲線 長さ めんせき Fläche Integral Kurvenlänge área integral longitud de curva aire intégrale longueur 넓이 적분 곡선 길이 面積 積分 曲線 長度',
@@ -10418,12 +10462,16 @@
     openPlot();
     if (P.setMode) P.setMode('2d');
     const U = P.areaUI;
-    if (U && U.box.hidden && U.toggle) U.toggle.click();
+    if (U && !U.areaOpen) setAreaOpen(true);
     return U;
   }
+  // 1.12.0 (B0a): the 2D graph with "Make a solid" open (not "Area and length")
   function openRevolutionTool() {
-    const U = openAreaTool();
-    if (U && U.rev && U.rev.open) U.rev.open();
+    openPlot();
+    if (P.setMode) P.setMode('2d');
+    const U = P.areaUI;
+    if (U && U.rev && U.rev.box.hidden) U.rev.open();
+    return U;
   }
 
   // ---------------------------------------------------------------- lists

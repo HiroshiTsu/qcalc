@@ -1361,3 +1361,8 @@ body.hselect #history { padding-bottom: 150px; }
 .caution[hidden] { display: none; }
 .caution-i { flex: 0 0 auto; font-size: 14px; line-height: 1.3; }
 .caution-t { min-width: 0; overflow-wrap: anywhere; }
+
+/* the two switches of the 2D graph side by side (1.12.0, B0a) */
+.area-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+.area-toggles > .area-toggle { margin: 0; }
+.tools .area-toggles { display: contents; } /* in the row of the graph's tools, like the other switches */
