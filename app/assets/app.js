@@ -4923,7 +4923,8 @@
     const rangeText = el('span', { class: 'form-hint' });
     const R = el('input', { inputmode: 'text', autocapitalize: 'off', placeholder: 'R', 'aria-label': tr('Radius R', '半径 R') });
     const bRect = tapButton({ text: tr('Rectangle', '長方形') }, () => setRegion('rect')), bDisk = tapButton({ text: tr('Disk', '円') }, () => setRegion('disk'));
-    // 1.11.0: the part enclosed by the surfaces (computeEnclosed), found by itself; encText says what it is
+    // 1.11.0: the part enclosed by the surfaces (computeEnclosed), found by itself; encText says what it is.
+    // Its button comes after the rectangle and the disk, so those two stay where they were
     const bEnc = tapButton({ text: tr('Enclosed', '囲まれた部分'), 'aria-label': tr('The part enclosed by the surfaces', '曲面で囲まれた部分') }, () => setRegion('enc'));
     const encText = el('span', { class: 'form-hint enc-text', 'aria-live': 'polite' });
     const diskRow = el('span', { class: 'disk-row' }, el('span', { text: 'x² + y² ≤ R²,  R =' }), R);
@@ -4942,7 +4943,7 @@
     const hintEnc = el('div', { class: 'form-hint', hidden: true, text: tr('The values are those of the graph that is drawn: the solid between the two surfaces (or between the surface and z = 0) over the part found, and its whole surface, the upper and the lower surface over that part.', 'いま描いているグラフの値です。見つけた部分での 2 つの曲面（または曲面と z = 0）の間の立体の体積と、その表面全体（その部分の上と下の曲面）の面積です。') });
     const box = el('div', { class: 'area-box' },
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
-      el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bEnc, bRect, bDisk), rangeText, diskRow, encText),
+      el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk, bEnc), rangeText, diskRow, encText),
       legend, out, ins,
       hint, hintEnc,
       buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
