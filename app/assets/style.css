@@ -1299,3 +1299,47 @@ input.search { min-height: 48px; box-sizing: border-box; }
 .panel-body .card a { display: inline-block; padding: 14px 0; }
 .adv-settings > summary { min-height: 48px; }
 .panel-body .cats button { min-height: 48px; } /* (the row scrolls sideways and so clips anything around the chips) */
+
+/* ------------------------------------------------ history: pinned, notes, search, selection (1.12.0) */
+.h-pinned { border-bottom: 2px solid var(--line); margin-bottom: 4px; }
+.h-pin-t { font-size: 12px; font-weight: 700; color: var(--muted); padding: 6px 12px 2px; }
+.h-item.starred .h-expr::before { content: "★ "; color: var(--accent); }
+.h-note { font-size: 13px; color: var(--muted); font-style: italic; padding-bottom: 2px; overflow-wrap: anywhere; }
+.hsearch { display: flex; align-items: center; gap: 4px; flex: 1 1 auto; min-width: 0; }
+.hsearch[hidden] { display: none; }
+body.hsearching .bar > .title, body.hsearching .bar > .chips, body.hsearching #btn-hist { display: none; }
+.hs-input { flex: 1 1 auto; min-width: 0; height: 48px; font-size: 16px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
+.hs-count { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.hsearch .icon-btn { flex: 0 0 auto; }
+body.hselect .h-item { padding-left: 44px; }
+body.hselect .h-item::before { content: ""; position: absolute; left: 12px; top: 50%; width: 20px; height: 20px; margin-top: -10px; border: 2px solid var(--muted); border-radius: 6px; box-sizing: border-box; }
+body.hselect .h-item.sel { background: var(--surface-2); }
+body.hselect .h-item.sel::before { background: var(--accent); border-color: var(--accent); }
+body.hselect .h-item.sel::after { content: "✓"; position: absolute; left: 15px; top: 50%; margin-top: -11px; color: var(--accent-text); font-size: 15px; font-weight: 700; }
+body.hselect .h-item .h-more { visibility: hidden; }
+.hselbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(0,0,0,.12); padding: 8px 12px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: flex-end; }
+.hselbar[hidden] { display: none; }
+.hs-info { flex: 1 1 auto; min-width: 0; }
+.hs-n { font-size: 13px; color: var(--muted); }
+.hs-row { display: flex; gap: 8px; align-items: baseline; font-size: 15px; }
+.hs-row.sum { font-size: 20px; font-weight: 700; }
+.hs-l { color: var(--muted); font-size: 13px; font-weight: 400; flex: 0 0 auto; }
+.hs-v { min-width: 0; overflow-wrap: anywhere; }
+.hs-btns { display: flex; gap: 6px; flex: 0 0 auto; }
+.hs-btns .btn { min-height: 48px; }
+body.hselect .keypad { visibility: hidden; }
+.sheet-input { display: block; width: 100%; box-sizing: border-box; height: 48px; font-size: 16px; padding: 0 12px; margin: 0 0 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
+/* memory keys */
+.memrow { display: grid; grid-template-columns: repeat(4, 1fr) 1.6fr; gap: 5px; margin-bottom: 5px; align-items: center; }
+.memrow[hidden] { display: none; }
+.memrow .key.mem { height: 36px; font-size: 14px; border-radius: 10px; background: var(--key-fn); font-weight: 600; position: relative; }
+.memrow .key.mem::before { content: ""; position: absolute; left: -3px; right: -3px; top: -6px; bottom: -6px; }
+.mem-val { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+/* what is new */
+.news-card { background: var(--surface); border: 2px solid var(--accent); border-radius: 16px; padding: 4px 8px 6px 14px; margin: 8px 10px; }
+.news-t { display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 15px; }
+.news-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 14px; }
+.news-row .ico { flex: 0 0 auto; font-size: 18px; }
+.news-x-t { flex: 1 1 auto; min-width: 0; }
+.news-try { flex: 0 0 auto; min-height: 48px; }
+.news-x { flex: 0 0 auto; }

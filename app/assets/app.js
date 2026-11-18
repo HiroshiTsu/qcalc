@@ -217,7 +217,7 @@
     angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1, time_limit: 20, math_view: true,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: false, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
-    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto'
+    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
   const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
@@ -424,7 +424,19 @@
   // in 1.12.0 are for those users only; a new user is marked as having seen them
   const usedBefore = history.length > 0 || store.get('qalc.settings', null) !== null;
   if (!usedBefore && !store.get('qalc.moved112', false)) store.set('qalc.moved112', true);
-  const saveHistory = debounce(() => store.set('qalc.history', history.slice(-300)), 300);
+  const saveHistory = debounce(() => store.set('qalc.history', trimHistory(history)), 300);
+  // the history cut to 300 lines: the oldest lines go, but not those pinned with a star (1.12.0)
+  function trimHistory(list) {
+    const extra = list.length - 300;
+    if (extra <= 0) return list;
+    let drop = extra;
+    return list.filter((h) => { if (drop > 0 && !(h && h.star)) { drop--; return false; } return true; }).slice(-300);
+  }
+  // the history's search words, the lines chosen to add up (a Set while choosing), the card of what is new
+  let histQuery = '', histSel = null, selSeq = 0, newsCard = null;
+  // the memory of M+ M− MR MC, in the engine's form ('' when empty)
+  let memory = store.get('qalc.memory', '');
+  if (typeof memory !== 'string') memory = '';
   // the beginning of a long text, for titles and announcements
   function clip(t, n) { t = String(t || ''); return t.length > n ? t.slice(0, n) + '…' : t; }
 
@@ -597,6 +609,7 @@
   document.addEventListener('pointerdown', (e) => { if (!varPopEl.hidden && !varPopEl.contains(e.target)) closeVarPop(); }, true);
 
   function buildKeypad() {
+    buildMemRow();
     const tb = $('#toolbar');
     tb.textContent = '';
     for (const d of TOOLBAR) tb.append(makeKey(d, true));
@@ -1286,9 +1299,12 @@
       sessionEntries.set(r.id, entry);
       if (sessionEntries.size > 20) sessionEntries.delete(sessionEntries.keys().next().value);
     }
+    closeNews();
     history.push(entry);
     const over = history.length > 300;
-    if (over) history = history.slice(-300);
+    // the line that goes: the oldest one without a star
+    const gone = over ? history.findIndex((x) => !(x && x.star)) : -1;
+    if (over) history = trimHistory(history);
     const shortened = fitHistory();
     saveHistory();
     dropUndo();
@@ -1305,8 +1321,8 @@
     // only the new line is added (and the oldest one taken away when the history is full), unless
     // the lines on the screen are no longer the history (the first result, an older long result
     // shortened). The oldest lines may not be drawn yet (olderLeft, renderHistory).
-    if (over) { if (olderLeft > 0) olderLeft--; else if (histEl.firstElementChild) histEl.firstElementChild.remove(); }
-    if (shortened || !histEl.querySelector('.h-item') || histEl.children.length !== history.length - 1 - olderLeft) renderHistory(true);
+    if (over) { if (gone >= 0 && gone < olderLeft) olderLeft--; else { const first = histEl.querySelector(':scope > .h-item'); if (first) first.remove(); } }
+    if (shortened || histFiltered() || !histEl.querySelector(':scope > .h-item') || histEl.querySelectorAll(':scope > .h-item').length !== history.filter((x) => !x.star).length - 1 - olderLeft) renderHistory(true);
     else {
       const item = historyItem(entry);
       histEl.append(item);
@@ -2801,14 +2817,23 @@
         el('div', { text: tr('Tap a result to insert it into the expression, or touch and hold it to copy it.', '結果をタップで式に挿入、長押しでコピーできます。') }),
         el('div', { class: 'empty-try', text: tr('Tap an example to try it', '例をタップして試す') }), chips,
         tapButton({ class: 'btn', text: tr('Examples and tips', '使い方と例を見る') }, () => openExamples())));
+      if (newsCard) histEl.append(newsCard);
       histEl.scrollTop = 0; // read from the top (results are followed at the bottom)
       histPinned = false;
       return;
     }
+    // lines pinned with a star (1.12.0): at the top, in the order they were calculated
+    const pinned = history.filter((h) => h && h.star);
+    if (pinned.length) {
+      const sec = el('div', { class: 'h-pinned', role: 'group', 'aria-label': tr('Pinned', '固定') }, el('div', { class: 'h-pin-t', text: tr('★ Pinned', '★ 固定') }));
+      for (const h of pinned) sec.append(historyItem(h));
+      histEl.append(sec);
+    }
     const first = Math.max(0, history.length - HIST_CHUNK);
     const frag = document.createDocumentFragment();
-    for (let i = first; i < history.length; i++) frag.append(historyItem(history[i]));
+    for (let i = first; i < history.length; i++) if (!history[i].star) frag.append(historyItem(history[i]));
     histEl.append(frag);
+    if (newsCard) histEl.append(newsCard);
     fitMatrices(histEl);
     if (scroll) { histEl.scrollTop = histEl.scrollHeight; histPinned = true; }
     olderLeft = first;
@@ -2822,24 +2847,31 @@
     if (job !== olderJob || olderLeft <= 0) return;
     const to = Math.min(olderLeft, history.length), from = Math.max(0, to - HIST_CHUNK);
     const items = [];
-    for (let i = from; i < to; i++) items.push(historyItem(history[i]));
+    for (let i = from; i < to; i++) if (!history[i].star) items.push(historyItem(history[i]));
     const fromBottom = histEl.scrollHeight - histEl.scrollTop;
-    histEl.prepend(...items);
+    const firstItem = histEl.querySelector(':scope > .h-item');
+    for (const it of items) histEl.insertBefore(it, firstItem); // (below the pinned lines)
     for (const it of items) fitMatrices(it);
     histEl.scrollTop = histEl.scrollHeight - fromBottom; // the lines on the screen stay where they were
     olderLeft = from;
     if (olderLeft) drawOlderLater(job);
+    if (histFiltered()) filterHistory();
   }
+  // all lines drawn now (to search them)
+  function drawAllOlder() { while (olderLeft > 0) drawOlder(olderJob); }
   // one line of the history: the expression, the result and its warnings
   function historyItem(h) {
     const res = el('div', { class: 'h-res' });
     showResult(res, displayResult(h));
-    const item = el('div', { class: 'h-item' }, el('div', { class: 'h-expr', text: toDisplay(h.expr) }), res);
+    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') }, el('div', { class: 'h-expr', text: toDisplay(h.expr) }), res);
+    item._h = h;
+    if (h.note) item.insertBefore(el('div', { class: 'h-note', text: h.note }), item.firstChild);
     for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
     // ⋯ opens the same menu as touching and holding the line (1.12.0: nothing only by a long touch);
     // the dots are drawn by style.css, so that the text of the line stays the expression and the result
     item.append(el('button', { class: 'h-more', type: 'button', 'aria-label': tr('Menu of this result', 'この結果のメニュー') }));
-    bindLongPress(item, () => historyMenu(h), (target) => {
+    bindLongPress(item, () => { if (!histSel) historyMenu(h); }, (target) => {
+      if (histSel) { toggleSelected(item); return; }
       if (target.closest('.h-more')) { historyMenu(h); return; }
       if (target.closest('.h-expr')) setExpr(h.expr);
       else insertResult(h);
@@ -2911,7 +2943,10 @@
     else if (mcols === 3) more.push(['m-plot', tr('Draw the rows as points (3D graph)', '各行を点としてグラフに描く（3D）')]);
     const a = await sheet((h.t ? fmtTime(h.t / 1000) + '\n' : '') + clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300), more.concat([
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
-      ['ins-ans', tr('Insert result', '結果を式に挿入')], ['del', tr('Delete this line', 'この行を削除'), 'danger']
+      ['ins-ans', tr('Insert result', '結果を式に挿入')],
+      ['star', h.star ? tr('★ Unpin', '★ 固定を外す') : tr('☆ Pin at the top', '☆ 上に固定')],
+      ['note', h.note ? tr('Change the note', 'メモを変える') : tr('Add a short note', 'ひとことメモ')],
+      ['del', tr('Delete this line', 'この行を削除'), 'danger']
     ]));
     if (a === 'm-edit') openForm('mat', { matrix: mat });
     else if (a === 'm-plot') plotMatrixRows(parseMatrix(mat).rows);
@@ -2932,9 +2967,16 @@
       historyChanged();
       toast(tr('Line deleted', '1 行を削除しました'), 5000, [tr('Undo', '元に戻す'), () => {
         history.splice(Math.min(i, history.length), 0, h);
-        if (history.length > 300) history = history.slice(-300);
+        history = trimHistory(history);
         historyChanged();
       }]);
+    }
+    else if (a === 'star') { h.star = !h.star; if (!h.star) delete h.star; historyChanged(); if (h.star) toast(tr('Pinned at the top of the history', '履歴のいちばん上に固定しました'), 1800); }
+    else if (a === 'note') {
+      const t = await promptSheet(tr('A short note for this line', 'この行のひとことメモ'), h.note || '', tr('e.g. rent of March', '例：3 月の家賃'));
+      if (t === null) return;
+      if (t.trim()) h.note = t.trim().slice(0, 120); else delete h.note;
+      historyChanged();
     }
   }
   // The result of a history line as an expression in x (x³ − 3x, 3x² + C), or null: not for numbers,
@@ -3062,9 +3104,13 @@
   // the history's own menu (1.12.0; until 1.11.0 exporting and clearing were in the main menu)
   async function historyActions() {
     const k = await sheet(tr('History', '履歴'), [
+      ['h-search', tr('Search the history', '履歴を検索')],
+      ['h-select', tr('Select lines: sum, average, copy', '行を選んで合計・平均・コピー')],
       ['export', tr('Export the history (CSV file)', '履歴を書き出す（CSV ファイル）') + (hasPro() ? '' : '  ⭐ Pro')],
       ['clear', tr('Clear the whole history', '履歴をすべて消去')]]);
-    if (k) menuAction(k);
+    if (k === 'h-search') openHistSearch();
+    else if (k === 'h-select') openHistSelect();
+    else if (k) menuAction(k);
   }
   $('#btn-hist').addEventListener('click', historyActions);
   $('#scrim').addEventListener('click', () => { if ($('#sheet').classList.contains('open')) closeSheet(null); closeDrawer(); });
@@ -3091,7 +3137,7 @@
       history = [];
       historyChanged();
       toast(tr('History cleared', '履歴を消去しました'), 6000, [tr('Undo', '元に戻す'), () => {
-        history = old.concat(history).slice(-300); // with anything calculated in the meantime
+        history = trimHistory(old.concat(history)); // with anything calculated in the meantime
         historyChanged();
         histEl.scrollTop = histEl.scrollHeight;
       }]);
@@ -10048,6 +10094,201 @@
     return p;
   }
 
+
+  // ------------------------------------------- history: search, selection (1.12.0)
+  // From the history's menu (🕘): "Search" puts a search box into the top bar and shows only the
+  // lines whose expression, result or note has the words; "Select" lets lines be tapped to choose
+  // them, and a bar at the bottom gives their sum and average (with the unit when they have the
+  // same kind of unit) and copies them.
+  const histFiltered = () => !!histQuery.trim();
+  const hsInput = el('input', { type: 'search', class: 'hs-input', autocomplete: 'off', spellcheck: 'false', placeholder: tr('Search the history', '履歴を検索'), 'aria-label': tr('Search the history', '履歴を検索') });
+  const hsCount = el('span', { class: 'hs-count', 'aria-live': 'polite' });
+  const hsBar = el('div', { class: 'hsearch', hidden: true }, hsInput, hsCount,
+    el('button', { class: 'icon-btn', type: 'button', 'aria-label': tr('Close the search', '検索を閉じる'), text: '×', onclick: () => closeHistSearch() }));
+  $('.bar').append(hsBar);
+  hsInput.addEventListener('input', () => { histQuery = hsInput.value; filterHistory(); });
+  function openHistSearch() {
+    closeHistSelect();
+    drawAllOlder();
+    document.body.classList.add('hsearching');
+    hsBar.hidden = false;
+    hsInput.value = ''; histQuery = '';
+    filterHistory();
+    setTimeout(() => hsInput.focus(), 50);
+  }
+  function closeHistSearch() {
+    if (hsBar.hidden) return false;
+    hsBar.hidden = true;
+    document.body.classList.remove('hsearching');
+    histQuery = '';
+    filterHistory();
+    histEl.scrollTop = histEl.scrollHeight;
+    focusExpr();
+    return true;
+  }
+  function filterHistory() {
+    const words = toolNorm(histQuery).split(' ').filter(Boolean);
+    let n = 0;
+    for (const it of histEl.querySelectorAll('.h-item')) {
+      const h = it._h;
+      if (!h) continue;
+      const hay = toolNorm(toDisplay(h.expr) + ' ' + displayResult(h) + ' ' + (h.note || ''));
+      const ok = !words.length || words.every((w) => hay.indexOf(w) >= 0);
+      it.hidden = !ok;
+      if (ok) n++;
+    }
+    const sec = histEl.querySelector('.h-pinned');
+    if (sec) sec.hidden = !Array.from(sec.querySelectorAll('.h-item')).some((x) => !x.hidden);
+    hsCount.textContent = words.length ? trf('{0} found', '{0} 件', n) : '';
+  }
+  const selBar = el('div', { class: 'hselbar', hidden: true, role: 'region', 'aria-label': tr('Selected lines', '選んだ行') });
+  const selInfo = el('div', { class: 'hs-info', 'aria-live': 'polite' });
+  selBar.append(selInfo, el('div', { class: 'hs-btns' },
+    el('button', { class: 'btn', type: 'button', text: tr('Copy', 'コピー'), onclick: () => copySelected() }),
+    el('button', { class: 'btn primary', type: 'button', text: tr('Done', '終わる'), onclick: () => closeHistSelect() })));
+  document.body.append(selBar);
+  function openHistSelect() {
+    closeHistSearch();
+    drawAllOlder();
+    histSel = new Set();
+    document.body.classList.add('hselect');
+    selBar.hidden = false;
+    for (const it of histEl.querySelectorAll('.h-item')) it.classList.remove('sel');
+    updateSelected();
+  }
+  function closeHistSelect() {
+    if (!histSel) return false;
+    histSel = null;
+    selSeq++;
+    document.body.classList.remove('hselect');
+    selBar.hidden = true;
+    for (const it of histEl.querySelectorAll('.h-item.sel')) { it.classList.remove('sel'); it.removeAttribute('aria-selected'); }
+    focusExpr();
+    return true;
+  }
+  function toggleSelected(item) {
+    const h = item._h;
+    if (!h || !histSel) return;
+    if (histSel.has(h)) histSel.delete(h); else histSel.add(h);
+    item.classList.toggle('sel', histSel.has(h));
+    item.setAttribute('aria-selected', String(histSel.has(h)));
+    vibrate();
+    updateSelected();
+  }
+  async function updateSelected() {
+    const list = history.filter((h) => histSel && histSel.has(h));
+    const seq = ++selSeq;
+    selInfo.textContent = '';
+    const head = el('div', { class: 'hs-n', text: list.length ? trf('{0} selected', '{0} 行を選択', list.length) : tr('Tap the lines to add up', '合計する行をタップしてください') });
+    selInfo.append(head);
+    if (!list.length) return;
+    const vals = list.map((h) => insertText(h));
+    if (vals.some((v) => !v)) { selInfo.append(el('div', { class: 'form-hint warn', text: tr('A result that cannot be used in a calculation is selected (too long, or text)', '計算に使えない結果（長すぎる・文字）が選ばれています') })); return; }
+    const sum = vals.map((v) => '(' + v + ')').join(' + ');
+    const r = await Bridge.send('calc', { expr: sum, opts: engineOpts(), timeout: 3000 });
+    if (seq !== selSeq) return;
+    if (!r.ok || !r.result || r.timeout) { selInfo.append(el('div', { class: 'form-hint warn', text: localMessage(r.error) || tr('Could not add them up', '合計を計算できませんでした') })); return; }
+    // a sum of different kinds of units stays a sum ("5 km + 3 kg"): said, not given as a total
+    const exact = r.result.split(' ≈ ')[0];
+    if (/[A-Za-z]/.test(exact) && /\s[+−]\s/.test(exact.replace(/\([^()]*\)/g, ''))) {
+      selInfo.append(el('div', { class: 'form-hint warn', text: tr('The units do not match, so they cannot be added up', '単位がそろっていないので、合計できません') }));
+      return;
+    }
+    const avg = await Bridge.send('calc', { expr: '(' + sum + ') / ' + list.length, opts: engineOpts(), timeout: 3000 });
+    if (seq !== selSeq) return;
+    const row = (name, rr, cls) => { const v = el('span', { class: 'hs-v' }); showResult(v, resultText(rr)); return el('div', { class: 'hs-row ' + (cls || '') }, el('span', { class: 'hs-l', text: name }), v); };
+    selInfo.append(row(tr('Sum', '合計'), r, 'sum'));
+    if (avg.ok && avg.result && !avg.timeout) selInfo.append(row(tr('Average', '平均'), avg, 'avg'));
+  }
+  function copySelected() {
+    const list = history.filter((h) => histSel && histSel.has(h));
+    if (!list.length) { toast(tr('Nothing is selected', '何も選ばれていません'), 1500); return; }
+    copyText(list.map((h) => toDisplay(h.expr) + ' ' + displayResult(h)).join('\n'));
+  }
+  // a dialog with one line of text: the text, or null when cancelled
+  function promptSheet(title, value, placeholder) {
+    if (sheetResolve) closeSheet(null);
+    return new Promise((resolve) => {
+      const sh = $('#sheet');
+      sh.textContent = '';
+      const inp = el('input', { type: 'text', class: 'sheet-input', value: value || '', placeholder: placeholder || '', 'aria-label': title, maxlength: '120' });
+      const done = (v) => { sheetResolve = null; closeSheet(null); resolve(v); };
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); done(inp.value); } });
+      sh.append(el('div', { class: 'stitle', text: title }), inp,
+        el('button', { class: 'accent', text: tr('Save', '保存'), onclick: () => done(inp.value) }),
+        el('button', { text: tr('Cancel', 'キャンセル'), onclick: () => done(null) }));
+      sheetResolve = () => resolve(null);
+      $('#scrim').classList.add('show', 'over-panels');
+      sh.classList.add('open');
+      sh.inert = false;
+      setTimeout(() => { inp.focus(); inp.select(); }, 60);
+    });
+  }
+
+  // -------------------------------------------------------- memory keys
+  // M+, M−, MR and MC (1.12.0; setting "Show the memory keys", off at first): a row above the keys.
+  // M+ and M− add the value of the expression in the field (or else of the newest result) to the
+  // memory, MR puts the memory into the expression, MC clears it. The memory is kept (qalc.memory),
+  // in the engine's form, exactly when it can be (1/3 stays 1/3).
+  function buildMemRow() {
+    let row = $('#memrow');
+    if (!row) { row = el('div', { id: 'memrow', class: 'memrow' }); $('#keypad').insertBefore(row, $('#toolbar')); }
+    row.hidden = !S.memkeys;
+    row.textContent = '';
+    if (!S.memkeys) return;
+    const k = (label, name, op) => { const b = el('button', { class: 'key mem', type: 'button', text: label, 'aria-label': name }); bindPress(b, () => { vibrate(); memOp(op); }); return b; };
+    row.append(k('MC', tr('Clear the memory', 'メモリーを消す'), 'MC'), k('MR', tr('Insert the memory', 'メモリーを呼び出す'), 'MR'),
+      k('M+', tr('Add to the memory', 'メモリーに足す'), 'M+'), k('M−', tr('Subtract from the memory', 'メモリーから引く'), 'M−'),
+      el('span', { class: 'mem-val', id: 'mem-val', 'aria-live': 'polite' }));
+    showMemory();
+  }
+  function showMemory() {
+    const v = $('#mem-val');
+    if (v) v.textContent = memory ? 'M = ' + clip(displayText(memory), 24) : tr('M: empty', 'M：空');
+  }
+  async function memOp(op) {
+    if (op === 'MC') { memory = ''; store.set('qalc.memory', memory); showMemory(); return; }
+    if (op === 'MR') { if (memory) insert(toDisplay(wrapValue(memory)), 0, false); else toast(tr('The memory is empty', 'メモリーは空です'), 1500); return; }
+    const raw = exprEl.value.trim();
+    const v = raw ? withoutOpenTo(normalizeExpr(raw)) : (history.length ? insertText(history[history.length - 1]) : '');
+    if (!v || v.indexOf('□') >= 0) { toast(tr('Type a value or calculate one first', '先に値を入れるか、計算してください'), 2000); return; }
+    if (!engineReady) { toast(tr('The calculation engine is starting', '計算エンジンを準備中です'), 1500); return; }
+    const r = await Bridge.send('calc', { expr: '(' + (memory || '0') + ') ' + (op === 'M+' ? '+' : '−') + ' (' + v + ')', opts: Object.assign(engineOpts(), { base: 10 }), timeout: 3000 });
+    if (!r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error')) { toast(localMessage(r.error) || tr('Could not add it to the memory', 'メモリーに足せませんでした'), 2500); return; }
+    const t = legacyInsertText({ result: r.result, base: 10 });
+    if (!t) { toast(tr('Could not add it to the memory', 'メモリーに足せませんでした'), 2500); return; }
+    memory = t.replace(/^\((.*)\)$/, '$1');
+    store.set('qalc.memory', memory);
+    showMemory();
+  }
+
+  // ------------------------------------------------------- what is new
+  // On the first start of a new version, a card with what is new, once (1.12.0): to those who used
+  // an earlier version, each with "Try it". Closed, it does not come again.
+  const NEWS_VERSION = '1.12';
+  const NEWS = () => [
+    ['🧰', tr('Tools: find a tool by what you want to do', '道具：やりたいことで探せます'), () => openTools()],
+    ['🔢', tr('Number format: a decimal comma (1,5) if you like', '数の書き方：小数点を「,」にもできます'), () => openSettings()],
+    ['🕘', tr('History: search, pin with a star, notes, add up lines', '履歴：検索・星で固定・メモ・選んで合計'), () => historyActions()],
+    ['📈', tr('Graph: one switch for the area and the length', 'グラフ：面積と長さを切り替えて表示'), () => openAreaTool()]
+  ];
+  // the card is the last thing in the history, just above the field (it covers nothing); it goes
+  // with the first calculation, its ×, or a "Try it"
+  function closeNews() { if (newsCard) { newsCard.remove(); newsCard = null; } }
+  function showNews() {
+    if (!usedBefore || store.get('qalc.news', '') === NEWS_VERSION) return;
+    store.set('qalc.news', NEWS_VERSION); // once: also when it is not closed
+    const card = el('div', { class: 'news-card', role: 'region', 'aria-label': tr('What is new', '新しい機能') });
+    card.append(el('div', { class: 'news-t' }, el('span', { text: tr('New in this version', 'この版の新しい機能') }),
+      el('button', { class: 'icon-btn news-x', type: 'button', 'aria-label': tr('Close', '閉じる'), text: '×', onclick: () => closeNews() })));
+    for (const [ico, text, run] of NEWS()) {
+      card.append(el('div', { class: 'news-row' }, el('span', { class: 'ico', text: ico, 'aria-hidden': 'true' }), el('span', { class: 'news-x-t', text }),
+        el('button', { class: 'btn news-try', type: 'button', text: tr('Try it', '試す'), 'aria-label': tr('Try it', '試す') + ': ' + text, onclick: () => { closeNews(); run(); } })));
+    }
+    newsCard = card;
+    histEl.append(card);
+    histEl.scrollTop = histEl.scrollHeight;
+  }
   // ---------------------------------------------------------------- tools
   // "Tools" (1.12.0): every tool in one place, found by what one wants to do. A search box on top
   // (the words of all seven languages find a tool, whatever the language of the page: VAT,
@@ -10180,7 +10421,7 @@
     else if (t.indexOf('≈ ') === 0) { t = t.slice(2); approx = true; }
     if (!expr || !t) return;
     history.push({ expr, result: t, approx, base: 10, msgs: [], t: Date.now() });
-    if (history.length > 300) history = history.slice(-300);
+    history = trimHistory(history);
     historyChanged();
     histEl.scrollTop = histEl.scrollHeight;
     histPinned = true;
@@ -10229,7 +10470,8 @@
     [tr('Input', '操作'), [
       ['preview', tr('Show the result while typing', '入力中に結果を表示'), 'bool'],
       ['auto_ans', tr('An operator in an empty field continues from ans', '空欄で演算子を押すと ans から続ける'), 'bool'],
-      ['haptics', tr('Vibrate when a key is pressed', 'キーを押したときに振動'), 'bool']
+      ['haptics', tr('Vibrate when a key is pressed', 'キーを押したときに振動'), 'bool'],
+      ['memkeys', tr('Show the memory keys (M+ M− MR MC)', 'メモリーキー（M+ M− MR MC）を出す'), 'bool']
     ]],
     // 1.12.0: updating the rates was an item of the menu until 1.11.0
     [tr('Exchange rates', '為替レート'), [
@@ -10238,7 +10480,7 @@
     ]]
   ];
   // the settings that most people never change are under "More settings" (1.12.0), closed at first
-  const ADV_SETTINGS = ['structuring', 'complex', 'units', 'mixed_units', 'time_limit', 'max_decimals', 'base', 'notation', 'grouping', 'math_view', 'auto_ans'];
+  const ADV_SETTINGS = ['structuring', 'complex', 'units', 'mixed_units', 'time_limit', 'max_decimals', 'base', 'notation', 'grouping', 'math_view', 'auto_ans', 'haptics', 'memkeys'];
   // the settings that are numbers: smallest, largest (now, and with QCalc Pro) and default value
   const NUMBER_RANGE = {
     precision: { min: 2, max: maxPrecision, limit: MAX_PRECISION, def: 10 },
@@ -10318,6 +10560,7 @@
     // history follow (what is saved is in the engine's form and does not change)
     const field = toInternal(exprEl.value), wasNF = NF;
     applyNumFmt();
+    if (!!$('#memrow') && $('#memrow').hidden === !!S.memkeys) buildKeypad(); // the memory keys shown or hidden
     if (NF !== wasNF) {
       exprEl.value = toDisplay(field);
       buildKeypad();
@@ -10544,6 +10787,7 @@
   window.qalcBack = function () {
     if (!varPopEl.hidden) { closeVarPop(); return true; }
     if ($('#sheet').classList.contains('open')) { closeSheet(null); return true; }
+    if (closeHistSelect() || closeHistSearch()) return true;
     if ($('#drawer').classList.contains('open')) { closeDrawer(); return true; }
     if (panelStack.length) { closePanel(); return true; }
     if (CF.id) { closeForm(); return true; }
@@ -10551,7 +10795,7 @@
     return false;
   };
   window.qalcPause = function () {
-    store.set('qalc.history', history.slice(-300));
+    store.set('qalc.history', trimHistory(history));
     store.set('qalc.draft', toInternal(exprEl.value));
   };
 
@@ -10654,6 +10898,7 @@
     focusExpr();
     startEngine();
     startupMark('ui');
+    showNews();
   }
   // The times of the start (1.12.0), from the start of the page: the keypad and the newest history
   // shown (ui), the engine ready (engine) and the first result. The app writes them to its log
