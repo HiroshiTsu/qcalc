@@ -1177,3 +1177,13 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .cus-err:empty, .cus-text:empty { display: none; }
 .cus-formula { overflow-wrap: anywhere; }
 .sign-row .form-hint { margin-top: 0; }
+
+/* 1.11.0: volume from measured values (cross sections, grid of heights) */
+.sec-table { display: grid; gap: 6px; margin: 10px 0 6px; }
+.sec-table.sec-2 { grid-template-columns: 1fr 1fr; }
+.sec-table input { min-width: 0; width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 16px; }
+.sec-table input[aria-invalid="true"], .sec-ab input[aria-invalid="true"] { border-color: var(--danger, #c62828); }
+.sec-h { font-size: 13px; color: var(--muted); }
+.sec-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.sec-tools .sec-btn { min-height: 40px; padding: 6px 14px; }
+.sec-how:empty { display: none; }

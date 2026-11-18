@@ -2981,6 +2981,7 @@
       '「図形」には円錐台・半球・球欠・楕円体・角柱・パイプもあります。「容器の液量」では、横置き・縦置きの円筒、球形、下向きの円錐のタンクの液面の高さから液量（満杯に対する割合も）を出し、液量（1000 L など）から高さも出します。丸い形の大きさは直径でも入れられ、体積は L・mL・m³・cm³・US gal・ft³ で表示でき、材料（水・コンクリート・鉄など）を選ぶと重さも出ます。'),
     tr('Areas, lengths and volumes of shapes: "Shapes" in the menu. Choose a circle, a triangle, a cylinder and so on, type the sizes, and the results appear at once. In a graph, "Area and length" shades the area, and its edges can be dragged.', '図形の面積・長さ・体積は、メニューの「図形」で求められます。円・三角形・円柱などを選んで大きさを入れると、結果がすぐに出ます。グラフでは「面積・長さ」で面積に色が付き、両端をドラッグして範囲を変えられます。'),
     tr('In "Area and length" of a 2D graph, "Solid of revolution" turns the shaded region once around the x axis, the y axis, y = k or x = k: the volume, the curved surfaces and the surface with the end faces, exact when possible, with the formula used (washers or shells) and a 3D view. Where the region is on both sides of the axis, the overlap counts once. Tap a result to put its integral into the input field or to copy it.', '2D グラフの「面積・長さ」の「回転体」では、色の付いた部分を x 軸・y 軸・y = k・x = k のまわりに 1 回転させた立体の体積、曲面の面積、端の面を含む表面積を出します（できるときは厳密な値）。使った式（ワッシャー法・殻の方法）も示し、3D でも見られます。領域が軸の両側にあるときは、重なる部分を 1 回だけ数えます。結果をタップすると、積分の式を入力欄に入れたり、コピーしたりできます。'),
+    tr('"Shapes" also leads to "Volume from measured values": a table of cross sections (the average end area method and Simpson’s rule, with the reason when Simpson’s rule cannot be used) or the heights at the corners of a grid (the method of point heights, V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)). A table can be pasted from a spreadsheet; the volume is given in m³ and L.', '「図形」からは「測った値から体積」も開けます：断面積の表から平均断面法とシンプソンの公式（使えないときは理由も）、格子の角の高さから点高法（V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)）で体積を出します。表は表計算ソフトから貼り付けられ、結果は m³ と L で出ます。'),
     tr('Below a graph there is a row of samples (a heart, waves, a doughnut, a ripple …): tap one to draw it, then change its functions and ranges as you like.', 'グラフの下にサンプル（ハート、波、ドーナツ、波紋など）が並んでいます。タップすると描けるので、式や範囲を変えて試せます。'),
     tr('In a form, ↶ and ↷ undo and redo, and ⋯ clears all boxes. A form closed without being used keeps its boxes. The matrix form keeps its matrix for the next calculation, takes a table pasted from a spreadsheet, and its ⋯ menu inserts or deletes a row or a column.', 'フォームでは ↶ ↷ で「元に戻す」「やり直す」、⋯ で「すべての欄を消去」ができます。使わずに閉じたフォームは、次に開くと欄がそのまま残っています。行列の画面は入れた行列を次の計算まで覚えていて、表計算ソフトの表を貼り付けでまとめて入れられ、⋯ から行や列の挿入・削除もできます。')
   ];
@@ -9322,12 +9323,226 @@
         el('div', { class: 'geo-main' }, pic, el('div', { class: 'geo-side' }, rdSeg, sizes,
           el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
         outUnits, msg, outs, amtRow, weightRow, graph,
+        // 1.11.0: the volume from measured values (a table of cross sections, a grid of heights)
+        tapButton({ class: 'btn geo-link', text: tr('Volume from measured values (cross sections, grid of heights) ›', '測った値から体積（断面積の表・点高法）›') }, () => openSections()),
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
       p.run = run;
       choose(G.k);
     });
     // opened again: the precision or the angle unit of the settings may have changed
     if (p.run) p.run();
+    return p;
+  }
+  // ------------------------------------------ volume from measured values (1.11.0)
+  // Two ways that are used on site, from values typed or pasted from a spreadsheet:
+  // - a table of cross sections (the distance along the axis and the area of the section there):
+  //   the average end area method (trapezoids) V = Σ (Aᵢ + Aᵢ₊₁)/2 · (xᵢ₊₁ − xᵢ), and Simpson's rule
+  //   V = h/3 (A₀ + 4A₁ + 2A₂ + … + 4Aₙ₋₁ + Aₙ) when the steps are equal and their number is even
+  //   (otherwise the reason is given, and for an odd number of equal steps the last three are taken
+  //   with Simpson's 3/8 rule);
+  // - heights at the corners of a grid of a × b cells (the method of point heights): every point
+  //   counts as often as the cells it is a corner of, V = (ab/4)(Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄). A cell
+  //   is a cell when its four corners have heights (empty boxes are no points).
+  // The values are exact when they are typed exactly (2.5, 1/3): the engine adds them. The lengths
+  // have one unit; the volume is given in it cubed, in m³ and in L. The tables are remembered.
+  const SEC_UNITS = ['m', 'cm', 'mm', 'km', 'ft', 'in', 'yd'];
+  function openSections() {
+    if (!proGate('sections')) return null;
+    const p = panel('sections', tr('Volume from measured values', '測った値から体積'), (p) => {
+      const saved = store.get('qalc.sections', null) || {};
+      const M = { mode: saved.mode === 'grid' ? 'grid' : 'sec', unit: SEC_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : 'm', seq: 0,
+        rows: Array.isArray(saved.rows) && saved.rows.length ? saved.rows : [['0', '0'], ['1', '1'], ['2', '4'], ['3', '9'], ['4', '16']],
+        a: typeof saved.a === 'string' ? saved.a : '10', b: typeof saved.b === 'string' ? saved.b : '10',
+        grid: Array.isArray(saved.grid) && saved.grid.length ? saved.grid : [['1', '1', '1'], ['1', '1', '1'], ['1', '1', '1']] };
+      const save = () => store.set('qalc.sections', { mode: M.mode, unit: M.unit, rows: M.rows, a: M.a, b: M.b, grid: M.grid });
+      const bSec = tapButton({ text: tr('Cross sections', '断面積の表') }, () => setMode('sec')), bGrid = tapButton({ text: tr('Grid of heights', '点高法（格子の高さ）') }, () => setMode('grid'));
+      const unit = el('select', { 'aria-label': tr('Unit of the lengths', '長さの単位') });
+      for (const u of SEC_UNITS) unit.append(el('option', { value: u, text: u }));
+      unit.value = M.unit;
+      const table = el('div', { class: 'sec-table', role: 'table' });
+      const tools = el('div', { class: 'sec-tools' });
+      const msg = el('div', { class: 'geo-msg', role: 'alert' });
+      const outs = el('div', { class: 'geo-out', 'aria-live': 'polite' });
+      const how = el('div', { class: 'form-hint sec-how' });
+      const ab = el('div', { class: 'sec-ab' });
+      // a value box of the table; r, c: its place; on paste of several values (tabs, commas, lines) they fill the table from there
+      const cell = (list, r, c, ph, label) => {
+        const inp = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: ph, 'aria-label': label, value: list[r][c] || '' });
+        inp.addEventListener('input', () => { list[r][c] = inp.value; inp.removeAttribute('aria-invalid'); save(); run(); });
+        inp.addEventListener('paste', (e) => {
+          const t = (e.clipboardData || window.clipboardData).getData('text');
+          if (!/[\t\n,;]/.test(t.trim())) return;
+          e.preventDefault();
+          const lines = t.replace(/\r/g, '').split('\n').filter((l) => l.trim() !== '');
+          lines.forEach((l, i) => {
+            const vals = (/\t/.test(l) ? l.split('\t') : /;/.test(l) ? l.split(';') : /,/.test(l) ? l.split(',') : l.trim().split(/\s+/)).map((s) => s.trim());
+            while (list.length <= r + i) list.push(new Array(list[0].length).fill(''));
+            vals.forEach((v, j) => { if (M.mode === 'sec' ? c + j < 2 : true) { while (list[r + i].length <= c + j) { for (const row of list) row.push(''); } list[r + i][c + j] = v; } });
+          });
+          save(); build(); run();
+        });
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
+        return inp;
+      };
+      const btn = (text, label, f) => tapButton({ class: 'btn sec-btn', text, 'aria-label': label }, () => { f(); save(); build(); run(); });
+      const build = () => {
+        table.textContent = ''; tools.textContent = ''; ab.textContent = '';
+        const u = M.unit;
+        if (M.mode === 'sec') {
+          table.className = 'sec-table sec-2';
+          table.append(el('div', { class: 'sec-h', role: 'columnheader', text: tr('Distance x', '距離 x') + ' (' + u + ')' }), el('div', { class: 'sec-h', role: 'columnheader', text: tr('Area A', '断面積 A') + ' (' + u + '²)' }));
+          M.rows.forEach((row, r) => table.append(cell(M.rows, r, 0, 'x', trf('Distance, row {0}', '{0} 行目の距離', r + 1)), cell(M.rows, r, 1, 'A', trf('Area, row {0}', '{0} 行目の断面積', r + 1))));
+          tools.append(btn(tr('+ Row', '+ 行'), tr('Add a row', '行を追加'), () => M.rows.push(['', ''])),
+            btn(tr('− Row', '− 行'), tr('Delete the last row', '最後の行を削除'), () => { if (M.rows.length > 2) M.rows.pop(); }));
+        } else {
+          const nc = M.grid[0].length;
+          table.className = 'sec-table sec-grid';
+          table.style.gridTemplateColumns = 'repeat(' + nc + ', minmax(0, 1fr))';
+          M.grid.forEach((row, r) => row.forEach((v, c) => table.append(cell(M.grid, r, c, 'h', trf('Height, row {0}, column {1}', '{0} 行 {1} 列の高さ', r + 1, c + 1)))));
+          tools.append(btn(tr('+ Row', '+ 行'), tr('Add a row', '行を追加'), () => M.grid.push(new Array(nc).fill(''))),
+            btn(tr('− Row', '− 行'), tr('Delete the last row', '最後の行を削除'), () => { if (M.grid.length > 2) M.grid.pop(); }),
+            btn(tr('+ Column', '+ 列'), tr('Add a column', '列を追加'), () => { for (const row of M.grid) row.push(''); }),
+            btn(tr('− Column', '− 列'), tr('Delete the last column', '最後の列を削除'), () => { if (M.grid[0].length > 2) for (const row of M.grid) row.pop(); }));
+          const ia = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: M.a, 'aria-label': tr('Spacing a (across)', '間隔 a（横）') });
+          const ib = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: M.b, 'aria-label': tr('Spacing b (down)', '間隔 b（縦）') });
+          ia.addEventListener('input', () => { M.a = ia.value; ia.removeAttribute('aria-invalid'); save(); run(); });
+          ib.addEventListener('input', () => { M.b = ib.value; ib.removeAttribute('aria-invalid'); save(); run(); });
+          M.ia = ia; M.ib = ib;
+          ab.append(el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Spacing a (across)', '間隔 a（横）') }), ia, el('span', { class: 'geo-unit', text: u })),
+            el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Spacing b (down)', '間隔 b（縦）') }), ib, el('span', { class: 'geo-unit', text: u })));
+        }
+      };
+      const setMode = (m) => {
+        M.mode = m; bSec.classList.toggle('on', m === 'sec'); bGrid.classList.toggle('on', m === 'grid');
+        bSec.setAttribute('aria-pressed', String(m === 'sec')); bGrid.setAttribute('aria-pressed', String(m === 'grid'));
+        save(); build(); run();
+      };
+      unit.addEventListener('change', () => { M.unit = unit.value; save(); build(); run(); });
+      // a result row: tap to put the expression into the input field or to copy the result
+      const row = (name, small) => {
+        const val = el('span', { class: 'geo-val', text: '…' });
+        const r = { val, expr: '', result: '' };
+        r.node = tapButton({ class: 'geo-row' }, async () => {
+          if (!r.expr) return;
+          const k = await sheet(name + '  ' + clip(r.result, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'], ['copy', tr('Copy the result', '結果をコピー')]]);
+          if (k === 'use') useExample(r.expr); else if (k === 'copy') copyText(r.result);
+        });
+        r.node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), val);
+        outs.append(r.node);
+        return r;
+      };
+      // the volume of the expression e (in the unit cubed): "= 64/3 m³ ≈ 21.33333333 m³ = 21333.33333 L"
+      // (in m³ too when the unit is another one); the expression for the input field has the unit
+      const show = async (r, e, seq) => {
+        const u = M.unit, withUnit = `(${e}) × 1 ${u}^3`;
+        const v = await Bridge.send('calc', { expr: e, opts: iOpts(), timeout: 3000 });
+        if (seq !== M.seq) return false;
+        if (!v.ok || !v.result || v.timeout || (v.messages || []).some((m) => m.type === 'error')) { r.val.textContent = tr('could not be calculated', '計算できませんでした'); return false; }
+        const exact = v.result.split(' ≈ ')[0].split(' = ')[0].trim(), dec = numberPart(v.result).replace(/-/g, '−');
+        let text = '= ' + exact + ' ' + u + '³';
+        if (dec !== exact) text += (v.result.indexOf(' ≈ ') >= 0 || v.approx ? ' ≈ ' : ' = ') + dec + ' ' + u + '³';
+        for (const to of (u === 'm' ? [] : ['m^3']).concat(['L'])) {
+          const c = await Bridge.send('calc', { expr: `${withUnit} to ${to}`, opts: Object.assign(iOpts(), { approx: 'approx' }), timeout: 3000 });
+          if (seq !== M.seq) return false;
+          // ("21333.33333 L", "0.0000025 m³": the number and its unit)
+          if (c.ok && c.result) text += (c.result.indexOf('≈') >= 0 || v.approx || v.result.indexOf(' ≈ ') >= 0 ? ' ≈ ' : ' = ') + numberPart(c.result).replace(/-/g, '−').replace(/^([−\d.Ee+×^]+)(.*)$/, (all, n, un) => n + ' ' + (un || (to === 'L' ? 'L' : 'm³')));
+        }
+        // (as plain text: the math notation would put the unit into the fraction)
+        r.val.textContent = text;
+        r.result = text; r.expr = withUnit.replace(`(${e})`, '(' + exact + ')');
+        return true;
+      };
+      const num = async (t) => { const s = normalizeExpr(t); return s ? { t: s, v: await numValue(s) } : null; };
+      const bad = (inp, text) => { if (inp) inp.setAttribute('aria-invalid', 'true'); msg.textContent = text; outs.textContent = ''; how.textContent = ''; };
+      const inputAt = (r, c) => table.querySelectorAll('input')[M.mode === 'sec' ? r * 2 + c : r * M.grid[0].length + c];
+      const run = async () => {
+        const seq = ++M.seq;
+        msg.textContent = ''; outs.textContent = ''; how.textContent = '';
+        if (M.mode === 'sec') {
+          // the rows with both values, in order of x
+          const pts = [];
+          for (let r = 0; r < M.rows.length; r++) {
+            const [x, A] = M.rows[r];
+            if (!String(x || '').trim() && !String(A || '').trim()) continue;
+            const nx = await num(x), nA = await num(A);
+            if (seq !== M.seq) return;
+            if (!nx || !isFinite(nx.v)) return bad(inputAt(r, 0), trf('Row {0}: enter the distance as a number', '{0} 行目：距離を数で入れてください', r + 1));
+            if (!nA || !isFinite(nA.v)) return bad(inputAt(r, 1), trf('Row {0}: enter the area as a number', '{0} 行目：断面積を数で入れてください', r + 1));
+            if (nA.v < 0) return bad(inputAt(r, 1), trf('Row {0}: an area cannot be negative', '{0} 行目：断面積は負にできません', r + 1));
+            pts.push({ x: nx, A: nA, r });
+          }
+          if (pts.length < 2) return bad(null, tr('Enter at least two sections', '断面を 2 つ以上入れてください'));
+          for (let i = 1; i < pts.length; i++) if (!(pts[i].x.v > pts[i - 1].x.v)) return bad(inputAt(pts[i].r, 0), trf('Row {0}: the distances must grow from row to row', '{0} 行目：距離は行ごとに大きくしてください', pts[i].r + 1));
+          const n = pts.length - 1, P = (q) => '(' + q.t + ')';
+          const trap = pts.slice(1).map((q, i) => `(${P(pts[i].A)} + ${P(q.A)}) / 2 × (${P(q.x)} − ${P(pts[i].x)})`).join(' + ');
+          const r1 = row(tr('Average end area (trapezoids)', '平均断面法（台形）'), 'Σ (Aᵢ + Aᵢ₊₁)/2 · Δx');
+          if (!(await show(r1, trap, seq))) return;
+          // Simpson: equal steps and an even number of them
+          const h0 = pts[1].x.v - pts[0].x.v, even = pts.every((q, i) => i === 0 || Math.abs((q.x.v - pts[i - 1].x.v) - h0) <= 1e-9 * Math.max(1, Math.abs(h0)));
+          const h = `((${P(pts[n].x)} − ${P(pts[0].x)}) / ${n})`;
+          const simp = (from, to) => { const t = []; for (let i = from; i <= to; i++) t.push((i === from || i === to ? '' : (i - from) % 2 ? '4 × ' : '2 × ') + P(pts[i].A)); return `${h} / 3 × (${t.join(' + ')})`; };
+          const r2 = row(tr("Simpson's rule", 'シンプソンの公式'), 'h/3 (A₀ + 4A₁ + 2A₂ + … + Aₙ)');
+          if (n < 2) { r2.val.textContent = tr('needs three sections or more', '断面が 3 つ以上必要です'); }
+          else if (!even) { r2.val.textContent = tr('not usable: the steps are not equal', '使えません：間隔が等しくありません'); how.textContent = tr("Simpson's rule needs equal steps between the sections: use the average end area value, or measure at equal steps.", 'シンプソンの公式には等しい間隔が必要です。平均断面法の値を使うか、等しい間隔で測ってください。'); }
+          else if (n % 2) {
+            r2.val.textContent = trf('not usable: the number of steps ({0}) is odd', '使えません：区間の数（{0}）が奇数です', n);
+            if (n >= 3) {
+              // the last three steps by Simpson's 3/8 rule, the others by Simpson's rule
+              const k = n - 3, t38 = `3 × ${h} / 8 × (${P(pts[k].A)} + 3 × ${P(pts[k + 1].A)} + 3 × ${P(pts[k + 2].A)} + ${P(pts[n].A)})`;
+              const r3 = row(tr("Simpson's rule with the 3/8 rule for the last three steps", 'シンプソン（最後の 3 区間は 3/8 公式）'), k ? '1/3 + 3/8' : '3h/8 (A₀ + 3A₁ + 3A₂ + A₃)');
+              if (!(await show(r3, k ? `${simp(0, k)} + ${t38}` : t38, seq))) return;
+              how.textContent = tr("Simpson's rule needs an even number of steps. Instead the last three steps are taken by Simpson's 3/8 rule; or add or drop one section.", 'シンプソンの公式には偶数個の区間が必要です。代わりに最後の 3 区間をシンプソンの 3/8 公式で計算しました（断面を 1 つ足すか減らしても使えます）。');
+            }
+          } else if (!(await show(r2, simp(0, n), seq))) return;
+          return;
+        }
+        // the grid of heights
+        const na = await num(M.a), nb = await num(M.b);
+        if (seq !== M.seq) return;
+        if (!na || !(na.v > 0)) return bad(M.ia, tr('Enter the spacing a as a positive number', '間隔 a を正の数で入れてください'));
+        if (!nb || !(nb.v > 0)) return bad(M.ib, tr('Enter the spacing b as a positive number', '間隔 b を正の数で入れてください'));
+        const R = M.grid.length, C = M.grid[0].length, H = [];
+        for (let r = 0; r < R; r++) {
+          H.push([]);
+          for (let c = 0; c < C; c++) {
+            const t = String(M.grid[r][c] || '').trim();
+            if (!t) { H[r].push(null); continue; }
+            const v = await num(t);
+            if (seq !== M.seq) return;
+            if (!v || !isFinite(v.v)) return bad(inputAt(r, c), trf('Row {0}, column {1}: enter the height as a number', '{0} 行 {1} 列：高さを数で入れてください', r + 1, c + 1));
+            H[r].push(v);
+          }
+        }
+        // how many cells each point is a corner of
+        const w = H.map((row) => row.map(() => 0));
+        let cells = 0;
+        for (let r = 0; r + 1 < R; r++) for (let c = 0; c + 1 < C; c++) {
+          if (H[r][c] && H[r][c + 1] && H[r + 1][c] && H[r + 1][c + 1]) { cells++; w[r][c]++; w[r][c + 1]++; w[r + 1][c]++; w[r + 1][c + 1]++; }
+        }
+        if (!cells) return bad(null, tr('No cell has heights at its four corners', '4 つの角に高さがあるマスがありません'));
+        const sums = [[], [], [], []];
+        for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (w[r][c]) sums[w[r][c] - 1].push('(' + H[r][c].t + ')');
+        const S = sums.map((s) => (s.length ? '(' + s.join(' + ') + ')' : '0'));
+        const e = `(${na.t}) × (${nb.t}) / 4 × (${S[0]} + 2 × ${S[1]} + 3 × ${S[2]} + 4 × ${S[3]})`;
+        const r1 = row(tr('Volume (method of point heights)', '体積（点高法）'), 'ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)');
+        if (!(await show(r1, e, seq))) return;
+        how.textContent = trf('{0} cells; points that are corners of 1, 2, 3, 4 cells: {1}, {2}, {3}, {4}', 'マス {0} 個。1・2・3・4 つのマスの角になる点：{1}・{2}・{3}・{4} 個', cells, sums[0].length, sums[1].length, sums[2].length, sums[3].length);
+      };
+      // one tap: examples
+      const EX = [
+        [tr('Sections x² (0 to 4)', '断面 x²（0〜4）'), () => { M.mode = 'sec'; M.unit = 'm'; M.rows = [['0', '0'], ['1', '1'], ['2', '4'], ['3', '9'], ['4', '16']]; }],
+        [tr('Constant 10 m² over 5 m', '一定 10 m²・5 m'), () => { M.mode = 'sec'; M.unit = 'm'; M.rows = [['0', '10'], ['5', '10']]; }],
+        [tr('3 × 3 points, 10 m squares', '3 × 3 点・10 m のマス'), () => { M.mode = 'grid'; M.unit = 'm'; M.a = '10'; M.b = '10'; M.grid = [['1', '1', '1'], ['1', '1', '1'], ['1', '1', '1']]; }]
+      ];
+      const ex = el('div', { class: 'rev-ex' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
+        ...EX.map(([label, f]) => tapButton({ class: 'area-chip', text: label }, () => { f(); unit.value = M.unit; setMode(M.mode); })));
+      p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Method', '方法') }, bSec, bGrid),
+        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit of the lengths', '長さの単位') }), unit),
+        ab, table, tools, msg, outs, how, ex,
+        el('div', { class: 'form-hint', text: tr('Type the values or paste a table from a spreadsheet (columns separated by tabs or commas) into a box: it fills the table from there. Tap a result to put its expression into the input field or to copy it. The tables are kept for the next time.', '値を入れるか、表計算ソフトの表（タブかカンマ区切り）を欄に貼り付けると、そこから表に入ります。結果をタップすると、式を入力欄に入れたりコピーしたりできます。表は次回のために残ります。') }));
+      p.run = run;
+      setMode(M.mode);
+    });
     return p;
   }
   // a sphere of radius r in the 3D graph, with its volume and surface area (a QCalc Pro feature)
