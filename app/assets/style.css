@@ -1177,3 +1177,7 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .cus-err:empty, .cus-text:empty { display: none; }
 .cus-formula { overflow-wrap: anywhere; }
 .sign-row .form-hint { margin-top: 0; }
+/* (1.11.0: a row of small buttons in the tools of a graph wraps instead of running past the screen:
+   with "Custom" the region buttons were too wide for 360 pixels in Spanish, German and French) */
+.area-box .seg.mini { flex: 0 1 auto; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.area-box .seg.mini button { flex: 1 0 auto; }
