@@ -215,6 +215,15 @@
   }
   function proOffered() { return PRO.billing === 'play' || PRO.billing === 'debug'; }
   function hasPro() { return !proOffered() || PRO.pro === true; }
+  // 1.11.0: the new volume features and whether they need Pro, in one place. None does now ('free');
+  // 'pro' locks one (proGate asks for Pro where it is used). The 3D graph, where some of them are,
+  // is Pro as before.
+  const PRO_GATES = { enclosed: 'free', tanks: 'free', revolution: 'free', regions: 'free', sections: 'free' };
+  function proGate(k) {
+    if (PRO_GATES[k] !== 'pro' || hasPro()) return true;
+    proPrompt(tr('This is a QCalc Pro feature', 'これは QCalc Pro の機能です'));
+    return false;
+  }
   function maxPrecision() { return hasPro() ? MAX_PRECISION : FREE_MAX_PRECISION; }
   function engineOpts() {
     return {
@@ -2970,6 +2979,7 @@
     tr('"Shapes" also has a frustum of a cone, a hemisphere, a spherical cap, an ellipsoid, prisms and a pipe, and "Tanks": the amount of liquid in a tank lying down or standing, a sphere or a cone with its point down from the height of the liquid (with how full it is), and the height for an amount (1000 L). Round sizes can be typed as diameters; volumes can be shown in L, mL, m³, cm³, US gal or ft³, and a material (water, concrete, iron…) gives the weight.',
       '「図形」には円錐台・半球・球欠・楕円体・角柱・パイプもあります。「容器の液量」では、横置き・縦置きの円筒、球形、下向きの円錐のタンクの液面の高さから液量（満杯に対する割合も）を出し、液量（1000 L など）から高さも出します。丸い形の大きさは直径でも入れられ、体積は L・mL・m³・cm³・US gal・ft³ で表示でき、材料（水・コンクリート・鉄など）を選ぶと重さも出ます。'),
     tr('Areas, lengths and volumes of shapes: "Shapes" in the menu. Choose a circle, a triangle, a cylinder and so on, type the sizes, and the results appear at once. In a graph, "Area and length" shades the area, and its edges can be dragged.', '図形の面積・長さ・体積は、メニューの「図形」で求められます。円・三角形・円柱などを選んで大きさを入れると、結果がすぐに出ます。グラフでは「面積・長さ」で面積に色が付き、両端をドラッグして範囲を変えられます。'),
+    tr('In "Area and length" of a 2D graph, "Solid of revolution" turns the shaded region once around the x axis, the y axis, y = k or x = k: the volume, the curved surfaces and the surface with the end faces, exact when possible, with the formula used (washers or shells) and a 3D view. Where the region is on both sides of the axis, the overlap counts once. Tap a result to put its integral into the input field or to copy it.', '2D グラフの「面積・長さ」の「回転体」では、色の付いた部分を x 軸・y 軸・y = k・x = k のまわりに 1 回転させた立体の体積、曲面の面積、端の面を含む表面積を出します（できるときは厳密な値）。使った式（ワッシャー法・殻の方法）も示し、3D でも見られます。領域が軸の両側にあるときは、重なる部分を 1 回だけ数えます。結果をタップすると、積分の式を入力欄に入れたり、コピーしたりできます。'),
     tr('Below a graph there is a row of samples (a heart, waves, a doughnut, a ripple …): tap one to draw it, then change its functions and ranges as you like.', 'グラフの下にサンプル（ハート、波、ドーナツ、波紋など）が並んでいます。タップすると描けるので、式や範囲を変えて試せます。'),
     tr('In a form, ↶ and ↷ undo and redo, and ⋯ clears all boxes. A form closed without being used keeps its boxes. The matrix form keeps its matrix for the next calculation, takes a table pasted from a spreadsheet, and its ⋯ menu inserts or deletes a row or a column.', 'フォームでは ↶ ↷ で「元に戻す」「やり直す」、⋯ で「すべての欄を消去」ができます。使わずに閉じたフォームは、次に開くと欄がそのまま残っています。行列の画面は入れた行列を次の計算まで覚えていて、表計算ソフトの表を貼り付けでまとめて入れられ、⋯ から行や列の挿入・削除もできます。')
   ];
@@ -3638,6 +3648,7 @@
       U.f1.value = '0'; U.f2.value = o.area.between && P.series.length > 1 ? '1' : 'axis';
       await areaPairChanged();
       U.a.value = String(o.area.a); U.b.value = String(o.area.b);
+      if (o.area.rev && U.rev) U.rev.open();
       await computeArea();
       if (o.area.length) computeLength();
     }
@@ -3812,6 +3823,7 @@
       g.fillText(fmt(y, stepY), tx, py);
     }
     if (P.area) drawArea(g, sx, sy);
+    if (P.revAxis && P.areaUI && !P.areaUI.box.hidden && !P.areaUI.rev.box.hidden) { drawRevAxis(g, sx, sy, W, H); c.dataset.rev = P.revAxis.kind + ':' + P.revAxis.v; } else delete c.dataset.rev;
     g.lineWidth = 2.2;
     g.lineJoin = 'round';
     for (const s of P.series) {
@@ -4566,22 +4578,23 @@
     const go = el('button', { class: 'btn primary', text: tr('Area', '面積') });
     const lenBtn = tapButton({ class: 'btn', text: tr('Length', '長さ・周') }, () => computeLength());
     const len = el('div', { class: 'area-out', 'aria-live': 'polite' });
+    const rev = buildRevolution(); // 1.11.0: solids of revolution
     const box = el('div', { class: 'area-box' },
       el('div', { class: 'plot-range' }, f1, el('span', { text: tr('and', 'と') }), f2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), a, el('span', { text: tr(' to ', ' 〜 ').trim() }), b, go, lenBtn),
-      cross, out, ins, len,
+      cross, out, ins, len, rev.toggle, rev.box,
       el('div', { class: 'form-hint', text: tr('The area is shaded in the graph. Drag one of its two edges (↔) to change the range, or tap a range between crossing points. Parts below the x axis (or below the other function) count as positive. "Length" gives the length of the curve, or the perimeter of the region between two functions.', '面積を求める部分はグラフに色が付きます。両端の ↔ をドラッグすると範囲を変えられ、交点の間の範囲はタップでも選べます。x 軸（またはもう一方の関数）より下の部分もプラスとして数えます。「長さ・周」は曲線の長さ（2 つの関数の間なら囲まれた部分の周の長さ）です。') }),
       buildShapes2d(),
       tapButton({ class: 'btn geo-link', text: tr('More shapes: rectangle, triangle, cylinder… ›', 'ほかの図形（長方形・三角形・円柱など）›') }, () => openShapes()));
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Area and length ▾', '面積・長さ ▾') });
     // opened: the area between the first function and the x axis (or the second function) is shown at once
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) { P.areaUI.auto = true; areaFunctionsChanged(); } else { P.area = null; draw(); } });
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) { P.areaUI.auto = true; areaFunctionsChanged(); } else { P.area = null; P.revAxis = null; rev.seq++; draw(); } });
     f1.addEventListener('change', () => { P.areaUI.auto = true; areaPairChanged(); });
     f2.addEventListener('change', () => { P.areaUI.auto = true; areaPairChanged(); });
     go.addEventListener('click', () => computeArea());
     ins.addEventListener('click', () => { if (P.areaExpr) useExample(P.areaExpr); });
-    P.areaUI = { f1, f2, a, b, cross, out, ins, box, len };
+    P.areaUI = { f1, f2, a, b, cross, out, ins, box, len, rev };
     return el('div', { class: 'area-wrap' }, toggle, box);
   }
   // shapes to draw and measure: a circle (radius r), an ellipse (half axes a and b)
@@ -4698,6 +4711,7 @@
     else if (real && real.clipped && real.parts.length) { U.a.value = real.parts[0].a; U.b.value = real.parts[real.parts.length - 1].b; }
     else if (view) { U.a.value = String(view.lo); U.b.value = String(view.hi); }
     if (auto) await computeArea(true);
+    else if (U.rev && !U.rev.box.hidden) computeRevolution(true);
   }
   // An edge of the shaded area was dragged (setupPlotGestures): a or b follows it. When the finger
   // lifts, the edge snaps to a crossing point close by (its exact value) or to a round number, and
@@ -4783,8 +4797,14 @@
     if (ex.length !== ap.length) return [];
     return ex.map((e, i) => ({ text: e.replace(/^\((.*)\)$/, '$1'), v: Number(ap[i].replace(/−/g, '-')) })).filter((r) => isFinite(r.v));
   }
-  // auto: asked for by opening the tools or drawing a graph, not with the "Area" button (a short time limit)
+  // auto: asked for by opening the tools or drawing a graph, not with the "Area" button (a short time
+  // limit). 1.11.0: then the solid of revolution, when its part of the tools is open
   async function computeArea(auto) {
+    await computeAreaOnly(auto);
+    const U = P.areaUI;
+    if (U && U.rev && !U.rev.box.hidden) await computeRevolution(auto);
+  }
+  async function computeAreaOnly(auto) {
     const U = P.areaUI, f = P.series[Number(U.f1.value)];
     if (!f) return;
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
@@ -4878,6 +4898,498 @@
     g.fill();
     g.restore();
   }
+
+  // ------------------------------------------ solids of revolution (2D graph, 1.11.0)
+  // The region of the area tools (between f and g, or between f and the x axis, x from a to b)
+  // turned once around an axis: the x axis, the y axis, y = k or x = k. The volume and the area of
+  // the surface of the solid: exact when the engine can integrate each piece, else numeric with the
+  // digits that can be trusted.
+  // A horizontal axis y = k: each slice x of the region is the interval of y between f and g; turned,
+  // it is the ring of the distances from the axis r ≤ ρ ≤ R (washers): V = π∫(R² − r²) dx. A slice
+  // that crosses the axis gives the disk of the larger distance (r = 0): the two sides turned are one
+  // solid, and the part where they overlap counts once.
+  // A vertical axis x = k: the slices are the distances ρ from the axis. The region on each side of
+  // the axis gives an interval of y at ρ (the side on the left is mirrored, x → 2k − x); the solid is
+  // the union of the two turned (shells): V = 2π∫ρ m(ρ) dρ, m the length of the union of the
+  // intervals.
+  // The range is cut where the curves that make R and r (or the ends of the intervals) change: each
+  // piece is then smooth, and the engine can often integrate it exactly.
+  const REV_AXES = [['x', tr('x axis', 'x 軸')], ['y', tr('y axis', 'y 軸')], ['h', 'y = k'], ['v', 'x = k']];
+  // "(k)" in a sum, and "x − k" (only "x" when k is 0)
+  const revParen = (t) => (/^[−-]?[\d.]+$|^[\p{L}π]+$/u.test(t) && t[0] !== '−' && t[0] !== '-' ? t : '(' + t + ')');
+  const revMinus = (e, k) => (k === '0' ? e : `${revParen(e)} − ${revParen(k)}`);
+  // x^2 as x² in a text that is read (not one that is calculated)
+  const revPretty = (t) => String(t).replace(/\^2(?![\d.])/g, '²').replace(/\^3(?![\d.])/g, '³');
+  // √(1 + f′²) of a curve, and the points where it is infinite (kept: each curve is asked once)
+  const revArcCache = new Map();
+  async function revArc(e) {
+    if (revArcCache.has(e)) return revArcCache.get(e);
+    const s = await symInfo(`√(1 + (diff(${e}, x))^2)`);
+    const res = s ? { L: recipSqrt(s.text), points: s.points } : null;
+    revArcCache.set(e, res);
+    if (revArcCache.size > 60) revArcCache.delete(revArcCache.keys().next().value);
+    return res;
+  }
+  // the values of the expressions es (in x) at one point t: [numbers], or null
+  const revAt = (es, t) => sumVector('[' + es.map((e) => subXY(e, '(' + t + ')', 'y')).join(', ') + ']', 20);
+  // the exact roots of e = 0 that the engine finds (kept), as [{ v, text }]
+  const revSolveCache = new Map();
+  async function revSolve(e) {
+    if (revSolveCache.has(e)) return revSolveCache.get(e);
+    const rs = await Bridge.send('calc', { expr: `solve((${e}) = 0)`, opts: Object.assign(engineOpts(), { precision: 15, grouping: false }), timeout: 1500 });
+    const res = rs.ok && rs.result && !rs.timeout && !/solve\(/.test(rs.result) ? splitRoots(rs.result) : [];
+    revSolveCache.set(e, res);
+    if (revSolveCache.size > 60) revSolveCache.delete(revSolveCache.keys().next().value);
+    return res;
+  }
+  // the points inside lo..hi where the expressions es (in x) change sign: exact when the engine can
+  // solve the equation, else by secantsolve(); [{ v, text }] in order. Values within tol of 0 have no
+  // sign (an expression that is 0 all along, as f − g for the two sides of a symmetric region, does
+  // not cut the range).
+  async function revCuts(es, lo, hi, a, b, seq) {
+    const S0 = await revSamplesOf(es, a, b);
+    if (!S0) return null;
+    const cuts = [];
+    for (let n = 0; n < es.length; n++) {
+      const { x, y } = S0[n];
+      const scale = Math.max(1e-300, ...y.filter((v) => v !== null && isFinite(v)).map(Math.abs));
+      const tol = 1e-9 * Math.max(1, scale);
+      let last = -1;
+      const br = [];
+      for (let i = 0; i < x.length; i++) {
+        const v = y[i];
+        if (v === null || !isFinite(v)) { last = -1; continue; }
+        if (Math.abs(v) <= tol) continue;
+        if (last >= 0 && (y[last] < 0) !== (v < 0)) br.push([x[last], x[i]]);
+        last = i;
+      }
+      if (!br.length) continue;
+      const exact = br.length <= 12 ? await revSolve(es[n]) : [];
+      for (const [p, q] of br.slice(0, 24)) {
+        if (seq && seq()) return null;
+        const ex = exact.find((r) => r.v >= p - 1e-12 * Math.max(1, Math.abs(p)) && r.v <= q + 1e-12 * Math.max(1, Math.abs(q)));
+        if (ex) { cuts.push({ v: ex.v, text: ex.text }); continue; }
+        const r = await Bridge.send('calc', { expr: `secantsolve(${es[n]}, ${engineNum(p)}, ${engineNum(q)})`, opts: Object.assign(engineOpts(), { precision: 16, approx: 'approx', grouping: false }), timeout: 1500 });
+        let v = r.ok && r.result ? Number(numberPart(r.result)) : NaN;
+        if (!(v >= p && v <= q)) v = (p + q) / 2;
+        cuts.push({ v, text: niceNumber(v) || engineNum(+v.toPrecision(15)) });
+      }
+    }
+    const span = hi - lo;
+    return cuts.filter((c) => c.v > lo + span * 1e-10 && c.v < hi - span * 1e-10).sort((p, q) => p.v - q.v)
+      .filter((c, i, arr) => i === 0 || c.v - arr[i - 1].v > span * 1e-10);
+  }
+  // the engine's samples of the expressions es on a..b: for each, { x: [], y: [] } (y null where not real)
+  async function revSamplesOf(es, a, b) {
+    if (!es.length) return [];
+    const r = await Bridge.send('plot', { exprs: es, min: String(a), max: String(b), steps: 400, var: 'x', opts: iOpts(), timeout: 8000 });
+    if (!r.ok || !Array.isArray(r.series) || r.series.length !== es.length) return null;
+    return r.series.map((s) => ({ x: s.x, y: s.y }));
+  }
+  // the pieces of a range: [{ lo, hi, a, b }] between the cuts
+  function revPieces(p, cuts) {
+    const bounds = [{ v: p.lo, text: p.a }].concat(cuts, [{ v: p.hi, text: p.b }]), out = [];
+    for (let i = 0; i + 1 < bounds.length; i++) out.push({ lo: bounds[i].v, hi: bounds[i + 1].v, a: bounds[i].text, b: bounds[i + 1].text });
+    return out;
+  }
+  // ∫ F from a to b (texts; lo, hi as numbers): exact when the engine can, else numeric; cut at the
+  // points where the integrand is infinite (points, from the curve). { text, exact, v, digits } or
+  // { inf: true }, or null
+  async function revIntegral(F, p, points) {
+    const cuts = [];
+    for (const t of new Set(points || [])) {
+      const v = await numValue(t);
+      if (!(v > p.lo + (p.hi - p.lo) * 1e-12 && v < p.hi - (p.hi - p.lo) * 1e-12) || cuts.some((c) => Math.abs(c.v - v) < 1e-12 * Math.max(1, Math.abs(v)))) continue;
+      cuts.push({ v, text: /^[−-]?\d+(\.\d+)?$/.test(t) ? (niceNumber(v) || t) : t });
+    }
+    cuts.sort((x, y) => x.v - y.v);
+    const bounds = [p.a].concat(cuts.map((c) => c.text), [p.b]), vals = [];
+    for (let i = 0; i + 1 < bounds.length; i++) {
+      const num = await tsIntegral(F, bounds[i], bounds[i + 1]);
+      if (num && num.inf) return { inf: true };
+      const ex = await exactIntegral(`integrate(${F}, ${bounds[i]}, ${bounds[i + 1]})`, cuts.length ? 3000 : 6000);
+      const val = bestValue(ex, num ? num.v : NaN, num ? num.digits : 10);
+      if (!val) return null;
+      vals.push(val);
+    }
+    return sumValues(vals);
+  }
+  // a value of an expression without x (an end face): { text, exact, v } or null
+  async function revConst(e) {
+    const num = await numValue(e);
+    if (!isFinite(num)) return null;
+    return bestValue(await exactIntegral(e, 3000), num, 10);
+  }
+
+  // The solid: { pieces: [{ lo, hi, a, b, vol, surf: [{ e (the curve), w (its distance from the
+  // axis) }] }], ends: [expressions of the flat faces or walls], method, three: { exprs, range }, note }
+  // or { error }. f, g: expressions (g '0' for the x axis); parts: the parts of the range where they
+  // are real; ax: { kind 'h' | 'v', k (text), kv (number) }
+  async function revSolid(f, g, parts, ax, seq) {
+    return ax.kind === 'h' ? revWashers(f, g, parts, ax, seq) : revShells(f, g, parts, ax, seq);
+  }
+  // a horizontal axis y = k
+  async function revWashers(f, g, parts, ax, seq) {
+    const u = revMinus(f, ax.k), v = revMinus(g, ax.k);
+    const pieces = [], ends = [];
+    let hole = false, cases = new Set(), Rmax = 0;
+    for (const p of parts) {
+      const cuts = await revCuts([u, v, `(${f}) − (${g})`, `(${u}) + (${v})`], p.lo, p.hi, p.a, p.b, seq);
+      if (!cuts) return { error: tr('Could not calculate the solid', '回転体を計算できませんでした') };
+      const ps = revPieces(p, cuts), first = pieces.length;
+      for (const q of ps) {
+        if (seq()) return null;
+        const m = await revAt([u, v], engineNum((q.lo + q.hi) / 2));
+        if (!m) return { error: tr('Could not calculate the solid', '回転体を計算できませんでした') };
+        const [um, vm] = m, au = Math.abs(um), av = Math.abs(vm);
+        const outer = au >= av - 1e-12 * Math.max(1, au) ? 'f' : 'g';
+        const R = outer === 'f' ? u : v, Rs = (outer === 'f' ? um : vm) < 0 ? -1 : 1;
+        const piece = Object.assign({}, q, { surf: [{ e: outer === 'f' ? f : g, w: Rs < 0 ? `−(${R})` : `(${R})` }] });
+        if (um * vm > 0 && Math.abs(au - av) > 1e-12 * Math.max(1, au)) {
+          // a washer: the other curve makes the hole
+          const r = outer === 'f' ? v : u;
+          piece.vol = `π × ((${R})^2 − (${r})^2)`;
+          piece.R = R; piece.r = r;
+          piece.surf.push({ e: outer === 'f' ? g : f, w: Rs < 0 ? `−(${r})` : `(${r})` });
+          hole = true;
+        } else if (um * vm > 0) {
+          // f and g at the same distance all along this piece (the region is a curve): nothing to turn
+          piece.vol = '0'; piece.R = R; piece.r = R; piece.surf = [];
+        } else { piece.vol = `π × (${R})^2`; piece.R = R; piece.r = ''; }
+        cases.add(piece.R + '|' + piece.r);
+        pieces.push(piece);
+      }
+      // the flat faces at the two ends of the part: rings π (R² − r²)
+      for (const [q, t] of [[pieces[first], p.a], [pieces[pieces.length - 1], p.b]]) {
+        const e = q.r ? `π × ((${q.R})^2 − (${q.r})^2)` : `π × (${q.R})^2`;
+        ends.push(subXY(e, '(' + t + ')', 'y'));
+      }
+      const sm = await revSamplesOf([u, v], p.a, p.b);
+      if (sm) for (const s of sm) for (const y of s.y) if (y !== null && isFinite(y)) Rmax = Math.max(Rmax, Math.abs(y));
+    }
+    // the 3D view: the solid with the axis along x: z = ±√(R² − y²), and the hole ±√(r² − y²)
+    let R3, r3;
+    if (cases.size === 1) { R3 = pieces[0].R; r3 = pieces[0].r; }
+    else { R3 = `max(abs(${u}), abs(${v}))`; r3 = hole ? `max(0, sgn((${u}) × (${v})) × min(abs(${u}), abs(${v})))` : ''; }
+    const exprs = [`√((${R3})^2 − y^2)`, `−√((${R3})^2 − y^2)`].concat(hole && r3 ? [`√((${r3})^2 − y^2)`, `−√((${r3})^2 − y^2)`] : []);
+    const lo = parts[0].lo, hi = parts[parts.length - 1].hi, w = r6((Rmax || 1) * 1.08);
+    const three = { exprs, range: [parts[0].a, parts[parts.length - 1].b, '−' + w, w] };
+    const one = cases.size === 1 && pieces.length === 1;
+    const method = hole ? tr('Washers: V = π∫(R² − r²) dx (R, r: the distances of the outer and the inner curve from the axis)', 'ワッシャー法：V = π∫(R² − r²) dx（R・r：外側・内側の曲線と軸の距離）')
+      : tr('Disks: V = π∫R² dx (R: the distance of the curve from the axis)', '円板の方法：V = π∫R² dx（R：曲線と軸の距離）');
+    const simple = async (e) => revPretty(ax.k === '0' ? e : (await exactText(e)) || e);
+    const detail = one ? 'R = ' + await simple(pieces[0].R) + (pieces[0].r ? ', r = ' + await simple(pieces[0].r) : '')
+      : trf('R and r change at {0}: calculated in {1} pieces', 'R と r は x = {0} で替わるので、{1} 個に分けて計算', pieceCuts(pieces, parts), pieces.length);
+    return { pieces, ends, method, detail, three, span: [lo, hi] };
+  }
+  // the inner ends of the pieces, for a note: "0, 1/2"
+  const pieceCuts = (pieces, parts) => pieces.slice(1).map((p) => p.a).filter((t) => !parts.some((q) => q.a === t)).slice(0, 4).join(', ');
+  // a vertical axis x = k: the side on the right as it is, the side on the left mirrored
+  async function revShells(f, g, parts, ax, seq) {
+    const k = ax.k, kv = ax.kv;
+    const mirror = k === '0' ? '−x' : `2 × ${revParen(k)} − x`;
+    const sides = [];
+    const right = parts.filter((p) => p.hi > kv).map((p) => (p.lo >= kv ? p : { lo: kv, hi: p.hi, a: k, b: p.b }));
+    const left = [];
+    for (const p of parts.filter((q) => q.lo < kv)) {
+      const hi = Math.min(p.hi, kv), ht = p.hi > kv ? k : p.b;
+      const ta = (await exactText(`2 × ${revParen(k)} − ${revParen(ht)}`)) || `2 × ${revParen(k)} − ${revParen(ht)}`;
+      const tb = (await exactText(`2 × ${revParen(k)} − ${revParen(p.a)}`)) || `2 × ${revParen(k)} − ${revParen(p.a)}`;
+      left.push({ lo: 2 * kv - hi, hi: 2 * kv - p.lo, a: ta, b: tb });
+    }
+    left.sort((p, q) => p.lo - q.lo);
+    if (right.length) sides.push({ name: 'R', f, g, parts: right });
+    if (left.length) sides.push({ name: 'L', f: subXY(f, mirror, 'y'), g: subXY(g, mirror, 'y'), parts: left });
+    if (!sides.length) return { error: noRealText() };
+    // a region that is the same on both sides of the axis: one side alone gives the solid
+    if (sides.length === 2 && await revSymmetric(sides)) sides.pop();
+    const all = [].concat(...sides.map((s) => s.parts)).sort((p, q) => p.lo - q.lo);
+    const X = { lo: all[0].lo, hi: Math.max(...all.map((p) => p.hi)) };
+    X.a = all[0].a; X.b = all.find((p) => p.hi === X.hi).b;
+    const curves = [].concat(...sides.map((s) => [s.f, s.g]));
+    // the cuts: the ends of the sides, and where two of the four curves meet
+    const diffs = [];
+    for (let i = 0; i < curves.length; i++) for (let j = i + 1; j < curves.length; j++) diffs.push(`(${curves[i]}) − (${curves[j]})`);
+    const cuts = await revCuts(diffs, X.lo, X.hi, X.a, X.b, seq);
+    if (!cuts) return { error: tr('Could not calculate the solid', '回転体を計算できませんでした') };
+    const events = [];
+    for (const s of sides) for (const p of s.parts) for (const [v, text] of [[p.lo, p.a], [p.hi, p.b]]) if (v > X.lo && v < X.hi) events.push({ v, text });
+    const allCuts = cuts.concat(events).sort((p, q) => p.v - q.v).filter((c, i, arr) => i === 0 || c.v - arr[i - 1].v > (X.hi - X.lo) * 1e-10);
+    const rho = k === '0' ? 'x' : `x − ${revParen(k)}`;
+    const span = X.hi - X.lo, eps = span * 1e-9;
+    const present = (s, t) => s.parts.some((p) => t > p.lo - eps && t < p.hi + eps);
+    // the union of the intervals of the sides at t (numbers vals of the curves): [{ lo, hi }] with the curves
+    const union = (t, vals, which) => {
+      const iv = [];
+      sides.forEach((s, n) => {
+        if (!which(s)) return;
+        const fv = vals[2 * n], gv = vals[2 * n + 1];
+        iv.push(fv <= gv ? { lo: [s.f, fv], hi: [s.g, gv] } : { lo: [s.g, gv], hi: [s.f, fv] });
+      });
+      iv.sort((p, q) => p.lo[1] - q.lo[1]);
+      const out = [];
+      for (const q of iv) {
+        const last = out[out.length - 1];
+        if (last && q.lo[1] <= last.hi[1] + 1e-12 * Math.max(1, Math.abs(last.hi[1]))) { if (q.hi[1] > last.hi[1] + 1e-12 * Math.max(1, Math.abs(q.hi[1]))) last.hi = q.hi; }
+        else out.push({ lo: q.lo, hi: q.hi });
+      }
+      return out;
+    };
+    const lenExpr = (u) => u.map((q) => q.hi[0] + (q.lo[0] === '0' ? '' : ' − ' + revParen(q.lo[0]))).join(' + ');
+    const pieces = [];
+    for (const q of revPieces(X, allCuts)) {
+      if (seq()) return null;
+      const mid = (q.lo + q.hi) / 2;
+      if (!sides.some((s) => present(s, mid))) continue;
+      const vals = await revAt(curves, engineNum(mid));
+      if (!vals) return { error: tr('Could not calculate the solid', '回転体を計算できませんでした') };
+      const u = union(mid, vals, (s) => present(s, mid));
+      pieces.push(Object.assign({}, q, { vol: `2π × (${rho}) × (${lenExpr(u)})`, h: lenExpr(u), surf: [].concat(...u.map((iv) => [{ e: iv.lo[0], w: rho }, { e: iv.hi[0], w: rho }])) }));
+    }
+    if (!pieces.length) return { error: noRealText() };
+    // the walls: where a side begins or ends away from the axis, the union of the intervals jumps;
+    // what is in one of the unions just before and just after but not in both, turned, is a
+    // cylinder 2π ρ × its height (both sides can begin or end at the same distance)
+    const ends = [], seen = [];
+    for (const s of sides) for (const p of s.parts) for (const [t, text] of [[p.lo, p.a], [p.hi, p.b]]) {
+      if (Math.abs(t - kv) <= eps || seen.some((x) => Math.abs(x - t) <= eps)) continue;
+      seen.push(t);
+      const vals = await revAt(curves, engineNum(t));
+      if (!vals) continue;
+      const B = sides.filter((o) => present(o, t - eps * 10)), A = sides.filter((o) => present(o, t + eps * 10));
+      const both = sides.filter((o) => B.includes(o) || A.includes(o)), common = B.filter((o) => A.includes(o));
+      const all = union(t, vals, (o) => both.includes(o));
+      let inter = '0';
+      if (common.length) { const u = union(t, vals, (o) => common.includes(o)); if (u.length) inter = lenExpr(u); }
+      else if (B.length && A.length) {
+        // one side ends where the other begins: what they have in common
+        const iv = (o) => { const n = sides.indexOf(o), fv = vals[2 * n], gv = vals[2 * n + 1]; return fv <= gv ? [[o.f, fv], [o.g, gv]] : [[o.g, gv], [o.f, fv]]; };
+        const [l1, h1] = iv(B[0]), [l2, h2] = iv(A[0]);
+        const lo = l1[1] >= l2[1] ? l1 : l2, hi = h1[1] <= h2[1] ? h1 : h2;
+        if (hi[1] > lo[1]) inter = `(${hi[0]}) − (${lo[0]})`;
+      }
+      if (!all.length) continue;
+      ends.push(subXY(`2π × (${rho}) × (${lenExpr(all)}${inter === '0' ? '' : ` − (${inter})`})`, '(' + text + ')', 'y'));
+    }
+    // the 3D view: the axis is the z axis, ρ = √(x² + y²); the top and the bottom of each side
+    // between its distances from the axis (√(min(0, …)) is not real outside them)
+    const r3 = '√(x^2 + y^2)', exprs = [];
+    for (const s of sides) {
+      const at = s.name === 'R' ? (k === '0' ? r3 : `${revParen(k)} + ${r3}`) : (k === '0' ? '−' + r3 : `${revParen(k)} − ${r3}`);
+      const F = subXY(f, at, 'y'), G = subXY(g, at, 'y');
+      const p0 = s.parts[0].lo - kv, p1 = s.parts[s.parts.length - 1].hi - kv;
+      const cut = `√(min(0, (${r3} − ${engineNum(+p0.toPrecision(15))}) × (${engineNum(+p1.toPrecision(15))} − ${r3})))`;
+      exprs.push(`max(${F}, ${G}) + ${cut}`, `min(${F}, ${G}) + ${cut}`);
+    }
+    const w = r6((X.hi - kv) * 1.06);
+    const three = { exprs, range: ['−' + w, w, '−' + w, w] };
+    const method = tr('Shells: V = 2π∫ρ h dρ (ρ: the distance from the axis, h: the height of the region there)', '殻の方法（円筒分割）：V = 2π∫ρ h dρ（ρ：軸からの距離、h：その距離での領域の高さ）');
+    const one = pieces.length === 1;
+    const detail = (one ? 'ρ = ' + revPretty(k === '0' ? rho : (await exactText(rho)) || rho) + ', h = ' + revPretty(pieces[0].h) : trf('h changes at {0}: calculated in {1} pieces', 'h は {0} で替わるので、{1} 個に分けて計算', pieces.slice(1).map((p) => p.a).slice(0, 4).join(', '), pieces.length))
+      + (sides.length === 2 ? tr(' (the region is on both sides of the axis: the two sides turned make one solid, the overlap counted once)', '（領域が軸の両側にあるので、両側を回した立体の和として、重なりは 1 回だけ数えています）') : '');
+    return { pieces, ends, method, detail, three, span: [X.lo, X.hi] };
+  }
+  // true when the two sides (the right one and the mirrored left one) are the same region
+  async function revSymmetric(sides) {
+    const [R, L] = sides;
+    if (R.parts.length !== L.parts.length || R.parts.some((p, i) => Math.abs(p.lo - L.parts[i].lo) > 1e-9 * Math.max(1, Math.abs(p.lo)) || Math.abs(p.hi - L.parts[i].hi) > 1e-9 * Math.max(1, Math.abs(p.hi)))) return false;
+    const ts = [0.13, 0.31, 0.5, 0.67, 0.89].map((t) => R.parts[0].lo + (R.parts[R.parts.length - 1].hi - R.parts[0].lo) * t);
+    for (const t of ts) {
+      const v = await revAt([R.f, R.g, L.f, L.g], engineNum(t));
+      if (!v) return false;
+      const lo1 = Math.min(v[0], v[1]), hi1 = Math.max(v[0], v[1]), lo2 = Math.min(v[2], v[3]), hi2 = Math.max(v[2], v[3]);
+      const tol = 1e-10 * Math.max(1, Math.abs(hi1), Math.abs(lo1));
+      if (Math.abs(lo1 - lo2) > tol || Math.abs(hi1 - hi2) > tol) return false;
+    }
+    return true;
+  }
+
+  // the part of the area tools for solids of revolution: the axis, the results (tap one to put its
+  // integral into the input field or to copy it), the formula used, the 3D view and examples.
+  // The axis and k are remembered (qalc.rev)
+  function buildRevolution() {
+    const saved = store.get('qalc.rev', null) || {};
+    const R = { axis: REV_AXES.some((x) => x[0] === saved.axis) ? saved.axis : 'x', seq: 0, three: null };
+    const k = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: 'k', value: typeof saved.k === 'string' ? saved.k : '−1', 'aria-label': tr('k of the axis', '軸の k') });
+    const kErr = el('div', { class: 'form-hint warn', role: 'alert' });
+    const kRow = el('span', { class: 'rev-k' }, el('span', { class: 'rev-k-lbl', text: 'k =' }), k);
+    const btns = REV_AXES.map(([key, label]) => tapButton({ text: label, 'aria-label': tr('Axis: ', '軸：') + label }, () => setAxis(key)));
+    const save = () => store.set('qalc.rev', { axis: R.axis, k: k.value, open: !box.hidden });
+    const setAxis = (key, quiet) => {
+      R.axis = key;
+      btns.forEach((b, i) => { const on = REV_AXES[i][0] === key; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+      kRow.hidden = key !== 'h' && key !== 'v';
+      kRow.firstChild.textContent = key === 'v' ? 'x = k,  k =' : 'y = k,  k =';
+      save();
+      if (!quiet) computeRevolution();
+    };
+    k.addEventListener('change', () => { save(); computeRevolution(); });
+    const msg = el('div', { class: 'area-out', 'aria-live': 'polite' });
+    const outs = el('div', { class: 'geo-out rev-out' });
+    const method = el('div', { class: 'form-hint rev-method' });
+    const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, () => {
+      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: true, res: 61 });
+    });
+    // one tap: a graph, its range and the axis
+    const EX = [
+      [tr('y = √x, x axis', 'y = √x・x 軸'), ['√(x)'], [-0.5, 4.5], '0', '4', false, 'x'],
+      [tr('y = x and y = x², y axis', 'y = x と y = x²・y 軸'), ['x', 'x^2'], [-0.5, 1.5], '0', '1', true, 'y'],
+      [tr('Sphere', '球'), ['√(4 − x^2)'], [-2.6, 2.6], '−2', '2', false, 'x', true],
+      [tr('Torus', 'トーラス'), ['3 + √(1 − x^2)', '3 − √(1 − x^2)'], [-3, 3], '−1', '1', true, 'x', true]
+    ];
+    const exRow = el('div', { class: 'rev-ex' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
+      ...EX.map(([label, exprs, range, a, b, between, axis, equal]) => tapButton({ class: 'area-chip', text: label }, () => {
+        setAxis(axis, true);
+        openPlotWith(exprs, { range, equal: !!equal, area: { a, b, between, rev: true } });
+      })));
+    const box = el('div', { class: 'rev-box' },
+      el('div', { class: 'plot-range' }, el('span', { text: tr('Axis', '軸') }), el('span', { class: 'seg mini rev-axes' }, ...btns), kRow),
+      kErr, msg, outs, method, view, exRow,
+      el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
+    box.hidden = true;
+    const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Solid of revolution ▾', '回転体 ▾'), 'aria-expanded': 'false' }, () => {
+      if (box.hidden && !proGate('revolution')) return;
+      box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); save();
+      if (!box.hidden) computeRevolution(true); else { R.seq++; P.revAxis = null; draw(); }
+    });
+    Object.assign(R, { box, toggle, k, kErr, kRow, msg, outs, method, view, setAxis, open: () => { if (box.hidden) toggle.click(); } });
+    setAxis(R.axis, true);
+    if (saved.open) { box.hidden = false; toggle.classList.add('on'); toggle.setAttribute('aria-expanded', 'true'); }
+    return R;
+  }
+  // a row of the results: its name, the formula in small letters, the value; tapping it offers to put
+  // the integral into the input field or to copy the result
+  function revRow(R, name, small) {
+    const val = el('span', { class: 'geo-val', text: '…' });
+    const row = { val, expr: '', result: '' };
+    row.node = tapButton({ class: 'geo-row' }, async () => {
+      if (!row.expr) return;
+      const key = await sheet(name + '  ' + clip(row.result, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'], ['copy', tr('Copy the result', '結果をコピー')]]);
+      if (key === 'use') useExample(row.expr);
+      else if (key === 'copy') copyText(row.result);
+    });
+    row.node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), val);
+    R.outs.append(row.node);
+    return row;
+  }
+  const revShow = (row, val, expr) => { row.result = val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text; row.val.textContent = ''; showResult(row.val, row.result); row.expr = expr; };
+  // the volume and the surface of the solid, for the functions and the range of the area tools.
+  // auto: opened or drawn (not a tap on the axis): the same, it only tells how long it took
+  async function computeRevolution(auto) {
+    const U = P.areaUI, R = U && U.rev;
+    if (!R || R.box.hidden || U.box.hidden) return;
+    const seq = ++R.seq, stale = () => seq !== R.seq;
+    R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.k.removeAttribute('aria-invalid'); R.outs.textContent = ''; R.method.textContent = '';
+    const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '回転体を計算できませんでした'); R.outs.textContent = ''; } };
+    const f = P.series[Number(U.f1.value)];
+    if (!f) return fail(tr('Draw a function first', '先に関数を描いてください'));
+    const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
+    if (!a || !b) return fail(tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'));
+    let k = '0', kv = 0;
+    if (R.axis === 'h' || R.axis === 'v') {
+      k = normalizeExpr(R.k.value);
+      kv = k ? await numValue(k) : NaN;
+      if (stale()) return;
+      if (!k || !isFinite(kv)) {
+        R.kErr.textContent = tr('Enter a number for k (for example −1 or 1/2)', 'k に数を入れてください（例：−1、1/2）');
+        R.k.setAttribute('aria-invalid', 'true');
+        P.revAxis = null; draw();
+        return fail(' ');
+      }
+    }
+    const ax = { kind: R.axis === 'x' || R.axis === 'h' ? 'h' : 'v', k, kv };
+    P.revAxis = { kind: ax.kind, v: kv }; draw();
+    const g = areaG(), ge = g ? g.expr : '0';
+    R.msg.textContent = tr('Calculating…', '計算中…');
+    const t0 = Date.now(), limit = Math.max(30, timeLimit() * 2) * 1000, late = () => Date.now() - t0 > limit;
+    const rn = await rangeNums(a, b);
+    if (stale()) return;
+    if (!rn) return fail(tr('a and b must be two different numbers', 'a と b は異なる数にしてください'));
+    const rp = await realParts(g ? [f.expr, g.expr] : [f.expr], rn.a, rn.b, rn.lo, rn.hi);
+    if (stale()) return;
+    if (rp && !rp.parts.length) return fail(noRealText());
+    const parts = rp ? rp.parts : [rn];
+    const solid = await revSolid(f.expr, ge, parts, ax, () => stale() || late());
+    if (stale()) return;
+    if (late()) return fail(tr('It took too long (the time limit can be changed in the settings)', '時間がかかりすぎました（制限時間は設定で変えられます）'));
+    if (!solid || solid.error) return fail(solid && solid.error);
+    const vrow = revRow(R, tr('Volume', '体積'), ax.kind === 'h' ? 'π∫(R² − r²) dx' : '2π∫ρ h dρ');
+    const srow = revRow(R, tr('Surface area (curved surfaces)', '表面積（曲面だけ）'), '2π∫ρ ds');
+    const erow = revRow(R, tr('Surface area (with the end faces)', '表面積（端の面も含む）'), ax.kind === 'h' ? tr('+ the flat faces at x = a and b', '＋ x = a、b の平らな面') : tr('+ the faces the sides at x = a and b make', '＋ x = a、b の辺が作る面'));
+    R.msg.textContent = '';
+    R.method.textContent = solid.method + '\n' + solid.detail + (rp && rp.clipped ? '\n' + realNote(!!g, parts) : '');
+    // the volume
+    const vols = [], vexpr = [];
+    for (const p of solid.pieces) {
+      if (p.vol === '0') continue;
+      const v = await revIntegral(p.vol, p, []);
+      if (stale()) return;
+      if (late()) return fail(tr('It took too long (the time limit can be changed in the settings)', '時間がかかりすぎました（制限時間は設定で変えられます）'));
+      if (!v) { vrow.val.textContent = tr('could not be calculated', '計算できませんでした'); vols.length = 0; break; }
+      if (v.inf) { vrow.val.textContent = tr('infinite', '無限大'); vols.length = 0; break; }
+      vols.push(v); vexpr.push(`integrate(${p.vol}, ${p.a}, ${p.b})`);
+    }
+    if (vols.length) { const V = await sumValues(vols); if (stale()) return; revShow(vrow, V, vexpr.join(' + ')); }
+    else if (!solid.pieces.some((p) => p.vol !== '0')) revShow(vrow, { text: '0', v: 0 }, '0');
+    R.three = solid.three; R.view.hidden = false;
+    // the surfaces: each curve that bounds the solid, turned: 2π ∫ (its distance) √(1 + f′²) dx
+    const curved = [], sexpr = [];
+    let bad = '';
+    for (const p of solid.pieces) {
+      for (const s of p.surf) {
+        const arc = await revArc(s.e);
+        if (stale()) return;
+        if (!arc) { bad = tr('could not be calculated', '計算できませんでした'); break; }
+        const F = `2π × ${s.w} × ${arc.L}`;
+        const v = await revIntegral(F, p, arc.points);
+        if (stale()) return;
+        if (late()) { bad = tr('took too long', '時間がかかりすぎました'); break; }
+        if (!v) { bad = tr('could not be calculated', '計算できませんでした'); break; }
+        if (v.inf) { bad = tr('infinite', '無限大'); break; }
+        if (Math.abs(v.v) > 0 || v.exact) { curved.push(v); sexpr.push(`integrate(${F}, ${p.a}, ${p.b})`); }
+      }
+      if (bad) break;
+    }
+    if (bad) { srow.val.textContent = bad; erow.val.textContent = bad; return; }
+    const S1 = curved.length ? await sumValues(curved) : { text: '0', exact: '0', v: 0 };
+    if (stale()) return;
+    revShow(srow, S1, sexpr.join(' + ') || '0');
+    const ends = [], eexpr = [];
+    for (const e of solid.ends) {
+      const v = await revConst(e);
+      if (stale()) return;
+      if (v && Math.abs(v.v) > 1e-13) { ends.push(v); eexpr.push(e); }
+    }
+    const S2 = ends.length ? await sumValues(curved.concat(ends)) : S1;
+    if (stale()) return;
+    revShow(erow, S2, sexpr.concat(eexpr).join(' + ') || '0');
+  }
+  // the axis of a solid of revolution in the graph: a dash-dot line, y = k or x = k, with "↻ axis"
+  // (in the color of the text, so it is not taken for the dashed edges of the area)
+  function drawRevAxis(g, sx, sy, W, H) {
+    const A = P.revAxis, css = getComputedStyle(document.documentElement);
+    g.save();
+    g.strokeStyle = g.fillStyle = css.getPropertyValue('--text').trim() || '#222';
+    g.globalAlpha = 0.8;
+    g.lineWidth = 1.8;
+    g.setLineDash([10, 4, 2, 4]);
+    g.beginPath();
+    const label = '↻ ' + tr('axis', '回転軸');
+    g.font = '12px system-ui, sans-serif';
+    if (A.kind === 'h') {
+      const y = sy(A.v);
+      g.moveTo(0, y); g.lineTo(W, y); g.stroke();
+      g.textAlign = 'right'; g.textBaseline = 'bottom';
+      if (y > 14 && y < H + 2) g.fillText(label, W - 56, y - 3);
+    } else {
+      const x = sx(A.v);
+      g.moveTo(x, 0); g.lineTo(x, H); g.stroke();
+      g.textAlign = 'left'; g.textBaseline = 'bottom';
+      if (x > -2 && x < W - 60) g.fillText(label, x + 4, H - 6);
+    }
+    g.restore();
+  }
+
 
   // --------------------------------------------- partial derivatives (3D graph)
   function buildPartial3d() {
@@ -5579,6 +6091,7 @@
   }
   // "Enclosed": the volume and the surface area, part by part
   async function computeEnclosed(seq) {
+    if (!proGate('enclosed')) return;
     const S = volumeSetup();
     if (!S) { setVolumeShade(null); return; }
     const { U } = S;
@@ -5982,6 +6495,9 @@
     Q3.points = opts.points || null;
     Q3.equalOnce = !!opts.equal;
     Q3.pending = null;
+    // (1.11.0: a finer grid when asked for, as for a solid of revolution with its round rims)
+    if (opts.res && (Number(store.get('qalc.plot3d.res', '41')) || 41) < opts.res) store.set('qalc.plot3d.res', String(opts.res));
+    if (opts.res && Q3.resEl && Number(Q3.resEl.value) < opts.res) Q3.resEl.value = String(opts.res);
     const built = !!panels.plot;
     openPlot();
     if (built && Q3.ta) {
@@ -8289,7 +8805,7 @@
       unit.addEventListener('change', () => { G.unit = unit.value; typed(); choose(G.k); });
       b2.addEventListener('click', () => { if (cur().d !== 2) { typed(); choose(G.last[2] || 'circle'); } });
       b3.addEventListener('click', () => { if (cur().d !== 3) { typed(); choose(G.last[3] || 'sphere'); } });
-      b4.addEventListener('click', () => { if (cur().d !== 4) { typed(); choose(G.last[4] || 'htank'); } });
+      b4.addEventListener('click', () => { if (cur().d !== 4 && proGate('tanks')) { typed(); choose(G.last[4] || 'htank'); } });
       vUnit.addEventListener('change', () => { G.vu = vUnit.value; save(); run(); });
       aUnit.addEventListener('change', () => { G.au = aUnit.value; save(); run(); });
       dens.addEventListener('change', () => { G.dens = dens.value; densIn.hidden = G.dens !== 'own'; save(); run(); if (G.dens === 'own') densIn.focus(); });

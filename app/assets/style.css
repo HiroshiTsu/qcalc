@@ -1145,3 +1145,20 @@ body.cform-open #history, body.cform-open .entry { display: none; }
   body.cform-open .cf-hint:not(.cf-note) { display: none; }
 }
 
+
+/* 1.11.0: solids of revolution in the area tools of the 2D graph */
+.area-box .rev-toggle { display: block; margin-top: 8px; }
+.rev-box { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
+.rev-box[hidden], .rev-k[hidden] { display: none; }
+.rev-box .seg.mini { flex-wrap: wrap; }
+.rev-axes button { min-height: 36px; }
+.rev-k { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.rev-k input { width: 5em; }
+.rev-k input[aria-invalid="true"] { border-color: var(--danger, #c62828); }
+.rev-method { white-space: pre-line; }
+.rev-box .form-hint.warn:empty { display: none; }
+.rev-box .geo-out:empty { display: none; }
+.rev-box .area-out:empty { display: none; }
+.rev-ex { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 4px; }
+.rev-ex .area-chip { border: 1px solid var(--line); border-radius: 15px; padding: 6px 12px; background: var(--surface-2); font-size: 13px; color: var(--text); }
+.rev-box .form-hint.warn { color: var(--warn); }
