@@ -1,22 +1,36 @@
-# QCalc design documents (v1.9.2)
+# QCalc design documents (v1.9.4)
 
 **English** | [日本語](#日本語)
 
-The design document set of QCalc 1.9.2 (versionCode 18, package name `io.github.hiroshitsu.qcalc`): requirements, design, usage, maintenance and tests. Every document is in English and in Japanese, with the same content. The documents match the 1.9.2 source code in this repository (commit `54be2b3`).
+The design document set of QCalc 1.9.4 (versionCode 20, package name `io.github.hiroshitsu.qcalc`): requirements, design, usage, maintenance and tests. Every document is in English and in Japanese, with the same content. The documents match the 1.9.4 source code in this repository (commit `811a497`).
 
 - Author: Hiroshi Tsukayama (津嘉山 弘)
-- Date: 2026-11-18 (12th edition, for 1.9.2)
+- Date: 2026-11-18 (13th edition, for 1.9.4)
 - Format: PDF (A4), with UML class, sequence and state diagrams and other figures
 
 | Document | English | Pages | Japanese | Pages | Contents |
 | --- | --- | ---: | --- | ---: | --- |
-| Overview | [00-overview-en.pdf](00-overview-en.pdf) | 53 | [00-overview.pdf](00-overview.pdf) (概要) | 30 | What QCalc is, what changed in 1.9.2, 1.9.1, 1.9.0, 1.8.4, 1.8.3, 1.8.2, 1.8.1, 1.8.0, 1.7.1, 1.7.0, 1.6.0, 1.5.0, 1.4.0, 1.3.0, 1.2.0 and 1.1.0, the design in brief, components and versions, list of the documents, glossary, revision history |
-| 1. Requirements definition | [01-requirements-en.pdf](01-requirements-en.pdf) | 37 | [01-requirements.pdf](01-requirements.pdf) (要件定義書) | 30 | Purpose, scope, 28 use cases, 54 functional requirements, non-functional requirements, constraints, 35 acceptance criteria, QCalc Pro |
-| 2. Basic design | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 39 | [02-basic-design.pdf](02-basic-design.pdf) (基本設計書) | 32 | System structure, deployment, modules, screens and screen transitions (with the forms), keys, main processing flows, stored data, external interfaces, error handling, security |
-| 3. Detailed design | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 107 | [03-detailed-design.pdf](03-detailed-design.pdf) (詳細設計書) | 98 | Class diagram, JavaScript bridge, protocol between the app and the engine, calculation, process supervision, user interface, data formats, time limits, error codes and messages, QCalc Pro, language, color themes, CSV export, suggestions, the Light or dark setting, special functions with Arb, the time limit setting, forms, the math view, □ boxes, actions on results, analysis and measuring in 2D and 3D graphs, graphs from forms, the Shapes panel, the area shown at once with edges that can be dragged, and for 1.8.0: forms that check, keep and undo, samples for the graphs, the volume of the drawn surface, notes on input, and for 1.8.2: the shorter search for exact values and the values kept, and for 1.8.3: the edge in the pictures of the samples and the scale kept for round samples, for 1.8.4: the measured solid shown filled with a pale liquid and graphs from expressions, equations, functions and matrices made anywhere in the app, for 1.9.0: Spanish as the third language of the screens, for 1.9.1: the measured solid drawn as a real pale liquid in a clear, glossy film, traced for every pixel, and for 1.9.2: smooth surfaces with a depth buffer and light at every pixel, and the measured solid as a pale gelatin in a clear skin of a deeper shade |
+| Overview | [00-overview-en.pdf](00-overview-en.pdf) | 55 | [00-overview.pdf](00-overview.pdf) (概要) | 32 | What QCalc is, what changed in 1.9.4, 1.9.3, 1.9.2, 1.9.1, 1.9.0, 1.8.4, 1.8.3, 1.8.2, 1.8.1, 1.8.0, 1.7.1, 1.7.0, 1.6.0, 1.5.0, 1.4.0, 1.3.0, 1.2.0 and 1.1.0, the design in brief, components and versions, list of the documents, glossary, revision history |
+| 1. Requirements definition | [01-requirements-en.pdf](01-requirements-en.pdf) | 38 | [01-requirements.pdf](01-requirements.pdf) (要件定義書) | 32 | Purpose, scope, 28 use cases, 54 functional requirements, non-functional requirements, constraints, 37 acceptance criteria, QCalc Pro |
+| 2. Basic design | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 39 | [02-basic-design.pdf](02-basic-design.pdf) (基本設計書) | 34 | System structure, deployment, modules, screens and screen transitions (with the forms), keys, main processing flows, stored data, external interfaces, error handling, security |
+| 3. Detailed design | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 110 | [03-detailed-design.pdf](03-detailed-design.pdf) (詳細設計書) | 102 | Class diagram, JavaScript bridge, protocol between the app and the engine, calculation, process supervision, user interface, data formats, time limits, error codes and messages, QCalc Pro, language, color themes, CSV export, suggestions, the Light or dark setting, special functions with Arb, the time limit setting, forms, the math view, □ boxes, actions on results, analysis and measuring in 2D and 3D graphs, graphs from forms, the Shapes panel, the area shown at once with edges that can be dragged, and for 1.8.0: forms that check, keep and undo, samples for the graphs, the volume of the drawn surface, notes on input, and for 1.8.2: the shorter search for exact values and the values kept, and for 1.8.3: the edge in the pictures of the samples and the scale kept for round samples, for 1.8.4: the measured solid shown filled with a pale liquid and graphs from expressions, equations, functions and matrices made anywhere in the app, for 1.9.0: Spanish as the third language of the screens, for 1.9.1: the measured solid drawn as a real pale liquid in a clear, glossy film, traced for every pixel, and for 1.9.2: smooth surfaces with a depth buffer and light at every pixel, and the measured solid as a pale gelatin in a clear skin of a deeper shade, for 1.9.3: a sphere drawn as one round, smooth ball, and for 1.9.4: measuring only where the functions have real values, with only the digits that can be trusted |
 | 4. User manual | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 49 | [04-user-manual.pdf](04-user-manual.pdf) (操作マニュアル) | 48 | Installation and the language (English, Japanese, Spanish), the screen, calculating (□ boxes, fractions, the suggestions and very long results), the forms for calculus and matrices (up to 30 × 30; checking, Undo and Redo, pasting a table), keyboard input, examples, the menu (graphs with samples, analysis and measuring, drawn also from the input field, the history and saved functions; shapes: area, volume, length), settings, troubleshooting; with screenshots |
 | 5. Build and maintenance manual | [05-build-and-maintenance-en.pdf](05-build-and-maintenance-en.pdf) | 22 | [05-build-and-maintenance.pdf](05-build-and-maintenance.pdf) (ビルド・保守マニュアル) | 20 | Development environment, build steps (test APK and App Bundle for Google Play), FLINT and the patch to libqalculate, signing, the build with billing (Gradle), checks, updating libqalculate, Android Studio |
-| 6. Test specification and results | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 73 | [06-test-specification.pdf](06-test-specification.pdf) (テスト仕様書・結果) | 69 | Test policy, test items and their results for 1.9.2 (all 983 items passed; the engine and Java tests are results of 1.6.0, as the engine and the Java code they test are unchanged), tests not yet done |
+| 6. Test specification and results | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 79 | [06-test-specification.pdf](06-test-specification.pdf) (テスト仕様書・結果) | 74 | Test policy, test items and their results for 1.9.4 (all 969 items passed, each test counted once; the engine and Java tests are results of 1.6.0, as the engine and the Java code they test are unchanged), tests not yet done |
+
+### What changed in 1.9.4
+
+- On the user's phone, "Area and length" with the sample "Circle" (the range −2.6 to 2.6) gave the area 12.83 and "Could not calculate the length". The two halves of the circle meet at ±2 without crossing, so no crossing point was found, and beyond ±2 the functions have no real value: the engine integrated complex numbers there, and abs() turned them into a wrong size. The same kind of fault was in the sample "eˣ and ln x", the length of the "Heart", the volume of the "Doughnut" (76.85 for 4π²) and a sphere on a disk larger than it.
+- Area, length, volume and surface area now count only where the functions have real values: the range is cut where the real values end (found exactly when they end at a simple number), a note under the result says which part was measured, a point where two curves meet without crossing is a crossing point, round parts in 3D are measured in polar coordinates, and an infinite length is said to be infinite. The circle gives 4π for its area and its perimeter, the doughnut 4π² and 8π².
+- Every value shows only the digits that can be trusted: lengths of very wavy curves are found with the 15-point Gauss–Kronrod rule on many parts (right to 10 digits; seven samples had wrong digits), and a volume found only approximately shows fewer digits (the sample "Egg carton": 39.9, not 39.939589). The engine and the Java code do not change (only app.js and seven texts of i18n-es.js changed).
+- 1.9.4 also has the changes of 1.9.3, which was made at the same time in a separate session with the same version number and was not released on its own.
+- The test specification now counts each test once (D21 to D45 and S01 to S13, run on both screens, had been counted twice: the 983 items of 1.9.2 were 945 tests).
+
+### What changed in 1.9.3
+
+- On the user's phone, the sample "Sphere" of 1.9.2 showed streaks across the band next to its rim and its two halves in blue and red, as if they were two objects; and once 1:1 had been turned off for one graph, every later sphere came out flattened.
+- Surfaces that close up into one solid (the two halves of a sphere or of a doughnut) are now colored by height as one object, with one color bar in the legend. Near the rim of a surface that ends as a square root, the light comes from the square of the height above the rim, which changes smoothly there, and the cells next to the rim are cut into smaller triangles lifted onto the rounded surface: no streaks.
+- 1:1 holds only for the functions it was set for (a value saved by an earlier version counts as no choice), and half a sphere alone is drawn down to its rim. Only app.js changed.
 
 ### What changed in 1.9.2
 
@@ -76,21 +90,35 @@ Only the page changed (app.js and style.css); the engine and the Java code are t
 
 ## 日本語
 
-QCalc 1.9.2（versionCode 18、パッケージ名 `io.github.hiroshitsu.qcalc`）の要件、設計、使い方、保守、テストをまとめた設計書です。どの文書も日本語と英語の 2 通りがあり、内容は同じです。内容はこのリポジトリの 1.9.2 のソースコード（コミット `54be2b3`）に合わせています。
+QCalc 1.9.4（versionCode 20、パッケージ名 `io.github.hiroshitsu.qcalc`）の要件、設計、使い方、保守、テストをまとめた設計書です。どの文書も日本語と英語の 2 通りがあり、内容は同じです。内容はこのリポジトリの 1.9.4 のソースコード（コミット `811a497`）に合わせています。
 
 - 作成：津嘉山 弘
-- 作成日：2026-11-18（第 12 版。1.9.2 に合わせて改訂）
+- 作成日：2026-11-18（第 13 版。1.9.4 に合わせて改訂）
 - 形式：PDF（A4）。UML のクラス図・シーケンス図・状態遷移図などの図を含みます。
 
 | 文書 | 日本語 | ページ | 英語 | ページ | 内容 |
 | --- | --- | ---: | --- | ---: | --- |
-| 概要 | [00-overview.pdf](00-overview.pdf) | 30 | [00-overview-en.pdf](00-overview-en.pdf) | 53 | 1.9.2・1.9.1・1.9.0・1.8.4・1.8.3・1.8.2・1.8.1・1.8.0・1.7.1・1.7.0・1.6.0・1.5.0・1.4.0・1.3.0・1.2.0・1.1.0 で変えたところ、文書の一覧、全体像の図、構成要素と版、用語集、改訂履歴（英語版は設計の要点のまとめも含む） |
-| 1. 要件定義書 | [01-requirements.pdf](01-requirements.pdf) | 30 | [01-requirements-en.pdf](01-requirements-en.pdf) | 37 | 目的、対象範囲、ユースケース 28、機能要件 54、非機能要件、制約、受け入れ基準 35、QCalc Pro |
-| 2. 基本設計書 | [02-basic-design.pdf](02-basic-design.pdf) | 32 | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 39 | システム構成、配置、モジュール、画面と画面遷移（フォームを含む）、キー、主要な処理の流れ、保存データ、外部インターフェース、エラー処理、セキュリティ |
-| 3. 詳細設計書 | [03-detailed-design.pdf](03-detailed-design.pdf) | 98 | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 107 | クラス図、JavaScript ブリッジ、計算エンジンとの通信プロトコル、計算処理、プロセス監視、画面処理、データ形式、時間制限、エラーコードとメッセージ、QCalc Pro、表示の言語、配色テーマ、履歴の書き出し、入力の候補、ライト／ダークの設定、Arb による特殊関数、計算の制限時間、入力フォーム、数式の形、□ の欄、結果からの操作、2D・3D グラフの解析と計測、フォームからのグラフ、図形の画面、すぐに出て端を指で動かせる面積。版 1.8.0 の、確かめる・残す・元に戻すフォーム、グラフのサンプル、描いている曲面の体積、入力への注意。版 1.8.2 の、厳密な値を探す時間の短縮と求めた値の記憶。版 1.8.3 の、サンプルの絵の縁と、丸いサンプルの比を保つこと。版 1.8.4 の、計測している立体を薄い液体で満たしたように示すことと、どこで作った式・方程式・関数・行列もグラフにすること。版 1.9.0 の、3 つ目の言語としてのスペイン語。版 1.9.1 の、計測している立体を、つやのある透明な膜に満たした本物の薄い液体として画素ごとに描くこと。版 1.9.2 の、深度バッファーと画素ごとの光によるなめらかな曲面と、計測している立体を濃い色の透明な皮に包まれた薄いゼラチンとして示すこと |
+| 概要 | [00-overview.pdf](00-overview.pdf) | 32 | [00-overview-en.pdf](00-overview-en.pdf) | 55 | 1.9.4・1.9.3・1.9.2・1.9.1・1.9.0・1.8.4・1.8.3・1.8.2・1.8.1・1.8.0・1.7.1・1.7.0・1.6.0・1.5.0・1.4.0・1.3.0・1.2.0・1.1.0 で変えたところ、文書の一覧、全体像の図、構成要素と版、用語集、改訂履歴（英語版は設計の要点のまとめも含む） |
+| 1. 要件定義書 | [01-requirements.pdf](01-requirements.pdf) | 32 | [01-requirements-en.pdf](01-requirements-en.pdf) | 38 | 目的、対象範囲、ユースケース 28、機能要件 54、非機能要件、制約、受け入れ基準 37、QCalc Pro |
+| 2. 基本設計書 | [02-basic-design.pdf](02-basic-design.pdf) | 34 | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 39 | システム構成、配置、モジュール、画面と画面遷移（フォームを含む）、キー、主要な処理の流れ、保存データ、外部インターフェース、エラー処理、セキュリティ |
+| 3. 詳細設計書 | [03-detailed-design.pdf](03-detailed-design.pdf) | 102 | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 110 | クラス図、JavaScript ブリッジ、計算エンジンとの通信プロトコル、計算処理、プロセス監視、画面処理、データ形式、時間制限、エラーコードとメッセージ、QCalc Pro、表示の言語、配色テーマ、履歴の書き出し、入力の候補、ライト／ダークの設定、Arb による特殊関数、計算の制限時間、入力フォーム、数式の形、□ の欄、結果からの操作、2D・3D グラフの解析と計測、フォームからのグラフ、図形の画面、すぐに出て端を指で動かせる面積。版 1.8.0 の、確かめる・残す・元に戻すフォーム、グラフのサンプル、描いている曲面の体積、入力への注意。版 1.8.2 の、厳密な値を探す時間の短縮と求めた値の記憶。版 1.8.3 の、サンプルの絵の縁と、丸いサンプルの比を保つこと。版 1.8.4 の、計測している立体を薄い液体で満たしたように示すことと、どこで作った式・方程式・関数・行列もグラフにすること。版 1.9.0 の、3 つ目の言語としてのスペイン語。版 1.9.1 の、計測している立体を、つやのある透明な膜に満たした本物の薄い液体として画素ごとに描くこと。版 1.9.2 の、深度バッファーと画素ごとの光によるなめらかな曲面と、計測している立体を濃い色の透明な皮に包まれた薄いゼラチンとして示すこと。版 1.9.3 の、球を 1 つのなめらかな球として描くこと。版 1.9.4 の、関数に実数の値がある部分だけで測り、信頼できる桁だけを示すこと |
 | 4. 操作マニュアル | [04-user-manual.pdf](04-user-manual.pdf) | 48 | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 49 | インストールと表示の言語（英語・日本語・スペイン語）、画面の見方、計算のしかた（□ の欄、分数、入力の候補、とても長い結果を含む）、解析と行列のフォーム（行列は 30 × 30 まで。欄の確認、「元に戻す」「やり直す」、表の貼り付け）、キーボード入力、式の例、メニュー（グラフのサンプル・解析・計測、入力欄・履歴・保存した関数からのグラフ、図形の面積・体積・長さ）、設定、困ったとき。各画面の画像つき |
 | 5. ビルド・保守マニュアル | [05-build-and-maintenance.pdf](05-build-and-maintenance.pdf) | 20 | [05-build-and-maintenance-en.pdf](05-build-and-maintenance-en.pdf) | 22 | 開発環境、ビルド手順（テスト用 APK と Google Play 用 App Bundle）、FLINT と libqalculate へのパッチ、署名、課金のある版（Gradle）、動作確認、libqalculate の更新手順、Android Studio |
-| 6. テスト仕様書・結果 | [06-test-specification.pdf](06-test-specification.pdf) | 69 | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 73 | テストの方針、テスト項目と 1.9.2 での結果（983 項目すべて合格。計算エンジンと、試験の対象の Java は変えていないので、その試験は 1.6.0 の結果）、未実施のテスト |
+| 6. テスト仕様書・結果 | [06-test-specification.pdf](06-test-specification.pdf) | 74 | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 79 | テストの方針、テスト項目と 1.9.4 での結果（969 項目すべて合格。各試験を 1 回数える。計算エンジンと、試験の対象の Java は変えていないので、その試験は 1.6.0 の結果）、未実施のテスト |
+
+### 1.9.4 で変えたところ
+
+- 利用者のスマートフォンで、サンプル「円」の「面積・長さ」（範囲 −2.6〜2.6）が、面積 12.83、長さは「長さを計算できませんでした」となりました。円の 2 つの半分は ±2 で接するだけで交わらないので交点が見つからず、±2 の外では関数に実数の値がありません。計算エンジンはそこで複素数を積分し、abs() のため違う大きさになっていました。同じ種類の不具合は、サンプル「指数と対数」、「ハート」の長さ、「ドーナツ」の体積（4π² ではなく 76.85）、球より大きい円の上の球にもありました。
+- 面積・長さ・体積・表面積を、関数に実数の値がある部分だけで求めます。実数の値がなくなる所で範囲を切り（簡単な数で終わるなら厳密に求める）、結果の下に測った部分を書き添えます。2 つの曲線が交わらずに接する点も交点とし、3D の丸い部分は極座標で測り、限りのない長さは無限大と示します。円の面積と周の長さは 4π、ドーナツは 4π² と 8π² になります。
+- どの値も信頼できる桁だけを示します。波の多い曲線の長さは、多くの部分に分けた 15 点のガウス・クロンロッド則で求め（10 桁まで正しい。7 つのサンプルで正しくない桁がありました）、おおよそにしか求まらない体積は桁を減らして示します（サンプル「波（卵パック）」は 39.939589 ではなく 39.9）。計算エンジンと Java のコードは変わりません（変えたのは app.js と i18n-es.js の 7 つの文だけ）。
+- 1.9.4 には 1.9.3 の変更も入っています。1.9.3 は同じ時期に別の作業で同じ版の番号で作られ、単独では公開していません。
+- テスト仕様書では、各試験を 1 回数えるようにしました（両方の画面で行った D21〜D45 と S01〜S13 を 2 回数えていて、版 1.9.2 の 983 項目は 945 件でした）。
+
+### 1.9.3 で変えたところ
+
+- 利用者のスマートフォンで、版 1.9.2 のサンプル「球」のふちに沿った帯にすじが出て、上下の半分が青と赤で 2 つの物のように見えました。また、あるグラフで 1:1 を切ると、そのあとの球がすべてつぶれて描かれていました。
+- 閉じて 1 つの立体になる曲面（球やドーナツの上下の半分）を、高さで色分けした 1 つの物として描き、凡例には 1 本の色の帯を示します。平方根の形で終わる曲面のふちの近くでは、そこでもなめらかに変わる「ふちからの高さの 2 乗」から光を求め、ふちのとなりのマスを丸い曲面の上に持ち上げた小さな三角形に分けるので、すじが出ません。
+- 1:1 は選んだ関数だけに保ち（以前の版が保存した値は選んでいないものとする）、半球だけを描くときはふちまで描きます。変えたのは app.js だけです。
 
 ### 1.9.2 で変えたところ
 
