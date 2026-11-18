@@ -1013,7 +1013,11 @@
     "The calculator: exact results, units, currencies, matrices, calculus": "計算：精確結果、單位、貨幣、矩陣、微積分",
     "2D graphs, areas and lengths": "2D 圖形、面積與長度",
     "Shapes: areas and volumes": "圖形：面積與體積",
-    "Free": "免費"
+    "Free": "免費",
+    "Same as device": "與裝置相同",
+    "(now {0})": "（目前為 {0}）",
+    "When QCalc does not have the language of the device, it is in English": "若 QCalc 沒有裝置的語言，會以英文顯示",
+    "Language (in the menu or the settings): \"Same as device\" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone's language changes.": "語言（選單或設定）：選「與裝置相同」會跟隨手機的語言（變更時也一樣）；若 QCalc 沒有該語言，會以英文顯示。從清單選擇語言後，即使變更手機的語言也會維持該語言。"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",

@@ -1009,7 +1009,11 @@
     "The calculator: exact results, units, currencies, matrices, calculus": "Der Rechner: exakte Ergebnisse, Einheiten, Währungen, Matrizen, Analysis",
     "2D graphs, areas and lengths": "2D-Graphen, Flächen und Längen",
     "Shapes: areas and volumes": "Formen: Flächen und Volumen",
-    "Free": "Kostenlos"
+    "Free": "Kostenlos",
+    "Same as device": "Wie das Gerät",
+    "(now {0})": "(jetzt {0})",
+    "When QCalc does not have the language of the device, it is in English": "Wenn QCalc die Sprache des Geräts nicht hat, ist es auf Englisch",
+    "Language (in the menu or the settings): \"Same as device\" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone's language changes.": "Sprache (im Menü oder in den Einstellungen): „Wie das Gerät“ folgt der Sprache des Telefons, auch wenn sie geändert wird; hat QCalc diese Sprache nicht, ist es auf Englisch. Eine in der Liste gewählte Sprache bleibt, wenn sich die Sprache des Telefons ändert."
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",

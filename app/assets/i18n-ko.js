@@ -1012,7 +1012,11 @@
     "The calculator: exact results, units, currencies, matrices, calculus": "계산: 정확한 결과, 단위, 통화, 행렬, 미적분",
     "2D graphs, areas and lengths": "2D 그래프, 넓이와 길이",
     "Shapes: areas and volumes": "도형: 넓이와 부피",
-    "Free": "무료"
+    "Free": "무료",
+    "Same as device": "기기 설정에 맞추기",
+    "(now {0})": "(지금은 {0})",
+    "When QCalc does not have the language of the device, it is in English": "기기의 언어가 QCalc에 없으면 영어로 표시됩니다",
+    "Language (in the menu or the settings): \"Same as device\" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone's language changes.": "언어(메뉴나 설정): ‘기기 설정에 맞추기’를 고르면 휴대폰의 언어를 따릅니다(바꿨을 때도). 그 언어가 QCalc에 없으면 영어로 표시됩니다. 목록에서 언어를 고르면 휴대폰의 언어를 바꿔도 그 언어로 유지됩니다."
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",

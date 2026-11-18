@@ -343,6 +343,17 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Puts the language set for QCalc in the system settings back to the system default (Android 13 and later). */
+    private void clearAppLocale() {
+        if (Build.VERSION.SDK_INT < 33) return;
+        try {
+            LocaleManager m = getSystemService(LocaleManager.class);
+            if (m != null && !m.getApplicationLocales().isEmpty()) m.setApplicationLocales(LocaleList.getEmptyLocaleList());
+        } catch (RuntimeException e) {
+            Log.w(TAG, "clear app locales", e);
+        }
+    }
+
     /**
      * The configuration changed without the activity being made again (configChanges in the
      * manifest; 1.11.0 adds locale and layoutDirection). When the languages changed (in the system
@@ -723,6 +734,42 @@ public class MainActivity extends Activity {
          * The user chose a language in the app ("Language", 1.11.0). It is kept as qalc.lang (the
          * page saves it too) and, on Android 13 and later, set for QCalc in the system settings.
          */
+        /**
+         * "Same as device" chosen in the app (1.12.0; see Lang.automatic): qalc.lang and qalc.langsys
+         * are removed and, on Android 13 and later, the language set for QCalc in the system settings
+         * goes back to the system default. Returns the language the app then has (the page loads
+         * itself again in it).
+         */
+        @JavascriptInterface
+        public String setLangAuto() {
+            try {
+                synchronized (MainActivity.this) {
+                    Lang.Choice c = Lang.automatic(Build.VERSION.SDK_INT >= 33, deviceLocales());
+                    // first, so that the change of the configuration that follows finds nothing new
+                    appLang = c.lang;
+                    StateStore.save(MainActivity.this, "qalc.lang", null);
+                    StateStore.save(MainActivity.this, "qalc.langsys", null);
+                    if (c.clearSystem) clearAppLocale();
+                    return c.lang;
+                }
+            } catch (RuntimeException e) {
+                Log.e(TAG, "setLangAuto", e);
+                return "en";
+            }
+        }
+
+        /** The language "Same as device" gives now: the first of the device's languages that the app has, else English (1.12.0). */
+        @JavascriptInterface
+        public String deviceLang() {
+            try {
+                String f = Lang.first(deviceLocales());
+                return f != null ? f : "en";
+            } catch (RuntimeException e) {
+                Log.e(TAG, "deviceLang", e);
+                return "en";
+            }
+        }
+
         @JavascriptInterface
         public void setLang(String code) {
             if (!Lang.valid(code)) return;

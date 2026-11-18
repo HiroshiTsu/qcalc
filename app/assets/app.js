@@ -39,6 +39,11 @@
       const text = JSON.stringify(v);
       if (nativeState) { try { nativeState.saveState(stateName(k), text); } catch (e) { } }
       try { localStorage.setItem(k, text); } catch (e) { /* storage full or blocked */ }
+    },
+    // removed (1.12.0): saveState with null deletes the file (StateStore.save)
+    del(k) {
+      if (nativeState) { try { nativeState.saveState(stateName(k), null); } catch (e) { } }
+      try { localStorage.removeItem(k); } catch (e) { }
     }
   };
   // The language of the user interface: English, Japanese, Spanish (1.9.0), German, French, Korean
@@ -99,6 +104,15 @@
     return pickLang(list);
   })();
   const JA = LANG === 'ja';
+  // "Same as device" (1.12.0): no language of the user's own is saved (qalc.lang), so the language
+  // follows the device's list (also when it changes). Until 1.11.0 a language chosen once (or kept
+  // for an earlier user at the first start of 1.11.0) could not be undone in the app.
+  const LANG_AUTO = LANGS.indexOf(store.get('qalc.lang', '')) < 0;
+  // the language "Same as device" gives now: the first of the device's list that the app has, else English
+  function deviceLang() {
+    try { if (window.QalcNative && window.QalcNative.deviceLang) { const l = window.QalcNative.deviceLang(); if (LANGS.indexOf(l) >= 0) return l; } } catch (e) { }
+    return pickLang(navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]);
+  }
   // The rest of the page starts in start(), at the end of this file: at once in English and
   // Japanese, and after the file of the texts of the language has been loaded in the others (1.12.0;
   // until 1.11.0 index.html loaded all five files at every start).
@@ -242,7 +256,7 @@
     autosize();
   }
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
-  S.lang = LANG; // the language in use (qalc.lang), whatever qalc.settings says
+  S.lang = LANG_AUTO ? 'auto' : LANG; // the language in use (qalc.lang, or 'auto'), whatever qalc.settings says
   function saveSettings() { store.set('qalc.settings', S); }
 
   // ------------------------------------------------------- number format
@@ -2831,7 +2845,6 @@
         el('div', { text: tr('Tap a result to insert it into the expression, or touch and hold it to copy it.', '結果をタップで式に挿入、長押しでコピーできます。') }),
         el('div', { class: 'empty-try', text: tr('Tap an example to try it', '例をタップして試す') }), chips,
         tapButton({ class: 'btn', text: tr('Examples and tips', '使い方と例を見る') }, () => openExamples())));
-      if (newsCard) histEl.append(newsCard);
       histEl.scrollTop = 0; // read from the top (results are followed at the bottom)
       histPinned = false;
       return;
@@ -3322,6 +3335,7 @@
     tr('Above the input field the expression is shown in math notation (fractions, powers, roots, integrals), so you can check what you typed. It can be turned off in the settings.', '入力欄の上に、式が数式の形（分数・べき乗・根号・積分など）で表示されるので、入力した内容を確かめられます。設定で表示しないこともできます。'),
     tr('Touch and hold a result with x (x³ − 3x), or tap its ⋯, to differentiate or integrate it, draw its graph or put in a value for x.', 'x を含む結果（x³ − 3x など）を長押しするか ⋯ をタップすると、微分・積分・グラフ・x への値の代入ができます。'),
     tr('Type the "=" of an equation with the a=b key (the large = key calculates). Example: solve(x^2 = 16)', '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)'),
+    tr('Language (in the menu or the settings): "Same as device" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone\'s language changes.', '言語（メニューか設定）：「端末の設定に合わせる」にすると、スマホの言語に合わせます（変えたときも）。端末の言語に QCalc がないときは英語になります。一覧から言語を選ぶと、スマホの言語を変えてもその言語のままです。'),
     tr('With a decimal comma (Settings → Number format: 1.234,5 or 1 234,5, or automatically in such a region) type 1,5 and separate the arguments with ";": max(1,5; 2). In a matrix the elements are separated by spaces: [1,5 2; 3 4]. The history stays as it was when the setting is changed.', '小数点を「,」にした場合（設定 →「数の書き方」で 1.234,5 か 1 234,5、または自動でその地域）は、1,5 のように入れ、引数は「;」で区切ります：max(1,5; 2)。行列の要素は空白で区切ります：[1,5 2; 3 4]。設定を変えても履歴はそのままです。'),
     tr('Type a matrix as [1, 2; 3, 4]: "," between the elements and ";" between the rows. Matrix results are shown as tables in the history.', '行列は [1, 2; 3, 4] のように、要素を「,」、行を「;」で区切って入力します。結果の行列は履歴に表の形で表示されます。'),
     tr('The ▦ key of the Matrix page opens a grid of cells: set the rows and columns with + and −, type the elements and choose what to calculate (determinant, inverse, transpose, rank, eigenvalues, linear system). det, Aᵀ and A⁻¹ open it too when the input field is empty. Touch and hold a matrix result to edit it there.', '「行列」ページの ▦ キーで、行列を表の形で入力する画面が開きます。行と列の数を + と − で決めて要素を入れ、計算（行列式・逆行列・転置・階数・固有値・連立方程式）を選びます。入力欄が空のときは det・Aᵀ・A⁻¹ のキーでも開きます。結果の行列を長押しすると、その画面で編集できます。'),
@@ -10294,7 +10308,8 @@
   // with the first calculation, its ×, or a "Try it"
   function closeNews() { if (newsCard) { newsCard.remove(); newsCard = null; } }
   function showNews() {
-    if (!usedBefore || store.get('qalc.news', '') === NEWS_VERSION) return;
+    // not on an empty history (the first screen with its examples stays whole): shown when there is one
+    if (!usedBefore || !history.length || store.get('qalc.news', '') === NEWS_VERSION) return;
     store.set('qalc.news', NEWS_VERSION); // once: also when it is not closed
     const card = el('div', { class: 'news-card', role: 'region', 'aria-label': tr('What is new', '新しい機能') });
     card.append(el('div', { class: 'news-t' }, el('span', { text: tr('New in this version', 'この版の新しい機能') }),
@@ -10453,7 +10468,7 @@
     ['purple', tr('Purple', 'パープル')], ['rose', tr('Rose', 'ローズ')], ['orange', tr('Orange', 'オレンジ')], ['graphite', tr('Graphite', 'グラファイト')]];
   const SETTINGS = [
     [tr('Language', '言語'), [
-      ['lang', LANG_TITLE, LANG_NAMES]
+      ['lang', LANG_TITLE, [['auto', langAutoLabel()]].concat(LANG_NAMES), langAutoNote()]
     ]],
     [tr('Calculation', '計算'), [
       ['angle', tr('Angle unit', '角度の単位'), [['rad', tr('Radians', 'ラジアン')], ['deg', tr('Degrees', '度')], ['gra', tr('Gradians', 'グラード')]]],
@@ -10566,7 +10581,7 @@
       p.body.append(el('div', { class: 'section-title', text: '' }),
         el('button', { class: 'btn', text: tr('Reset all settings', '設定を初期値に戻す'), onclick: async () => {
           if (!(await confirmSheet(tr('Reset all settings to their defaults?', '設定を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
-          S = Object.assign({}, DEFAULTS, { lang: LANG }); settingsChanged(); // the language stays
+          S = Object.assign({}, DEFAULTS, { lang: LANG_AUTO ? 'auto' : LANG }); settingsChanged(); // the language stays
           for (const k of Object.keys(p.inputs)) { const i = p.inputs[k]; if (i.type === 'checkbox') i.checked = !!S[k]; else i.value = String(S[k]); }
         } }));
     });
@@ -10574,7 +10589,7 @@
   }
   function settingsChanged() {
     saveSettings();
-    if (S.lang !== LANG) { setLanguage(S.lang); return; }
+    if (S.lang !== (LANG_AUTO ? 'auto' : LANG)) { setLanguage(S.lang); return; }
     // another number format: the expression being typed is written again in it, the keys and the
     // history follow (what is saved is in the engine's form and does not change)
     const field = toInternal(exprEl.value), wasNF = NF;
@@ -10938,18 +10953,42 @@
     nextBoxEl.textContent = tr('Next box ▶', '次の欄 ▶');
   }
   // "Language" in the menu and in the settings (LANG_TITLE): the page is loaded again in the new language
+  // 1.12.0: "Same as device" first, with the language it gives now; ✓ on it while no language has
+  // been chosen
   async function chooseLanguage() {
-    const k = await sheet(LANG_TITLE, LANG_NAMES.map(([l, name]) => [l, (l === LANG ? '✓ ' : '') + name]));
+    const k = await sheet(LANG_TITLE + '\n' + langAutoNote(), [['auto', (LANG_AUTO ? '✓ ' : '') + langAutoLabel()]].concat(
+      LANG_NAMES.map(([l, name]) => [l, (!LANG_AUTO && l === LANG ? '✓ ' : '') + name])));
     if (k) setLanguage(k);
   }
+  // "Same as device / 端末の設定に合わせる (now 日本語)": in the language of the page and in English
+  function langAutoLabel() {
+    const name = (LANG_NAMES.find((x) => x[0] === deviceLang()) || LANG_NAMES[0])[1];
+    const now = trf('(now {0})', '（今は {0}）', name);
+    return (LANG === 'en' ? 'Same as device' : tr('Same as device', '端末の設定に合わせる') + ' / Same as device') + (now[0] === '（' ? '' : ' ') + now;
+  }
+  function langAutoNote() { return tr('When QCalc does not have the language of the device, it is in English', '端末の言語に QCalc がないときは英語になります'); }
   function setLanguage(lang) {
+    if (lang === 'auto') {
+      // no language of one's own: qalc.lang and qalc.langsys go, and on Android 13 and later the
+      // language set for QCalc in the system settings goes back to the system default
+      let now = deviceLang();
+      try { if (window.QalcNative && window.QalcNative.setLangAuto) { const l = window.QalcNative.setLangAuto(); if (LANGS.indexOf(l) >= 0) now = l; } } catch (e) { }
+      store.del('qalc.lang');
+      store.del('qalc.langsys');
+      S.lang = 'auto';
+      saveSettings();
+      if (LANG_AUTO && now === LANG) return;
+      window.qalcPause(); // the history and the expression being typed
+      location.reload();
+      return;
+    }
     if (LANGS.indexOf(lang) < 0) return;
     store.set('qalc.lang', lang); // the user's own choice (see LANG)
     // on Android 13 and later it becomes the language set for QCalc in the system settings too (1.11.0)
     try { if (window.QalcNative && window.QalcNative.setLang) window.QalcNative.setLang(lang); } catch (e) { }
     S.lang = lang;
     saveSettings();
-    if (lang === LANG) return;
+    if (lang === LANG && !LANG_AUTO) return; // (from "Same as device" to the same language: loaded again, now kept)
     window.qalcPause(); // the history and the expression being typed
     location.reload();
   }
