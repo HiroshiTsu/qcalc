@@ -1062,6 +1062,15 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .geo-unit { flex: 0 0 auto; color: var(--muted); }
 .geo-unit:empty { display: none; }
 .geo-msg { color: var(--danger); font-size: 14px; margin: 8px 2px 0; }
+/* 1.11.0: radius or diameter, the units of the results, the weight and the height from an amount */
+.geo-rd { margin: 0 0 4px; }
+.geo-units, .geo-weight { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+.geo-units select, .geo-weight select, .geo-weight input, .geo-amt input { flex: 1 1 140px; min-width: 0; min-height: 40px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 15px; }
+.geo-weight .geo-val, .geo-amt .geo-val { flex: 1 1 100%; font-size: 15px; }
+.geo-weight .geo-val:empty, .geo-amt .geo-val:empty { display: none; }
+.geo-amt { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 14px; }
+.geo-pic svg .liq, .geo-chip svg .liq { fill: #3b82f6; fill-opacity: .45; stroke: none; }
+.geo-rd[hidden], .geo-units[hidden], .geo-weight[hidden], .geo-amt[hidden], .geo-weight input[hidden] { display: none; }
 .geo-msg:empty { display: none; }
 .geo-out { margin: 10px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
 .geo-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 12px; text-align: left; background: none; border: 0; color: var(--text); }
@@ -1137,3 +1146,52 @@ body.cform-open #history, body.cform-open .entry { display: none; }
   body.cform-open .cf-hint:not(.cf-note) { display: none; }
 }
 
+
+/* 1.11.0: solids of revolution in the area tools of the 2D graph */
+.area-box .rev-toggle { display: block; margin-top: 8px; }
+.rev-box { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
+.rev-box[hidden], .rev-k[hidden] { display: none; }
+.rev-box .seg.mini { flex-wrap: wrap; }
+.rev-axes button { min-height: 36px; }
+.rev-k { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.rev-k input { width: 5em; }
+.rev-k input[aria-invalid="true"] { border-color: var(--danger, #c62828); }
+.rev-method { white-space: pre-line; }
+.rev-box .form-hint.warn:empty { display: none; }
+.rev-box .geo-out:empty { display: none; }
+.rev-box .area-out:empty { display: none; }
+.rev-ex { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 4px; }
+.rev-ex .area-chip { border: 1px solid var(--line); border-radius: 15px; padding: 6px 12px; background: var(--surface-2); font-size: 13px; color: var(--text); }
+.rev-box .form-hint.warn { color: var(--warn); }
+
+/* 1.11.0: regions typed as formulas in "Volume and surface" (3D) */
+.cus-box { margin: 6px 0; padding: 8px; border: 1px dashed var(--line); border-radius: 10px; }
+.cus-box[hidden], .sign-row[hidden] { display: none; }
+.cus-box select { max-width: none; width: 100%; }
+.cus-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; font-size: 14px; }
+.cus-row .cus-in { width: 5.2em; flex: 0 1 auto; min-width: 0; }
+.cus-row .cus-g1, .cus-row .cus-g2, .cus-row .cus-h1, .cus-row .cus-h2 { width: 7.5em; }
+.cus-row .cus-ineq { width: 100%; min-height: 2.6em; resize: vertical; }
+.cus-row input, .cus-row textarea { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font: inherit; }
+.cus-row [aria-invalid="true"] { border-color: var(--danger, #c62828); }
+.cus-err { color: var(--warn); }
+.cus-err:empty, .cus-text:empty { display: none; }
+.cus-formula { overflow-wrap: anywhere; }
+.sign-row .form-hint { margin-top: 0; }
+/* (1.11.0: a row of small buttons in the tools of a graph wraps instead of running past the screen:
+   with "Custom" the region buttons were too wide for 360 pixels in Spanish, German and French) */
+.area-box .seg.mini { flex: 0 1 auto; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.area-box .seg.mini button { flex: 1 0 auto; }
+
+/* 1.11.0: volume from measured values (cross sections, grid of heights) */
+.sec-table { display: grid; gap: 6px; margin: 10px 0 6px; }
+.sec-table.sec-2 { grid-template-columns: 1fr 1fr; }
+.sec-table input { min-width: 0; width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 16px; }
+.sec-table input[aria-invalid="true"], .sec-ab input[aria-invalid="true"] { border-color: var(--danger, #c62828); }
+.sec-h { font-size: 13px; color: var(--muted); }
+.sec-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.sec-tools .sec-btn { min-height: 40px; padding: 6px 14px; }
+.sec-how:empty { display: none; }
+/* (1.11.0: a link of the tools may take two lines: "Volume from measured values (cross sections, grid
+   of heights) ›" made the panel of the shapes wider than a 320-pixel screen) */
+.geo-link { white-space: normal; }
