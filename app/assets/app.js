@@ -99,9 +99,13 @@
     return pickLang(list);
   })();
   const JA = LANG === 'ja';
-  // The texts of a language other than English and Japanese (i18n-es.js, i18n-de.js … , which
-  // index.html loads before this file; each one gives a function, called only for the language in
-  // use): { texts, messages, keys, categories, date }, described in i18n-es.js.
+  // The rest of the page starts in start(), at the end of this file: at once in English and
+  // Japanese, and after the file of the texts of the language has been loaded in the others (1.12.0;
+  // until 1.11.0 index.html loaded all five files at every start).
+  function start() {
+  // The texts of a language other than English and Japanese (i18n-es.js, i18n-de.js …; each one
+  // gives a function, called only for the language in use): { texts, messages, keys, categories,
+  // date }, described in i18n-es.js.
   const I18N = (() => {
     const f = LANG !== 'en' && !JA && window.QCALC_I18N && window.QCALC_I18N[LANG];
     try { return (typeof f === 'function' && f()) || {}; } catch (e) { return {}; }
@@ -1038,11 +1042,13 @@
   }
 
   // ============================================================ commit
-  let committing = false, stopping = false, busyTimer = null;
+  let committing = false, stopping = false, busyTimer = null, commitWaiting = false;
   async function commit() {
     const raw = exprEl.value.trim();
     if (!raw || committing) return;
-    if (!engineReady) { toast(tr('The calculation engine is starting', '計算エンジンを準備中です')); return; }
+    // 1.12.0: "=" while the engine is starting is kept, and the expression in the field then is
+    // calculated as soon as the engine is ready (startEngine); until 1.11.0 it only said so
+    if (!engineReady) { commitWaiting = true; previewEl.textContent = tr('Starting the calculation engine… the result follows', '計算エンジンを準備中です。準備ができたら計算します'); return; }
     const expr = withoutOpenTo(normalizeExpr(raw));
     if (!expr) return;
     if (expr.indexOf('□') >= 0) {
@@ -1117,9 +1123,11 @@
       exprChanged(); // something was typed while the calculation ran: keep it
     }
     saveDraft();
-    // only the new line is added, unless the lines on the screen are no longer the history
-    // (the first result, the oldest line dropped, an older long result shortened)
-    if (over || shortened || histEl.children.length !== history.length - 1 || !histEl.querySelector('.h-item')) renderHistory(true);
+    // only the new line is added (and the oldest one taken away when the history is full), unless
+    // the lines on the screen are no longer the history (the first result, an older long result
+    // shortened). The oldest lines may not be drawn yet (olderLeft, renderHistory).
+    if (over) { if (olderLeft > 0) olderLeft--; else if (histEl.firstElementChild) histEl.firstElementChild.remove(); }
+    if (shortened || !histEl.querySelector('.h-item') || histEl.children.length !== history.length - 1 - olderLeft) renderHistory(true);
     else {
       const item = historyItem(entry);
       histEl.append(item);
@@ -1129,6 +1137,7 @@
     }
     announce(entry);
     definitionMade(r, expr);
+    startupMark('first');
   }
   // "x = 5" and "f(x) := x^2" define a variable or a function. From then on every expression uses
   // it (x is 5 in the forms too), which is easy to do by mistake when an equation was meant: a
@@ -2583,8 +2592,17 @@
     if (t === null) { toast(tr('This result is too long to insert (use the ans key)', 'この結果はそのまま挿入できません（ans キーで使えます）'), 2600); return; }
     insert(t, 0, false);
   }
+  // The history is drawn in chunks (1.12.0): the newest HIST_CHUNK lines at once, then the older
+  // ones a chunk at a time, at the top, when the page is idle, keeping what is on the screen in
+  // place. Drawing all 300 lines (fractions and roots in math notation) took about a second on a
+  // phone at every start, and again after every result once the history was full, as the oldest
+  // line then went and the whole history was drawn again. olderLeft: the oldest lines not drawn yet.
+  const HIST_CHUNK = 40;
+  let olderLeft = 0, olderJob = 0;
   function renderHistory(scroll) {
     histEl.textContent = '';
+    olderLeft = 0;
+    olderJob++;
     if (!history.length) {
       // nothing calculated yet: say what to do and offer a few examples to try
       const chips = el('div', { class: 'ex-chips' });
@@ -2598,11 +2616,30 @@
       histPinned = false;
       return;
     }
+    const first = Math.max(0, history.length - HIST_CHUNK);
     const frag = document.createDocumentFragment();
-    for (const h of history) frag.append(historyItem(h));
+    for (let i = first; i < history.length; i++) frag.append(historyItem(history[i]));
     histEl.append(frag);
     fitMatrices(histEl);
     if (scroll) { histEl.scrollTop = histEl.scrollHeight; histPinned = true; }
+    olderLeft = first;
+    if (olderLeft) drawOlderLater(olderJob);
+  }
+  function drawOlderLater(job) {
+    if (window.requestIdleCallback) window.requestIdleCallback(() => drawOlder(job), { timeout: 400 });
+    else setTimeout(() => drawOlder(job), 30);
+  }
+  function drawOlder(job) {
+    if (job !== olderJob || olderLeft <= 0) return;
+    const to = Math.min(olderLeft, history.length), from = Math.max(0, to - HIST_CHUNK);
+    const items = [];
+    for (let i = from; i < to; i++) items.push(historyItem(history[i]));
+    const fromBottom = histEl.scrollHeight - histEl.scrollTop;
+    histEl.prepend(...items);
+    for (const it of items) fitMatrices(it);
+    histEl.scrollTop = histEl.scrollHeight - fromBottom; // the lines on the screen stay where they were
+    olderLeft = from;
+    if (olderLeft) drawOlderLater(job);
   }
   // one line of the history: the expression, the result and its warnings
   function historyItem(h) {
@@ -10130,12 +10167,27 @@
     autosize();
     focusExpr();
     startEngine();
+    startupMark('ui');
+  }
+  // The times of the start (1.12.0), from the start of the page: the keypad and the newest history
+  // shown (ui), the engine ready (engine) and the first result. The app writes them to its log
+  // (adb logcat -s QCalc), and reports the first one to the system as "fully drawn" (pageReady), so
+  // that `am start -W` and the system's own log show the whole start.
+  const startup = {};
+  function startupMark(k) {
+    if (k in startup) return;
+    startup[k] = Math.round(window.performance && performance.now ? performance.now() : 0);
+    if (k === 'ui') { try { if (window.QalcNative && QalcNative.pageReady) QalcNative.pageReady(); } catch (e) { } }
+    if (k === 'engine' || k === 'first') {
+      try { console.info('QCalc startup: ' + Object.keys(startup).map((x) => x + ' ' + startup[x] + ' ms').join(', ')); } catch (e) { }
+    }
   }
   async function startEngine() {
     previewEl.textContent = tr('Starting the calculation engine…', '計算エンジンを準備中…');
     const r = await Bridge.send('init');
     previewEl.textContent = '';
     if (!r.ok) {
+      commitWaiting = false;
       msgEl.textContent = (localMessage(r.error) || tr('Could not start the calculation engine', '計算エンジンを起動できませんでした')) + tr(' (tap here to try again)', '（ここをタップすると、もう一度試します）');
       msgEl.className = 'msg error';
       msgEl.onclick = () => { msgEl.onclick = null; msgEl.textContent = ''; msgEl.className = 'msg'; startEngine(); };
@@ -10153,9 +10205,26 @@
     autoUpdateRates();
     const sub = $('#drawer-sub');
     if (sub) sub.textContent = tr('Calculation engine ', '計算エンジン ') + engineName;
-    if (exprEl.value.trim()) exprChanged();
+    startupMark('engine');
+    if (commitWaiting) { commitWaiting = false; commit(); } // "=" was pressed while the engine was starting
+    else if (exprEl.value.trim()) exprChanged();
+    if (CF.id) formChanged();
     // the lists of names for the suggestions, once the first calculations are out of the way
     setTimeout(() => { if (!sugData) loadSugData(); }, 2500);
   }
   boot();
+  }
+  // 1.12.0: only the file of the texts of the language in use is loaded (each is about 90 KB of
+  // script that the phone had to read at every start). Without it (it could not be loaded) the
+  // page is in English, as tr() gives the English text for a text it does not find.
+  const I18N_FILE = { es: 'i18n-es.js', de: 'i18n-de.js', fr: 'i18n-fr.js', ko: 'i18n-ko.js', 'zh-TW': 'i18n-zh-TW.js' };
+  if (Object.prototype.hasOwnProperty.call(I18N_FILE, LANG) && !(window.QCALC_I18N && window.QCALC_I18N[LANG])) {
+    let started = false;
+    const go = () => { if (!started) { started = true; start(); } };
+    const s = document.createElement('script');
+    s.src = I18N_FILE[LANG];
+    s.onload = go;
+    s.onerror = go;
+    document.head.append(s);
+  } else start();
 })();

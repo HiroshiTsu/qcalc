@@ -2,7 +2,6 @@ package io.github.hiroshitsu.qcalc;
 
 import android.app.Activity;
 import android.app.LocaleManager;
-import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -18,6 +17,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.LocaleList;
 import android.os.Looper;
+import android.os.StrictMode;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.Gravity;
@@ -86,10 +86,19 @@ public class MainActivity extends Activity {
     private volatile String appLang;
     /** The languages of the app's configuration when they were last looked at (onConfigurationChanged). */
     private String configLocales;
+    /** When onCreate began (SystemClock.elapsedRealtime), for the times of the start in the log. */
+    private long createdAt;
+    /** The page has reported that it is ready (reportFullyDrawn is called once). */
+    private boolean fullyDrawn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        createdAt = SystemClock.elapsedRealtime();
+        if (getPackageName().endsWith(".debug")) strictMode();
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= 24) {
+            Log.i(TAG, "startup: onCreate " + (createdAt - android.os.Process.getStartElapsedRealtime()) + " ms after the process started");
+        }
         appearance = savedAppearance();
         configLocales = getResources().getConfiguration().getLocales().toLanguageTags();
         // first: on its first start a build with billing looks for the data of older versions
@@ -176,6 +185,17 @@ public class MainActivity extends Activity {
         content.addView(web, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         Engine.get(this).setEventListener(events);
+    }
+
+    /**
+     * Test builds only (the package name ends in .debug, as with build-apk.sh and Gradle's debug
+     * build; 1.12.0): StrictMode writes to the log what the main thread reads from or writes to the
+     * disk or the network, and leaked objects, without stopping anything (adb logcat -s StrictMode).
+     */
+    private static void strictMode() {
+        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build());
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().detectLeakedSqlLiteObjects()
+                .detectLeakedClosableObjects().detectActivityLeaks().penaltyLog().build());
     }
 
     /**
@@ -446,6 +466,9 @@ public class MainActivity extends Activity {
 
     /** The setting "Light or dark" as the page saved it with its other settings (qalc.settings). */
     private String savedAppearance() {
+        // a small file read on the main thread on purpose: the colours of the window must be right
+        // before its first frame (StrictMode of the test builds is told so)
+        StrictMode.ThreadPolicy policy = StrictMode.allowThreadDiskReads();
         try {
             String s = StateStore.load(this, "qalc.settings");
             if (s != null) {
@@ -453,6 +476,8 @@ public class MainActivity extends Activity {
                 if ("dark".equals(a) || "light".equals(a)) return a;
             }
         } catch (Exception ignored) {
+        } finally {
+            StrictMode.setThreadPolicy(policy);
         }
         return "system";
     }
@@ -595,38 +620,72 @@ public class MainActivity extends Activity {
         });
     }
 
-    /** Methods callable from the page as window.QalcNative.* (run on a background thread). */
+    /**
+     * Runs r on the UI thread. An exception there is written to the log instead of closing the app
+     * (1.12.0: everything the page asks for goes through here or is caught in JsApi).
+     */
+    private void onUi(final String what, final Runnable r) {
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (!destroyed) r.run();
+                } catch (RuntimeException e) {
+                    Log.e(TAG, what, e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Methods callable from the page as window.QalcNative.* (run on a background thread of the
+     * WebView). 1.12.0: each one catches what it throws, so that a wrong value from the page or a
+     * failure of the system never closes the app; the page gets an empty or "failed" answer.
+     */
     final class JsApi {
 
         @JavascriptInterface
         public void send(String request) {
-            Engine.get(MainActivity.this).submit(request, new Engine.Callback() {
-                @Override
-                public void done(String response) {
-                    deliver(response);
-                }
-            });
+            try {
+                Engine.get(MainActivity.this).submit(request, new Engine.Callback() {
+                    @Override
+                    public void done(String response) {
+                        deliver(response);
+                    }
+                });
+            } catch (RuntimeException e) {
+                Log.e(TAG, "send", e);
+            }
         }
 
         @JavascriptInterface
         public void updateRates(final int id) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    String r;
-                    try {
-                        r = RatesUpdater.update(Engine.get(MainActivity.this), id, versionName());
-                    } catch (RuntimeException e) {
-                        r = "{\"id\":" + id + ",\"ok\":false,\"error\":\"Could not update the exchange rates\"}";
+            try {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String r;
+                        try {
+                            r = RatesUpdater.update(Engine.get(MainActivity.this), id, versionName());
+                        } catch (RuntimeException e) {
+                            r = "{\"id\":" + id + ",\"ok\":false,\"error\":\"Could not update the exchange rates\"}";
+                        }
+                        deliver(r);
                     }
-                    deliver(r);
-                }
-            }, "qalc-rates").start();
+                }, "qalc-rates").start();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "updateRates", e);
+                deliver("{\"id\":" + id + ",\"ok\":false,\"error\":\"Could not update the exchange rates\"}");
+            }
         }
 
         @JavascriptInterface
         public void cancel() {
-            Engine.get(MainActivity.this).cancel();
+            try {
+                Engine.get(MainActivity.this).cancel();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "cancel", e);
+            }
         }
 
         /**
@@ -636,7 +695,12 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public String startLang(boolean had) {
-            return chooseLang(had, true).lang;
+            try {
+                return chooseLang(had, true).lang;
+            } catch (RuntimeException e) {
+                Log.e(TAG, "startLang", e);
+                return "en";
+            }
         }
 
         /**
@@ -646,28 +710,41 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void setLang(String code) {
             if (!Lang.valid(code)) return;
-            synchronized (MainActivity.this) {
-                // first, so that the change of the configuration that follows finds nothing new
-                appLang = code;
-                StateStore.save(MainActivity.this, "qalc.lang", Lang.json(code));
-                if (setAppLocale(code)) StateStore.save(MainActivity.this, "qalc.langsys", Lang.json(code));
+            try {
+                synchronized (MainActivity.this) {
+                    // first, so that the change of the configuration that follows finds nothing new
+                    appLang = code;
+                    StateStore.save(MainActivity.this, "qalc.lang", Lang.json(code));
+                    if (setAppLocale(code)) StateStore.save(MainActivity.this, "qalc.langsys", Lang.json(code));
+                }
+            } catch (RuntimeException e) {
+                Log.e(TAG, "setLang", e);
             }
         }
 
         @JavascriptInterface
         public String loadState(String name) {
-            return StateStore.load(MainActivity.this, name);
+            try {
+                return StateStore.load(MainActivity.this, name);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "loadState", e);
+                return null;
+            }
         }
 
         @JavascriptInterface
         public void saveState(String name, String data) {
-            StateStore.save(MainActivity.this, name, data);
+            try {
+                StateStore.save(MainActivity.this, name, data);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "saveState", e);
+            }
         }
 
         @JavascriptInterface
         public void copy(final String text) {
             if (text == null) return;
-            ui.post(new Runnable() {
+            onUi("copy", new Runnable() {
                 @Override
                 public void run() {
                     ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
@@ -700,7 +777,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void openUrl(final String url) {
-            ui.post(new Runnable() {
+            onUi("openUrl", new Runnable() {
                 @Override
                 public void run() {
                     openExternal(url);
@@ -712,10 +789,27 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void setAppearance(String mode) {
             appearance = "dark".equals(mode) || "light".equals(mode) ? mode : "system";
-            ui.post(new Runnable() {
+            onUi("setAppearance", new Runnable() {
                 @Override
                 public void run() {
-                    if (!destroyed) applyColors();
+                    applyColors();
+                }
+            });
+        }
+
+        /**
+         * The page shows its keypad and the newest history (1.12.0): reported to the system as the
+         * end of the start ("Fully drawn" in `adb logcat`, and in `am start -W` from Android 10).
+         */
+        @JavascriptInterface
+        public void pageReady() {
+            onUi("pageReady", new Runnable() {
+                @Override
+                public void run() {
+                    if (fullyDrawn) return;
+                    fullyDrawn = true;
+                    Log.i(TAG, "startup: page ready " + (SystemClock.elapsedRealtime() - createdAt) + " ms after onCreate");
+                    reportFullyDrawn();
                 }
             });
         }
@@ -723,33 +817,50 @@ public class MainActivity extends Activity {
         /** QCalc Pro: {billing, pro, legacy, price, state} (see Pro.info()). */
         @JavascriptInterface
         public String proInfo() {
-            return pro != null ? pro.info() : "{\"billing\":\"none\"}";
+            try {
+                return pro != null ? pro.info() : "{\"billing\":\"none\"}";
+            } catch (RuntimeException e) {
+                Log.e(TAG, "proInfo", e);
+                return "{\"billing\":\"none\"}";
+            }
         }
 
         @JavascriptInterface
         public void buyPro() {
-            ui.post(new Runnable() {
+            onUi("buyPro", new Runnable() {
                 @Override
                 public void run() {
-                    if (pro != null && !destroyed) pro.buy(MainActivity.this);
+                    if (pro != null) pro.buy(MainActivity.this);
                 }
             });
         }
 
         @JavascriptInterface
         public void restorePro() {
-            if (pro != null) pro.restore();
+            try {
+                if (pro != null) pro.restore();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "restorePro", e);
+            }
         }
 
         @JavascriptInterface
         public void refreshPro() {
-            if (pro != null) pro.refresh();
+            try {
+                if (pro != null) pro.refresh();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "refreshPro", e);
+            }
         }
 
         /** Test builds only: see the app with or without Pro. */
         @JavascriptInterface
         public void setTestPro(boolean unlocked) {
-            if (pro != null) pro.setTestUnlocked(unlocked);
+            try {
+                if (pro != null) pro.setTestUnlocked(unlocked);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "setTestPro", e);
+            }
         }
 
         /**
@@ -763,10 +874,9 @@ public class MainActivity extends Activity {
                 sendEvent("{\"event\":\"saved\",\"ok\":false,\"error\":\"Could not save the file\"}");
                 return;
             }
-            ui.post(new Runnable() {
+            onUi("saveFile", new Runnable() {
                 @Override
                 public void run() {
-                    if (destroyed) return;
                     Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("text/csv");
@@ -774,7 +884,8 @@ public class MainActivity extends Activity {
                     pendingSave = text;
                     try {
                         startActivityForResult(i, REQUEST_SAVE);
-                    } catch (ActivityNotFoundException e) {
+                    } catch (RuntimeException e) {
+                        // no file picker (ActivityNotFoundException), or the system refused
                         pendingSave = null;
                         sendEvent("{\"event\":\"saved\",\"ok\":false,\"error\":\"Could not save the file\"}");
                     }
