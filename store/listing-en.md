@@ -70,6 +70,42 @@ Paste in Play Console under "Release notes" (up to 500 characters per language).
 each user the notes in their language: put all the blocks into the field (from 1.9.0 also the Spanish one,
 es-419, after the Spanish translation of the listing has been added; listing-es.md).
 
+1.9.3 (when 1.9.0, 1.9.1 or 1.9.2 was already released):
+
+<en-US>
+• Fixed: area, length, volume and surface area are measured only where the functions have real values. The sample "Circle" now gives the area 4π and the perimeter 4π (before: a wrong area and no length), the "Doughnut" the volume 4π²
+• Lengths of very wavy curves are right to 10 digits; a value that cannot be found as precisely shows only the digits that are right
+</en-US>
+<ja-JP>
+・修正：面積・長さ・体積・表面積は、関数に実数の値がある部分だけで計算します。サンプル「円」の面積と周の長さは 4π に（これまでは面積が違い、長さが出ませんでした）、「ドーナツ」の体積は 4π² になりました
+・波の多い曲線の長さも 10 桁まで正しく出します。それほど正確に求まらない値は、正しい桁だけを示します
+</ja-JP>
+<es-419>
+• Corregido: el área, la longitud, el volumen y el área superficial se miden solo donde las funciones tienen valores reales. La muestra "Círculo" da el área 4π y el perímetro 4π (antes: un área errónea y ninguna longitud), la "Dona" el volumen 4π²
+• Las longitudes de curvas con muchas ondas son correctas hasta 10 cifras; un valor que no se puede hallar con tanta precisión muestra solo las cifras correctas
+</es-419>
+
+1.9.3, when the last release was 1.8.0, 1.8.1, 1.8.2, 1.8.3 or 1.8.4 (the changes of 1.8.1 to 1.9.3):
+
+<en-US>
+• New: Spanish (menu → Language / 言語 / Idioma → Español). A phone set to Spanish starts in Spanish
+• 3D graph: smooth, glossy surfaces; the measured solid looks like a pale gelatin in a clear skin
+• Area, length, volume and surface only where the functions have real values (circle 4π, doughnut 4π²); right digits only
+• 📈 draws expressions in x and y, equations and matrices, also from the history
+</en-US>
+<ja-JP>
+・新機能：スペイン語に対応（メニュー →「Language / 言語 / Idioma」→ Español）。スペイン語の端末ではスペイン語で始まります
+・3D グラフ：曲面をなめらかでつやのある姿で描き、計測している立体は透明な皮に包まれた薄いゼラチンのように示します
+・面積・長さ・体積・表面積は実数の値がある部分だけで計算します（円 4π、ドーナツ 4π²）。正しい桁だけを示します
+・📈 で x と y の式、方程式、行列を描けます。履歴からも同じです
+</ja-JP>
+<es-419>
+• Nuevo: español (menú → Language / 言語 / Idioma → Español). Un teléfono en español empieza en español
+• Gráfico 3D: superficies suaves y brillantes; el sólido medido parece una gelatina clara en una piel transparente
+• Área, longitud, volumen y superficie solo donde las funciones tienen valores reales (círculo 4π, dona 4π²); solo cifras correctas
+• 📈 dibuja expresiones en x e y, ecuaciones y matrices, también desde el historial
+</es-419>
+
 1.9.2 (when 1.9.0 or 1.9.1 was already released):
 
 <en-US>
