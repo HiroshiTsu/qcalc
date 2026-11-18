@@ -521,7 +521,6 @@
     "The angle is from 0 to 360 degrees": "중심각은 0~360도로 하세요",
     "The area is shaded in the graph. Drag one of its two edges (↔) to change the range, or tap a range between crossing points. Parts below the x axis (or below the other function) count as positive. \"Length\" gives the length of the curve, or the perimeter of the region between two functions.": "넓이를 구하는 부분은 그래프에 색이 칠해집니다. 양 끝의 ↔를 끌면 범위를 바꿀 수 있고, 교점 사이의 범위는 탭해서 고를 수도 있습니다. x축(또는 다른 함수)보다 아래 부분도 양수로 셉니다. ‘길이’는 곡선의 길이(두 함수 사이이면 둘러싸인 부분의 둘레)입니다.",
     "The calculation engine also contains GMP, MPFR, libxml2 and more. Because MPFR is LGPL v3 or later, the engine as a whole is distributed under the GNU GPL v3 or later.": "계산 엔진에는 GMP, MPFR, libxml2 등도 들어 있습니다. MPFR이 LGPL v3 이상이므로 엔진 전체는 GNU GPL v3 이상의 조건으로 배포합니다.",
-    "The calculation engine is starting": "계산 엔진을 준비하는 중입니다",
     "The calculation took longer than the time limit ({0} s) and was stopped. The time limit can be changed in Settings": "제한 시간({0}초)을 넘어서 계산을 중단했습니다. 제한 시간은 설정에서 바꿀 수 있습니다",
     "The calculation took too long and was stopped": "시간이 너무 오래 걸려 계산을 중단했습니다",
     "The calculation took too long: only part of the graph was calculated": "시간이 너무 오래 걸려 일부만 계산했습니다",
@@ -896,7 +895,8 @@
     "3 × 3 points, 10 m squares": "3 × 3 점·10 m 칸",
     "Method": "방법",
     "Type the values or paste a table from a spreadsheet (columns separated by tabs or commas) into a box: it fills the table from there. Tap a result to put its expression into the input field or to copy it. The tables are kept for the next time.": "값을 입력하거나, 스프레드시트의 표(탭 또는 쉼표로 구분)를 칸에 붙여 넣으면 거기서부터 표가 채워집니다. 결과를 누르면 식을 입력란에 넣거나 복사할 수 있습니다. 표는 다음을 위해 남아 있습니다.",
-    "\"Shapes\" also leads to \"Volume from measured values\": a table of cross sections (the average end area method and Simpson’s rule, with the reason when Simpson’s rule cannot be used) or the heights at the corners of a grid (the method of point heights, V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)). A table can be pasted from a spreadsheet; the volume is given in m³ and L.": "‘도형’에서 ‘측정값으로 부피 구하기’도 열 수 있습니다: 단면적 표로 평균단면법과 심프슨 공식(쓸 수 없으면 이유도), 격자 모서리의 높이로 점고법(V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄))을 써서 부피를 구합니다. 표는 스프레드시트에서 붙여 넣을 수 있고, 결과는 m³와 L로 나옵니다."
+    "\"Shapes\" also leads to \"Volume from measured values\": a table of cross sections (the average end area method and Simpson’s rule, with the reason when Simpson’s rule cannot be used) or the heights at the corners of a grid (the method of point heights, V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)). A table can be pasted from a spreadsheet; the volume is given in m³ and L.": "‘도형’에서 ‘측정값으로 부피 구하기’도 열 수 있습니다: 단면적 표로 평균단면법과 심프슨 공식(쓸 수 없으면 이유도), 격자 모서리의 높이로 점고법(V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄))을 써서 부피를 구합니다. 표는 스프레드시트에서 붙여 넣을 수 있고, 결과는 m³와 L로 나옵니다.",
+    "Starting the calculation engine… the result follows": "계산 엔진을 준비하고 있습니다. 준비되면 계산합니다"
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(메뉴 → ‘환율 업데이트’)",

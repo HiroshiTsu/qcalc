@@ -522,7 +522,6 @@
     "The angle is from 0 to 360 degrees": "圓心角請介於 0～360 度",
     "The area is shaded in the graph. Drag one of its two edges (↔) to change the range, or tap a range between crossing points. Parts below the x axis (or below the other function) count as positive. \"Length\" gives the length of the curve, or the perimeter of the region between two functions.": "面積會在圖形中上色。拖曳它兩端的 ↔ 可改變範圍，也可以點一下交點之間的範圍。x 軸（或另一個函數）下方的部分也算成正值。「長度」會求出曲線的長度，或兩個函數之間區域的周長。",
     "The calculation engine also contains GMP, MPFR, libxml2 and more. Because MPFR is LGPL v3 or later, the engine as a whole is distributed under the GNU GPL v3 or later.": "計算引擎也包含 GMP、MPFR、libxml2 等。因為 MPFR 採用 LGPL v3 或更新版本，整個引擎以 GNU GPL v3 或更新版本的條款散布。",
-    "The calculation engine is starting": "計算引擎正在啟動",
     "The calculation took longer than the time limit ({0} s) and was stopped. The time limit can be changed in Settings": "計算超過時間上限（{0} 秒），已停止。時間上限可在設定中變更",
     "The calculation took too long and was stopped": "計算花費的時間太長，已停止",
     "The calculation took too long: only part of the graph was calculated": "計算花費的時間太長：只算出部分圖形",
@@ -897,7 +896,8 @@
     "3 × 3 points, 10 m squares": "3 × 3 點、10 m 方格",
     "Method": "方法",
     "Type the values or paste a table from a spreadsheet (columns separated by tabs or commas) into a box: it fills the table from there. Tap a result to put its expression into the input field or to copy it. The tables are kept for the next time.": "輸入數值，或將試算表的表格（以 Tab 或逗號分隔欄）貼到格子中，表格會從該處填入。點選結果可將其算式放入輸入欄或複製。表格會保留到下次。",
-    "\"Shapes\" also leads to \"Volume from measured values\": a table of cross sections (the average end area method and Simpson’s rule, with the reason when Simpson’s rule cannot be used) or the heights at the corners of a grid (the method of point heights, V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)). A table can be pasted from a spreadsheet; the volume is given in m³ and L.": "「幾何圖形」也可開啟「由實測值求體積」：以斷面積表用平均斷面法與辛普森公式（無法使用時說明原因），或以方格角點的高度用點高法（V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)）求體積。表格可從試算表貼上，結果以 m³ 與 L 表示。"
+    "\"Shapes\" also leads to \"Volume from measured values\": a table of cross sections (the average end area method and Simpson’s rule, with the reason when Simpson’s rule cannot be used) or the heights at the corners of a grid (the method of point heights, V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)). A table can be pasted from a spreadsheet; the volume is given in m³ and L.": "「幾何圖形」也可開啟「由實測值求體積」：以斷面積表用平均斷面法與辛普森公式（無法使用時說明原因），或以方格角點的高度用點高法（V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)）求體積。表格可從試算表貼上，結果以 m³ 與 L 表示。",
+    "Starting the calculation engine… the result follows": "正在啟動計算引擎，準備好後就會計算"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（選單 →「更新匯率」）",
