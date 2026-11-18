@@ -3594,8 +3594,11 @@
     }
   }
   // a number from an expression (π/2, √2, 1/3), or NaN
+  // (1.11.0: shown as a decimal whatever the setting "Fractions" is: with "auto" the engine shows the
+  // input 0.5 as "1/2" and 2.5 as "2 + 1/2", which were not read as numbers: the circle of radius 0.5
+  // in the 2D graph was refused with "The size must be a positive number")
   async function numValue(expr) {
-    const r = await Bridge.send('calc', { expr: String(expr), opts: Object.assign(engineOpts(), { approx: 'approx', precision: 15, grouping: false }), timeout: 1500 });
+    const r = await Bridge.send('calc', { expr: String(expr), opts: Object.assign(engineOpts(), { approx: 'approx', precision: 15, grouping: false, fraction: 'decimal', base: 10, notation: 'auto', max_decimals: -1 }), timeout: 1500 });
     return r.ok && r.result ? Number(numberPart(r.result)) : NaN;
   }
   // the exact text of a result, as an expression (the part before ≈ or "="), or ''
@@ -4146,7 +4149,9 @@
     if (kept && (kept.res || kept.ms >= ms)) { exactCache.delete(key); exactCache.set(key, kept); return kept.res; }
     const r = await Bridge.send('calc', { expr, opts: iOpts(), timeout: ms });
     let res = null;
-    if (r.ok && r.result && !/∫|integrate/.test(r.result) && !(r.messages || []).some((m) => m.type === 'error' || /integrate|approximated/i.test(m.text))) {
+    // (1.11.0: nor a decimal the engine marks as approximate without saying so, as for
+    // integrate(2π x² √(4x² + 1), 0, 1) = 3.809729705: it was shown with "=" as if it were exact)
+    if (r.ok && r.result && !/∫|integrate/.test(r.result) && !(r.approx && r.result.indexOf(' ≈ ') < 0) && !(r.messages || []).some((m) => m.type === 'error' || /integrate|approximated/i.test(m.text))) {
       const v = Number(numberPart(r.result));
       if (isFinite(v)) res = { text: r.result, exact: r.result.split(' ≈ ')[0].trim(), v };
     }
@@ -4296,13 +4301,24 @@
   async function sumValues(parts) {
     const v = parts.reduce((t, p) => t + p.v, 0);
     if (parts.length > 1 && parts.every((p) => p.exact)) {
-      const r = await exactIntegral(parts.map((p) => '(' + p.exact + ')').join(' + '), 3000);
+      const expr = parts.map((p) => '(' + p.exact + ')').join(' + ');
+      const r = await exactIntegral(expr, 3000);
       if (r && Math.abs(r.v - v) <= 1e-6 * Math.max(1, Math.abs(v))) return r;
+      // 1.11.0: a sum that the setting "auto" shows as a decimal only (√2 π + π): its exact form
+      const x = await exactForm(expr);
+      if (x) return { text: x + ' ≈ ' + fmtV(+v.toPrecision(10)), exact: x, v };
     }
     const digits = Math.min(...parts.map((p) => p.digits || 10));
     return parts.length === 1 ? parts[0] : { text: '≈ ' + fmtV(+v.toPrecision(digits)), exact: '', v, digits };
   }
   const shownValue = (val) => (val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text);
+  // the exact form of an expression of exact values (calculated with "exact"), or ''
+  async function exactForm(expr) {
+    const r = await Bridge.send('calc', { expr, opts: iOpts({ approx: 'exact' }), timeout: 3000 });
+    if (!r.ok || !r.result || r.timeout || r.approx || (r.messages || []).some((m) => m.type === 'error')) return '';
+    const t = r.result.split(' ≈ ')[0].split(' = ')[0].trim();
+    return /integrate|∫|^[−-]?[\d.]+(e[−+-]?\d+)?$/.test(t) ? '' : t;
+  }
 
   // ------------------------- only where the functions have real values (1.9.3)
   // A range (2D) or a region (3D) can reach where a function has no real value: √(4 − x²) beyond
@@ -5791,7 +5807,7 @@
     });
     if (!jobs.length || jobs.length > 2400) return false;
     const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect', base: 10, notation: 'auto', max_decimals: -1 });
-    const B = 300;
+    const B = batchOf(series.map((s) => s.expr));
     for (let step = 0; step < 12; step++) {
       for (let b0 = 0; b0 < jobs.length; b0 += B) {
         const part = jobs.slice(b0, b0 + B);
@@ -5818,6 +5834,11 @@
     }
     return true;
   }
+  // How many values one calculation asks for (1.11.0): the engine refuses a vector of more than about
+  // 15 000 characters ("The expression is nested too deeply"), so the values of a long expression are
+  // asked for in smaller batches. Until 1.10.x it was always 300: the edge of a long surface (a solid
+  // of revolution around a vertical axis) was not found, and the surface was drawn with saw teeth
+  const batchOf = (es) => Math.max(8, Math.min(300, Math.floor(9000 / (Math.max(...es.map((e) => subXY(e, '0.1234567890123', '0.1234567890123').length)) + 4))));
   // The edge of a surface with no real values beyond it (a sphere: √(r² − x² − y²)). On each grid
   // line from a point with a value to one without, the last point with a real value is found by
   // halving the step 12 times (all such lines at once, in one calculation per step), so the drawing
@@ -5839,7 +5860,7 @@
     }
     // (plain decimal numbers whatever the settings of the results are: base 16 or 2 decimals, 1.8.3)
     const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect', base: 10, notation: 'auto', max_decimals: -1 });
-    const B = 300;
+    const B = batchOf(series.map((s) => s.expr));
     for (let step = 0; step < 12; step++) {
       for (let b0 = 0; b0 < jobs.length; b0 += B) {
         const part = jobs.slice(b0, b0 + B);
@@ -7045,7 +7066,8 @@
     }
     const surf = surfacePaint(g, tb, { W, H, q: Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3 });
     // (what was drawn, for the tests)
-    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid });
+    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid,
+      rims: (D.series || []).reduce((n, s) => n + (s.rim ? Object.keys(s.rim).length : 0), 0) });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
     if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
