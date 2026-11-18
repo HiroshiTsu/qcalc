@@ -1191,3 +1191,6 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .sec-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
 .sec-tools .sec-btn { min-height: 40px; padding: 6px 14px; }
 .sec-how:empty { display: none; }
+/* (1.11.0: a link of the tools may take two lines: "Volume from measured values (cross sections, grid
+   of heights) ›" made the panel of the shapes wider than a 320-pixel screen) */
+.geo-link { white-space: normal; }
