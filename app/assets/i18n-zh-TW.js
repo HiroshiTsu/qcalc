@@ -688,7 +688,20 @@
     "✓ QCalc Pro is unlocked": "✓ QCalc Pro 已啟用",
     "📈 Show in a graph": "📈 以圖形顯示",
     "📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.": "輸入欄上方的 📈 會畫出所輸入內容的圖形：x 的運算式（2D）或 x 與 y 的運算式（3D）、y = 2x + 1、x² + y² = 4 或 z = x y 這類方程式，或 2 行或 3 行數字的矩陣（點）。長按歷史紀錄中的一列也能做到。",
-    "📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.": "表單中的 📈 會畫出相應的圖形：導數及其切線、積分的面積、線性方程組的直線或平面及其解、矩陣的各列作為點。"
+    "📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.": "表單中的 📈 會畫出相應的圖形：導數及其切線、積分的面積、線性方程組的直線或平面及其解、矩陣的各列作為點。",
+    "Enclosed": "圍成的部分",
+    "The part enclosed by the surfaces": "曲面圍成的部分",
+    "Could not read the surfaces in the drawn range": "無法讀取繪製範圍內的曲面值",
+    "The surfaces do not enclose anything in the drawn range": "在繪製範圍內，曲面沒有圍成任何部分",
+    "The surface is not above z = 0 anywhere in the drawn range": "在繪製範圍內，曲面沒有任何部分在 z = 0 之上",
+    "Finding the part enclosed by the surfaces…": "正在尋找曲面圍成的部分…",
+    "Part {0}": "第 {0} 部分",
+    "The part is cut at the edge of the drawn range: widen the range of the graph. The values below are those inside the range.": "這個部分在繪製範圍的邊緣被截斷。請擴大圖形的範圍。下面的值是範圍內的值。",
+    "{0} ≤ {1} (a disk of radius {2})": "{0} ≤ {1}（半徑 {2} 的圓）",
+    "{0} ≤ {1} ≤ {2} (a ring of radii {3} and {4})": "{0} ≤ {1} ≤ {2}（半徑 {3} 和 {4} 的圓環）",
+    "the part enclosed by where the surfaces meet": "曲面交線圍成的部分",
+    "Its region \"Enclosed\" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.": "範圍的「圍成的部分」會根據交線，自動找出一個曲面在另一個曲面之上（或在 z = 0 之上）的部分，例如 z = x² + y² 與 z = 4 得到 8π。範圍會以式子（x² + y² ≤ 4）表示並在底面畫出輪廓；若有多個部分，會逐一列出。",
+    "The values are those of the graph that is drawn: the solid between the two surfaces (or between the surface and z = 0) over the part found, and its whole surface, the upper and the lower surface over that part.": "這是目前繪製的圖形的值：在找到的部分上，兩個曲面（或曲面與 z = 0）之間的立體的體積，以及它的整個表面（該部分上方與下方的曲面）的面積。"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（選單 →「更新匯率」）",

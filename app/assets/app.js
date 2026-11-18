@@ -2950,6 +2950,8 @@
     tr('📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.', '入力欄の上の 📈 で、入力した式のグラフを描けます。x の式は 2D、x と y の式は 3D、y = 2x + 1、x² + y² = 4、z = x y のような方程式、2 列か 3 列の数の行列（点）も描けます。履歴の行を長押ししても同じことができます。'),
     tr('In the graph, "Area" finds the area between a function and the x axis or between two functions (the crossing points are offered as ranges), and "Length" the length of a curve or the perimeter between two functions. "Example" draws a circle or an ellipse.', 'グラフの「面積を求める」で、関数と x 軸の間や 2 つの関数の間の面積（交点の間の範囲を選べます）、「長さ・周」で曲線の長さや 2 つの関数に囲まれた部分の周の長さが求められます。「図形の例」で円や楕円を描けます。'),
     tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks like a pale gelatin in a skin of a deeper shade in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで濃い色の皮に包まれた薄い色のゼラチンのように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
+    tr('Its region "Enclosed" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.',
+      '範囲の「囲まれた部分」は、一方の曲面がもう一方より上にある部分（または z = 0 より上の部分）を、交線から自動で見つけます。例：z = x² + y² と z = 4 なら 8π。範囲を式（x² + y² ≤ 4）で示して床に輪郭を描き、部分が複数あれば部分ごとに出します。'),
     tr('1:1 in the graph makes one unit as long on every axis, so a circle or a sphere looks round. In 3D it turns on by itself when the ranges are about the same.', 'グラフの「1:1」で、どの軸も 1 目盛りの長さがそろい、円や球が丸く見えます。3D では範囲の長さが近いときに自動でオンになります。'),
     tr('"Calculus" under a 2D graph draws f′ and ∫f, the tangent at x = a, and marks zeros and extrema; in 3D, "Partial derivatives" draws ∂f/∂x and ∂f/∂y.', '2D グラフの「微分・接線・極値」で f′ と ∫f、x = a での接線を描き、零点と極値に印を付けます。3D の「偏微分」では ∂f/∂x と ∂f/∂y を描きます。'),
     tr('📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.', '入力フォームの 📈 で、その計算に合うグラフを描きます。微分なら接線、定積分なら面積、連立方程式なら直線や平面と解の点、行列なら各行の点です。'),
@@ -4929,18 +4931,20 @@
     const setRegion = (k, quiet) => {
       Q3.volUI.region = k;
       bEnc.classList.toggle('on', k === 'enc'); bRect.classList.toggle('on', k === 'rect'); bDisk.classList.toggle('on', k === 'disk');
-      rangeText.hidden = k !== 'rect'; diskRow.hidden = k !== 'disk'; encText.hidden = k !== 'enc';
+      rangeText.hidden = k !== 'rect'; diskRow.hidden = k !== 'disk'; encText.hidden = k !== 'enc'; hint.hidden = k === 'enc'; hintEnc.hidden = k !== 'enc';
       if (k === 'enc') encText.textContent = '';
       out.textContent = ''; ins.hidden = true;
       if (!quiet) volumeAuto();
     };
     // the color of the solid that is measured, as it is shown in the graph (1.8.4; draw3d sets it)
     const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('In the graph, the solid that is measured looks like a pale gelatin of this color in a clear, glossy skin of a deeper shade', 'グラフでは、計測している立体を、この色の薄いゼラチンを、濃い色のつやのある透明な皮で包んだように示しています') }));
+    const hint = el('div', { class: 'form-hint', text: tr('The values are those of the graph that is drawn. Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.', 'いま描いているグラフの値です。平面（またはもう一方の曲面）より下の部分もプラスとして数えます。表面積は 2 つの曲面（または曲面と z = 0 の底面）の面積の和で、側面は含みません。') });
+    const hintEnc = el('div', { class: 'form-hint', hidden: true, text: tr('The values are those of the graph that is drawn: the solid between the two surfaces (or between the surface and z = 0) over the part found, and its whole surface, the upper and the lower surface over that part.', 'いま描いているグラフの値です。見つけた部分での 2 つの曲面（または曲面と z = 0）の間の立体の体積と、その表面全体（その部分の上と下の曲面）の面積です。') });
     const box = el('div', { class: 'area-box' },
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bEnc, bRect, bDisk), rangeText, diskRow, encText),
       legend, out, ins,
-      el('div', { class: 'form-hint', text: tr('The values are those of the graph that is drawn. Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.', 'いま描いているグラフの値です。平面（またはもう一方の曲面）より下の部分もプラスとして数えます。表面積は 2 つの曲面（または曲面と z = 0 の底面）の面積の和で、側面は含みません。') }),
+      hint, hintEnc,
       buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
       tapButton({ class: 'btn geo-link', text: tr('More shapes: cylinder, cone, box… ›', 'ほかの図形（円柱・円錐・直方体など）›') }, () => openShapes()));
     box.hidden = true;
@@ -7319,7 +7323,11 @@
     // a cell counts as inside the region when any part of it is (its point nearest to the centre of a disk)
     const inRegion = (i, j) => {
       // (1.11.0: the enclosed part: a cell whose four corners are inside)
-      if (VS.enc) { const k = j * D.nx + i, e = VS.enc; return e[k] > 0 && e[k + 1] > 0 && e[k + D.nx] > 0 && e[k + D.nx + 1] > 0; }
+      // (corners without a real value, at the rim of a sphere, do not count)
+      if (VS.enc) {
+        const k = j * D.nx + i, e = VS.enc, C = [k, k + 1, k + D.nx, k + D.nx + 1];
+        return C.some((q) => e[q] === e[q]) && C.every((q) => !(e[q] === e[q]) || e[q] > 0);
+      }
       if (!VS.disk) return true; const cx = Math.max(xs[i], Math.min(xs[i + 1], 0)), cy = Math.max(ys[j], Math.min(ys[j + 1], 0)); return cx * cx + cy * cy <= VS.R * VS.R; };
     // a cell partly inside and partly outside the disk (its nearest point inside, its farthest corner outside)
     const crossing = (i, j) => VS.disk && inRegion(i, j) && Math.max(Math.hypot(xs[i], ys[j]), Math.hypot(xs[i + 1], ys[j]), Math.hypot(xs[i], ys[j + 1]), Math.hypot(xs[i + 1], ys[j + 1])) > VS.R;
@@ -7407,6 +7415,29 @@
             const len = Math.hypot(ncx, ncy, ncd) || 1;
             cells.push({ s, poly, depth: dd * 4 / poly.length, shade: Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len, t: (ww / (poly.length * EZ) + 1) / 2, inR: chosen && inRegion(i, j) });
             continue;
+          }
+          // (1.11.0) a cell of a measured surface partly inside the enclosed part: only its part outside
+          // is drawn as the surface (cut where d = 0 by the straight lines between the corners), so the
+          // edge of the liquid is smooth instead of following the cells
+          if (real === 4 && chosen && VS.enc) {
+            const e = VS.enc, cs = [a, b, c2, d], nIn = cs.filter((k) => e[k] > 0).length;
+            if (nIn > 0 && nIn < 4) {
+              const corner = (k) => ({ x: px[k], y: py[k], d: pd[k], u: U(xs[k % D.nx]), v: V(ys[(k / D.nx) | 0]), w: pw[k], n: [s.cnrm[3 * k], s.cnrm[3 * k + 1], s.cnrm[3 * k + 2]], gi: k % D.nx, gj: (k / D.nx) | 0 });
+              const mix = (p, q, f) => ({ x: p.x + (q.x - p.x) * f, y: p.y + (q.y - p.y) * f, d: p.d + (q.d - p.d) * f, u: p.u + (q.u - p.u) * f, v: p.v + (q.v - p.v) * f, w: p.w + (q.w - p.w) * f,
+                n: [p.n[0] + (q.n[0] - p.n[0]) * f, p.n[1] + (q.n[1] - p.n[1]) * f, p.n[2] + (q.n[2] - p.n[2]) * f], gi: p.gi + (q.gi - p.gi) * f, gj: p.gj + (q.gj - p.gj) * f });
+              const poly = [];
+              for (let n = 0; n < 4; n++) {
+                const k = cs[n], k2 = cs[(n + 1) % 4];
+                if (!(e[k] > 0)) poly.push(corner(k));
+                if ((e[k] > 0) !== (e[k2] > 0)) poly.push(mix(corner(k), corner(k2), Math.max(0, Math.min(1, e[k] / (e[k] - e[k2])))));
+              }
+              if (poly.length >= 3) {
+                let dd = 0, ww = 0;
+                for (const q of poly) { dd += q.d; ww += q.w; }
+                cells.push({ s, poly, piece: true, depth: dd * 4 / poly.length, shade: 0.8, t: (ww / (poly.length * EZ) + 1) / 2, inR: false });
+              }
+              continue;
+            }
           }
           if (real < 3) continue;
           if (real === 4) {

@@ -684,7 +684,20 @@
     "✓ QCalc Pro is unlocked": "✓ QCalc Pro ist freigeschaltet",
     "📈 Show in a graph": "📈 Im Graphen zeigen",
     "📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.": "📈 über dem Eingabefeld zeichnet den Graphen des Eingegebenen: einen Ausdruck in x (2D) oder in x und y (3D), eine Gleichung wie y = 2x + 1, x² + y² = 4 oder z = x y oder eine Zahlenmatrix mit 2 oder 3 Spalten (Punkte). Langes Drücken auf eine Zeile im Verlauf bietet dasselbe.",
-    "📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.": "📈 in den Formularen zeichnet den passenden Graphen: eine Ableitung mit ihrer Tangente, die Fläche eines Integrals, die Geraden oder Ebenen eines linearen Systems mit seiner Lösung, die Zeilen einer Matrix als Punkte."
+    "📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.": "📈 in den Formularen zeichnet den passenden Graphen: eine Ableitung mit ihrer Tangente, die Fläche eines Integrals, die Geraden oder Ebenen eines linearen Systems mit seiner Lösung, die Zeilen einer Matrix als Punkte.",
+    "Enclosed": "Eingeschlossen",
+    "The part enclosed by the surfaces": "Der von den Flächen eingeschlossene Teil",
+    "Could not read the surfaces in the drawn range": "Die Flächen im gezeichneten Bereich konnten nicht gelesen werden",
+    "The surfaces do not enclose anything in the drawn range": "Im gezeichneten Bereich schließen die Flächen nichts ein",
+    "The surface is not above z = 0 anywhere in the drawn range": "Im gezeichneten Bereich liegt die Fläche nirgends über z = 0",
+    "Finding the part enclosed by the surfaces…": "Der von den Flächen eingeschlossene Teil wird gesucht …",
+    "Part {0}": "Teil {0}",
+    "The part is cut at the edge of the drawn range: widen the range of the graph. The values below are those inside the range.": "Der Teil wird am Rand des gezeichneten Bereichs abgeschnitten: Vergrößere den Bereich des Graphen. Die Werte unten gelten innerhalb des Bereichs.",
+    "{0} ≤ {1} (a disk of radius {2})": "{0} ≤ {1} (eine Kreisscheibe mit Radius {2})",
+    "{0} ≤ {1} ≤ {2} (a ring of radii {3} and {4})": "{0} ≤ {1} ≤ {2} (ein Kreisring mit den Radien {3} und {4})",
+    "the part enclosed by where the surfaces meet": "der von der Schnittkurve der Flächen eingeschlossene Teil",
+    "Its region \"Enclosed\" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.": "Der Bereich „Eingeschlossen“ findet selbst den Teil, in dem eine Fläche über der anderen liegt (oder über z = 0), begrenzt durch ihre Schnittkurve, etwa bei z = x² + y² und z = 4 (8π): Der Bereich wird beschrieben (x² + y² ≤ 4) und sein Umriss auf dem Boden gezeichnet; mehrere Teile werden einzeln angegeben.",
+    "The values are those of the graph that is drawn: the solid between the two surfaces (or between the surface and z = 0) over the part found, and its whole surface, the upper and the lower surface over that part.": "Die Werte sind die des gezeichneten Graphen: der Körper zwischen den beiden Flächen (oder zwischen der Fläche und z = 0) über dem gefundenen Teil und seine gesamte Oberfläche, die obere und die untere Fläche über diesem Teil."
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Menü → „Wechselkurse aktualisieren“)",

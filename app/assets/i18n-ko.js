@@ -687,7 +687,20 @@
     "✓ QCalc Pro is unlocked": "✓ QCalc Pro를 쓸 수 있습니다",
     "📈 Show in a graph": "📈 그래프로 보기",
     "📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.": "입력란 위의 📈로 입력한 식의 그래프를 그립니다. x의 식은 2D, x와 y의 식은 3D, y = 2x + 1, x² + y² = 4, z = x y 같은 방정식, 2열이나 3열의 수로 된 행렬(점)도 그릴 수 있습니다. 기록의 줄을 길게 눌러도 같은 일을 할 수 있습니다.",
-    "📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.": "입력 양식의 📈로 그 계산에 맞는 그래프를 그립니다. 미분이면 접선, 정적분이면 넓이, 연립방정식이면 직선이나 평면과 해의 점, 행렬이면 각 행의 점입니다."
+    "📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.": "입력 양식의 📈로 그 계산에 맞는 그래프를 그립니다. 미분이면 접선, 정적분이면 넓이, 연립방정식이면 직선이나 평면과 해의 점, 행렬이면 각 행의 점입니다.",
+    "Enclosed": "둘러싸인 부분",
+    "The part enclosed by the surfaces": "곡면으로 둘러싸인 부분",
+    "Could not read the surfaces in the drawn range": "그린 범위에서 곡면의 값을 읽을 수 없습니다",
+    "The surfaces do not enclose anything in the drawn range": "그린 범위에서는 곡면으로 둘러싸인 부분이 없습니다",
+    "The surface is not above z = 0 anywhere in the drawn range": "그린 범위에서는 곡면이 z = 0보다 위에 있는 부분이 없습니다",
+    "Finding the part enclosed by the surfaces…": "곡면으로 둘러싸인 부분을 찾는 중…",
+    "Part {0}": "부분 {0}",
+    "The part is cut at the edge of the drawn range: widen the range of the graph. The values below are those inside the range.": "그린 범위의 가장자리에서 잘려 있습니다. 그래프의 범위를 넓히세요. 아래 값은 범위 안의 값입니다.",
+    "{0} ≤ {1} (a disk of radius {2})": "{0} ≤ {1} (반지름이 {2}인 원)",
+    "{0} ≤ {1} ≤ {2} (a ring of radii {3} and {4})": "{0} ≤ {1} ≤ {2} (반지름이 {3}, {4}인 원환)",
+    "the part enclosed by where the surfaces meet": "곡면의 교선으로 둘러싸인 부분",
+    "Its region \"Enclosed\" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.": "범위의 ‘둘러싸인 부분’은 한 곡면이 다른 곡면보다 위에 있는 부분(또는 z = 0보다 위인 부분)을 교선으로부터 자동으로 찾습니다. 예: z = x² + y²와 z = 4이면 8π. 범위를 식(x² + y² ≤ 4)으로 보여 주고 바닥에 윤곽을 그리며, 부분이 여러 개이면 부분마다 값을 냅니다.",
+    "The values are those of the graph that is drawn: the solid between the two surfaces (or between the surface and z = 0) over the part found, and its whole surface, the upper and the lower surface over that part.": "그린 그래프의 값입니다. 찾은 부분에서 두 곡면(또는 곡면과 z = 0) 사이에 있는 입체의 부피와, 그 겉면 전체(그 부분의 위와 아래 곡면)의 넓이입니다."
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(메뉴 → ‘환율 업데이트’)",

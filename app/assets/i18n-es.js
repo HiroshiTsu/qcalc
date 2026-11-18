@@ -696,7 +696,20 @@
     "✓ QCalc Pro is unlocked": "✓ QCalc Pro está desbloqueado",
     "📈 Show in a graph": "📈 Ver en un gráfico",
     "📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.": "📈 sobre el campo de entrada dibuja el gráfico de lo que escribiste: una expresión en x (2D) o en x e y (3D), una ecuación como y = 2x + 1, x² + y² = 4 o z = x y, o una matriz de números con 2 o 3 columnas (puntos). Mantener presionada una línea del historial ofrece lo mismo.",
-    "📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.": "📈 en los formularios dibuja el gráfico que les corresponde: una derivada con su tangente, el área de una integral, las rectas o planos de un sistema lineal con su solución, las filas de una matriz como puntos."
+    "📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.": "📈 en los formularios dibuja el gráfico que les corresponde: una derivada con su tangente, el área de una integral, las rectas o planos de un sistema lineal con su solución, las filas de una matriz como puntos.",
+    "Enclosed": "Parte encerrada",
+    "The part enclosed by the surfaces": "La parte encerrada por las superficies",
+    "Could not read the surfaces in the drawn range": "No se pudieron leer las superficies en el rango dibujado",
+    "The surfaces do not enclose anything in the drawn range": "En el rango dibujado, las superficies no encierran ninguna parte",
+    "The surface is not above z = 0 anywhere in the drawn range": "En el rango dibujado, la superficie no está por encima de z = 0 en ninguna parte",
+    "Finding the part enclosed by the surfaces…": "Buscando la parte encerrada por las superficies…",
+    "Part {0}": "Parte {0}",
+    "The part is cut at the edge of the drawn range: widen the range of the graph. The values below are those inside the range.": "La parte queda cortada en el borde del rango dibujado: amplía el rango de la gráfica. Los valores de abajo son los de dentro del rango.",
+    "{0} ≤ {1} (a disk of radius {2})": "{0} ≤ {1} (un círculo de radio {2})",
+    "{0} ≤ {1} ≤ {2} (a ring of radii {3} and {4})": "{0} ≤ {1} ≤ {2} (una corona circular de radios {3} y {4})",
+    "the part enclosed by where the surfaces meet": "la parte encerrada por la intersección de las superficies",
+    "Its region \"Enclosed\" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.": "Su región «Parte encerrada» encuentra sola la parte en la que una superficie está por encima de la otra (o por encima de z = 0), limitada por donde se cortan, como con z = x² + y² y z = 4 (8π): la región se describe (x² + y² ≤ 4) y se dibuja su contorno en el suelo, y si hay varias partes se dan una por una.",
+    "The values are those of the graph that is drawn: the solid between the two surfaces (or between the surface and z = 0) over the part found, and its whole surface, the upper and the lower surface over that part.": "Los valores son los de la gráfica dibujada: el sólido entre las dos superficies (o entre la superficie y z = 0) sobre la parte encontrada, y toda su superficie, la superficie de arriba y la de abajo sobre esa parte."
   },
   messages: {
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (menú → "Actualizar tipos de cambio")',

@@ -684,7 +684,20 @@
     "✓ QCalc Pro is unlocked": "✓ QCalc Pro est débloqué",
     "📈 Show in a graph": "📈 Voir dans un graphique",
     "📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.": "📈 au-dessus du champ de saisie trace le graphique de ce qui est saisi : une expression en x (2D) ou en x et y (3D), une équation comme y = 2x + 1, x² + y² = 4 ou z = x y, ou une matrice de nombres à 2 ou 3 colonnes (points). Un appui long sur une ligne de l’historique propose la même chose.",
-    "📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.": "📈 dans les formulaires trace le graphique correspondant : une dérivée avec sa tangente, l’aire d’une intégrale, les droites ou les plans d’un système linéaire avec sa solution, les lignes d’une matrice comme points."
+    "📈 in the forms draws the graph that goes with them: a derivative with its tangent, the area of an integral, the lines or planes of a linear system with its solution, the rows of a matrix as points.": "📈 dans les formulaires trace le graphique correspondant : une dérivée avec sa tangente, l’aire d’une intégrale, les droites ou les plans d’un système linéaire avec sa solution, les lignes d’une matrice comme points.",
+    "Enclosed": "Partie enclose",
+    "The part enclosed by the surfaces": "La partie délimitée par les surfaces",
+    "Could not read the surfaces in the drawn range": "Impossible de lire les surfaces dans la plage tracée",
+    "The surfaces do not enclose anything in the drawn range": "Dans la plage tracée, les surfaces ne délimitent aucune partie",
+    "The surface is not above z = 0 anywhere in the drawn range": "Dans la plage tracée, la surface n’est nulle part au-dessus de z = 0",
+    "Finding the part enclosed by the surfaces…": "Recherche de la partie délimitée par les surfaces…",
+    "Part {0}": "Partie {0}",
+    "The part is cut at the edge of the drawn range: widen the range of the graph. The values below are those inside the range.": "La partie est coupée au bord de la plage tracée : élargissez la plage du graphique. Les valeurs ci-dessous sont celles à l’intérieur de la plage.",
+    "{0} ≤ {1} (a disk of radius {2})": "{0} ≤ {1} (un disque de rayon {2})",
+    "{0} ≤ {1} ≤ {2} (a ring of radii {3} and {4})": "{0} ≤ {1} ≤ {2} (une couronne de rayons {3} et {4})",
+    "the part enclosed by where the surfaces meet": "la partie délimitée par l’intersection des surfaces",
+    "Its region \"Enclosed\" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.": "La région « Partie enclose » trouve d’elle-même la partie où une surface est au-dessus de l’autre (ou au-dessus de z = 0), délimitée par leur intersection, comme pour z = x² + y² et z = 4 (8π) : la région est décrite (x² + y² ≤ 4) et son contour tracé sur le sol, et plusieurs parties sont données une par une.",
+    "The values are those of the graph that is drawn: the solid between the two surfaces (or between the surface and z = 0) over the part found, and its whole surface, the upper and the lower surface over that part.": "Les valeurs sont celles du graphique tracé : le solide entre les deux surfaces (ou entre la surface et z = 0) au-dessus de la partie trouvée, et toute sa surface, la surface du haut et celle du bas au-dessus de cette partie."
   },
   messages: {
     "rates-old": (p1) => "Les taux de change n’ont pas été mis à jour depuis " + p1 + " " + (p1 === '1' ? "jour" : "jours") + " (menu → « Mettre à jour les taux de change »)",
