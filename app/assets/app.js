@@ -416,7 +416,8 @@
     profile: 'pro',        // a solid from a measured profile: volume, capacity, weight, surface, its table (1.12 D2): Pro (work)
     stl: 'pro',            // the solids saved as STL files for 3D printers (1.12 D3): Pro (work)
     share: 'free',         // sharing a picture of a graph, with a small "QCalc" in the corner (1.12 D4)
-    share_pro: 'pro'       // the moving picture (GIF) of the 3D graph, and pictures without the mark at full resolution (1.12 D4): Pro
+    share_pro: 'pro',      // the moving picture (GIF) of the 3D graph, and pictures without the mark at full resolution (1.12 D4): Pro
+    notes: 'pro'           // calculation notes: the second memo and more, and saving them as text or CSV (1.12 D5): Pro; the first memo, copying and sharing it are free
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -12740,6 +12741,177 @@
     else out.push(['power', tr('Power', '累乗'), xpos && ypos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every x and y must be above 0', 'x と y がすべて 0 より大きいときだけ使えます')]);
     return out;
   }
+  // ---- Data: calculation notes (1.12.0, D5)
+  // A memo of calculations, one on each line, with the result on the right: "rent = 85000 JPY" gives a
+  // name that the lines below can use (in this memo only), "ans" is the value of the line above, and a
+  // line "total" (合計, Summe, …) adds the results of the lines above it, back to the last such line.
+  // Units and currencies work as on the calculator (the engine). A line that starts with # or // is a
+  // note. Only the line that changed and the lines below it are calculated again. Several memos (the
+  // first free; more, and saving as text or CSV: QCalc Pro, key 'notes'); copy and share as text.
+  // How the names work: a name is replaced, before a line is calculated, by its expression in
+  // parentheses (with the names in it replaced in turn), so the exact value, units and currencies go
+  // through and nothing is defined in the engine (the calculator's variables are not touched, and the
+  // same name can mean another thing in another memo). A name is letters (any script), digits and _,
+  // not starting with a digit; it stands for itself where it is not part of a longer word.
+  const NOTE_MAX = 300, NOTE_TOTAL = /^\s*(合計|小計|total|subtotal|sum|summe|gesamt|zwischensumme|suma|totale?|somme|합계|소계|總計|合計|小計)\s*[:：=]?\s*$/i;
+  const NOTE_NAME_CH = 'A-Za-z_\\u00C0-\\u024F\\u0370-\\u03FF\\u0400-\\u04FF\\u3040-\\u30FF\\u3400-\\u9FFF\\uAC00-\\uD7AF\\uF900-\\uFAFF';
+  const NOTE_ASSIGN = new RegExp('^\\s*([' + NOTE_NAME_CH + '][' + NOTE_NAME_CH + '0-9]*)\\s*[=＝]\\s*([^=].*)$');
+  const NOTE_EX = () => [
+    [tr('Rent and bills', '家賃と光熱費'), [tr('rent', '家賃') + ' = 85000 JPY', tr('electricity', '電気') + ' = 6200 JPY', tr('water', '水道') + ' = 3100 JPY', tr('total', '合計'), tr('ans × 12', 'ans × 12')]],
+    [tr('Travel budget', '旅の予算'), [tr('hotel', 'ホテル') + ' = 3 × 120 USD', tr('meals', '食事') + ' = 3 × 45 USD', tr('total', '合計'), tr('ans to JPY', 'ans to JPY')]],
+    [tr('A room', '部屋の広さ'), [tr('width', '横') + ' = 3.6 m', tr('depth', '奥行き') + ' = 2.7 m', tr('width × depth', '横 × 奥行き'), tr('ans to ft^2', 'ans to ft^2')]]
+  ];
+  // the line with the names (and ans) replaced: { expr } or { error }
+  function noteExpand(text, names, prev) {
+    const isCh = (c) => !!c && new RegExp('[' + NOTE_NAME_CH + '0-9]').test(c);
+    let s = text;
+    const keys = Object.keys(names).concat(prev !== null ? ['ans'] : []).sort((a, b) => b.length - a.length);
+    for (const k of keys) {
+      const v = k === 'ans' && !(k in names) ? prev : names[k];
+      let out = '', i = 0;
+      for (;;) {
+        const j = s.indexOf(k, i);
+        if (j < 0) { out += s.slice(i); break; }
+        if (!isCh(s[j - 1]) && !isCh(s[j + k.length])) { out += s.slice(i, j) + '(' + v + ')'; i = j + k.length; }
+        else { out += s.slice(i, j + 1); i = j + 1; }
+      }
+      s = out;
+    }
+    return { expr: s };
+  }
+  function openNotesTool() {
+    const p = panel('notes', tr('Calculation notes', '計算メモ'), (p) => {
+      const saved = store.get('qalc.notes', null) || {};
+      const N = { memos: Array.isArray(saved.memos) && saved.memos.length ? saved.memos.slice(0, 50) : [{ id: 1, title: tr('Memo 1', 'メモ 1'), lines: NOTE_EX()[0][1].slice() }], cur: saved.cur || 1, seq: 0, cache: [] };
+      if (!N.memos.some((m) => m.id === N.cur)) N.cur = N.memos[0].id;
+      const memo = () => N.memos.find((m) => m.id === N.cur) || N.memos[0];
+      const save = () => store.set('qalc.notes', { memos: N.memos, cur: N.cur });
+      const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
+        ...NOTE_EX().map(([label, lines]) => tapButton({ class: 'area-chip', text: label }, () => { memo().lines = lines.slice(); save(); build(); run(0); })));
+      const pick = el('select', { 'aria-label': tr('Memo', 'メモ') });
+      const fillPick = () => { pick.textContent = ''; for (const m of N.memos) pick.append(el('option', { value: String(m.id), text: m.title })); pick.value = String(N.cur); };
+      pick.addEventListener('change', () => { N.cur = Number(pick.value); N.cache = []; save(); build(); run(0); });
+      const addBtn = tapButton({ class: 'btn', text: tr('+ New memo', '＋ 新しいメモ') + (PRO_GATES.notes === 'pro' && !hasPro() && N.memos.length >= 1 ? '  ⭐ Pro' : ''), 'aria-label': tr('New memo', '新しいメモ') }, () => {
+        if (N.memos.length >= 1 && !proGate('notes')) return;
+        const id = Math.max(...N.memos.map((m) => m.id)) + 1;
+        N.memos.push({ id, title: trf('Memo {0}', 'メモ {0}', N.memos.length + 1), lines: [''] }); N.cur = id; N.cache = []; save(); fillPick(); build(); run(0);
+        const f = list.querySelector('input'); if (f) f.focus();
+      });
+      const list = el('div', { class: 'note-lines', role: 'list' });
+      const msg = el('div', { class: 'geo-msg', role: 'alert' });
+      // one line: the field and its result
+      const lineRow = (i) => {
+        const inp = el('input', { inputmode: 'text', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false', value: memo().lines[i] || '', placeholder: i === 0 ? tr('e.g. rent = 85000 JPY', '例：家賃 = 85000 JPY') : '', 'aria-label': trf('Line {0}', '{0} 行目', i + 1), enterkeyhint: 'next' });
+        const res = tapButton({ class: 'note-res', 'aria-label': trf('Result of line {0}', '{0} 行目の結果', i + 1) }, () => { const c = N.cache[i]; if (c && c.ok) resultSheet(memo().lines[i], c.expr, c.shown); });
+        inp.addEventListener('input', () => { memo().lines[i] = inp.value; save(); run(i); });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); const L = memo().lines; if (L.length >= NOTE_MAX) return; const at = inp.selectionStart === 0 && inp.value ? i : i + 1; L.splice(at, 0, ''); save(); build(); run(at); const f = list.querySelectorAll('input')[at === i ? i + 1 : at]; if (f) f.focus(); }
+          else if (e.key === 'Backspace' && !inp.value && memo().lines.length > 1) { e.preventDefault(); memo().lines.splice(i, 1); save(); build(); run(i); const f = list.querySelectorAll('input')[Math.max(0, i - 1)]; if (f) f.focus(); }
+        });
+        inp.addEventListener('paste', (e) => {
+          const t = (e.clipboardData || window.clipboardData).getData('text');
+          if (!/\n/.test(t.trim())) return;
+          e.preventDefault();
+          const add = t.replace(/\r/g, '').split('\n'), L = memo().lines;
+          const before = inp.value.slice(0, inp.selectionStart), after = inp.value.slice(inp.selectionEnd);
+          add[0] = before + add[0]; add[add.length - 1] += after;
+          L.splice(i, 1, ...add.slice(0, NOTE_MAX - L.length + 1)); save(); build(); run(i);
+        });
+        // (the result already known, when the lines are laid out again)
+        const c = N.cache[i];
+        if (c && c.done && c.text === inp.value) { res.textContent = c.ok ? (c.total ? tr('Total ', '合計 ') : '') + c.shown : c.err || ''; res.classList.toggle('bad', !c.ok && !!c.err); }
+        return el('div', { class: 'note-line', role: 'listitem' }, inp, res);
+      };
+      const build = () => { list.textContent = ''; memo().lines.forEach((l, i) => list.append(lineRow(i))); };
+      // the results from line `from` on (the lines above keep theirs)
+      const run = async (from) => {
+        const seq = ++N.seq, L = memo().lines, rows = list.querySelectorAll('.note-line');
+        // (what the lines above give: their names, the value of the line above, the start of the sum)
+        const names = {};
+        let prev = null, sumFrom = 0;
+        for (let i = 0; i < from; i++) {
+          const c = N.cache[i];
+          // (a line not finished, or changed meanwhile, is calculated again from there)
+          if (!c || !c.done || c.text !== String(L[i] || '')) { from = i; break; }
+          if (c.name) names[c.name] = c.expr;
+          if (c.ok) prev = c.expr;
+          if (c.total) sumFrom = i + 1;
+        }
+        for (let i = from; i < L.length; i++) {
+          if (seq !== N.seq) return;
+          const text = String(L[i] || ''), res = rows[i] && rows[i].querySelector('.note-res'), c = { text };
+          N.cache[i] = c;
+          if (!text.trim() || /^\s*(#|\/\/)/.test(text)) { c.done = true; if (res) { res.textContent = ''; res.classList.remove('bad'); } continue; }
+          let body = text, name = null;
+          if (NOTE_TOTAL.test(text)) {
+            const parts = [];
+            for (let k = sumFrom; k < i; k++) if (N.cache[k] && N.cache[k].ok && !N.cache[k].total) parts.push('(' + N.cache[k].expr + ')');
+            body = parts.length ? parts.join(' + ') : '0'; c.total = true; sumFrom = i + 1;
+          } else {
+            const m = NOTE_ASSIGN.exec(text);
+            if (m && !/^(ans)$/i.test(m[1])) { name = m[1]; body = m[2]; }
+          }
+          const ex = c.total ? { expr: body } : noteExpand(normalizeExpr(body), names, prev);
+          const r = await Bridge.send('calc', { expr: ex.expr, opts: engineOpts(), timeout: 4000 });
+          if (seq !== N.seq) return;
+          c.done = true;
+          if (r.ok && r.result && !r.timeout && !(r.messages || []).some((q) => q.type === 'error')) {
+            c.ok = true; c.expr = ex.expr; c.shown = resultText(r);
+            if (name) { c.name = name; names[name] = ex.expr; }
+            prev = ex.expr;
+            if (res) { res.textContent = (c.total ? tr('Total ', '合計 ') : '') + c.shown; res.classList.remove('bad'); }
+          } else {
+            c.ok = false;
+            const err = r.timeout ? tr('took too long', '時間がかかりすぎました') : localMessage(((r.messages || []).find((q) => q.type === 'error') || {}).text || r.error) || tr('could not be calculated', '計算できませんでした');
+            c.err = err;
+            if (res) { res.textContent = err; res.classList.add('bad'); }
+          }
+        }
+        N.cache.length = L.length;
+        msg.textContent = '';
+      };
+      // copy, share, and under "More": rename, save as text or CSV (Pro), delete
+      const asText = () => memo().lines.map((l, i) => { const c = N.cache[i]; return c && c.ok ? l + '  →  ' + c.shown : l; }).join('\n');
+      const copyBtn = tapButton({ class: 'btn', text: tr('Copy', 'コピー') }, () => copyText(asText()));
+      const shareBtn = tapButton({ class: 'btn', text: tr('Share', '共有') }, () => {
+        if (window.QalcNative && QalcNative.shareText) QalcNative.shareText(asText());
+        else if (window.QalcDev && QalcDev.shareText) QalcDev.shareText(asText());
+        else copyText(asText());
+      });
+      const exp = (kind) => {
+        if (!proGate('notes')) return;
+        const d = new Date(), z = (q) => String(q).padStart(2, '0'), stamp = d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate());
+        const sep = commaMode ? ';' : ',', cell = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+        const text = kind === 'csv' ? '﻿' + [[tr('Line', '行'), tr('Calculation', '計算'), tr('Result', '結果')].map(cell).join(sep)].concat(memo().lines.map((l, i) => [i + 1, l, N.cache[i] && N.cache[i].ok ? N.cache[i].shown : ''].map(cell).join(sep))).join('\r\n') + '\r\n' : asText() + '\n';
+        const name = 'QCalc-notes-' + stamp + (kind === 'csv' ? '.csv' : '.txt');
+        savingWhat = 'notes';
+        if (kind === 'csv' && window.QalcNative && QalcNative.saveFile) { QalcNative.saveFile(name, 'text/csv', text); return; }
+        if (kind === 'txt' && window.QalcNative && QalcNative.saveFile) { QalcNative.saveFile(name, 'text/plain', text); return; }
+        const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: kind === 'csv' ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8' })), download: name });
+        document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+        fileSaved({ ok: true });
+      };
+      const lock = () => (PRO_GATES.notes === 'pro' && !hasPro() ? '  ⭐ Pro' : '');
+      const titleIn = el('input', { inputmode: 'text', 'aria-label': tr('Name of the memo', 'メモの名前') });
+      titleIn.addEventListener('input', () => { memo().title = titleIn.value.trim() || tr('Memo', 'メモ'); save(); fillPick(); });
+      const delBtn = tapButton({ class: 'btn', text: tr('Delete this memo', 'このメモを消す') }, async () => {
+        const k = await sheet(tr('Delete this memo?', 'このメモを消しますか？'), [['del', tr('Delete', '消す'), 'danger']]);
+        if (k !== 'del') return;
+        N.memos = N.memos.filter((m) => m.id !== N.cur);
+        if (!N.memos.length) N.memos.push({ id: 1, title: tr('Memo 1', 'メモ 1'), lines: [''] });
+        N.cur = N.memos[0].id; N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
+      });
+      const txtBtn = tapButton({ class: 'btn', text: tr('Save as text', 'テキストで保存') + lock() }, () => exp('txt'));
+      const csvBtn = tapButton({ class: 'btn', text: tr('Save as CSV', 'CSV で保存') + lock() }, () => exp('csv'));
+      const more = el('details', { class: 'sec-more note-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }),
+        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Name', '名前') }), titleIn), el('div', { class: 'tool-tbl-btns' }, txtBtn, csvBtn), delBtn);
+      more.addEventListener('toggle', () => { if (more.open) titleIn.value = memo().title; });
+      const hint = el('div', { class: 'form-hint', text: tr('One calculation on each line. "name = …" gives a name for the lines below (in this memo), "ans" is the line above, and "total" adds the lines above. Tap a result for the three actions.', '1 行に 1 つの計算。「名前 = 式」で下の行で使える名前（このメモの中だけ）、「ans」は上の行の値、「合計」で上の行を足します。結果をタップすると 3 つの操作。') });
+      p.body.append(chips, el('div', { class: 'geo-size note-pick' }, pick, addBtn), list, msg, el('div', { class: 'tool-tbl-btns' }, copyBtn, shareBtn), more, hint);
+      fillPick(); build(); run(0);
+    });
+    return p;
+  }
   function openStatsTool() {
     const p = panel('stats', tr('Statistics', '統計'), (p) => {
       const saved = store.get('qalc.stats', null) || {};
@@ -13024,6 +13196,10 @@
       'convert conversion unit units currency exchange mile km inch feet pound kg celsius fahrenheit fuel mpg 換算 変換 単位 通貨 為替 マイル インチ フィート ポンド 摂氏 華氏 燃費 尺 坪 升 かんさん たんい umrechnen Einheit Währung convertir unidad moneda convertir unité devise 변환 단위 환율 통화 換算 單位 貨幣 匯率',
       () => openConverter()],
     // 1.12.0 (C4): statistics
+    // 1.12.0 (D5): calculation notes (the tool is free; more memos and saving them: the gate 'notes')
+    ['memo', 'data', '📝', tr('Calculation notes', '計算メモ'), tr('A calculation on each line with its result; names, totals, units and currencies', '1 行ずつ計算して結果を右に。名前・合計・単位・通貨も'),
+      'notes memo notepad calculation sheet lines budget total sum variables names list 計算メモ メモ 計算 合計 名前 変数 家計 予算 一覧 めも けいさん Notizen Rechenblatt Summe notas cálculo suma notes calcul somme 계산 메모 합계 計算筆記 備忘 總計',
+      () => openNotesTool()],
     ['stats', 'data', '📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰'),
       'statistics stats mean average median mode standard deviation variance quartile regression correlation trend least squares data 統計 平均 中央値 最頻値 標準偏差 分散 四分位 回帰 相関 決定係数 最小二乗 データ 散布図 へいきん ちゅうおうち とうけい Statistik Mittelwert Durchschnitt Median Standardabweichung Varianz Quartil Regression Korrelation Daten estadística media promedio mediana moda desviación varianza cuartil regresión correlación datos statistiques moyenne médiane mode écart-type variance quartile régression corrélation données 통계 평균 중앙값 최빈값 표준편차 분산 사분위 회귀 상관 데이터 統計 平均 中位數 眾數 標準差 變異數 四分位 迴歸 相關 資料',
       () => openStatsTool()],
@@ -13512,6 +13688,7 @@
     tank_heads: ['🛢', tr('Tank heads and quick-reference tables', 'タンクの鏡板と早見表'), tr('Hemispherical, semi-elliptical and dished heads; the amount for each height and the height for each amount', '半球・半楕円・皿形の鏡板、高さごとの液量と液量ごとの高さの表')],
     profile: ['🏺', tr('Solid from a profile', '輪郭から回転体'), tr('Volume, capacity, weight and surface from positions and diameters (turned parts, pottery)', '位置と直径から体積・容量・重さ・表面積（旋盤の部品・陶芸）')],
     stl: ['🖨', tr('STL files for 3D printers', 'STL ファイル（3D プリンター）'), tr('Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres', '回転体・断面の立体・輪郭から回転体を、閉じた立体の面（mm）として保存')],
+    notes: ['📝', tr('More calculation notes, saved as files', '計算メモの 2 つ目以降と書き出し'), tr('Several memos of calculations, and saving them as text or CSV (the first memo is free)', '計算メモをいくつも作り、テキストや CSV で保存（1 つ目のメモは無料）')],
     share_pro: ['🎞', tr('GIF and pictures without the mark', 'GIF と透かしなしの共有'), tr('The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without "QCalc" in the corner', '3D グラフを動く画像（GIF）で、グラフの画像を高い解像度・透かしなしで共有')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
@@ -13762,7 +13939,7 @@
   }
   function fileSaved(ev) {
     const what = savingWhat; savingWhat = '';
-    if (ev.ok) toast(what === 'table' ? tr('Table saved', '表を保存しました') : what === 'stl' ? tr('STL file saved', 'STL ファイルを保存しました') : tr('History exported', '履歴を書き出しました'), 2000);
+    if (ev.ok) toast(what === 'table' ? tr('Table saved', '表を保存しました') : what === 'stl' ? tr('STL file saved', 'STL ファイルを保存しました') : what === 'notes' ? tr('Memo saved', 'メモを保存しました') : tr('History exported', '履歴を書き出しました'), 2000);
     else if (!ev.cancelled) toast(localMessage(ev.error) || tr('Could not save the file', 'ファイルを保存できませんでした'), 3500);
   }
 

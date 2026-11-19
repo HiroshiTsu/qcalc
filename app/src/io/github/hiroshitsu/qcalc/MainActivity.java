@@ -1049,6 +1049,25 @@ public class MainActivity extends Activity {
             }
         }
 
+        /** Shares a text (a calculation memo, 1.12.0 D5) through the system's share sheet. */
+        @JavascriptInterface
+        public void shareText(final String text) {
+            if (text == null || text.isEmpty() || text.length() > 100000) return;
+            onUi("shareText", new Runnable() {
+                @Override
+                public void run() {
+                    Intent send = new Intent(Intent.ACTION_SEND);
+                    send.setType("text/plain");
+                    send.putExtra(Intent.EXTRA_TEXT, text);
+                    try {
+                        startActivity(Intent.createChooser(send, null));
+                    } catch (RuntimeException e) {
+                        Log.w(TAG, "shareText", e);
+                    }
+                }
+            });
+        }
+
         /**
          * Shares an image of a graph (1.12.0, D4): data is the PNG or GIF in base64, mime its type, text
          * the words that go with it. The image is written to cache/shared/ on a thread (the images shared
@@ -1114,12 +1133,14 @@ public class MainActivity extends Activity {
         /**
          * Saves a text file where the user chooses (the system's file picker); the result comes
          * as a "saved" event. Only CSV files (text/csv, .csv) and, from 1.12.0, ASCII STL files for 3D
-         * printers (model/stl, .stl), with a plain name, as the page makes them.
+         * printers (model/stl, .stl) and the text of a calculation memo (text/plain, .txt), with a plain
+         * name, as the page makes them.
          */
         @JavascriptInterface
         public void saveFile(final String name, final String mime, final String text) {
             if (name == null || text == null || !FILE_NAME.matcher(name).matches()
-                    || !(("text/csv".equals(mime) && name.endsWith(".csv")) || ("model/stl".equals(mime) && name.endsWith(".stl")))
+                    || !(("text/csv".equals(mime) && name.endsWith(".csv")) || ("model/stl".equals(mime) && name.endsWith(".stl"))
+                        || ("text/plain".equals(mime) && name.endsWith(".txt")))
                     || text.length() > MAX_SAVE) {
                 sendEvent("{\"event\":\"saved\",\"ok\":false,\"error\":\"Could not save the file\"}");
                 return;
