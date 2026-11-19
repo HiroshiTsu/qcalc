@@ -21,7 +21,7 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 | 0:00–0:12 | 2D graph with the region already turned: View in 3D (the solid grows from 0° to 360°), then turned with a finger (QCalc Pro) | QCalc (3D 보기: QCalc Pro) | 계산기로 수식을 입력하기 어렵고, 단위 변환은 다른 앱, 그래프는 또 다른 앱…… QCalc는 이것을 하나로 모은 공학용 계산기입니다. |
 | 0:12–0:26 | The calculator: 60 mph to km/h (or 100 km/h to mph), solve(x^2 − 5x + 6 = 0), integrate(x^2 sin(x), 0, pi), typed one character at a time, = after each | 쓰는 그대로 입력 | 수식은 종이에 쓰는 그대로 입력합니다. 100 km/h to mph처럼 단위를 붙인 채로도, 방정식이나 적분도 바로 답이 나옵니다. |
 | 0:26–0:38 | The calculator: sqrt(8), 1/3 + 1/4, solve(x^2 = 2): exact answers | 정확한 답 | 답은 분수, 루트, π가 들어간 정확한 형태로도 나옵니다. 정밀도를 높이면 최대 20만 자리까지 계산합니다. |
-| 0:38–0:50 | Tools → Price: discount and tax → the first example | 가격: 할인과 부가세 | 매일의 계산은 '도구'에 모았습니다. 가격은 할인과 부가세를 한 번에. 예시를 탭하면 됩니다. |
+| 0:38–0:50 | Tools → Price: discount and tax → the first example | 가격과 부가세 | 매일의 계산은 '도구'에 모았습니다. 가격에 부가세를 더하거나 빼는 계산도 예시를 탭하면 됩니다. |
 | 0:50–1:02 | Tools → Loan → the first example, then down to the repayment table | 대출과 상환표 | 대출은 월 상환액과 이자 합계, 상환표까지. 더치페이, 날짜, 근무 시간 계산도 있습니다. |
 | 1:02–1:16 | Tools → Convert units and currencies → 5 typed → km to mi, then the categories | 단위와 환율 변환 | 변환 화면에서는 숫자를 넣으면 바로 변환됩니다. 길이, 무게, 온도, 연비, 통화까지 바꿀 수 있습니다. |
 | 1:16–1:32 | 2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D (the region turns, V appears), then View in 3D (the solid grows from 0° to 360°; QCalc Pro) | 그래프의 영역을 / 돌려 입체로 (3D 보기: QCalc Pro) | 2D 그래프에 두 함수를 그리고 ⟳ 3D를 누르면, 둘러싸인 부분을 돌린 입체와 그 부피가 바로 나옵니다. 3D로 보기는 QCalc Pro 기능입니다. |
@@ -48,5 +48,5 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 
 | Time | Screen | Headline on screen | Narration (subtitle) |
 |---|---|---|---|
-| 0:00–0:11 | Tools → Price: discount and tax → the first example | 가격: 할인과 부가세 | 할인과 부가세를 넣은 가격은? 예시를 탭하면 바로 답. |
+| 0:00–0:11 | Tools → Price: discount and tax → the first example | 가격과 부가세 | 부가세를 넣은 가격은? 예시를 탭하면 바로 답. |
 | 0:11–0:22 | Tools → Loan → the first example, then down to the repayment table | 대출 상환 | 대출의 월 상환액도 상환표까지 한 번에. |

@@ -58,7 +58,7 @@ const SCENES = {
   solid2d: { dark: true, run: Q.solid2d },
   solid3d: { dark: true, run: async (page) => { await Q.solid2d(page); await Q.solid3d(page); } },
   profile: { dark: false, run: Q.profile },
-  notes: { dark: true, run: async (page) => { await Q.tool(page, 'memo', 0); await sleep(1500); } },
+  notes: { dark: true, run: async (page, set) => { await Q.tool(page, 'memo', 0); await sleep(1500); await Q.localNotes(page, set); } },
   exact: {
     // exact answers, then π with 100 digits (the precision setting goes up to 200,000)
     dark: false, run: async (page) => {

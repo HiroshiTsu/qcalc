@@ -1,9 +1,9 @@
 1
-00:00:00,150 --> 00:00:07,163
-Ein Preis mit Rabatt und MwSt.?
+00:00:00,150 --> 00:00:06,144
+Ein Preis mit MwSt.?
 
 2
-00:00:07,283 --> 00:00:10,730
+00:00:06,264 --> 00:00:10,730
 Beispiel antippen, fertig.
 
 3

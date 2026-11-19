@@ -170,7 +170,7 @@ const SCENES = {
   },
   notes: {
     prep: async () => {},
-    run: async (page) => { await sleep(300); await openTool(page, 'memo'); await tap(page, chip(page, 0)); await sleep(3500); await smoothScroll(page, '.panel-body > *:nth-child(3)', 40, 900); await sleep(2000); }
+    run: async (page, lang) => { await sleep(300); await openTool(page, 'memo'); await tap(page, chip(page, 0)); await sleep(300); await Q.localNotes(page, lang); await sleep(1000); await smoothScroll(page, '.panel-body > *:nth-child(3)', 40, 900); await sleep(2000); }
   },
   manual: {
     prep: async () => {},

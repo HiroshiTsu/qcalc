@@ -21,7 +21,7 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 | 0:00–0:12 | 2D graph with the region already turned: View in 3D (the solid grows from 0° to 360°), then turned with a finger (QCalc Pro) | QCalc (3D view: QCalc Pro) | Calculator apps make you fight the keys. Units need another app, and graphs yet another. QCalc puts it all in one scientific calculator. |
 | 0:12–0:26 | The calculator: 60 mph to km/h (or 100 km/h to mph), solve(x^2 − 5x + 6 = 0), integrate(x^2 sin(x), 0, pi), typed one character at a time, = after each | Type it as you write it | Type math the way you write it on paper. Keep the units, as in 60 mph to km/h, or solve an equation, or an integral. |
 | 0:26–0:38 | The calculator: sqrt(8), 1/3 + 1/4, solve(x^2 = 2): exact answers | Exact answers | Answers can stay exact, with fractions, roots and π. With more precision, you get up to 200,000 digits. |
-| 0:38–0:50 | Tools → Price: discount and tax → the first example | Price: discount and tax | Everyday calculations are in Tools. The price tool works out a discount and tax: just tap an example. |
+| 0:38–0:50 | Tools → Price: discount and tax → the first example | Price and tax | Everyday calculations are in Tools. The price tool adds or takes out the tax: just tap an example. |
 | 0:50–1:02 | Tools → Loan → the first example, then down to the repayment table | Loans and the full table | The loan tool gives the monthly payment, the interest and the table. There are tools for splitting a bill, dates and hours too. |
 | 1:02–1:16 | Tools → Convert units and currencies → 5 typed → km to mi, then the categories | Units and currencies | On the conversion screen, type a number and it converts at once: length, weight, temperature, fuel economy and currencies. |
 | 1:16–1:32 | 2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D (the region turns, V appears), then View in 3D (the solid grows from 0° to 360°; QCalc Pro) | Turn a region / into a solid (3D view: QCalc Pro) | Draw two functions in the 2D graph and tap ⟳ 3D: the region turns into a solid of revolution, with its volume. Viewing it in 3D is a QCalc Pro feature. |
@@ -48,5 +48,5 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 
 | Time | Screen | Headline on screen | Narration (subtitle) |
 |---|---|---|---|
-| 0:00–0:11 | Tools → Price: discount and tax → the first example | Price with tax | A price with a discount and tax? Tap an example: the answer is there. |
+| 0:00–0:11 | Tools → Price: discount and tax → the first example | Price with tax | A price with tax? Tap an example: the answer is there. |
 | 0:11–0:22 | Tools → Loan → the first example, then down to the repayment table | Loan payments | A monthly loan payment, and the whole table at once. |

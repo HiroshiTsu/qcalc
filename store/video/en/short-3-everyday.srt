@@ -1,9 +1,9 @@
 1
-00:00:00,150 --> 00:00:05,380
-A price with a discount and tax?
+00:00:00,150 --> 00:00:03,921
+A price with tax?
 
 2
-00:00:05,500 --> 00:00:10,730
+00:00:04,041 --> 00:00:10,730
 Tap an example: the answer is there.
 
 3

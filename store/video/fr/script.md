@@ -48,7 +48,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 
 **0:38–0:50** 【Outils du quotidien】
 - 00:38–00:42 Les calculs du quotidien sont dans Outils.
-- 00:42–00:49 Le prix avec remise et TVA : touchez simplement un exemple.
+- 00:42–00:49 Le prix TTC ou HT : touchez simplement un exemple.
 
 **0:50–1:02**
 - 00:50–00:55 Pour un prêt : mensualité, intérêts et tableau d’amortissement.
@@ -104,8 +104,8 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 ## Short 3 (9:16, 22 s) — short-3-everyday.srt
 
 **0:00–0:11**
-- 00:00–00:06 Un prix avec remise et TVA ?
-- 00:06–00:10 Touchez un exemple, c’est tout.
+- 00:00–00:05 Un prix avec TVA ?
+- 00:05–00:10 Touchez un exemple, c’est tout.
 
 **0:11–0:22**
 - 00:11–00:15 La mensualité d’un prêt

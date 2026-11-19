@@ -21,7 +21,7 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 | 0:00–0:12 | 2D graph with the region already turned: View in 3D (the solid grows from 0° to 360°), then turned with a finger (QCalc Pro) | QCalc (Vue 3D : QCalc Pro) | Sur une calculatrice, taper une formule est pénible. Les unités demandent une autre appli, les courbes encore une autre. QCalc réunit tout dans une calculatrice scientifique. |
 | 0:12–0:26 | The calculator: 60 mph to km/h (or 100 km/h to mph), solve(x^2 − 5x + 6 = 0), integrate(x^2 sin(x), 0, pi), typed one character at a time, = after each | Comme sur papier | Tapez vos calculs comme sur papier. Avec les unités, comme 100 km/h to mph, ou résolvez une équation, une intégrale. |
 | 0:26–0:38 | The calculator: sqrt(8), 1/3 + 1/4, solve(x^2 = 2): exact answers | Résultats exacts | Le résultat peut rester exact, avec fractions, racines et π. Avec plus de précision, jusqu’à 200 000 chiffres. |
-| 0:38–0:50 | Tools → Price: discount and tax → the first example | Prix : remise et TVA | Les calculs du quotidien sont dans Outils. Le prix avec remise et TVA : touchez simplement un exemple. |
+| 0:38–0:50 | Tools → Price: discount and tax → the first example | Prix et TVA | Les calculs du quotidien sont dans Outils. Le prix TTC ou HT : touchez simplement un exemple. |
 | 0:50–1:02 | Tools → Loan → the first example, then down to the repayment table | Prêt et tableau | Pour un prêt : mensualité, intérêts et tableau d’amortissement. Et aussi l’addition partagée, les dates et les heures. |
 | 1:02–1:16 | Tools → Convert units and currencies → 5 typed → km to mi, then the categories | Unités et devises | Dans le convertisseur, tapez un nombre, il est converti aussitôt : longueur, masse, température, consommation et devises. |
 | 1:16–1:32 | 2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D (the region turns, V appears), then View in 3D (the solid grows from 0° to 360°; QCalc Pro) | Faites tourner / une région (Vue 3D : QCalc Pro) | Tracez deux fonctions dans le graphique 2D et touchez ⟳ 3D : la région devient un solide de révolution, avec son volume. La vue 3D fait partie de QCalc Pro. |
@@ -48,5 +48,5 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 
 | Time | Screen | Headline on screen | Narration (subtitle) |
 |---|---|---|---|
-| 0:00–0:11 | Tools → Price: discount and tax → the first example | Prix avec TVA | Un prix avec remise et TVA ? Touchez un exemple, c’est tout. |
+| 0:00–0:11 | Tools → Price: discount and tax → the first example | Prix avec TVA | Un prix avec TVA ? Touchez un exemple, c’est tout. |
 | 0:11–0:22 | Tools → Loan → the first example, then down to the repayment table | Mensualité du prêt | La mensualité d’un prêt et tout le tableau d’un coup. |

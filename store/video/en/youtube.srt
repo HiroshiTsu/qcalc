@@ -36,7 +36,7 @@ Everyday calculations are in Tools.
 
 10
 00:00:41,400 --> 00:00:49,730
-The price tool works out a discount and tax: just tap an example.
+The price tool adds or takes out the tax: just tap an example.
 
 11
 00:00:50,150 --> 00:00:56,134

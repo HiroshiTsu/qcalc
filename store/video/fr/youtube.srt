@@ -31,12 +31,12 @@ Le résultat peut rester exact, avec fractions, racines et π.
 Avec plus de précision, jusqu’à 200 000 chiffres.
 
 9
-00:00:38,150 --> 00:00:42,580
+00:00:38,150 --> 00:00:42,848
 Les calculs du quotidien sont dans Outils.
 
 10
-00:00:42,700 --> 00:00:49,730
-Le prix avec remise et TVA : touchez simplement un exemple.
+00:00:42,968 --> 00:00:49,730
+Le prix TTC ou HT : touchez simplement un exemple.
 
 11
 00:00:50,150 --> 00:00:55,880

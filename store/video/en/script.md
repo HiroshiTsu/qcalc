@@ -48,7 +48,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 
 **0:38–0:50** 【Everyday tools】
 - 00:38–00:41 Everyday calculations are in Tools.
-- 00:41–00:49 The price tool works out a discount and tax: just tap an example.
+- 00:41–00:49 The price tool adds or takes out the tax: just tap an example.
 
 **0:50–1:02**
 - 00:50–00:56 The loan tool gives the monthly payment, the interest and the table.
@@ -104,8 +104,8 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 ## Short 3 (9:16, 22 s) — short-3-everyday.srt
 
 **0:00–0:11**
-- 00:00–00:05 A price with a discount and tax?
-- 00:05–00:10 Tap an example: the answer is there.
+- 00:00–00:03 A price with tax?
+- 00:04–00:10 Tap an example: the answer is there.
 
 **0:11–0:22**
 - 00:11–00:15 A monthly loan payment,

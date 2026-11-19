@@ -128,9 +128,25 @@ async function manualAbout(page) {
   });
   await sleep(600);
 }
+// the first example of the calculation notes uses yen in every language; outside Japan, the amounts of its
+// first three lines are typed in the money of the region (the names stay those of the app's language)
+const NOTE_MONEY = {
+  en: ['1450 USD', '120 USD', '60 USD'], 'en-GB': ['1250 GBP', '95 GBP', '40 GBP'], de: ['980 EUR', '85 EUR', '40 EUR'], es: ['950 EUR', '70 EUR', '30 EUR'],
+  'es-419': ['12000 MXN', '600 MXN', '300 MXN'], fr: ['850 EUR', '75 EUR', '35 EUR'], 'fr-CA': ['1650 CAD', '90 CAD', '45 CAD'],
+  ko: ['650000 KRW', '55000 KRW', '20000 KRW'], 'zh-TW': ['18000 TWD', '1200 TWD', '400 TWD']
+};
+async function localNotes(page, set) {
+  const m = NOTE_MONEY[set];
+  if (!m) return;
+  await page.evaluate((m) => {
+    const ins = Array.from(document.querySelectorAll('.panel.open .note-lines input')).slice(0, 3);
+    ins.forEach((inp, i) => { const k = inp.value.split('=')[0].trim(); inp.value = k + ' = ' + m[i]; inp.dispatchEvent(new Event('input', { bubbles: true })); });
+  }, m);
+  await sleep(2500);
+}
 async function setPrecisionAndReload(page, n) {
   await page.evaluate((n) => { const s = JSON.parse(localStorage.getItem('qalc.settings') || '{}'); s.precision = n; localStorage.setItem('qalc.settings', JSON.stringify(s)); }, n);
   await page.reload(); await ready(page);
 }
 
-module.exports = { sleep, SETS, COMMA, mainExamples, start, ready, home, menu, tool, type, eq, body, scrollTo, solid2d, solid3d, graphRect, profile, manualAbout, setPrecisionAndReload };
+module.exports = { sleep, SETS, COMMA, mainExamples, localNotes, start, ready, home, menu, tool, type, eq, body, scrollTo, solid2d, solid3d, graphRect, profile, manualAbout, setPrecisionAndReload };

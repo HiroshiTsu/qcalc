@@ -176,11 +176,11 @@
           "dur": 12,
           "chapter": "日常の道具",
           "title": [
-            "値段：割引と税"
+            "値段と税"
           ],
           "lines": [
             "毎日の計算は「道具」にまとめました。",
-            "値段は、割引と消費税をまとめて計算。例をタップするだけです。"
+            "値段は、税込み・税抜きをまとめて計算。例をタップするだけです。"
           ]
         },
         {
@@ -337,10 +337,10 @@
               "scene": "price",
               "dur": 11,
               "title": [
-                "値段：割引と税"
+                "値段と税"
               ],
               "lines": [
-                "1,500 円の 1 割引、税 8 % では？",
+                "値段に税を入れるといくら？",
                 "例をタップするとすぐ答え。"
               ]
             },
@@ -511,11 +511,11 @@
           "dur": 12,
           "chapter": "Everyday tools",
           "title": [
-            "Price: discount and tax"
+            "Price and tax"
           ],
           "lines": [
             "Everyday calculations are in Tools.",
-            "The price tool works out a discount and tax: just tap an example."
+            "The price tool adds or takes out the tax: just tap an example."
           ]
         },
         {
@@ -675,7 +675,7 @@
                 "Price with tax"
               ],
               "lines": [
-                "A price with a discount and tax?",
+                "A price with tax?",
                 "Tap an example: the answer is there."
               ]
             },
@@ -845,11 +845,11 @@
           "dur": 12,
           "chapter": "Werkzeuge für den Alltag",
           "title": [
-            "Preis: Rabatt und MwSt."
+            "Preis und MwSt."
           ],
           "lines": [
             "Alltagsrechnungen findest du unter Werkzeuge.",
-            "Der Preis mit Rabatt und MwSt.: einfach ein Beispiel antippen."
+            "Der Preis mit oder ohne MwSt.: einfach ein Beispiel antippen."
           ]
         },
         {
@@ -1009,7 +1009,7 @@
                 "Preis mit MwSt."
               ],
               "lines": [
-                "Ein Preis mit Rabatt und MwSt.?",
+                "Ein Preis mit MwSt.?",
                 "Beispiel antippen, fertig."
               ]
             },
@@ -1179,11 +1179,11 @@
           "dur": 12,
           "chapter": "Herramientas del día a día",
           "title": [
-            "Precio: descuento e IVA"
+            "Precio e IVA"
           ],
           "lines": [
             "Las cuentas de cada día están en Herramientas.",
-            "El precio con descuento e IVA: basta con tocar un ejemplo."
+            "El precio con o sin IVA: basta con tocar un ejemplo."
           ]
         },
         {
@@ -1343,7 +1343,7 @@
                 "Precio con IVA"
               ],
               "lines": [
-                "¿Un precio con descuento e IVA?",
+                "¿Un precio con IVA?",
                 "Toca un ejemplo y listo."
               ]
             },
@@ -1513,11 +1513,11 @@
           "dur": 12,
           "chapter": "Outils du quotidien",
           "title": [
-            "Prix : remise et TVA"
+            "Prix et TVA"
           ],
           "lines": [
             "Les calculs du quotidien sont dans Outils.",
-            "Le prix avec remise et TVA : touchez simplement un exemple."
+            "Le prix TTC ou HT : touchez simplement un exemple."
           ]
         },
         {
@@ -1677,7 +1677,7 @@
                 "Prix avec TVA"
               ],
               "lines": [
-                "Un prix avec remise et TVA ?",
+                "Un prix avec TVA ?",
                 "Touchez un exemple, c’est tout."
               ]
             },
@@ -1847,11 +1847,11 @@
           "dur": 12,
           "chapter": "생활 속 도구",
           "title": [
-            "가격: 할인과 부가세"
+            "가격과 부가세"
           ],
           "lines": [
             "매일의 계산은 '도구'에 모았습니다.",
-            "가격은 할인과 부가세를 한 번에. 예시를 탭하면 됩니다."
+            "가격에 부가세를 더하거나 빼는 계산도 예시를 탭하면 됩니다."
           ]
         },
         {
@@ -2008,10 +2008,10 @@
               "scene": "price",
               "dur": 11,
               "title": [
-                "가격: 할인과 부가세"
+                "가격과 부가세"
               ],
               "lines": [
-                "할인과 부가세를 넣은 가격은?",
+                "부가세를 넣은 가격은?",
                 "예시를 탭하면 바로 답."
               ]
             },
@@ -2181,11 +2181,11 @@
           "dur": 12,
           "chapter": "日常工具",
           "title": [
-            "價格：折扣與稅"
+            "價格與稅"
           ],
           "lines": [
             "每天會用到的計算都放在「工具」裡。",
-            "價格可以一次算折扣和營業稅，點一下範例就好。"
+            "價格加稅或扣稅，點一下範例就好。"
           ]
         },
         {
@@ -2342,10 +2342,10 @@
               "scene": "price",
               "dur": 11,
               "title": [
-                "價格：折扣與稅"
+                "價格與稅"
               ],
               "lines": [
-                "打折再加稅是多少？",
+                "加上營業稅是多少？",
                 "點一下範例就有答案。"
               ]
             },

@@ -36,7 +36,7 @@ Las cuentas de cada día están en Herramientas.
 
 10
 00:00:43,076 --> 00:00:49,730
-El precio con descuento e IVA: basta con tocar un ejemplo.
+El precio con o sin IVA: basta con tocar un ejemplo.
 
 11
 00:00:50,150 --> 00:00:56,912

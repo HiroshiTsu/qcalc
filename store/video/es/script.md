@@ -48,7 +48,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 
 **0:38–0:50** 【Herramientas del día a día】
 - 00:38–00:42 Las cuentas de cada día están en Herramientas.
-- 00:43–00:49 El precio con descuento e IVA: basta con tocar un ejemplo.
+- 00:43–00:49 El precio con o sin IVA: basta con tocar un ejemplo.
 
 **0:50–1:02**
 - 00:50–00:56 En el préstamo: cuota mensual, intereses y cuadro de amortización.
@@ -104,8 +104,8 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 ## Short 3 (9:16, 22 s) — short-3-everyday.srt
 
 **0:00–0:11**
-- 00:00–00:05 ¿Un precio con descuento e IVA?
-- 00:05–00:10 Toca un ejemplo y listo.
+- 00:00–00:04 ¿Un precio con IVA?
+- 00:04–00:10 Toca un ejemplo y listo.
 
 **0:11–0:22**
 - 00:11–00:15 La cuota mensual de un préstamo

@@ -1,9 +1,9 @@
 1
-00:00:00,150 --> 00:00:06,272
-Un prix avec remise et TVA ?
+00:00:00,150 --> 00:00:05,380
+Un prix avec TVA ?
 
 2
-00:00:06,392 --> 00:00:10,730
+00:00:05,500 --> 00:00:10,730
 Touchez un exemple, c’est tout.
 
 3

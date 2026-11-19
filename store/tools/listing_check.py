@@ -36,7 +36,7 @@ LIMITS = {'title': 30, 'short': 80, 'full': 4000}
 # words not allowed in the app name, the short description, and on the pictures and videos
 # (Google Play metadata policy; 20:45 instruction). Lower case; matched as words for Latin scripts.
 STRICT = {
-    'ja': ['最高', 'no.1', 'no1', 'ナンバーワン', '1位', '一位', 'ベスト', '人気', '無料', '広告なし', '広告ゼロ', 'セール', '今すぐ', 'ダウンロード',
+    'ja': ['最高', '割引', '値引き', 'no.1', 'no1', 'ナンバーワン', '1位', '一位', 'ベスト', '人気', '無料', '広告なし', '広告ゼロ', 'セール', '今すぐ', 'ダウンロード',
            'お得', '最強', '最速', '最安', '一番', '史上', 'ランキング', '大人気', '話題', 'おすすめ', '激安', '割引中', 'キャンペーン', '限定'],
     'en': ['best', 'top', '#1', 'no. 1', 'no.1', 'number one', 'popular', 'free', 'no ads', 'ad-free', 'ads-free', 'ad free', 'sale', 'discount',
            'download now', 'install now', 'get it now', 'app of the year', "editor's choice", 'cheapest', 'fastest', 'most powerful', 'ultimate', 'deal'],
@@ -163,6 +163,13 @@ def main():
                 if isinstance(text, list):
                     text = ' '.join(text)
                 check_text('captions %s %s' % (lang, key), lang, text, True, problems)
+    vplan = os.path.join(STORE, 'tools', 'video-plan.json')
+    if os.path.exists(vplan):
+        VP = json.load(open(vplan, encoding='utf-8'))
+        for lang, L in VP['langs'].items():
+            segs = L['promo'] + L['youtube'] + [s for sh in L['shorts'] for s in sh['segments']]
+            texts = [t for s in segs for t in s['title'] + ([s['tag']] if s.get('tag') else [])] + L['end'] + L['youtube_meta']['thumb']
+            check_text('video-plan %s headlines' % lang, lang, '\n'.join(texts), True, problems)
     vroot = os.path.join(STORE, 'video')
     if os.path.isdir(vroot):
         for lang in sorted(os.listdir(vroot)):

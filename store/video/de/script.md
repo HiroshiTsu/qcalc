@@ -48,7 +48,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 
 **0:38–0:50** 【Werkzeuge für den Alltag】
 - 00:38–00:41 Alltagsrechnungen findest du unter Werkzeuge.
-- 00:42–00:49 Der Preis mit Rabatt und MwSt.: einfach ein Beispiel antippen.
+- 00:42–00:49 Der Preis mit oder ohne MwSt.: einfach ein Beispiel antippen.
 
 **0:50–1:02**
 - 00:50–00:55 Beim Kredit: Monatsrate, Zinsen und Tilgungsplan.
@@ -104,8 +104,8 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 ## Short 3 (9:16, 22 s) — short-3-everyday.srt
 
 **0:00–0:11**
-- 00:00–00:07 Ein Preis mit Rabatt und MwSt.?
-- 00:07–00:10 Beispiel antippen, fertig.
+- 00:00–00:06 Ein Preis mit MwSt.?
+- 00:06–00:10 Beispiel antippen, fertig.
 
 **0:11–0:22**
 - 00:11–00:15 Die Monatsrate eines Kredits
