@@ -6,7 +6,7 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 
 | Time | Screen | Headline on screen | Narration (subtitle) |
 |---|---|---|---|
-| 0:00–0:06 | 2D graph with the region already turned: View in 3D (the solid grows from 0° to 360°), then turned with a finger (QCalc Pro) | Gira una región / de la gráfica (Vista 3D: QCalc Pro) | Gira una región de la gráfica y obtén el sólido y su volumen. |
+| 0:00–0:06 | 2D graph with the region already turned (⟳ 3D, then ← Back to 2D): View in 3D (the solid grows from 0° to 360°), then turned with a finger (QCalc Pro) | Gira una región / de la gráfica (Vista 3D: QCalc Pro) | Gira una región de la gráfica y obtén el sólido y su volumen. |
 | 0:06–0:14 | The calculator: 60 mph to km/h (or 100 km/h to mph), solve(x^2 − 5x + 6 = 0), integrate(x^2 sin(x), 0, pi), typed one character at a time, = after each | Escribe las cuentas / como en papel | Escribe las operaciones como en papel. Unidades, ecuaciones e integrales, tal cual. |
 | 0:14–0:21 | Tools → Price: discount and tax → the first example | Precio, préstamo, fechas | Precio, préstamo y fechas: toca un ejemplo y ya tienes la respuesta. |
 | 0:21–0:26 | Tools → Convert units and currencies → 5 typed → km to mi, then the categories | Unidades y divisas | Convierte unidades y divisas al momento. |
@@ -18,14 +18,14 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 
 | Time | Screen | Headline on screen | Narration (subtitle) |
 |---|---|---|---|
-| 0:00–0:12 | 2D graph with the region already turned: View in 3D (the solid grows from 0° to 360°), then turned with a finger (QCalc Pro) | QCalc (Vista 3D: QCalc Pro) | En la calculadora cuesta escribir fórmulas. Las unidades piden otra app, y las gráficas otra más. QCalc lo reúne todo en una calculadora científica. |
+| 0:00–0:12 | 2D graph with the region already turned (⟳ 3D, then ← Back to 2D): View in 3D (the solid grows from 0° to 360°), then turned with a finger (QCalc Pro) | QCalc (Vista 3D: QCalc Pro) | En la calculadora cuesta escribir fórmulas. Las unidades piden otra app, y las gráficas otra más. QCalc lo reúne todo en una calculadora científica. |
 | 0:12–0:26 | The calculator: 60 mph to km/h (or 100 km/h to mph), solve(x^2 − 5x + 6 = 0), integrate(x^2 sin(x), 0, pi), typed one character at a time, = after each | Como en papel | Escribe las operaciones como en papel. Con unidades, como 100 km/h to mph, o resuelve una ecuación o una integral. |
 | 0:26–0:38 | The calculator: sqrt(8), 1/3 + 1/4, solve(x^2 = 2): exact answers | Resultados exactos | El resultado puede quedar exacto, con fracciones, raíces y π. Con más precisión, hasta 200 000 cifras. |
 | 0:38–0:50 | Tools → Price: discount and tax → the first example | Precio e IVA | Las cuentas de cada día están en Herramientas. El precio con o sin IVA: basta con tocar un ejemplo. |
 | 0:50–1:02 | Tools → Loan → the first example, then down to the repayment table | Préstamo y cuadro | En el préstamo: cuota mensual, intereses y cuadro de amortización. También dividir la cuenta, fechas y horas. |
 | 1:02–1:16 | Tools → Convert units and currencies → 5 typed → km to mi, then the categories | Unidades y divisas | En el conversor, escribe un número y se convierte al momento: longitud, peso, temperatura, consumo y divisas. |
-| 1:16–1:32 | 2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D (the region turns, V appears), then View in 3D (the solid grows from 0° to 360°; QCalc Pro) | Gira una región / y obtén un sólido (Vista 3D: QCalc Pro) | Dibuja dos funciones en la gráfica 2D y toca ⟳ 3D: la región se convierte en un sólido de revolución, con su volumen. Verlo en 3D es una función de QCalc Pro. |
-| 1:32–1:46 | 2D graph with the region turned: tap the y axis (the axis changes), then Show the method with lines | Cambia el eje / y ve el método | Toca un eje para girar la región a su alrededor, y muestra los discos o capas que suman el volumen. |
+| 1:16–1:32 | 2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D: the 3D view opens at once, the solid grows from 0° to 360° with its volume V large above the graph (QCalc Pro; 1.12.0, BG20), then turned with a finger | Gira una región / y obtén un sólido (Vista 3D: QCalc Pro) | Dibuja dos funciones en la gráfica 2D y toca ⟳ 3D: la región se convierte en un sólido de revolución, con su volumen. Verlo en 3D es una función de QCalc Pro. |
+| 1:32–1:46 | 2D graph with the region turned (⟳ 3D, then ← Back to 2D): tap the y axis (the axis changes), then Show the method with lines | Cambia el eje / y ve el método | Toca un eje para girar la región a su alrededor, y muestra los discos o capas que suman el volumen. |
 | 1:46–1:58 | Tools → Solid from a profile (QCalc Pro) → the first example → View in 3D | Volumen y peso / de un perfil (QCalc Pro) | QCalc Pro toma las posiciones y diámetros medidos, da el volumen, la capacidad y el peso, y guarda un archivo STL. |
 | 1:58–2:06 | Tools → Tanks: liquid and level → horizontal cylinder 1 m × 2 m, 0.3 m → the results | Líquido en un depósito | También el líquido de un depósito según su nivel. |
 | 2:06–2:22 | Tools → Calculation notes → the first example (names and a total) | Notas de cálculo | Las notas de cálculo van línea a línea, con total. Puedes poner nombre a los valores, como alquiler = 950 EUR. El historial se puede buscar, fijar y sumar. |
@@ -36,7 +36,7 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 
 | Time | Screen | Headline on screen | Narration (subtitle) |
 |---|---|---|---|
-| 0:00–0:20 | 2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D (the region turns, V appears), then View in 3D (the solid grows from 0° to 360°; QCalc Pro) | La gráfica se vuelve / un sólido (Vista 3D: QCalc Pro) | Toma la región entre dos gráficas, toca ⟳ 3D y obtén el sólido y su volumen. |
+| 0:00–0:20 | 2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D: the 3D view opens at once, the solid grows from 0° to 360° with its volume V large above the graph (QCalc Pro; 1.12.0, BG20), then turned with a finger | La gráfica se vuelve / un sólido (Vista 3D: QCalc Pro) | Toma la región entre dos gráficas, toca ⟳ 3D y obtén el sólido y su volumen. |
 
 ## Short 2 (9:16, 20 s)
 
