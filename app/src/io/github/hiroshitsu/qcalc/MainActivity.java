@@ -1048,11 +1048,13 @@ public class MainActivity extends Activity {
 
         /**
          * Saves a text file where the user chooses (the system's file picker); the result comes
-         * as a "saved" event. Only CSV files with a plain name, as the page makes them.
+         * as a "saved" event. Only CSV files (text/csv, .csv) and, from 1.12.0, ASCII STL files for 3D
+         * printers (model/stl, .stl), with a plain name, as the page makes them.
          */
         @JavascriptInterface
-        public void saveFile(final String name, String mime, final String text) {
-            if (name == null || text == null || !FILE_NAME.matcher(name).matches() || !"text/csv".equals(mime)
+        public void saveFile(final String name, final String mime, final String text) {
+            if (name == null || text == null || !FILE_NAME.matcher(name).matches()
+                    || !(("text/csv".equals(mime) && name.endsWith(".csv")) || ("model/stl".equals(mime) && name.endsWith(".stl")))
                     || text.length() > MAX_SAVE) {
                 sendEvent("{\"event\":\"saved\",\"ok\":false,\"error\":\"Could not save the file\"}");
                 return;
@@ -1062,7 +1064,7 @@ public class MainActivity extends Activity {
                 public void run() {
                     Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
-                    i.setType("text/csv");
+                    i.setType(mime);
                     i.putExtra(Intent.EXTRA_TITLE, name);
                     pendingSave = text;
                     try {

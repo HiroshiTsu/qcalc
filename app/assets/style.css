@@ -1508,3 +1508,7 @@ body.hselect #history { padding-bottom: 150px; }
 /* an exact result with its approximation that is wider than the history (320 px, large text): the line breaks after
    = or ≈ instead of the end being hidden off the right (it still scrolls when one part alone is too wide) */
 .h-res.math { white-space: normal; }
+/* the sheet "Save as STL" (1.12.0, D3) */
+.sheet .stl-mm, .sheet .geo-size { padding: 4px 12px; }
+.stl-mm input { max-width: 8em; }
+.stl-info { padding: 6px 12px; font-variant-numeric: tabular-nums; color: var(--muted); overflow-wrap: anywhere; }

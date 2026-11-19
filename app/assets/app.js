@@ -413,7 +413,8 @@
     quick: 'free',         // the widget, the tile and the shortcuts of the icon (1.12 C3)
     stats: 'free',         // statistics: one or two columns, regression, the graph (1.12 C4)
     tank_heads: 'pro',     // the heads of tanks (hemispherical, semi-elliptical, dished) and the quick-reference tables of tanks (1.12 D1): Pro (work)
-    profile: 'pro'         // a solid from a measured profile: volume, capacity, weight, surface, its table (1.12 D2): Pro (work)
+    profile: 'pro',        // a solid from a measured profile: volume, capacity, weight, surface, its table (1.12 D2): Pro (work)
+    stl: 'pro'             // the solids saved as STL files for 3D printers (1.12 D3): Pro (work)
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -5772,7 +5773,7 @@
     const simple = async (e) => revPretty(ax.k === '0' ? e : (await exactText(e)) || e);
     const detail = one ? 'R = ' + await simple(pieces[0].R) + (pieces[0].r ? ', r = ' + await simple(pieces[0].r) : '')
       : trf('R and r change at {0}: calculated in {1} pieces', 'R と r は x = {0} で替わるので、{1} 個に分けて計算', pieceCuts(pieces, parts), pieces.length);
-    return { pieces, ends, method, detail, three, span: [lo, hi] };
+    return { pieces, ends, method, detail, three, span: [lo, hi], stl: { kind: 'h', u, v, parts } };
   }
   // the inner ends of the pieces, for a note: "0, 1/2"
   const pieceCuts = (pieces, parts) => pieces.slice(1).map((p) => p.a).filter((t) => !parts.some((q) => q.a === t)).slice(0, 4).join(', ');
@@ -5912,7 +5913,7 @@
     const one = pieces.length === 1;
     const detail = (one ? 'ρ = ' + revPretty(k === '0' ? rho : (await exactText(rho)) || rho) + ', h = ' + revPretty(pieces[0].h) : trf('h changes at {0}: calculated in {1} pieces', 'h は {0} で替わるので、{1} 個に分けて計算', pieces.slice(1).map((p) => p.a).slice(0, 4).join(', '), pieces.length))
       + (sides.length === 2 ? tr(' (the region is on both sides of the axis: the two sides turned make one solid, the overlap counted once)', '（領域が軸の両側にあるので、両側を回した立体の和として、重なりは 1 回だけ数えています）') : '');
-    return { pieces, ends, method, detail, three, span: [X.lo, X.hi] };
+    return { pieces, ends, method, detail, three, span: [X.lo, X.hi], stl: { kind: 'v', sides: sideF.map((q) => ({ f: q.s.f, g: q.s.g, a: q.a, b: q.b })), kv } };
   }
   // true when the two sides (the right one and the mirrored left one) are the same region
   async function revSymmetric(sides) {
@@ -5946,6 +5947,7 @@
     const U = P.areaUI, R = U.rev;
     const seq = ++R.seq, stale = () => seq !== R.seq;
     R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.outs.textContent = ''; R.method.textContent = ''; R.moreOuts.textContent = ''; R.more.hidden = true;
+    R.stlBtn.hidden = true; R.stlSpec = null;
     P.revVolText = ''; P.revAxis = null; draw();
     const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '立体を計算できませんでした'); R.outs.textContent = ''; } };
     const f = P.series[Number(U.f1.value)];
@@ -5994,6 +5996,12 @@
     R.method.textContent = 'V = ∫ A(s(x)) dx,  A(s) = ' + (d[0] === 'own' ? normalizeExpr(R.ownIn.value) : d[0] === 'rect' ? toDisplay(normalizeExpr(R.skIn.value)) + ' × s²' : d[2].replace('s^2', 's²').replace(' × ', '·')) +
       ',  s = ' + revPretty(toDisplay(clip(f.expr, 24))) + (g ? ' − ' + (/^[^+\-−]+$/.test(g.expr.slice(1)) ? revPretty(toDisplay(clip(g.expr, 24))) : '(' + revPretty(toDisplay(clip(g.expr, 24))) + ')') : '') + '\n' + tr('(the volume is the sum of the thin slices of area A and thickness dx)', '（面積 A、厚さ dx の薄い板を重ねた体積）');
     P.revVolText = shortValue('V', vrow.result); draw();
+    // the STL file (D3): the sections lofted; not for a shape of one's own A(s), which has no form
+    if (d[0] !== 'own' && V && isFinite(V.v)) {
+      const kk = d[0] === 'rect' ? await numValue(normalizeExpr(R.skIn.value)) : 1;
+      if (stale()) return;
+      R.stlSpec = { kind: 'sec', f: f.expr, g: g ? g.expr : null, parts, shape: d[0], k: kk, volume: Math.abs(V.v) }; stlShow(R.stlBtn);
+    }
     // the 3D view (Pro): the top of the cross sections over the region, z = 0 outside not drawn
     const hiE = g ? `max(${f.expr}, ${ge})` : `max(${f.expr}, 0)`, loE = g ? `min(${f.expr}, ${ge})` : `min(${f.expr}, 0)`;
     const cut = `√(min(0, (y − ${loE}) × (${hiE} − y)))`, w = `(${hiE} − ${loE})`;
@@ -6048,6 +6056,8 @@
     nIn.addEventListener('input', () => { R.nSlices = Number(nIn.value); nVal.textContent = nIn.value; save(); draw(); });
     const showSlices = () => { slicesBtn.classList.toggle('on', !!R.slices); slicesBtn.setAttribute('aria-pressed', String(!!R.slices)); nRow.hidden = !R.slices; };
     const more = el('details', { class: 'rev-more' }, el('summary', { text: tr('More: surface areas ▾', '詳しく：表面積 ▾') }), moreOuts);
+    // 1.12.0 (D3): the solid saved as an STL file (Pro)
+    const stlBtn = tapButton({ class: 'btn stl-btn', text: tr('Save as STL', 'STL で保存'), hidden: true }, () => { if (R.stlSpec) openStlSheet(R.stlSpec, R.kind === 'sec' ? 'sections' : 'revolution', null); });
     const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, () => {
       // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion")
       if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis, rims: R.three.rims });
@@ -6107,7 +6117,7 @@
     };
     const slicesRow = el('div', { class: 'rev-slices-row' }, slicesBtn, nRow);
     const box = el('div', { class: 'rev-box' }, kinds, axisRow, secRow,
-      kErr, msg, outs, method, pappus, slicesRow, more, view, exRow,
+      kErr, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
       el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
     box.hidden = true;
     const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Make a solid ▾', '立体にする ▾'), 'aria-expanded': 'false' }, () => {
@@ -6120,7 +6130,7 @@
         setTimeout(() => toast(tr('Tap an axis to turn around it. Drag an edge ↔ to change the range.', '軸をタップすると、回す軸が変わります。端の ↔ をドラッグすると、範囲が変わります'), 6000), 400);
       }
     });
-    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, more, method, pappus, view, setAxis, setKind, setShape, skIn, ownIn, open: () => { if (box.hidden) toggle.click(); } });
+    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, more, method, pappus, view, stlBtn, setAxis, setKind, setShape, skIn, ownIn, open: () => { if (box.hidden) toggle.click(); } });
     showSlices();
     setAxis(R.axis, true);
     setShape(R.shape, true);
@@ -6183,6 +6193,7 @@
     if (R.kind === 'sec') return computeSections(auto);
     const seq = ++R.seq, stale = () => seq !== R.seq;
     R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.k.removeAttribute('aria-invalid'); R.outs.textContent = ''; R.method.textContent = '';
+    R.stlBtn.hidden = true; R.stlSpec = null;
     R.moreOuts.textContent = ''; R.more.hidden = false; R.pappus.textContent = ''; P.revVolText = '';
     const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '回転体を計算できませんでした'); R.outs.textContent = ''; } };
     const f = P.series[Number(U.f1.value)];
@@ -6240,6 +6251,8 @@
     if (vrow.result) { P.revVolText = shortValue('V', vrow.result); draw(); } // also in the corner of the graph
     if (vols.length) revPappus(R, f, g, parts, ax, vols.reduce((t, v) => t + v.v, 0), stale);
     R.three = solid.three; R.view.hidden = false;
+    // (the STL file: the meridian from the same curves, its volume checked against this one; D3)
+    if (vols.length && solid.stl) { R.stlSpec = Object.assign({}, solid.stl, { volume: vols.reduce((t, v) => t + v.v, 0) }); stlShow(R.stlBtn); }
     // the surfaces: each curve that bounds the solid, turned: 2π ∫ (its distance) √(1 + f′²) dx
     const curved = [], sexpr = [];
     let bad = '';
@@ -10955,6 +10968,8 @@
       const msg = el('div', { class: 'geo-msg', role: 'alert' });
       const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
       const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る') }, () => { if (D.three) openPlot3dWith(D.three.exprs, { range: D.three.range, equal: true, res: 61, grow: 'h', rims: D.three.rims }); });
+      // (D3: the solid as an STL file, one unit of the profile in millimetres)
+      const stlBtn = tapButton({ class: 'btn stl-btn', text: tr('Save as STL', 'STL で保存') }, () => { if (D.stl) openStlSheet(D.stl, 'profile', { mm: 1, cm: 10, m: 1000, in: 25.4 }[D.unit]); });
       const quickBox = el('div', { class: 'quick-box' });
       const quick = el('details', { class: 'sec-more quick-pf' }, el('summary', { text: tr('Height and amount: quick-reference table ▾', '高さと量の早見表 ▾') }), quickBox);
       quick.addEventListener('toggle', () => { if (quick.open) run(); });
@@ -11018,7 +11033,7 @@
       };
       const run = async () => {
         const seq = ++D.seq;
-        msg.textContent = ''; outs.textContent = ''; quickBox.textContent = ''; view.hidden = true; D.three = null;
+        msg.textContent = ''; outs.textContent = ''; quickBox.textContent = ''; view.hidden = true; D.three = null; stlBtn.hidden = true; D.stl = null;
         const o = pfPoints(D.rows, D.dia);
         if (o.error) { if (o.row !== undefined) mark(table, o.row, o.col); msg.textContent = o.error; pic.textContent = ''; return; }
         const hasInner = D.inner.some((r) => String(r[0] || '').trim() || String(r[1] || '').trim());
@@ -11064,6 +11079,7 @@
         D.three = { exprs, range: [engineNum(String(o[0].z)), engineNum(String(o[o.length - 1].z)), engineNum(String(-w)), engineNum(String(w))],
           rims: { kind: 'h', groups: [exprs.map((e, n) => n)], Q: si ? [Qo, Qo, Qi, Qi] : [Qo, Qo] } };
         view.hidden = false;
+        if (!(si && mat < 0)) { D.stl = { kind: 'profile', o, i, smooth: D.smooth, volume: so.volume - cap }; stlShow(stlBtn); }
         // the quick-reference table: the height and the amount inside (or of the whole solid)
         if (quick.open) {
           const sh = si || so, total = sh.volume, top = sh.height, inMl = (v) => v * PF_CM3[u];
@@ -11076,10 +11092,341 @@
       };
       p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Sizes as', '大きさ') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Sizes as', '大きさ') }, bD, bR)),
         el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unitSel), table, tools, more,
-        el('div', { class: 'geo-weight' }, dens, densIn), pic, msg, outs, view, quick, caution, hint);
+        el('div', { class: 'geo-weight' }, dens, densIn), pic, msg, outs, el('div', { class: 'tool-tbl-btns' }, view, stlBtn), quick, caution, hint);
       sync(); build(); run();
     });
     return p;
+  }
+  // ------------------------------------------ STL for 3D printers (1.12.0, D3; QCalc Pro)
+  // The solids of the app as closed meshes of triangles, saved as ASCII STL files: a solid of revolution
+  // (the area tools' "Make a solid"), a solid with known cross sections (the same), and a solid from a
+  // profile (D2). A solid of revolution is its meridian, a closed polygon in (t along the axis, ρ the
+  // distance from it), turned about the axis in N steps; the points of the polygon on the axis become one
+  // point each, so that the mesh closes there (the tip of a cone). A solid with cross sections is lofted
+  // through its sections (the same number of corners in each), with the two ends closed; a section that
+  // has shrunk to a point (where the region is pinched) becomes one point. The points are welded where they
+  // fall together, triangles without area are dropped, and the triangles are turned so that their normals
+  // point out (the signed volume is positive). Before a file is offered the mesh is checked: every edge is
+  // shared by exactly two triangles, once each way; no triangle has no area; and its volume is within
+  // 0.5 % of the solid's volume as the app calculated it. One unit of the graph is a number of millimetres
+  // chosen in the sheet (the profile's own unit gives the first value), and the number of triangles stays
+  // under a limit (standard 20 000, fine 60 000: about 5 and 15 MB).
+  const STL_LIMIT = { std: 20000, fine: 60000 }, STL_TURNS = { std: 96, fine: 160 };
+  // the button "Save as STL" shown (with ⭐ Pro while it is locked)
+  function stlShow(b) { b.textContent = tr('Save as STL', 'STL で保存') + (PRO_GATES.stl === 'pro' && !hasPro() ? '  ⭐ Pro' : ''); b.hidden = false; }
+  // a mesh being built: points welded to a grid of q
+  function meshNew(q) { return { v: [], f: [], key: new Map(), q: q || 1e-9 }; }
+  function meshPt(m, x, y, z) {
+    const r = (a) => Math.round(a / m.q), k = r(x) + ',' + r(y) + ',' + r(z);
+    let i = m.key.get(k);
+    if (i === undefined) { i = m.v.length / 3; m.v.push(x, y, z); m.key.set(k, i); }
+    return i;
+  }
+  function meshTri(m, a, b, c) { if (a !== b && b !== c && a !== c) m.f.push(a, b, c); }
+  // a closed polygon [[t, ρ], …] turned about the axis ('x': t along x; 'z': t along z) in n steps
+  function meshRevolve(m, poly, n, axis) {
+    const pt = (t, r, k) => { const th = 2 * Math.PI * k / n, c = Math.cos(th), s = Math.sin(th); if (r <= m.q) r = 0; return axis === 'z' ? meshPt(m, r * c, r * s, t) : meshPt(m, t, r * c, r * s); };
+    for (let i = 0; i < poly.length; i++) {
+      const [t0, r0] = poly[i], [t1, r1] = poly[(i + 1) % poly.length];
+      for (let k = 0; k < n; k++) {
+        const A = pt(t0, r0, k), B = pt(t1, r1, k), C = pt(t1, r1, k + 1 === n ? 0 : k + 1), D = pt(t0, r0, k + 1 === n ? 0 : k + 1);
+        meshTri(m, A, B, C); meshTri(m, A, C, D);
+      }
+    }
+  }
+  // sections [[[x, y, z], …], …] (each a closed polygon with the same number of corners, in order),
+  // joined side by side, the two ends closed by fans from their centres
+  function meshLoft(m, secs) {
+    const ids = secs.map((s) => s.map(([x, y, z]) => meshPt(m, x, y, z))), K = ids[0].length;
+    for (let j = 0; j + 1 < ids.length; j++) for (let i = 0; i < K; i++) {
+      const a = ids[j][i], b = ids[j][(i + 1) % K], c = ids[j + 1][(i + 1) % K], d = ids[j + 1][i];
+      meshTri(m, a, b, c); meshTri(m, a, c, d);
+    }
+    for (const [s, dir] of [[secs[0], 1], [secs[secs.length - 1], -1]]) {
+      const c = [0, 1, 2].map((q) => s.reduce((t, p) => t + p[q], 0) / s.length), ci = meshPt(m, c[0], c[1], c[2]);
+      const id = s.map(([x, y, z]) => meshPt(m, x, y, z));
+      for (let i = 0; i < K; i++) { if (dir > 0) meshTri(m, ci, id[(i + 1) % K], id[i]); else meshTri(m, ci, id[i], id[(i + 1) % K]); }
+    }
+  }
+  // the mesh finished: triangles without area dropped, turned outward; { v, f }
+  function meshDone(m) {
+    const v = m.v, f = [], tiny = m.q * m.q;
+    for (let t = 0; t < m.f.length; t += 3) {
+      const a = 3 * m.f[t], b = 3 * m.f[t + 1], c = 3 * m.f[t + 2];
+      const ux = v[b] - v[a], uy = v[b + 1] - v[a + 1], uz = v[b + 2] - v[a + 2], wx = v[c] - v[a], wy = v[c + 1] - v[a + 1], wz = v[c + 2] - v[a + 2];
+      const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+      if (nx * nx + ny * ny + nz * nz > tiny) f.push(m.f[t], m.f[t + 1], m.f[t + 2]);
+    }
+    const out = { v: new Float64Array(v), f: new Int32Array(f) };
+    if (meshVolume(out) < 0) for (let t = 0; t < f.length; t += 3) { const q = out.f[t + 1]; out.f[t + 1] = out.f[t + 2]; out.f[t + 2] = q; }
+    return out;
+  }
+  function meshVolume(M) {
+    const v = M.v, f = M.f;
+    let s = 0;
+    for (let t = 0; t < f.length; t += 3) {
+      const a = 3 * f[t], b = 3 * f[t + 1], c = 3 * f[t + 2];
+      s += v[a] * (v[b + 1] * v[c + 2] - v[b + 2] * v[c + 1]) - v[a + 1] * (v[b] * v[c + 2] - v[b + 2] * v[c]) + v[a + 2] * (v[b] * v[c + 1] - v[b + 1] * v[c]);
+    }
+    return s / 6;
+  }
+  // the checks: { tris, verts, open (edges not shared by exactly two triangles, once each way), flat
+  // (triangles without area), volume, size [dx, dy, dz] }
+  function meshCheck(M) {
+    const v = M.v, f = M.f, E = new Map();
+    let flat = 0;
+    let lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < v.length; i += 3) for (let q = 0; q < 3; q++) { if (v[i + q] < lo[q]) lo[q] = v[i + q]; if (v[i + q] > hi[q]) hi[q] = v[i + q]; }
+    const size = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) || 1, tiny = (size * 1e-12) ** 2;
+    for (let t = 0; t < f.length; t += 3) {
+      const a = f[t], b = f[t + 1], c = f[t + 2];
+      for (const [p, q] of [[a, b], [b, c], [c, a]]) { const k = p + ',' + q; E.set(k, (E.get(k) || 0) + 1); }
+      const A = 3 * a, B = 3 * b, C = 3 * c;
+      const ux = v[B] - v[A], uy = v[B + 1] - v[A + 1], uz = v[B + 2] - v[A + 2], wx = v[C] - v[A], wy = v[C + 1] - v[A + 1], wz = v[C + 2] - v[A + 2];
+      const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+      if (!(nx * nx + ny * ny + nz * nz > tiny)) flat++;
+    }
+    let open = 0;
+    for (const [k, n] of E) { const [p, q] = k.split(','); if (n !== 1 || E.get(q + ',' + p) !== 1) open++; }
+    return { tris: f.length / 3, verts: v.length / 3, open, flat, volume: meshVolume(M), size: [0, 1, 2].map((q) => hi[q] - lo[q]) };
+  }
+  // ASCII STL, the lengths times scale (millimetres)
+  function stlText(M, name, scale) {
+    const v = M.v, f = M.f, n = (x) => { const s = (+x.toPrecision(9)).toString(); return s === '-0' ? '0' : s; }, out = ['solid ' + name];
+    for (let t = 0; t < f.length; t += 3) {
+      const P = [f[t], f[t + 1], f[t + 2]].map((i) => [v[3 * i] * scale, v[3 * i + 1] * scale, v[3 * i + 2] * scale]);
+      const u = [0, 1, 2].map((q) => P[1][q] - P[0][q]), w = [0, 1, 2].map((q) => P[2][q] - P[0][q]);
+      let N = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+      const l = Math.hypot(N[0], N[1], N[2]) || 1; N = N.map((q) => q / l);
+      out.push(' facet normal ' + N.map(n).join(' '), '  outer loop', ...P.map((p) => '   vertex ' + p.map(n).join(' ')), '  endloop', ' endfacet');
+    }
+    out.push('endsolid ' + name);
+    return out.join('\n') + '\n';
+  }
+  // a polyline [[t, ρ], …] simplified to about n points (Douglas–Peucker, the tolerance found by halving)
+  function polySimplify(pts, n) {
+    if (pts.length <= n) return pts;
+    const keepAt = (tol) => {
+      const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1;
+      const st = [[0, pts.length - 1]];
+      while (st.length) {
+        const [a, b] = st.pop();
+        let best = -1, bd = tol;
+        const [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1;
+        for (let i = a + 1; i < b; i++) { const d = Math.abs((pts[i][0] - ax) * dy - (pts[i][1] - ay) * dx) / L; if (d > bd) { bd = d; best = i; } }
+        if (best > 0) { keep[best] = 1; st.push([a, best], [best, b]); }
+      }
+      return keep;
+    };
+    let lo = 0, hi = 1;
+    for (const p of pts) hi = Math.max(hi, Math.abs(p[0]), Math.abs(p[1]));
+    for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2, c = keepAt(m).reduce((s, x) => s + x, 0); if (c > n) lo = m; else hi = m; }
+    const keep = keepAt(hi);
+    return pts.filter((p, i) => keep[i]);
+  }
+  // the engine's samples of expressions on a..b (about steps + 1 points, closer where a curve bends, and
+  // not at the same places for each expression): [{ x, y }] or null
+  async function stlSamples(es, a, b, steps) {
+    const r = await Bridge.send('plot', { exprs: es, min: String(a), max: String(b), steps, var: 'x', opts: iOpts(), timeout: 8000 });
+    if (!r.ok || !Array.isArray(r.series) || r.series.length !== es.length) return null;
+    return r.series.map((s) => ({ x: s.x, y: s.y.map((q) => (q === null || !isFinite(q) ? null : q)) }));
+  }
+  // the value of samples { x, y } at x, on the straight line between the two around it (null outside them,
+  // or where one of the two has none)
+  function stlAt(S, x) {
+    const X = S.x, n = X.length, e = (Math.abs(X[n - 1] - X[0]) || 1) * 1e-9;
+    if (!n || x < X[0] - e || x > X[n - 1] + e) return null;
+    if (n === 1) return S.y[0];
+    let i = 0, j = n - 1;
+    while (j - i > 1) { const m = (i + j) >> 1; if (X[m] <= x) i = m; else j = m; }
+    const a = S.y[i], b = S.y[i + 1];
+    if (a === null || b === null) return x - X[i] <= e ? a : X[i + 1] - x <= e ? b : null;
+    const t = Math.max(0, Math.min(1, (x - X[i]) / ((X[i + 1] - X[i]) || 1)));
+    return a + (b - a) * t;
+  }
+  // the places of all the samples, in order, once each
+  const stlGrid = (sm, off) => [...new Set([].concat(...sm.map((q) => q.x)))].sort((a, b) => a - b).map((x) => x - (off || 0));
+  // The meridians of a solid of revolution: [poly] in (t, ρ), and the axis; or { error }.
+  // spec: { kind: 'h', u, v, parts } (the distances of the two curves from the axis, signed) or
+  // { kind: 'v', sides: [{ f, g, a, b }], kv } (each side's curves as functions of x, present for x − kv
+  // in a..b); points: how many points a meridian may have
+  async function stlMeridians(spec, points) {
+    const polys = [];
+    if (spec.kind === 'h') {
+      for (const p of spec.parts) {
+        const sm = await stlSamples([spec.u, spec.v], p.lo, p.hi, 400);
+        if (!sm) return { error: tr('Could not calculate the solid', '立体を計算できませんでした') };
+        const out = [], inn = [];
+        for (const x of stlGrid(sm)) {
+          const u = stlAt(sm[0], x), v = stlAt(sm[1], x);
+          if (u === null || v === null) continue;
+          const au = Math.abs(u), av = Math.abs(v);
+          out.push([x, Math.max(au, av)]); inn.push([x, u * v > 0 ? Math.min(au, av) : 0]);
+        }
+        if (out.length < 2) continue;
+        const hole = inn.some((q) => q[1] > 0), half = hole ? Math.floor(points / 2) - 2 : points - 4;
+        const o = polySimplify(out, half), i2 = hole ? polySimplify(inn, half) : [inn[0], inn[inn.length - 1]];
+        polys.push(o.concat(i2.slice().reverse()));
+      }
+      return { polys, axis: 'x' };
+    }
+    // around a vertical axis: the union of the sides at each distance, one interval
+    const lo = Math.min(...spec.sides.map((s) => s.a)), hi = Math.max(...spec.sides.map((s) => s.b)), h = (hi - lo) / 400;
+    const samp = [], places = [];
+    for (const s of spec.sides) {
+      const sm = await stlSamples([s.f, s.g], spec.kv + s.a, spec.kv + s.b, Math.max(20, Math.round((s.b - s.a) / h)));
+      if (!sm) return { error: tr('Could not calculate the solid', '立体を計算できませんでした') };
+      const F = { x: sm[0].x.map((x) => x - spec.kv), y: sm[0].y }, G = { x: sm[1].x.map((x) => x - spec.kv), y: sm[1].y };
+      samp.push({ s, F, G }); places.push(...F.x, ...G.x);
+    }
+    const at = (q, r) => { const f = stlAt(q.F, r), g = stlAt(q.G, r); return f === null || g === null ? null : [Math.min(f, g), Math.max(f, g)]; };
+    const bot = [], top = [];
+    for (const r of [...new Set(places)].sort((a, b) => a - b)) {
+      const iv = samp.map((q) => at(q, r)).filter(Boolean);
+      if (!iv.length) return { error: tr('The region is not one piece at every distance from the axis: this solid cannot be saved as STL', '軸からの距離によって領域が 2 つに分かれるので、この立体は STL にできません') };
+      iv.sort((a, b) => a[0] - b[0]);
+      for (let n = 1; n < iv.length; n++) if (iv[n][0] > iv[n - 1][1] + 1e-9 * (1 + Math.abs(iv[n - 1][1]))) return { error: tr('The region is not one piece at every distance from the axis: this solid cannot be saved as STL', '軸からの距離によって領域が 2 つに分かれるので、この立体は STL にできません') };
+      bot.push([Math.min(...iv.map((q) => q[0])), r]); top.push([Math.max(...iv.map((q) => q[1])), r]);
+    }
+    // (in (t, ρ): the height along the axis and the distance)
+    const half = Math.floor(points / 2) - 2;
+    const b2 = polySimplify(bot.map(([z, r]) => [r, z]), half).map(([r, z]) => [z, r]), t2 = polySimplify(top.map(([z, r]) => [r, z]), half).map(([r, z]) => [z, r]);
+    polys.push(b2.concat(t2.slice().reverse()));
+    return { polys, axis: 'z' };
+  }
+  // the sections of a solid with known cross sections: [[[x, y, z]]] or { error }
+  async function stlSections(spec, per) {
+    const out = [];
+    for (const p of spec.parts) {
+      const sm = await stlSamples(spec.g ? [spec.f, spec.g] : [spec.f], p.lo, p.hi, Math.max(8, Math.min(400, per)));
+      if (!sm) return { error: tr('Could not calculate the solid', '立体を計算できませんでした') };
+      const secs = [], G = stlGrid(sm), m = Math.max(8, Math.min(400, per));
+      // (no more sections than the limit of triangles allows: evenly among the places of the samples)
+      const places = G.length > m + 1 ? Array.from({ length: m + 1 }, (_, k) => G[Math.round(k * (G.length - 1) / m)]) : G;
+      for (const x of places) {
+        const f = stlAt(sm[0], x), g = spec.g ? stlAt(sm[1], x) : 0;
+        if (f === null || g === null) continue;
+        const lo = Math.min(f, g), hi = Math.max(f, g), s = hi - lo, c = (lo + hi) / 2;
+        let yz;
+        if (spec.shape === 'sq') yz = [[lo, 0], [hi, 0], [hi, s], [lo, s]];
+        else if (spec.shape === 'rect') yz = [[lo, 0], [hi, 0], [hi, spec.k * s], [lo, spec.k * s]];
+        else if (spec.shape === 'eq') yz = [[lo, 0], [hi, 0], [c, s * Math.sqrt(3) / 2]];
+        else if (spec.shape === 'rl') yz = [[lo, 0], [hi, 0], [lo, s]];
+        else if (spec.shape === 'rh') yz = [[lo, 0], [hi, 0], [c, s / 2]];
+        else { yz = []; for (let k = 0; k <= 32; k++) { const ph = Math.PI * k / 32; yz.push([c + s / 2 * Math.cos(ph), s / 2 * Math.sin(ph)]); } }
+        secs.push(yz.map(([y, z]) => [x, y, z]));
+      }
+      if (secs.length >= 2) out.push(secs);
+    }
+    return out.length ? out : { error: noRealText() };
+  }
+  // The meridian of a solid from a profile (D2), in (t, ρ): the outer profile up, across the top (open
+  // when the inner profile reaches the top, else on the axis), the inner profile down, across the bottom
+  function stlProfilePoly(o, i, smooth) {
+    const chain = (pts) => { const sh = pfShape(pts, smooth), out = [[pts[0].z, pts[0].r]]; for (const s of sh.segs) { if (s.a !== pts[0] && (out[out.length - 1][0] !== s.a.z || out[out.length - 1][1] !== s.a.r)) out.push([s.a.z, s.a.r]); const n = smooth ? 12 : 1; for (let k = 1; k <= n; k++) { const z = s.a.z + (s.b.z - s.a.z) * k / n; out.push([z, sh.at(s, k === n ? s.b.z : z)[0]]); } } return out; };
+    const O = chain(o);
+    if (!i) return [[O[0][0], 0]].concat(O, [[O[O.length - 1][0], 0]]);
+    const I = chain(i), e = 1e-9 * (1 + Math.abs(O[O.length - 1][0] - O[0][0]));
+    if (I[0][0] < O[0][0] - e || I[I.length - 1][0] > O[O.length - 1][0] + e) return null;
+    const P = [];
+    if (I[0][0] > O[0][0] + e) P.push([I[0][0], 0], [O[0][0], 0]);
+    P.push(...O);
+    if (I[I.length - 1][0] < O[O.length - 1][0] - e) P.push([O[O.length - 1][0], 0], [I[I.length - 1][0], 0]);
+    P.push(...I.slice().reverse());
+    return P;
+  }
+  // Builds the mesh of a solid: spec { kind: 'h' | 'v' | 'sec' | 'profile', …, volume (as calculated) };
+  // { mesh, check, ok } or { error }
+  async function stlBuild(spec, quality) {
+    const cap = STL_LIMIT[quality] || STL_LIMIT.std;
+    let n = STL_TURNS[quality] || STL_TURNS.std, M;
+    if (spec.kind === 'sec') {
+      const K = spec.shape === 'semi' ? 33 : spec.shape === 'sq' || spec.shape === 'rect' ? 4 : 3;
+      const per = Math.floor(cap / (2 * K) / Math.max(1, spec.parts.length)) - 2;
+      const all = await stlSections(spec, per);
+      if (all.error) return all;
+      const size = Math.max(1e-9, ...all.flat(2).map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]), Math.abs(p[2]))));
+      const m = meshNew(size * 1e-9);
+      for (const secs of all) meshLoft(m, secs);
+      M = meshDone(m);
+    } else {
+      let polys, axis;
+      if (spec.kind === 'profile') {
+        const P = stlProfilePoly(spec.o, spec.i, spec.smooth);
+        if (!P) return { error: tr('The inner profile must lie within the outer one, from bottom to top', '内側の輪郭は、外側の輪郭の高さの範囲の中に入れてください') };
+        polys = [P]; axis = 'x';
+        if (P.length * 2 * n > cap) n = Math.max(24, Math.floor(cap / (2 * P.length)));
+      } else {
+        const r = await stlMeridians(spec, Math.floor(cap / (2 * n)));
+        if (r.error) return r;
+        polys = r.polys; axis = r.axis;
+      }
+      if (!polys.length) return { error: noRealText() };
+      const size = Math.max(1e-9, ...polys.flat().map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]))));
+      const m = meshNew(size * 1e-9);
+      for (const P of polys) meshRevolve(m, P, n, axis);
+      M = meshDone(m);
+    }
+    const check = meshCheck(M);
+    const volOk = !(spec.volume > 0) || Math.abs(check.volume / spec.volume - 1) <= 0.005;
+    check.want = spec.volume || null; check.turns = spec.kind === 'sec' ? null : n; check.cap = cap;
+    return { mesh: M, check, ok: check.tris > 0 && check.tris <= cap && check.open === 0 && check.flat === 0 && check.volume > 0 && volOk };
+  }
+  // The sheet "Save as STL": the size of one unit in millimetres, standard or fine, what will be saved, and
+  // the button. name: for the file; unit: the first millimetres of one unit
+  async function openStlSheet(spec, name, mmPerUnit) {
+    if (!proGate('stl')) return;
+    if (sheetResolve) closeSheet(null);
+    const saved = store.get('qalc.stl', null) || {};
+    const st = { q: saved.q === 'fine' ? 'fine' : 'std', mm: mmPerUnit ? String(mmPerUnit) : (saved.mm || '10'), seq: 0, mesh: null };
+    const sh = $('#sheet');
+    sh.textContent = '';
+    const mmIn = el('input', { inputmode: 'decimal', value: st.mm, 'aria-label': tr('Millimetres for one unit', '1 単位あたりの mm') });
+    const bS = tapButton({ text: tr('Standard', '標準') }, () => setQ('std')), bF = tapButton({ text: tr('Fine', '細かい') }, () => setQ('fine'));
+    const info = el('div', { class: 'stl-info', role: 'status' }), err = el('div', { class: 'form-hint warn' });
+    const save = el('button', { class: 'accent', text: tr('Save the STL file', 'STL ファイルを保存') });
+    sh.append(el('div', { class: 'stitle', text: tr('Save as STL (for 3D printers)', 'STL で保存（3D プリンター用）') }),
+      el('label', { class: 'geo-size stl-mm' }, el('span', { class: 'geo-lbl', text: tr('1 unit =', '1 単位 =') }), mmIn, el('span', { text: 'mm' })),
+      el('div', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Triangles', '三角形') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Triangles', '三角形') }, bS, bF)),
+      info, err, save, el('div', { class: 'pro-sheet-note', text: tr('A closed mesh in millimetres (ASCII STL). Check the size and the walls in your slicer before printing.', '閉じた立体の面（ASCII 形式の STL、単位 mm）。印刷の前に、スライサーで大きさと壁の厚さを確かめてください。') }),
+      el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
+    const mm = () => { const v = statVal(mmIn.value); return v > 0 && isFinite(v) ? v : NaN; };
+    const show = () => {
+      const c = st.mesh && st.mesh.check;
+      sh.dataset.mesh = c ? JSON.stringify(Object.assign({ ok: st.mesh.ok }, c)) : '';
+      if (!c) return;
+      const k = mm(), s = c.size.map((q) => statNum(+(q * k).toPrecision(4))).join(' × ');
+      info.textContent = isFinite(k) ? trf('{0} triangles · {1} mm · {2} cm³', '三角形 {0} 個・{1} mm・{2} cm³', fmtV(c.tris), s, statNum(+(c.volume * k * k * k / 1000).toPrecision(5))) : '';
+      save.disabled = !st.mesh.ok || !isFinite(k);
+      err.textContent = !st.mesh.ok ? tr('The solid could not be made into a closed mesh, so it is not saved.', '閉じた立体の面にできなかったため、保存できません。') : !isFinite(k) ? tr('Enter the millimetres for one unit (a positive number, for example 10)', '1 単位あたりの mm を正の数で入れてください（例：10）') : '';
+      if (!isFinite(k)) mmIn.setAttribute('aria-invalid', 'true'); else mmIn.removeAttribute('aria-invalid');
+    };
+    const build = async () => {
+      const seq = ++st.seq;
+      st.mesh = null; info.textContent = tr('Calculating…', '計算中…'); err.textContent = ''; save.disabled = true; sh.dataset.mesh = '';
+      const r = await stlBuild(spec, st.q);
+      if (seq !== st.seq) return;
+      if (r.error) { info.textContent = ''; err.textContent = r.error; sh.dataset.mesh = JSON.stringify({ error: r.error }); return; }
+      st.mesh = r; show();
+    };
+    function setQ(q) { st.q = q; bS.classList.toggle('on', q === 'std'); bF.classList.toggle('on', q === 'fine'); bS.setAttribute('aria-pressed', String(q === 'std')); bF.setAttribute('aria-pressed', String(q === 'fine')); store.set('qalc.stl', { q: st.q, mm: mmIn.value }); build(); }
+    mmIn.addEventListener('input', () => { store.set('qalc.stl', { q: st.q, mm: mmIn.value }); show(); });
+    save.addEventListener('click', () => {
+      if (!st.mesh || !st.mesh.ok || !isFinite(mm())) return;
+      const d = new Date(), z = (q) => String(q).padStart(2, '0');
+      const file = 'QCalc-' + name + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.stl';
+      const text = stlText(st.mesh.mesh, 'QCalc_' + name, mm());
+      savingWhat = 'stl';
+      closeSheet(null);
+      if (window.QalcNative && QalcNative.saveFile) { QalcNative.saveFile(file, 'model/stl', text); return; }
+      const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: 'model/stl' })), download: file });
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      fileSaved({ ok: true });
+    });
+    const k = new Promise((resolve) => { sheetResolve = resolve; $('#scrim').classList.add('show', 'over-panels'); sh.classList.add('open'); sh.inert = false; });
+    setQ(st.q);
+    await k;
   }
   // ------------------------------------------ volume from measured values (1.11.0)
   // Two ways that are used on site, from values typed or pasted from a spreadsheet:
@@ -12993,7 +13340,8 @@
     quick: ['⌂', tr('Widget, tile and shortcuts', 'ウィジェット・タイル・ショートカット'), tr('Open QCalc from the home screen and the quick settings', 'ホーム画面やクイック設定から QCalc を開く')],
     stats: ['📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰')],
     tank_heads: ['🛢', tr('Tank heads and quick-reference tables', 'タンクの鏡板と早見表'), tr('Hemispherical, semi-elliptical and dished heads; the amount for each height and the height for each amount', '半球・半楕円・皿形の鏡板、高さごとの液量と液量ごとの高さの表')],
-    profile: ['🏺', tr('Solid from a profile', '輪郭から回転体'), tr('Volume, capacity, weight and surface from positions and diameters (turned parts, pottery)', '位置と直径から体積・容量・重さ・表面積（旋盤の部品・陶芸）')]
+    profile: ['🏺', tr('Solid from a profile', '輪郭から回転体'), tr('Volume, capacity, weight and surface from positions and diameters (turned parts, pottery)', '位置と直径から体積・容量・重さ・表面積（旋盤の部品・陶芸）')],
+    stl: ['🖨', tr('STL files for 3D printers', 'STL ファイル（3D プリンター）'), tr('Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres', '回転体・断面の立体・輪郭から回転体を、閉じた立体の面（mm）として保存')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {
@@ -13243,7 +13591,7 @@
   }
   function fileSaved(ev) {
     const what = savingWhat; savingWhat = '';
-    if (ev.ok) toast(what === 'table' ? tr('Table saved', '表を保存しました') : tr('History exported', '履歴を書き出しました'), 2000);
+    if (ev.ok) toast(what === 'table' ? tr('Table saved', '表を保存しました') : what === 'stl' ? tr('STL file saved', 'STL ファイルを保存しました') : tr('History exported', '履歴を書き出しました'), 2000);
     else if (!ev.cancelled) toast(localMessage(ev.error) || tr('Could not save the file', 'ファイルを保存できませんでした'), 3500);
   }
 
