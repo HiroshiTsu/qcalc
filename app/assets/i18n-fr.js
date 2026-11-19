@@ -493,7 +493,6 @@
     "Surface": "Surface",
     "Surface area": "Aire de la surface",
     "Surface area ": "Aire de la surface ",
-    "Surfaces z = f(x, y) that you can turn with a finger": "Surfaces z = f(x, y) à faire pivoter du doigt",
     "Switch the keys with the tabs 123, Functions, Calculus and Matrix. The ⌨ key opens the phone keyboard.": "Changez de touches avec les onglets 123, Fonctions, Analyse et Matrice. La touche ⌨ ouvre le clavier du téléphone.",
     "Tangent at x =": "Tangente en x =",
     "Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.": "Touchez RAD, AUTO et DÉC en haut pour changer l’unité d’angle, les résultats exacts ou approchés et la base des résultats.",
@@ -1262,7 +1261,6 @@
     "Everyday tools": "Calculs du quotidien",
     "Price and tax, loan, savings, dates and times": "Prix et taxe, prêt, épargne, dates et heures",
     "Tables as CSV files": "Tableaux en CSV",
-    "Save the table of a loan or of savings for a spreadsheet": "Enregistrer le tableau d’un prêt ou d’une épargne pour un tableur",
     "Table saved": "Tableau enregistré",
     "Weight": "Poids",
     "Time": "Temps",
@@ -1307,7 +1305,11 @@
     "How to put the widget on the home screen": "Comment placer le widget sur l’écran d’accueil",
     "The names can differ a little from phone to phone.": "Les noms peuvent varier un peu selon le téléphone.",
     "The tile was added to the quick settings": "La tuile a été ajoutée aux Réglages rapides",
-    "The tile is already in the quick settings": "La tuile est déjà dans les Réglages rapides"
+    "The tile is already in the quick settings": "La tuile est déjà dans les Réglages rapides",
+    "Surfaces z = f(x, y) and solids that you can turn with a finger, also a solid of revolution growing in 3D": "Surfaces z = f(x, y) et solides que vous pouvez faire tourner du doigt, aussi un solide de révolution qui se forme en 3D",
+    "Save the tables of a loan or of savings as CSV files for a spreadsheet (showing them stays free)": "Enregistrer les tableaux d’un prêt ou d’une épargne en fichiers CSV pour un tableur (les afficher reste gratuit)",
+    "Widget, tile and shortcuts": "Widget, tuile et raccourcis",
+    "Open QCalc from the home screen and the quick settings": "Ouvrir QCalc depuis l’écran d’accueil et les Réglages rapides"
   },
   messages: {
     "rates-old": (p1) => "Les taux de change n’ont pas été mis à jour depuis " + p1 + " " + (p1 === '1' ? "jour" : "jours") + " (Paramètres → « Mettre à jour les taux de change maintenant »)",

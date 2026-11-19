@@ -497,7 +497,6 @@
     "Surface": "曲面",
     "Surface area": "表面積",
     "Surface area ": "表面積 ",
-    "Surfaces z = f(x, y) that you can turn with a finger": "可用手指旋轉的曲面 z = f(x, y)",
     "Switch the keys with the tabs 123, Functions, Calculus and Matrix. The ⌨ key opens the phone keyboard.": "用「123」、「函數」、「微積分」、「矩陣」分頁切換按鍵。⌨ 鍵會開啟手機鍵盤。",
     "Tangent at x =": "切線 x =",
     "Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.": "點一下上方的「RAD」、「自動」、「十進」，即可切換角度單位、精確或近似結果，以及結果的進位制。",
@@ -1266,7 +1265,6 @@
     "Everyday tools": "日常計算",
     "Price and tax, loan, savings, dates and times": "價格與稅、貸款、儲蓄、日期與時間",
     "Tables as CSV files": "表格存成 CSV",
-    "Save the table of a loan or of savings for a spreadsheet": "把貸款或儲蓄的表格存成試算表可用的檔案",
     "Table saved": "已儲存表格",
     "Weight": "重量",
     "Time": "時間",
@@ -1311,7 +1309,11 @@
     "How to put the widget on the home screen": "如何在主畫面放置小工具",
     "The names can differ a little from phone to phone.": "名稱可能因手機而略有不同。",
     "The tile was added to the quick settings": "已將圖塊加入快速設定",
-    "The tile is already in the quick settings": "圖塊已在快速設定中"
+    "The tile is already in the quick settings": "圖塊已在快速設定中",
+    "Surfaces z = f(x, y) and solids that you can turn with a finger, also a solid of revolution growing in 3D": "可用手指旋轉的曲面 z = f(x, y) 與立體（也能看旋轉體在 3D 中逐漸成形）",
+    "Save the tables of a loan or of savings as CSV files for a spreadsheet (showing them stays free)": "將貸款或儲蓄的表格存成試算表用的 CSV 檔（查看表格仍免費）",
+    "Widget, tile and shortcuts": "小工具、圖塊與捷徑",
+    "Open QCalc from the home screen and the quick settings": "從主畫面與快速設定開啟 QCalc"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",

@@ -496,7 +496,6 @@
     "Surface": "곡면",
     "Surface area": "겉넓이",
     "Surface area ": "겉넓이 ",
-    "Surfaces z = f(x, y) that you can turn with a finger": "손가락으로 돌릴 수 있는 곡면 z = f(x, y)",
     "Switch the keys with the tabs 123, Functions, Calculus and Matrix. The ⌨ key opens the phone keyboard.": "키는 ‘123’, ‘함수’, ‘미적분’, ‘행렬’ 탭으로 바꿉니다. ⌨ 키로 휴대전화 키보드도 쓸 수 있습니다.",
     "Tangent at x =": "접선 x =",
     "Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.": "위의 ‘RAD’, ‘자동’, ‘10진’을 탭하면 각도 단위, 정확한 값·근사, 결과의 진법이 바뀝니다.",
@@ -1265,7 +1264,6 @@
     "Everyday tools": "생활 계산",
     "Price and tax, loan, savings, dates and times": "가격과 세금, 대출, 적립, 날짜와 시간",
     "Tables as CSV files": "표의 CSV 저장",
-    "Save the table of a loan or of savings for a spreadsheet": "대출이나 적립의 표를 스프레드시트용으로 저장",
     "Table saved": "표를 저장했습니다",
     "Weight": "무게",
     "Time": "시간",
@@ -1310,7 +1308,11 @@
     "How to put the widget on the home screen": "홈 화면에 위젯을 놓는 방법",
     "The names can differ a little from phone to phone.": "이름은 기종에 따라 조금 다를 수 있습니다.",
     "The tile was added to the quick settings": "빠른 설정에 타일을 추가했습니다",
-    "The tile is already in the quick settings": "타일이 이미 빠른 설정에 있습니다"
+    "The tile is already in the quick settings": "타일이 이미 빠른 설정에 있습니다",
+    "Surfaces z = f(x, y) and solids that you can turn with a finger, also a solid of revolution growing in 3D": "손가락으로 돌릴 수 있는 곡면 z = f(x, y)와 입체(회전체가 3D로 만들어지는 모습도)",
+    "Save the tables of a loan or of savings as CSV files for a spreadsheet (showing them stays free)": "대출이나 적립의 표를 스프레드시트용 CSV 파일로 저장(표 보기는 무료)",
+    "Widget, tile and shortcuts": "위젯·타일·바로가기",
+    "Open QCalc from the home screen and the quick settings": "홈 화면과 빠른 설정에서 QCalc 열기"
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",

@@ -493,7 +493,6 @@
     "Surface": "Fläche",
     "Surface area": "Oberfläche",
     "Surface area ": "Oberfläche ",
-    "Surfaces z = f(x, y) that you can turn with a finger": "Flächen z = f(x, y), die du mit einem Finger drehen kannst",
     "Switch the keys with the tabs 123, Functions, Calculus and Matrix. The ⌨ key opens the phone keyboard.": "Wechsle die Tasten mit den Reitern 123, Funktionen, Analysis und Matrix. Die Taste ⌨ öffnet die Tastatur des Handys.",
     "Tangent at x =": "Tangente bei x =",
     "Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.": "Tippe oben auf RAD, AUTO und DEC, um die Winkeleinheit, exakte oder näherungsweise Ergebnisse und das Zahlensystem der Ergebnisse umzuschalten.",
@@ -1262,7 +1261,6 @@
     "Everyday tools": "Alltagsrechner",
     "Price and tax, loan, savings, dates and times": "Preis und Steuer, Kredit, Sparen, Datum und Zeit",
     "Tables as CSV files": "Tabellen als CSV",
-    "Save the table of a loan or of savings for a spreadsheet": "Die Tabelle eines Kredits oder einer Sparrate für eine Tabellenkalkulation speichern",
     "Table saved": "Tabelle gespeichert",
     "Weight": "Gewicht",
     "Time": "Zeit",
@@ -1307,7 +1305,11 @@
     "How to put the widget on the home screen": "So legst du das Widget auf den Startbildschirm",
     "The names can differ a little from phone to phone.": "Die Bezeichnungen können je nach Gerät etwas anders sein.",
     "The tile was added to the quick settings": "Die Kachel wurde zu den Schnelleinstellungen hinzugefügt",
-    "The tile is already in the quick settings": "Die Kachel ist schon in den Schnelleinstellungen"
+    "The tile is already in the quick settings": "Die Kachel ist schon in den Schnelleinstellungen",
+    "Surfaces z = f(x, y) and solids that you can turn with a finger, also a solid of revolution growing in 3D": "Flächen z = f(x, y) und Körper, die du mit einem Finger drehen kannst, auch ein Rotationskörper, der in 3D entsteht",
+    "Save the tables of a loan or of savings as CSV files for a spreadsheet (showing them stays free)": "Die Tabellen eines Kredits oder einer Sparrate als CSV-Datei für eine Tabellenkalkulation speichern (ansehen bleibt kostenlos)",
+    "Widget, tile and shortcuts": "Widget, Kachel und Verknüpfungen",
+    "Open QCalc from the home screen and the quick settings": "QCalc vom Startbildschirm und aus den Schnelleinstellungen öffnen"
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",

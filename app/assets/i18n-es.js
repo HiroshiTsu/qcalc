@@ -505,7 +505,6 @@
     "Surface": "Superficie",
     "Surface area": "Área superficial",
     "Surface area ": "Área superficial ",
-    "Surfaces z = f(x, y) that you can turn with a finger": "Superficies z = f(x, y) que puedes girar con un dedo",
     "Switch the keys with the tabs 123, Functions, Calculus and Matrix. The ⌨ key opens the phone keyboard.": "Cambia las teclas con las pestañas 123, Funciones, Cálculo y Matriz. La tecla ⌨ abre el teclado del teléfono.",
     "Tangent at x =": "Tangente en x =",
     "Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.": "Toca RAD, AUTO y DEC arriba para cambiar la unidad de ángulo, los resultados exactos o aproximados y la base numérica de los resultados.",
@@ -1274,7 +1273,6 @@
     "Everyday tools": "Cálculos cotidianos",
     "Price and tax, loan, savings, dates and times": "Precio e impuesto, préstamo, ahorro, fechas y horas",
     "Tables as CSV files": "Tablas en CSV",
-    "Save the table of a loan or of savings for a spreadsheet": "Guardar la tabla de un préstamo o del ahorro para una hoja de cálculo",
     "Table saved": "Tabla guardada",
     "Weight": "Peso",
     "Time": "Tiempo",
@@ -1319,7 +1317,11 @@
     "How to put the widget on the home screen": "Cómo poner el widget en la pantalla de inicio",
     "The names can differ a little from phone to phone.": "Los nombres pueden variar un poco según el teléfono.",
     "The tile was added to the quick settings": "Se añadió el icono a los Ajustes rápidos",
-    "The tile is already in the quick settings": "El icono ya está en los Ajustes rápidos"
+    "The tile is already in the quick settings": "El icono ya está en los Ajustes rápidos",
+    "Surfaces z = f(x, y) and solids that you can turn with a finger, also a solid of revolution growing in 3D": "Superficies z = f(x, y) y sólidos que puedes girar con un dedo, también un sólido de revolución que se forma en 3D",
+    "Save the tables of a loan or of savings as CSV files for a spreadsheet (showing them stays free)": "Guardar las tablas de un préstamo o de un ahorro como archivos CSV para una hoja de cálculo (verlas sigue siendo gratis)",
+    "Widget, tile and shortcuts": "Widget, icono y accesos directos",
+    "Open QCalc from the home screen and the quick settings": "Abrir QCalc desde la pantalla de inicio y los Ajustes rápidos"
   },
   messages: {
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (Ajustes → "Actualizar los tipos de cambio ahora")',

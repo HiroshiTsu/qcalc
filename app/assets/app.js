@@ -378,26 +378,38 @@
   }
   function proOffered() { return PRO.billing === 'play' || PRO.billing === 'debug'; }
   function hasPro() { return !proOffered() || PRO.pro === true; }
-  // 1.11.0: the new volume features and whether they need Pro, in one place. None does now ('free');
-  // 'pro' locks one (proGate asks for Pro where it is used). The 3D graph, where some of them are,
-  // is Pro as before.
-  // Which features need QCalc Pro: 'free' or 'pro'. 1.12.0: every feature of 1.11.0 and 1.12.0 is
-  // free for now; the comment says what is recommended (also in WORK-IN-PROGRESS.md, "要判断"). A key
-  // set to 'pro' is listed among the Pro features (PRO_INFO) and its tool asks for Pro (proGate).
+  // Which features need QCalc Pro: 'free' or 'pro' (proGate asks for Pro where a 'pro' key is used,
+  // and the Pro panel lists it, PRO_INFO). Decided by the author for 1.12.0 (2026-11-19):
+  // - Free: what is for learning and for everyday calculations. The calculator and its usability
+  //   (Tools, the lists, the number format, the language, touch, reading out, large screens, the
+  //   history's search, pins, notes and sums, the memory keys, the card of what is new), the
+  //   everyday tools with their tables shown, conversion, the widget, tile and shortcuts,
+  //   statistics, the solids of revolution and cross sections with their 2D pictures (mirror, disks
+  //   and shells) and the theorem of Pappus. Sharing a picture with a small "QCalc" in a corner (D4)
+  //   and the first calculation note (D5) will be free too.
+  // - Pro: the features for work. As before the 3D graph (also "View in 3D" and the solid growing in
+  //   3D), more than 1000 digits, the colour themes and exporting the history; now also saving the
+  //   tables as CSV files ('tables': the loan and savings tables of C1, the quick-reference tables of
+  //   D1; showing them stays free). Still to come, each with its own key: the heads of tanks
+  //   (hemispherical, semi-elliptical, dished) and their tables (D1; the flat-ended tanks of now stay
+  //   free), solids from a profile (D2), STL files (D3), GIFs, pictures without the mark and in a
+  //   higher resolution (D4), the second and later notes and exporting them (D5).
+  // - A feature that was once free is never made Pro: the keys of 1.11.0 stay 'free'.
+  // Those who used QCalc before Pro began have Pro for free (Pro.java); this does not change it.
   const PRO_GATES = {
-    enclosed: 'free',      // the area enclosed by curves (1.10): recommended free (school maths)
-    tanks: 'free',         // the volume of liquid in tanks (1.10): recommended free (the heads of D1: Pro)
-    revolution: 'free',    // solids of revolution in the 2D graph (1.10): recommended free (the 3D view needs Pro)
-    regions: 'free',       // volumes of regions (1.10): recommended free
-    sections: 'free',      // the volume from measured values (1.11): recommended free
-    history_tools: 'free', // the history: search, pin, notes, sum of lines (1.12 A5): recommended free (usability)
-    memkeys: 'free',       // the memory keys (1.12 A5): recommended free (usability)
-    cross_sections: 'free', // solids with known cross sections (1.12 B1): recommended free (2D and the volume; the 3D view needs Pro)
-    rev_lines: 'free',     // the lines of the method in 2D and the theorem of Pappus (1.12 B2): recommended free (the angle of the 3D view needs Pro as 3D)
-    everyday: 'free',      // the everyday tools: price, percentages, unit price, split, loan, savings, dates, times (1.12 C1): recommended free
-    tables: 'free',        // saving the tables of the tools as CSV files (1.12 C1): recommended Pro (as exporting the history)
-    convert: 'free',       // the conversion of units and currencies (1.12 C2): recommended free
-    quick: 'free'          // the widget, the tile and the shortcuts of the icon (1.12 C3): recommended free (they only open the app)
+    enclosed: 'free',      // the area enclosed by curves (1.10)
+    tanks: 'free',         // the volume of liquid in tanks with flat ends (1.10)
+    revolution: 'free',    // solids of revolution in the 2D graph (1.10; the 3D view is the 3D graph: Pro)
+    regions: 'free',       // volumes of regions (1.10)
+    sections: 'free',      // the volume from measured values (1.11)
+    history_tools: 'free', // the history: search, pin, notes, sum of lines (1.12 A5)
+    memkeys: 'free',       // the memory keys (1.12 A5)
+    cross_sections: 'free', // solids with known cross sections, in 2D with the volume (1.12 B1; the 3D view: Pro)
+    rev_lines: 'free',     // the lines of the method in 2D and the theorem of Pappus (1.12 B2; the angle in 3D: Pro)
+    everyday: 'free',      // the everyday tools with their tables shown (1.12 C1)
+    tables: 'pro',         // saving the tables as CSV files (1.12 C1, D1): Pro, as exporting the history
+    convert: 'free',       // the conversion of units and currencies (1.12 C2)
+    quick: 'free'          // the widget, the tile and the shortcuts of the icon (1.12 C3)
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -11877,7 +11889,7 @@
   // the Pro features that are not tools: icon, name, what it gives, key of the prompt
   const PRO_FIXED = () => [
     ['🎯', tr('High precision', '高精度'), tr('Up to 200000 significant digits (free: up to 1000)', '有効桁数は最大 200000 桁（無料版は 1000 桁まで）'), 'precision'],
-    ['🧊', tr('3D graphs', '3D グラフ'), tr('Surfaces z = f(x, y) that you can turn with a finger', '指で回せる曲面 z = f(x, y)'), '3d'],
+    ['🧊', tr('3D graphs', '3D グラフ'), tr('Surfaces z = f(x, y) and solids that you can turn with a finger, also a solid of revolution growing in 3D', '指で回せる曲面 z = f(x, y) と立体（回転体が 3D でできていく様子も）'), '3d'],
     ['🎨', tr('Color themes', '配色テーマ'), tr('Seven colors for the keys and the highlights, in the light and the dark theme', 'キーや強調表示を 7 色から選べます（ライト・ダークの両方）'), 'themes'],
     ['📤', tr('Export the history', '履歴の書き出し'), tr('Save the history as a CSV file that spreadsheets can open', '履歴を CSV ファイルに保存（表計算ソフトで開けます）'), 'export']
   ];
@@ -11893,8 +11905,9 @@
     cross_sections: ['◪', tr('Cross sections', '断面の立体'), tr('Squares, triangles or half discs on a base region', '底面の上に正方形・三角形・半円を立てた立体')],
     rev_lines: ['☰', tr('Lines of the method and Pappus', '方法の線とパップスの定理'), tr('Disks or shells drawn in the graph; V = 2π d A', 'グラフに円板・殻の線、V = 2π d A')],
     everyday: ['🏷', tr('Everyday tools', '日常の計算'), tr('Price and tax, loan, savings, dates and times', '値段と税、ローン、積立、日付と時間')],
-    tables: ['📄', tr('Tables as CSV files', '表の CSV 保存'), tr('Save the table of a loan or of savings for a spreadsheet', 'ローンや積立の表を、表計算ソフト用に保存')],
-    convert: ['⇄', tr('Convert units and currencies', '単位・通貨の換算'), tr('Two boxes that convert both ways', '両方向に換算できる 2 つの欄')]
+    tables: ['📄', tr('Tables as CSV files', '表の CSV 保存'), tr('Save the tables of a loan or of savings as CSV files for a spreadsheet (showing them stays free)', 'ローンや積立の表を、表計算ソフト用の CSV ファイルに保存（表を見るのは無料）')],
+    convert: ['⇄', tr('Convert units and currencies', '単位・通貨の換算'), tr('Two boxes that convert both ways', '両方向に換算できる 2 つの欄')],
+    quick: ['⌂', tr('Widget, tile and shortcuts', 'ウィジェット・タイル・ショートカット'), tr('Open QCalc from the home screen and the quick settings', 'ホーム画面やクイック設定から QCalc を開く')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {
