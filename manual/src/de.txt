@@ -477,6 +477,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :tip: [[How to use ›]] in einer Zeile der Pro-Funktionen öffnet den Abschnitt dieser Anleitung.
 
 ## pro-buy | Kaufen und wiederherstellen
+Der Preis wird im Kaufbildschirm von Google Play angezeigt.
 :step: Öffnen Sie [[!QCalc Pro]] über ☰ (oder über das Fenster einer gesperrten Funktion).
 :step: Drücken Sie [[Buy QCalc Pro]] und kaufen Sie im Bildschirm von Google Play.
 :step: Auf einem Telefon, auf dem Sie schon gekauft haben, oder nach einer Neuinstallation drücken Sie [[Restore a purchase]].

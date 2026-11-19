@@ -474,7 +474,7 @@
   //            'debug'  a test build: Pro is unlocked (it can be locked for testing in the Pro panel)
   //            'none'   a build without Google Play Billing: Pro cannot be bought, so nothing is locked
   //   pro      true when Pro is unlocked; legacy: unlocked because QCalc was used before Pro began
-  //   price    the price from Google Play ("¥300"); state 'pending' while a payment is processed
+  //   price    the price from Google Play ("¥600"); state 'pending' while a payment is processed
   // The highest precision is the engine's limit (MAX_PRECISION in qalc-engine.cc).
   const MAX_PRECISION = 200000, FREE_MAX_PRECISION = 1000;
   let PRO = readPro();

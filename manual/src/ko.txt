@@ -476,6 +476,7 @@ QCalc는 식을 종이에 쓰듯 입력하면 바로 결과가 나오는 계산�
 :tip: Pro 기능 줄의 [[How to use ›]]는 이 설명서의 그 절을 엽니다.
 
 ## pro-buy | 구매와 복원
+가격은 Google Play의 구매 화면에 표시됩니다.
 :step: ☰에서 [[!QCalc Pro]]를 엽니다(잠긴 기능을 보여 주는 패널에서도 됩니다).
 :step: [[Buy QCalc Pro]]를 누르고 Google Play 화면에서 구매합니다.
 :step: 이미 구매한 휴대폰이나 다시 설치한 뒤에는 [[Restore a purchase]]를 누릅니다.

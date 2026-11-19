@@ -477,6 +477,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :tip: [[How to use ›]] on a row of the Pro features opens its section of this manual.
 
 ## pro-buy | Buying and restoring
+The price is shown on the Google Play purchase screen.
 :step: Open [[!QCalc Pro]] from ☰ (or from the sheet shown by a locked feature).
 :step: Press [[Buy QCalc Pro]] and buy it on Google Play's screen.
 :step: On a phone where you bought it before, or after reinstalling, press [[Restore a purchase]].

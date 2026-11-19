@@ -477,6 +477,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :tip: [[How to use ›]] sur une ligne des fonctions Pro ouvre sa section de ce manuel.
 
 ## pro-buy | Acheter et restaurer
+Le prix s'affiche sur l'écran d'achat de Google Play.
 :step: Ouvrez [[!QCalc Pro]] depuis ☰ (ou depuis le panneau qui montre une fonction verrouillée).
 :step: Appuyez sur [[Buy QCalc Pro]] et achetez dans l'écran de Google Play.
 :step: Sur un téléphone où vous l'avez déjà acheté, ou après une réinstallation, appuyez sur [[Restore a purchase]].

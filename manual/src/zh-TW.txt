@@ -476,6 +476,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :tip: Pro 功能那一行的 [[How to use ›]] 會打開本說明書的該節。
 
 ## pro-buy | 購買與恢復
+價格會顯示在 Google Play 的購買畫面上。
 :step: 從 ☰ 打開 [[!QCalc Pro]]（也可從顯示鎖定功能的面板打開）。
 :step: 按 [[Buy QCalc Pro]]，在 Google Play 的畫面中購買。
 :step: 在已購買過的手機上，或重新安裝後，按 [[Restore a purchase]]。

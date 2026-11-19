@@ -2,6 +2,8 @@
 // language, from the app's page on a test server, with the places of the numbered marks
 // (img/<name>.json). Only for the web version: the manual inside the app has no photos.
 // Needs Node.js and Playwright (as the tests); run again when the screens change, then manual/build.py.
+// The Pro panel is taken before Google Play sends the price (?pro=play-noprice): the price is set in Play
+// Console and shown on Google Play's purchase screen, so the manual shows none.
 // Usage: node manual/shots.js <base url of the page> [langs, e.g. ja,en] [photos, e.g. tanks,profile]
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -139,7 +141,7 @@ const SHOTS = {
     fs.mkdirSync(dir, { recursive: true });
     for (const [name, run] of Object.entries(SHOTS)) {
       if (ONLY && ONLY.indexOf(name) < 0) continue;
-      const { ctx, page } = await start(browser, lang, name === 'pro' ? '?pro=play' : '?pro=all');
+      const { ctx, page } = await start(browser, lang, name === 'pro' ? '?pro=play-noprice' : '?pro=all');
       let marks = null;
       try { marks = await run(page); } catch (e) { console.log(lang, name, 'ERROR', e.message.split('\n')[0]); }
       await sleep(300);
