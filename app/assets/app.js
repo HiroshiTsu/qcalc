@@ -8429,12 +8429,15 @@
       A[i] = 1 - 0.72 * f; M[i] = 1; fh[i] = h; any++;
     }
     if (!any) return { px: 0 };
-    // (the blurs of about 2, 6 and 14 CSS pixels, in cells of the layer)
-    const r2 = o.lite ? 2 : 3, r3 = o.lite ? 4 : 7;
-    boxBlur(A, B.b1, B.t, LW, LH, 1); boxBlur(A, B.b2, B.t, LW, LH, r2); boxBlur(A, B.b3, B.t, LW, LH, r3);
-    boxBlur(fh, B.hb, B.t, LW, LH, r3); boxBlur(M, M, B.t, LW, LH, r3);
     const img = new ImageData(LW, LH), d = img.data, col = o.dark ? [0, 0, 0] : [28, 38, 66], A0 = (o.dark ? 0.5 : 0.3) * 255 * fadeIn * (o.k === undefined ? 1 : o.k);
-    for (let i = 0; i < n; i++) {
+    // (while the graph is turned: one blur of about 8 CSS pixels, 1.12.0 BG08)
+    if (o.lite) {
+      boxBlur(A, B.b2, B.t, LW, LH, 2);
+      for (let i = 0; i < n; i++) { const s = B.b2[i]; if (!(s > 0.002)) continue; const o4 = i * 4; d[o4] = col[0]; d[o4 + 1] = col[1]; d[o4 + 2] = col[2]; d[o4 + 3] = s * A0; }
+    }
+    // (the blurs of about 2, 6 and 14 CSS pixels, in cells of the layer)
+    if (!o.lite) { boxBlur(A, B.b1, B.t, LW, LH, 1); boxBlur(A, B.b2, B.t, LW, LH, 3); boxBlur(A, B.b3, B.t, LW, LH, 7); boxBlur(fh, B.hb, B.t, LW, LH, 7); boxBlur(M, M, B.t, LW, LH, 7); }
+    for (let i = 0; !o.lite && i < n; i++) {
       const m = M[i];
       if (!(m > 0.002)) continue;
       // (the height of the surfaces around: 0 near the floor, 1 at the top; it picks the blur)
