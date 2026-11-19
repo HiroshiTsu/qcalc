@@ -2,7 +2,7 @@
 
 **English** | [日本語](#日本語)
 
-The design document set of QCalc 1.12.0 (versionCode 25, package name `io.github.hiroshitsu.qcalc`): requirements, design, usage, maintenance and tests. Every document is in English and in Japanese, with the same content. The documents match the 1.12.0 source code in this repository (commit `d9ceb64`).
+The design document set of QCalc 1.12.0 (versionCode 26, package name `io.github.hiroshitsu.qcalc`): requirements, design, usage, maintenance and tests. Every document is in English and in Japanese, with the same content. The documents match the 1.12.0 source code in this repository (commit `d9ceb64`).
 
 - Author: Hiroshi Tsukayama (津嘉山 弘)
 - Date: 2026-11-20 (18th edition, for 1.12.0)
@@ -127,7 +127,7 @@ Only the page changed (app.js and style.css); the engine and the Java code are t
 
 ## 日本語
 
-QCalc 1.12.0（versionCode 25、パッケージ名 `io.github.hiroshitsu.qcalc`）の要件、設計、使い方、保守、テストをまとめた設計書です。どの文書も日本語と英語の 2 通りがあり、内容は同じです。内容はこのリポジトリの 1.12.0 のソースコード（コミット `d9ceb64`）に合わせています。
+QCalc 1.12.0（versionCode 26、パッケージ名 `io.github.hiroshitsu.qcalc`）の要件、設計、使い方、保守、テストをまとめた設計書です。どの文書も日本語と英語の 2 通りがあり、内容は同じです。内容はこのリポジトリの 1.12.0 のソースコード（コミット `d9ceb64`）に合わせています。
 
 - 作成：津嘉山 弘
 - 作成日：2026-11-20（第 18 版。1.12.0 に合わせて改訂）
