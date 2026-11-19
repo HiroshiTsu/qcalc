@@ -1,65 +1,134 @@
 # QCalc — Google Play store listing (French)
 
-The texts to add in Play Console as a translation: "Grow users" → "Store presence" → "Main store listing"
-→ "Manage translations" → add **French – fr-FR** and paste the texts below.
-The default language of the listing stays English (listing-en.md). From version 1.10.0 the app itself
-is in French too (it starts in French on a phone set to French; from 1.11.0, in the first language in the
-phone's list that it has).
-Limits: app name 30 characters, short description 80, full description 4000.
-The texts were translated by machine (Claude) and have not been checked by a native speaker.
+The texts to add in Play Console as translations: "Grow users" → "Store presence" → "Main store listing"
+→ "Manage translations" → add **French – fr-FR** and **French (Canada) – fr-CA** and paste the texts below.
+The default language of the listing stays English (listing-en.md).
+fr-FR: decimal comma, 20 % TVA, euros, "prêt immobilier", "portable". fr-CA: decimal comma, TPS and TVQ,
+Canadian dollars, "prêt hypothécaire", "cellulaire", "courriel".
+Limits: app name 30 characters, short description 80, full description 4000; checked by
+store/tools/listing_check.py; the same texts are in store/play-import/<locale>/ (1.12.0, stage M).
+Written by Claude for each region (not checked by a native speaker yet; store/launch-plan-ja.md says what
+testers should look at).
 
-The screenshots and the feature graphic of the English listing (store/screenshots-en/,
-store/feature-graphic-en.png) are used for French as well unless French ones are added.
-App icon: store/icon-512.png (the same for every language).
+- Screenshots: store/screenshots-1.12/fr/ (fr-FR) and store/screenshots-1.12/fr-CA/. Feature graphic:
+  store/feature-graphic-1.12-fr.png.
+- App icon: store/icon-512.png.
 
-## Nom de l’application
+<!-- listing: fr-FR -->
+## Français (France, fr-FR)
 
-QCalc - Calcul scientifique
+### App name
 
-## Description courte
+QCalc – Calculatrice graphique
 
-Tapez les maths comme sur papier : unités, devises, équations et graphiques.
+### Short description
 
-## Description complète
+Vos calculs comme sur papier : unités, devises, TVA, prêts, courbes et 3D.
 
-QCalc est une calculatrice pour Android fondée sur libqalculate, le moteur de calcul de la calculatrice libre Qalculate!. Saisissez les expressions comme vous les écririez, par exemple « 60 mph to km/h » ou « solve(x^2 − 5x + 6 = 0) ».
+### Full description
 
-■ Fonctions
-• Unités et devises : longueur, masse, vitesse, température, énergie… (5 km to mi, 100 USD to EUR), saisies ou dans un convertisseur ; taux de la BCE et d’autres sources
-• Outils avec exemples et résultat immédiat : prix avec remise et TVA, pourcentages, prix à l’unité, partage de l’addition, prêts avec échéancier, épargne à intérêts composés, dates, heures, statistiques avec régression, notes de calcul (un calcul par ligne, avec noms et totaux)
-• Équations et systèmes ; dérivées, intégrales, limites, sommes et équations différentielles dans des formulaires comme sur papier
-• L’expression en notation mathématique pendant la saisie
-• Matrices jusqu’à 30 × 30 dans une grille : déterminant, inverse, rang, valeurs propres, systèmes linéaires
-• Formes : aire, longueurs, volume et surface de 22 formes avec dessin et formule ; liquide des cuves ; masse par densité ; volume à partir de profils
-• Nombres complexes ; binaire, octal et hexadécimal ; dates (today + 100 days) ; propagation des incertitudes
-• Résultats exacts avec fractions et racines, jusqu’à 200 000 chiffres (plus de 1000 avec QCalc Pro) ; fonctions spéciales rapides (zeta, gamma, erf, Bessel…)
-• Graphiques 2D : plusieurs fonctions, glisser et zoomer ; dérivées, tangentes, zéros et extrema ; aires aux bords déplaçables, longueurs ; « ⟳ 3D » fait d’un domaine un solide de révolution en un geste, avec sections et théorème de Guldin ; 17 exemples
-• Graphiques 3D de z = f(x, y) avec ombres, à faire pivoter du doigt : dérivées partielles, volume et surface sur un rectangle, un disque, la partie entre deux surfaces ou un domaine saisi ; 14 exemples (QCalc Pro)
-• Partager un graphique en image ; widget, tuile des réglages rapides et raccourcis
-• Touchez un résultat : dans la saisie, dans l’historique ou copié. Historique avec recherche, épingles, notes et sommes ; touches mémoire
-• Nombres écrits 1 234,5, 1.234,5 ou 1,234.5, selon votre région
-• Unités japonaises traditionnelles (30 tsubo to m²)
-• Exemples et conseils dans l’app ; listes de fonctions, d’unités et de constantes ; vos propres variables et fonctions
-• Suggestions à la saisie : unités après « to », noms de fonctions et d’unités
-• Quatre pages de touches (123, Fonctions, Analyse, Matrice) ou le clavier du téléphone ; trois tailles de texte ; clair ou sombre
-• En français, anglais, japonais, espagnol, allemand, coréen et chinois traditionnel
+Une calculatrice scientifique où l’on tape les calculs comme sur papier : unités et devises, prix TTC et prêts, équations, courbes, et même le volume d’un solide de révolution, dans une seule application.
+Essayez « 100 km/h to mph », « solve(x^2 − 5x + 6 = 0) » ou « 3/8 + 1/6 » : le résultat peut rester exact, avec fractions, racines et π.
 
-■ QCalc Pro
-Un achat unique dans l’app débloque : plus de 1000 chiffres, graphiques 3D, thèmes de couleurs, export de l’historique, tableaux en CSV, fonds de cuves avec barèmes, solides d’un profil mesuré (volume, contenance, masse), fichiers STL pour imprimantes 3D, GIF animés des graphiques 3D, images sans marque, plus de notes de calcul et les fonctions Pro à venir. Sans abonnement ; tout le reste est gratuit.
+■ Pour les élèves, les étudiants et les profs
+• Tracez des fonctions, déplacez et zoomez du doigt ; dérivée, tangente, zéros, extremums et aires sur la courbe
+• Transformez la région entre deux courbes en solide de révolution avec « ⟳ 3D » et voyez son volume aussitôt ; touchez un axe pour le changer. Disques et tubes, théorème de Guldin, solides à section carrée, triangulaire ou demi-circulaire
+• Équations et systèmes, dérivées, intégrales, limites, sommes, matrices jusqu’à 30 × 30, complexes, binaire, octal et hexadécimal
+• Moyenne, médiane, écart type, quartiles et régression avec graphique
+• Jusqu’à 200 000 chiffres (plus de 1 000 chiffres avec QCalc Pro)
 
-■ Confidentialité
-QCalc ne collecte aucune donnée personnelle et n’envoie rien au développeur. Pas de publicité. Internet sert uniquement aux taux de change ; Google Play gère l’achat de QCalc Pro. L’historique et les paramètres restent sur votre appareil.
+■ Pour le chantier, l’atelier et le bureau d’études
+• Aires et volumes de 22 formes, liquide dans une cuve (hauteur ⇄ volume), volume d’après des sections mesurées, masse d’après la masse volumique
+• Calculez avec les unités (2,4 m × 1,8 m × 0,15 m to L) et la propagation des incertitudes
+• QCalc Pro : fonds de cuves (hémisphériques, elliptiques, torisphériques) avec barèmes de jaugeage ; volume, contenance et masse d’un solide d’après un profil mesuré ; fichiers STL pour l’impression 3D ; tableaux en CSV
 
-■ Logiciel libre
-QCalc est un logiciel libre sous licence GNU GPL version 2 ou ultérieure. Le code source est sur GitHub :
-https://github.com/HiroshiTsu/qcalc
+■ Pour les courses et le budget
+• Prix avec remise et TVA (20 %, 10 %, 5,5 %), pourcentages, prix au kilo ou à l’unité, partage de l’addition, mensualité d’un prêt immobilier avec tableau d’amortissement, épargne, dates (dans X jours, âge), heures travaillées et salaire
+• Devises aux taux de la Banque centrale européenne et d’autres sources
+• Notes de calcul : un calcul par ligne, avec total et valeurs nommées (loyer = 850 EUR)
 
-libqalculate est un logiciel libre développé par Hanna Knutsson et d’autres (https://qalculate.github.io/). QCalc n’est pas une app officielle de Qalculate! et est réalisé par un particulier sans lien avec les développeurs de Qalculate!.
+■ Simple à utiliser
+• Chaque outil a des exemples : touchez-en un, le résultat s’affiche. Touchez un résultat pour le saisir, le garder dans l’historique ou le copier
+• Historique : recherche, épinglage, notes, somme des lignes ; touches mémoire
+• Widget pour l’écran d’accueil, vignette dans les réglages rapides, partage d’un graphique en image
+• Sept langues, dont le français. Le mode d’emploi est dans l’application et fonctionne hors ligne : « ? » ouvre la bonne page
 
-■ Configuration requise
-Android 7.0 ou ultérieur sur un appareil ARM 64 bits (arm64).
+■ QCalc Pro (un achat dans l’application)
+Graphique 3D (volume et aire, solides de révolution en 3D, GIF animés), plus de 1 000 chiffres, fonds de cuves, solides d’après un profil, STL, CSV des tableaux et de l’historique, thèmes de couleurs, plusieurs notes de calcul. Pas d’abonnement. Tout ce qui sert aux études et au quotidien fonctionne sans achat. Le prix s’affiche sur l’écran d’achat de Google Play.
 
-Résultats indicatifs : à ne pas utiliser pour le commerce ou la certification, la conception et la construction, ni les impôts ; vérifiez les résultats importants par une méthode officielle.
+■ Confidentialité et code ouvert
+• Il n’y a ni publicité ni abonnement.
+• Tous les calculs se font sur votre téléphone. Internet ne sert qu’aux taux de change ; calculs, graphiques et mode d’emploi fonctionnent hors ligne.
+• QCalc ne collecte aucune donnée personnelle et n’envoie rien au développeur. L’historique et les réglages restent sur votre téléphone.
+• Code source ouvert (GNU GPL v2 ou ultérieure) : https://github.com/HiroshiTsu/qcalc
+• QCalc utilise libqalculate, le moteur de calcul open source de Qalculate!. QCalc est un projet indépendant d’une seule personne, sans lien avec les développeurs de Qalculate!.
+
+■ À noter
+Les résultats sont donnés à titre indicatif. Ne les utilisez pas pour des transactions ou certifications, la conception et la construction ni les impôts ; vérifiez les résultats importants par une méthode officielle.
+
+■ Contact
+Bogues et suggestions : hiroshitsu.apps@gmail.com
+Mode d’emploi avec photos et en PDF : https://hiroshitsu.github.io/qcalc/manual/
+Nécessite Android 7.0 ou plus récent sur un appareil ARM 64 bits (arm64).
+<!-- /listing -->
+
+<!-- listing: fr-CA -->
+## Français (Canada, fr-CA)
+
+### App name
+
+QCalc – Calculatrice graphique
+
+### Short description
+
+Vos calculs comme sur papier : unités, devises, taxes, prêts, graphiques et 3D.
+
+### Full description
+
+Une calculatrice scientifique où l’on entre les calculs comme sur papier : unités et devises, prix avec taxes et prêts, équations, graphiques, et même le volume d’un solide de révolution, dans une seule application.
+Essayez « 100 km/h to mph », « solve(x^2 − 5x + 6 = 0) » ou « 3/8 + 1/6 » : le résultat peut rester exact, avec fractions, racines et π.
+
+■ Pour les élèves, les étudiants et les enseignants
+• Tracez des fonctions, déplacez et zoomez du doigt ; dérivée, tangente, zéros, extremums et aires sur le graphique
+• Transformez la région entre deux courbes en solide de révolution avec « ⟳ 3D » et voyez son volume aussitôt ; touchez un axe pour le changer. Disques et tubes, théorème de Pappus-Guldin, solides à section carrée, triangulaire ou demi-circulaire
+• Équations et systèmes, dérivées, intégrales, limites, sommes, matrices jusqu’à 30 × 30, complexes, binaire, octal et hexadécimal
+• Moyenne, médiane, écart type, quartiles et régression avec graphique
+• Jusqu’à 200 000 chiffres (plus de 1 000 chiffres avec QCalc Pro)
+
+■ Pour le chantier, l’atelier et la conception
+• Aires et volumes de 22 formes, liquide dans un réservoir (hauteur ⇄ volume), volume d’après des sections mesurées, masse d’après la masse volumique
+• Calculez avec les unités (12 ft × 9,5 ft to m²) et la propagation des incertitudes
+• QCalc Pro : fonds de réservoirs (hémisphériques, elliptiques, torisphériques) avec tables de jaugeage ; volume, contenance et masse d’un solide d’après un profil mesuré ; fichiers STL pour l’impression 3D ; tableaux en CSV
+
+■ Pour l’épicerie et le budget
+• Prix avec rabais et taxes (TPS et TVQ), pourcentages, prix à l’unité, partage de la facture, paiement mensuel d’un prêt hypothécaire avec tableau d’amortissement, épargne, dates (dans X jours, âge), heures travaillées et salaire
+• Devises aux taux de la Banque centrale européenne et d’autres sources
+• Notes de calcul : un calcul par ligne, avec total et valeurs nommées (loyer = 1650 CAD)
+
+■ Simple à utiliser
+• Chaque outil a des exemples : touchez-en un, le résultat s’affiche. Touchez un résultat pour le saisir, le garder dans l’historique ou le copier
+• Historique : recherche, épinglage, notes, somme des lignes ; touches mémoire
+• Widget pour l’écran d’accueil, tuile dans les paramètres rapides, partage d’un graphique en image
+• Sept langues, dont le français. Le guide d’utilisation est dans l’application et fonctionne hors ligne : « ? » ouvre la bonne page
+
+■ QCalc Pro (un achat intégré)
+Graphique 3D (volume et aire, solides de révolution en 3D, GIF animés), plus de 1 000 chiffres, fonds de réservoirs, solides d’après un profil, STL, CSV des tableaux et de l’historique, thèmes de couleurs, plusieurs notes de calcul. Pas d’abonnement. Tout ce qui sert aux études et au quotidien fonctionne sans achat. Le prix s’affiche sur l’écran d’achat de Google Play.
+
+■ Confidentialité et code ouvert
+• Il n’y a ni publicité ni abonnement.
+• Tous les calculs se font sur votre cellulaire. Internet ne sert qu’aux taux de change ; calculs, graphiques et guide fonctionnent hors ligne.
+• QCalc ne recueille aucune donnée personnelle et n’envoie rien au développeur. L’historique et les paramètres restent sur votre cellulaire.
+• Code source ouvert (GNU GPL v2 ou ultérieure) : https://github.com/HiroshiTsu/qcalc
+• QCalc utilise libqalculate, le moteur de calcul à code source ouvert de Qalculate!. QCalc est un projet indépendant d’une seule personne, sans lien avec les développeurs de Qalculate!.
+
+■ À noter
+Les résultats sont fournis à titre indicatif. Ne les utilisez pas pour des transactions ou certifications, la conception et la construction ni la déclaration de revenus ; vérifiez les résultats importants par une méthode officielle.
+
+■ Contact
+Bogues et suggestions : hiroshitsu.apps@gmail.com
+Guide d’utilisation avec photos et en PDF : https://hiroshitsu.github.io/qcalc/manual/
+Nécessite Android 7.0 ou plus récent sur un appareil ARM 64 bits (arm64).
+<!-- /listing -->
 
 ## Notes de version
 

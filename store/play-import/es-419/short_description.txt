@@ -1,0 +1,1 @@
+Operaciones como en papel: unidades, monedas, IVA, préstamos, gráficas y 3D.
