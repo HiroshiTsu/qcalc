@@ -1435,7 +1435,7 @@ body.hselect #history { padding-bottom: 150px; }
 .rev-n input[type="range"] { min-width: 60px; }
 .rev-n-v { min-width: 2em; text-align: right; }
 /* the small choices inside a field (tax rates, "today"): touch areas of 48 dp */
-.tool-mini-chips .area-chip { min-height: 48px; min-width: 48px; padding: 0 10px; }
+.tool-mini-chips .area-chip { min-height: 48px; min-width: 48px; padding: 0 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); color: var(--text); font-size: 14px; }
 /* the first screen fits again at 360 × 740 (the keys became taller in A4, for 48 dp): on short screens
    the empty history is tighter, without the line on tapping results (also in the tips) */
 @media (max-height: 780px) {
@@ -1454,3 +1454,16 @@ body.hselect #history { padding-bottom: 150px; }
 .stat-more > summary { min-height: 48px; display: flex; align-items: center; }
 .tool-out .geo-val.geo-val-text { font-size: 14px; font-weight: 400; color: var(--muted); }
 .stat-more .geo-val { font-size: calc(15px * var(--fs)); }
+
+/* stage U (1.12.0): touch areas of 48 dp in the tools: the result rows, the "+ −" of the times, the
+   chips of the kinds of units and of "More shapes" (a little larger to touch than they look) */
+.tool-out .geo-row, .rev-out .geo-row { min-height: 48px; }
+.tool-choice .seg.mini button { min-width: 48px; }
+.geo-chip { position: relative; }
+.geo-chip::before { content: ""; position: absolute; left: -4px; right: -4px; top: -6px; bottom: -6px; }
+.conv-kinds .geo-chip { min-height: 40px; }
+.conv-kinds { margin-bottom: 8px; }
+/* a field with small choices (three tax rates in Spanish and French): the field keeps room for a
+   number, and the choices go under it when the row is too narrow */
+.geo-size:has(.tool-mini-chips) input { min-width: 88px; }
+.tool-mini-chips { margin-left: auto; }
