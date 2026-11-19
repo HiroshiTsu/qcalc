@@ -1575,7 +1575,7 @@ body.hselect #history { padding-bottom: 150px; }
 .manual-doc .m-toc-t { font-weight: 700; }
 .manual-doc .m-toc ol { margin: 0; padding-left: 1.3em; }
 .manual-doc .m-toc ol ol { font-size: .94em; }
-.manual-doc .m-toc a { display: inline-block; min-height: 40px; line-height: 40px; }
+.manual-doc .m-toc a { display: block; min-height: 40px; padding: 9px 0; line-height: 22px; box-sizing: border-box; } /* (a long title wraps with its number on its first line) */
 .manual-doc .m-lbl { font-weight: 700; }
 .manual-doc .m-what .m-lbl { display: block; color: var(--muted); font-size: .9em; }
 .manual-doc .m-steps ol { margin: .2em 0; padding-left: 1.5em; }

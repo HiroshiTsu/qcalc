@@ -37,7 +37,7 @@ a { color: var(--accent); }
 .m-toc-t { font-weight: 700; margin-bottom: 4px; }
 .m-toc ol { margin: 0; padding-left: 1.4em; }
 .m-toc ol ol { padding-left: 1.2em; font-size: .94em; }
-.m-toc a { display: inline-block; padding: 3px 0; }
+.m-toc a { display: block; padding: 3px 0; }  /* (block: a long title that wraps keeps its number on its first line) */
 .m-lbl { font-weight: 700; }
 .m-what .m-lbl { display: block; color: var(--muted); font-size: .9em; }
 .m-steps { margin: .6em 0; }
@@ -372,7 +372,6 @@ th { background: var(--box); }
 <path d="M300 30v110M296 30h8M296 140h8" stroke="currentColor" opacity=".7"/><text x="309" y="90" font-size="12" fill="currentColor">D</text>
 <path d="M150 140v-40" stroke="var(--m-accent)" stroke-width="1.5"/><path d="M146 104l4-6 4 6" stroke="var(--m-accent)" fill="none"/><text x="156" y="128" font-size="12" fill="var(--m-accent)">h</text>
 <path d="M40 85h-14M280 85h14" stroke="currentColor" opacity=".5" stroke-dasharray="3 3"/>
-<text x="20" y="160" font-size="11" fill="currentColor" opacity=".8">A</text><text x="292" y="160" font-size="11" fill="currentColor" opacity=".8">A</text>
 </svg><figcaption>臥式槽（L 長度，D 直徑，h 液面高度）</figcaption></figure>
 <div class="m-steps"><div class="m-lbl">步驟</div><ol><li>在 <b class="ui">工具</b> 中打開 <b class="ui">容器液量</b>。</li><li>選擇形狀，輸入直徑（或半徑）和長度。</li><li>輸入液面高度，選擇長度單位。</li></ol></div>
 <figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/tanks.jpg" alt="臥式槽的液量" width="360"></div><figcaption>臥式槽的液量</figcaption></figure>
