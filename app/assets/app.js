@@ -4966,9 +4966,12 @@
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
     if (!a || !b) { U.len.textContent = tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'); return; }
     const g = areaG(), key = areaKey();
+    // (1.12.0: the length follows the range by itself, so an older run that ends later must not
+    // write over the newer one; until 1.11.0 it was calculated only with the button)
+    const gen = U.lenGen = (U.lenGen || 0) + 1, live = () => gen === U.lenGen && areaKey() === key;
     U.len.textContent = tr('Calculating…', '計算中…');
     U.lenKey = ''; P.lenExpr = ''; showAreaMode();
-    const fail = (text) => { U.len.textContent = text || tr('Could not calculate the length', '長さを計算できませんでした'); U.lenKey = key; };
+    const fail = (text) => { if (!live()) return; U.len.textContent = text || tr('Could not calculate the length', '長さを計算できませんでした'); U.lenKey = key; };
     // the integral for the input field: the curve, or both curves and the vertical sides
     const arc = (e) => `integrate(√(1 + (diff(${e}, x))^2), ${a}, ${b})`;
     const lenExpr = g ? `${arc(f.expr)} + ${arc(g.expr)} + ${subXY(`abs((${f.expr}) − (${g.expr}))`, '(' + a + ')', 'y')} + ${subXY(`abs((${f.expr}) − (${g.expr}))`, '(' + b + ')', 'y')}` : arc(f.expr);
@@ -5002,11 +5005,13 @@
       }
     }
     const lf = await sumValues(lfs);
+    if (!live()) return;
     const onGraph = (name, val) => { U.lenShown = true; U.lenKey = key; P.lenExpr = lenExpr; showAreaMode(); if (P.area) { P.area.lenText = shortValue(name, val.text); draw(); } };
     const note = () => { if (clipped) U.len.append(el('div', { class: 'form-hint', text: realNote(!!g, parts) })); };
     if (!g) { U.lenText = shownValue(lf); U.lenName = tr('Length of the curve', '曲線の長さ'); U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + shownValue(lf)); note(); onGraph(tr('Length', '長さ'), lf); return; }
     const lg = await sumValues(lgs);
     const total = await sumValues(lfs.concat(lgs, sides));
+    if (!live()) return;
     U.len.textContent = '';
     U.lenText = shownValue(total); U.lenName = tr('Perimeter', '周の長さ');
     showResult(U.len, tr('Perimeter ', '周の長さ ') + shownValue(total));
@@ -5371,6 +5376,7 @@
     if (nums.length === 2 && nums.every(isFinite) && nums[0] !== nums[1]) {
       const lo = Math.min(nums[0], nums[1]), hi = Math.max(nums[0], nums[1]);
       real = await realParts(g ? [f.expr, g.expr] : [f.expr], nums[0] < nums[1] ? a : b, nums[0] < nums[1] ? b : a, lo, hi);
+      if (areaKey() !== key) return;
       if (real && !real.parts.length) { if (!shadeOnly) { U.out.textContent = noRealText(); U.areaKey = key; } P.area = null; draw(); return; }
       if (real && !real.clipped) real = null;
     }
@@ -5400,6 +5406,7 @@
     }
     const expr = pieces.length <= 8 ? pieces.join(' + ') : real ? real.parts.map((p) => `integrate(abs(${d}), ${p.a}, ${p.b})`).join(' + ') : `integrate(abs(${d}), ${a}, ${b})`;
     const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: auto ? Math.min(5000, timeLimit() * 1000) : timeLimit() * 1000 });
+    if (areaKey() !== key) return; // (another range or other functions meanwhile: that run writes, 1.12.0)
     const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
     // a result the engine could not integrate exactly still has its approximate value after ≈
     if (r.ok && r.result && /∫|integrate\(/.test(r.result) && r.result.indexOf('≈') > 0) r.result = '≈ ' + r.result.split('≈').pop().trim();
