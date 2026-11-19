@@ -1013,7 +1013,6 @@
     "Turn a region of the 2D graph around an axis: volume and surface": "Girar una región de la gráfica 2D alrededor de un eje: volumen y superficie",
     "Volumes of regions": "Volúmenes de regiones",
     "Volumes over regions of the plane": "Volúmenes sobre regiones del plano",
-    "Solids with known cross sections": "Sólidos de sección conocida",
     "Squares, triangles or half discs on a base region": "Cuadrados, triángulos o semicírculos sobre una base",
     "History tools": "Herramientas del historial",
     "Search, pin, notes, and the sum of lines": "Buscar, fijar, notas y la suma de líneas",

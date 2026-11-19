@@ -1001,7 +1001,6 @@
     "Turn a region of the 2D graph around an axis: volume and surface": "Einen Bereich des 2D-Graphen um eine Achse drehen: Volumen und Oberfläche",
     "Volumes of regions": "Volumen über Bereichen",
     "Volumes over regions of the plane": "Volumen über Bereichen der Ebene",
-    "Solids with known cross sections": "Körper mit bekannten Querschnitten",
     "Squares, triangles or half discs on a base region": "Quadrate, Dreiecke oder Halbkreise über einer Grundfläche",
     "History tools": "Verlaufswerkzeuge",
     "Search, pin, notes, and the sum of lines": "Suchen, anheften, Notizen und die Summe von Zeilen",

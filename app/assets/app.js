@@ -389,9 +389,10 @@
     tanks: 'free',         // the volume of liquid in tanks (1.10): recommended free (the heads of D1: Pro)
     revolution: 'free',    // solids of revolution in the 2D graph (1.10): recommended free (the 3D view needs Pro)
     regions: 'free',       // volumes of regions (1.10): recommended free
-    sections: 'free',      // solids with known cross sections (1.11): recommended free
+    sections: 'free',      // the volume from measured values (1.11): recommended free
     history_tools: 'free', // the history: search, pin, notes, sum of lines (1.12 A5): recommended free (usability)
-    memkeys: 'free'        // the memory keys (1.12 A5): recommended free (usability)
+    memkeys: 'free',       // the memory keys (1.12 A5): recommended free (usability)
+    cross_sections: 'free' // solids with known cross sections (1.12 B1): recommended free (2D and the volume; the 3D view needs Pro)
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -5968,7 +5969,7 @@
     // 1.12.0: "Make a solid ▾" holds the kinds of solids made from the shaded region (the solid of
     // revolution now; the solid with known cross sections follows)
     const kRev = tapButton({ text: tr('Revolution (turned around an axis)', '回転体（軸のまわりに回す）') }, () => setKind('rev'));
-    const kSec = tapButton({ text: tr('Cross sections (shapes standing on the region)', '断面の立体（底面に形を立てる）') }, () => setKind('sec'));
+    const kSec = tapButton({ text: tr('Cross sections (shapes standing on the region)', '断面の立体（底面に形を立てる）') }, () => { if (R.kind !== 'sec' && proGate('cross_sections')) setKind('sec'); });
     const kinds = el('div', { class: 'seg mini solid-kinds', role: 'group', 'aria-label': tr('Kind of solid', '立体の種類') }, kRev, kSec);
     const axisRow = el('div', { class: 'plot-range' }, el('span', { text: tr('Axis', '軸') }), el('span', { class: 'seg mini rev-axes' }, ...btns), kRow);
     // the shapes of the cross sections: the three common ones as picture buttons, the others under "More ▾"
@@ -11135,9 +11136,10 @@
     tanks: ['🛢', tr('Tanks', '容器'), tr('The volume of liquid at a level in horizontal and vertical tanks', '横置き・縦置きのタンクで、液面の高さから液の量')],
     revolution: ['⟳', tr('Solids of revolution', '回転体'), tr('Turn a region of the 2D graph around an axis: volume and surface', '2D グラフの部分を軸のまわりに回した体積と表面積')],
     regions: ['▦', tr('Volumes of regions', '領域の体積'), tr('Volumes over regions of the plane', '平面の領域の上の体積')],
-    sections: ['◪', tr('Solids with known cross sections', '断面が分かる立体'), tr('Squares, triangles or half discs on a base region', '底面の上に正方形・三角形・半円を立てた立体')],
+    sections: ['📏', tr('Volume from measured values', '測った値から体積'), tr('Cross sections or a grid of heights (earthwork, ponds)', '断面積の表や、格子の点の高さから（土量・池など）')],
     history_tools: ['🕘', tr('History tools', '履歴の道具'), tr('Search, pin, notes, and the sum of lines', '検索・固定・メモ・選んだ行の合計')],
-    memkeys: ['M+', tr('Memory keys', 'メモリーキー'), 'M+ M− MR MC']
+    memkeys: ['M+', tr('Memory keys', 'メモリーキー'), 'M+ M− MR MC'],
+    cross_sections: ['◪', tr('Cross sections', '断面の立体'), tr('Squares, triangles or half discs on a base region', '底面の上に正方形・三角形・半円を立てた立体')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {

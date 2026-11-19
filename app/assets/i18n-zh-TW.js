@@ -1005,7 +1005,6 @@
     "Turn a region of the 2D graph around an axis: volume and surface": "將 2D 圖形的區域繞軸旋轉：體積與表面積",
     "Volumes of regions": "區域的體積",
     "Volumes over regions of the plane": "平面區域上方的體積",
-    "Solids with known cross sections": "已知截面的立體",
     "Squares, triangles or half discs on a base region": "在底面上立起正方形、三角形或半圓",
     "History tools": "記錄工具",
     "Search, pin, notes, and the sum of lines": "搜尋、固定、備註、選取行的合計",

@@ -1004,7 +1004,6 @@
     "Turn a region of the 2D graph around an axis: volume and surface": "2D 그래프의 영역을 축 둘레로 돌린 부피와 겉넓이",
     "Volumes of regions": "영역의 부피",
     "Volumes over regions of the plane": "평면 영역 위의 부피",
-    "Solids with known cross sections": "단면을 아는 입체",
     "Squares, triangles or half discs on a base region": "밑면 위에 정사각형·삼각형·반원을 세운 입체",
     "History tools": "기록 도구",
     "Search, pin, notes, and the sum of lines": "검색·고정·메모·선택한 줄의 합계",
