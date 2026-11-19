@@ -1444,3 +1444,13 @@ body.hselect #history { padding-bottom: 150px; }
   .empty .empty-try { margin-top: 4px; }
   .ex-chips { margin: 2px 0 6px; }
 }
+
+/* the statistics tool (1.12.0, C4): one column of values flows in rows (fewer screens to scroll),
+   the prediction and the graph only for two columns */
+.stat-table:not(.sec-2) { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+.stat-table:not(.sec-2) .sec-h { grid-column: 1 / -1; }
+.stat-px[hidden], .geo-graph[hidden] { display: none; }
+.stat-table input { min-height: 44px; }
+.stat-more > summary { min-height: 48px; display: flex; align-items: center; }
+.tool-out .geo-val.geo-val-text { font-size: 14px; font-weight: 400; color: var(--muted); }
+.stat-more .geo-val { font-size: calc(15px * var(--fs)); }

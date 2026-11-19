@@ -409,7 +409,8 @@
     everyday: 'free',      // the everyday tools with their tables shown (1.12 C1)
     tables: 'pro',         // saving the tables as CSV files (1.12 C1, D1): Pro, as exporting the history
     convert: 'free',       // the conversion of units and currencies (1.12 C2)
-    quick: 'free'          // the widget, the tile and the shortcuts of the icon (1.12 C3)
+    quick: 'free',         // the widget, the tile and the shortcuts of the icon (1.12 C3)
+    stats: 'free'          // statistics: one or two columns, regression, the graph (1.12 C4)
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -3359,6 +3360,7 @@
     tr('Touch and hold a result with x (x³ − 3x), or tap its ⋯, to differentiate or integrate it, draw its graph or put in a value for x.', 'x を含む結果（x³ − 3x など）を長押しするか ⋯ をタップすると、微分・積分・グラフ・x への値の代入ができます。'),
     tr('Type the "=" of an equation with the a=b key (the large = key calculates). Example: solve(x^2 = 16)', '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)'),
     tr('Language (in the menu or the settings): "Same as device" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone\'s language changes.', '言語（メニューか設定）：「端末の設定に合わせる」にすると、スマホの言語に合わせます（変えたときも）。端末の言語に QCalc がないときは英語になります。一覧から言語を選ぶと、スマホの言語を変えてもその言語のままです。'),
+    tr('Tools → Statistics: values one per row (or pasted from a spreadsheet) give the mean, median, standard deviations and quartiles; with two columns x and y, the regression line, r and R², and the points with the line in a graph.', '道具 →「統計」：値を 1 行に 1 つ入れる（表計算ソフトから貼り付けもできる）と、平均・中央値・標準偏差・四分位数。x と y の 2 列なら、回帰直線・相関係数・決定係数と、点と直線のグラフ。'),
     tr('In the app: Tools → "Open QCalc quickly" puts a widget with the last result on the home screen or adds a tile to the quick settings. Touch and hold the QCalc icon for New calculation, Tools and Convert.', 'アプリでは「道具」→「QCalc をすぐ開く」で、最後の結果が見えるウィジェットをホーム画面に置いたり、クイック設定にタイルを足したりできます。QCalc のアイコンを長押しすると「新しい計算」「道具」「換算」を選べます。'),
     tr('With a decimal comma (Settings → Number format: 1.234,5 or 1 234,5, or automatically in such a region) type 1,5 and separate the arguments with ";": max(1,5; 2). In a matrix the elements are separated by spaces: [1,5 2; 3 4]. The history stays as it was when the setting is changed.', '小数点を「,」にした場合（設定 →「数の書き方」で 1.234,5 か 1 234,5、または自動でその地域）は、1,5 のように入れ、引数は「;」で区切ります：max(1,5; 2)。行列の要素は空白で区切ります：[1,5 2; 3 4]。設定を変えても履歴はそのままです。'),
     tr('Type a matrix as [1, 2; 3, 4]: "," between the elements and ";" between the rows. Matrix results are shown as tables in the history.', '行列は [1, 2; 3, 4] のように、要素を「,」、行を「;」で区切って入力します。結果の行列は履歴に表の形で表示されます。'),
@@ -4099,6 +4101,8 @@
     if (!keepView) P.view = null;
     P.legend.textContent = '';
     for (const s of P.series) P.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.y.some((v) => v !== null) ? '' : tr(' (no values)', '（値なし）')) }));
+    // (1.12.0, C4: the points of the statistics with their regression line)
+    if (P.points && P.points.length) P.legend.append(el('span', { class: 'legend-points', style: '--c:' + COLORS[0], text: tr('Points: ', '点：') + P.points.length }));
     if (kept && P.series[kept[0]] && (kept[1] < 0 || P.series[kept[1]])) {
       P.area.f = P.series[kept[0]]; P.area.g = kept[1] < 0 ? null : P.series[kept[1]];
     } else {
@@ -11294,6 +11298,268 @@
   const KIND_ALIASES = { Speed: ['Speed', 'Velocity'], Mass: ['Mass', 'Weight'] };
   const JP_UNIT_KIND = { 坪: 'Area', 反: 'Area', 畝: 'Area', 町歩: 'Area', 歩: 'Area', 寸: 'Length', 尺: 'Length', 間: 'Length', 丈: 'Length', 里: 'Length', 町: 'Length',
     合: 'Volume', 升: 'Volume', 斗: 'Volume', 石: 'Volume', 勺: 'Volume', 匁: 'Mass', 貫: 'Mass', 斤: 'Mass', 両: 'Mass' };
+  // ------------------------------------------------------- statistics (1.12.0, C4)
+  // "Statistics" in Tools ("Data"): one column (count, sum, mean, median, mode, the standard deviations
+  // of a sample and of a population, the quartiles) or two (the regression line first, the other
+  // models under "More ▾", r, R² and a predicted value), and the points with the line in the 2D
+  // graph. The numbers are worked out here in double precision and shown with 10 significant digits;
+  // a tap on a result offers the engine's expression (mean([…]), median([…]) …), which the calculator
+  // gives exactly. The quartiles are those of the school books (the medians of the lower and the
+  // upper half, without the median when n is odd); the spreadsheets' QUARTILE.INC is under "More".
+  const STAT_MAX = 2000;
+  const STAT_EX = () => [
+    [tr('Test scores (1 column)', 'テストの点（1 列）'), 1, [62, 75, 81, 58, 90, 73, 68, 85, 77, 70].map((v) => [String(v)])],
+    [tr('Height and weight (2 columns)', '身長と体重（2 列）'), 2, [[155, 50], [160, 54], [165, 59], [170, 62], [175, 68], [180, 72]].map((r) => r.map(String))],
+    [tr('Temperature and sales (2 columns)', '気温と売上（2 列）'), 2, [[18, 120], [21, 135], [24, 160], [27, 190], [30, 230], [33, 260]].map((r) => r.map(String))]
+  ];
+  // a number as shown: 10 significant digits, the number format, "× 10^−5" for very small or large ones
+  function statNum(v) {
+    if (!isFinite(v)) return '';
+    if (v === 0) return '0';
+    let s = String(+v.toPrecision(10)), exp = '';
+    const m = s.match(/^(-?[\d.]+)e([+-]\d+)$/);
+    if (m) { s = m[1]; exp = ' × 10^' + String(Number(m[2])).replace('-', '−'); }
+    const neg = s[0] === '-';
+    if (neg) s = s.slice(1);
+    let [i, f] = s.split('.');
+    i = i.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group);
+    return (neg ? '−' : '') + i + (f ? NF.dec + f : '') + exp;
+  }
+  // a value typed or pasted into the table (the number format, also 1.5e3); NaN if it is not a number
+  function statVal(t) {
+    const s = String(t || '').trim();
+    if (!s) return NaN;
+    const v = boxNum(s);
+    if (isFinite(v) && !/[%割]$/.test(s)) return v;
+    const e = s.replace(/[−–]/g, '-').replace(commaMode ? ',' : /^$/, '.');
+    return /^-?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(e) ? Number(e) : NaN;
+  }
+  const statMedian = (a) => { const k = a.length; return k ? (k % 2 ? a[(k - 1) / 2] : (a[k / 2 - 1] + a[k / 2]) / 2) : NaN; };
+  // one column: n, sum, mean, median, modes, variances, quartiles (school books and QUARTILE.INC), min, max
+  function statOne(xs) {
+    const n = xs.length, s = xs.slice().sort((a, b) => a - b);
+    let sum = 0, c = 0; // (compensated sum)
+    for (const x of xs) { const y = x - c, t = sum + y; c = (t - sum) - y; sum = t; }
+    const mean = sum / n;
+    let m2 = 0;
+    for (const x of xs) m2 += (x - mean) * (x - mean);
+    const half = Math.floor(n / 2), lower = s.slice(0, half), upper = s.slice(n - half);
+    const cnt = new Map();
+    for (const x of s) cnt.set(x, (cnt.get(x) || 0) + 1);
+    const top = Math.max(...cnt.values()), modes = top > 1 ? Array.from(cnt).filter((e) => e[1] === top).map((e) => e[0]) : [];
+    const inc = (p) => { const h = (n - 1) * p, lo = Math.floor(h); return s[lo] + (h - lo) * (s[Math.min(lo + 1, n - 1)] - s[lo]); };
+    return { n, sum, mean, median: statMedian(s), modes, top, vs: n > 1 ? m2 / (n - 1) : NaN, vp: m2 / n,
+      q1: statMedian(lower), q3: statMedian(upper), lower, upper, min: s[0], max: s[n - 1], inc1: inc(0.25), inc3: inc(0.75) };
+  }
+  // least squares: y = a x + b on (u, v); r
+  function statLine(us, vs) {
+    const n = us.length;
+    let mu = 0, mv = 0;
+    for (let i = 0; i < n; i++) { mu += us[i]; mv += vs[i]; }
+    mu /= n; mv /= n;
+    let suu = 0, suv = 0, svv = 0;
+    for (let i = 0; i < n; i++) { const du = us[i] - mu, dv = vs[i] - mv; suu += du * du; suv += du * dv; svv += dv * dv; }
+    if (!(suu > 0)) return null;
+    const a = suv / suu;
+    return { a, b: mv - a * mu, r: svv > 0 ? suv / Math.sqrt(suu * svv) : NaN, mu, mv };
+  }
+  // R² of a model f on the original y: 1 − SSres / SStot
+  function statR2(xs, ys, f) {
+    const my = ys.reduce((s, y) => s + y, 0) / ys.length;
+    let ssr = 0, sst = 0;
+    for (let i = 0; i < xs.length; i++) { const e = ys[i] - f(xs[i]); ssr += e * e; sst += (ys[i] - my) * (ys[i] - my); }
+    return sst > 0 ? 1 - ssr / sst : NaN;
+  }
+  // the models of two columns: [key, name, equation shown, expression (in x), f, R²] or [key, name, why not]
+  function statModels(xs, ys) {
+    const out = [], N = (v) => statNum(v), E = exprNum;
+    // (a term that is 0 is left out: y = 2x², y = 3x)
+    const signed = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + N(-v) + t : ' + ' + N(v) + t), signedE = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + E(-v) + t : ' + ' + E(v) + t);
+    const lead = (v, t, rest, restE) => (v === 0 ? [(rest.replace(/^ \+ /, '').replace(/^ − /, '−') || '0'), (restE.replace(/^ \+ /, '').replace(/^ − /, '−') || '0')] : [N(v) + t + rest, E(v) + t + restE]);
+    // a coefficient that is only rounding (its term below 1e-10 of the largest y) is 0: y = 2x², not 2x² + 3.1 × 10^−15
+    const ymax = Math.max(...ys.map(Math.abs)) || 1, xmax = Math.max(...xs.map(Math.abs)) || 1;
+    const snap = (v, k) => (Math.abs(v) * Math.pow(xmax, k) < 1e-10 * ymax ? 0 : v);
+    const L0 = statLine(xs, ys), L = L0 && Object.assign({}, L0, { a: snap(L0.a, 1), b: snap(L0.b, 0) });
+    if (L) {
+      const f = (x) => L.a * x + L.b;
+      const [sh, ex] = lead(L.a, 'x', signed(L.b, ''), signedE(L.b, ''));
+      out.push(['linear', tr('Line', '直線'), 'y = ' + sh, ex, f, statR2(xs, ys, f), L]);
+    }
+    // quadratic, in u = x − mean (for exact sums), then written in x
+    const distinct = new Set(xs).size;
+    if (distinct >= 3) {
+      const n = xs.length, m = xs.reduce((s, x) => s + x, 0) / n, S = [0, 0, 0, 0, 0], T = [0, 0, 0];
+      for (let i = 0; i < n; i++) { const u = xs[i] - m; let p = 1; for (let k = 0; k <= 4; k++) { S[k] += p; if (k <= 2) T[k] += p * ys[i]; p *= u; } }
+      const A = [[S[0], S[1], S[2], T[0]], [S[1], S[2], S[3], T[1]], [S[2], S[3], S[4], T[2]]];
+      for (let i = 0; i < 3; i++) {
+        let piv = i;
+        for (let j = i + 1; j < 3; j++) if (Math.abs(A[j][i]) > Math.abs(A[piv][i])) piv = j;
+        [A[i], A[piv]] = [A[piv], A[i]];
+        for (let j = 0; j < 3; j++) if (j !== i) { const q = A[j][i] / A[i][i]; for (let k = i; k < 4; k++) A[j][k] -= q * A[i][k]; }
+      }
+      const c0 = A[0][3] / A[0][0], c1 = A[1][3] / A[1][1], c2 = A[2][3] / A[2][2];
+      const p2 = snap(c2, 2), p1 = snap(c1 - 2 * c2 * m, 1), p0 = snap(c0 - c1 * m + c2 * m * m, 0), f = (x) => (p2 * x + p1) * x + p0;
+      const [sh, ex] = lead(p2, 'x²', signed(p1, 'x') + signed(p0, ''), signedE(p1, 'x') + signedE(p0, ''));
+      if ([p0, p1, p2].every(isFinite)) out.push(['quad', tr('Quadratic', '2 次式'), 'y = ' + sh, ex.replace('x²', 'x^2'), f, statR2(xs, ys, f)]);
+    } else out.push(['quad', tr('Quadratic', '2 次式'), tr('needs three different x', '異なる x が 3 つ必要です')]);
+    const ypos = ys.every((y) => y > 0), xpos = xs.every((x) => x > 0);
+    const Le = ypos ? statLine(xs, ys.map(Math.log)) : null;
+    if (Le) { const a = Math.exp(Le.b), b = Le.a, f = (x) => a * Math.exp(b * x); out.push(['exp', tr('Exponential', '指数'), 'y = ' + N(a) + ' e^(' + N(b) + 'x)', E(a) + ' e^(' + E(b) + 'x)', f, statR2(xs, ys, f)]); }
+    else out.push(['exp', tr('Exponential', '指数'), ypos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every y must be above 0', 'y がすべて 0 より大きいときだけ使えます')]);
+    const Ll = xpos ? statLine(xs.map(Math.log), ys) : null;
+    if (Ll) { const a = Ll.b, b = Ll.a, f = (x) => a + b * Math.log(x); out.push(['log', tr('Logarithmic', '対数'), 'y = ' + N(a) + signed(b, ' ln x'), E(a) + signedE(b, ' ln(x)'), f, statR2(xs, ys, f)]); }
+    else out.push(['log', tr('Logarithmic', '対数'), xpos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every x must be above 0', 'x がすべて 0 より大きいときだけ使えます')]);
+    const Lp = xpos && ypos ? statLine(xs.map(Math.log), ys.map(Math.log)) : null;
+    if (Lp) { const a = Math.exp(Lp.b), b = Lp.a, f = (x) => a * Math.pow(x, b); out.push(['power', tr('Power', '累乗'), 'y = ' + N(a) + ' x^' + N(b), E(a) + ' x^(' + E(b) + ')', f, statR2(xs, ys, f)]); }
+    else out.push(['power', tr('Power', '累乗'), xpos && ypos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every x and y must be above 0', 'x と y がすべて 0 より大きいときだけ使えます')]);
+    return out;
+  }
+  function openStatsTool() {
+    const p = panel('stats', tr('Statistics', '統計'), (p) => {
+      const saved = store.get('qalc.stats', null) || {};
+      const ex0 = STAT_EX()[0];
+      const D = { cols: saved.cols === 2 ? 2 : 1, rows: Array.isArray(saved.rows) && saved.rows.length ? saved.rows.slice(0, STAT_MAX) : ex0[2].map((r) => r.slice()), px: typeof saved.px === 'string' ? saved.px : '' };
+      const save = () => store.set('qalc.stats', { cols: D.cols, rows: D.rows, px: D.px });
+      const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
+        ...STAT_EX().map(([label, cols, rows]) => tapButton({ class: 'area-chip', text: label }, () => { D.cols = cols; D.rows = rows.map((r) => r.slice()); save(); setCols(cols); })));
+      const b1 = tapButton({ text: tr('1 column', '1 列') }, () => setCols(1)), b2 = tapButton({ text: tr('2 columns (x and y)', '2 列（x と y）') }, () => setCols(2));
+      const seg = el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Columns', '列の数') }, b1, b2);
+      const table = el('div', { class: 'sec-table stat-table', role: 'table' });
+      const tools = el('div', { class: 'sec-tools' });
+      const msg = el('div', { class: 'geo-msg', role: 'alert' });
+      const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
+      const more = el('details', { class: 'sec-more stat-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }));
+      const moreOut = el('div', { class: 'geo-out tool-out' });
+      more.append(moreOut);
+      const pxIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: D.px, placeholder: tr('e.g. 185', '例：185'), 'aria-label': tr('x for the predicted value', '予測する x') });
+      const pxRow = el('label', { class: 'geo-size stat-px' }, el('span', { class: 'geo-lbl', text: tr('Predict at x =', '予測：x =') }), pxIn);
+      const graph = tapButton({ class: 'btn geo-graph', text: tr('📈 Show in a graph', '📈 グラフで見る') }, () => showGraph());
+      const hint = el('div', { class: 'form-hint stat-hint' });
+      // a value box: on paste of several values (tabs, commas, lines) the table becomes the pasted one from there
+      const cell = (r, c) => {
+        const inp = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: (D.rows[r] || [])[c] || '',
+          placeholder: D.cols === 1 ? tr('value', '値') : c ? 'y' : 'x', 'aria-label': D.cols === 1 ? trf('Value, row {0}', '{0} 行目の値', r + 1) : trf('{0}, row {1}', '{1} 行目の {0}', c ? 'y' : 'x', r + 1) });
+        inp.addEventListener('input', () => { while (D.rows[r].length <= c) D.rows[r].push(''); D.rows[r][c] = inp.value; inp.removeAttribute('aria-invalid'); save(); run(); });
+        inp.addEventListener('paste', (e) => {
+          const t = (e.clipboardData || window.clipboardData).getData('text');
+          if (!/[\t\n;]/.test(t.trim()) && !(!commaMode && /,/.test(t.trim()))) return;
+          e.preventDefault();
+          const lines = t.replace(/\r/g, '').split('\n').filter((l) => l.trim() !== '');
+          if (lines.length > 1 && !/\d/.test(lines[0])) lines.shift(); // (a row of headings)
+          const cells = pastedDecimals(lines.map((l) => (/\t/.test(l) ? l.split('\t') : /;/.test(l) ? l.split(';') : !commaMode && /,/.test(l) ? l.split(',') : l.trim().split(/\s+/)).map((s) => s.trim())));
+          const wide = Math.max(...cells.map((x) => x.length));
+          if (r === 0 && c === 0) { D.rows = []; D.cols = wide >= 2 ? 2 : 1; }
+          cells.slice(0, STAT_MAX - r).forEach((vals, i) => {
+            while (D.rows.length <= r + i) D.rows.push(['', '']);
+            vals.slice(0, 2 - c).forEach((v, j) => { D.rows[r + i][c + j] = v; });
+          });
+          if (wide > 2) toast(tr('Only the first two columns are used', '最初の 2 列だけを使います'), 3000);
+          save(); setCols(D.cols);
+        });
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
+        return inp;
+      };
+      const btn = (text, label, f) => tapButton({ class: 'btn sec-btn', text, 'aria-label': label }, () => { f(); save(); build(); run(); });
+      const build = () => {
+        table.textContent = ''; tools.textContent = '';
+        table.classList.toggle('sec-2', D.cols === 2);
+        if (D.cols === 2) table.append(el('div', { class: 'sec-h', role: 'columnheader', text: 'x' }), el('div', { class: 'sec-h', role: 'columnheader', text: 'y' }));
+        else table.append(el('div', { class: 'sec-h', role: 'columnheader', text: tr('Values', '値') }));
+        D.rows.forEach((row, r) => { for (let c = 0; c < D.cols; c++) table.append(cell(r, c)); });
+        tools.append(btn(tr('+ Row', '+ 行'), tr('Add a row', '行を追加'), () => { if (D.rows.length < STAT_MAX) D.rows.push(['', '']); }),
+          btn(tr('− Row', '− 行'), tr('Delete the last row', '最後の行を削除'), () => { if (D.rows.length > 1) D.rows.pop(); }),
+          btn(tr('Clear', 'すべて消す'), tr('Clear the table', '表をすべて消す'), () => { D.rows = [['', ''], ['', ''], ['', '']]; }));
+      };
+      const setCols = (n) => {
+        D.cols = n;
+        for (const [b, k] of [[b1, 1], [b2, 2]]) { b.classList.toggle('on', n === k); b.setAttribute('aria-pressed', String(n === k)); }
+        pxRow.hidden = n !== 2; graph.hidden = n !== 2;
+        save(); build(); run();
+      };
+      pxIn.addEventListener('input', () => { D.px = pxIn.value; pxIn.removeAttribute('aria-invalid'); save(); run(); });
+      // a result row: a tap offers the three actions with the engine's expression
+      const row = (box, name, small, shown, expr, main) => {
+        const val = el('span', { class: 'geo-val', text: shown });
+        const node = tapButton({ class: 'geo-row' + (main ? ' tool-main' : '') }, () => { if (expr) resultSheet(name, expr, shown.replace(/^(?![=≈])/, '= ')); });
+        node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), val);
+        box.append(node);
+        return node;
+      };
+      const inputAt = (r, c) => table.querySelectorAll('input')[r * D.cols + c];
+      const fail = (inp, text) => { if (inp) inp.setAttribute('aria-invalid', 'true'); msg.textContent = text; outs.textContent = ''; moreOut.textContent = ''; more.hidden = true; D.fit = null; };
+      const list = (vs) => '[' + vs.map(exprNum).join(', ') + ']';
+      const run = () => {
+        msg.textContent = ''; outs.textContent = ''; moreOut.textContent = ''; more.hidden = false; D.fit = null;
+        const xs = [], ys = [];
+        for (let r = 0; r < D.rows.length; r++) {
+          const a = String(D.rows[r][0] || '').trim(), b = D.cols === 2 ? String(D.rows[r][1] || '').trim() : '';
+          if (!a && !b) continue;
+          if (D.cols === 2 && (!a || !b)) return fail(inputAt(r, a ? 1 : 0), trf('Row {0}: enter both x and y (or clear the row)', '{0} 行目：x と y の両方を入れてください（使わない行は空にします）', r + 1));
+          const va = statVal(a);
+          if (!isFinite(va)) return fail(inputAt(r, 0), trf('Row {0}: enter a number, such as 12.5', '{0} 行目：数を入れてください（例：12.5）', r + 1).replace('12.5', toDisplay('12.5')));
+          xs.push(va);
+          if (D.cols === 2) {
+            const vb = statVal(b);
+            if (!isFinite(vb)) return fail(inputAt(r, 1), trf('Row {0}: enter a number, such as 12.5', '{0} 行目：数を入れてください（例：12.5）', r + 1).replace('12.5', toDisplay('12.5')));
+            ys.push(vb);
+          }
+        }
+        if (!xs.length) return fail(null, tr('Enter the values in the table, one in each row (or paste them)', '表に値を 1 行に 1 つずつ入れてください（貼り付けもできます）'));
+        if (D.cols === 1) {
+          const s = statOne(xs), L = list(xs), dash = '—';
+          row(outs, tr('Mean', '平均'), 'x̄', statNum(s.mean), 'mean(' + L + ')', true);
+          row(outs, tr('Count', '個数'), 'n', String(s.n), String(s.n));
+          row(outs, tr('Sum', '合計'), 'Σx', statNum(s.sum), 'total(' + L + ')');
+          row(outs, tr('Median', '中央値'), '', statNum(s.median), 'median(' + L + ')');
+          const mo = row(outs, tr('Mode', '最頻値'), s.modes.length ? trf('{0} times', '{0} 回', s.top) : '', s.modes.length ? s.modes.map(statNum).join(', ') : tr('none (every value once)', 'なし（どの値も 1 回）'), s.modes.length === 1 ? 'mode(' + L + ')' : '');
+          if (!s.modes.length) mo.querySelector('.geo-val').classList.add('geo-val-text'); // (words, not a number)
+          row(outs, tr('Standard deviation (sample)', '標準偏差（標本）'), tr('s, divided by n − 1', 's、n − 1 で割る'), s.n > 1 ? statNum(Math.sqrt(s.vs)) : dash, s.n > 1 ? 'stdev(' + L + ')' : '');
+          row(outs, tr('Standard deviation (population)', '標準偏差（母集団）'), tr('σ, divided by n', 'σ、n で割る'), statNum(Math.sqrt(s.vp)), 'stdevp(' + L + ')');
+          row(outs, tr('Quartiles', '四分位数'), 'Q1 / Q3', s.n > 1 ? statNum(s.q1) + ' / ' + statNum(s.q3) : dash, s.n > 1 ? 'median(' + list(s.lower) + ')' : '');
+          row(moreOut, tr('Smallest / largest', '最小値 / 最大値'), '', statNum(s.min) + ' / ' + statNum(s.max), 'min(' + L + ')');
+          row(moreOut, tr('Range', '範囲'), tr('largest − smallest', '最大 − 最小'), statNum(s.max - s.min), 'max(' + L + ') − min(' + L + ')');
+          if (s.n > 1) row(moreOut, tr('Interquartile range', '四分位範囲'), 'Q3 − Q1', statNum(s.q3 - s.q1), 'median(' + list(s.upper) + ') − median(' + list(s.lower) + ')');
+          if (s.n > 1) row(moreOut, tr('Variance (sample / population)', '分散（標本 / 母集団）'), 's² / σ²', statNum(s.vs) + ' / ' + statNum(s.vp), 'var(' + L + ')');
+          row(moreOut, tr('Quartiles as in spreadsheets', '表計算ソフトの四分位数'), 'QUARTILE.INC', statNum(s.inc1) + ' / ' + statNum(s.inc3), 'quartile(' + L + ', 1)');
+          hint.textContent = tr('The sample standard deviation divides by n − 1 (for a part of all the data), the population one by n (for all of it). The quartiles are the medians of the lower and the upper half (without the median when n is odd), as in school books.',
+            '標本の標準偏差は n − 1 で割ります（全体の一部のデータから全体を推し量るとき）。母集団の標準偏差は n で割ります（データが全体のとき）。四分位数は、下半分と上半分のそれぞれの中央値です（n が奇数のときは中央値を除く。教科書の方法）。');
+          return;
+        }
+        if (xs.length < 2) return fail(null, tr('Enter at least two rows of x and y', 'x と y を 2 行以上入れてください'));
+        const models = statModels(xs, ys), lin = models.find((m) => m[0] === 'linear');
+        if (!lin) return fail(null, tr('Every x is the same, so no line can be drawn: enter different x', 'x がすべて同じなので、直線を引けません。違う x を入れてください'));
+        D.fit = { xs, ys, expr: lin[3] };
+        const L = lin[6];
+        row(outs, tr('Regression line', '回帰直線'), tr('least squares', '最小二乗法'), lin[2], lin[3], true);
+        row(outs, tr('Correlation coefficient', '相関係数'), 'r', isFinite(L.r) ? statNum(L.r) : '—', isFinite(L.r) ? exprNum(L.r) : '');
+        row(outs, tr('Coefficient of determination', '決定係数'), 'R²', isFinite(lin[5]) ? statNum(lin[5]) : '—', isFinite(lin[5]) ? exprNum(lin[5]) : '');
+        const pxv = statVal(D.px);
+        if (String(D.px).trim() && !isFinite(pxv)) pxIn.setAttribute('aria-invalid', 'true');
+        if (isFinite(pxv)) row(outs, trf('Predicted y at x = {0}', 'x = {0} のときの y（予測）', statNum(pxv)), 'ŷ', statNum(lin[4](pxv)), lin[3].replace(/x/g, '(' + exprNum(pxv) + ')'));
+        row(outs, tr('Rows', '行の数'), 'n', String(xs.length), String(xs.length));
+        for (const m of models.filter((q) => q[0] !== 'linear')) {
+          if (m.length === 3) { row(moreOut, m[1], '', m[2], ''); continue; }
+          const at = isFinite(pxv) ? '  ' + trf('(x = {0}: {1})', '（x = {0} で {1}）', statNum(pxv), statNum(m[4](pxv))) : '';
+          row(moreOut, m[1], 'R² = ' + (isFinite(m[5]) ? statNum(m[5]) : '—') + at, m[2], m[3]);
+        }
+        const xm = xs.reduce((a, b) => a + b, 0) / xs.length, ym = ys.reduce((a, b) => a + b, 0) / ys.length;
+        row(moreOut, tr('Means of x and y', 'x と y の平均'), 'x̄ / ȳ', statNum(xm) + ' / ' + statNum(ym), 'mean(' + list(xs) + ')');
+        hint.textContent = tr('The line is found by least squares; r near ±1 means the points lie close to it. Other curves are under "More"; their R² is worked out on the y values themselves.',
+          '回帰直線は最小二乗法で求めます。r が ±1 に近いほど、点は直線の近くに並びます。ほかの曲線は「詳しく」の中にあります（決定係数は元の y の値で計算）。');
+      };
+      // the points and the line in the 2D graph
+      const showGraph = () => {
+        if (!D.fit) return;
+        const { xs, ys, expr } = D.fit;
+        let lo = Math.min(...xs), hi = Math.max(...xs);
+        const pad = (hi - lo) * 0.15 || Math.abs(lo) * 0.2 || 1;
+        openPlotWith([expr], { points: xs.map((x, i) => ({ x, y: ys[i] })), range: [+(lo - pad).toPrecision(6), +(hi + pad).toPrecision(6)] });
+      };
+      p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Columns', '列') }), seg), table, tools, pxRow, msg, outs, more, graph, hint);
+      setCols(D.cols);
+    });
+    return p;
+  }
   function openConverter() {
     const p = panel('convert', tr('Convert units and currencies', '単位・通貨の換算'), (p) => {
       const saved = store.get('qalc.conv', null) || {};
@@ -11431,6 +11697,10 @@
     ['convert', 'convert', '⇄', tr('Convert units and currencies', '単位・通貨の換算'), tr('Length, weight, volume, temperature, fuel economy, currencies…', '長さ・重さ・体積・温度・燃費・通貨など'),
       'convert conversion unit units currency exchange mile km inch feet pound kg celsius fahrenheit fuel mpg 換算 変換 単位 通貨 為替 マイル インチ フィート ポンド 摂氏 華氏 燃費 尺 坪 升 かんさん たんい umrechnen Einheit Währung convertir unidad moneda convertir unité devise 변환 단위 환율 통화 換算 單位 貨幣 匯率',
       () => openConverter()],
+    // 1.12.0 (C4): statistics
+    ['stats', 'data', '📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰'),
+      'statistics stats mean average median mode standard deviation variance quartile regression correlation trend least squares data 統計 平均 中央値 最頻値 標準偏差 分散 四分位 回帰 相関 決定係数 最小二乗 データ 散布図 へいきん ちゅうおうち とうけい Statistik Mittelwert Durchschnitt Median Standardabweichung Varianz Quartil Regression Korrelation Daten estadística media promedio mediana moda desviación varianza cuartil regresión correlación datos statistiques moyenne médiane mode écart-type variance quartile régression corrélation données 통계 평균 중앙값 최빈값 표준편차 분산 사분위 회귀 상관 데이터 統計 平均 中位數 眾數 標準差 變異數 四分位 迴歸 相關 資料',
+      () => openStatsTool()],
     // 1.12.0 (C1): everyday calculations
     ['price', 'shop', '🏷', tr('Price: discount and tax', '値段：割引と税'), tr('Tax included or not, a discount (also two), rounding', '税込・税抜、割引（2 回も）、端数の扱い'),
       'price tax vat sales discount off percent sale shopping 値段 消費税 税込 税抜 税 割引 値引き 割 セール ぜいこみ わりびき Preis Mehrwertsteuer MwSt Steuer Rabatt precio IVA impuesto descuento prix TVA taxe remise réduction 가격 부가세 세금 할인 價格 營業稅 稅 折扣',
@@ -11907,7 +12177,8 @@
     everyday: ['🏷', tr('Everyday tools', '日常の計算'), tr('Price and tax, loan, savings, dates and times', '値段と税、ローン、積立、日付と時間')],
     tables: ['📄', tr('Tables as CSV files', '表の CSV 保存'), tr('Save the tables of a loan or of savings as CSV files for a spreadsheet (showing them stays free)', 'ローンや積立の表を、表計算ソフト用の CSV ファイルに保存（表を見るのは無料）')],
     convert: ['⇄', tr('Convert units and currencies', '単位・通貨の換算'), tr('Two boxes that convert both ways', '両方向に換算できる 2 つの欄')],
-    quick: ['⌂', tr('Widget, tile and shortcuts', 'ウィジェット・タイル・ショートカット'), tr('Open QCalc from the home screen and the quick settings', 'ホーム画面やクイック設定から QCalc を開く')]
+    quick: ['⌂', tr('Widget, tile and shortcuts', 'ウィジェット・タイル・ショートカット'), tr('Open QCalc from the home screen and the quick settings', 'ホーム画面やクイック設定から QCalc を開く')],
+    stats: ['📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {
