@@ -394,6 +394,8 @@
     memkeys: 'free',       // the memory keys (1.12 A5): recommended free (usability)
     cross_sections: 'free', // solids with known cross sections (1.12 B1): recommended free (2D and the volume; the 3D view needs Pro)
     rev_lines: 'free',     // the lines of the method in 2D and the theorem of Pappus (1.12 B2): recommended free (the angle of the 3D view needs Pro as 3D)
+    everyday: 'free',      // the everyday tools: price, percentages, unit price, split, loan, savings, dates, times (1.12 C1): recommended free
+    tables: 'free'         // saving the tables of the tools as CSV files (1.12 C1): recommended Pro (as exporting the history)
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -10780,6 +10782,475 @@
     // its title and × in sight, also when the history is short (memory keys, a small screen)
     histEl.scrollTop = Math.max(0, card.offsetTop - histEl.offsetTop - 4);
   }
+  // ------------------------------------------------- everyday calculations (1.12.0, C1)
+  // Every tool has the same form (as the shapes): example chips above, the boxes, the results at once
+  // as rows (tap one: put its expression into the field, keep it in the history, copy it), one line
+  // of explanation below, and for money the note of what the result assumes. spec: { chips:
+  // [[label, values]], fields: [{ k, label, def, ph, opts, more, kind }], run(v) → { rows: [{ name,
+  // small, value (shown), expr }], msg, table: { head, rows, name } }, hint, caution }
+  // A number of money or a count, grouped in the number format (1,500 / 1.500 / 1 500)
+  function fmtNum(v, dec) {
+    if (!isFinite(v)) return '';
+    const neg = v < 0, t = Math.abs(v).toFixed(dec === undefined ? 0 : dec);
+    let [i, f] = t.split('.');
+    i = i.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group);
+    if (f) f = f.replace(/0+$/, '');
+    return (neg ? '−' : '') + i + (f ? NF.dec + f : '');
+  }
+  // a number typed in a box: in the number format ("1.500,5" with a decimal comma), with "%" or the
+  // Japanese "割" (3割 = 30 %), groups allowed; NaN when it is not a plain number
+  function boxNum(t) {
+    let s = String(t || '').trim().replace(/[\s ]/g, '').replace(/[，]/g, ',').replace(/[．]/g, '.').replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[−–]/g, '-');
+    let scale = 1;
+    if (/割$/.test(s)) { s = s.slice(0, -1); scale = 10; } else if (/%$/.test(s)) s = s.slice(0, -1);
+    if (commaMode) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, '');
+    return /^-?\d+(\.\d+)?$|^-?\.\d+$/.test(s) ? Number(s) * scale : NaN;
+  }
+  // a plain number for an expression ("1500", "0.08")
+  const exprNum = (v) => String(+(+v).toPrecision(12)).replace('-', '−');
+  // the defaults of the language: the tax rates, and the unit of rounding money (1 yen, 0.01 euro)
+  const TAX_RATES = { ja: ['10', '8'], de: ['19', '7'], fr: ['20', '10', '5.5'], es: ['21', '10', '4'], ko: ['10'], 'zh-TW': ['5'], en: [] };
+  const MONEY_DEC = { ja: 0, ko: 0, 'zh-TW': 0 }[LANG] !== undefined ? 0 : 2;
+  function simpleTool(id, title, spec) {
+    const p = panel(id, title, (p) => {
+      const saved = store.get('qalc.tool.' + id, null) || {};
+      const inputs = {}, chosen = {};
+      const save = () => { const o = {}; for (const f of spec.fields) o[f.k] = f.opts ? chosen[f.k] : inputs[f.k].value; store.set('qalc.tool.' + id, o); };
+      const box = (f) => {
+        if (f.opts) {
+          // a choice of a few: a switch (aria-pressed)
+          chosen[f.k] = f.opts.some((o) => o[0] === saved[f.k]) ? saved[f.k] : f.def;
+          const btns = f.opts.map(([v, label]) => tapButton({ text: label, 'aria-pressed': String(v === chosen[f.k]), class: v === chosen[f.k] ? 'on' : '' }, () => {
+            chosen[f.k] = v;
+            btns.forEach((b, i) => { const on = f.opts[i][0] === v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+            save(); showFields(); run();
+          }));
+          const row = el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: f.label }), el('span', { class: 'seg mini', role: 'group', 'aria-label': f.label }, ...btns));
+          row._f = f;
+          return row;
+        }
+        const inp = el('input', { inputmode: f.kind === 'date' || f.kind === 'time' ? 'text' : 'decimal', type: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: f.ph || '', value: typeof saved[f.k] === 'string' ? saved[f.k] : (typeof f.def === 'function' ? f.def() : f.def || ''), 'aria-label': f.label });
+        inp.addEventListener('input', () => { inp.removeAttribute('aria-invalid'); save(); run(); });
+        inputs[f.k] = inp;
+        const row = el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: f.label }), inp);
+        if (f.chips) row.append(el('span', { class: 'tool-mini-chips' }, ...f.chips().map((c) => tapButton({ class: 'area-chip', text: c }, () => { inp.value = c; save(); run(); }))));
+        row._f = f;
+        return row;
+      };
+      const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
+        ...spec.chips.map(([label, vals]) => tapButton({ class: 'area-chip', text: label }, () => {
+          for (const [k, v] of Object.entries(vals)) {
+            if (inputs[k]) inputs[k].value = v;
+            else if (chosen[k] !== undefined) { chosen[k] = v; const row = rows.find((r) => r._f.k === k); if (row) row.querySelectorAll('button').forEach((b, i) => { const on = row._f.opts[i][0] === v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); }
+          }
+          save(); showFields(); run();
+        })));
+      const rows = spec.fields.map(box);
+      const main = el('div', { class: 'tool-fields' }, ...rows.filter((r) => !r._f.more));
+      const moreRows = rows.filter((r) => r._f.more);
+      const more = moreRows.length ? el('details', { class: 'sec-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }), ...moreRows) : null;
+      const msg = el('div', { class: 'geo-msg', role: 'alert' });
+      const outs = el('div', { class: 'geo-out', 'aria-live': 'polite' });
+      const tableBox = el('div', { class: 'tool-table' });
+      const caution = spec.caution ? cautionLine(spec.caution) : null;
+      // fields shown only for some choices (when: values → boolean)
+      const showFields = () => { const v = values(); for (const r of rows) if (r._f.when) r.hidden = !r._f.when(v); };
+      const values = () => { const v = {}; for (const f of spec.fields) v[f.k] = f.opts ? chosen[f.k] : inputs[f.k].value; return v; };
+      let seq = 0;
+      const run = debounce(async () => {
+        const my = ++seq;
+        msg.textContent = '';
+        let r;
+        try { r = await spec.run(values(), inputs); } catch (e) { r = { msg: tr('Could not calculate this', '計算できませんでした') }; }
+        if (my !== seq) return;
+        outs.textContent = ''; tableBox.textContent = '';
+        if (!r || r.msg) { msg.textContent = (r && r.msg) || ''; outs.hidden = true; if (r && r.bad && inputs[r.bad]) inputs[r.bad].setAttribute('aria-invalid', 'true'); return; }
+        outs.hidden = false;
+        r.rows.forEach((row, i) => {
+          const node = tapButton({ class: 'geo-row' + (i === 0 ? ' tool-main' : '') }, () => { if (row.expr) resultSheet(row.name, row.expr, '= ' + row.value, row.value); });
+          node.append(el('span', { class: 'geo-name' }, row.name, row.small ? el('small', { text: row.small }) : ''), el('span', { class: 'geo-val', text: row.value }));
+          outs.append(node);
+        });
+        if (r.table) showTable(tableBox, r.table);
+      }, 120);
+      p.body.append(chips, main, ...(more ? [more] : []), msg, outs, ...(caution ? [caution] : []), tableBox, el('div', { class: 'form-hint', text: spec.hint }));
+      showFields();
+      p.run = run;
+      run();
+    });
+    p.run && p.run();
+    return p;
+  }
+  // a table of a tool (a loan, savings): shown (free), the first rows and "All rows ▾", copy, and
+  // saving as a CSV file (QCalc Pro, the key 'tables', as exporting the history)
+  function showTable(box, t) {
+    const head = el('tr', {}, ...t.head.map((h) => el('th', { text: h })));
+    const body = (rows) => rows.map((r) => el('tr', {}, ...r.map((c) => el('td', { text: c }))));
+    const tbl = el('table', { class: 'tool-tbl' }, el('thead', {}, head), el('tbody', {}, ...body(t.rows.slice(0, 12))));
+    const all = t.rows.length > 12 ? el('details', { class: 'sec-more' }, el('summary', { text: trf('All {0} rows ▾', '全 {0} 行 ▾', t.rows.length) })) : null;
+    if (all) all.addEventListener('toggle', () => { if (all.open && !all._done) { all._done = true; tbl.tBodies[0].append(...body(t.rows.slice(12))); } }, { once: false });
+    const copy = tapButton({ class: 'btn', text: tr('Copy the table', '表をコピー') }, () => copyText([t.head].concat(t.rows).map((r) => r.join('\t')).join('\n')));
+    const csv = tapButton({ class: 'btn', text: tr('Save as CSV', 'CSV で保存') + (PRO_GATES.tables === 'pro' && !hasPro() ? '  ⭐ Pro' : '') }, () => saveTableCsv(t));
+    box.append(el('div', { class: 'section-title', text: t.title }), el('div', { class: 'tbl-wrap' }, tbl), ...(all ? [all] : []), el('div', { class: 'tool-tbl-btns' }, copy, csv));
+  }
+  let savingWhat = '';
+  function saveTableCsv(t) {
+    if (!proGate('tables')) return;
+    const sep = commaMode ? ';' : ',', cell = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+    const plain = (c) => String(c).replace(new RegExp('\\' + NF.group.replace(/[ ]/, ' '), 'g'), '').replace(/−/g, '-');
+    const csv = '﻿' + [t.head.map(cell).join(sep)].concat(t.rows.map((r) => r.map((c, i) => (i === 0 ? cell(c) : cell(plain(c)))).join(sep))).join('\r\n') + '\r\n';
+    const d = new Date(), z = (n) => String(n).padStart(2, '0');
+    const name = 'QCalc-' + t.name + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.csv';
+    savingWhat = 'table';
+    if (window.QalcNative && QalcNative.saveFile) { QalcNative.saveFile(name, 'text/csv', csv); return; }
+    const a = el('a', { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), download: name });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    fileSaved({ ok: true });
+  }
+  const roundBy = (x, mode, u) => { const q = x / u; const r = mode === 'down' ? Math.floor(q + 1e-9) : mode === 'up' ? Math.ceil(q - 1e-9) : Math.round(q); return r * u; };
+  const roundFn = (mode) => (mode === 'down' ? 'floor' : mode === 'up' ? 'ceil' : 'round');
+  const ROUNDING = () => [['down', tr('Down', '切り捨て')], ['near', tr('Nearest', '四捨五入')], ['up', tr('Up', '切り上げ')]];
+  const unitWord = () => (MONEY_DEC ? '' : tr('', '円'));
+
+  // ---- Shopping: the price with a discount and the tax
+  function openPriceTool() {
+    const rates = TAX_RATES[LANG] || [];
+    return simpleTool('price', tr('Price: discount and tax', '値段：割引と税'), {
+      chips: [[tr('1500, 10% off, tax 8%', '1500 円・1割引・税 8%'), { price: '1500', off: '10', tax: '8', dir: 'add' }],
+        [tr('Tax included 1100 → before tax', '税込 1100 円 → 税抜'), { price: '1100', off: '', tax: rates[0] || '10', dir: 'remove' }]],
+      fields: [
+        { k: 'dir', label: tr('The price is', '値段は'), opts: [['add', tr('before tax', '税抜')], ['remove', tr('with tax', '税込')]], def: 'add' },
+        { k: 'price', label: tr('Price', '値段'), def: '', ph: MONEY_DEC ? 'e.g. 19,99' : tr('e.g. 1500', '例：1500') },
+        { k: 'off', label: tr('Discount (%)', '割引（% か ○割）'), def: '', ph: tr('e.g. 10', '例：10、3割'), when: (v) => v.dir === 'add' },
+        { k: 'tax', label: tr('Tax rate (%)', '税率（%）'), def: rates[0] ? toDisplay(rates[0]) : '', ph: tr('e.g. 10', '例：10'), chips: () => rates.map((r) => toDisplay(r)) },
+        { k: 'round', label: tr('Rounding', '端数'), opts: ROUNDING(), def: LANG === 'ja' ? 'down' : 'near' },
+        { k: 'off2', label: tr('Second discount (%)', '続けての割引（%）'), def: '', ph: tr('e.g. 5', '例：5'), more: true, when: (v) => v.dir === 'add' }
+      ],
+      hint: tr('The discount is taken first, then the tax is added; the result is rounded to the currency’s unit as chosen.', '割引を先に引いてから税を足し、最後に端数を処理します（日本語では 1 円単位）。'),
+      caution: tr('The tax rates are the usual rates of the language as of November 2026; check the rate that applies.', '前提：税率の初期値は 2026 年 11 月時点のもの。当てはまる税率を確かめてください。'),
+      run: async (v) => {
+        const price = boxNum(v.price), tax = v.tax === '' ? 0 : boxNum(v.tax), off = v.off === '' ? 0 : boxNum(v.off), off2 = v.off2 === '' ? 0 : boxNum(v.off2);
+        if (!v.price) return { msg: tr('Enter the price', '値段を入れてください') };
+        if (!(price >= 0)) return { msg: tr('The price must be a number, such as 1500', '値段は 1500 のような数にしてください'), bad: 'price' };
+        if (!(tax >= 0 && tax < 100)) return { msg: tr('The tax rate must be a number from 0 to 100, such as 10', '税率は 0〜100 の数にしてください（例：10）'), bad: 'tax' };
+        if (!(off >= 0 && off <= 100) || !(off2 >= 0 && off2 <= 100)) return { msg: tr('A discount must be from 0 to 100 %', '割引は 0〜100 % にしてください'), bad: 'off' };
+        const u = MONEY_DEC ? 0.01 : 1, uE = MONEY_DEC ? '0.01' : '1', fn = roundFn(v.round), m = v.round;
+        const rows = [];
+        if (v.dir === 'add') {
+          const after = price * (1 - off / 100) * (1 - off2 / 100);
+          const disc = `${exprNum(price)}${off ? ` × (1 − ${exprNum(off)}%)` : ''}${off2 ? ` × (1 − ${exprNum(off2)}%)` : ''}`;
+          const total = roundBy(after * (1 + tax / 100), m, u);
+          const totalE = `${fn}(${disc} × (1 + ${exprNum(tax)}%)${MONEY_DEC ? ' × 100) / 100' : ')'}`;
+          rows.push({ name: tr('With tax', '税込'), small: off || off2 ? tr('after the discount', '割引のあと') : '', value: fmtNum(total, MONEY_DEC) + unitWord(), expr: totalE });
+          if (off || off2) rows.push({ name: tr('After the discount (before tax)', '割引後（税抜）'), value: fmtNum(roundBy(after, m, u), MONEY_DEC) + unitWord(), expr: MONEY_DEC ? `${fn}(${disc} × 100) / 100` : `${fn}(${disc})` });
+          rows.push({ name: tr('Tax', '税'), value: fmtNum(total - roundBy(after, m, u), MONEY_DEC) + unitWord(), expr: '' });
+          if (off || off2) rows.push({ name: tr('You save (with tax)', '安くなった額（税込）'), value: fmtNum(roundBy(price * (1 + tax / 100), m, u) - total, MONEY_DEC) + unitWord(), expr: '' });
+        } else {
+          const before = roundBy(price / (1 + tax / 100), m, u);
+          rows.push({ name: tr('Before tax', '税抜'), value: fmtNum(before, MONEY_DEC) + unitWord(), expr: `${fn}(${exprNum(price)} / (1 + ${exprNum(tax)}%)${MONEY_DEC ? ' × 100) / 100' : ')'}` });
+          rows.push({ name: tr('Tax', '税'), value: fmtNum(price - before, MONEY_DEC) + unitWord(), expr: '' });
+        }
+        void uE;
+        return { rows };
+      }
+    });
+  }
+  // ---- Shopping: percentages
+  function openPercentTool() {
+    return simpleTool('percent', tr('Percentages', '割合'), {
+      chips: [[tr('30 of 120', '120 のうち 30'), { mode: 'of', a: '30', b: '120' }], [tr('From 80 to 100', '80 から 100 へ'), { mode: 'change', a: '80', b: '100' }]],
+      fields: [
+        { k: 'mode', label: tr('Find', '求めるもの'), opts: [['of', tr('A is what % of B', 'A は B の何 %')], ['change', tr('Change from A to B', 'A から B への増減率')]], def: 'of' },
+        { k: 'a', label: 'A', def: '', ph: tr('e.g. 30', '例：30') },
+        { k: 'b', label: 'B', def: '', ph: tr('e.g. 120', '例：120') }
+      ],
+      hint: tr('"Change" is (B − A) / A: + for an increase, − for a decrease.', '増減率は (B − A) ÷ A です（増えたら ＋、減ったら −）。'),
+      run: async (v) => {
+        const a = boxNum(v.a), b = boxNum(v.b);
+        if (!v.a || !v.b) return { msg: tr('Enter A and B', 'A と B を入れてください') };
+        if (!isFinite(a)) return { msg: tr('A must be a number', 'A は数にしてください'), bad: 'a' };
+        if (!isFinite(b)) return { msg: tr('B must be a number', 'B は数にしてください'), bad: 'b' };
+        if (v.mode === 'of') {
+          if (b === 0) return { msg: tr('B must not be 0', 'B は 0 以外にしてください'), bad: 'b' };
+          return { rows: [{ name: tr('A is … % of B', 'A は B の'), value: fmtNum(a / b * 100, 4) + ' %', expr: `${exprNum(a)} / ${exprNum(b)} to %` }] };
+        }
+        if (a === 0) return { msg: tr('A must not be 0 (a change from 0 has no rate)', 'A は 0 以外にしてください（0 からの増減率はありません）'), bad: 'a' };
+        const c = (b - a) / a * 100;
+        return { rows: [{ name: tr('Change', '増減率'), value: (c > 0 ? '+' : '') + fmtNum(c, 4) + ' %', expr: `(${exprNum(b)} − ${exprNum(a)}) / ${exprNum(a)} to %` },
+          { name: tr('Difference', '差'), value: (b - a > 0 ? '+' : '') + fmtNum(b - a, 6), expr: `${exprNum(b)} − ${exprNum(a)}` }] };
+      }
+    });
+  }
+  // ---- Shopping: which is cheaper (the amounts in the engine's units: g and kg, mL and L, pieces)
+  function openUnitPriceTool() {
+    return simpleTool('unitprice', tr('Unit price: which is cheaper', '単価の比較'), {
+      chips: [[tr('298 for 500 g / 498 for 1 kg', '298 円で 500 g と 498 円で 1 kg'), { p1: '298', q1: '500 g', p2: '498', q2: '1 kg' }],
+        [tr('158 for 1 L / 98 for 500 mL', '158 円で 1 L と 98 円で 500 mL'), { p1: '158', q1: '1 L', p2: '98', q2: '500 mL' }]],
+      fields: [
+        { k: 'p1', label: tr('Price A', 'A の値段'), def: '', ph: tr('e.g. 298', '例：298') },
+        { k: 'q1', label: tr('Amount A', 'A の量'), def: '', ph: tr('e.g. 500 g', '例：500 g、6 個') },
+        { k: 'p2', label: tr('Price B', 'B の値段'), def: '', ph: tr('e.g. 498', '例：498') },
+        { k: 'q2', label: tr('Amount B', 'B の量'), def: '', ph: tr('e.g. 1 kg', '例：1 kg') }
+      ],
+      hint: tr('Amounts with units (g, kg, mL, L, oz, lb) are compared in the same unit; a number alone is a count of pieces.', '量は単位付き（g、kg、mL、L など）なら同じ単位にそろえて比べます。数だけなら個数として比べます。'),
+      caution: tr('The price per unit is rounded for showing; the comparison uses the exact values.', '前提：単価は表示のため丸めています（比べるときは丸める前の値）。'),
+      run: async (v) => {
+        if (!v.p1 || !v.q1 || !v.p2 || !v.q2) return { msg: tr('Enter the price and the amount of A and B', 'A と B の値段と量を入れてください') };
+        const p1 = boxNum(v.p1), p2 = boxNum(v.p2);
+        if (!(p1 >= 0)) return { msg: tr('The price must be a number', '値段は数にしてください'), bad: 'p1' };
+        if (!(p2 >= 0)) return { msg: tr('The price must be a number', '値段は数にしてください'), bad: 'p2' };
+        // the amounts: a unit of mass or volume (per 100 g / 100 mL), or pieces
+        const amount = async (q) => {
+          const t = normalizeExpr(String(q).replace(/個|pcs?|pieces?|Stück|piezas?|pièces?|개|個/gi, '').trim());
+          if (/^[\d.,\s]+$/.test(String(q).replace(/個|pcs?|pieces?|Stück|piezas?|pièces?|개/gi, '').trim())) { const n = boxNum(String(q).replace(/[^\d.,]/g, '')); return n > 0 ? { n, kind: 'pc' } : null; }
+          // (converted by the engine: "500 g", "1 kg to g" = "1000 g"; a volume to mL)
+          for (const base of ['g', 'mL']) {
+            const r = await Bridge.send('calc', { expr: `(${t}) to ${base}`, opts: Object.assign(engineOpts(), { approx: 'approx', grouping: false, fraction: 'decimal', notation: 'auto', base: 10, units: 'none' }), timeout: 1500 });
+            const m = r.ok && r.result && r.result.replace(/^≈\s*/, '').match(new RegExp('^([0-9.]+(?:E[−+-]?\\d+)?)\\s*' + base + '$'));
+            if (m && Number(m[1]) > 0) return { n: Number(m[1].replace('−', '-')), kind: base };
+          }
+          return null;
+        };
+        const a1 = await amount(v.q1), a2 = await amount(v.q2);
+        if (!a1) return { msg: tr('Amount A: write it as 500 g, 1 L or 6 (pieces)', 'A の量は 500 g、1 L、6（個）のように書いてください'), bad: 'q1' };
+        if (!a2) return { msg: tr('Amount B: write it as 500 g, 1 L or 6 (pieces)', 'B の量は 500 g、1 L、6（個）のように書いてください'), bad: 'q2' };
+        if (a1.kind !== a2.kind) return { msg: tr('A and B must be amounts of the same kind (both a weight, both a volume or both pieces)', 'A と B は同じ種類の量にしてください（両方とも重さ、両方とも体積、両方とも個数）') };
+        const per = a1.kind === 'pc' ? 1 : 100, unit = a1.kind === 'pc' ? tr('1 piece', '1 個') : '100 ' + a1.kind;
+        const u1 = p1 / a1.n * per, u2 = p2 / a2.n * per;
+        const better = Math.abs(u1 - u2) <= 1e-12 * Math.max(u1, u2) ? tr('The same', '同じ') : u1 < u2 ? tr('A is cheaper', 'A が安い') : tr('B is cheaper', 'B が安い');
+        const diff = Math.abs(u1 - u2) / Math.max(u1, u2) * 100;
+        return { rows: [
+          { name: better, small: diff > 1e-9 ? trf('by {0} % per unit', '単価で {0} % 安い', fmtNum(diff, 1)) : '', value: '', expr: '' },
+          { name: tr('A per ', 'A の単価（') + unit + tr('', '）'), value: fmtNum(u1, 2), expr: `${exprNum(p1)} / ${exprNum(a1.n)} × ${per}` },
+          { name: tr('B per ', 'B の単価（') + unit + tr('', '）'), value: fmtNum(u2, 2), expr: `${exprNum(p2)} / ${exprNum(a2.n)} × ${per}` }] };
+      }
+    });
+  }
+  // ---- Shopping: splitting a bill
+  function openSplitTool() {
+    return simpleTool('split', tr('Split the bill', '割り勘'), {
+      chips: [[tr('10000 for 3', '10000 円を 3 人'), { total: '10000', n: '3', unit: MONEY_DEC ? '0.01' : '100' }], [tr('7777 for 4', '7777 円を 4 人'), { total: '7777', n: '4', unit: MONEY_DEC ? '0.01' : '10' }]],
+      fields: [
+        { k: 'total', label: tr('Total', '合計'), def: '', ph: tr('e.g. 10000', '例：10000') },
+        { k: 'n', label: tr('People', '人数'), def: '', ph: tr('e.g. 3', '例：3') },
+        { k: 'unit', label: tr('Each pays in steps of', '1 人分の単位'), opts: MONEY_DEC ? [['0.01', '0.01'], ['0.1', '0.10'], ['1', '1']] : [['1', JA ? '1 円' : '1'], ['10', JA ? '10 円' : '10'], ['100', JA ? '100 円' : '100']], def: MONEY_DEC ? '0.01' : '100' }
+      ],
+      hint: tr('Each pays the share rounded up to the step; what is paid too much is shown (or, rounded down, what one person pays more).', '1 人分を単位で切り上げた額と、集めすぎた額を出します（切り捨てたときに 1 人が多く払う額も）。'),
+      run: async (v) => {
+        const t = boxNum(v.total), n = boxNum(v.n), u = Number(v.unit);
+        if (!v.total || !v.n) return { msg: tr('Enter the total and the number of people', '合計と人数を入れてください') };
+        if (!(t >= 0)) return { msg: tr('The total must be a number', '合計は数にしてください'), bad: 'total' };
+        if (!(n >= 1) || n !== Math.floor(n)) return { msg: tr('The number of people must be a whole number of 1 or more', '人数は 1 以上の整数にしてください'), bad: 'n' };
+        const up = Math.ceil(t / n / u - 1e-9) * u, down = Math.floor(t / n / u + 1e-9) * u;
+        const dec = u < 1 ? 2 : 0;
+        return { rows: [
+          { name: tr('Each (rounded up)', '1 人（切り上げ）'), value: fmtNum(up, dec) + unitWord(), expr: `ceil(${exprNum(t)} / ${exprNum(n)} / ${exprNum(u)}) × ${exprNum(u)}` },
+          { name: tr('Paid too much', '集めすぎ'), value: fmtNum(up * n - t, dec) + unitWord(), expr: '' },
+          { name: tr('Rounded down: each', '切り捨て：1 人'), small: trf('one person pays {0} more', '1 人が {0} 多く払う', fmtNum(t - down * n, dec)), value: fmtNum(down, dec) + unitWord(), expr: `floor(${exprNum(t)} / ${exprNum(n)} / ${exprNum(u)}) × ${exprNum(u)}` }] };
+      }
+    });
+  }
+  // ---- Money: a loan (equal payments, or equal principal), with its table
+  function openLoanTool() {
+    return simpleTool('loan', tr('Loan', 'ローン'), {
+      chips: [[tr('30,000,000 at 1 % for 35 years', '3000 万円・年 1%・35 年'), { amount: '30000000', rate: '1', years: '35', method: 'equal' }],
+        [tr('2,000,000 at 3 % for 5 years', '200 万円・年 3%・5 年'), { amount: '2000000', rate: '3', years: '5', method: 'equal' }]],
+      fields: [
+        { k: 'amount', label: tr('Amount borrowed', '借りる額'), def: '', ph: tr('e.g. 30000000', '例：30000000') },
+        { k: 'rate', label: tr('Interest a year (%)', '年利（%）'), def: '', ph: tr('e.g. 1', '例：1') },
+        { k: 'years', label: tr('Years', '年数'), def: '', ph: tr('e.g. 35', '例：35') },
+        { k: 'method', label: tr('Payments', '返し方'), opts: [['equal', tr('Equal payments', '元利均等（毎月同じ額）')], ['principal', tr('Equal principal', '元金均等（元金が同じ額）')]], def: 'equal' }
+      ],
+      hint: tr('Monthly payments with the interest of a year divided by 12. Equal principal: the first payment is the largest.', '毎月返す場合です（年利の 12 分の 1 を月の利息とします）。元金均等は最初の月がいちばん多くなります。'),
+      caution: tr('Rounded to whole units at the end; a bank may round each payment and adjust the last one.', '前提：端数は最後に丸めています。金融機関の額とは、毎月の端数の扱いで少し違うことがあります。'),
+      run: async (v) => {
+        const P0 = boxNum(v.amount), y = boxNum(v.years), R = v.rate === '' ? NaN : boxNum(v.rate);
+        if (!v.amount || !v.years || v.rate === '') return { msg: tr('Enter the amount, the interest and the years', '借りる額、年利、年数を入れてください') };
+        if (!(P0 > 0)) return { msg: tr('The amount must be a number above 0', '借りる額は 0 より大きい数にしてください'), bad: 'amount' };
+        if (!(R >= 0 && R < 100)) return { msg: tr('The interest must be from 0 to 100 %', '年利は 0〜100 % にしてください'), bad: 'rate' };
+        if (!(y > 0 && y <= 100) || Math.round(y * 12) !== y * 12) return { msg: tr('The years must be a number of months: 35, or 2.5', '年数は 35 や 2.5 のように、月の数になる値にしてください'), bad: 'years' };
+        const n = Math.round(y * 12), r = R / 100 / 12, dec = MONEY_DEC;
+        const rowsT = [];
+        let monthly, total, interest, first = 0, last = 0;
+        const rE = `${exprNum(R)}% / 12`;
+        let expr;
+        if (v.method === 'equal') {
+          monthly = r ? P0 * r / (1 - Math.pow(1 + r, -n)) : P0 / n;
+          total = monthly * n; interest = total - P0;
+          expr = r ? `${exprNum(P0)} × (${rE}) / (1 − (1 + ${rE})^(−${n}))` : `${exprNum(P0)} / ${n}`;
+          let bal = P0;
+          for (let k = 1; k <= n; k++) { const i = bal * r, pr = monthly - i; bal -= pr; rowsT.push([String(k), fmtNum(monthly, dec), fmtNum(pr, dec), fmtNum(i, dec), fmtNum(Math.max(0, bal), dec)]); }
+        } else {
+          const pr = P0 / n;
+          let bal = P0; total = 0;
+          for (let k = 1; k <= n; k++) { const i = bal * r, pay = pr + i; if (k === 1) first = pay; if (k === n) last = pay; total += pay; bal -= pr; rowsT.push([String(k), fmtNum(pay, dec), fmtNum(pr, dec), fmtNum(i, dec), fmtNum(Math.max(0, bal), dec)]); }
+          interest = total - P0;
+          expr = `${exprNum(P0)} / ${n} + ${exprNum(P0)} × (${rE})`;
+        }
+        const rows = v.method === 'equal'
+          ? [{ name: tr('Each month', '毎月の返済額'), value: fmtNum(monthly, dec) + unitWord(), expr }]
+          : [{ name: tr('First month', '最初の月'), small: trf('last month {0}', '最後の月 {0}', fmtNum(last, dec) + unitWord()), value: fmtNum(first, dec) + unitWord(), expr }];
+        rows.push({ name: tr('Interest in all', '利息の合計'), value: fmtNum(interest, dec) + unitWord(), expr: '' }, { name: tr('Paid in all', '返す額の合計'), value: fmtNum(total, dec) + unitWord(), expr: '' });
+        return { rows, table: { title: tr('Payments, month by month', '返済表（月ごと）'), name: 'loan', head: [tr('Month', '回'), tr('Payment', '返済額'), tr('Principal', '元金'), tr('Interest', '利息'), tr('Left', '残り')], rows: rowsT } };
+      }
+    });
+  }
+  // ---- Money: saving every month with compound interest
+  function openSavingsTool() {
+    return simpleTool('savings', tr('Savings and compound interest', '積立と複利'), {
+      chips: [[tr('30,000 a month, 3 %, 20 years', '月 3 万円・年 3%・20 年'), { monthly: '30000', rate: '3', years: '20', start: '' }], [tr('1,000,000 at 5 % for 10 years', '100 万円を年 5%・10 年'), { monthly: '0', rate: '5', years: '10', start: '1000000' }]],
+      fields: [
+        { k: 'monthly', label: tr('Each month', '毎月の積立額'), def: '', ph: tr('e.g. 30000', '例：30000') },
+        { k: 'rate', label: tr('Interest a year (%)', '年利（%）'), def: '', ph: tr('e.g. 3', '例：3') },
+        { k: 'years', label: tr('Years', '年数'), def: '', ph: tr('e.g. 20', '例：20') },
+        { k: 'start', label: tr('At the start', '最初にある額'), def: '', ph: '0', more: true }
+      ],
+      hint: tr('Interest added every month (the interest of a year divided by 12); a saving at the end of each month.', '利息は毎月（年利の 12 分の 1）付き、積立は毎月の終わりに入れるとします。'),
+      caution: tr('Before tax on the interest; the interest rate is taken as fixed.', '前提：利息の税は引いていません。利率は変わらないとします。'),
+      run: async (v) => {
+        const m = v.monthly === '' ? 0 : boxNum(v.monthly), R = v.rate === '' ? NaN : boxNum(v.rate), y = boxNum(v.years), s0 = v.start === '' ? 0 : boxNum(v.start);
+        if (v.rate === '' || !v.years || (v.monthly === '' && v.start === '')) return { msg: tr('Enter the saving, the interest and the years', '積立額、年利、年数を入れてください') };
+        if (!(m >= 0)) return { msg: tr('The saving must be a number', '積立額は数にしてください'), bad: 'monthly' };
+        if (!(R >= 0 && R < 100)) return { msg: tr('The interest must be from 0 to 100 %', '年利は 0〜100 % にしてください'), bad: 'rate' };
+        if (!(y > 0 && y <= 100) || Math.round(y * 12) !== y * 12) return { msg: tr('The years must be a number of months: 20, or 2.5', '年数は 20 や 2.5 のように、月の数になる値にしてください'), bad: 'years' };
+        if (!(s0 >= 0)) return { msg: tr('The amount at the start must be a number', '最初にある額は数にしてください'), bad: 'start' };
+        const n = Math.round(y * 12), i = R / 100 / 12, dec = MONEY_DEC;
+        let bal = s0, paid = s0;
+        const rowsT = [];
+        for (let k = 1; k <= n; k++) { bal = bal * (1 + i) + m; paid += m; if (k % 12 === 0 || k === n) rowsT.push([String(Math.ceil(k / 12)), fmtNum(paid, dec), fmtNum(bal - paid, dec), fmtNum(bal, dec)]); }
+        const iE = `${exprNum(R)}% / 12`;
+        const expr = i ? `${exprNum(s0)} × (1 + ${iE})^${n} + ${exprNum(m)} × ((1 + ${iE})^${n} − 1) / (${iE})` : `${exprNum(s0)} + ${exprNum(m)} × ${n}`;
+        return { rows: [{ name: tr('At the end', '最後の額'), value: fmtNum(bal, dec) + unitWord(), expr },
+          { name: tr('Put in', '入れた額'), value: fmtNum(paid, dec) + unitWord(), expr: '' }, { name: tr('Interest', '増えた額（利息）'), value: fmtNum(bal - paid, dec) + unitWord(), expr: '' }],
+          table: { title: tr('Year by year', '年ごと'), name: 'savings', head: [tr('Year', '年'), tr('Put in', '入れた額'), tr('Interest', '利息'), tr('Amount', '額')], rows: rowsT } };
+      }
+    });
+  }
+  // ---- Dates: days between, a date after n days, an age; in Japanese also the era and the zodiac
+  // (the eras from their first day: 1989-01-07 is Shōwa 64, 1989-01-08 Heisei 1)
+  const ERAS = [['令和', 'Reiwa', 2019, 5, 1], ['平成', 'Heisei', 1989, 1, 8], ['昭和', 'Shōwa', 1926, 12, 25], ['大正', 'Taishō', 1912, 7, 30], ['明治', 'Meiji', 1868, 1, 25]];
+  const ETO = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'], ETO10 = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+  function eraOf(y, m, d) {
+    for (const [ja, en, ey, em, ed] of ERAS) if (y > ey || (y === ey && (m > em || (m === em && d >= ed)))) { const n = y - ey + 1; return { name: JA ? ja : en, n, text: (JA ? ja : en + ' ') + (n === 1 ? (JA ? '元' : '1') : n) + (JA ? '年' : '') }; }
+    return null;
+  }
+  // a date typed: 2026-11-19, 2026/11/19, 2026.11.19, 19.11.2026, today; in Japanese also 令和8年11月19日, R8.11.19
+  function parseDate(t) {
+    t = String(t || '').trim().replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+    if (!t) return null;
+    if (/^(today|heute|hoy|aujourd'hui|오늘|今日|今天)$/i.test(t)) { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() }; }
+    let m = t.match(/^(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})\s*日?$/);
+    if (!m && (m = t.match(/^(\d{1,2})\s*[./-]\s*(\d{1,2})\s*[./-]\s*(\d{4})$/))) m = [m[0], m[3], LANG === 'en' && /\//.test(t) ? m[1] : m[2], LANG === 'en' && /\//.test(t) ? m[2] : m[1]];
+    let y, mo, d;
+    if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+    else {
+      const e = t.match(/^(令和|平成|昭和|大正|明治|[RHSTMrhstm])\s*(元|\d{1,2})\s*[年.]\s*(\d{1,2})\s*[月.]\s*(\d{1,2})\s*日?$/);
+      if (!e) return null;
+      const k = { 令和: 0, R: 0, r: 0, 平成: 1, H: 1, h: 1, 昭和: 2, S: 2, s: 2, 大正: 3, T: 3, t: 3, 明治: 4, M: 4, m: 4 }[e[1]];
+      y = ERAS[k][2] + (e[2] === '元' ? 1 : +e[2]) - 1; mo = +e[3]; d = +e[4];
+      const era = eraOf(y, mo, d);
+      if (!era || era.name !== (JA ? ERAS[k][0] : ERAS[k][1])) return { bad: 'era' };
+    }
+    const dt = new Date(Date.UTC(y, mo - 1, d));
+    if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return null;
+    return { y, m: mo, d };
+  }
+  const dayNum = (o) => Math.round(Date.UTC(o.y, o.m - 1, o.d) / 86400000);
+  const fromDay = (n) => { const d = new Date(n * 86400000); return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate() }; };
+  const WEEK = () => [tr('Sun', '日'), tr('Mon', '月'), tr('Tue', '火'), tr('Wed', '水'), tr('Thu', '木'), tr('Fri', '金'), tr('Sat', '土')];
+  const dateText = (o) => { const w = WEEK()[new Date(Date.UTC(o.y, o.m - 1, o.d)).getUTCDay()]; const z = (n) => String(n).padStart(2, '0'); return JA ? `${o.y}年${o.m}月${o.d}日（${w}）` : `${o.y}-${z(o.m)}-${z(o.d)} (${w})`; };
+  function openDateTool() {
+    const today = () => { const d = new Date(), z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); };
+    const modes = [['after', tr('n days after', '○日後')], ['between', tr('Days between', '日数の差')], ['age', tr('Age', '年齢')]].concat(JA ? [['era', '和暦・干支']] : []);
+    return simpleTool('date', tr('Dates', '日付'), {
+      chips: [[tr('100 days from today', '今日から 100 日後'), { mode: 'after', d1: today(), n: '100' }], [tr('Days to 2027-01-01', '2027 年 1 月 1 日までの日数'), { mode: 'between', d1: today(), d2: '2027-01-01' }]].concat(JA ? [['昭和64年1月7日', { mode: 'era', d1: '1989-01-07' }]] : []),
+      fields: [
+        { k: 'mode', label: tr('Find', '求めるもの'), opts: modes, def: 'after' },
+        { k: 'd1', label: tr('Date', '日付'), def: today, ph: JA ? '2026-11-19、令和8年11月19日' : '2026-11-19', kind: 'date', chips: () => [tr('today', '今日')] },
+        { k: 'n', label: tr('Days', '日数'), def: '100', ph: tr('e.g. 100 or −30', '例：100、−30'), when: (v) => v.mode === 'after' },
+        { k: 'd2', label: tr('Second date', 'もう 1 つの日付'), def: '', ph: '2027-01-01', kind: 'date', when: (v) => v.mode === 'between' || v.mode === 'age' }
+      ],
+      hint: tr('Dates as 2026-11-19 (or "today"). Days between counts the days from the first date to the second; an age is in full years on the second date (today if empty).', '日付は 2026-11-19 か「今日」（日本語では 令和8年11月19日 も）。日数の差は 1 つめから 2 つめまでの日数、年齢は 2 つめの日（空なら今日）の満年齢です。'),
+      run: async (v) => {
+        const a = parseDate(v.d1);
+        if (!v.d1) return { msg: tr('Enter a date', '日付を入れてください') };
+        if (!a || a.bad) return { msg: a && a.bad ? tr('That date is not in that era', 'その日付は、その元号の期間にありません（例：昭和64年は1月7日まで）') : tr('Write the date as 2026-11-19', '日付は 2026-11-19 のように書いてください'), bad: 'd1' };
+        if (v.mode === 'after') {
+          const n = boxNum(v.n);
+          if (!isFinite(n) || n !== Math.floor(n)) return { msg: tr('The days must be a whole number, such as 100 or −30', '日数は 100 や −30 のような整数にしてください'), bad: 'n' };
+          const r = fromDay(dayNum(a) + n);
+          return { rows: [{ name: n >= 0 ? trf('{0} days after', '{0} 日後', fmtNum(n)) : trf('{0} days before', '{0} 日前', fmtNum(-n)), value: dateText(r) + (JA && eraOf(r.y, r.m, r.d) ? '　' + eraOf(r.y, r.m, r.d).text : ''), expr: '' }] };
+        }
+        if (v.mode === 'era') {
+          const e = eraOf(a.y, a.m, a.d), k = ((a.y - 4) % 12 + 12) % 12, k10 = ((a.y - 4) % 10 + 10) % 10;
+          return { rows: [{ name: '和暦', value: e ? e.text + a.m + '月' + a.d + '日' : '明治より前', expr: '' }, { name: '干支（その年）', small: '1 月 1 日で替わるものとします', value: ETO10[k10] + ETO[k] + '（' + ETO[k] + '年）', expr: '' }, { name: '曜日', value: WEEK()[new Date(Date.UTC(a.y, a.m - 1, a.d)).getUTCDay()] + '曜日', expr: '' }] };
+        }
+        const b = v.d2 ? parseDate(v.d2) : v.mode === 'age' ? parseDate('today') : null;
+        if (!v.d2 && v.mode === 'between') return { msg: tr('Enter the second date', 'もう 1 つの日付を入れてください') };
+        if (!b || b.bad) return { msg: tr('Write the second date as 2027-01-01', 'もう 1 つの日付は 2027-01-01 のように書いてください'), bad: 'd2' };
+        if (v.mode === 'between') {
+          const n = dayNum(b) - dayNum(a);
+          return { rows: [{ name: tr('Days', '日数'), small: tr('from the first date to the second', '1 つめから 2 つめまで'), value: fmtNum(n) + tr(' days', ' 日'), expr: '' }, { name: tr('Weeks', '週'), value: trf('{0} weeks {1} days', '{0} 週 {1} 日', fmtNum(Math.trunc(n / 7)), Math.abs(n % 7)), expr: '' }] };
+        }
+        let age = b.y - a.y;
+        if (b.m < a.m || (b.m === a.m && b.d < a.d)) age--;
+        if (age < 0) return { msg: tr('The birthday must be before the second date', '誕生日は 2 つめの日付より前にしてください'), bad: 'd1' };
+        const nb = { y: b.y + ((b.m > a.m || (b.m === a.m && b.d >= a.d)) ? 1 : 0), m: a.m, d: a.d };
+        const nbOk = parseDate(nb.y + '-' + nb.m + '-' + nb.d) || { y: nb.y, m: 3, d: 1 }; // (29 February: 1 March in other years)
+        return { rows: [{ name: tr('Age', '満年齢'), value: trf('{0} years', '{0} 歳', age), expr: '' }, { name: tr('Next birthday', '次の誕生日'), small: trf('in {0} days', 'あと {0} 日', dayNum(nbOk) - dayNum(b)), value: dateText(nbOk), expr: '' }] };
+      }
+    });
+  }
+  // ---- Times: h:mm plus or minus h:mm, the hours worked (end − start − break) × the pay an hour
+  function parseHM(t) {
+    const s = String(t || '').trim().replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[：]/g, ':');
+    let m = s.match(/^(\d{1,3}):(\d{1,2})$/);
+    if (m && +m[2] < 60) return +m[1] * 60 + +m[2];
+    m = s.match(/^(\d{1,3})\s*(h|時間?)\s*(?:(\d{1,2})\s*(m|min|分)?)?$/i);
+    if (m && (!m[3] || +m[3] < 60)) return +m[1] * 60 + (m[3] ? +m[3] : 0);
+    m = s.match(/^(\d{1,4})\s*(m|min|分)$/i);
+    if (m) return +m[1];
+    return NaN;
+  }
+  const hmText = (min) => { const neg = min < 0; min = Math.abs(Math.round(min)); return (neg ? '−' : '') + Math.floor(min / 60) + ':' + String(min % 60).padStart(2, '0'); };
+  function openTimeTool() {
+    return simpleTool('time', tr('Times', '時間'), {
+      chips: [[tr('Worked 9:00–17:30, break 1:00', '9:00〜17:30・休憩 1:00'), { mode: 'work', t1: '9:00', t2: '17:30', brk: '1:00', wage: '' }], [tr('1:45 + 2:30', '1:45 ＋ 2:30'), { mode: 'add', t1: '1:45', t2: '2:30', op: 'plus' }]],
+      fields: [
+        { k: 'mode', label: tr('Find', '求めるもの'), opts: [['work', tr('Hours worked', '勤務時間')], ['add', tr('h:mm ± h:mm', '時:分の足し引き')]], def: 'work' },
+        { k: 't1', label: tr('Start / first', '始め・1 つめ'), def: '9:00', ph: '9:00', kind: 'time' },
+        { k: 'op', label: tr('Operation', '計算'), opts: [['plus', '＋'], ['minus', '−']], def: 'plus', when: (v) => v.mode === 'add' },
+        { k: 't2', label: tr('End / second', '終わり・2 つめ'), def: '17:30', ph: '17:30', kind: 'time' },
+        { k: 'brk', label: tr('Break', '休憩'), def: '1:00', ph: '1:00', kind: 'time', when: (v) => v.mode === 'work' },
+        { k: 'wage', label: tr('Pay an hour', '時給'), def: '', ph: tr('e.g. 1200', '例：1200'), when: (v) => v.mode === 'work' }
+      ],
+      hint: tr('Times as 9:00 or 1:45 (also 2h 30m). An end before the start is taken as the next day (a night shift).', '時刻・時間は 9:00、1:45 のように（2時間30分 も可）。終わりが始めより前なら、次の日として数えます（夜勤）。'),
+      run: async (v) => {
+        const a = parseHM(v.t1), b = parseHM(v.t2);
+        if (!v.t1 || !v.t2) return { msg: tr('Enter two times, such as 9:00 and 17:30', '9:00 と 17:30 のように、2 つの時刻を入れてください') };
+        if (!isFinite(a)) return { msg: tr('Write the time as 9:00', '時刻は 9:00 のように書いてください'), bad: 't1' };
+        if (!isFinite(b)) return { msg: tr('Write the time as 17:30', '時刻は 17:30 のように書いてください'), bad: 't2' };
+        if (v.mode === 'add') {
+          const r = v.op === 'plus' ? a + b : a - b;
+          return { rows: [{ name: tr('Result', '結果'), small: trf('{0} hours', '{0} 時間', fmtNum(r / 60, 4)), value: hmText(r), expr: `${a} min ${v.op === 'plus' ? '+' : '−'} ${b} min to h` }] };
+        }
+        const br = v.brk ? parseHM(v.brk) : 0;
+        if (!isFinite(br)) return { msg: tr('Write the break as 1:00 or 45 min', '休憩は 1:00 や 45分 のように書いてください'), bad: 'brk' };
+        let w = b - a; if (w < 0) w += 24 * 60;
+        w -= br;
+        if (w < 0) return { msg: tr('The break is longer than the time worked', '休憩が勤務時間より長くなっています'), bad: 'brk' };
+        const rows = [{ name: tr('Hours worked', '勤務時間'), small: trf('{0} hours', '{0} 時間', fmtNum(w / 60, 4)), value: hmText(w), expr: '' }];
+        if (v.wage) {
+          const pay = boxNum(v.wage);
+          if (!(pay >= 0)) return { msg: tr('The pay must be a number', '時給は数にしてください'), bad: 'wage' };
+          rows.push({ name: tr('Pay', '給料'), value: fmtNum(pay * w / 60, MONEY_DEC) + unitWord(), expr: `${exprNum(pay)} × ${w} / 60` });
+        }
+        return { rows };
+      }
+    });
+  }
+
   // ---------------------------------------------------------------- tools
   // "Tools" (1.12.0): every tool in one place, found by what one wants to do. A search box on top
   // (the words of all seven languages find a tool, whatever the language of the page: VAT,
@@ -10789,6 +11260,31 @@
   const TOOL_GROUPS = [['shop', tr('Shopping', '買い物')], ['money', tr('Money', 'お金')], ['time', tr('Dates and times', '日付と時間')],
     ['convert', tr('Conversion', '換算')], ['geo', tr('Shapes and volumes', '図形と体積')], ['data', tr('Data', 'データ')]];
   const TOOLS = [
+    // 1.12.0 (C1): everyday calculations
+    ['price', 'shop', '🏷', tr('Price: discount and tax', '値段：割引と税'), tr('Tax included or not, a discount (also two), rounding', '税込・税抜、割引（2 回も）、端数の扱い'),
+      'price tax vat sales discount off percent sale shopping 値段 消費税 税込 税抜 税 割引 値引き 割 セール ぜいこみ わりびき Preis Mehrwertsteuer MwSt Steuer Rabatt precio IVA impuesto descuento prix TVA taxe remise réduction 가격 부가세 세금 할인 價格 營業稅 稅 折扣',
+      () => openPriceTool()],
+    ['percent', 'shop', '%', tr('Percentages', '割合'), tr('A is what % of B, the change from A to B', 'A は B の何 %、増減率'),
+      'percent percentage ratio change increase decrease rate 割合 パーセント 何% 増減率 増加率 比率 わりあい Prozent Anteil Änderung porcentaje cambio pourcentage variation 퍼센트 비율 증감률 百分比 比例 增減率',
+      () => openPercentTool()],
+    ['unitprice', 'shop', '⚖', tr('Unit price: which is cheaper', '単価の比較'), tr('Price per 100 g, 100 mL or piece', '100 g・100 mL・1 個あたりの値段で比べる'),
+      'unit price cheaper compare per gram kilogram litre 単価 比較 どっちが安い グラム たんか Grundpreis Preisvergleich precio unitario comparar prix unitaire comparer 단가 비교 單價 比較',
+      () => openUnitPriceTool()],
+    ['split', 'shop', '👥', tr('Split the bill', '割り勘'), tr('Each person’s share, rounded', '1 人分（端数の扱い）'),
+      'split bill share people each restaurant 割り勘 わりかん 人数 1人あたり Rechnung teilen dividir la cuenta partager l’addition 더치페이 분담 平分 AA 分攤',
+      () => openSplitTool()],
+    ['loan', 'money', '🏠', tr('Loan', 'ローン'), tr('Monthly payment, interest in all, table', '毎月の返済額、利息の合計、返済表'),
+      'loan mortgage payment monthly interest repayment ローン 住宅ローン 返済 毎月 利息 元利均等 元金均等 ろーん Kredit Darlehen Rate Zinsen préstamo hipoteca cuota intereses prêt crédit mensualité intérêts 대출 상환 이자 貸款 房貸 還款 利息',
+      () => openLoanTool()],
+    ['savings', 'money', '🐷', tr('Savings and compound interest', '積立と複利'), tr('What a monthly saving grows to', '毎月の積立がいくらになるか'),
+      'savings compound interest deposit invest grow 積立 複利 貯金 預金 利息 つみたて Sparen Zinseszins ahorro interés compuesto épargne intérêts composés 적금 복리 저축 儲蓄 複利 存款',
+      () => openSavingsTool()],
+    ['date', 'time', '📅', tr('Dates', '日付'), JA ? '日数の差、○日後、年齢、和暦・干支' : tr('Days between, n days after, age', '日数の差、○日後、年齢'),
+      'date days between after before age birthday calendar weekday 日付 日数 何日後 何日前 年齢 誕生日 曜日 和暦 西暦 元号 干支 ひづけ Datum Tage Alter fecha días edad date jours âge 날짜 일수 나이 日期 天數 年齡',
+      () => openDateTool()],
+    ['time', 'time', '⏱', tr('Times', '時間'), tr('h:mm plus or minus, hours worked and pay', '時:分の足し引き、勤務時間と給料'),
+      'time hours minutes add work shift wage pay hourly 時間 時刻 勤務時間 時給 給料 休憩 じかん Zeit Stunden Arbeitszeit Stundenlohn tiempo horas jornada salario temps heures travail salaire 시간 근무 시급 時間 工時 時薪',
+      () => openTimeTool()],
     ['flat', 'geo', '📐', tr('Flat shapes', '平面の図形'), tr('Area and perimeter of a circle, rectangle, triangle, trapezoid…', '円・長方形・三角形・台形などの面積と周の長さ'),
       'area perimeter circle rectangle triangle trapezoid ellipse sector polygon 面積 周 円 長方形 三角形 台形 楕円 扇形 めんせき えん さんかくけい Fläche Umfang Kreis Rechteck Dreieck Trapez área perímetro círculo rectángulo triángulo aire périmètre cercle rectangle triangle 넓이 둘레 원 직사각형 삼각형 面積 周長 圓 長方形 三角形 梯形',
       () => openShapes(2)],
@@ -10819,6 +11315,7 @@
   }
   function useTool(t) {
     if (PRO_GATES[t[0]] && !proGate(t[0])) return; // a tool made a Pro feature asks first (1.12.0)
+    if ((t[1] === 'shop' || t[1] === 'money' || t[1] === 'time') && !proGate('everyday')) return;
     const recent = (store.get('qalc.tools.recent', []) || []).filter((id) => id !== t[0] && TOOLS.some((x) => x[0] === id));
     recent.unshift(t[0]);
     store.set('qalc.tools.recent', recent.slice(0, 4));
@@ -10837,7 +11334,7 @@
         placeholder: tr('What do you want to do?', 'やりたいことで探す'), 'aria-label': tr('Find a tool by what you want to do', 'やりたいことで道具を探す') });
       const found = el('div', { class: 'tool-found', 'aria-live': 'polite' });
       const lists = el('div', { class: 'tool-lists' });
-      p.body.append(search, el('div', { class: 'form-hint tool-eg', text: tr('For example: tank, volume, area', '例：タンク、体積、面積') }), found, lists);
+      p.body.append(search, el('div', { class: 'form-hint tool-eg', text: tr('For example: tax, loan, days, tank, volume', '例：消費税、ローン、日数、タンク、体積') }), found, lists);
       const fill = () => {
         lists.textContent = '';
         const recent = (store.get('qalc.tools.recent', []) || []).map((id) => TOOLS.find((t) => t[0] === id)).filter(Boolean);
@@ -11232,7 +11729,9 @@
     history_tools: ['🕘', tr('History tools', '履歴の道具'), tr('Search, pin, notes, and the sum of lines', '検索・固定・メモ・選んだ行の合計')],
     memkeys: ['M+', tr('Memory keys', 'メモリーキー'), 'M+ M− MR MC'],
     cross_sections: ['◪', tr('Cross sections', '断面の立体'), tr('Squares, triangles or half discs on a base region', '底面の上に正方形・三角形・半円を立てた立体')],
-    rev_lines: ['☰', tr('Lines of the method and Pappus', '方法の線とパップスの定理'), tr('Disks or shells drawn in the graph; V = 2π d A', 'グラフに円板・殻の線、V = 2π d A')]
+    rev_lines: ['☰', tr('Lines of the method and Pappus', '方法の線とパップスの定理'), tr('Disks or shells drawn in the graph; V = 2π d A', 'グラフに円板・殻の線、V = 2π d A')],
+    everyday: ['🏷', tr('Everyday tools', '日常の計算'), tr('Price and tax, loan, savings, dates and times', '値段と税、ローン、積立、日付と時間')],
+    tables: ['📄', tr('Tables as CSV files', '表の CSV 保存'), tr('Save the table of a loan or of savings for a spreadsheet', 'ローンや積立の表を、表計算ソフト用に保存')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {
@@ -11359,7 +11858,8 @@
     fileSaved({ ok: true });
   }
   function fileSaved(ev) {
-    if (ev.ok) toast(tr('History exported', '履歴を書き出しました'), 2000);
+    const what = savingWhat; savingWhat = '';
+    if (ev.ok) toast(what === 'table' ? tr('Table saved', '表を保存しました') : tr('History exported', '履歴を書き出しました'), 2000);
     else if (!ev.cancelled) toast(localMessage(ev.error) || tr('Could not save the file', 'ファイルを保存できませんでした'), 3500);
   }
 

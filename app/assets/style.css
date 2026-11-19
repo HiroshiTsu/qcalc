@@ -1395,3 +1395,14 @@ body.hselect #history { padding-bottom: 150px; }
 .rev-pappus { font-size: 13px; color: var(--muted); margin: 4px 0; overflow-wrap: anywhere; }
 .rev-angle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rev-angle-v, .rev-n-v { min-width: 3.2em; font-variant-numeric: tabular-nums; }
+
+/* the everyday tools (1.12.0, C1) */
+.tool-choice .seg.mini { flex: 1 1 0; flex-wrap: wrap; }
+.tool-mini-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.geo-size { flex-wrap: wrap; }
+.geo-row.tool-main .geo-val { font-size: 1.45em; font-weight: 700; }
+.tool-table .tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.tool-tbl { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+.tool-tbl th, .tool-tbl td { padding: 6px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+.tool-tbl th { background: var(--surface-2); position: sticky; top: 0; }
+.tool-tbl-btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
