@@ -1046,7 +1046,20 @@
     "Rectangle: k =": "Rectangle : k =",
     "Shape of the cross sections": "Forme des sections",
     "Each cross section stands on the region across x (s: its width, the upper function − the lower one).": "Chaque section se dresse sur la région, perpendiculaire à l’axe x (s : sa largeur, fonction du haut − du bas).",
-    "\"Make a solid ▾\" → \"Cross sections\": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under \"More shapes ▾\"); the volume V = ∫ A(s(x)) dx, s being the width of the region.": "« Faire un solide ▾ » → « Sections » : des carrés □, triangles équilatéraux △ ou demi-disques ◠ se dressent perpendiculairement à x sur la région colorée (autres formes sous « Autres formes ▾ ») ; le volume V = ∫ A(s(x)) dx, s étant la largeur de la région."
+    "\"Make a solid ▾\" → \"Cross sections\": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under \"More shapes ▾\"); the volume V = ∫ A(s(x)) dx, s being the width of the region.": "« Faire un solide ▾ » → « Sections » : des carrés □, triangles équilatéraux △ ou demi-disques ◠ se dressent perpendiculairement à x sur la région colorée (autres formes sous « Autres formes ▾ ») ; le volume V = ∫ A(s(x)) dx, s étant la largeur de la région.",
+    "In \"Make a solid\", \"Show the method with lines\" draws the thin disks or rings (across the axis) or the shells (along the axis) that the volume adds up, n of them. When the region is on one side of the axis, the theorem of Pappus and Guldinus is shown too: V = 2π d A (A the area, d the distance of its centre from the axis). In the 3D view the slider \"Angle\" turns the solid from 0° to 360° (180°: cut in half); ▶ turns it again.": "Dans « Faire un solide », « Montrer la méthode par des lignes » dessine les disques ou anneaux fins (perpendiculaires à l’axe) ou les coquilles (parallèles à l’axe) dont le volume fait la somme, au nombre de n. Si la région est d’un seul côté de l’axe, le théorème de Pappus-Guldin s’affiche aussi : V = 2π d A (A l’aire, d la distance de son centre à l’axe). Dans la vue 3D, le curseur « Angle » fait tourner le solide de 0° à 360° (180° : coupé en deux) ; ▶ le fait tourner à nouveau.",
+    "Number of lines": "Nombre de lignes",
+    "Show the method with lines": "Montrer la méthode par des lignes",
+    "Lines n =": "Lignes n =",
+    "Pappus–Guldinus theorem: ": "Théorème de Pappus-Guldin : ",
+    "cannot be used, because the region is on both sides of the axis (the two sides overlap when turned)": "inutilisable, car la région est des deux côtés de l’axe (en tournant, les deux côtés se recouvrent)",
+    "  ✓ the same as the integral": "  ✓ égal à l’intégrale",
+    "Angle turned (degrees)": "Angle de rotation (degrés)",
+    "Turn it again from 0°": "Tourner à nouveau depuis 0°",
+    "Cut in half": "Couper en deux",
+    "Angle": "Angle",
+    "Lines of the method and Pappus": "Lignes de la méthode et Pappus",
+    "Disks or shells drawn in the graph; V = 2π d A": "Disques ou coquilles dans le graphique ; V = 2π d A"
   },
   messages: {
     "rates-old": (p1) => "Les taux de change n’ont pas été mis à jour depuis " + p1 + " " + (p1 === '1' ? "jour" : "jours") + " (Paramètres → « Mettre à jour les taux de change maintenant »)",

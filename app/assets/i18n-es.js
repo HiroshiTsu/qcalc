@@ -1058,7 +1058,20 @@
     "Rectangle: k =": "Rectángulo: k =",
     "Shape of the cross sections": "Forma de las secciones",
     "Each cross section stands on the region across x (s: its width, the upper function − the lower one).": "Cada sección se levanta sobre la región, perpendicular al eje x (s: su ancho, función de arriba − de abajo).",
-    "\"Make a solid ▾\" → \"Cross sections\": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under \"More shapes ▾\"); the volume V = ∫ A(s(x)) dx, s being the width of the region.": "«Hacer un sólido ▾» → «Secciones»: cuadrados □, triángulos equiláteros △ o semicírculos ◠ se levantan perpendiculares a x sobre la región coloreada (más figuras en «Más figuras ▾»); el volumen V = ∫ A(s(x)) dx, siendo s el ancho de la región."
+    "\"Make a solid ▾\" → \"Cross sections\": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under \"More shapes ▾\"); the volume V = ∫ A(s(x)) dx, s being the width of the region.": "«Hacer un sólido ▾» → «Secciones»: cuadrados □, triángulos equiláteros △ o semicírculos ◠ se levantan perpendiculares a x sobre la región coloreada (más figuras en «Más figuras ▾»); el volumen V = ∫ A(s(x)) dx, siendo s el ancho de la región.",
+    "In \"Make a solid\", \"Show the method with lines\" draws the thin disks or rings (across the axis) or the shells (along the axis) that the volume adds up, n of them. When the region is on one side of the axis, the theorem of Pappus and Guldinus is shown too: V = 2π d A (A the area, d the distance of its centre from the axis). In the 3D view the slider \"Angle\" turns the solid from 0° to 360° (180°: cut in half); ▶ turns it again.": "En «Hacer un sólido», «Mostrar el método con líneas» dibuja los discos o anillos delgados (perpendiculares al eje) o las capas (paralelas al eje) que suma el volumen, n de ellos. Si la región está a un lado del eje, también aparece el teorema de Pappus-Guldin: V = 2π d A (A el área, d la distancia de su centroide al eje). En la vista 3D, el control «Ángulo» gira el sólido de 0° a 360° (180°: cortado por la mitad); ▶ lo gira de nuevo.",
+    "Number of lines": "Número de líneas",
+    "Show the method with lines": "Mostrar el método con líneas",
+    "Lines n =": "Líneas n =",
+    "Pappus–Guldinus theorem: ": "Teorema de Pappus-Guldin: ",
+    "cannot be used, because the region is on both sides of the axis (the two sides overlap when turned)": "no se puede usar porque la región está a ambos lados del eje (al girar, los dos lados se superponen)",
+    "  ✓ the same as the integral": "  ✓ igual que la integral",
+    "Angle turned (degrees)": "Ángulo girado (grados)",
+    "Turn it again from 0°": "Girar de nuevo desde 0°",
+    "Cut in half": "Cortar por la mitad",
+    "Angle": "Ángulo",
+    "Lines of the method and Pappus": "Líneas del método y Pappus",
+    "Disks or shells drawn in the graph; V = 2π d A": "Discos o capas en la gráfica; V = 2π d A"
   },
   messages: {
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (Ajustes → "Actualizar los tipos de cambio ahora")',

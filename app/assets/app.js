@@ -392,7 +392,8 @@
     sections: 'free',      // the volume from measured values (1.11): recommended free
     history_tools: 'free', // the history: search, pin, notes, sum of lines (1.12 A5): recommended free (usability)
     memkeys: 'free',       // the memory keys (1.12 A5): recommended free (usability)
-    cross_sections: 'free' // solids with known cross sections (1.12 B1): recommended free (2D and the volume; the 3D view needs Pro)
+    cross_sections: 'free', // solids with known cross sections (1.12 B1): recommended free (2D and the volume; the 3D view needs Pro)
+    rev_lines: 'free',     // the lines of the method in 2D and the theorem of Pappus (1.12 B2): recommended free (the angle of the 3D view needs Pro as 3D)
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -3325,6 +3326,7 @@
     tr('In the graph, "Area" finds the area between a function and the x axis or between two functions (the crossing points are offered as ranges), and "Length" the length of a curve or the perimeter between two functions. "Example" draws a circle or an ellipse.', 'グラフの「面積を求める」で、関数と x 軸の間や 2 つの関数の間の面積（交点の間の範囲を選べます）、「長さ・周」で曲線の長さや 2 つの関数に囲まれた部分の周の長さが求められます。「図形の例」で円や楕円を描けます。'),
     tr('⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis at once and gives the volume. Tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.', '2D グラフの右の丸いボタン「⟳ 3D」で、色の付いた部分を x 軸のまわりに回した体積がすぐ出ます。y 軸（または x 軸）の線をタップすると、その軸のまわりに回します。y = k・x = k は線をドラッグして動かせます。軸の反対側に薄く映った形が、立体を軸で切った形です。変えたあとのメッセージの「↶ 元に戻す」で戻せます。'),
     tr('"Make a solid ▾" → "Cross sections": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under "More shapes ▾"); the volume V = ∫ A(s(x)) dx, s being the width of the region.', '「立体にする ▾」→「断面の立体」では、色の付いた部分の上に、x 軸に垂直に正方形 □・正三角形 △・半円 ◠ を立てた立体の体積 V = ∫ A(s(x)) dx を出します（s は底面の幅。ほかの形は「詳しく：ほかの形 ▾」）。'),
+    tr('In "Make a solid", "Show the method with lines" draws the thin disks or rings (across the axis) or the shells (along the axis) that the volume adds up, n of them. When the region is on one side of the axis, the theorem of Pappus and Guldinus is shown too: V = 2π d A (A the area, d the distance of its centre from the axis). In the 3D view the slider "Angle" turns the solid from 0° to 360° (180°: cut in half); ▶ turns it again.', '「立体にする」の「方法を線で見せる」では、体積を足し合わせる薄い円板・穴のあいた円板（軸に垂直）か、殻（軸に平行）を n 本の線で描きます。領域が軸の片側にあるときは、パップス・ギュルダンの定理 V = 2π d A（A は面積、d は重心から軸までの距離）も出します。3D で見るときは「角度」のスライダーで 0° から 360° まで回せます（180° で半分に切った形）。▶ でもう一度回ります。'),
     tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks like a pale gelatin in a skin of a deeper shade in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで濃い色の皮に包まれた薄い色のゼラチンのように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
     tr('Its region "Enclosed" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.',
       '範囲の「囲まれた部分」は、一方の曲面がもう一方より上にある部分（または z = 0 より上の部分）を、交線から自動で見つけます。例：z = x² + y² と z = 4 なら 8π。範囲を式（x² + y² ≤ 4）で示して床に輪郭を描き、部分が複数あれば部分ごとに出します。'),
@@ -5465,10 +5467,28 @@
       g.globalAlpha = 0.45; g.strokeStyle = f.color; g.lineWidth = 1; g.setLineDash([4, 3]);
       g.stroke();
       P.canvas.dataset.mirror = M.kind + ':' + M.v;
+      // 1.12.0 (B2): the lines of the method used, n of them over the region and its mirror image:
+      // disks or washers across the axis (axis along x), shells along the axis (axis up)
+      const RV = P.areaUI.rev;
+      if (RV.kind === 'rev' && RV.slices) {
+        const n = RV.nSlices;
+        g.globalAlpha = 0.85; g.lineWidth = 1.4; g.setLineDash([]); g.strokeStyle = f.color;
+        for (let i = 0; i < n; i++) {
+          const x = A.a + (A.b - A.a) * (i + 0.5) / n, y1 = yAt(f, x), y2 = yAt(gs, x);
+          if (!isFinite(y1) || !isFinite(y2)) continue;
+          g.beginPath();
+          g.moveTo(sx(x), sy(y1)); g.lineTo(sx(x), sy(y2));
+          if (M.kind === 'h') { g.moveTo(sx(x), sy(2 * M.v - y1)); g.lineTo(sx(x), sy(2 * M.v - y2)); }
+          else { g.moveTo(sx(2 * M.v - x), sy(y1)); g.lineTo(sx(2 * M.v - x), sy(y2)); }
+          g.stroke();
+        }
+        P.canvas.dataset.slices = (M.kind === 'h' ? 'washer' : 'shell') + ':' + n;
+      } else delete P.canvas.dataset.slices;
     } else delete P.canvas.dataset.mirror;
     // 1.12.0 (B1): the cross sections, seen in 2D: at five places a band across the region and a small
     // picture of the shape standing on it (drawn slanted: up is to the upper right)
     const RS = P.areaUI && P.areaUI.rev;
+    if (!(M && revOpen())) delete P.canvas.dataset.slices;
     if (RS && RS.kind === 'sec' && revOpen()) {
       const n = 5, k = RS.shape, ppy = Math.abs(sy(1) - sy(0)) || 1;
       const up = (z) => [z * ppy * 0.5, -z * ppy * 0.25]; // a height z on the screen, slanted
@@ -5928,13 +5948,13 @@
     const R = { axis: REV_AXES.some((x) => x[0] === saved.axis) ? saved.axis : 'x', seq: 0, three: null,
       // 1.12.0 (B1): the kind of solid ('rev' turned around an axis, 'sec' cross sections standing on
       // the region) and the shape of the cross sections, with k of the rectangle and A(s) of one's own
-      kind: saved.kind === 'sec' ? 'sec' : 'rev', shape: SEC_SHAPES.some((x) => x[0] === saved.shape) ? saved.shape : 'sq',
+      kind: saved.kind === 'sec' ? 'sec' : 'rev', slices: saved.slices !== false, nSlices: Math.max(1, Math.min(40, Number(saved.n) || 8)), shape: SEC_SHAPES.some((x) => x[0] === saved.shape) ? saved.shape : 'sq',
       sk: typeof saved.sk === 'string' ? saved.sk : '1/2', own: typeof saved.own === 'string' ? saved.own : 's^2/2' };
     const k = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: 'k', value: typeof saved.k === 'string' ? saved.k : '−1', 'aria-label': tr('k of the axis', '軸の k') });
     const kErr = el('div', { class: 'form-hint warn', role: 'alert' });
     const kRow = el('span', { class: 'rev-k' }, el('span', { class: 'rev-k-lbl', text: 'k =' }), k);
     const btns = REV_AXES.map(([key, label]) => tapButton({ text: label, 'aria-label': tr('Axis: ', '軸：') + label }, () => { if (key !== R.axis) { revUndoable(); setAxis(key); } }));
-    const save = () => store.set('qalc.rev', { axis: R.axis, k: k.value, open: !box.hidden, kind: R.kind, shape: R.shape, sk: skIn.value, own: ownIn.value });
+    const save = () => store.set('qalc.rev', { axis: R.axis, k: k.value, open: !box.hidden, kind: R.kind, shape: R.shape, sk: skIn.value, own: ownIn.value, slices: !!R.slices, n: R.nSlices });
     const setAxis = (key, quiet) => {
       R.axis = key;
       btns.forEach((b, i) => { const on = REV_AXES[i][0] === key; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
@@ -5949,6 +5969,14 @@
     const outs = el('div', { class: 'geo-out rev-out' });
     const method = el('div', { class: 'form-hint rev-method' });
     const moreOuts = el('div', { class: 'geo-out rev-more-out' });
+    // B2: the lines of the method in the graph (n slices), and the theorem of Pappus and Guldinus
+    const pappus = el('div', { class: 'rev-pappus', 'aria-live': 'polite' });
+    const nIn = el('input', { type: 'range', min: '1', max: '40', step: '1', value: String(Math.max(1, Math.min(40, Number(saved.n) || 8))), 'aria-label': tr('Number of lines', '線の数') });
+    const nVal = el('span', { class: 'rev-n-v', text: nIn.value });
+    const slicesBtn = tapButton({ class: 'btn rev-slices', 'aria-pressed': 'false', text: tr('Show the method with lines', '方法を線で見せる') }, () => { if (!R.slices && !proGate('rev_lines')) return; R.slices = !R.slices; showSlices(); save(); draw(); });
+    const nRow = el('label', { class: 'plot-range rev-n' }, el('span', { text: tr('Lines n =', '線の数 n =') }), nIn, nVal);
+    nIn.addEventListener('input', () => { R.nSlices = Number(nIn.value); nVal.textContent = nIn.value; save(); draw(); });
+    const showSlices = () => { slicesBtn.classList.toggle('on', !!R.slices); slicesBtn.setAttribute('aria-pressed', String(!!R.slices)); nRow.hidden = !R.slices; };
     const more = el('details', { class: 'rev-more' }, el('summary', { text: tr('More: surface areas ▾', '詳しく：表面積 ▾') }), moreOuts);
     const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, () => {
       // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion")
@@ -6003,12 +6031,13 @@
       R.kind = kind;
       kRev.classList.toggle('on', kind === 'rev'); kSec.classList.toggle('on', kind === 'sec');
       kRev.setAttribute('aria-pressed', String(kind === 'rev')); kSec.setAttribute('aria-pressed', String(kind === 'sec'));
-      axisRow.hidden = kind !== 'rev'; secRow.hidden = kind !== 'sec'; exRow.hidden = kind !== 'rev';
+      axisRow.hidden = kind !== 'rev'; secRow.hidden = kind !== 'sec'; exRow.hidden = kind !== 'rev'; slicesRow.hidden = kind !== 'rev'; pappus.hidden = kind !== 'rev';
       save();
       if (!quiet) { computeRevolution(); }
     };
+    const slicesRow = el('div', { class: 'rev-slices-row' }, slicesBtn, nRow);
     const box = el('div', { class: 'rev-box' }, kinds, axisRow, secRow,
-      kErr, msg, outs, method, more, view, exRow,
+      kErr, msg, outs, method, pappus, slicesRow, more, view, exRow,
       el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
     box.hidden = true;
     const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Make a solid ▾', '立体にする ▾'), 'aria-expanded': 'false' }, () => {
@@ -6021,12 +6050,46 @@
         setTimeout(() => toast(tr('Tap an axis to turn around it. Drag an edge ↔ to change the range.', '軸をタップすると、回す軸が変わります。端の ↔ をドラッグすると、範囲が変わります'), 6000), 400);
       }
     });
-    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, more, method, view, setAxis, setKind, setShape, skIn, ownIn, open: () => { if (box.hidden) toggle.click(); } });
+    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, more, method, pappus, view, setAxis, setKind, setShape, skIn, ownIn, open: () => { if (box.hidden) toggle.click(); } });
+    showSlices();
     setAxis(R.axis, true);
     setShape(R.shape, true);
     setKind(R.kind, true);
     if (saved.open) { box.hidden = false; toggle.classList.add('on'); toggle.setAttribute('aria-expanded', 'true'); }
     return R;
+  }
+  // The theorem of Pappus and Guldinus (1.12.0, B2): when the region is on one side of the axis, its
+  // area A and the distance d of its centroid from the axis give V = 2π d A, which is shown with the
+  // integral's value beside it; on both sides it cannot be used, and the line says why.
+  async function revPappus(R, f, g, parts, ax, V, stale) {
+    const fe = f.expr, ge = g ? g.expr : '0', k = ax.k;
+    // the side of the axis: from the drawn values of the region's curves
+    let below = false, above = false;
+    for (const s of [f, g].filter(Boolean)) s.x.forEach((x, i) => {
+      const y = s.y[i];
+      if (y === null || !isFinite(y) || !parts.some((p) => x >= p.lo && x <= p.hi)) return;
+      const t = ax.kind === 'h' ? y - ax.kv : x - ax.kv, eps = 1e-9 * Math.max(1, Math.abs(ax.kv));
+      if (t < -eps) below = true; else if (t > eps) above = true;
+    });
+    if (!g && ax.kind === 'h') { if (ax.kv > 0) below = true; else if (ax.kv < 0) above = true; } // (the x axis is a side of the region)
+    if (ax.kind === 'v') parts.forEach((p) => { if (p.lo < ax.kv - 1e-12) below = true; if (p.hi > ax.kv + 1e-12) above = true; });
+    const head = tr('Pappus–Guldinus theorem: ', 'パップス・ギュルダンの定理：');
+    if (below && above) { R.pappus.textContent = head + tr('cannot be used, because the region is on both sides of the axis (the two sides overlap when turned)', '使えません。領域が軸の両側にあるためです（回すと両側が重なります）'); return; }
+    // A = ∫|f − g| dx; d A = ∫ |(f − k)² − (g − k)²| / 2 dx (axis along x) or ∫ |x − k| |f − g| dx (axis up)
+    const area = `abs((${fe}) − (${ge}))`;
+    const mom = ax.kind === 'h' ? `abs(((${fe}) − ${revParen(k)})^2 − ((${ge}) − ${revParen(k)})^2) / 2` : `abs(x − ${revParen(k)}) × abs((${fe}) − (${ge}))`;
+    const As = [], Ms = [];
+    for (const p of parts) {
+      const a1 = await revIntegral(area, p, []), m1 = await revIntegral(mom, p, []);
+      if (stale()) return;
+      if (!a1 || !m1 || a1.inf || m1.inf) return;
+      As.push(a1); Ms.push(m1);
+    }
+    const A = await sumValues(As), M = await sumValues(Ms);
+    if (stale() || !(A.v > 0)) return;
+    const d = M.v / A.v, Vp = 2 * Math.PI * d * A.v, same = Math.abs(Vp - V) <= 1e-7 * Math.max(1, Math.abs(V));
+    R.pappus.textContent = head + 'A = ' + toDisplay(clip(A.text, 30)) + ',  d = ' + toDisplay(fmtV(+d.toPrecision(10))) + ',  V = 2π d A ≈ ' + toDisplay(fmtV(+Vp.toPrecision(10))) +
+      (same ? tr('  ✓ the same as the integral', '  ✓ 積分の値と一致') : '');
   }
   // a row of the results: its name, the formula in small letters, the value; tapping it offers to put
   // the integral into the input field or to copy the result
@@ -6050,7 +6113,7 @@
     if (R.kind === 'sec') return computeSections(auto);
     const seq = ++R.seq, stale = () => seq !== R.seq;
     R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.k.removeAttribute('aria-invalid'); R.outs.textContent = ''; R.method.textContent = '';
-    R.moreOuts.textContent = ''; R.more.hidden = false; P.revVolText = '';
+    R.moreOuts.textContent = ''; R.more.hidden = false; R.pappus.textContent = ''; P.revVolText = '';
     const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '回転体を計算できませんでした'); R.outs.textContent = ''; } };
     const f = P.series[Number(U.f1.value)];
     if (!f) return fail(tr('Draw a function first', '先に関数を描いてください'));
@@ -6105,6 +6168,7 @@
     if (vols.length) { const V = await sumValues(vols); if (stale()) return; revShow(vrow, V, vexpr.join(' + ')); }
     else if (!solid.pieces.some((p) => p.vol !== '0')) revShow(vrow, { text: '0', v: 0 }, '0');
     if (vrow.result) { P.revVolText = shortValue('V', vrow.result); draw(); } // also in the corner of the graph
+    if (vols.length) revPappus(R, f, g, parts, ax, vols.reduce((t, v) => t + v.v, 0), stale);
     R.three = solid.three; R.view.hidden = false;
     // the surfaces: each curve that bounds the solid, turned: 2π ∫ (its distance) √(1 + f′²) dx
     const curved = [], sexpr = [];
@@ -7714,7 +7778,15 @@
     const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
     const legend = el('div', { class: 'legend' });
     const msg = el('div', { class: 'form-hint' });
-    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res });
+    // 1.12.0 (B2): for a solid of revolution, how far it is turned (0–360°; 180° is the solid cut in
+    // half along its axis) and ▶ to watch it turn again
+    const angle = el('input', { type: 'range', min: '0', max: '360', step: '5', value: '360', 'aria-label': tr('Angle turned (degrees)', '回した角度（度）') });
+    const angleVal = el('span', { class: 'rev-angle-v', text: '360°' });
+    const play = tapButton({ class: 'btn', 'aria-label': tr('Turn it again from 0°', '0° からもう一度回す'), text: '▶' }, () => { if (Q3.revInfo) startGrow(Q3.revInfo, true); });
+    const half = tapButton({ class: 'btn', text: tr('Cut in half', '半分に切る') }, () => setAngle3d(180));
+    angle.addEventListener('input', () => setAngle3d(Number(angle.value)));
+    const angleRow = el('div', { class: 'plot-range rev-angle', hidden: true }, el('span', { text: tr('Angle', '角度') }), angle, angleVal, play, half);
+    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
@@ -7727,6 +7799,7 @@
         // surfaces are drawn again with another grid or range; other surfaces drop them (1.8.3)
         if (plotExprs(ta.value, 4).join('\n') !== Q3.exprs.join('\n')) { Q3.equalOnce = false; if (Q3.samples) Q3.samples.clearChoice(); }
       }
+      if (!Q3.keep) { Q3.revInfo = null; Q3.grow = null; if (Q3.angleRow) Q3.angleRow.hidden = true; } // (another graph: not the solid of revolution)
       Q3.keep = false;
       store.set('qalc.plot3d.exprs', ta.value); store.set('qalc.plot3d.res', res.value);
       store.set('qalc.plot3d.xmin', xmin.value); store.set('qalc.plot3d.xmax', xmax.value);
@@ -7749,7 +7822,7 @@
           el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax),
           el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr(' to ', ' 〜 ').trim() }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
-      wrap, legend, msg, el('div', { class: 'tools' }, buildPartial3d(), buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
+      wrap, angleRow, legend, msg, el('div', { class: 'tools' }, buildPartial3d(), buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
@@ -7778,6 +7851,8 @@
     Q3.points = opts.points || null;
     Q3.equalOnce = !!opts.equal;
     Q3.growNext = opts.grow || null;
+    Q3.revInfo = opts.grow || null; // (the angle row of B2)
+    if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
     Q3.pending = null;
     // (1.11.0: a finer grid when asked for, as for a solid of revolution with its round rims)
     if (opts.res && (Number(store.get('qalc.plot3d.res', '41')) || 41) < opts.res) store.set('qalc.plot3d.res', String(opts.res));
@@ -9072,20 +9147,37 @@
   // around the axis of up to theta are drawn, theta from 0 to 360° in 2 s; then the graph is turned
   // with a finger as always. A touch stops it; with "reduce motion" the solid is shown at once.
   // ax: 'h', the axis along x (the angle of (y, z)), 'v', along z (the angle of (x, y)).
-  function startGrow(ax) {
+  // asked: ▶ was pressed (it plays also with "reduce motion"; only the automatic start does not)
+  function startGrow(ax, asked) {
     Q3.grow = null;
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { if (Q3.canvas) Q3.canvas.dataset.grow = 'still'; return; }
-    const G = Q3.grow = { ax, theta: 0, t0: 0 };
+    if (Q3.angleRow) Q3.angleRow.hidden = false;
+    if (!asked && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { if (Q3.canvas) Q3.canvas.dataset.grow = 'still'; showAngle3d(360); return; }
+    const G = Q3.grow = { ax, theta: 0, t0: 0, last: 0 };
     const step = (now) => {
       if (Q3.grow !== G) return;
       if (!G.t0) G.t0 = now;
+      // (not on the screen, or the app in the background: it waits, and goes on when seen again)
+      const r = Q3.canvas && Q3.canvas.getBoundingClientRect();
+      if (document.hidden || !r || !r.width || r.bottom < 0 || r.top > (window.innerHeight || 0)) { if (G.last) G.t0 += now - G.last; G.last = now; requestAnimationFrame(step); return; }
+      G.last = now;
       G.theta = Math.min(2 * Math.PI, (now - G.t0) / 2000 * 2 * Math.PI);
       if (Q3.canvas) Q3.canvas.dataset.grow = String(Math.round(G.theta * 180 / Math.PI));
+      showAngle3d(Math.round(G.theta * 180 / Math.PI));
       if (G.theta >= 2 * Math.PI) Q3.grow = null;
       draw3d();
       if (Q3.grow === G) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
+  }
+  function showAngle3d(deg) { if (Q3.angle) { Q3.angle.value = String(deg); Q3.angleVal.textContent = deg + '°'; } }
+  // the slider: the solid turned by deg degrees (360: whole), drawn at once
+  function setAngle3d(deg) {
+    if (!Q3.revInfo) return;
+    deg = Math.max(0, Math.min(360, deg));
+    showAngle3d(deg);
+    Q3.grow = deg >= 360 ? null : { ax: Q3.revInfo, theta: deg * Math.PI / 180, still: true };
+    if (Q3.canvas) Q3.canvas.dataset.grow = String(deg);
+    draw3d();
   }
   function draw3d() {
     const c = Q3.canvas;
@@ -9607,7 +9699,7 @@
     wrap.addEventListener('pointerdown', (e) => {
       if (e.target.tagName === 'BUTTON' || !Q3.data) return;
       try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* the pointer is already gone */ }
-      if (Q3.grow) { Q3.grow = null; if (Q3.canvas) Q3.canvas.dataset.grow = 'stopped'; draw3d(); } // a touch shows the whole solid at once
+      if (Q3.grow && !Q3.grow.still) { Q3.grow = null; showAngle3d(360); if (Q3.canvas) Q3.canvas.dataset.grow = 'stopped'; draw3d(); } // a touch shows the whole solid at once
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       start = snapshot();
       if (pts.size > 1) moved = true; else moved = false;
@@ -11139,7 +11231,8 @@
     sections: ['📏', tr('Volume from measured values', '測った値から体積'), tr('Cross sections or a grid of heights (earthwork, ponds)', '断面積の表や、格子の点の高さから（土量・池など）')],
     history_tools: ['🕘', tr('History tools', '履歴の道具'), tr('Search, pin, notes, and the sum of lines', '検索・固定・メモ・選んだ行の合計')],
     memkeys: ['M+', tr('Memory keys', 'メモリーキー'), 'M+ M− MR MC'],
-    cross_sections: ['◪', tr('Cross sections', '断面の立体'), tr('Squares, triangles or half discs on a base region', '底面の上に正方形・三角形・半円を立てた立体')]
+    cross_sections: ['◪', tr('Cross sections', '断面の立体'), tr('Squares, triangles or half discs on a base region', '底面の上に正方形・三角形・半円を立てた立体')],
+    rev_lines: ['☰', tr('Lines of the method and Pappus', '方法の線とパップスの定理'), tr('Disks or shells drawn in the graph; V = 2π d A', 'グラフに円板・殻の線、V = 2π d A')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {

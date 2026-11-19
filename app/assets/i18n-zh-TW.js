@@ -1050,7 +1050,20 @@
     "Rectangle: k =": "長方形：k =",
     "Shape of the cross sections": "截面的形狀",
     "Each cross section stands on the region across x (s: its width, the upper function − the lower one).": "截面垂直於 x 軸，立在底面（著色部分）上（s：底面寬度＝上方函數－下方函數）。",
-    "\"Make a solid ▾\" → \"Cross sections\": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under \"More shapes ▾\"); the volume V = ∫ A(s(x)) dx, s being the width of the region.": "「做成立體 ▾」→「截面立體」：在著色部分上垂直於 x 軸立起正方形 □、正三角形 △ 或半圓 ◠，求出體積 V = ∫ A(s(x)) dx（s 為底面寬度；其他形狀在「詳細：其他形狀 ▾」）。"
+    "\"Make a solid ▾\" → \"Cross sections\": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under \"More shapes ▾\"); the volume V = ∫ A(s(x)) dx, s being the width of the region.": "「做成立體 ▾」→「截面立體」：在著色部分上垂直於 x 軸立起正方形 □、正三角形 △ 或半圓 ◠，求出體積 V = ∫ A(s(x)) dx（s 為底面寬度；其他形狀在「詳細：其他形狀 ▾」）。",
+    "In \"Make a solid\", \"Show the method with lines\" draws the thin disks or rings (across the axis) or the shells (along the axis) that the volume adds up, n of them. When the region is on one side of the axis, the theorem of Pappus and Guldinus is shown too: V = 2π d A (A the area, d the distance of its centre from the axis). In the 3D view the slider \"Angle\" turns the solid from 0° to 360° (180°: cut in half); ▶ turns it again.": "「做成立體」的「以線條顯示方法」會畫出相加成體積的薄圓盤、環（垂直於軸）或圓柱殼（平行於軸），共 n 條線。區域在軸的一側時，也會顯示帕普斯－古爾丁定理 V = 2π d A（A 為面積，d 為形心到軸的距離）。以 3D 查看時，可用「角度」滑桿從 0° 轉到 360°（180° 為對半切開）；▶ 會再轉一次。",
+    "Number of lines": "線條數",
+    "Show the method with lines": "以線條顯示方法",
+    "Lines n =": "線條數 n =",
+    "Pappus–Guldinus theorem: ": "帕普斯－古爾丁定理：",
+    "cannot be used, because the region is on both sides of the axis (the two sides overlap when turned)": "無法使用，因為區域位於軸的兩側（旋轉時兩側會重疊）",
+    "  ✓ the same as the integral": "  ✓ 與積分值一致",
+    "Angle turned (degrees)": "旋轉角度（度）",
+    "Turn it again from 0°": "從 0° 再轉一次",
+    "Cut in half": "對半切開",
+    "Angle": "角度",
+    "Lines of the method and Pappus": "方法線條與帕普斯定理",
+    "Disks or shells drawn in the graph; V = 2π d A": "圖形中的圓盤或殼線；V = 2π d A"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",

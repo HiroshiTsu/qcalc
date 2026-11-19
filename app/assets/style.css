@@ -1386,3 +1386,12 @@ body.hselect #history { padding-bottom: 150px; }
 .sec-more > summary { cursor: pointer; padding: 12px 4px; min-height: 48px; box-sizing: border-box; color: var(--accent); font-weight: 600; list-style: none; }
 .sec-more > summary::-webkit-details-marker { display: none; }
 .sec-row[hidden] { display: none; }
+
+/* B2: the lines of the method, Pappus–Guldinus, the angle of the 3D solid */
+.rev-slices-row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 6px 0; }
+.rev-slices-row[hidden], .rev-n[hidden], .rev-angle[hidden] { display: none; }
+.btn.rev-slices.on { background: var(--accent-soft); color: var(--key-op-text); border-color: var(--accent); }
+.rev-n input[type="range"], .rev-angle input[type="range"] { flex: 1 1 120px; min-width: 100px; min-height: 48px; }
+.rev-pappus { font-size: 13px; color: var(--muted); margin: 4px 0; overflow-wrap: anywhere; }
+.rev-angle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rev-angle-v, .rev-n-v { min-width: 3.2em; font-variant-numeric: tabular-nums; }

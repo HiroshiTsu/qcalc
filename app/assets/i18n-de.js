@@ -1046,7 +1046,20 @@
     "Rectangle: k =": "Rechteck: k =",
     "Shape of the cross sections": "Form der Querschnitte",
     "Each cross section stands on the region across x (s: its width, the upper function − the lower one).": "Jeder Querschnitt steht quer zu x auf dem Bereich (s: seine Breite, obere Funktion − untere).",
-    "\"Make a solid ▾\" → \"Cross sections\": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under \"More shapes ▾\"); the volume V = ∫ A(s(x)) dx, s being the width of the region.": "„Körper bilden ▾“ → „Querschnitte“: Quadrate □, gleichseitige Dreiecke △ oder Halbkreise ◠ stehen quer zu x auf dem eingefärbten Bereich (weitere unter „Weitere Formen ▾“); das Volumen V = ∫ A(s(x)) dx, s die Breite des Bereichs."
+    "\"Make a solid ▾\" → \"Cross sections\": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under \"More shapes ▾\"); the volume V = ∫ A(s(x)) dx, s being the width of the region.": "„Körper bilden ▾“ → „Querschnitte“: Quadrate □, gleichseitige Dreiecke △ oder Halbkreise ◠ stehen quer zu x auf dem eingefärbten Bereich (weitere unter „Weitere Formen ▾“); das Volumen V = ∫ A(s(x)) dx, s die Breite des Bereichs.",
+    "In \"Make a solid\", \"Show the method with lines\" draws the thin disks or rings (across the axis) or the shells (along the axis) that the volume adds up, n of them. When the region is on one side of the axis, the theorem of Pappus and Guldinus is shown too: V = 2π d A (A the area, d the distance of its centre from the axis). In the 3D view the slider \"Angle\" turns the solid from 0° to 360° (180°: cut in half); ▶ turns it again.": "In „Körper bilden“ zeichnet „Methode mit Linien zeigen“ die dünnen Scheiben oder Ringe (quer zur Achse) bzw. die Zylinderschalen (entlang der Achse), deren Summe das Volumen ist, n Stück. Liegt der Bereich auf einer Seite der Achse, steht auch die Guldinsche Regel da: V = 2π d A (A die Fläche, d der Abstand ihres Schwerpunkts von der Achse). In der 3D-Ansicht dreht der Regler „Winkel“ den Körper von 0° bis 360° (180°: halbiert); ▶ dreht ihn erneut.",
+    "Number of lines": "Anzahl der Linien",
+    "Show the method with lines": "Methode mit Linien zeigen",
+    "Lines n =": "Linien n =",
+    "Pappus–Guldinus theorem: ": "Guldinsche Regel: ",
+    "cannot be used, because the region is on both sides of the axis (the two sides overlap when turned)": "nicht anwendbar, weil der Bereich auf beiden Seiten der Achse liegt (beim Drehen überlappen sich die Seiten)",
+    "  ✓ the same as the integral": "  ✓ gleich dem Integral",
+    "Angle turned (degrees)": "Gedrehter Winkel (Grad)",
+    "Turn it again from 0°": "Erneut ab 0° drehen",
+    "Cut in half": "Halbieren",
+    "Angle": "Winkel",
+    "Lines of the method and Pappus": "Linien der Methode und Guldin",
+    "Disks or shells drawn in the graph; V = 2π d A": "Scheiben oder Schalen im Graphen; V = 2π d A"
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",

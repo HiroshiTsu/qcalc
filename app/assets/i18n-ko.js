@@ -1049,7 +1049,20 @@
     "Rectangle: k =": "직사각형: k =",
     "Shape of the cross sections": "단면의 모양",
     "Each cross section stands on the region across x (s: its width, the upper function − the lower one).": "단면은 x축에 수직으로 밑면(색칠한 부분) 위에 섭니다(s: 밑면의 폭 = 위 함수 − 아래 함수).",
-    "\"Make a solid ▾\" → \"Cross sections\": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under \"More shapes ▾\"); the volume V = ∫ A(s(x)) dx, s being the width of the region.": "‘입체 만들기 ▾’ → ‘단면 입체’에서는 색칠한 부분 위에 x축에 수직으로 정사각형 □·정삼각형 △·반원 ◠을 세운 입체의 부피 V = ∫ A(s(x)) dx를 구합니다(s는 밑면의 폭. 다른 모양은 ‘자세히: 다른 모양 ▾’)."
+    "\"Make a solid ▾\" → \"Cross sections\": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under \"More shapes ▾\"); the volume V = ∫ A(s(x)) dx, s being the width of the region.": "‘입체 만들기 ▾’ → ‘단면 입체’에서는 색칠한 부분 위에 x축에 수직으로 정사각형 □·정삼각형 △·반원 ◠을 세운 입체의 부피 V = ∫ A(s(x)) dx를 구합니다(s는 밑면의 폭. 다른 모양은 ‘자세히: 다른 모양 ▾’).",
+    "In \"Make a solid\", \"Show the method with lines\" draws the thin disks or rings (across the axis) or the shells (along the axis) that the volume adds up, n of them. When the region is on one side of the axis, the theorem of Pappus and Guldinus is shown too: V = 2π d A (A the area, d the distance of its centre from the axis). In the 3D view the slider \"Angle\" turns the solid from 0° to 360° (180°: cut in half); ▶ turns it again.": "‘입체 만들기’의 ‘방법을 선으로 보이기’는 부피를 더해 가는 얇은 원판·고리(축에 수직)나 껍질(축에 평행)을 n개의 선으로 그립니다. 영역이 축의 한쪽에 있으면 파푸스-굴딘 정리 V = 2π d A(A는 넓이, d는 무게중심에서 축까지의 거리)도 보여 줍니다. 3D로 볼 때는 ‘각도’ 슬라이더로 0°부터 360°까지 돌릴 수 있습니다(180°는 반으로 자른 모양). ▶로 다시 돌립니다.",
+    "Number of lines": "선의 수",
+    "Show the method with lines": "방법을 선으로 보이기",
+    "Lines n =": "선의 수 n =",
+    "Pappus–Guldinus theorem: ": "파푸스-굴딘 정리: ",
+    "cannot be used, because the region is on both sides of the axis (the two sides overlap when turned)": "쓸 수 없습니다. 영역이 축의 양쪽에 있기 때문입니다(돌리면 양쪽이 겹칩니다)",
+    "  ✓ the same as the integral": "  ✓ 적분값과 일치",
+    "Angle turned (degrees)": "돌린 각도(도)",
+    "Turn it again from 0°": "0°부터 다시 돌리기",
+    "Cut in half": "반으로 자르기",
+    "Angle": "각도",
+    "Lines of the method and Pappus": "방법의 선과 파푸스 정리",
+    "Disks or shells drawn in the graph; V = 2π d A": "그래프에 원판·껍질의 선, V = 2π d A"
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",
