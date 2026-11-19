@@ -1521,3 +1521,5 @@ body.hselect #history { padding-bottom: 150px; }
 .note-res { flex: 1 1 6em; min-width: 0; min-height: 48px; text-align: right; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; font-size: calc(15px * var(--fs)); overflow-wrap: break-word; word-break: keep-all; padding: 4px 2px; }
 .note-res:empty { min-height: 0; padding: 0; pointer-events: none; }
 .note-res.bad { color: var(--danger); font-weight: 400; font-size: 13px; }
+/* the line pictures of the Pro features (1.12.0, 要判断 14 B) */
+.pro-feat .ico svg { display: block; margin: 2px auto 0; color: var(--accent); }

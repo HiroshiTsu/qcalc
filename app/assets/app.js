@@ -336,6 +336,9 @@
   // the numbers drawn by KaTeX with a decimal comma (and ";" between arguments)
   function commaMath(node) {
     if (!commaMode || !node) return;
+    // (BG11: the MathML read by TalkBack holds a number as one text node per digit and sign — KaTeX
+    // joins its <mn> parts so — and a "." alone was not changed: one text node per number first)
+    node.normalize();
     const w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
     for (let n = w.nextNode(); n; n = w.nextNode()) {
       const v = n.nodeValue;
@@ -4806,6 +4809,11 @@
     return parts.length === 1 ? parts[0] : { text: '≈ ' + fmtV(+v.toPrecision(digits)), exact: '', v, digits };
   }
   const shownValue = (val) => (val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text);
+  // a value's text as shown (1.12.0, BG10): the values of the area and solid tools are in the engine's form
+  // (decimal point; the decimals made here grouped with commas, fmtV), and showResult takes the form shown:
+  // with a decimal comma their decimal point was taken for a group separator and dropped (0.4188790205 was
+  // shown as 04188790205)
+  const valueShown = (t) => displayText(commaMode ? String(t).replace(/(\d),(?=\d{3}(?!\d))/g, '$1') : String(t));
   // the exact form of an expression of exact values (calculated with "exact"), or ''
   async function exactForm(expr) {
     const r = await Bridge.send('calc', { expr, opts: iOpts({ approx: 'exact' }), timeout: 3000 });
@@ -5041,13 +5049,13 @@
     if (!live()) return;
     const onGraph = (name, val) => { U.lenShown = true; U.lenKey = key; P.lenExpr = lenExpr; showAreaMode(); if (P.area) { P.area.lenText = shortValue(name, val.text); draw(); } };
     const note = () => { if (clipped) U.len.append(el('div', { class: 'form-hint', text: realNote(!!g, parts) })); };
-    if (!g) { U.lenText = shownValue(lf); U.lenName = tr('Length of the curve', '曲線の長さ'); U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + shownValue(lf)); note(); onGraph(tr('Length', '長さ'), lf); return; }
+    if (!g) { U.lenText = shownValue(lf); U.lenName = tr('Length of the curve', '曲線の長さ'); U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + valueShown(shownValue(lf))); note(); onGraph(tr('Length', '長さ'), lf); return; }
     const lg = await sumValues(lgs);
     const total = await sumValues(lfs.concat(lgs, sides));
     if (!live()) return;
     U.len.textContent = '';
     U.lenText = shownValue(total); U.lenName = tr('Perimeter', '周の長さ');
-    showResult(U.len, tr('Perimeter ', '周の長さ ') + shownValue(total));
+    showResult(U.len, tr('Perimeter ', '周の長さ ') + valueShown(shownValue(total)));
     onGraph(tr('Perimeter', '周の長さ'), total);
     U.len.append(el('div', { class: 'form-hint', text: tr('Curves: ', '曲線：') + shownValue(lf).replace(/^= /, '') + ' + ' + shownValue(lg).replace(/^= /, '') +
       (sides.length ? tr(', with the vertical sides at a and b', '、a と b の縦の辺を含む') : '') }));
@@ -5900,7 +5908,7 @@
     // the heights at the edges: the top and the bottom of the sides there
     const rimSurf = [];
     for (let n = 0; n < exprs.length; n++) rimSurf.push({ iv: [ivs[n]], z: {} });
-    for (const rho of [...new Set(ivs.flat())]) {
+    for (const rho of [...new Set([].concat(...ivs))]) {
       if (!(rho > 1e-12)) continue;
       const vals = await revAt(curves, engineNum(kv + rho));
       if (!vals) continue;
@@ -6190,7 +6198,7 @@
     R.outs.append(row.node);
     return row;
   }
-  const revShow = (row, val, expr) => { row.result = val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text; row.val.textContent = ''; showResult(row.val, row.result); row.expr = expr; };
+  const revShow = (row, val, expr) => { row.result = val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text; row.val.textContent = ''; showResult(row.val, valueShown(row.result)); row.expr = expr; };
   // the volume and the surface of the solid, for the functions and the range of the area tools.
   // auto: opened or drawn (not a tap on the axis): the same, it only tells how long it took
   async function computeRevolution(auto) {
@@ -6765,7 +6773,7 @@
     if (seq !== U.seq) return;
     if (!r.val) { U.out.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
     U.out.textContent = '';
-    showResult(U.out, (signed ? tr('Integral ', '積分の値 ') : tr('Volume ', '体積 ')) + shownValue(r.val));
+    showResult(U.out, (signed ? tr('Integral ', '積分の値 ') : tr('Volume ', '体積 ')) + valueShown(shownValue(r.val)));
     if (S.real && S.real.note) U.out.append(el('div', { class: 'form-hint', text: S.real.note }));
     if (r.missing) U.out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', r.missing) }));
     Q3.volExpr = r.expr;
@@ -6825,7 +6833,7 @@
     const total = await sumValues(parts);
     if (seq !== U.seq) return;
     out.textContent = '';
-    showResult(out, tr('Surface area ', '表面積 ') + shownValue(total));
+    showResult(out, tr('Surface area ', '表面積 ') + valueShown(shownValue(total)));
     out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
     if (S.real && S.real.note && !append) out.append(el('div', { class: 'form-hint', text: S.real.note }));
     if (missing) out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', missing) }));
@@ -7145,7 +7153,7 @@
     const total = await sumValues(vals);
     if (seq !== U.seq) return;
     vol.textContent = '';
-    showResult(vol, tr('Volume ', '体積 ') + shownValue(total));
+    showResult(vol, tr('Volume ', '体積 ') + valueShown(shownValue(total)));
     if (many) vol.append(el('div', { class: 'form-hint', text: vals.map((v, m) => trf('Part {0}', '部分 {0}', m + 1) + tr(': ', '：') + shownValue(v).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
     Q3.volExpr = exprs.join(' + ');
     U.ins.hidden = false;
@@ -7183,7 +7191,7 @@
     const all = await sumValues(sums);
     if (seq !== U.seq) return;
     surf.textContent = '';
-    showResult(surf, tr('Surface area ', '表面積 ') + shownValue(all));
+    showResult(surf, tr('Surface area ', '表面積 ') + valueShown(shownValue(all)));
     surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
   }
   // --------------------------------------- regions given by formulas (3D graph, 1.11.0)
@@ -7572,7 +7580,7 @@
     }
     if (!val) { vol.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
     vol.textContent = '';
-    showResult(vol, name + shownValue(val));
+    showResult(vol, name + valueShown(shownValue(val)));
     if (expr) { Q3.volExpr = expr; U.ins.hidden = false; }
     // the surface area of the surfaces over the region (the floor z = 0: the area of the region)
     surf.textContent = tr('Calculating the surface area…', '表面積を計算中…');
@@ -7595,7 +7603,7 @@
     const all = await sumValues(sums);
     if (stale()) return;
     surf.textContent = '';
-    showResult(surf, tr('Surface area ', '表面積 ') + shownValue(all));
+    showResult(surf, tr('Surface area ', '表面積 ') + valueShown(shownValue(all)));
     surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
   }
   // whether "Enclosed" is the first choice for the surfaces that are chosen: two surfaces that cross
@@ -10694,7 +10702,7 @@
           const sub = (unit) => row.def[2].replace(/\{(\w+)\}/g, (m, n) => { if (n === 'turn') return fullTurn(); const q = sh.p.find((x) => x[0] === n) || [], g = geoValue(v[n], q[2], unit); return G.dia && q[4] ? `(${g} / 2)` : g; });
           // a row worked out by the page itself (the surface of an ellipsoid, 1.11.0)
           if (typeof row.def[2] === 'function') {
-            const rr = await row.def[2](G.dia ? Object.fromEntries(Object.entries(v).map(([n, x]) => [n, (sh.p.find((q) => q[0] === n) || [])[4] ? `(${x}) / 2` : x])) : v, { unit: G.unit, base, vu: G.vu });
+            const rr = await row.def[2](G.dia ? Object.keys(v).reduce((o, n) => { o[n] = (sh.p.find((q) => q[0] === n) || [])[4] ? `(${v[n]}) / 2` : v[n]; return o; }, {}) : v, { unit: G.unit, base, vu: G.vu });
             if (seq !== G.seq) return;
             if (!rr) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
             row.expr = rr.expr; row.result = rr.result; row.shown = rr.shown; row.vol = rr.vol || '';
@@ -11516,7 +11524,7 @@
       const per = Math.floor(cap / (2 * K) / Math.max(1, spec.parts.length)) - 2;
       const all = await stlSections(spec, per);
       if (all.error) return all;
-      const size = Math.max(1e-9, ...all.flat(2).map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]), Math.abs(p[2]))));
+      const size = Math.max(1e-9, ...[].concat(...[].concat(...all)).map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]), Math.abs(p[2]))));
       const m = meshNew(size * 1e-9);
       for (const secs of all) meshLoft(m, secs);
       M = meshDone(m);
@@ -11533,7 +11541,7 @@
         polys = r.polys; axis = r.axis;
       }
       if (!polys.length) return { error: noRealText() };
-      const size = Math.max(1e-9, ...polys.flat().map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]))));
+      const size = Math.max(1e-9, ...[].concat(...polys).map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]))));
       const m = meshNew(size * 1e-9);
       for (const P of polys) meshRevolve(m, P, n, axis);
       M = meshDone(m);
@@ -13618,7 +13626,7 @@
     const sh = $('#sheet');
     sh.textContent = '';
     sh.append(el('div', { class: 'stitle', text: what }));
-    if (info) sh.append(el('div', { class: 'pro-feat pro-sheet-feat' }, el('span', { class: 'ico', text: info[0], 'aria-hidden': 'true' }),
+    if (info) sh.append(el('div', { class: 'pro-feat pro-sheet-feat' }, proIco(key, info[0]),
       el('div', {}, el('div', { class: 'n', text: info[1] }), el('div', { class: 'muted', text: info[2] }))));
     sh.append(el('div', { class: 'pro-sheet-note', text: tr('One purchase unlocks every Pro feature, also those of later updates. No subscription, no ads.', '1 回の購入で、すべての Pro 機能が使えます（今後増える機能も）。サブスクリプションも広告もありません。') }));
     const done = (k) => closeSheet(k);
@@ -13694,9 +13702,32 @@
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {
     const info = PRO_INFO();
-    const gated = Object.keys(PRO_GATES).filter((k) => PRO_GATES[k] === 'pro' && info[k]).map((k) => info[k]);
-    return PRO_FIXED().map((f) => f.slice(0, 3)).concat(gated, [
-      ['✨', tr('Future Pro features', '今後の Pro 機能'), tr('The Pro features of later updates, at no extra cost', '今後のアップデートで増える Pro 機能も、追加料金なしで使えます')]]);
+    const gated = Object.keys(PRO_GATES).filter((k) => PRO_GATES[k] === 'pro' && info[k]).map((k) => info[k].concat([k]));
+    return PRO_FIXED().concat(gated, [
+      ['✨', tr('Future Pro features', '今後の Pro 機能'), tr('The Pro features of later updates, at no extra cost', '今後のアップデートで増える Pro 機能も、追加料金なしで使えます'), 'future']]);
+  }
+  // The small pictures of the Pro features (1.12.0, 要判断 14: B, the line pictures, as the author decided):
+  // drawn in the accent colour with lines, the same on every phone, in the light and the dark theme. A
+  // feature without one keeps its symbol.
+  const PRO_SVG = {
+    precision: '<circle cx="10" cy="10" r="6.5"/><path d="M15 15l5.5 5.5"/><path d="M7.5 8.5v3M10 8.5v3M12.5 8.5v3"/>',
+    '3d': '<path d="M3 15c3-4 6-4 9 0s6 4 9 0"/><path d="M3 10c3-4 6-4 9 0s6 4 9 0"/><path d="M6.5 8.3v9.4M12 10v9.6M17.5 8.3v9.4"/>',
+    themes: '<path d="M12 3a9 9 0 1 0 0 18c1.4 0 1.8-1 1.3-2-.6-1.2.2-2.5 1.6-2.5H17a4 4 0 0 0 4-4C21 7 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/>',
+    export: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M12.5 10v7M9.8 14.5l2.7 2.7 2.7-2.7"/>',
+    tables: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 4.5v15M15 4.5v15"/>',
+    tank_heads: '<path d="M7 7h10a5 5 0 0 1 0 10H7A5 5 0 0 1 7 7z"/><path d="M2.6 13.5h18.8"/>',
+    profile: '<path d="M9 3h6M10 3c0 3-4 5-4 10s2 8 6 8 6-3 6-8-4-7-4-10"/><path d="M12 2v20" stroke-dasharray="2 2"/>',
+    stl: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+    share_pro: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.2l5 2.8-5 2.8z"/><path d="M3 8.5h2M3 15.5h2M19 8.5h2M19 15.5h2"/>',
+    notes: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
+    future: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>'
+  };
+  // the picture of a feature: its line picture, or its symbol
+  function proIco(key, sym) {
+    const d = PRO_SVG[key], s = el('span', { class: 'ico', 'aria-hidden': 'true' });
+    if (d) s.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+    else s.textContent = sym;
+    return s;
   }
   // what stays free (the Pro panel): the calculator itself and the tools that are not Pro
   function freeFeatures() {
@@ -13729,8 +13760,8 @@
     }
     body.append(card);
     const list = el('div', { class: 'card' });
-    for (const [ico, name, desc] of proFeatures()) {
-      list.append(el('div', { class: 'pro-feat' }, el('span', { class: 'ico', text: ico }),
+    for (const [ico, name, desc, key] of proFeatures()) {
+      list.append(el('div', { class: 'pro-feat' }, proIco(key, ico),
         el('div', {}, el('div', { class: 'n', text: name }), el('div', { class: 'muted', text: desc }))));
     }
     body.append(list, el('div', { class: 'form-hint', text: tr('Everything else in QCalc stays free.', 'そのほかの機能は、すべて無料のまま使えます。') }));
