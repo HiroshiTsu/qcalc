@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>QCalc – Bedienungsanleitung</title>
+<style>/* The web version of the QCalc user manual (made into the page by manual/build.py). The version inside
+   the app uses app/assets/style.css (the classes .m-*). */
+:root { --bg: #ffffff; --text: #1d2433; --muted: #59627a; --line: #dde2ea; --accent: #2459d9; --m-accent: #2459d9; --m-on-accent: #ffffff;
+        --m-soft: #e7eefc; --box: #f5f7fb; --tip: #eaf6ee; --mis: #fdf0ec; --note: #fff6dc; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #121418; --text: #e6e9ef; --muted: #a8b0bf; --line: #2e333d; --accent: #8bb0ff; --m-accent: #6f9bff; --m-on-accent: #0d1220;
+          --m-soft: #22304d; --box: #1a1e25; --tip: #16271c; --mis: #2b1c17; --note: #2b2512; }
+}
+html { background: var(--bg); }
+body.m-web { margin: 0 auto; max-width: 820px; padding: 24px 16px 48px; background: var(--bg); color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Noto Sans CJK JP", "Noto Sans KR", "Noto Sans TC", Meiryo, sans-serif;
+  line-height: 1.75; font-size: 17px; }
+a { color: var(--accent); }
+.m-cover { display: flex; gap: 16px; align-items: center; }
+.m-cover img { width: 64px; height: 64px; border-radius: 16px; }
+.m-cover h1 { margin: 0; font-size: 1.8em; line-height: 1.2; }
+.m-subt, .m-ver { margin: 2px 0; color: var(--muted); }
+.m-bar { margin: 16px 0 8px; display: flex; flex-direction: column; gap: 6px; }
+.m-bar p { margin: 0; }
+.m-dl a { display: inline-block; padding: 10px 16px; border-radius: 24px; background: var(--m-accent); color: var(--m-on-accent); text-decoration: none; font-weight: 700; min-height: 28px; }
+.m-dl-n { color: var(--muted); }
+.m-langs { font-size: .95em; }
+.m-langs a, .m-langs b { display: inline-block; padding: 8px 2px; }
+.manual-search { box-sizing: border-box; width: 100%; min-height: 48px; padding: 10px 14px; font: inherit; color: var(--text); background: var(--box); border: 1px solid var(--line); border-radius: 12px; }
+.m-none { color: var(--muted); }
+.m-doc h2 { font-size: 1.45em; margin: 2em 0 .5em; padding-top: .5em; border-top: 2px solid var(--line); line-height: 1.3; }
+.m-doc h3 { font-size: 1.18em; margin: 1.6em 0 .4em; line-height: 1.35; }
+.m-doc h4 { font-size: 1.04em; margin: 1.2em 0 .3em; }
+.m-toc { background: var(--box); border-radius: 12px; padding: 12px 16px; margin: 16px 0; }
+.m-toc-t { font-weight: 700; margin-bottom: 4px; }
+.m-toc ol { margin: 0; padding-left: 1.4em; }
+.m-toc ol ol { padding-left: 1.2em; font-size: .94em; }
+.m-toc a { display: block; padding: 3px 0; }  /* (block: a long title that wraps keeps its number on its first line) */
+.m-lbl { font-weight: 700; }
+.m-what .m-lbl { display: block; color: var(--muted); font-size: .9em; }
+.m-steps { margin: .6em 0; }
+.m-steps ol { margin: .2em 0; padding-left: 1.6em; }
+.m-steps li { margin: .25em 0; }
+.m-box { border-radius: 10px; padding: 8px 14px; margin: .7em 0; background: var(--box); }
+.m-box p, .m-box ul { margin: .2em 0; }
+.m-tip { background: var(--tip); }
+.m-mis { background: var(--mis); }
+.m-note { background: var(--note); }
+.m-ex code { font-size: 1em; }
+.m-pro { margin: .6em 0; }
+.m-badge { display: inline-block; padding: 0 8px; border-radius: 6px; background: var(--m-accent); color: var(--m-on-accent); font-weight: 700; font-size: .85em; }
+b.ui { font-weight: 700; }
+code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .92em; background: var(--box); padding: 0 4px; border-radius: 4px; }
+.m-tw { overflow-x: auto; }
+table { border-collapse: collapse; margin: .6em 0; font-size: .95em; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--box); }
+.m-fig { margin: 1em 0; }
+.m-fig figcaption { color: var(--muted); font-size: .9em; margin-top: 4px; }
+.m-svg svg { width: 100%; max-width: 300px; height: auto; color: var(--text); display: block; }
+.m-shot-in { position: relative; display: inline-block; max-width: 100%; }
+.m-shot img { display: block; max-width: 100%; width: 320px; height: auto; border: 1px solid var(--line); border-radius: 16px; }
+.m-mark { position: absolute; transform: translate(-50%, -50%); width: 24px; height: 24px; line-height: 24px; border-radius: 50%; text-align: center;
+  background: var(--m-accent); color: var(--m-on-accent); font-weight: 700; font-size: 14px; box-shadow: 0 0 0 2px var(--bg); }
+.m-legend { margin: .4em 0; }
+.m-idx { columns: 2; column-gap: 24px; padding-left: 1.1em; font-size: .92em; }
+.m-idx li { break-inside: avoid; }
+.m-foot { margin-top: 32px; }
+@media (max-width: 520px) { body.m-web { font-size: 16px; } .m-idx { columns: 1; } .m-cover h1 { font-size: 1.5em; } }
+@media print {
+  @page { size: A4; margin: 16mm 15mm 18mm; @bottom-center { content: counter(page) " / " counter(pages); font-size: 9pt; color: #555; } }
+  :root { --bg: #fff; --text: #111; --muted: #444; --line: #bbb; --box: #f3f4f7; --tip: #eef7f0; --mis: #fbf1ee; --note: #fff7e0; --m-soft: #e9eefb; }
+  body.m-web { max-width: none; padding: 0; font-size: 10.5pt; line-height: 1.6; }
+  .m-bar, .m-foot { display: none; }
+  .m-cover { min-height: 60vh; flex-direction: column; justify-content: center; text-align: center; break-after: page; }
+  .m-cover img { width: 96px; height: 96px; }
+  .m-cover h1 { font-size: 26pt; }
+  .m-toc { background: none; margin: 0; padding: 0; font-size: 9.5pt; line-height: 1.45; }  /* (the first chapter starts a page) */
+  .m-toc > ol { columns: 2; column-gap: 24px; margin: 0; }
+  .m-toc > ol > li { break-inside: avoid; }
+  .m-doc section.m-ch { break-before: page; }
+  .m-doc h2 { border-top: 0; margin-top: 0; }
+  .m-box, figure, table, .m-steps li { break-inside: avoid; }
+  .m-shot img { width: 230px; }
+  a { color: #1d3fa0; text-decoration: none; }
+  .m-idx { columns: 2; }
+}
+</style>
+</head>
+<body class="m-web">
+<header class="m-cover">
+  <img src="../../icon-512.png" alt="" width="64" height="64">
+  <div><h1>QCalc – Bedienungsanleitung</h1><p class="m-subt">Ein vielseitiger Rechner für Android: Ausdrücke so eingeben, wie man sie schreibt</p><p class="m-ver">Version 1.12.0 · 2026-11-19</p></div>
+</header>
+<div class="m-bar">
+  <p class="m-dl"><a href="QCalc-manual-de.pdf" download>Als PDF speichern</a> <span class="m-dl-n">(A4)</span></p>
+  <p class="m-langs" aria-label="Sprache"><a href="../ja/" hreflang="ja" lang="ja">日本語</a> · <a href="../en/" hreflang="en" lang="en">English</a> · <b>Deutsch</b> · <a href="../es/" hreflang="es" lang="es">Español</a> · <a href="../fr/" hreflang="fr" lang="fr">Français</a> · <a href="../ko/" hreflang="ko" lang="ko">한국어</a> · <a href="../zh-TW/" hreflang="zh-TW" lang="zh-TW">繁體中文</a></p>
+  <input id="m-q" type="search" class="manual-search" placeholder="In der Anleitung suchen" aria-label="In der Anleitung suchen">
+  <p id="m-none" class="m-none" hidden>Nichts gefunden. Versuchen Sie ein anderes Wort.</p>
+</div>
+<main class="m-doc">
+<nav class="m-toc" aria-label="Inhalt"><div class="m-toc-t">Inhalt</div><ol><li><a href="#intro">Einführung</a><ol><li><a href="#what-qcalc-does">Was QCalc kann</a></li><li><a href="#first-steps">Die ersten drei Rechnungen</a></li><li><a href="#new-1-12">Neu in 1.12.0</a></li><li><a href="#examples">Beispiele und Tipps in der App</a></li></ol></li><li><a href="#screen">Der Bildschirm</a></li><li><a href="#basics">Grundrechnen</a><ol><li><a href="#typing">Einen Ausdruck eingeben</a></li><li><a href="#results">Das Ergebnis lesen: exakt, genähert, Brüche</a></li><li><a href="#undo">Löschen und rückgängig machen</a></li><li><a href="#number-format">Zahlenformat: das Dezimalzeichen</a></li></ol></li><li><a href="#history">Verlauf und Speicher</a><ol><li><a href="#pins-notes">Anheften, Notizen und Suche</a></li><li><a href="#select-sum">Zeilen addieren</a></li><li><a href="#export">Den Verlauf exportieren (CSV)</a></li><li><a href="#memory-keys">Speichertasten (M+ M− MR MC)</a></li></ol></li><li><a href="#keys">Tasten und Eingabehilfen</a><ol><li><a href="#key-pages">Die vier Tastenseiten</a></li><li><a href="#boxes">Kästchen □ (die Formulare)</a></li><li><a href="#suggestions">Vorschläge</a></li><li><a href="#writing">Funktionen, Einheiten und Währungen schreiben</a></li><li><a href="#lists">Listen: Funktionen, Einheiten, Konstanten, eigene Definitionen</a></li><li><a href="#currencies">Währungen und Wechselkurse</a></li></ol></li><li><a href="#tools">Werkzeuge</a><ol><li><a href="#find-tools">Ein Werkzeug finden</a></li><li><a href="#price">Preis: Rabatt und Steuer</a></li><li><a href="#percent">Prozente</a></li><li><a href="#unit-price">Grundpreis: was ist günstiger</a></li><li><a href="#split">Rechnung teilen</a></li><li><a href="#loan">Kredit</a></li><li><a href="#savings">Sparen und Zinseszins</a></li><li><a href="#dates">Daten</a></li><li><a href="#times">Zeiten</a></li><li><a href="#convert">Einheiten und Währungen umrechnen</a></li><li><a href="#shapes">Formen: Fläche, Volumen, Länge</a></li><li><a href="#tanks">Tanks: Füllmenge und Füllhöhe</a></li><li><a href="#tank-heads">Tankböden und Tabellen</a></li><li><a href="#measured">Volumen aus Messwerten</a></li><li><a href="#profile">Körper aus einem Profil</a></li><li><a href="#stl">STL-Dateien für 3D-Drucker</a></li><li><a href="#stats">Statistik</a></li><li><a href="#notes">Rechennotizen</a></li></ol></li><li><a href="#graphs">Graphen</a><ol><li><a href="#graph-2d">2D-Graph</a></li><li><a href="#area-length">Fläche und Länge</a></li><li><a href="#solid">Einen Körper bilden (Rotationskörper)</a></li><li><a href="#cross-sections">Körper mit bekannten Querschnitten</a></li><li><a href="#graph-3d">3D-Graph</a></li><li><a href="#volume-3d">Volumen und Oberfläche (3D)</a></li><li><a href="#share">Bilder und GIFs teilen</a></li></ol></li><li><a href="#forms">Formulare: Analysis, Gleichungen, Matrizen</a><ol><li><a href="#calculus">Ableitungen, Integrale, Grenzwerte, Summen</a></li><li><a href="#equations">Gleichungen</a></li><li><a href="#matrices">Matrizen und Vektoren</a></li></ol></li><li><a href="#setup">Einstellungen, Sprache, Widget</a><ol><li><a href="#settings">Einstellungen</a></li><li><a href="#language">Sprache</a></li><li><a href="#widget">Widget, Kachel und Verknüpfungen</a></li><li><a href="#about">Über diese App und Datenschutz</a></li></ol></li><li><a href="#pro">QCalc Pro</a><ol><li><a href="#pro-free">Was kostenlos ist</a></li><li><a href="#pro-features">Was QCalc Pro hinzufügt</a></li><li><a href="#pro-buy">Kaufen und wiederherstellen</a></li></ol></li><li><a href="#trouble">Wenn etwas nicht klappt</a><ol><li><a href="#faq">Häufige Fragen</a></li><li><a href="#errors">Fehlermeldungen und ihre Behebung</a></li><li><a href="#time-limit">Das Zeitlimit einer Rechnung</a></li><li><a href="#caution">Hinweise zur Verwendung der Ergebnisse</a></li></ol></li><li><a href="#glossary">Glossar</a></li><li><a href="#index">Stichwortverzeichnis</a></li></ol></nav>
+<section class="m-ch" id="intro">
+<h2>Einführung</h2>
+
+<section class="m-sec" id="what-qcalc-does">
+<h3>Was QCalc kann</h3>
+<p>QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Papier schreiben würden, und sofort das Ergebnis erhalten. Gerechnet wird mit libqalculate, der Rechenmaschine des Desktop-Rechners Qalculate!.</p>
+<ul><li>Von den Grundrechenarten über Brüche, Wurzeln, Einheiten, Währungen, Ableitungen, Integrale und Gleichungen bis zu Matrizen, alles in einer Zeile.</li><li>Wenn möglich ist das Ergebnis exakt (√2, π/2, 7/12), mit einem Dezimalnäherungswert daneben.</li><li>Alltägliche Rechnungen wie Preise, Kredite, Daten, Umrechnungen, Statistik und Tanks finden Sie unter „Werkzeuge“: Zahlen eingeben, das Ergebnis erscheint.</li><li>2D- und 3D-Graphen mit Flächen, Längen und dem Volumen von Rotationskörpern.</li><li>QCalc sammelt keine persönlichen Daten. Das Internet wird nur für die Wechselkurse genutzt.</li></ul>
+<div class="m-box m-note"><div class="m-lbl">Hinweis</div><p>Die Ergebnisse dienen zur Orientierung. Verwenden Sie sie nicht, wo kein Fehler erlaubt ist, etwa im Handel oder bei Bescheinigungen, bei Planung und Bau oder für Steuererklärungen (<a href="#caution">Hinweise</a>).</p></div>
+</section>
+<section class="m-sec" id="first-steps">
+<h3>Die ersten drei Rechnungen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Geben Sie einen Ausdruck mit den Tasten ein und drücken Sie <b class="ui">=</b>: Das Ergebnis kommt in den Verlauf. Schon beim Tippen erscheint es unter dem Eingabefeld.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie die App und tippen Sie <code>2 + 3 × 4</code>. Unter dem Eingabefeld erscheint „= 14“.</li><li>Drücken Sie <b class="ui">=</b>. Ausdruck und „= 14“ kommen in den Verlauf, das Eingabefeld ist wieder leer.</li><li>Tippen Sie nun <code>60 mph to km/h</code> („to“ liegt auf der Taste →). Es erscheint „≈ 96,56064 km/h“.</li><li>Die dritte Rechnung ist <code>sqrt(2)</code>, auch über die Taste √: „= √2 ≈ 1,414213562“, der exakte Wert und die Näherung.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p><code>1/3 + 1/4</code> → <code>= 7/12 ≈ 0,5833333333</code></p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu übernehmen oder zu kopieren.</p></div>
+<div class="m-box m-mis"><div class="m-lbl">Häufige Fehler</div><ul><li>Der Buchstabe x ist eine Variable, kein „mal“. Multiplizieren Sie mit der Taste × (oder *).</li></ul></div>
+</section>
+<section class="m-sec" id="new-1-12">
+<h3>Neu in 1.12.0</h3>
+<ul><li><b>Übersichtlicher</b>: Das Menü hat acht Einträge, die Werkzeuge sind unter <b class="ui">Werkzeuge</b> zusammengefasst. In jedem Werkzeug füllt ein Beispiel per Tippen die Felder aus; das Ergebnis erscheint sofort.</li><li><b>Alltagswerkzeuge</b>: <b class="ui">Preis: Rabatt und Steuer</b>, <b class="ui">Prozente</b>, <b class="ui">Grundpreis: was ist günstiger</b>, <b class="ui">Rechnung teilen</b>, <b class="ui">Kredit</b>, <b class="ui">Sparen und Zinseszins</b>, <b class="ui">Datumsangaben</b>, <b class="ui">Zeiten</b>, <b class="ui">Einheiten und Währungen umrechnen</b>, <b class="ui">Statistik</b>, <b class="ui">Rechennotizen</b>.</li><li><b>Zahlenformat</b>: 1,234.5, 1.234,5 oder 1 234,5 (<a href="#number-format">Zahlenformat</a>).</li><li><b>Verlauf</b>: Suche, mit Stern anheften, kurze Notizen, Summe ausgewählter Zeilen; Speichertasten (<a href="#history">Verlauf und Speicher</a>).</li><li><b>Von 2D zu 3D</b>: <b class="ui">⟳ 3D</b> macht aus einem Bereich des Graphen sofort einen Rotationskörper; dazu Körper mit bekannten Querschnitten, die Linien der Methode und die Guldinsche Regel (<a href="#solid">Einen Körper bilden</a>).</li><li><b>Schnell öffnen</b>: ein Widget, eine Kachel der Schnelleinstellungen und Verknüpfungen am Symbol (<a href="#widget">Widget, Kachel und Verknüpfungen</a>).</li><li><b>Teilen</b>: Bilder von Graphen, bei 3D auch als bewegtes GIF (<a href="#share">Teilen</a>).</li><li><b>QCalc Pro</b>: CSV von Tabellen, Tankböden mit Tabellen, Körper aus einem Profil, STL-Dateien, weitere Rechennotizen und mehr (<a href="#pro">QCalc Pro</a>).</li><li><b>Diese Anleitung</b>: Sie ist in der App. Das „?“ oben rechts in einem Werkzeug oder Fenster öffnet den passenden Abschnitt.</li></ul>
+</section>
+<section class="m-sec" id="examples">
+<h3>Beispiele und Tipps in der App</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> <b class="ui">Beispiele und Tipps</b> im Menü enthält Ausdrücke, die mit einem Tippen ins Eingabefeld kommen, und Tipps. <b class="ui">Bedienungsanleitung</b> ganz oben öffnet diese Anleitung.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Drücken Sie ☰ oben links und wählen Sie <b class="ui">Beispiele und Tipps</b>.</li><li>Tippen Sie auf einen Ausdruck. Das Fenster schließt sich, der Ausdruck steht im Eingabefeld.</li><li>Drücken Sie <b class="ui">=</b>, um ihn zu berechnen.</li></ol></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Diese Anleitung lässt sich ohne Internet lesen. Die ausführliche Fassung mit Fotos (Web) und das PDF öffnen sich über die Links ganz oben.</p></div>
+</section>
+</section>
+<section class="m-ch" id="screen">
+<h2>Der Bildschirm</h2>
+<figure class="m-fig m-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 430" class="m-pic" role="img" aria-hidden="true">
+<rect x="20" y="4" width="220" height="420" rx="22" fill="none" stroke="currentColor" stroke-width="2"/>
+<rect x="30" y="18" width="200" height="30" rx="6" fill="var(--m-soft)"/>
+<path d="M38 27h14M38 33h14M38 39h14" stroke="currentColor" stroke-width="2"/>
+<rect x="104" y="25" width="26" height="16" rx="8" fill="none" stroke="currentColor"/><rect x="134" y="25" width="26" height="16" rx="8" fill="none" stroke="currentColor"/><rect x="164" y="25" width="26" height="16" rx="8" fill="none" stroke="currentColor"/>
+<circle cx="214" cy="33" r="8" fill="none" stroke="currentColor"/><path d="M214 28v5l3 2" stroke="currentColor" fill="none"/>
+<path d="M120 80h96M150 92h66M120 120h96M164 132h52M120 160h96M140 172h76" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+<rect x="30" y="196" width="200" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+<path d="M38 212h80" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M38 228h50" stroke="var(--m-accent)" stroke-width="3" stroke-linecap="round"/>
+<rect x="30" y="250" width="200" height="20" rx="4" fill="var(--m-soft)"/>
+<g fill="none" stroke="currentColor"><rect x="32" y="278" width="44" height="26" rx="5"/><rect x="82" y="278" width="44" height="26" rx="5"/><rect x="132" y="278" width="44" height="26" rx="5"/><rect x="182" y="278" width="44" height="26" rx="5"/>
+<rect x="32" y="310" width="44" height="26" rx="5"/><rect x="82" y="310" width="44" height="26" rx="5"/><rect x="132" y="310" width="44" height="26" rx="5"/><rect x="182" y="310" width="44" height="26" rx="5"/>
+<rect x="32" y="342" width="44" height="26" rx="5"/><rect x="82" y="342" width="44" height="26" rx="5"/><rect x="132" y="342" width="44" height="26" rx="5"/><rect x="182" y="342" width="44" height="26" rx="5"/>
+<rect x="32" y="374" width="44" height="26" rx="5"/><rect x="82" y="374" width="44" height="26" rx="5"/><rect x="132" y="374" width="44" height="26" rx="5"/></g>
+<rect x="182" y="374" width="44" height="26" rx="5" fill="var(--m-accent)"/><text x="204" y="392" text-anchor="middle" font-size="16" fill="var(--m-on-accent)">=</text>
+<g font-size="12" font-weight="700" text-anchor="middle" fill="var(--m-on-accent)">
+<circle cx="12" cy="33" r="10" fill="var(--m-accent)"/><text x="12" y="37">1</text>
+<circle cx="147" cy="60" r="10" fill="var(--m-accent)"/><text x="147" y="64">2</text>
+<circle cx="250" cy="33" r="10" fill="var(--m-accent)"/><text x="250" y="37">3</text>
+<circle cx="12" cy="125" r="10" fill="var(--m-accent)"/><text x="12" y="129">4</text>
+<circle cx="12" cy="218" r="10" fill="var(--m-accent)"/><text x="12" y="222">5</text>
+<circle cx="12" cy="260" r="10" fill="var(--m-accent)"/><text x="12" y="264">6</text>
+<circle cx="12" cy="330" r="10" fill="var(--m-accent)"/><text x="12" y="334">7</text>
+<circle cx="250" cy="387" r="10" fill="var(--m-accent)"/><text x="250" y="391">8</text></g>
+</svg><figcaption>Die Teile des Hauptbildschirms (die Nummern entsprechen der Tabelle)</figcaption></figure>
+<div class="m-tw"><table><thead><tr><th>Nr.</th><th>Name</th><th>Wofür</th></tr></thead><tbody><tr><td>1</td><td>☰ (Menü)</td><td>Öffnet Werkzeuge, Graphen, Listen, Einstellungen und mehr</td></tr><tr><td>2</td><td>Schalter</td><td>Winkeleinheit (RAD, DEG), exakt oder genähert, dezimal oder hexadezimal, mit einem Tippen</td></tr><tr><td>3</td><td>🕘 (Verlaufsmenü)</td><td>Verlauf durchsuchen, Zeilen auswählen, exportieren, löschen</td></tr><tr><td>4</td><td>Verlauf</td><td>Die Ausdrücke mit ihren Ergebnissen, das neueste unten</td></tr><tr><td>5</td><td>Eingabefeld</td><td>Hier wird getippt; darunter das Ergebnis beim Tippen (Vorschau)</td></tr><tr><td>6</td><td>Tastenseiten</td><td>Wechsel zwischen den Seiten 123, Funktionen, Analysis und Matrix</td></tr><tr><td>7</td><td>Tasten</td><td>Ziffern, Operatoren und Funktionen</td></tr><tr><td>8</td><td>Taste =</td><td>Rechnet und legt Ausdruck und Ergebnis im Verlauf ab</td></tr></tbody></table></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/main.jpg" alt="Der Hauptbildschirm (die Nummern entsprechen der Tabelle)" width="360"><span class="m-mark" style="left:7.8%;top:3.5%" aria-hidden="true">1</span><span class="m-mark" style="left:59.8%;top:3.5%" aria-hidden="true">2</span><span class="m-mark" style="left:91.1%;top:3.5%" aria-hidden="true">3</span><span class="m-mark" style="left:50.0%;top:19.2%" aria-hidden="true">4</span><span class="m-mark" style="left:50.0%;top:38.1%" aria-hidden="true">5</span><span class="m-mark" style="left:50.0%;top:55.8%" aria-hidden="true">6</span><span class="m-mark" style="left:50.0%;top:79.2%" aria-hidden="true">7</span><span class="m-mark" style="left:88.9%;top:95.3%" aria-hidden="true">8</span></div><figcaption>Der Hauptbildschirm (die Nummern entsprechen der Tabelle)</figcaption></figure>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Auf einem Telefon mit großer Schrift ist die obere Tastenreihe (x, ans, Pfeile, ⌨) ausgeblendet. ⌨ am rechten Ende der Reiter zeigt sie an.</p></div>
+</section>
+<section class="m-ch" id="basics">
+<h2>Grundrechnen</h2>
+
+<section class="m-sec" id="typing">
+<h3>Einen Ausdruck eingeben</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Geben Sie einen Ausdruck so ein, wie ein Mathematikbuch ihn schreibt, mit den Tasten oder nach ⌨ mit der Tastatur des Telefons.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Tippen Sie den Ausdruck mit den Ziffern- und Operatortasten. Klammern liegen auf den Tasten ( ).</li><li>Eine Funktionstaste der Seite Funktionen (sin, log, √ und andere) schreibt „sin(“ und Ähnliches.</li><li>Einheiten und Währungen schreiben Sie mit Namen (<code>5 km</code>, <code>100 USD</code>). Umgerechnet wird mit „to“ (<code>5 km to mi</code>).</li><li>Drücken Sie <b class="ui">=</b>, um zu rechnen.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p><code>2^10</code> → <code>= 1024</code>, <code>5!</code> → <code>= 120</code>, <code>sin(30°)</code> → <code>= 1/2</code></p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>÷ × + und Ähnliches in einem leeren Eingabefeld rechnen mit dem letzten Ergebnis „ans“ weiter.</p></div>
+<div class="m-box m-mis"><div class="m-lbl">Häufige Fehler</div><ul><li>Klammern, die nicht paarweise stehen, führen zu einem Fehler. Die Meldung sagt, was zu korrigieren ist.</li></ul></div>
+</section>
+<section class="m-sec" id="results">
+<h3>Das Ergebnis lesen: exakt, genähert, Brüche</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Ein Ergebnis mit „=“ ist exakt, eines mit „≈“ genähert. Ergebnisse mit Brüchen oder √ zeigen auch die Dezimalzahl.</p>
+<ul><li><code>1/3 + 1/4</code> → <code>= 7/12 ≈ 0,5833333333</code> (der Bruch bleibt, mit Dezimalzahl)</li><li><code>sqrt(8)</code> → <code>= 2√2 ≈ 2,828427125</code></li><li><code>pi × 2</code> → <code>= 2π ≈ 6,283185307</code></li></ul>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Der Schalter oben wechselt zwischen exakt, genähert und automatisch.</li><li>Die Stellenzahl ist <b class="ui">Genauigkeit (signifikante Stellen)</b> in den <b class="ui">Einstellungen</b> (Standard 10).</li></ol></div>
+<p class="m-pro"><span class="m-badge">Pro</span> Dies ist eine Funktion von QCalc Pro. Bis 1000 Stellen kostenlos. Mehr als 1000, bis 200000 Stellen, ist eine Funktion von QCalc Pro.</p>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Ein sehr langes Ergebnis lässt sich im Verlauf scrollen, sodass jede Stelle lesbar ist; beim Kopieren wird jede Stelle kopiert.</p></div>
+</section>
+<section class="m-sec" id="undo">
+<h3>Löschen und rückgängig machen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> ⌫ löscht ein Zeichen, AC leert das Eingabefeld. Gleich danach holt <b class="ui">Rückgängig</b> über dem Eingabefeld es zurück.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>⌫ löscht das Zeichen vor dem Cursor; gedrückt halten löscht weiter.</li><li>AC leert das Eingabefeld, darüber erscheint <b class="ui">Rückgängig</b>.</li><li><b class="ui">Rückgängig</b> holt den Ausdruck zurück.</li></ol></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Eine aus dem Verlauf gelöschte Zeile lässt sich ebenfalls einige Sekunden lang mit <b class="ui">Rückgängig</b> unten am Bildschirm zurückholen.</p></div>
+</section>
+<section class="m-sec" id="number-format">
+<h3>Zahlenformat: das Dezimalzeichen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Wählen Sie, ob das Dezimalzeichen „.“ oder „,“ ist und wie Ziffern gruppiert werden. Anfangs schreibt QCalc Zahlen wie die Region Ihres Telefons.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie die <b class="ui">Einstellungen</b>.</li><li>Wählen Sie unter <b class="ui">Zahlenformat</b> <b class="ui">Automatisch</b>, 1,234.5, 1.234,5 oder 1 234,5.</li><li>Eingabe und Anzeige folgen dem gewählten Format.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>Bei 1.234,5 tippen Sie zweieinhalb als <code>2,5</code>: <code>2,5 + 3,75</code> → <code>= 6,25</code></p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Mit Dezimalkomma trennen Sie die Argumente einer Funktion mit „;“: <code>max(1,5; 2)</code>.</p></div>
+<div class="m-box m-mis"><div class="m-lbl">Häufige Fehler</div><ul><li><code>1.5</code> mit Dezimalkomma ergibt einen Fehler; die Meldung zeigt die richtige Schreibweise.</li></ul></div>
+</section>
+</section>
+<section class="m-ch" id="history">
+<h2>Verlauf und Speicher</h2>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Ausdrücke und Ergebnisse bleiben im Verlauf, bis zu 300 Zeilen. 🕘 oben rechts sucht, summiert ausgewählte Zeilen, exportiert und löscht.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Tippen Sie auf ein Ergebnis im Verlauf, um <b class="ui">Ausdruck ins Eingabefeld setzen</b>, <b class="ui">Ergebnis kopieren</b> und Ähnliches zu wählen.</li><li>⋯ rechts an einer Zeile bietet <b class="ui">☆ Oben anheften</b> und <b class="ui">Kurze Notiz hinzufügen</b>.</li><li>🕘 bietet <b class="ui">Verlauf durchsuchen</b>, <b class="ui">Zeilen auswählen: Summe, Mittelwert, kopieren</b>, <b class="ui">Verlauf exportieren (CSV-Datei)</b> und <b class="ui">Ganzen Verlauf löschen</b>.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/history.jpg" alt="Das Verlaufsmenü von 🕘" width="360"></div><figcaption>Das Verlaufsmenü von 🕘</figcaption></figure>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Mit Stern angeheftete Zeilen bleiben erhalten, wenn der Verlauf voll ist.</p></div>
+<section class="m-sec" id="pins-notes">
+<h3>Anheften, Notizen und Suche</h3>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Wählen Sie <b class="ui">☆ Oben anheften</b> im ⋯ einer Zeile: Sie rückt zu den anderen angehefteten Zeilen nach oben.</li><li>Wählen Sie <b class="ui">Kurze Notiz hinzufügen</b> im ⋯ und schreiben Sie eine kurze Notiz. Sie erscheint über dem Ausdruck.</li><li>In 🕘 zeigt <b class="ui">Verlauf durchsuchen</b> nur die Zeilen, deren Ausdruck, Ergebnis oder Notiz die eingegebenen Wörter enthält.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>Eine Zeile mit der Notiz „Miete“ findet die Suche nach „Miete“.</p></div>
+</section>
+<section class="m-sec" id="select-sum">
+<h3>Zeilen addieren</h3>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Wählen Sie <b class="ui">Zeilen auswählen: Summe, Mittelwert, kopieren</b> in 🕘.</li><li>Tippen Sie auf die Zeilen, die addiert werden sollen.</li><li>Summe und Mittelwert erscheinen unten, mit Einheit, wenn die Einheiten passen. <b class="ui">Kopieren</b> kopiert die Zeilen.</li></ol></div>
+<div class="m-box m-mis"><div class="m-lbl">Häufige Fehler</div><ul><li>Zeilen mit verschiedenen Einheiten (m und kg) lassen sich nicht addieren; der Grund wird angezeigt.</li></ul></div>
+</section>
+<section class="m-sec" id="export">
+<h3>Den Verlauf exportieren (CSV)</h3>
+<p class="m-pro"><span class="m-badge">Pro</span> Dies ist eine Funktion von QCalc Pro. </p>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Speichert den Verlauf als CSV-Datei, die Tabellenkalkulationen öffnen können.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Wählen Sie <b class="ui">Verlauf exportieren (CSV-Datei)</b> in 🕘.</li><li>Wählen Sie im Speichern-Bildschirm von Android den Ort.</li></ol></div>
+</section>
+<section class="m-sec" id="memory-keys">
+<h3>Speichertasten (M+ M− MR MC)</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Die Speichertasten eines Taschenrechners. Der Wert wird in seiner exakten Form gespeichert.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Weitere Einstellungen</b> in den <b class="ui">Einstellungen</b> und schalten Sie <b class="ui">Speichertasten anzeigen (M+ M− MR MC)</b> ein.</li><li>Bei einem angezeigten Ergebnis addiert M+ es zum Speicher, M− zieht es ab.</li><li>MR setzt den Speicher ins Eingabefeld, MC löscht ihn.</li></ol></div>
+</section>
+</section>
+<section class="m-ch" id="keys">
+<h2>Tasten und Eingabehilfen</h2>
+
+<section class="m-sec" id="key-pages">
+<h3>Die vier Tastenseiten</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Die Tasten liegen auf vier Seiten, die mit den Reitern darüber gewechselt werden.</p>
+<div class="m-tw"><table><thead><tr><th>Seite</th><th>Wichtigste Tasten</th></tr></thead><tbody><tr><td>123</td><td>Ziffern, + − × ÷, Klammern, %, ^, √</td></tr><tr><td><b class="ui">Funktionen</b></td><td>sin, cos, tan, log, ln, Betrag, Fakultät und mehr</td></tr><tr><td><b class="ui">Analysis</b></td><td>Ableitung d/dx, Integral ∫, Grenzwert lim, Summe Σ, Produkt Π, Gleichungen</td></tr><tr><td><b class="ui">Matrix</b></td><td>Matrix ▦, Determinante det, Transponierte, Inverse</td></tr></tbody></table></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Wenn Sie den Namen einer Funktion nicht kennen, suchen Sie in <b class="ui">Listen: Funktionen, Einheiten, Konstanten</b> (<a href="#lists">Listen</a>).</p></div>
+</section>
+<section class="m-sec" id="boxes">
+<h3>Kästchen □ (die Formulare)</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Die Tasten für Integral und Grenzwert öffnen ein Formular mit Kästchen □. Kästchen ausfüllen, und der Ausdruck ist fertig.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Drücken Sie ∫ auf der Seite <b class="ui">Analysis</b>.</li><li>Tippen Sie Funktion, untere und obere Grenze. <b class="ui">Nächstes Feld ▶</b> springt zum nächsten Kästchen.</li><li>Das Ergebnis erscheint darunter. <b class="ui">=</b> legt es im Verlauf ab.</li></ol></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Das ⋯ des Formulars enthält <b class="ui">Alle Felder leeren</b> und <b class="ui">So nutzen Sie dieses Formular ›</b>.</p></div>
+</section>
+<section class="m-sec" id="suggestions">
+<h3>Vorschläge</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Beim Tippen erscheinen Vorschläge unter dem Eingabefeld: nach „to“ die Zieleinheiten, mit der Tastatur die Namen von Funktionen und Einheiten.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Tippen Sie <code>5 km to</code>: mi, m, ft und andere werden vorgeschlagen.</li><li>Tippen Sie auf einen Vorschlag, um ihn einzufügen.</li></ol></div>
+</section>
+<section class="m-sec" id="writing">
+<h3>Funktionen, Einheiten und Währungen schreiben</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Ausdrücke werden wie in Qalculate! geschrieben. Die üblichen Schreibweisen:</p>
+<div class="m-tw"><table><thead><tr><th>Schreibweise</th><th>Bedeutung</th></tr></thead><tbody><tr><td><code>sqrt(x)</code>, <code>√x</code></td><td>Quadratwurzel</td></tr><tr><td><code>x^2</code></td><td>Potenz</td></tr><tr><td><code>5 km to mi</code></td><td>Einheit umrechnen</td></tr><tr><td><code>100 USD to EUR</code></td><td>Währung umrechnen (mit den Wechselkursen)</td></tr><tr><td><code>solve(x^2 − 5x + 6 = 0)</code></td><td>Gleichung lösen</td></tr><tr><td><code>diff(x^3)</code></td><td>Ableitung</td></tr><tr><td><code>integrate(x^2; 0; 1)</code></td><td>Bestimmtes Integral (mit Dezimalkomma Argumente mit „;“ trennen)</td></tr><tr><td><code>ans</code></td><td>Das letzte Ergebnis</td></tr></tbody></table></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Zehn traditionelle japanische Einheiten (tsubo, shaku, shō, kan und andere) funktionieren auch: <code>30 tsubo to m^2</code>.</p></div>
+</section>
+<section class="m-sec" id="lists">
+<h3>Listen: Funktionen, Einheiten, Konstanten, eigene Definitionen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> <b class="ui">Listen: Funktionen, Einheiten, Konstanten</b> im Menü hat vier Reiter: Funktionen, Einheiten und Währungen, Variablen und Konstanten sowie Ihre eigenen Definitionen, jeweils mit Suche.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Listen: Funktionen, Einheiten, Konstanten</b> über ☰.</li><li>Wählen Sie einen Reiter und tippen Sie einen Teil eines Namens in das Feld oben.</li><li>Tippen Sie auf einen Eintrag, um die Beschreibung zu lesen; <b class="ui">Einfügen</b> setzt ihn ins Eingabefeld.</li></ol></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Im Reiter der eigenen Definitionen speichern Sie Variablen (r = 5 cm) und Funktionen; sie bleiben für das nächste Mal erhalten.</p></div>
+</section>
+<section class="m-sec" id="currencies">
+<h3>Währungen und Wechselkurse</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Währungen werden wie <code>100 USD to EUR</code> umgerechnet. Die Wechselkurse werden alle 7 Tage von selbst aktualisiert (mit Internet).</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Zum sofortigen Aktualisieren drücken Sie <b class="ui">Wechselkurse jetzt aktualisieren</b> in den <b class="ui">Einstellungen</b>.</li><li>Der Zeitpunkt der letzten Aktualisierung steht in derselben Zeile.</li></ol></div>
+<div class="m-box m-mis"><div class="m-lbl">Häufige Fehler</div><ul><li>Ohne Internet lassen sich die Kurse nicht aktualisieren; es gelten die zuletzt geladenen.</li></ul></div>
+</section>
+</section>
+<section class="m-ch" id="tools">
+<h2>Werkzeuge</h2>
+
+<section class="m-sec" id="find-tools">
+<h3>Ein Werkzeug finden</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> <b class="ui">Werkzeuge</b> im Menü enthält die Alltagswerkzeuge und die für Formen, Volumen und Daten. Suchen Sie nach dem, was Sie tun möchten.</p>
+<figure class="m-fig m-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 330" class="m-pic" role="img" aria-hidden="true">
+<rect x="20" y="4" width="220" height="322" rx="22" fill="none" stroke="currentColor" stroke-width="2"/>
+<rect x="30" y="16" width="200" height="30" rx="6" fill="var(--m-soft)"/><path d="M42 25l-6 6 6 6" stroke="currentColor" stroke-width="2" fill="none"/><path d="M60 31h70" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+<circle cx="214" cy="31" r="9" fill="none" stroke="var(--m-accent)" stroke-width="1.5"/><text x="214" y="35" text-anchor="middle" font-size="12" font-weight="700" fill="var(--m-accent)">?</text>
+<rect x="34" y="58" width="70" height="20" rx="10" fill="none" stroke="var(--m-accent)"/><rect x="110" y="58" width="70" height="20" rx="10" fill="none" stroke="var(--m-accent)"/>
+<g fill="none" stroke="currentColor"><rect x="34" y="90" width="192" height="24" rx="4"/><rect x="34" y="120" width="192" height="24" rx="4"/><rect x="34" y="150" width="192" height="24" rx="4"/></g>
+<path d="M40 102h40M40 132h50M40 162h36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".55"/><path d="M150 102h40M150 132h30M150 162h44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".35"/>
+<rect x="34" y="186" width="192" height="30" rx="6" fill="var(--m-soft)"/><path d="M42 201h60" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M150 201h68" stroke="var(--m-accent)" stroke-width="4" stroke-linecap="round"/>
+<rect x="34" y="220" width="192" height="24" rx="6" fill="none" stroke="currentColor" opacity=".6"/><path d="M42 232h50M160 232h56" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+<path d="M34 262h190" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".4"/>
+<path d="M34 286h150" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4" opacity=".6"/>
+<g font-size="12" font-weight="700" text-anchor="middle" fill="var(--m-on-accent)">
+<circle cx="250" cy="31" r="10" fill="var(--m-accent)"/><text x="250" y="35">1</text>
+<circle cx="12" cy="68" r="10" fill="var(--m-accent)"/><text x="12" y="72">2</text>
+<circle cx="12" cy="132" r="10" fill="var(--m-accent)"/><text x="12" y="136">3</text>
+<circle cx="12" cy="201" r="10" fill="var(--m-accent)"/><text x="12" y="205">4</text>
+<circle cx="12" cy="262" r="10" fill="var(--m-accent)"/><text x="12" y="266">5</text>
+<circle cx="12" cy="286" r="10" fill="var(--m-accent)"/><text x="12" y="290">6</text></g>
+</svg><figcaption>Ein Werkzeug (alle Werkzeuge haben denselben Aufbau)</figcaption></figure>
+<ol class="m-legend"><li>„?“: öffnet diese Anleitung beim Werkzeug</li><li>Beispiele: ein Tippen füllt sie aus</li><li>Felder: Zahlen eingeben (eine graue Zahl ist ein Beispiel)</li><li>Ergebnisse: ein Tippen übernimmt den Ausdruck ins Eingabefeld, legt das Ergebnis im Verlauf ab oder kopiert es</li><li>Ein Hinweis (Werkzeuge für Geld oder Sicherheit)</li><li>Eine Zeile Erklärung</li></ol>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Werkzeuge</b> über ☰.</li><li>Tippen Sie oben ein, was Sie tun möchten, etwa „Kredit“, „Tank“ oder „Mittelwert“.</li><li>Tippen Sie auf das Werkzeug.</li><li>Tippen Sie auf ein Beispiel oder geben Sie die Zahlen ein. Das Ergebnis erscheint sofort.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/tools.jpg" alt="Der Bildschirm Werkzeuge: das Suchfeld und die Gruppen" width="360"></div><figcaption>Der Bildschirm Werkzeuge: das Suchfeld und die Gruppen</figcaption></figure>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Zuletzt genutzte Werkzeuge stehen oben. <b class="ui">QCalc schnell öffnen</b> ganz unten fügt das Widget oder die Kachel hinzu.</p></div>
+</section>
+<section class="m-sec" id="price">
+<h3>Preis: Rabatt und Steuer</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Der Preis mit oder ohne Steuer, ein oder zwei Rabatte, und wie gerundet wird.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Preis: Rabatt und Steuer</b> in den <b class="ui">Werkzeuge</b>.</li><li>Geben Sie Preis, Rabatt (%) und Steuersatz ein.</li><li>Wählen Sie, ob der Preis die Steuer enthält, und wie gerundet wird.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/price.jpg" alt="Preis: Rabatt und Steuer mit einem Beispiel" width="360"><span class="m-mark" style="left:91.1%;top:3.5%" aria-hidden="true">1</span><span class="m-mark" style="left:33.2%;top:14.7%" aria-hidden="true">2</span><span class="m-mark" style="left:55.4%;top:33.8%" aria-hidden="true">3</span><span class="m-mark" style="left:50.0%;top:72.6%" aria-hidden="true">4</span><span class="m-mark" style="left:50.0%;top:50.0%" aria-hidden="true">5</span><span class="m-mark" style="left:50.0%;top:17.1%" aria-hidden="true">6</span></div><figcaption>Preis: Rabatt und Steuer mit einem Beispiel</figcaption></figure>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>1500 mit 10 % Rabatt und 8 % Steuer → 1.458 mit Steuer (1.350 ohne Steuer, Steuer 108)</p></div>
+<div class="m-box m-mis"><div class="m-lbl">Häufige Fehler</div><ul><li>Um den Preis ohne Steuer aus einem Preis mit Steuer zu finden, wählen Sie zuerst „mit Steuer“.</li></ul></div>
+</section>
+<section class="m-sec" id="percent">
+<h3>Prozente</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> A ist wie viel Prozent von B, und die Änderung von A nach B in Prozent.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Prozente</b> und wählen Sie die Rechnung.</li><li>Geben Sie A und B ein.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>30 von 120 → 25 %. Von 80 auf 100 → plus 25 %</p></div>
+</section>
+<section class="m-sec" id="unit-price">
+<h3>Grundpreis: was ist günstiger</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Vergleicht den Preis pro 100 g (100 mL, Stück) zweier Produkte.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Grundpreis: was ist günstiger</b>.</li><li>Geben Sie Preis und Menge (500 g, 1 kg) von A und B ein.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>298 für 500 g und 498 für 1 kg → B ist günstiger (59,6 und 49,8 pro 100 g, 16,4 % weniger)</p></div>
+</section>
+<section class="m-sec" id="split">
+<h3>Rechnung teilen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Der Anteil jeder Person, gerundet wie gewählt.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Rechnung teilen</b> und geben Sie Gesamtbetrag und Personenzahl ein.</li><li>Wählen Sie Auf- oder Abrunden.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>10000 für 3 → je 3.333,34 (aufgerundet; 0,02 zu viel)</p></div>
+</section>
+<section class="m-sec" id="loan">
+<h3>Kredit</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Monatliche Rate, Zinsen insgesamt und Tilgungsplan, mit gleichen Raten oder gleicher Tilgung.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Kredit</b>.</li><li>Geben Sie Betrag, Jahreszins und Jahre ein.</li><li>Wählen Sie die Art der Rückzahlung.</li><li>Öffnen Sie <b class="ui">Raten, Monat für Monat</b> für den Plan.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/loan.jpg" alt="Kredit mit einem Beispiel (30.000.000 zu 1 % über 35 Jahre)" width="360"></div><figcaption>Kredit mit einem Beispiel (30.000.000 zu 1 % über 35 Jahre)</figcaption></figure>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>30.000.000 zu 1 % über 35 Jahre (gleiche Raten) → 84.685,71 im Monat, Zinsen insgesamt 5.567.998,07</p></div>
+<p class="m-pro"><span class="m-badge">Pro</span> Dies ist eine Funktion von QCalc Pro. Den Plan als CSV-Datei zu speichern ist eine Funktion von QCalc Pro (Anzeigen und Kopieren sind kostenlos).</p>
+<div class="m-box m-mis"><div class="m-lbl">Häufige Fehler</div><ul><li>0,01 statt 1 % ergibt 0,01 %. Geben Sie die Prozentzahl ein.</li></ul></div>
+</section>
+<section class="m-sec" id="savings">
+<h3>Sparen und Zinseszins</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Was eine monatliche Sparrate oder ein Betrag mit Zinseszins wird.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Sparen und Zinseszins</b> und geben Sie Monatsbetrag (oder Anfangsbetrag), Jahreszins und Jahre ein.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>30.000 im Monat, 3 %, 20 Jahre → 9.849.059,94 (eingezahlt 7.200.000; Zinsen 2.649.059,94)</p></div>
+</section>
+<section class="m-sec" id="dates">
+<h3>Daten</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Die Tage zwischen zwei Daten, n Tage danach oder davor, ein Alter, der Wochentag.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Datumsangaben</b> und wählen Sie die Rechnung.</li><li>Geben Sie die Daten und die Tage ein.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>100 Tage ab heute → das Datum und sein Wochentag</p></div>
+</section>
+<section class="m-sec" id="times">
+<h3>Zeiten</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Addiert und subtrahiert h:mm und gibt die Arbeitszeit ohne Pausen und den Lohn.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Zeiten</b> und geben Sie Beginn, Ende und Pause ein.</li><li>Mit dem Stundenlohn erhalten Sie den Lohn.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>9:00 bis 17:30 mit 1:00 Pause → 7:30 gearbeitet (7,5 Stunden)</p></div>
+</section>
+<section class="m-sec" id="convert">
+<h3>Einheiten und Währungen umrechnen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Geben Sie in einer von zwei Zeilen eine Zahl ein; die andere rechnet um. Länge, Gewicht, Volumen, Temperatur, Verbrauch, Währungen und mehr.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Einheiten und Währungen umrechnen</b> und wählen Sie die Größe mit den Chips oben.</li><li>Wählen Sie die Einheiten der beiden Zeilen.</li><li>Geben Sie in einer Zeile eine Zahl ein.</li><li>⇅ tauscht die Zeilen.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/convert.jpg" alt="Der Umrechnungsbildschirm" width="360"></div><figcaption>Der Umrechnungsbildschirm</figcaption></figure>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>5 km → 3,106855961 mi</p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Tippen Sie auf die Ergebniszeile, um „5 km to mi“ ins Eingabefeld zu setzen oder im Verlauf abzulegen.</p></div>
+</section>
+<section class="m-sec" id="shapes">
+<h3>Formen: Fläche, Volumen, Länge</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Wählen Sie eine Form nach ihrem Bild und geben Sie die Maße ein: Fläche, Umfang, Volumen und Oberfläche erscheinen.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Ebene Figuren</b> oder <b class="ui">Körper</b> in den <b class="ui">Werkzeuge</b>.</li><li>Tippen Sie auf das Bild einer Form.</li><li>Geben Sie die im Bild genannten Maße ein (r, h). Runde Maße als Radius oder Durchmesser.</li><li>Die Ergebnisse ändern sich beim Tippen; ein Tippen übernimmt oder kopiert den Ausdruck.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>Kugel mit Radius 2 → Volumen 32π/3 ≈ 33,51032164, Oberfläche 16π</p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Wählen Sie ein Material, um das Gewicht zu erhalten.</p></div>
+</section>
+<section class="m-sec" id="tanks">
+<h3>Tanks: Füllmenge und Füllhöhe</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Die Flüssigkeitsmenge in einem liegenden oder stehenden Tank oder einem runden Behälter aus der Füllhöhe, und die Höhe zu einer Menge.</p>
+<figure class="m-fig m-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 170" class="m-pic" role="img" aria-hidden="true">
+<path d="M80 30 H240 A40 55 0 0 1 240 140 H80 A40 55 0 0 1 80 30 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+<clipPath id="tk"><path d="M80 30 H240 A40 55 0 0 1 240 140 H80 A40 55 0 0 1 80 30 Z"/></clipPath>
+<rect x="30" y="100" width="260" height="45" fill="var(--m-soft)" clip-path="url(#tk)"/>
+<path d="M30 100h260" stroke="var(--m-accent)" stroke-width="2" clip-path="url(#tk)"/>
+<path d="M80 26v-12M240 26v-12M80 18h160" stroke="currentColor" opacity=".7"/><text x="160" y="13" font-size="12" text-anchor="middle" fill="currentColor">L</text>
+<path d="M300 30v110M296 30h8M296 140h8" stroke="currentColor" opacity=".7"/><text x="309" y="90" font-size="12" fill="currentColor">D</text>
+<path d="M150 140v-40" stroke="var(--m-accent)" stroke-width="1.5"/><path d="M146 104l4-6 4 6" stroke="var(--m-accent)" fill="none"/><text x="156" y="128" font-size="12" fill="var(--m-accent)">h</text>
+<path d="M40 85h-14M280 85h14" stroke="currentColor" opacity=".5" stroke-dasharray="3 3"/>
+</svg><figcaption>Ein liegender Tank (L die Länge, D der Durchmesser, h die Füllhöhe)</figcaption></figure>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Behälter: Füllmenge und Füllhöhe</b> in den <b class="ui">Werkzeuge</b>.</li><li>Wählen Sie die Form und geben Sie Durchmesser (oder Radius) und Länge ein.</li><li>Geben Sie die Füllhöhe ein und wählen Sie die Längeneinheit.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/tanks.jpg" alt="Die Flüssigkeit in einem liegenden Tank" width="360"></div><figcaption>Die Flüssigkeit in einem liegenden Tank</figcaption></figure>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>Liegend, Durchmesser 1 m, Länge 2 m, Füllhöhe 30 cm → 0,3963367126 m³ (etwa 396 L)</p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p><b class="ui">Übersichtstabelle ▾</b> listet die Menge zu jeder Höhe.</p></div>
+<div class="m-box m-mis"><div class="m-lbl">Häufige Fehler</div><ul><li>Ein Radius im Feld für den Durchmesser ergibt etwa ein Viertel der Menge. Prüfen Sie Radius oder Durchmesser.</li></ul></div>
+</section>
+<section class="m-sec" id="tank-heads">
+<h3>Tankböden und Tabellen</h3>
+<p class="m-pro"><span class="m-badge">Pro</span> Dies ist eine Funktion von QCalc Pro. </p>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Bezieht die Böden an beiden Enden eines Tanks (halbkugelförmig, halbelliptisch 2:1, gewölbt) in Füllmenge und Gesamtvolumen ein, mit einer Tabelle der Menge zu jeder Höhe.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Wählen Sie in <b class="ui">Behälter: Füllmenge und Füllhöhe</b> einen liegenden oder stehenden Zylinder.</li><li>Wählen Sie <b class="ui">Halbkugel</b> oder <b class="ui">Halbelliptisch 2:1</b> unter <b class="ui">Böden</b>; gewölbte Böden stehen unter <b class="ui">Andere Böden ▾</b>.</li><li>L ist die Länge des Mantels (ohne Böden).</li><li>Geben Sie unter <b class="ui">Übersichtstabelle ▾</b> die Schrittweite ein: eine Tabelle aus Höhen und Mengen, zum Kopieren oder als CSV.</li></ol></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Flache Böden (ein einfacher Zylinder wie bisher) sind kostenlos.</p></div>
+</section>
+<section class="m-sec" id="measured">
+<h3>Volumen aus Messwerten</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Das Volumen von Erdarbeiten oder einem Teich aus einer Tabelle von Querschnitten (Mittelflächenverfahren, Simpsonregel) oder aus einem Raster von Punkthöhen.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Volumen aus Messwerten</b> in den <b class="ui">Werkzeuge</b>.</li><li>Wählen Sie Querschnitte oder Punkthöhen und geben Sie Abstände und Flächen (oder Höhen) ein.</li><li>Wählen Sie die Längeneinheit: Das Volumen wird in m³ und L angegeben.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>Querschnitte x² (0 bis 4, alle 1 m) → Mittelflächenverfahren 22 m³, Simpsonregel 64/3 m³ ≈ 21,33 m³</p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Zwei aus einer Tabellenkalkulation kopierte Spalten lassen sich in die Tabelle einfügen.</p></div>
+</section>
+<section class="m-sec" id="profile">
+<h3>Körper aus einem Profil</h3>
+<p class="m-pro"><span class="m-badge">Pro</span> Dies ist eine Funktion von QCalc Pro. </p>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Volumen, Fassungsvermögen, Gewicht und Oberfläche eines Drehteils oder Gefäßes aus einer Tabelle von Positionen und Durchmessern entlang der Achse.</p>
+<figure class="m-fig m-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 170" class="m-pic" role="img" aria-hidden="true">
+<path d="M20 85h290" stroke="currentColor" stroke-dasharray="8 4 2 4" opacity=".7"/>
+<path d="M40 55 V115 M40 55 H140 V40 H240 V65 H290 V105 H240 V130 H140 V115 H40" fill="var(--m-soft)" stroke="currentColor" stroke-width="2"/>
+<path d="M40 150v-8M140 150v-8M240 150v-8M290 150v-8" stroke="currentColor"/><text x="40" y="164" font-size="11" text-anchor="middle" fill="currentColor">0</text><text x="140" y="164" font-size="11" text-anchor="middle" fill="currentColor">z₁</text><text x="240" y="164" font-size="11" text-anchor="middle" fill="currentColor">z₂</text><text x="290" y="164" font-size="11" text-anchor="middle" fill="currentColor">z₃</text>
+<path d="M190 40v90" stroke="var(--m-accent)" stroke-width="1.5"/><path d="M186 46l4-6 4 6M186 124l4 6 4-6" stroke="var(--m-accent)" fill="none"/><text x="196" y="96" font-size="12" fill="var(--m-accent)">d</text>
+<text x="300" y="80" font-size="12" fill="currentColor">⟳</text>
+</svg><figcaption>Eine abgesetzte Welle (eine Tabelle der Positionen z und Durchmesser d ergibt die Form)</figcaption></figure>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Körper aus einem Profil</b> in den <b class="ui">Werkzeuge</b>.</li><li>Geben Sie Positionen und Durchmesser (oder Radien) ein. Zwei Zeilen an derselben Position ergeben einen Absatz.</li><li>Wählen Sie die Einheit (mm, cm, m, in).</li><li><b class="ui">Mehr ▾</b> ergänzt das Innenprofil eines Gefäßes und die Schwindung von Keramik.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/profile.jpg" alt="Das Beispiel der abgesetzten Welle" width="360"></div><figcaption>Das Beispiel der abgesetzten Welle</figcaption></figure>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>Die Beispielwelle → Außenvolumen 4440π mm³ ≈ 13,95 cm³, etwa 109,5 g in Eisen</p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p><b class="ui">In 3D ansehen</b> zeigt die Form; eine STL-Datei lässt sich mit einem 3D-Drucker drucken (<a href="#stl">STL-Dateien</a>).</p></div>
+</section>
+<section class="m-sec" id="stl">
+<h3>STL-Dateien für 3D-Drucker</h3>
+<p class="m-pro"><span class="m-badge">Pro</span> Dies ist eine Funktion von QCalc Pro. </p>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Speichert einen Rotationskörper, einen Körper mit Querschnitten oder einen Körper aus einem Profil als STL-Datei für 3D-Drucker.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Drücken Sie <b class="ui">Als STL speichern</b> unter den Ergebnissen des Körpers.</li><li>Wählen Sie „1 Einheit = □ mm“ und die Feinheit der Dreiecke.</li><li>Drücken Sie <b class="ui">STL-Datei speichern</b> und wählen Sie den Speicherort.</li></ol></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Prüfen Sie vor dem Drucken Größe und Wände in Ihrem Slicer.</p></div>
+</section>
+<section class="m-sec" id="stats">
+<h3>Statistik</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Für eine Spalte: Mittelwert, Median, Standardabweichung, Quartile und mehr; für zwei Spalten: Regressionsgerade und Korrelation.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Statistik</b> in den <b class="ui">Werkzeuge</b>.</li><li>Geben Sie die Werte ein oder fügen Sie sie aus einer Tabellenkalkulation ein.</li><li>Bei zwei Spalten zeichnet <b class="ui">📈 Im Graphen zeigen</b> die Punkte und die Gerade.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/stats.jpg" alt="Statistik mit einem Beispiel" width="360"></div><figcaption>Statistik mit einem Beispiel</figcaption></figure>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>Testergebnisse von 10 Personen → Mittelwert 73,9, Median 74, Standardabweichung (Stichprobe) 9,938142013</p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Die Quartile kommen zuerst nach der Methode japanischer Schulbücher; die Methode der Tabellenkalkulationen steht unter „Mehr“.</p></div>
+<div class="m-box m-mis"><div class="m-lbl">Häufige Fehler</div><ul><li>Ein Wert, der keine Zahl ist, wird mit Zeile und Korrekturhinweis angezeigt.</li></ul></div>
+</section>
+<section class="m-sec" id="notes">
+<h3>Rechennotizen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Eine Notiz mit einer Rechnung pro Zeile und ihrem Ergebnis rechts. Geben Sie einem Wert einen Namen und verwenden Sie ihn in den Zeilen darunter.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Rechennotizen</b> in den <b class="ui">Werkzeuge</b>.</li><li>Schreiben Sie eine Rechnung pro Zeile, etwa <code>rent = 85000 JPY</code>.</li><li>Verwenden Sie den Namen in einer späteren Zeile: <code>rent × 12</code>.</li><li>Eine Zeile mit dem Summenwort addiert die Ergebnisse darüber.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/notes.jpg" alt="Rechennotizen mit einem Beispiel" width="360"></div><figcaption>Rechennotizen mit einem Beispiel</figcaption></figure>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>Miete 85000, Strom 6200, Wasser 3100 (JPY) → die Summenzeile zeigt ¥94300</p></div>
+<p class="m-pro"><span class="m-badge">Pro</span> Dies ist eine Funktion von QCalc Pro. Die erste Notiz ist kostenlos. Weitere Notizen und das Speichern als Text oder CSV sind Funktionen von QCalc Pro.</p>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Eine Zeile, die mit # oder // beginnt, ist eine Bemerkung (sie wird nicht berechnet).</p></div>
+</section>
+</section>
+<section class="m-ch" id="graphs">
+<h2>Graphen</h2>
+
+<section class="m-sec" id="graph-2d">
+<h3>2D-Graph</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Zeichnet Graphen von y = f(x). Ziehen verschiebt, Spreizen zoomt.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Graph</b> über ☰ (oder 📈 über dem Eingabefeld).</li><li>Geben Sie die Funktionen ein, eine pro Zeile, und den Bereich von x.</li><li>Drücken Sie <b class="ui">Zeichnen</b>.</li><li>Tippen Sie auf den Graphen, um die Koordinaten eines Punktes zu sehen.</li></ol></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p><b class="ui">Analysis ▾</b> liefert Ableitung, Tangenten, Nullstellen und Extrema.</p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Tippen Sie auf ein Beispiel unter dem Graphen, um es zu zeichnen.</p></div>
+</section>
+<section class="m-sec" id="area-length">
+<h3>Fläche und Länge</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Die Fläche zwischen einer Kurve und der x-Achse oder zwischen zwei Kurven, und die Länge einer Kurve. Die Enden des Bereichs lassen sich mit dem Finger ziehen.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Zeichnen Sie die Funktionen im 2D-Graphen.</li><li>Öffnen Sie <b class="ui">Fläche und Länge ▾</b>.</li><li>Geben Sie den Bereich a und b ein oder ziehen Sie die Linien an den Enden.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/area.jpg" alt="Die Fläche unter √x von 0 bis 2" width="360"></div><figcaption>Die Fläche unter √x von 0 bis 2</figcaption></figure>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>√x von 0 bis 2 → Fläche 1,885618083</p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Wechseln Sie zu <b class="ui">Länge</b> für die Länge der Kurve.</p></div>
+</section>
+<section class="m-sec" id="solid">
+<h3>Einen Körper bilden (Rotationskörper)</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Volumen und Oberfläche des Körpers, der entsteht, wenn ein Bereich des 2D-Graphen um eine Achse gedreht wird.</p>
+<figure class="m-fig m-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 190" class="m-pic" role="img" aria-hidden="true">
+<path d="M20 150h270M40 175V15" stroke="currentColor" stroke-width="1.5"/><path d="M286 146l6 4-6 4M36 19l4-6 4 6" stroke="currentColor" fill="none"/>
+<path d="M40 150 L160 50 L160 150 Z" fill="none" stroke="none"/>
+<path d="M40 150 Q100 140 160 50 L40 150" fill="none"/>
+<path d="M40 150 L160 50" stroke="var(--m-accent)" stroke-width="2.5"/>
+<path d="M40 150 Q110 135 160 50" stroke="currentColor" stroke-width="2" fill="none"/>
+<path d="M40 150 L160 50 Q110 135 40 150 Z" fill="var(--m-soft)" opacity=".9"/>
+<ellipse cx="160" cy="150" rx="12" ry="100" fill="none" stroke="var(--m-accent)" stroke-dasharray="5 4"/>
+<ellipse cx="110" cy="150" rx="7" ry="58" fill="none" stroke="currentColor" stroke-dasharray="4 4" opacity=".6"/>
+<path d="M210 150a14 22 0 1 1 0 0.1" stroke="currentColor" fill="none"/><path d="M222 136l2 8-8-2" stroke="currentColor" fill="none"/>
+<text x="176" y="58" font-size="13" fill="currentColor">y = x</text><text x="96" y="122" font-size="13" fill="currentColor">y = x²</text>
+<text x="252" y="170" font-size="13" fill="currentColor">x</text><text x="44" y="24" font-size="13" fill="currentColor">y</text>
+<text x="236" y="120" font-size="13" fill="var(--m-accent)">⟳</text>
+</svg><figcaption>Der Bereich zwischen y = x und y = x² um die x-Achse gedreht</figcaption></figure>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Zeichnen Sie die Funktionen im 2D-Graphen (zum Beispiel <code>x</code> und <code>x^2</code>).</li><li>Drücken Sie den runden Knopf <b class="ui">⟳ 3D</b> am Graphen. Das Volumen um die x-Achse erscheint sofort.</li><li>Für eine andere Achse tippen Sie auf ihre Linie; die Linie y = k ziehen Sie mit dem Finger.</li><li><b class="ui">↶ Rückgängig</b> kehrt zur vorherigen Achse zurück.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/solid.jpg" alt="Der Bereich zwischen y = x und y = x² um die x-Achse gedreht" width="360"></div><figcaption>Der Bereich zwischen y = x und y = x² um die x-Achse gedreht</figcaption></figure>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>Zwischen y = x und y = x², um die x-Achse → Volumen 2π/15 ≈ 0,4188790205</p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p><b class="ui">Methode mit Linien zeigen</b> zeichnet die Scheiben (Ringe) oder Zylinderschalen. Die Zeile <b class="ui">Guldinsche Regel: </b> vergleicht das Volumen aus dem Schwerpunkt mit dem Integral.</p></div>
+<p class="m-pro"><span class="m-badge">Pro</span> Dies ist eine Funktion von QCalc Pro. Den Körper in <b class="ui">In 3D ansehen</b> mit dem Finger zu drehen ist, wie der 3D-Graph, eine Funktion von QCalc Pro.</p>
+</section>
+<section class="m-sec" id="cross-sections">
+<h3>Körper mit bekannten Querschnitten</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Das Volumen eines Körpers, dessen Grundfläche der Bereich zwischen zwei Kurven ist, mit darauf stehenden Quadraten, gleichseitigen Dreiecken oder Halbkreisen.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">Körper bilden ▾</b>.</li><li>Wählen Sie <b class="ui">Querschnitte (Formen auf dem Bereich)</b>.</li><li>Wählen Sie die Form (□ △ ◠); weitere stehen unter <b class="ui">Weitere Formen ▾</b>.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>Quadrate auf dem Bereich zwischen y = x und y = x² → Volumen 1/30</p></div>
+</section>
+<section class="m-sec" id="graph-3d">
+<h3>3D-Graph</h3>
+<p class="m-pro"><span class="m-badge">Pro</span> Dies ist eine Funktion von QCalc Pro. </p>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Zeichnet Flächen z = f(x, y) und Körper in 3D, die Sie mit dem Finger drehen können.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Wählen Sie <b class="ui">3D  z = f(x, y)</b> unter <b class="ui">Graph</b>.</li><li>Geben Sie bis zu vier Funktionen und die Bereiche von x und y ein und drücken Sie <b class="ui">Zeichnen</b>.</li><li>Mit einem Finger drehen, mit zwei zoomen.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/graph3d.jpg" alt="Der 3D-Graph (die Beispielkugel)" width="360"></div><figcaption>Der 3D-Graph (die Beispielkugel)</figcaption></figure>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p><b class="ui">Partielle Ableitungen ▾</b> zeichnet ∂f/∂x und ∂f/∂y.</p></div>
+</section>
+<section class="m-sec" id="volume-3d">
+<h3>Volumen und Oberfläche (3D)</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Das Volumen unter einer Fläche des 3D-Graphen (oder zwischen zwei Flächen) und die Oberfläche.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Zeichnen Sie die Flächen im 3D-Graphen.</li><li>Öffnen Sie <b class="ui">Volumen und Oberfläche ▾</b>: Volumen und Oberfläche erscheinen sofort.</li><li>Wählen Sie den Bereich: ein Rechteck, eine Kreisscheibe, den eingeschlossenen Teil oder einen per Formel gegebenen.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>Die Beispielkugel (Radius 2) → Volumen 32π/3, Oberfläche 16π</p></div>
+</section>
+<section class="m-sec" id="share">
+<h3>Bilder und GIFs teilen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Sendet ein Bild eines Graphen an eine andere App; einen 3D-Graphen auch als bewegtes GIF.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Drücken Sie ↗ (<b class="ui">Ein Bild des Graphen teilen</b>) am Graphen.</li><li>Wählen Sie die App im Teilen-Menü.</li></ol></div>
+<p class="m-pro"><span class="m-badge">Pro</span> Dies ist eine Funktion von QCalc Pro. Bilder in voller Größe ohne Kennzeichnung und bewegte GIFs sind Funktionen von QCalc Pro. Ohne Pro ist das Bild höchstens 800 px breit, mit einem kleinen „QCalc“.</p>
+</section>
+</section>
+<section class="m-ch" id="forms">
+<h2>Formulare: Analysis, Gleichungen, Matrizen</h2>
+
+<section class="m-sec" id="calculus">
+<h3>Ableitungen, Integrale, Grenzwerte, Summen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Die Tasten der Seite <b class="ui">Analysis</b> öffnen ein Formular mit Kästchen □.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Drücken Sie d/dx, ∫, lim, Σ oder eine andere Taste auf der Seite <b class="ui">Analysis</b>.</li><li>Füllen Sie die Kästchen aus. Die Variable kann x bleiben.</li><li>Das Ergebnis erscheint darunter; <b class="ui">=</b> legt es im Verlauf ab.</li></ol></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/form.jpg" alt="Das Formular eines Integrals" width="360"></div><figcaption>Das Formular eines Integrals</figcaption></figure>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p>∫ x² sin(x) dx von 0 bis π → <code>π² − 4 ≈ 5,869604401</code></p></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Ein Grenzwert kann <b class="ui">Beide Seiten</b>, <b class="ui">Von rechts (+)</b> oder <b class="ui">Von links (−)</b> sein.</p></div>
+</section>
+<section class="m-sec" id="equations">
+<h3>Gleichungen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Löst Gleichungen und Gleichungssysteme.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Drücken Sie die Gleichungstaste auf der Seite <b class="ui">Analysis</b> oder tippen Sie <code>solve(x^2 − 5x + 6 = 0)</code>.</li><li>Das Ergebnis wird als „x = 2 oder x = 3“ angezeigt.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Beispiel</div><p><code>solve(x^2 − 5x + 6 = 0)</code> → x = 2, x = 3</p></div>
+</section>
+<section class="m-sec" id="matrices">
+<h3>Matrizen und Vektoren</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> ▦ auf der Seite <b class="ui">Matrix</b> gibt eine Matrix als Tabelle ein (bis 30 × 30).</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Drücken Sie ▦ auf der Seite <b class="ui">Matrix</b>.</li><li>Wählen Sie Zeilen und Spalten und füllen Sie die Kästchen aus.</li><li>Rechnen Sie mit det, Transponierte, Inverse und den anderen Tasten.</li></ol></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Tabellen aus einer Tabellenkalkulation lassen sich einfügen; <b class="ui">Als Tabelle kopieren (für eine Tabellenkalkulation)</b> im ⋯ kopiert sie zurück.</p></div>
+</section>
+</section>
+<section class="m-ch" id="setup">
+<h2>Einstellungen, Sprache, Widget</h2>
+
+<section class="m-sec" id="settings">
+<h3>Einstellungen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Die meistgenutzten Einstellungen stehen oben; die, die kaum jemand ändert, unter <b class="ui">Weitere Einstellungen</b>. Eine Änderung gilt sofort.</p>
+<div class="m-tw"><table><thead><tr><th>Einstellung</th><th>Was sie ändert</th></tr></thead><tbody><tr><td><b class="ui">Winkeleinheit</b></td><td>Radiant, Grad, Gon</td></tr><tr><td><b class="ui">Exakt oder näherungsweise</b></td><td>Automatisch, immer exakt, immer genähert</td></tr><tr><td><b class="ui">Zahlenformat</b></td><td>Dezimalzeichen und Zifferngruppen (<a href="#number-format">Zahlenformat</a>)</td></tr><tr><td><b class="ui">Brüche</b></td><td>Automatisch, dezimal, Bruch, gemischter Bruch</td></tr><tr><td><b class="ui">Genauigkeit (signifikante Stellen)</b></td><td>Die Rechengenauigkeit (Standard 10)</td></tr><tr><td><b class="ui">Hell oder dunkel</b></td><td>Die Farben des Bildschirms</td></tr><tr><td><b class="ui">Textgröße</b></td><td>Die Schrift von Verlauf, Eingabefeld und Ergebnis</td></tr><tr><td><b class="ui">Farbschema</b></td><td>Die Farbe der Tasten (außer Blau: QCalc Pro)</td></tr><tr><td><b class="ui">Ergebnis beim Tippen zeigen</b></td><td>Die Vorschau</td></tr><tr><td><b class="ui">Wechselkurse jetzt aktualisieren</b></td><td>Lädt die Kurse sofort</td></tr></tbody></table></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/settings.jpg" alt="Die Einstellungen" width="360"></div><figcaption>Die Einstellungen</figcaption></figure>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p><b class="ui">Alle Einstellungen zurücksetzen</b> setzt alles auf die Standardwerte zurück (die Sprache bleibt).</p></div>
+</section>
+<section class="m-sec" id="language">
+<h3>Sprache</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Die App gibt es auf English, 日本語, Español, Deutsch, Français, 한국어 und 繁體中文.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Wählen Sie <b class="ui">Sprache</b> in ☰.</li><li>Wählen Sie eine Sprache: Die App öffnet sich darin neu, mit Verlauf und dem gerade getippten Ausdruck.</li><li><b class="ui">Wie das Gerät</b> folgt wieder der Sprache des Telefons.</li></ol></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Ab Android 13 lässt sich die Sprache auch für jede App in den Einstellungen des Telefons festlegen.</p></div>
+</section>
+<section class="m-sec" id="widget">
+<h3>Widget, Kachel und Verknüpfungen</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> QCalc schnell öffnen über ein Widget auf dem Startbildschirm, eine Kachel der Schnelleinstellungen oder die Verknüpfungen am Symbol. Alles kostenlos.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">QCalc schnell öffnen</b> ganz unten in den <b class="ui">Werkzeuge</b>.</li><li>Wählen Sie Widget oder Kachel und folgen Sie dem Bildschirm.</li><li>Halten Sie das Symbol gedrückt für die Verknüpfungen <b class="ui">Neue Rechnung</b>, <b class="ui">Werkzeuge</b> und <b class="ui">Umrechnen</b>.</li></ol></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Das Widget zeigt das letzte Ergebnis und Knöpfe für Rechnen, Werkzeuge und Umrechnen.</p></div>
+</section>
+<section class="m-sec" id="about">
+<h3>Über diese App und Datenschutz</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> <b class="ui">Über diese App</b> zeigt die Version, den Datenschutz, die Lizenzen und Links zum Quellcode.</p>
+<ul><li><b class="ui">QCalc weiterempfehlen</b> teilt die Adresse von QCalc bei Google Play.</li><li><b class="ui">Fehler oder Wunsch melden</b> öffnet einen Entwurf in der Mail-App, nur mit Version, Gerät und Sprache; ob du ihn sendest, entscheidest du.</li><li>QCalc sammelt keine persönlichen Daten und sendet nichts.</li><li>Das Internet wird nur für die Wechselkurse genutzt.</li><li>Die Rechenmaschine steht unter der GNU GPL v2 oder später (<b class="ui">Open-Source-Lizenzen</b>).</li></ul>
+</section>
+</section>
+<section class="m-ch" id="pro">
+<h2>QCalc Pro</h2>
+
+<section class="m-sec" id="pro-free">
+<h3>Was kostenlos ist</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Rechnungen, 2D-Graphen, Flächen und Längen, Rotationskörper, Formen, Tanks (flache Böden), die Alltagswerkzeuge, Umrechnung, Statistik, die erste Rechennotiz, das Widget und diese Anleitung sind kostenlos, ohne Werbung.</p>
+</section>
+<section class="m-sec" id="pro-features">
+<h3>Was QCalc Pro hinzufügt</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Ein Kauf schaltet alle Pro-Funktionen frei, auch die späterer Updates. Kein Abo, keine Werbung.</p>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/pro.jpg" alt="Das Fenster QCalc Pro" width="360"></div><figcaption>Das Fenster QCalc Pro</figcaption></figure>
+<div class="m-tw"><table><thead><tr><th>Funktion</th><th>Abschnitt dieser Anleitung</th></tr></thead><tbody><tr><td>Mehr als 1000 signifikante Stellen (bis 200000)</td><td><a href="#results">Das Ergebnis lesen</a></td></tr><tr><td>3D-Graphen, in 3D ansehen</td><td><a href="#graph-3d">3D-Graph</a></td></tr><tr><td>Farbthemen (7 Farben)</td><td><a href="#settings">Einstellungen</a></td></tr><tr><td>Verlauf exportieren (CSV)</td><td><a href="#export">Den Verlauf exportieren</a></td></tr><tr><td>Tabellen als CSV (Kredit, Sparen)</td><td><a href="#loan">Kredit</a></td></tr><tr><td>Tankböden und Tabellen</td><td><a href="#tank-heads">Tankböden</a></td></tr><tr><td>Körper aus einem Profil</td><td><a href="#profile">Körper aus einem Profil</a></td></tr><tr><td>STL-Dateien</td><td><a href="#stl">STL-Dateien</a></td></tr><tr><td>GIF und Bilder ohne Kennzeichnung</td><td><a href="#share">Teilen</a></td></tr><tr><td>Weitere Rechennotizen, als Datei gespeichert</td><td><a href="#notes">Rechennotizen</a></td></tr></tbody></table></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p><b class="ui">So geht’s ›</b> in einer Zeile der Pro-Funktionen öffnet den Abschnitt dieser Anleitung.</p></div>
+</section>
+<section class="m-sec" id="pro-buy">
+<h3>Kaufen und wiederherstellen</h3>
+<p>Der Preis wird im Kaufbildschirm von Google Play angezeigt.</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Öffnen Sie <b class="ui">QCalc Pro</b> über ☰ (oder über das Fenster einer gesperrten Funktion).</li><li>Drücken Sie <b class="ui">QCalc Pro kaufen</b> und kaufen Sie im Bildschirm von Google Play.</li><li>Auf einem Telefon, auf dem Sie schon gekauft haben, oder nach einer Neuinstallation drücken Sie <b class="ui">Kauf wiederherstellen</b>.</li></ol></div>
+<div class="m-box m-tip"><div class="m-lbl">Tipp</div><p>Der Kauf gehört zu Ihrem Google-Konto und gilt deshalb auch auf Ihren anderen Geräten.</p></div>
+</section>
+</section>
+<section class="m-ch" id="trouble">
+<h2>Wenn etwas nicht klappt</h2>
+
+<section class="m-sec" id="faq">
+<h3>Häufige Fragen</h3>
+<ul><li><b>Das Ergebnis ist keine Dezimalzahl</b>: Prüfen Sie den Schalter oben oder <b class="ui">Exakt oder näherungsweise</b>.</li><li><b>x ergibt seltsame Ergebnisse</b>: x ist eine Variable; multiplizieren Sie mit der Taste ×.</li><li><b>Die Wechselkurse sind alt</b>: Drücken Sie <b class="ui">Wechselkurse jetzt aktualisieren</b> (mit Internet).</li><li><b>Die obere Tastenreihe fehlt</b>: Bei großer Schrift ist sie ausgeblendet; ⌨ am rechten Ende der Reiter zeigt sie.</li><li><b>Der 3D-Graph öffnet sich nicht</b>: Der 3D-Graph ist eine Funktion von QCalc Pro (<a href="#pro">QCalc Pro</a>).</li></ul>
+</section>
+<section class="m-sec" id="errors">
+<h3>Fehlermeldungen und ihre Behebung</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Eine Fehlermeldung sagt, was falsch ist und wie es zu beheben ist. Die häufigsten:</p>
+<div class="m-tw"><table><thead><tr><th>Meldung</th><th>Behebung</th></tr></thead><tbody><tr><td>Klammern passen nicht zusammen</td><td>Gleich viele ( und ) setzen</td></tr><tr><td>1.5 lässt sich nicht lesen (mit Dezimalkomma)</td><td>1,5 tippen; Argumente mit „;“ trennen</td></tr><tr><td>Die Einheiten passen nicht</td><td>Größen gleicher Art addieren (m und kg lassen sich nicht addieren)</td></tr><tr><td>Zuerst eine Funktion zeichnen</td><td>Im Graphen <b class="ui">Zeichnen</b> drücken, bevor Fläche oder Körper geöffnet werden</td></tr><tr><td>Das Zeitlimit wurde erreicht</td><td>Das <a href="#time-limit">Zeitlimit</a> verlängern oder den Ausdruck vereinfachen</td></tr></tbody></table></div>
+</section>
+<section class="m-sec" id="time-limit">
+<h3>Das Zeitlimit einer Rechnung</h3>
+<p class="m-what"><span class="m-lbl">Was es kann</span> Eine sehr lange Rechnung stoppt nach <b class="ui">Zeitlimit (Sekunden)</b> (Standard 20 Sekunden, 1 bis 3600).</p>
+<div class="m-steps"><div class="m-lbl">Schritte</div><ol><li>Während der Rechnung erscheint ein Hinweis; ein Tippen darauf stoppt sie.</li><li>Für mehr Zeit ändern Sie <b class="ui">Zeitlimit (Sekunden)</b> unter <b class="ui">Weitere Einstellungen</b> in den <b class="ui">Einstellungen</b>.</li></ol></div>
+</section>
+<section class="m-sec" id="caution">
+<h3>Hinweise zur Verwendung der Ergebnisse</h3>
+<div class="m-box m-note"><div class="m-lbl">Hinweis</div><p>Die Ergebnisse von QCalc dienen zur Orientierung. Verwenden Sie sie nicht für Handel oder Bescheinigungen (auch im gesetzlichen Messwesen), Planung und Bau, Steuererklärungen, Medizin oder Entscheidungen über Sicherheit.</p></div>
+<ul><li>Die Menge in einem Tank setzt die ideale Form des Tanks voraus; ein echter Tank kann abweichen.</li><li>Gewichte verwenden typische Dichten.</li><li>Die Steuersätze sind die üblichen Sätze vom November 2026 und können im Feld geändert werden.</li><li>Wechselkurse sind die geladenen, nicht die Kurse eines echten Geschäfts.</li><li>Die Werkzeuge für Geld oder Sicherheit zeigen unter den Ergebnissen eine Hinweiszeile.</li></ul>
+</section>
+</section>
+<section class="m-ch" id="glossary">
+<h2>Glossar</h2>
+<div class="m-tw"><table><thead><tr><th>Wort</th><th>Bedeutung</th></tr></thead><tbody><tr><td>Exakter Wert</td><td>Ein Wert mit Brüchen, √ und π. Er beginnt mit „=“</td></tr><tr><td>Näherung</td><td>Ein Wert als Dezimalzahl. Er beginnt mit „≈“</td></tr><tr><td>Signifikante Stellen</td><td>Die Stellenzahl eines Ergebnisses (die Genauigkeit)</td></tr><tr><td>ans</td><td>Das letzte Ergebnis</td></tr><tr><td>Vorschau</td><td>Das Ergebnis unter dem Eingabefeld beim Tippen</td></tr><tr><td>Rotationskörper</td><td>Ein Körper, der durch Drehen eines Bereichs um eine Achse entsteht</td></tr><tr><td>Boden</td><td>Der Abschluss an jedem Ende eines Tanks</td></tr><tr><td>Tabelle</td><td>Eine Tabelle der Menge zu jeder Füllhöhe</td></tr><tr><td>STL</td><td>Ein Dateiformat für Körper für 3D-Drucker</td></tr><tr><td>CSV</td><td>Eine Tabelle in einer Textdatei, die Tabellenkalkulationen öffnen</td></tr><tr><td>QCalc Pro</td><td>Die Funktionen für die Arbeit, freigeschaltet mit einem Kauf</td></tr></tbody></table></div>
+</section>
+<section class="m-ch m-index" id="index"><h2>Stichwortverzeichnis</h2><ul class="m-idx"><li>☆ Oben anheften — <a href="#history">Verlauf und Speicher</a>, <a href="#pins-notes">Anheften, Notizen und Suche</a></li><li>↶ Rückgängig — <a href="#solid">Einen Körper bilden (Rotationskörper)</a></li><li>2D-Graph — <a href="#graph-2d">2D-Graph</a></li><li>3D-Graph — <a href="#graph-3d">3D-Graph</a></li><li>Ableitungen, Integrale, Grenzwerte, Summen — <a href="#calculus">Ableitungen, Integrale, Grenzwerte, Summen</a></li><li>Alle Einstellungen zurücksetzen — <a href="#settings">Einstellungen</a></li><li>Alle Felder leeren — <a href="#boxes">Kästchen □ (die Formulare)</a></li><li>Als STL speichern — <a href="#stl">STL-Dateien für 3D-Drucker</a></li><li>Als Tabelle kopieren (für eine Tabellenkalkulation) — <a href="#matrices">Matrizen und Vektoren</a></li><li>Analysis — <a href="#key-pages">Die vier Tastenseiten</a>, <a href="#boxes">Kästchen □ (die Formulare)</a>, <a href="#calculus">Ableitungen, Integrale, Grenzwerte, Summen</a>, <a href="#equations">Gleichungen</a></li><li>Analysis ▾ — <a href="#graph-2d">2D-Graph</a></li><li>Andere Böden ▾ — <a href="#tank-heads">Tankböden und Tabellen</a></li><li>Anheften, Notizen und Suche — <a href="#pins-notes">Anheften, Notizen und Suche</a></li><li>Ausdruck ins Eingabefeld setzen — <a href="#history">Verlauf und Speicher</a></li><li>Automatisch — <a href="#number-format">Zahlenformat: das Dezimalzeichen</a></li><li>Bedienungsanleitung — <a href="#examples">Beispiele und Tipps in der App</a></li><li>Behälter: Füllmenge und Füllhöhe — <a href="#tanks">Tanks: Füllmenge und Füllhöhe</a>, <a href="#tank-heads">Tankböden und Tabellen</a></li><li>Beide Seiten — <a href="#calculus">Ableitungen, Integrale, Grenzwerte, Summen</a></li><li>Beispiele und Tipps — <a href="#examples">Beispiele und Tipps in der App</a></li><li>Beispiele und Tipps in der App — <a href="#examples">Beispiele und Tipps in der App</a></li><li>Bilder und GIFs teilen — <a href="#share">Bilder und GIFs teilen</a></li><li>Brüche — <a href="#settings">Einstellungen</a></li><li>Böden — <a href="#tank-heads">Tankböden und Tabellen</a></li><li>Das Ergebnis lesen: exakt, genähert, Brüche — <a href="#results">Das Ergebnis lesen: exakt, genähert, Brüche</a></li><li>Das Zeitlimit einer Rechnung — <a href="#time-limit">Das Zeitlimit einer Rechnung</a></li><li>Daten — <a href="#dates">Daten</a></li><li>Datumsangaben — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#dates">Daten</a></li><li>Den Verlauf exportieren (CSV) — <a href="#export">Den Verlauf exportieren (CSV)</a></li><li>Die ersten drei Rechnungen — <a href="#first-steps">Die ersten drei Rechnungen</a></li><li>Die vier Tastenseiten — <a href="#key-pages">Die vier Tastenseiten</a></li><li>Ebene Figuren — <a href="#shapes">Formen: Fläche, Volumen, Länge</a></li><li>Ein Bild des Graphen teilen — <a href="#share">Bilder und GIFs teilen</a></li><li>Ein Werkzeug finden — <a href="#find-tools">Ein Werkzeug finden</a></li><li>Einen Ausdruck eingeben — <a href="#typing">Einen Ausdruck eingeben</a></li><li>Einen Körper bilden (Rotationskörper) — <a href="#solid">Einen Körper bilden (Rotationskörper)</a></li><li>Einfügen — <a href="#lists">Listen: Funktionen, Einheiten, Konstanten, eigene Definitionen</a></li><li>Einheiten und Währungen umrechnen — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#convert">Einheiten und Währungen umrechnen</a></li><li>Einstellungen — <a href="#results">Das Ergebnis lesen: exakt, genähert, Brüche</a>, <a href="#number-format">Zahlenformat: das Dezimalzeichen</a>, <a href="#memory-keys">Speichertasten (M+ M− MR MC)</a>, <a href="#currencies">Währungen und Wechselkurse</a></li><li>Ergebnis beim Tippen zeigen — <a href="#settings">Einstellungen</a></li><li>Ergebnis kopieren — <a href="#history">Verlauf und Speicher</a></li><li>Exakt oder näherungsweise — <a href="#settings">Einstellungen</a>, <a href="#faq">Häufige Fragen</a></li><li>Farbschema — <a href="#settings">Einstellungen</a></li><li>Fehler oder Wunsch melden — <a href="#about">Über diese App und Datenschutz</a></li><li>Fehlermeldungen und ihre Behebung — <a href="#errors">Fehlermeldungen und ihre Behebung</a></li><li>Fläche und Länge — <a href="#area-length">Fläche und Länge</a></li><li>Fläche und Länge ▾ — <a href="#area-length">Fläche und Länge</a></li><li>Formen: Fläche, Volumen, Länge — <a href="#shapes">Formen: Fläche, Volumen, Länge</a></li><li>Funktionen — <a href="#key-pages">Die vier Tastenseiten</a></li><li>Funktionen, Einheiten und Währungen schreiben — <a href="#writing">Funktionen, Einheiten und Währungen schreiben</a></li><li>Ganzen Verlauf löschen — <a href="#history">Verlauf und Speicher</a></li><li>Genauigkeit (signifikante Stellen) — <a href="#results">Das Ergebnis lesen: exakt, genähert, Brüche</a>, <a href="#settings">Einstellungen</a></li><li>Gleichungen — <a href="#equations">Gleichungen</a></li><li>Graph — <a href="#graph-2d">2D-Graph</a>, <a href="#graph-3d">3D-Graph</a></li><li>Grundpreis: was ist günstiger — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#unit-price">Grundpreis: was ist günstiger</a></li><li>Guldinsche Regel:  — <a href="#solid">Einen Körper bilden (Rotationskörper)</a></li><li>Halbelliptisch 2:1 — <a href="#tank-heads">Tankböden und Tabellen</a></li><li>Halbkugel — <a href="#tank-heads">Tankböden und Tabellen</a></li><li>Hell oder dunkel — <a href="#settings">Einstellungen</a></li><li>Hinweise zur Verwendung der Ergebnisse — <a href="#caution">Hinweise zur Verwendung der Ergebnisse</a></li><li>Häufige Fragen — <a href="#faq">Häufige Fragen</a></li><li>In 3D ansehen — <a href="#profile">Körper aus einem Profil</a>, <a href="#solid">Einen Körper bilden (Rotationskörper)</a></li><li>Kauf wiederherstellen — <a href="#pro-buy">Kaufen und wiederherstellen</a></li><li>Kaufen und wiederherstellen — <a href="#pro-buy">Kaufen und wiederherstellen</a></li><li>Kopieren — <a href="#select-sum">Zeilen addieren</a></li><li>Kredit — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#loan">Kredit</a></li><li>Kurze Notiz hinzufügen — <a href="#history">Verlauf und Speicher</a>, <a href="#pins-notes">Anheften, Notizen und Suche</a></li><li>Kästchen □ (die Formulare) — <a href="#boxes">Kästchen □ (die Formulare)</a></li><li>Körper — <a href="#shapes">Formen: Fläche, Volumen, Länge</a></li><li>Körper aus einem Profil — <a href="#profile">Körper aus einem Profil</a></li><li>Körper bilden ▾ — <a href="#cross-sections">Körper mit bekannten Querschnitten</a></li><li>Körper mit bekannten Querschnitten — <a href="#cross-sections">Körper mit bekannten Querschnitten</a></li><li>Listen: Funktionen, Einheiten, Konstanten — <a href="#key-pages">Die vier Tastenseiten</a>, <a href="#lists">Listen: Funktionen, Einheiten, Konstanten, eigene Definitionen</a></li><li>Listen: Funktionen, Einheiten, Konstanten, eigene Definitionen — <a href="#lists">Listen: Funktionen, Einheiten, Konstanten, eigene Definitionen</a></li><li>Länge — <a href="#area-length">Fläche und Länge</a></li><li>Löschen und rückgängig machen — <a href="#undo">Löschen und rückgängig machen</a></li><li>Matrix — <a href="#key-pages">Die vier Tastenseiten</a>, <a href="#matrices">Matrizen und Vektoren</a></li><li>Matrizen und Vektoren — <a href="#matrices">Matrizen und Vektoren</a></li><li>Mehr ▾ — <a href="#profile">Körper aus einem Profil</a></li><li>Methode mit Linien zeigen — <a href="#solid">Einen Körper bilden (Rotationskörper)</a></li><li>Neu in 1.12.0 — <a href="#new-1-12">Neu in 1.12.0</a></li><li>Neue Rechnung — <a href="#widget">Widget, Kachel und Verknüpfungen</a></li><li>Nächstes Feld ▶ — <a href="#boxes">Kästchen □ (die Formulare)</a></li><li>Open-Source-Lizenzen — <a href="#about">Über diese App und Datenschutz</a></li><li>Partielle Ableitungen ▾ — <a href="#graph-3d">3D-Graph</a></li><li>Preis: Rabatt und Steuer — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#price">Preis: Rabatt und Steuer</a></li><li>Prozente — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#percent">Prozente</a></li><li>QCalc Pro kaufen — <a href="#pro-buy">Kaufen und wiederherstellen</a></li><li>QCalc schnell öffnen — <a href="#find-tools">Ein Werkzeug finden</a>, <a href="#widget">Widget, Kachel und Verknüpfungen</a></li><li>QCalc weiterempfehlen — <a href="#about">Über diese App und Datenschutz</a></li><li>Querschnitte (Formen auf dem Bereich) — <a href="#cross-sections">Körper mit bekannten Querschnitten</a></li><li>Raten, Monat für Monat — <a href="#loan">Kredit</a></li><li>Rechennotizen — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#notes">Rechennotizen</a></li><li>Rechnung teilen — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#split">Rechnung teilen</a></li><li>Rückgängig — <a href="#undo">Löschen und rückgängig machen</a></li><li>So geht’s › — <a href="#pro-features">Was QCalc Pro hinzufügt</a></li><li>So nutzen Sie dieses Formular › — <a href="#boxes">Kästchen □ (die Formulare)</a></li><li>Sparen und Zinseszins — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#savings">Sparen und Zinseszins</a></li><li>Speichertasten (M+ M− MR MC) — <a href="#memory-keys">Speichertasten (M+ M− MR MC)</a></li><li>Speichertasten anzeigen (M+ M− MR MC) — <a href="#memory-keys">Speichertasten (M+ M− MR MC)</a></li><li>Sprache — <a href="#language">Sprache</a></li><li>Statistik — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#stats">Statistik</a></li><li>STL-Datei speichern — <a href="#stl">STL-Dateien für 3D-Drucker</a></li><li>STL-Dateien für 3D-Drucker — <a href="#stl">STL-Dateien für 3D-Drucker</a></li><li>Tankböden und Tabellen — <a href="#tank-heads">Tankböden und Tabellen</a></li><li>Tanks: Füllmenge und Füllhöhe — <a href="#tanks">Tanks: Füllmenge und Füllhöhe</a></li><li>Textgröße — <a href="#settings">Einstellungen</a></li><li>Umrechnen — <a href="#widget">Widget, Kachel und Verknüpfungen</a></li><li>Verlauf durchsuchen — <a href="#history">Verlauf und Speicher</a>, <a href="#pins-notes">Anheften, Notizen und Suche</a></li><li>Verlauf exportieren (CSV-Datei) — <a href="#history">Verlauf und Speicher</a>, <a href="#export">Den Verlauf exportieren (CSV)</a></li><li>Volumen aus Messwerten — <a href="#measured">Volumen aus Messwerten</a></li><li>Volumen und Oberfläche (3D) — <a href="#volume-3d">Volumen und Oberfläche (3D)</a></li><li>Volumen und Oberfläche ▾ — <a href="#volume-3d">Volumen und Oberfläche (3D)</a></li><li>Von links (−) — <a href="#calculus">Ableitungen, Integrale, Grenzwerte, Summen</a></li><li>Von rechts (+) — <a href="#calculus">Ableitungen, Integrale, Grenzwerte, Summen</a></li><li>Vorschläge — <a href="#suggestions">Vorschläge</a></li><li>Was kostenlos ist — <a href="#pro-free">Was kostenlos ist</a></li><li>Was QCalc kann — <a href="#what-qcalc-does">Was QCalc kann</a></li><li>Was QCalc Pro hinzufügt — <a href="#pro-features">Was QCalc Pro hinzufügt</a></li><li>Wechselkurse jetzt aktualisieren — <a href="#currencies">Währungen und Wechselkurse</a>, <a href="#settings">Einstellungen</a>, <a href="#faq">Häufige Fragen</a></li><li>Weitere Einstellungen — <a href="#memory-keys">Speichertasten (M+ M− MR MC)</a>, <a href="#settings">Einstellungen</a>, <a href="#time-limit">Das Zeitlimit einer Rechnung</a></li><li>Weitere Formen ▾ — <a href="#cross-sections">Körper mit bekannten Querschnitten</a></li><li>Werkzeuge — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#find-tools">Ein Werkzeug finden</a>, <a href="#price">Preis: Rabatt und Steuer</a>, <a href="#shapes">Formen: Fläche, Volumen, Länge</a></li><li>Widget, Kachel und Verknüpfungen — <a href="#widget">Widget, Kachel und Verknüpfungen</a></li><li>Wie das Gerät — <a href="#language">Sprache</a></li><li>Winkeleinheit — <a href="#settings">Einstellungen</a></li><li>Währungen und Wechselkurse — <a href="#currencies">Währungen und Wechselkurse</a></li><li>Zahlenformat — <a href="#number-format">Zahlenformat: das Dezimalzeichen</a>, <a href="#settings">Einstellungen</a></li><li>Zahlenformat: das Dezimalzeichen — <a href="#number-format">Zahlenformat: das Dezimalzeichen</a></li><li>Zeichnen — <a href="#graph-2d">2D-Graph</a>, <a href="#graph-3d">3D-Graph</a>, <a href="#errors">Fehlermeldungen und ihre Behebung</a></li><li>Zeilen addieren — <a href="#select-sum">Zeilen addieren</a></li><li>Zeilen auswählen: Summe, Mittelwert, kopieren — <a href="#history">Verlauf und Speicher</a>, <a href="#select-sum">Zeilen addieren</a></li><li>Zeiten — <a href="#new-1-12">Neu in 1.12.0</a>, <a href="#times">Zeiten</a></li><li>Zeitlimit (Sekunden) — <a href="#time-limit">Das Zeitlimit einer Rechnung</a></li><li>Über diese App — <a href="#about">Über diese App und Datenschutz</a></li><li>Über diese App und Datenschutz — <a href="#about">Über diese App und Datenschutz</a></li><li>Übersichtstabelle ▾ — <a href="#tanks">Tanks: Füllmenge und Füllhöhe</a>, <a href="#tank-heads">Tankböden und Tabellen</a></li><li>📈 Im Graphen zeigen — <a href="#stats">Statistik</a></li></ul></section>
+</main>
+<p class="m-foot"><a href="#">Nach oben</a></p>
+<script>
+(function () {
+  var q = document.getElementById('m-q'), none = document.getElementById('m-none');
+  var secs = Array.prototype.slice.call(document.querySelectorAll('.m-doc section.m-ch'));
+  q.addEventListener('input', function () {
+    var words = q.value.toLowerCase().split(/\s+/).filter(Boolean), any = false;
+    secs.forEach(function (ch) {
+      var subs = ch.querySelectorAll('section'), hitCh = false;
+      Array.prototype.forEach.call(subs.length ? subs : [ch], function (s) {
+        var hit = !words.length || words.every(function (w) { return s.textContent.toLowerCase().indexOf(w) >= 0; });
+        s.hidden = !hit; hitCh = hitCh || hit;
+      });
+      ch.hidden = !hitCh; any = any || hitCh;
+    });
+    document.querySelector('.m-doc .m-toc').hidden = words.length > 0;
+    none.hidden = any;
+  });
+})();
+</script>
+</body>
+</html>
