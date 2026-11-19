@@ -35,12 +35,14 @@ make_manifest() {
 }
 
 # build_dex <work dir>  ->  <work dir>/classes.dex
+# With the class R that "aapt2 link --java <work dir>/gen" wrote (the ids of the resources that the
+# widget uses, 1.12.0), as Gradle makes it.
 # Only app/src: app/src-billing (the purchase of QCalc Pro) needs the Google Play Billing Library and
 # is built by Gradle with qcalc.billing=true (app/build.gradle). Without it Pro cannot be bought, and
 # the app locks nothing (Pro.java).
 build_dex() {
   mkdir -p "$1/classes"
-  find "$A/src" -name '*.java' -print0 | xargs -0 javac -encoding UTF-8 -source 8 -target 8 \
+  find "$A/src" "$1/gen" -name '*.java' -print0 | xargs -0 javac -encoding UTF-8 -source 8 -target 8 \
     -bootclasspath "$ANDROID_JAR" -Xlint:-options -d "$1/classes"
   dalvik-exchange --dex --min-sdk-version=$MIN_SDK --output="$1/classes.dex" "$1/classes"
 }

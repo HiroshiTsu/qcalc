@@ -29,7 +29,9 @@ mkdir -p "$B" "$OUT"
 # ---- resources and manifest in protocol-buffer form (what a bundle contains)
 make_manifest "$PACKAGE" "$B/AndroidManifest.xml"
 aapt2 compile --dir "$A/res" -o "$B/res.zip"
+mkdir -p "$B/gen"
 aapt2 link --proto-format -o "$B/base-proto.zip" -I "$AAPT2_JAR" --manifest "$B/AndroidManifest.xml" -A "$A/assets" \
+  --java "$B/gen" --custom-package "$PACKAGE" \
   --min-sdk-version $MIN_SDK --target-sdk-version $TARGET_SDK \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME" "$B/res.zip"
 

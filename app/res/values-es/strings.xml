@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_desc">El último resultado, con botones para Calcular, Herramientas y Convertir</string>
+    <string name="widget_calc">Calcular</string>
+    <string name="widget_tools">Herramientas</string>
+    <string name="widget_convert">Convertir</string>
+    <string name="widget_empty">Aún no hay cálculos</string>
+    <string name="sc_new">Nuevo cálculo</string>
+    <string name="sc_convert_long">Convertir unidades y monedas</string>
+</resources>

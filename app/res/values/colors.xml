@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the widget on the home screen (1.12.0), in the colours of the page (style.css) -->
+<resources>
+    <color name="widget_bg">#FFFFFFFF</color>
+    <color name="widget_text">#FF1B2130</color>
+    <color name="widget_sub">#FF5F6778</color>
+    <color name="widget_btn">#FFE3ECFD</color>
+    <color name="widget_btn_text">#FF1D4ED8</color>
+    <color name="widget_press">#331D4ED8</color>
+</resources>

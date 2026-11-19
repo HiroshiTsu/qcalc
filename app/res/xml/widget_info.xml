@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget on the home screen (1.12.0): 3 × 2 cells, can be made larger. It is drawn again when
+     the history changes (Quick.setLast), so it needs no regular updates. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_desc"
+    android:initialLayout="@layout/widget"
+    android:minHeight="110dp"
+    android:minResizeHeight="100dp"
+    android:minResizeWidth="180dp"
+    android:minWidth="180dp"
+    android:previewImage="@mipmap/ic_launcher"
+    android:previewLayout="@layout/widget"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="2"
+    android:targetCellWidth="3"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

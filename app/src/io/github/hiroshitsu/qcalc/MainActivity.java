@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.LocaleManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -11,6 +12,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Insets;
+import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -90,6 +92,11 @@ public class MainActivity extends Activity {
     private long createdAt;
     /** The page has reported that it is ready (reportFullyDrawn is called once). */
     private boolean fullyDrawn;
+    /**
+     * The place the widget, a shortcut or the tile asked for (QuickText; 1.12.0), until the page is
+     * ready to be told (pageReady).
+     */
+    private String pendingOpen;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +107,11 @@ public class MainActivity extends Activity {
             Log.i(TAG, "startup: onCreate " + (createdAt - android.os.Process.getStartElapsedRealtime()) + " ms after the process started");
         }
         appearance = savedAppearance();
+        // opened from the widget, a shortcut of the icon or the tile; not when the system makes the
+        // activity again or it is opened from the list of recent apps (the same intent once more)
+        if (savedInstanceState == null && (getIntent().getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0) {
+            pendingOpen = Quick.targetOf(getIntent());
+        }
         configLocales = getResources().getConfiguration().getLocales().toLanguageTags();
         // first: on its first start a build with billing looks for the data of older versions
         pro = new Pro(this, new Pro.Listener() {
@@ -427,6 +439,23 @@ public class MainActivity extends Activity {
         });
     }
 
+    /** The app was running and is opened again (launchMode singleTask): from the widget, a shortcut or the tile. */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String target = Quick.targetOf(intent);
+        if (target == null) return;
+        if (fullyDrawn && web != null) openPlace(target);
+        else pendingOpen = target;
+    }
+
+    /** Tells the page to show a new calculation, Tools or Convert (window.qalcOpen in app.js). */
+    private void openPlace(String target) {
+        String t = QuickText.target(target);
+        if (t != null) runScript("window.qalcOpen && window.qalcOpen('" + t + "')");
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -610,6 +639,28 @@ public class MainActivity extends Activity {
                         : "{\"event\":\"saved\",\"ok\":false,\"error\":\"Could not save the file\"}");
             }
         }, "qalc-save").start();
+    }
+
+    /** Android 13 and later: the system asks the user whether to add QCalc's tile to the quick settings. */
+    private void requestTile() {
+        android.app.StatusBarManager sb = getSystemService(android.app.StatusBarManager.class);
+        if (sb == null) {
+            sendEvent("{\"event\":\"quick\",\"what\":\"tile\",\"result\":1006}");
+            return;
+        }
+        try {
+            sb.requestAddTileService(new ComponentName(this, QuickTile.class), getString(R.string.tile_label),
+                    Icon.createWithResource(this, R.drawable.ic_tile), getMainExecutor(),
+                    new java.util.function.Consumer<Integer>() {
+                        @Override
+                        public void accept(Integer result) {
+                            sendEvent("{\"event\":\"quick\",\"what\":\"tile\",\"result\":" + result + "}");
+                        }
+                    });
+        } catch (RuntimeException e) {
+            Log.w(TAG, "addTile", e);
+            sendEvent("{\"event\":\"quick\",\"what\":\"tile\",\"result\":1000}");
+        }
     }
 
     /** Hands an event (one JSON object) to the page: engine events, QCalc Pro, saved files. */
@@ -874,6 +925,10 @@ public class MainActivity extends Activity {
                     fullyDrawn = true;
                     Log.i(TAG, "startup: page ready " + (SystemClock.elapsedRealtime() - createdAt) + " ms after onCreate");
                     reportFullyDrawn();
+                    if (pendingOpen != null) {
+                        openPlace(pendingOpen);
+                        pendingOpen = null;
+                    }
                 }
             });
         }
@@ -925,6 +980,55 @@ public class MainActivity extends Activity {
             } catch (RuntimeException e) {
                 Log.e(TAG, "setTestPro", e);
             }
+        }
+
+        /** The last line of the history as shown, for the widget (1.12.0); both "" when the history is empty. */
+        @JavascriptInterface
+        public void setWidget(String expr, String result) {
+            try {
+                Quick.setLast(MainActivity.this, expr, result);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "setWidget", e);
+            }
+        }
+
+        /** The texts of the widget and of the icon's shortcuts in the app's language (JSON, see Quick.setLabels). */
+        @JavascriptInterface
+        public void setQuickLabels(String json) {
+            try {
+                Quick.setLabels(MainActivity.this, json);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "setQuickLabels", e);
+            }
+        }
+
+        /** "Put the widget on the home screen": "asked", "unsupported" or "failed" (Quick.pinWidget). */
+        @JavascriptInterface
+        public String pinWidget() {
+            return Quick.pinWidget(MainActivity.this);
+        }
+
+        /** How many QCalc widgets are on the home screen. */
+        @JavascriptInterface
+        public int widgetCount() {
+            return Widget.count(MainActivity.this);
+        }
+
+        /**
+         * "Add the tile to the quick settings" (Android 13 and later): "asked", and the answer comes as
+         * the event {"event":"quick","what":"tile","result":n} (StatusBarManager's codes: 2 added,
+         * 1 already there, 0 not added, 1000 and more a failure); "unsupported" before Android 13.
+         */
+        @JavascriptInterface
+        public String addTile() {
+            if (Build.VERSION.SDK_INT < 33) return "unsupported";
+            onUi("addTile", new Runnable() {
+                @Override
+                public void run() {
+                    requestTile();
+                }
+            });
+            return "asked";
         }
 
         /**

@@ -396,7 +396,8 @@
     rev_lines: 'free',     // the lines of the method in 2D and the theorem of Pappus (1.12 B2): recommended free (the angle of the 3D view needs Pro as 3D)
     everyday: 'free',      // the everyday tools: price, percentages, unit price, split, loan, savings, dates, times (1.12 C1): recommended free
     tables: 'free',        // saving the tables of the tools as CSV files (1.12 C1): recommended Pro (as exporting the history)
-    convert: 'free'        // the conversion of units and currencies (1.12 C2): recommended free
+    convert: 'free',       // the conversion of units and currencies (1.12 C2): recommended free
+    quick: 'free'          // the widget, the tile and the shortcuts of the icon (1.12 C3): recommended free (they only open the app)
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -457,7 +458,8 @@
   // in 1.12.0 are for those users only; a new user is marked as having seen them
   const usedBefore = history.length > 0 || store.get('qalc.settings', null) !== null;
   if (!usedBefore && !store.get('qalc.moved112', false)) store.set('qalc.moved112', true);
-  const saveHistory = debounce(() => store.set('qalc.history', trimHistory(history)), 300);
+  // (1.12.0) and the widget on the home screen shows the newest line (syncWidget)
+  const saveHistory = debounce(() => { store.set('qalc.history', trimHistory(history)); syncWidget(); }, 300);
   // the history cut to 300 lines: the oldest lines go, but not those pinned with a star (1.12.0)
   function trimHistory(list) {
     const extra = list.length - 300;
@@ -1405,6 +1407,7 @@
   Bridge.setEventHandler((ev) => {
     if (ev.event === 'pro') { proChanged(ev); return; }
     if (ev.event === 'saved') { fileSaved(ev); return; }
+    if (ev.event === 'quick') { quickAnswer(ev); return; }
     if (ev.event !== 'ans') return;
     const h = sessionEntries.get(ev.id);
     if (h) { sessionEntries.delete(ev.id); setInput(h, ev.input); saveHistory(); return; }
@@ -3344,6 +3347,7 @@
     tr('Touch and hold a result with x (x³ − 3x), or tap its ⋯, to differentiate or integrate it, draw its graph or put in a value for x.', 'x を含む結果（x³ − 3x など）を長押しするか ⋯ をタップすると、微分・積分・グラフ・x への値の代入ができます。'),
     tr('Type the "=" of an equation with the a=b key (the large = key calculates). Example: solve(x^2 = 16)', '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)'),
     tr('Language (in the menu or the settings): "Same as device" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone\'s language changes.', '言語（メニューか設定）：「端末の設定に合わせる」にすると、スマホの言語に合わせます（変えたときも）。端末の言語に QCalc がないときは英語になります。一覧から言語を選ぶと、スマホの言語を変えてもその言語のままです。'),
+    tr('In the app: Tools → "Open QCalc quickly" puts a widget with the last result on the home screen or adds a tile to the quick settings. Touch and hold the QCalc icon for New calculation, Tools and Convert.', 'アプリでは「道具」→「QCalc をすぐ開く」で、最後の結果が見えるウィジェットをホーム画面に置いたり、クイック設定にタイルを足したりできます。QCalc のアイコンを長押しすると「新しい計算」「道具」「換算」を選べます。'),
     tr('With a decimal comma (Settings → Number format: 1.234,5 or 1 234,5, or automatically in such a region) type 1,5 and separate the arguments with ";": max(1,5; 2). In a matrix the elements are separated by spaces: [1,5 2; 3 4]. The history stays as it was when the setting is changed.', '小数点を「,」にした場合（設定 →「数の書き方」で 1.234,5 か 1 234,5、または自動でその地域）は、1,5 のように入れ、引数は「;」で区切ります：max(1,5; 2)。行列の要素は空白で区切ります：[1,5 2; 3 4]。設定を変えても履歴はそのままです。'),
     tr('Type a matrix as [1, 2; 3, 4]: "," between the elements and ";" between the rows. Matrix results are shown as tables in the history.', '行列は [1, 2; 3, 4] のように、要素を「,」、行を「;」で区切って入力します。結果の行列は履歴に表の形で表示されます。'),
     tr('The ▦ key of the Matrix page opens a grid of cells: set the rows and columns with + and −, type the elements and choose what to calculate (determinant, inverse, transpose, rank, eigenvalues, linear system). det, Aᵀ and A⁻¹ open it too when the input field is empty. Touch and hold a matrix result to edit it there.', '「行列」ページの ▦ キーで、行列を表の形で入力する画面が開きます。行と列の数を + と − で決めて要素を入れ、計算（行列式・逆行列・転置・階数・固有値・連立方程式）を選びます。入力欄が空のときは det・Aᵀ・A⁻¹ のキーでも開きます。結果の行列を長押しすると、その画面で編集できます。'),
@@ -11498,14 +11502,17 @@
           const in_ = TOOLS.filter((t) => t[1] === g);
           if (in_.length) lists.append(el('div', { class: 'section-title', text: name }), el('div', { class: 'card tool-list' }, ...in_.map(toolRow)));
         }
+        // 1.12.0 (C3): in the app, the widget and the tile
+        if (quickApi()) lists.append(el('div', { class: 'section-title', text: tr('Home screen', 'ホーム画面') }), el('div', { class: 'card tool-list' }, quickRow()));
       };
       const find = () => {
         const q = search.value;
         found.textContent = '';
         lists.hidden = !!q.trim();
         if (!q.trim()) return;
-        const hits = TOOLS.filter((t) => toolMatches(t, q));
-        if (hits.length) found.append(el('div', { class: 'card tool-list' }, ...hits.map(toolRow)));
+        const hits = TOOLS.filter((t) => toolMatches(t, q)).map(toolRow);
+        if (quickMatches(q)) hits.push(quickRow());
+        if (hits.length) found.append(el('div', { class: 'card tool-list' }, ...hits));
         else found.append(el('div', { class: 'card muted', text: tr('No tool was found for this. Try another word, or choose from the list below the search box after clearing it. Many calculations can also be typed directly, for example 5 km to mi.', 'この言葉では道具が見つかりませんでした。別の言葉で探すか、検索欄を空にして一覧から選んでください。5 km to mi のように、計算画面に直接入れて計算できることも多くあります。') }));
       };
       search.addEventListener('input', find);
@@ -12013,6 +12020,128 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     fileSaved({ ok: true });
   }
+  // ------------------------------------------- quick ways into the app (1.12.0, C3)
+  // The widget on the home screen, the tile of the quick settings and the shortcuts of the app's
+  // icon (Widget.java, QuickTile.java, Quick.java) open the app at a new calculation, Tools or
+  // Convert: the app calls window.qalcOpen. The page gives the widget the newest line of the history
+  // as shown (number format) and the texts of the widget and the shortcuts in the app's language.
+  // In a browser there is none of this; the test page can stand in for the app (QalcDev).
+  function quickApi() {
+    if (window.QalcNative && QalcNative.pinWidget) return QalcNative;
+    if (window.QalcDev && QalcDev.pinWidget) return QalcDev;
+    return null;
+  }
+  function quickLabels() {
+    return {
+      calc: tr('Calculate', '計算'), tools: tr('Tools', '道具'), convert: tr('Convert', '換算'),
+      empty: tr('No calculation yet', 'まだ計算していません'), newCalc: tr('New calculation', '新しい計算'),
+      convertLong: tr('Convert units and currencies', '単位・通貨の換算')
+    };
+  }
+  let widgetSent = null;
+  function syncWidget() {
+    const q = quickApi();
+    if (!q || !q.setWidget) return;
+    const h = history.length ? history[history.length - 1] : null;
+    const expr = h ? toDisplay(h.expr || '') : '', res = h && h.result ? displayResult(h) : '';
+    if (expr + '\n' + res === widgetSent) return;
+    widgetSent = expr + '\n' + res;
+    try { q.setWidget(expr.slice(0, 200), res.slice(0, 200)); } catch (e) { }
+  }
+  // once the page has started (the language is known, and the app makes the shortcuts with these texts)
+  function syncQuick() {
+    const q = quickApi();
+    try { if (q && q.setQuickLabels) q.setQuickLabels(JSON.stringify(quickLabels())); } catch (e) { }
+    syncWidget();
+  }
+  // the row at the end of Tools (in the app only), also found by its words in the search
+  function quickRow() {
+    return tapButton({ class: 'tool-row quick-row', 'data-tool': 'quick' }, () => openQuickSheet())
+      .appendChild(el('span', { class: 'ico', text: '⌂', 'aria-hidden': 'true' })).parentNode
+      .appendChild(el('span', { class: 'tool-t' }, el('span', { class: 'n', text: tr('Open QCalc quickly', 'QCalc をすぐ開く') }),
+        el('span', { class: 'd', text: tr('A widget on the home screen, a tile in the quick settings', 'ホーム画面のウィジェット、クイック設定のタイル') }))).parentNode;
+  }
+  const QUICK_WORDS = ['widget', 'tile', 'home screen', 'shortcut', 'quick settings', 'ウィジェット', 'タイル', 'ホーム画面', 'ショートカット', 'クイック設定',
+    'kachel', 'startbildschirm', 'schnelleinstellungen', 'icono', 'pantalla de inicio', 'ajustes rápidos', 'tuile', 'écran d’accueil', 'réglages rapides',
+    '위젯', '타일', '홈 화면', '빠른 설정', '小工具', '圖塊', '主畫面', '快速設定'];
+  function quickMatches(q) {
+    const w = String(q || '').trim().toLowerCase().replace(/'/g, '’');
+    if (!quickApi() || w.length < 2) return false;
+    return QUICK_WORDS.some((x) => x.indexOf(w) === 0 || w.indexOf(x) >= 0) || tr('Open QCalc quickly', 'QCalc をすぐ開く').toLowerCase().indexOf(w) >= 0;
+  }
+  // the app opens a place: whatever is open is closed first (a sheet, the menu, panels, a form)
+  window.qalcOpen = function (what) {
+    if (!varPopEl.hidden) closeVarPop();
+    if ($('#sheet').classList.contains('open')) closeSheet(null);
+    closeHistSelect(); closeHistSearch();
+    if ($('#drawer').classList.contains('open')) closeDrawer();
+    for (let i = 0; i < 20 && panelStack.length; i++) closePanel();
+    if (what === 'tools') openTools();
+    else if (what === 'convert') openConverter();
+    else { if (CF.id) closeForm(); focusExpr(); }
+    return true;
+  };
+  // "Open QCalc quickly" (at the end of Tools): the widget, the tile, and what the icon offers
+  async function openQuickSheet() {
+    const q = quickApi();
+    if (!q || !proGate('quick')) return;
+    if (sheetResolve) closeSheet(null);
+    const sh = $('#sheet');
+    sh.textContent = '';
+    const item = (key, label, note, cls) => el('button', { class: 'quick-item ' + (cls || ''), 'data-quick': key, onclick: () => closeSheet(key) },
+      el('span', { class: 'n', text: label }), el('span', { class: 'd', text: note }));
+    sh.append(el('div', { class: 'stitle', text: tr('Open QCalc quickly', 'QCalc をすぐ開く') }),
+      item('widget', tr('Put a widget on the home screen', 'ホーム画面にウィジェットを置く'), tr('The last result, with buttons for Calculate, Tools and Convert', '最後の結果と、「計算」「道具」「換算」のボタン'), 'accent'),
+      item('tile', tr('Add a tile to the quick settings', 'クイック設定にタイルを足す'), tr('Opens QCalc from the panel you pull down from the top of the screen', '画面の上から下ろすパネルから開けます')),
+      el('div', { class: 'pro-sheet-note quick-icon', text: tr('Touch and hold the QCalc icon to choose New calculation, Tools or Convert.', 'QCalc のアイコンを長押しすると、「新しい計算」「道具」「換算」を選べます。') }),
+      el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
+    const k = await new Promise((resolve) => {
+      sheetResolve = resolve;
+      $('#scrim').classList.add('show', 'over-panels');
+      sh.classList.add('open');
+      sh.inert = false;
+    });
+    if (k === 'widget') {
+      let r = 'failed';
+      try { r = String(q.pinWidget()); } catch (e) { }
+      if (r !== 'asked') quickSteps('widget');
+    } else if (k === 'tile') {
+      let r = 'unsupported';
+      try { if (q.addTile) r = String(q.addTile()); } catch (e) { }
+      if (r !== 'asked') quickSteps('tile');
+    }
+  }
+  // how to do it by hand, when the system cannot ask (older Android, some home screens)
+  function quickSteps(what) {
+    const steps = what === 'tile' ? [
+      tr('Pull down from the top of the screen twice, so that all the quick settings are shown.', '画面の上から 2 回下ろして、クイック設定をすべて出します。'),
+      tr('Tap ✎ (Edit).', '✎（編集）をタップします。'),
+      tr('Find the QCalc tile and drag it up among the tiles in use.', '「QCalc」のタイルを探して、上の並びまで指で動かします。')
+    ] : [
+      tr('Touch and hold an empty place on the home screen.', 'ホーム画面の何もないところを長押しします。'),
+      tr('Choose “Widgets”.', '「ウィジェット」を選びます。'),
+      tr('Find QCalc, then touch and hold the widget and drag it to where you want it.', '「QCalc」を探して、ウィジェットを長押ししたまま置きたい場所まで動かします。')
+    ];
+    if (sheetResolve) closeSheet(null);
+    const sh = $('#sheet');
+    sh.textContent = '';
+    sh.append(el('div', { class: 'stitle', text: what === 'tile' ? tr('How to add the tile', 'タイルの足し方') : tr('How to put the widget on the home screen', 'ウィジェットの置き方') }),
+      el('ol', { class: 'quick-steps' }, ...steps.map((t) => el('li', { text: t }))),
+      el('div', { class: 'pro-sheet-note', text: tr('The names can differ a little from phone to phone.', '名前は機種によって少し違うことがあります。') }),
+      el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
+    sheetResolve = () => { };
+    $('#scrim').classList.add('show', 'over-panels');
+    sh.classList.add('open');
+    sh.inert = false;
+  }
+  // the answer to "Add a tile" (Android 13 and later): 2 added, 1 already there, 0 not added, else a failure
+  function quickAnswer(ev) {
+    if (ev.what !== 'tile') return;
+    const r = Number(ev.result);
+    if (r === 2) toast(tr('The tile was added to the quick settings', 'クイック設定にタイルを足しました'), 2500);
+    else if (r === 1) toast(tr('The tile is already in the quick settings', 'タイルはもうクイック設定にあります'), 2500);
+    else if (r !== 0) quickSteps('tile');
+  }
   function fileSaved(ev) {
     const what = savingWhat; savingWhat = '';
     if (ev.ok) toast(what === 'table' ? tr('Table saved', '表を保存しました') : tr('History exported', '履歴を書き出しました'), 2000);
@@ -12159,6 +12288,9 @@
     startEngine();
     startupMark('ui');
     showNews();
+    syncQuick();
+    // the test page: ?open=tools (or calc, convert) as the app does for the widget
+    try { const o = new URLSearchParams(location.search).get('open'); if (!window.QalcNative && /^(calc|tools|convert)$/.test(o || '')) setTimeout(() => window.qalcOpen(o), 0); } catch (e) { }
   }
   // The times of the start (1.12.0), from the start of the page: the keypad and the newest history
   // shown (ui), the engine ready (engine) and the first result. The app writes them to its log

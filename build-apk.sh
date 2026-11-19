@@ -28,7 +28,9 @@ mkdir -p "$B/stage/lib/arm64-v8a" "$OUT"
 make_manifest "$PACKAGE" "$B/AndroidManifest.xml"
 aapt2 compile --dir "$A/res" -o "$B/res.zip"
 aapt2 compile --dir "$A/res-debug" -o "$B/res-debug.zip"
+mkdir -p "$B/gen"
 aapt2 link -o "$B/app-unsigned.apk" -I "$AAPT2_JAR" --manifest "$B/AndroidManifest.xml" -A "$A/assets" \
+  --java "$B/gen" --custom-package "$PACKAGE" \
   --rename-manifest-package "$DEBUG_PACKAGE" \
   --min-sdk-version $MIN_SDK --target-sdk-version $TARGET_SDK \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME-debug" \
