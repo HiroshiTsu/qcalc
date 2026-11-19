@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 190" class="m-pic" role="img" aria-hidden="true">
+<path d="M20 150h270M40 175V15" stroke="currentColor" stroke-width="1.5"/><path d="M286 146l6 4-6 4M36 19l4-6 4 6" stroke="currentColor" fill="none"/>
+<path d="M40 150 L160 50 L160 150 Z" fill="none" stroke="none"/>
+<path d="M40 150 Q100 140 160 50 L40 150" fill="none"/>
+<path d="M40 150 L160 50" stroke="var(--m-accent)" stroke-width="2.5"/>
+<path d="M40 150 Q110 135 160 50" stroke="currentColor" stroke-width="2" fill="none"/>
+<path d="M40 150 L160 50 Q110 135 40 150 Z" fill="var(--m-soft)" opacity=".9"/>
+<ellipse cx="160" cy="150" rx="12" ry="100" fill="none" stroke="var(--m-accent)" stroke-dasharray="5 4"/>
+<ellipse cx="110" cy="150" rx="7" ry="58" fill="none" stroke="currentColor" stroke-dasharray="4 4" opacity=".6"/>
+<path d="M210 150a14 22 0 1 1 0 0.1" stroke="currentColor" fill="none"/><path d="M222 136l2 8-8-2" stroke="currentColor" fill="none"/>
+<text x="176" y="58" font-size="13" fill="currentColor">y = x</text><text x="96" y="122" font-size="13" fill="currentColor">y = x²</text>
+<text x="252" y="170" font-size="13" fill="currentColor">x</text><text x="44" y="24" font-size="13" fill="currentColor">y</text>
+<text x="236" y="120" font-size="13" fill="var(--m-accent)">⟳</text>
+</svg>

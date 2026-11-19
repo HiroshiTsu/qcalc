@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>QCalc user manual</title>
+<style>body{font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;padding:32px 16px;line-height:1.7;background:Canvas;color:CanvasText}a{font-size:1.15em}li{margin:.4em 0}</style>
+<script>
+(function () {
+  var have = ["ja", "en", "de", "es", "fr", "ko", "zh-TW"], l = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+  l = /^zh-(TW|HK|MO|Hant)/i.test(l) ? 'zh-TW' : l.split('-')[0];
+  if (!/[?&]stay/.test(location.search) && have.indexOf(l) >= 0) location.replace(l + '/' + location.hash);
+})();
+</script>
+</head>
+<body>
+<h1>QCalc user manual</h1>
+<ul>
+<li><a href="ja/" hreflang="ja" lang="ja">日本語</a></li>
+<li><a href="en/" hreflang="en" lang="en">English</a></li>
+<li><a href="de/" hreflang="de" lang="de">Deutsch</a></li>
+<li><a href="es/" hreflang="es" lang="es">Español</a></li>
+<li><a href="fr/" hreflang="fr" lang="fr">Français</a></li>
+<li><a href="ko/" hreflang="ko" lang="ko">한국어</a></li>
+<li><a href="zh-TW/" hreflang="zh-TW" lang="zh-TW">繁體中文</a></li>
+</ul>
+</body>
+</html>

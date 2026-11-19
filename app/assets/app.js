@@ -166,6 +166,107 @@
     if (window.QalcNative && QalcNative.openUrl) QalcNative.openUrl(url);
     else window.open(url, '_blank');
   }
+  // The user manual (1.12.0, H). Two forms are made from one source by tools/manual/build.py: the one
+  // inside the app (manual/<language>.js: text and simple SVG pictures; read only when the manual is
+  // opened, so the start is not slower, and readable offline), and the full one with photos on the site
+  // (docs/manual/<language>/, with its PDF), which only the links at the top of the manual open, in the
+  // browser (openUrl; the WebView, which has QalcNative, never loads an outside page). Both are in the
+  // language of the app (English for a language without a manual). The ids of the sections are the same
+  // in every language and must not change: the "?" of the panels and the tools point to them (MANUAL_IDS
+  // lists them all; the tests MN check that each is in the seven manuals, in the app and on the site).
+  const MANUAL_URL = 'https://hiroshitsu.github.io/qcalc/manual/';
+  const MANUAL_LANGS = ['en', 'ja', 'es', 'de', 'fr', 'ko', 'zh-TW'];
+  const manualLang = () => (MANUAL_LANGS.indexOf(LANG) >= 0 ? LANG : 'en');
+  function manualUrl(id) { return MANUAL_URL + manualLang() + '/' + (id ? '#' + id : ''); }
+  const manualPdf = () => MANUAL_URL + manualLang() + '/QCalc-manual-' + manualLang() + '.pdf';
+  function loadManual(lang) {
+    const l = lang || manualLang();
+    return new Promise((resolve, reject) => {
+      if (window.QCALC_MANUAL && window.QCALC_MANUAL[l]) { resolve(window.QCALC_MANUAL[l]); return; }
+      const s = document.createElement('script');
+      s.src = 'manual/' + l + '.js';
+      s.onload = () => (window.QCALC_MANUAL && window.QCALC_MANUAL[l] ? resolve(window.QCALC_MANUAL[l]) : reject(new Error('manual')));
+      s.onerror = () => { s.remove(); reject(new Error('manual')); };
+      document.head.append(s);
+    }).catch((e) => (l !== 'en' ? loadManual('en') : Promise.reject(e))); // (a language without its file: English)
+  }
+  // the web version (with photos) or its PDF, in the browser
+  function openManualWeb(url) {
+    if (navigator.onLine === false) { toast(tr('The detailed version opens when you are connected to the internet.', '詳しい版はインターネットにつながると開けます。'), 4000); return; }
+    openUrl(url);
+  }
+  // opens the manual in the app at the section id ('' or none: the top); Back returns to where it was
+  async function openManual(id) {
+    const p = panel('manual', tr('User manual', '取扱説明書'), (p) => {
+      p.body.classList.add('manual-body');
+      p.body.append(el('div', { class: 'muted', text: '…' }));
+      p.ready = loadManual().then((m) => renderManual(p, m), () => {
+        p.body.textContent = '';
+        p.body.append(el('div', { class: 'form-hint', text: tr('The manual could not be opened.', '説明書を開けませんでした。') }));
+      });
+    });
+    await p.ready;
+    manualGo(p, id);
+    return p;
+  }
+  function renderManual(p, m) {
+    p.body.textContent = '';
+    const search = el('input', { type: 'search', class: 'manual-search', placeholder: tr('Search the manual', '説明書を検索'), 'aria-label': tr('Search the manual', '説明書を検索') });
+    const none = el('div', { class: 'form-hint', hidden: true, text: tr('Nothing found. Try another word.', '見つかりません。ほかの言葉で探してください。') });
+    const doc = el('div', { class: 'manual-doc', lang: m.lang || manualLang(), html: m.html });
+    p.body.append(el('div', { class: 'manual-top' },
+      tapButton({ class: 'linkish', text: tr('Detailed version with photos (web)', '写真つきの詳しい版（Web）') }, () => openManualWeb(manualUrl(''))),
+      tapButton({ class: 'linkish', text: 'PDF' }, () => openManualWeb(manualPdf()))), search, none, doc);
+    // a search shows the sections whose text has every word
+    search.addEventListener('input', () => {
+      const words = search.value.toLowerCase().split(/\s+/).filter(Boolean);
+      let any = false;
+      for (const s of doc.querySelectorAll('section[data-sec]')) {
+        const hit = !words.length || words.every((w) => s.textContent.toLowerCase().indexOf(w) >= 0);
+        s.hidden = !hit;
+        any = any || hit;
+      }
+      const toc = doc.querySelector('.m-toc');
+      if (toc) toc.hidden = words.length > 0;
+      none.hidden = any;
+    });
+    // links: a section of the manual, or an outside page in the browser
+    doc.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href]');
+      if (!a) return;
+      e.preventDefault();
+      const h = a.getAttribute('href');
+      if (h.charAt(0) === '#') manualGo(p, h.slice(1));
+      else if (/^https?:/.test(h)) openManualWeb(h);
+    });
+    p.search = search;
+  }
+  function manualGo(p, id) {
+    if (p.search && p.search.value) { p.search.value = ''; p.search.dispatchEvent(new Event('input')); }
+    const t = id && p.body.querySelector('[data-sec="' + id + '"]');
+    if (t) t.scrollIntoView({ block: 'start' });
+    else p.body.scrollTop = 0;
+  }
+  // the section of the manual for each panel and tool (a panel can give its own with p.help, as the
+  // graph does for its tools); PRO_HELP: for each feature of QCalc Pro; FORM_HELP: for each form
+  const HELP = {
+    examples: 'examples', 'cat-functions': 'lists', 'cat-units': 'lists', 'cat-variables': 'lists', defs: 'lists',
+    rates: 'currencies', plot: 'graph-2d', shapes: 'shapes', profile: 'profile', sections: 'measured', notes: 'notes',
+    stats: 'stats', convert: 'convert', tools: 'find-tools', settings: 'settings', about: 'about', licenses: 'about',
+    pro: 'pro', price: 'price', percent: 'percent', unitprice: 'unit-price', split: 'split', loan: 'loan',
+    savings: 'savings', date: 'dates', time: 'times'
+  };
+  const PRO_HELP = {
+    precision: 'results', '3d': 'graph-3d', themes: 'settings', export: 'history', tables: 'loan', tank_heads: 'tank-heads',
+    profile: 'profile', stl: 'stl', share_pro: 'share', notes: 'notes', enclosed: 'area-length', tanks: 'tanks',
+    revolution: 'solid', regions: 'volume-3d', sections: 'measured', history_tools: 'history', memkeys: 'memory-keys',
+    cross_sections: 'cross-sections', rev_lines: 'solid', everyday: 'price', convert: 'convert', quick: 'widget', stats: 'stats'
+  };
+  const FORM_HELP = { int: 'calculus', diff: 'calculus', lim: 'calculus', sum: 'calculus', prod: 'calculus', dsolve: 'calculus', subst: 'calculus', solve: 'equations', mat: 'matrices' };
+  // every id the app links to (for the test of the links; '' is the top of the manual)
+  const MANUAL_IDS = Array.from(new Set(['', 'forms', 'pro-features', 'new-1-12', 'graph-3d', 'volume-3d', 'area-length', 'solid', 'tanks', 'stl']
+    .concat(Object.values(HELP), Object.values(PRO_HELP), Object.values(FORM_HELP))));
+  window.QalcManual = { url: manualUrl, ids: MANUAL_IDS, langs: MANUAL_LANGS };
 
   // ------------------------------------------------------------- bridge
   const Bridge = (() => {
@@ -2406,8 +2507,10 @@
       if (M.cols > 1) items.push(['colDel', trf('Delete column {0}', '{0} 列目を削除', j + 1)]);
       items.push(['copy', tr('Copy as a table (for a spreadsheet)', '表としてコピー（表計算ソフトに貼り付け用）')]);
     }
+    items.push(['help', tr('How to use this form ›', 'このフォームの使い方 ›')]); // (1.12.0, H) its section of the user manual
     const id = CF.id, a = await sheet(F.title, items);
     if (!a || CF.id !== id) { focusExpr(); return; }
+    if (a === 'help') { openManual(FORM_HELP[id] || 'forms'); return; }
     if (a === 'clear') formClear();
     else if (a === 'copy') {
       const c = matrixCells();
@@ -3256,6 +3359,11 @@
       document.body.append(p.node);
       panels[id] = p;
       build(p);
+      // "?" (1.12.0, H): the section of the user manual about this panel or tool, at the right end
+      if (HELP[id] !== undefined) {
+        bar.append(el('button', { class: 'icon-btn help-btn', 'aria-label': tr('How to use this (opens the user manual)', '使い方（説明書を開く）'),
+          title: tr('How to use this (opens the user manual)', '使い方（説明書を開く）'), text: '?', onclick: () => openManual(p.help ? p.help() : HELP[id]) }));
+      }
     }
     // a panel is on the stack once; opened again from another panel (the graph of a shape, from the
     // graph's own tools), it comes to the top instead of being counted twice for Back
@@ -3432,8 +3540,12 @@
     setExpr(text);
     focusExpr();
   }
-  function openExamples() {
-    return panel('examples', tr('Examples and tips', '使い方と例'), (p) => {
+  function openExamples(at) {
+    const p = panel('examples', tr('Examples and tips', '使い方と例'), (p) => {
+      // (1.12.0, H) the user manual, first
+      p.body.append(el('div', { class: 'card manual-card' },
+        tapButton({ class: 'btn manual-btn', text: '📖 ' + tr('User manual', '取扱説明書') }, () => openManual('')),
+        el('div', { class: 'muted', text: tr('Every feature step by step, on the web and as a PDF', 'すべての機能を手順つきで（Web と PDF）') })));
       p.body.append(el('div', { class: 'section-title', text: tr('Examples (tap one to put it in the input field)', '式の例（タップすると入力欄に入ります）') }));
       for (const [group, rows] of EXAMPLES) {
         const box = el('div', { class: 'card ex-group' }, el('div', { class: 'ex-title', text: group }));
@@ -3444,9 +3556,12 @@
         p.body.append(box);
       }
       p.body.append(el('div', { class: 'section-title', text: tr('Tips', '使い方のヒント') }),
-        el('div', { class: 'card' }, el('ul', { class: 'tips' }, ...TIPS.map((t) => el('li', { text: t })))),
+        el('div', { class: 'card tips-card' }, el('ul', { class: 'tips' }, ...TIPS.map((t) => el('li', { text: t })))),
         el('div', { class: 'form-hint', text: tr('Expressions are written as in Qalculate!. The functions, units and currencies are in "Lists" in the menu.', '式の書き方は Qalculate! と同じです。使える関数・単位・通貨は、メニューの「一覧」にあります。') }));
     });
+    // (the note shown when the manual cannot be opened offline leads here)
+    if (at === 'tips') { const t = p.body.querySelector('.tips-card'); if (t) setTimeout(() => t.scrollIntoView({ block: 'start' }), 250); }
+    return p;
   }
 
   // ---------------------------------------------------------- catalogs
@@ -3946,6 +4061,14 @@
       const b2 = el('button', { text: tr('2D  y = f(x)', '2D　y = f(x)') }), b3 = el('button', { text: tr('3D  z = f(x, y)', '3D　z = f(x, y)') });
       const f2 = el('div', { class: 'plot-mode' }), f3 = build3d();
       let started2d = false;
+      // "?" of the graph: the section of what is open (the solid, the area, "Volume and surface")
+      p.help = () => {
+        if (!f3.hidden) return f3.querySelector('.vol-toggle.on') ? 'volume-3d' : 'graph-3d';
+        const U = P.areaUI;
+        if (U && U.rev && !U.rev.box.hidden) return 'solid';
+        if (U && U.areaOpen) return 'area-length';
+        return 'graph-2d';
+      };
       const setMode = (m) => {
         if (m === '3d' && !hasPro()) m = '2d';
         store.set('qalc.plot.mode', m);
@@ -6538,7 +6661,7 @@
       buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
       tapButton({ class: 'btn geo-link', text: tr('More shapes: cylinder, cone, box… ›', 'ほかの図形（円柱・円錐・直方体など）›') }, () => openShapes()));
     box.hidden = true;
-    const toggle = el('button', { class: 'btn area-toggle', text: tr('Volume and surface ▾', '体積・表面積 ▾') });
+    const toggle = el('button', { class: 'btn area-toggle vol-toggle', text: tr('Volume and surface ▾', '体積・表面積 ▾') });
     // opened: the volume and the surface area of the drawn surface are shown at once
     toggle.setAttribute('aria-expanded', 'false');
     toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); if (!box.hidden) volumeSurfacesChanged(); else { Q3.volUI.seq++; Q3.volShade = null; Q3.liqBuf = null; requestDraw3d(); } });
@@ -10836,6 +10959,7 @@
       b3.addEventListener('click', () => { if (cur().d !== 3) { typed(); choose(G.last[3] || 'sphere'); } });
       b4.addEventListener('click', () => { if (cur().d !== 4 && proGate('tanks')) { typed(); choose(G.last[4] || 'htank'); } });
       p.showKind = (d) => { const b = { 2: b2, 3: b3, 4: b4 }[d]; if (b && cur().d !== d) b.click(); };
+      p.help = () => (cur().d === 4 ? 'tanks' : 'shapes'); // "?" (1.12.0, H)
       vUnit.addEventListener('change', () => { G.vu = vUnit.value; save(); run(); });
       aUnit.addEventListener('change', () => { G.au = aUnit.value; save(); run(); });
       const showCaution = () => { const d = cur().d; cautionTank.hidden = d !== 4; cautionWeight.hidden = d !== 3 || !G.dens; cautionHead.hidden = !cur().head; };
@@ -10984,7 +11108,8 @@
     if (!d) return NaN;
     const m = /^\s*([^\s a-zA-Z]+)\s*(.*)$/.exec(d.replace(/\^3|³/g, '3'));
     if (!m) return NaN;
-    const v = statVal(m[1]), u = m[2].replace(/\s+/g, '').toLowerCase();
+    // (BG17: a material's density is kept with a decimal point, "7.85"; only a typed one is in the person's form)
+    const v = key === 'own' ? statVal(m[1]) : Number(m[1]), u = m[2].replace(/\s+/g, '').toLowerCase();
     if (!isFinite(v) || v <= 0) return NaN;
     if (u === 'g/cm3' || u === 't/m3' || u === 'kg/l' || u === 'g/ml' || u === '') return v;
     if (u === 'kg/m3') return v / 1000;
@@ -10995,11 +11120,11 @@
       const saved = store.get('qalc.profile', null) || {};
       const ex = PF_EX()[0][1];
       const D = { unit: PF_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : ex.unit, dia: saved.dia !== false, smooth: !!saved.smooth, shrink: saved.shrink || '',
-        rows: Array.isArray(saved.rows) && saved.rows.length ? saved.rows : ex.rows.map((r) => r.map(String)), inner: Array.isArray(saved.inner) ? saved.inner : [], dens: saved.dens !== undefined ? saved.dens : ex.dens, dv: saved.dv || '', seq: 0, q: '' };
+        rows: Array.isArray(saved.rows) && saved.rows.length ? saved.rows : ex.rows.map((r) => r.map(decSign)), inner: Array.isArray(saved.inner) ? saved.inner : [], dens: saved.dens !== undefined ? saved.dens : ex.dens, dv: saved.dv || '', seq: 0, q: '' };
       const save = () => store.set('qalc.profile', { unit: D.unit, dia: D.dia, smooth: D.smooth, shrink: D.shrink, rows: D.rows, inner: D.inner, dens: D.dens, dv: D.dv });
       const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
         ...PF_EX().map(([label, e]) => tapButton({ class: 'area-chip', text: label }, () => {
-          Object.assign(D, { unit: e.unit, dia: e.dia, rows: e.rows.map((r) => r.map(String)), inner: e.inner.map((r) => r.map(String)), dens: e.dens });
+          Object.assign(D, { unit: e.unit, dia: e.dia, rows: e.rows.map((r) => r.map(decSign)), inner: e.inner.map((r) => r.map(decSign)), dens: e.dens }); // (BG17: 0,5 with a decimal comma)
           if (e.inner.length) more.open = true;
           sync(); save(); build(); run();
         })));
@@ -11612,6 +11737,7 @@
       el('label', { class: 'geo-size stl-mm' }, el('span', { class: 'geo-lbl', text: tr('1 unit =', '1 単位 =') }), mmIn, el('span', { text: 'mm' })),
       el('div', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Triangles', '三角形') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Triangles', '三角形') }, bS, bF)),
       info, err, save, el('div', { class: 'pro-sheet-note', text: tr('A closed mesh in millimetres (ASCII STL). Check the size and the walls in your slicer before printing.', '閉じた立体の面（ASCII 形式の STL、単位 mm）。印刷の前に、スライサーで大きさと壁の厚さを確かめてください。') }),
+      tapButton({ class: 'linkish pro-how', text: tr('How to use ›', '使い方 ›') }, () => { closeSheet(null); openManual('stl'); }), // (1.12.0, H)
       el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
     const mm = () => { const v = statVal(mmIn.value); return v > 0 && isFinite(v) ? v : NaN; };
     const show = () => {
@@ -12184,6 +12310,8 @@
       card.append(el('div', { class: 'news-row' }, el('span', { class: 'ico', text: ico, 'aria-hidden': 'true' }), el('span', { class: 'news-x-t', text }),
         el('button', { class: 'btn news-try', type: 'button', text: tr('Try it', '試す'), 'aria-label': tr('Try it', '試す') + ': ' + text, onclick: () => { closeNews(); run(); } })));
     }
+    // (1.12.0, H) everything new, step by step: the section of the user manual
+    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.12.0 (user manual) ›', '1.12.0 の新しい機能（説明書）›') }, () => openManual('new-1-12'))));
     newsCard = card;
     histEl.append(card);
     // its title and × in sight, also when the history is short (memory keys, a small screen)
@@ -12835,12 +12963,12 @@
   function openNotesTool() {
     const p = panel('notes', tr('Calculation notes', '計算メモ'), (p) => {
       const saved = store.get('qalc.notes', null) || {};
-      const N = { memos: Array.isArray(saved.memos) && saved.memos.length ? saved.memos.slice(0, 50) : [{ id: 1, title: tr('Memo 1', 'メモ 1'), lines: NOTE_EX()[0][1].slice() }], cur: saved.cur || 1, seq: 0, cache: [] };
+      const N = { memos: Array.isArray(saved.memos) && saved.memos.length ? saved.memos.slice(0, 50) : [{ id: 1, title: tr('Memo 1', 'メモ 1'), lines: NOTE_EX()[0][1].map(decSign) }], cur: saved.cur || 1, seq: 0, cache: [] };
       if (!N.memos.some((m) => m.id === N.cur)) N.cur = N.memos[0].id;
       const memo = () => N.memos.find((m) => m.id === N.cur) || N.memos[0];
       const save = () => store.set('qalc.notes', { memos: N.memos, cur: N.cur });
       const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
-        ...NOTE_EX().map(([label, lines]) => tapButton({ class: 'area-chip', text: label }, () => { memo().lines = lines.slice(); save(); build(); run(0); })));
+        ...NOTE_EX().map(([label, lines]) => tapButton({ class: 'area-chip', text: label }, () => { memo().lines = lines.map(decSign); save(); build(); run(0); }))); // (BG17: 3,6 m with a decimal comma)
       const pick = el('select', { 'aria-label': tr('Memo', 'メモ') });
       const fillPick = () => { pick.textContent = ''; for (const m of N.memos) pick.append(el('option', { value: String(m.id), text: m.title })); pick.value = String(N.cur); };
       pick.addEventListener('change', () => { N.cur = Number(pick.value); N.cache = []; save(); build(); run(0); });
@@ -13620,7 +13748,9 @@
           'Expressions are written in the same way as in Qalculate!.',
           '計算はすべて、オープンソースの電卓 Qalculate! の計算エンジン <b>libqalculate</b> が行います。QCalc は、その公式ソースコードを Android（arm64）向けにビルドして組み込んだ、スマホ向けの電卓です。Qalculate! の開発者が作ったアプリではありません。<br><br>' +
           '式の書き方は Qalculate! と同じです。') },
-          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Examples and tips', '使い方と例を見る'), onclick: (e) => { e.preventDefault(); openExamples(); } }))),
+          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Examples and tips', '使い方と例を見る'), onclick: (e) => { e.preventDefault(); openExamples(); } })),
+          // (1.12.0, H)
+          el('div', {}, el('a', { href: '#', class: 'manual-link', text: tr('User manual', '取扱説明書'), onclick: (e) => { e.preventDefault(); openManual(''); } }))),
         el('div', { class: 'card', html: tr(
           '<b>Privacy</b><br>QCalc collects no personal data and sends nothing anywhere. It uses the internet only to download exchange rates (from three sources such as the European Central Bank), and sends no information about you then either. The history and the settings are kept on your device and are never sent to the developer.',
           '<b>プライバシー</b><br>QCalc は個人情報を集めず、どこにも送りません。インターネットを使うのは為替レートの取得（欧州中央銀行など 3 か所からのダウンロード）だけで、そのときもあなたの情報は送りません。計算の履歴や設定は端末の中に保存し、開発者に送ることはありません。') },
@@ -13686,7 +13816,9 @@
     sh.textContent = '';
     sh.append(el('div', { class: 'stitle', text: what }));
     if (info) sh.append(el('div', { class: 'pro-feat pro-sheet-feat' }, proIco(key, info[0]),
-      el('div', {}, el('div', { class: 'n', text: info[1] }), el('div', { class: 'muted', text: info[2] }))));
+      el('div', {}, el('div', { class: 'n', text: info[1] }), el('div', { class: 'muted', text: info[2] }),
+        // (1.12.0, H) how the feature is used: its section of the user manual
+        tapButton({ class: 'linkish pro-how', text: tr('How to use ›', '使い方 ›'), 'aria-label': tr('How to use ›', '使い方 ›') + ' ' + info[1] }, () => { closeSheet(null); openManual(PRO_HELP[key] || 'pro'); }))));
     sh.append(el('div', { class: 'pro-sheet-note', text: tr('One purchase unlocks every Pro feature, also those of later updates. No subscription, no ads.', '1 回の購入で、すべての Pro 機能が使えます（今後増える機能も）。サブスクリプションも広告もありません。') }));
     const done = (k) => closeSheet(k);
     if (PRO.state === 'pending') sh.append(el('div', { class: 'form-hint', text: tr('Your payment is being processed. QCalc Pro will be unlocked when it is complete.', '支払いの手続き中です。完了すると QCalc Pro が使えるようになります。') }));
@@ -13809,7 +13941,8 @@
         el('div', { class: 'muted', text: PRO.legacy
           ? tr('It is free for you, because you used QCalc before QCalc Pro began. Thank you!', 'QCalc Pro が始まる前から QCalc を使っていただいているので、無料で使えます。ありがとうございます！')
           : PRO.billing === 'debug' ? tr('Unlocked in this test build.', 'このテスト版では最初から使えます。')
-            : tr('Thank you for your purchase!', 'ご購入ありがとうございます！') }));
+            : tr('Thank you for your purchase!', 'ご購入ありがとうございます！') }),
+        tapButton({ class: 'linkish pro-how', text: tr('How to use the Pro features ›', 'Pro の機能の使い方 ›') }, () => openManual('pro-features')));
     } else {
       card.append(el('div', { class: 'pro-title', text: tr('Unlock all features with a one-time purchase', '1 回の購入で、すべての機能が使えます') }),
         el('div', { class: 'muted', text: tr('No subscription and no ads. The purchase belongs to your Google account, so it also works on your other devices.', 'サブスクリプションも広告もありません。購入は Google アカウントに記録されるので、ほかの端末でも使えます。') }));
@@ -13820,8 +13953,10 @@
     body.append(card);
     const list = el('div', { class: 'card' });
     for (const [ico, name, desc, key] of proFeatures()) {
+      // (1.12.0, H) the section of the user manual about the feature
       list.append(el('div', { class: 'pro-feat' }, proIco(key, ico),
-        el('div', {}, el('div', { class: 'n', text: name }), el('div', { class: 'muted', text: desc }))));
+        el('div', {}, el('div', { class: 'n', text: name }), el('div', { class: 'muted', text: desc }),
+          tapButton({ class: 'linkish pro-how', text: tr('How to use ›', '使い方 ›'), 'aria-label': tr('How to use ›', '使い方 ›') + ' ' + name }, () => openManual(PRO_HELP[key] || 'pro')))));
     }
     body.append(list, el('div', { class: 'form-hint', text: tr('Everything else in QCalc stays free.', 'そのほかの機能は、すべて無料のまま使えます。') }));
     // what is free, so that what the purchase adds is clear (1.12.0)
@@ -13856,7 +13991,8 @@
     PRO = readPro();
     applyTheme();
     if (panels.settings && panels.settings.inputs && panels.settings.inputs.precision) panels.settings.inputs.precision.max = maxPrecision();
-    if (!before && hasPro()) toast(tr('QCalc Pro is unlocked. Thank you!', 'QCalc Pro が使えるようになりました。ありがとうございます！'), 4000);
+    if (!before && hasPro()) toast(tr('QCalc Pro is unlocked. Thank you!', 'QCalc Pro が使えるようになりました。ありがとうございます！'), 8000,
+      [tr('How to use the Pro features', 'Pro の機能の使い方'), () => openManual('pro-features')]);
     else if (ev && typeof ev.message === 'string' && ev.message) toast(localMessage(ev.message), 4500);
     if (panels.pro && panels.pro.refresh) panels.pro.refresh();
     if (before !== hasPro() && exprEl.value.trim()) exprChanged(); // the precision may be different

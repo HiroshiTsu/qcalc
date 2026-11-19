@@ -1,0 +1,528 @@
+// La source du manuel d'utilisation de QCalc en français (traduite de l'anglais ; à faire relire par un
+// locuteur natif). [[...]] contient le texte anglais de l'app ; build.py met la traduction de l'app.
+// Les id des titres sont les mêmes dans toutes les langues.
+= Manuel d'utilisation de QCalc
+@sub Une calculatrice polyvalente pour Android : écrivez le calcul comme vous l'écririez
+
+# intro | Introduction
+
+## what-qcalc-does | Ce que fait QCalc
+QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez le résultat aussitôt. Les calculs sont faits par libqalculate, le moteur de la calculatrice de bureau Qalculate!.
+- De l'arithmétique aux fractions, racines, unités, devises, dérivées, intégrales, équations et matrices, le tout sur une ligne.
+- Quand c'est possible, le résultat est exact (√2, π/2, 7/12), avec sa valeur décimale à côté.
+- Les calculs de tous les jours, comme les prix, les prêts, les dates, les conversions, les statistiques et les cuves, sont dans « Outils » : saisissez les nombres et le résultat s'affiche.
+- Graphiques 2D et 3D, avec aires, longueurs et volumes des solides de révolution.
+- QCalc ne collecte aucune donnée personnelle. Il n'utilise internet que pour télécharger les taux de change.
+:note: Les résultats sont donnés à titre indicatif. Ne les utilisez pas là où aucune erreur n'est admise, comme le commerce ou la certification, la conception et la construction, ou les déclarations fiscales ([avertissements](#caution)).
+
+## first-steps | Vos trois premiers calculs
+:what: Tapez un calcul avec les touches et appuyez sur [[!=]] : le résultat passe dans l'historique. Pendant la saisie, le résultat s'affiche déjà sous le champ de saisie.
+:step: Ouvrez l'app et tapez `2 + 3 × 4` avec les touches. « = 14 » s'affiche sous le champ.
+:step: Appuyez sur [[!=]]. Le calcul et « = 14 » passent dans l'historique et le champ se vide.
+:step: Tapez ensuite `60 mph to km/h` (« to » est sur la touche →). « ≈ 96.56064 km/h » s'affiche.
+:step: Le troisième est `sqrt(2)`, aussi avec la touche √ : « = √2 ≈ 1.414213562 », la valeur exacte et la valeur approchée.
+:example: `1/3 + 1/4` → `= 7/12 ≈ 0.5833333333`
+:tip: Touchez un résultat de l'historique pour le mettre dans le champ de saisie ou le copier.
+:mistake: La lettre x est une variable, pas « fois ». Multipliez avec la touche × (ou *).
+
+## new-1-12 | Nouveautés de la 1.12.0
+- **Plus clair** : le menu a huit entrées et les outils sont réunis dans [[Tools]]. Dans chaque outil, touchez un exemple pour le remplir ; le résultat s'affiche aussitôt.
+- **Outils du quotidien** : [[Price: discount and tax]], [[Percentages]], [[Unit price: which is cheaper]], [[Split the bill]], [[Loan]], [[Savings and compound interest]], [[Dates]], [[Times]], [[Convert units and currencies]], [[Statistics]], [[Calculation notes]].
+- **Format des nombres** : choisissez 1,234.5, 1.234,5 ou 1 234,5 ([Format des nombres](#number-format)).
+- **Historique** : recherche, épinglage avec une étoile, notes courtes, somme des lignes choisies ; touches mémoire ([Historique et mémoire](#history)).
+- **De la 2D à la 3D** : [[!⟳ 3D]] transforme aussitôt une région du graphique en solide de révolution ; aussi des solides à sections connues, les lignes de la méthode et le théorème de Guldin ([Créer un solide](#solid)).
+- **Ouvrir vite** : un widget, une vignette des réglages rapides et des raccourcis sur l'icône ([Widget, vignette et raccourcis](#widget)).
+- **Partager** : images des graphiques et GIF animés des graphiques 3D ([Partager](#share)).
+- **QCalc Pro** : CSV des tableaux, fonds de cuves avec barèmes de jaugeage, solides à partir d'un profil, fichiers STL, plus de notes de calcul et plus encore ([QCalc Pro](#pro)).
+- **Ce manuel** : il est dans l'app. Le « ? » en haut à droite d'un outil ou d'un panneau ouvre sa section.
+
+## examples | Exemples et astuces dans l'app
+:what: [[Examples and tips]] dans le menu contient des calculs qui passent dans le champ de saisie d'un toucher, et des astuces. [[User manual]] tout en haut ouvre ce manuel.
+:step: Appuyez sur ☰ en haut à gauche et choisissez [[Examples and tips]].
+:step: Touchez un calcul. Le panneau se ferme et le calcul est dans le champ.
+:step: Appuyez sur [[!=]] pour le calculer.
+:tip: Ce manuel se lit sans internet. La version détaillée avec photos (web) et le PDF s'ouvrent avec les liens en haut.
+
+# screen | L'écran
+:svg: main | Les parties de l'écran principal (les numéros sont ceux du tableau)
+| N° | Nom | À quoi ça sert |
+| 1 | ☰ (menu) | Ouvre les outils, les graphiques, les listes, les réglages et plus |
+| 2 | Boutons | Changent d'un toucher l'unité d'angle (RAD, DEG), exact ou approché, décimal ou hexadécimal |
+| 3 | 🕘 (menu de l'historique) | Rechercher dans l'historique, choisir des lignes, exporter, effacer |
+| 4 | Historique | Les calculs et leurs résultats, le plus récent en bas |
+| 5 | Champ de saisie | Là où vous tapez ; dessous, le résultat pendant la saisie (l'aperçu) |
+| 6 | Pages de touches | Passent d'une des quatre pages 123, Fonctions, Analyse et Matrice à l'autre |
+| 7 | Touches | Chiffres, opérateurs et fonctions |
+| 8 | Touche = | Calcule et garde le calcul et le résultat dans l'historique |
+:shot: main | L'écran principal (les numéros sont ceux du tableau)
+:tip: Sur un téléphone avec un grand texte, la rangée de touches du haut (x, ans, flèches, ⌨) est masquée. ⌨ au bout des onglets l'affiche.
+
+# basics | Calculs de base
+
+## typing | Saisir un calcul
+:what: Tapez le calcul comme dans un livre de maths, avec les touches ou, après ⌨, avec le clavier du téléphone.
+:step: Tapez le calcul avec les touches de chiffres et d'opérateurs. Les parenthèses sont sur les touches ( ).
+:step: Une touche de la page Fonctions (sin, log, √ et d'autres) écrit « sin( » et autres.
+:step: Les unités et les devises s'écrivent par leur nom (`5 km`, `100 USD`). Pour convertir, utilisez « to » (`5 km to mi`).
+:step: Appuyez sur [[!=]] pour calculer.
+:example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
+:tip: ÷ × + et autres dans un champ vide continuent à partir du dernier résultat, « ans ».
+:mistake: Des parenthèses qui ne vont pas par paires donnent une erreur. Le message dit quoi corriger.
+
+## results | Lire le résultat : exact, approché, fractions
+:what: Un résultat qui commence par « = » est exact ; un résultat qui commence par « ≈ » est approché. Les résultats avec des fractions ou √ affichent aussi la valeur décimale.
+- `1/3 + 1/4` → `= 7/12 ≈ 0.5833333333` (la fraction reste, avec sa valeur décimale)
+- `sqrt(8)` → `= 2√2 ≈ 2.828427125`
+- `pi × 2` → `= 2π ≈ 6.283185307`
+:step: Le bouton du haut passe d'exact à approché ou automatique.
+:step: Le nombre de chiffres est [[Precision (significant digits)]] dans [[Settings]] (10 par défaut).
+:pro: Jusqu'à 1000 chiffres, c'est gratuit. Au-delà de 1000, jusqu'à 200000 chiffres, c'est une fonction de QCalc Pro.
+:tip: Un résultat très long défile dans l'historique pour lire tous les chiffres ; le copier copie tous les chiffres.
+
+## undo | Effacer et annuler
+:what: ⌫ efface un caractère, AC vide le champ de saisie. Juste après, [[Undo]] au-dessus du champ le récupère.
+:step: ⌫ efface le caractère avant le curseur ; maintenez-le pour continuer à effacer.
+:step: AC vide le champ et [[Undo]] apparaît au-dessus.
+:step: [[Undo]] récupère le calcul.
+:tip: Une ligne effacée de l'historique se récupère aussi pendant quelques secondes avec [[Undo]] en bas de l'écran.
+
+## number-format | Format des nombres : le séparateur décimal
+:what: Choisissez si le séparateur décimal est « . » ou « , » et comment les chiffres sont groupés. Au départ, QCalc écrit les nombres comme la région de votre téléphone.
+:step: Ouvrez [[Settings]].
+:step: Dans [[Number format]], choisissez [[Automatic]], 1,234.5, 1.234,5 ou 1 234,5.
+:step: Ce que vous tapez et ce que vous voyez suit le format choisi.
+:example: Avec 1.234,5, deux et demi s'écrit `2,5` : `2,5 + 3,75` → `= 6,25`
+:tip: Avec la virgule décimale, séparez les arguments d'une fonction par « ; » : `max(1,5; 2)`.
+:mistake: Taper `1.5` avec la virgule décimale donne une erreur ; le message montre la bonne forme.
+
+# history | Historique et mémoire
+:what: Les calculs et les résultats restent dans l'historique, jusqu'à 300 lignes. 🕘 en haut à droite recherche, additionne les lignes choisies, exporte et efface.
+:step: Touchez un résultat de l'historique pour choisir [[Put the expression into the input field]], [[Copy the result]] et autres.
+:step: ⋯ à droite d'une ligne propose [[☆ Pin at the top]] et [[Add a short note]].
+:step: 🕘 propose [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] et [[Clear the whole history]].
+:shot: history | Le menu de l'historique de 🕘
+:tip: Les lignes épinglées avec une étoile restent même quand l'historique est plein.
+
+## pins-notes | Épingles, notes et recherche
+:step: Choisissez [[☆ Pin at the top]] dans le ⋯ d'une ligne : elle monte avec les autres lignes épinglées.
+:step: Choisissez [[Add a short note]] dans ⋯ et écrivez une note courte. Elle s'affiche au-dessus du calcul.
+:step: Dans 🕘, [[Search the history]] n'affiche que les lignes dont le calcul, le résultat ou la note contient les mots tapés.
+:example: Une ligne avec la note « loyer » apparaît quand vous cherchez « loyer ».
+
+## select-sum | Additionner des lignes
+:step: Choisissez [[Select lines: sum, average, copy]] dans 🕘.
+:step: Touchez les lignes à additionner.
+:step: La somme et la moyenne s'affichent en bas, avec leur unité si les unités concordent. [[Copy]] copie les lignes.
+:mistake: Des lignes d'unités différentes (m et kg) ne s'additionnent pas ; la raison s'affiche.
+
+## export | Exporter l'historique (CSV)
+:pro:
+:what: Enregistre l'historique dans un fichier CSV que les tableurs ouvrent.
+:step: Choisissez [[Export the history (CSV file)]] dans 🕘.
+:step: Choisissez où l'enregistrer dans l'écran d'enregistrement d'Android.
+
+## memory-keys | Touches mémoire (M+ M− MR MC)
+:what: Les touches mémoire d'une calculatrice de poche. La valeur est gardée sous sa forme exacte.
+:step: Ouvrez [[More settings]] dans [[Settings]] et activez [[Show the memory keys (M+ M− MR MC)]].
+:step: Avec un résultat affiché, M+ l'ajoute à la mémoire et M− le soustrait.
+:step: MR met la mémoire dans le champ de saisie ; MC l'efface.
+
+# keys | Touches et aides à la saisie
+
+## key-pages | Les quatre pages de touches
+:what: Les touches sont sur quatre pages qui se changent avec les onglets du haut.
+| Page | Touches principales |
+| 123 | Chiffres, + − × ÷, parenthèses, %, ^, √ |
+| [[Functions]] | sin, cos, tan, log, ln, valeur absolue, factorielle et plus |
+| [[Calculus]] | Dérivée d/dx, intégrale ∫, limite lim, somme Σ, produit Π, équations |
+| [[Matrix]] | Matrice ▦, déterminant det, transposée, inverse |
+:tip: Si vous ne connaissez pas le nom d'une fonction, cherchez-le dans [[Lists: functions, units, constants]] ([Listes](#lists)).
+
+## boxes | Cases □ (les formulaires)
+:what: Les touches d'intégrale et de limite ouvrent un formulaire avec des cases □. Remplissez les cases et le calcul est écrit.
+:step: Appuyez sur ∫ dans la page [[Calculus]].
+:step: Tapez la fonction et les bornes inférieure et supérieure. [[Next box ▶]] passe à la case suivante.
+:step: Le résultat s'affiche en bas. [[!=]] le garde dans l'historique.
+:tip: Le ⋯ du formulaire contient [[Clear all boxes]] et [[How to use this form ›]].
+
+## suggestions | Suggestions
+:what: Pendant la saisie, des suggestions s'affichent sous le champ : après « to », les unités cibles ; avec le clavier, des noms de fonctions et d'unités.
+:step: Tapez `5 km to` : mi, m, ft et d'autres sont proposés.
+:step: Touchez-en une pour l'écrire.
+
+## writing | Écrire des fonctions, des unités et des devises
+:what: Les calculs s'écrivent comme dans Qalculate!. Les formes courantes :
+| Tapez | Signifie |
+| `sqrt(x)`, `√x` | Racine carrée |
+| `x^2` | Puissance |
+| `5 km to mi` | Convertir une unité |
+| `100 USD to EUR` | Convertir une devise (avec les taux de change) |
+| `solve(x^2 − 5x + 6 = 0)` | Résoudre une équation |
+| `diff(x^3)` | Dérivée |
+| `integrate(x^2, 0, 1)` | Intégrale définie |
+| `ans` | Le dernier résultat |
+:tip: Dix unités japonaises traditionnelles (tsubo, shaku, shō, kan et d'autres) fonctionnent aussi : `30 tsubo to m^2`.
+
+## lists | Listes : fonctions, unités, constantes, vos définitions
+:what: [[Lists: functions, units, constants]] dans le menu a quatre onglets : fonctions, unités et devises, variables et constantes, et vos propres définitions, chacun avec une recherche.
+:step: Ouvrez [[Lists: functions, units, constants]] depuis ☰.
+:step: Choisissez un onglet et tapez une partie d'un nom dans la case du haut.
+:step: Touchez un élément pour lire sa description ; [[Insert]] le met dans le champ de saisie.
+:tip: Dans l'onglet de vos définitions, vous pouvez garder des variables (r = 5 cm) et des fonctions ; elles restent pour la prochaine fois.
+
+## currencies | Devises et taux de change
+:what: Les devises se convertissent comme `100 USD to EUR`. Les taux de change se mettent à jour seuls tous les 7 jours (avec internet).
+:step: Pour les mettre à jour tout de suite, appuyez sur [[Update exchange rates now]] dans [[Settings]].
+:step: L'heure de la dernière mise à jour est sur la même ligne.
+:mistake: Sans internet, ils ne se mettent pas à jour ; les derniers téléchargés sont utilisés.
+
+# tools | Outils
+
+## find-tools | Trouver un outil
+:what: [[Tools]] dans le menu contient les outils du quotidien et ceux des formes, des volumes et des données. Cherchez selon ce que vous voulez faire.
+:svg: tool | Un outil (tous ont la même forme)
+:legend: 1 « ? » : ouvre ce manuel à l'outil ; 2 Exemples : un toucher les remplit ; 3 Cases : tapez les nombres (un nombre gris est un exemple) ; 4 Résultats : un toucher met le calcul dans le champ, garde le résultat dans l'historique ou le copie ; 5 Une ligne d'avertissement (outils d'argent ou de sécurité) ; 6 Une ligne d'explication
+:step: Ouvrez [[Tools]] depuis ☰.
+:step: Tapez en haut ce que vous voulez faire, comme « prêt », « cuve » ou « moyenne ».
+:step: Touchez l'outil.
+:step: Touchez un exemple ou tapez les nombres. Le résultat s'affiche aussitôt.
+:shot: tools | L'écran des outils : la recherche et les groupes
+:tip: Les outils utilisés récemment viennent en premier. [[Open QCalc quickly]] tout en bas ajoute le widget ou la vignette.
+
+## price | Prix : remise et taxe
+:what: Le prix avec ou sans taxe, une ou deux remises, et comment arrondir.
+:step: Ouvrez [[Price: discount and tax]] dans [[Tools]].
+:step: Tapez le prix, la remise (%) et la taxe.
+:step: Choisissez si le prix inclut la taxe et comment arrondir.
+:shot: price | [[Price: discount and tax]] avec un exemple
+:example: 1500 avec 10 % de remise et 8 % de taxe → 1,458 taxe comprise (1,350 hors taxe, taxe 108)
+:mistake: Pour obtenir le prix hors taxe à partir d'un prix taxe comprise, choisissez d'abord « taxe comprise ».
+
+## percent | Pourcentages
+:what: Quel pourcentage de B représente A, et la variation de A à B en pourcentage.
+:step: Ouvrez [[Percentages]] et choisissez quoi calculer.
+:step: Tapez A et B.
+:example: 30 sur 120 → 25 %. De 80 à 100 → hausse de 25 %
+
+## unit-price | Prix unitaire : lequel est le moins cher
+:what: Compare le prix aux 100 g (100 mL, à la pièce) de deux produits.
+:step: Ouvrez [[Unit price: which is cheaper]].
+:step: Tapez le prix et la quantité (500 g, 1 kg) de A et de B.
+:example: 298 pour 500 g et 498 pour 1 kg → B est moins cher (59.6 et 49.8 aux 100 g, 16.4 % de moins)
+
+## split | Partager l'addition
+:what: Ce que paie chaque personne, arrondi comme vous le choisissez.
+:step: Ouvrez [[Split the bill]] et tapez le total et le nombre de personnes.
+:step: Choisissez d'arrondir au-dessus ou au-dessous.
+:example: 10000 pour 3 → chacun 3,333.34 (au-dessus ; 0.02 de trop)
+
+## loan | Prêt
+:what: La mensualité, le total des intérêts et le tableau des paiements, en mensualités égales ou en capital égal.
+:step: Ouvrez [[Loan]].
+:step: Tapez le montant, le taux annuel et les années.
+:step: Choisissez le mode de remboursement.
+:step: Ouvrez [[Payments, month by month]] pour voir le tableau.
+:shot: loan | [[Loan]] avec un exemple (30,000,000 à 1 % sur 35 ans)
+:example: 30,000,000 à 1 % sur 35 ans (mensualités égales) → 84,685.71 par mois, total des intérêts 5,567,998.07
+:pro: Enregistrer le tableau en fichier CSV est une fonction de QCalc Pro (le voir et le copier est gratuit).
+:mistake: Taper 0.01 pour 1 % donne 0.01 %. Tapez le nombre de pour cent.
+
+## savings | Épargne et intérêts composés
+:what: Ce que devient une épargne mensuelle ou une somme avec des intérêts composés.
+:step: Ouvrez [[Savings and compound interest]] et tapez le montant mensuel (ou la somme de départ), le taux annuel et les années.
+:example: 30,000 par mois, 3 %, 20 ans → 9,849,059.94 (versé 7,200,000 ; intérêts 2,649,059.94)
+
+## dates | Dates
+:what: Les jours entre deux dates, n jours après ou avant, un âge, le jour de la semaine.
+:step: Ouvrez [[Dates]] et choisissez quoi calculer.
+:step: Tapez les dates et les jours.
+:example: 100 jours à partir d'aujourd'hui → la date et son jour de la semaine
+
+## times | Heures
+:what: Additionne et soustrait des h:mm, et donne les heures travaillées sans les pauses et la paie.
+:step: Ouvrez [[Times]] et tapez l'heure de début, l'heure de fin et la pause.
+:step: Tapez le salaire horaire pour obtenir la paie.
+:example: De 9:00 à 17:30 avec 1:00 de pause → 7:30 travaillées (7.5 heures)
+
+## convert | Convertir des unités et des devises
+:what: Tapez un nombre dans l'une des deux lignes ; l'autre est convertie. Longueur, poids, volume, température, consommation, devises et plus.
+:step: Ouvrez [[Convert units and currencies]] et choisissez le type de grandeur avec les boutons du haut.
+:step: Choisissez les unités des deux lignes.
+:step: Tapez un nombre dans l'une d'elles.
+:step: ⇅ échange les lignes.
+:shot: convert | L'écran de conversion
+:example: 5 km → 3.106855961 mi
+:tip: Touchez la ligne du résultat pour mettre « 5 km to mi » dans le champ de saisie ou le garder dans l'historique.
+
+## shapes | Formes : aire, volume, longueur
+:what: Choisissez une forme d'après son dessin et tapez ses mesures : l'aire, le périmètre, le volume et la surface s'affichent.
+:step: Ouvrez [[Flat shapes]] ou [[Solids]] dans [[Tools]].
+:step: Touchez le dessin d'une forme.
+:step: Tapez les mesures indiquées sur le dessin (r, h). Les mesures rondes peuvent être un rayon ou un diamètre.
+:step: Les résultats changent pendant la saisie ; un toucher utilise ou copie leur calcul.
+:example: Une sphère de rayon 2 → volume 32π/3 ≈ 33.51032164, surface 16π
+:tip: Choisissez un matériau pour obtenir le poids.
+
+## tanks | Cuves : liquide et niveau
+:what: La quantité de liquide dans une cuve horizontale ou verticale, ou dans un récipient rond, à partir de la hauteur du liquide, et la hauteur pour une quantité.
+:svg: tank | Une cuve horizontale (L la longueur, D le diamètre, h la hauteur du liquide)
+:step: Ouvrez [[Tanks: liquid and level]] dans [[Tools]].
+:step: Choisissez la forme et tapez le diamètre (ou le rayon) et la longueur.
+:step: Tapez la hauteur du liquide et choisissez l'unité de longueur.
+:shot: tanks | Le liquide d'une cuve horizontale
+:example: Horizontale, diamètre 1 m, longueur 2 m, liquide à 30 cm → 0.3963367126 m³ (environ 396 L)
+:tip: [[Quick-reference table ▾]] donne la quantité pour chaque hauteur.
+:mistake: Un rayon tapé dans la case du diamètre donne à peu près le quart. Vérifiez rayon ou diamètre.
+
+## tank-heads | Fonds de cuves et barèmes de jaugeage
+:pro:
+:what: Ajoute les fonds des deux extrémités de la cuve (hémisphérique, semi-elliptique 2:1, torisphérique) à la quantité de liquide et au volume total, avec un barème de la quantité pour chaque hauteur.
+:step: Dans [[Tanks: liquid and level]], choisissez un cylindre horizontal ou vertical.
+:step: Choisissez [[Hemispherical]] ou [[Semi-elliptical 2:1]] dans [[Heads]] ; les fonds torisphériques sont dans [[Other heads ▾]].
+:step: L est la longueur du corps (sans les fonds).
+:step: Dans [[Quick-reference table ▾]], tapez le pas : un tableau des hauteurs et des quantités, à copier ou à enregistrer en CSV.
+:tip: Les fonds plats (un simple cylindre, comme avant) sont gratuits.
+
+## measured | Volume à partir de mesures
+:what: Le volume d'un terrassement ou d'un bassin à partir d'un tableau de sections (sections moyennes, méthode de Simpson) ou d'une grille de hauteurs.
+:step: Ouvrez [[Volume from measured values]] dans [[Tools]].
+:step: Choisissez sections ou hauteurs de points, et tapez les distances et les aires (ou les hauteurs).
+:step: Choisissez l'unité de longueur : le volume est donné en m³ et en L.
+:example: Sections x² (de 0 à 4, tous les 1 m) → sections moyennes 22 m³, méthode de Simpson 64/3 m³ ≈ 21.33 m³
+:tip: Deux colonnes copiées d'un tableur peuvent être collées dans le tableau.
+
+## profile | Solide à partir d'un profil
+:pro:
+:what: Le volume, la contenance, le poids et la surface d'une pièce tournée ou d'un récipient à partir d'un tableau de positions et de diamètres le long de son axe.
+:svg: profile | Un arbre étagé (un tableau de positions z et de diamètres d donne sa forme)
+:step: Ouvrez [[Solid from a profile]] dans [[Tools]].
+:step: Tapez les positions et les diamètres (ou les rayons). Deux lignes à la même position font une marche.
+:step: Choisissez l'unité (mm, cm, m, in).
+:step: [[More ▾]] ajoute le profil intérieur d'un récipient et le retrait de la céramique.
+:shot: profile | L'exemple de l'arbre étagé
+:example: L'arbre étagé de l'exemple → volume extérieur 4440π mm³ ≈ 13.95 cm³, environ 109.5 g en fer
+:tip: [[View in 3D]] montre la forme ; un fichier STL s'imprime avec une imprimante 3D ([Fichiers STL](#stl)).
+
+## stl | Fichiers STL pour imprimantes 3D
+:pro:
+:what: Enregistre un solide de révolution, un solide à sections connues ou un solide à partir d'un profil en fichier STL pour imprimantes 3D.
+:step: Appuyez sur [[Save as STL]] sous les résultats du solide.
+:step: Choisissez « 1 unité = □ mm » et la finesse des triangles.
+:step: Appuyez sur [[Save the STL file]] et choisissez où l'enregistrer.
+:tip: Avant d'imprimer, vérifiez la taille et les parois dans votre logiciel de tranchage.
+
+## stats | Statistiques
+:what: Pour une colonne : la moyenne, la médiane, l'écart type, les quartiles et plus ; pour deux colonnes : la droite de régression et la corrélation.
+:step: Ouvrez [[Statistics]] dans [[Tools]].
+:step: Tapez les valeurs ou collez-les depuis un tableur.
+:step: Avec deux colonnes, [[📈 Show in a graph]] trace les points et la droite.
+:shot: stats | [[Statistics]] avec un exemple
+:example: Notes de 10 personnes → moyenne 73.9, médiane 74, écart type (échantillon) 9.938142013
+:tip: Les quartiles sont d'abord donnés par la méthode des manuels du lycée au Japon ; celle des tableurs est dans « Plus ».
+:mistake: Une valeur qui n'est pas un nombre s'affiche avec sa ligne et comment la corriger.
+
+## notes | Notes de calcul
+:what: Une note avec un calcul par ligne et son résultat à droite. Donnez un nom à une valeur et utilisez-le dans les lignes du dessous.
+:step: Ouvrez [[Calculation notes]] dans [[Tools]].
+:step: Tapez un calcul par ligne, comme `rent = 85000 JPY`.
+:step: Utilisez le nom dans une ligne suivante : `rent × 12`.
+:step: Une ligne avec le mot du total additionne les résultats du dessus.
+:shot: notes | [[Calculation notes]] avec un exemple
+:example: loyer 85000, électricité 6200, eau 3100 (JPY) → la ligne du total affiche ¥94300
+:pro: La première note est gratuite. Plus de notes et leur enregistrement en texte ou CSV sont des fonctions de QCalc Pro.
+:tip: Une ligne qui commence par # ou // est un commentaire (non calculée).
+
+# graphs | Graphiques
+
+## graph-2d | Graphique 2D
+:what: Trace des courbes y = f(x). Glissez pour les déplacer, pincez pour zoomer.
+:step: Ouvrez [[Graph]] depuis ☰ (ou 📈 au-dessus du champ de saisie).
+:step: Tapez les fonctions, une par ligne, et l'intervalle de x.
+:step: Appuyez sur [[Draw]].
+:step: Touchez le graphique pour lire les coordonnées d'un point.
+:tip: [[Calculus ▾]] donne la dérivée, des tangentes, les zéros et les extremums.
+:tip: Touchez un exemple sous le graphique pour le tracer.
+
+## area-length | Aire et longueur
+:what: L'aire entre une courbe et l'axe des x ou entre deux courbes, et la longueur d'une courbe. Les bornes de l'intervalle se glissent au doigt.
+:step: Tracez les fonctions dans le graphique 2D.
+:step: Ouvrez [[Area and length ▾]].
+:step: Tapez l'intervalle a et b, ou glissez les lignes de ses bornes.
+:shot: area | L'aire sous √x de 0 à 2
+:example: √x de 0 à 2 → aire 1.885618083
+:tip: Passez à [[Length]] pour la longueur de la courbe.
+
+## solid | Créer un solide (solides de révolution)
+:what: Le volume et la surface du solide obtenu en faisant tourner une région du graphique 2D autour d'un axe.
+:svg: solid | La région entre y = x et y = x² tournée autour de l'axe des x
+:step: Tracez les fonctions dans le graphique 2D (par exemple `x` et `x^2`).
+:step: Appuyez sur le bouton rond [[!⟳ 3D]] du graphique. Le volume autour de l'axe des x s'affiche aussitôt.
+:step: Pour un autre axe, touchez sa ligne ; la ligne y = k se glisse au doigt.
+:step: [[↶ Undo]] revient à l'axe précédent.
+:shot: solid | La région entre y = x et y = x² tournée autour de l'axe des x
+:example: Entre y = x et y = x², autour de l'axe des x → volume 2π/15 ≈ 0.4188790205
+:tip: [[Show the method with lines]] trace les disques (rondelles) ou les coquilles. La ligne [[Pappus–Guldinus theorem: ]] compare le volume obtenu par le centre de gravité à l'intégrale.
+:pro: Faire tourner le solide au doigt dans [[View in 3D]] est une fonction de QCalc Pro, comme le graphique 3D.
+
+## cross-sections | Solides à sections connues
+:what: Le volume d'un solide dont la base est la région entre deux courbes, avec des carrés, des triangles équilatéraux ou des demi-cercles dressés dessus.
+:step: Ouvrez [[Make a solid ▾]].
+:step: Choisissez [[Cross sections (shapes standing on the region)]].
+:step: Choisissez la forme (□ △ ◠) ; d'autres sont dans [[More shapes ▾]].
+:example: Des carrés sur la région entre y = x et y = x² → volume 1/30
+
+## graph-3d | Graphique 3D
+:pro:
+:what: Trace des surfaces z = f(x, y) et des solides en 3D que vous faites tourner au doigt.
+:step: Choisissez [[!3D  z = f(x, y)]] dans [[Graph]].
+:step: Tapez jusqu'à quatre fonctions et les intervalles de x et de y, puis appuyez sur [[Draw]].
+:step: Faites tourner avec un doigt et zoomez avec deux.
+:shot: graph3d | Le graphique 3D (la sphère de l'exemple)
+:tip: [[Partial derivatives ▾]] trace ∂f/∂x et ∂f/∂y.
+
+## volume-3d | Volume et surface (3D)
+:what: Le volume sous une surface du graphique 3D (ou entre deux surfaces) et l'aire de la surface.
+:step: Tracez les surfaces dans le graphique 3D.
+:step: Ouvrez [[Volume and surface ▾]] : le volume et la surface s'affichent aussitôt.
+:step: Choisissez la région : un rectangle, un disque, la partie fermée ou une région donnée par des formules.
+:example: La sphère de l'exemple (rayon 2) → volume 32π/3, surface 16π
+
+## share | Partager des images et des GIF
+:what: Envoie une image d'un graphique à une autre app ; un graphique 3D aussi en GIF animé.
+:step: Appuyez sur ↗ ([[Share a picture of the graph]]) sur le graphique.
+:step: Choisissez l'app dans le menu de partage.
+:pro: Les images en taille réelle sans la marque et les GIF animés sont des fonctions de QCalc Pro. Sans Pro, l'image fait au plus 800 px de large, avec un petit « QCalc ».
+
+# forms | Formulaires : analyse, équations, matrices
+
+## calculus | Dérivées, intégrales, limites, sommes
+:what: Les touches de la page [[Calculus]] ouvrent un formulaire avec des cases □.
+:step: Appuyez sur d/dx, ∫, lim, Σ ou une autre touche de la page [[Calculus]].
+:step: Remplissez les cases. La variable peut rester x.
+:step: Le résultat s'affiche en bas ; [[!=]] le garde dans l'historique.
+:shot: form | Le formulaire d'une intégrale
+:example: ∫ x² sin(x) dx de 0 à π → `π² − 4 ≈ 5.869604401`
+:tip: Une limite peut être [[Both sides]], [[From the right (+)]] ou [[From the left (−)]].
+
+## equations | Équations
+:what: Résout des équations et des systèmes d'équations.
+:step: Appuyez sur la touche d'équation de la page [[Calculus]] ou tapez `solve(x^2 − 5x + 6 = 0)`.
+:step: Le résultat s'affiche comme « x = 2 ou x = 3 ».
+:example: `solve(x^2 − 5x + 6 = 0)` → x = 2, x = 3
+
+## matrices | Matrices et vecteurs
+:what: ▦ dans la page [[Matrix]] écrit une matrice comme un tableau (jusqu'à 30 × 30).
+:step: Appuyez sur ▦ dans la page [[Matrix]].
+:step: Choisissez les lignes et les colonnes et remplissez les cases.
+:step: Calculez avec det, transposée, inverse et les autres touches.
+:tip: Des tableaux d'un tableur peuvent être collés ; [[Copy as a table (for a spreadsheet)]] dans ⋯ les recopie.
+
+# setup | Réglages, langue, widget
+
+## settings | Réglages
+:what: Les réglages les plus utilisés sont en haut ; ceux que presque personne ne change sont dans [[More settings]]. Un changement s'applique aussitôt.
+| Réglage | Ce qu'il change |
+| [[Angle unit]] | Radians, degrés, grades |
+| [[Exact or approximate]] | Automatique, toujours exact, toujours approché |
+| [[Number format]] | Le séparateur décimal et les groupes de chiffres ([Format des nombres](#number-format)) |
+| [[Fractions]] | Automatique, décimal, fraction, fraction mixte |
+| [[Precision (significant digits)]] | La précision des calculs (10 par défaut) |
+| [[Light or dark]] | Les couleurs de l'écran |
+| [[Text size]] | Le texte de l'historique, du champ de saisie et du résultat |
+| [[Color theme]] | La couleur des touches (sauf le bleu : QCalc Pro) |
+| [[Show the result while typing]] | L'aperçu |
+| [[Update exchange rates now]] | Télécharge les taux tout de suite |
+:shot: settings | Les réglages
+:tip: [[Reset all settings]] remet tout aux valeurs de départ (la langue est gardée).
+
+## language | Langue
+:what: L'app est en English, 日本語, Español, Deutsch, Français, 한국어 et 繁體中文.
+:step: Choisissez [[Language]] dans ☰.
+:step: Choisissez une langue : l'app se rouvre dans cette langue, avec l'historique et le calcul en cours.
+:step: [[Same as device]] revient à la langue du téléphone.
+:tip: Depuis Android 13, la langue peut aussi se choisir pour chaque app dans les réglages du téléphone.
+
+## widget | Widget, vignette et raccourcis
+:what: Ouvrez QCalc vite depuis un widget sur l'écran d'accueil, une vignette des réglages rapides ou les raccourcis de l'icône. Tout est gratuit.
+:step: Ouvrez [[Open QCalc quickly]] tout en bas de [[Tools]].
+:step: Choisissez le widget ou la vignette et suivez l'écran.
+:step: Maintenez l'icône appuyée pour les raccourcis [[New calculation]], [[Tools]] et [[Convert]].
+:tip: Le widget affiche le dernier résultat et des boutons pour calculer, les outils et convertir.
+
+## about | À propos de cette app et confidentialité
+:what: [[About this app]] montre la version, la confidentialité, les licences et des liens vers le code source.
+- QCalc ne collecte aucune donnée personnelle et n'envoie rien.
+- Il n'utilise internet que pour télécharger les taux de change.
+- Le moteur de calcul est sous licence GNU GPL v2 ou ultérieure ([[Open source licenses]]).
+
+# pro | QCalc Pro
+
+## pro-free | Ce qui est gratuit
+:what: Les calculs, les graphiques 2D, les aires et longueurs, les solides de révolution, les formes, les cuves (fonds plats), les outils du quotidien, la conversion, les statistiques, la première note de calcul, le widget et ce manuel sont gratuits, sans publicité.
+
+## pro-features | Ce qu'ajoute QCalc Pro
+:what: Un seul achat débloque toutes les fonctions Pro, y compris celles des futures mises à jour. Sans abonnement ni publicité.
+:shot: pro | Le panneau QCalc Pro
+| Fonction | Section de ce manuel |
+| Plus de 1000 chiffres significatifs (jusqu'à 200000) | [Lire le résultat](#results) |
+| Graphiques 3D, voir en 3D | [Graphique 3D](#graph-3d) |
+| Thèmes de couleur (7 couleurs) | [Réglages](#settings) |
+| Exporter l'historique (CSV) | [Exporter l'historique](#export) |
+| Tableaux en CSV (prêt, épargne) | [Prêt](#loan) |
+| Fonds de cuves et barèmes de jaugeage | [Fonds de cuves](#tank-heads) |
+| Solide à partir d'un profil | [Solide à partir d'un profil](#profile) |
+| Fichiers STL | [Fichiers STL](#stl) |
+| GIF et images sans la marque | [Partager](#share) |
+| Plus de notes de calcul, enregistrées en fichier | [Notes de calcul](#notes) |
+:tip: [[How to use ›]] sur une ligne des fonctions Pro ouvre sa section de ce manuel.
+
+## pro-buy | Acheter et restaurer
+:step: Ouvrez [[!QCalc Pro]] depuis ☰ (ou depuis le panneau qui montre une fonction verrouillée).
+:step: Appuyez sur [[Buy QCalc Pro]] et achetez dans l'écran de Google Play.
+:step: Sur un téléphone où vous l'avez déjà acheté, ou après une réinstallation, appuyez sur [[Restore a purchase]].
+:tip: L'achat appartient à votre compte Google, il fonctionne donc aussi sur vos autres appareils.
+
+# trouble | En cas de problème
+
+## faq | Questions fréquentes
+- **Le résultat ne s'affiche pas en décimal** : vérifiez le bouton du haut ou [[Exact or approximate]].
+- **x donne des résultats étranges** : x est une variable ; multipliez avec la touche ×.
+- **Les taux de change sont anciens** : appuyez sur [[Update exchange rates now]] (avec internet).
+- **La rangée de touches du haut manque** : avec un grand texte elle est masquée ; ⌨ au bout des onglets l'affiche.
+- **Le graphique 3D ne s'ouvre pas** : le graphique 3D est une fonction de QCalc Pro ([QCalc Pro](#pro)).
+
+## errors | Messages d'erreur et comment corriger
+:what: Un message d'erreur dit ce qui ne va pas et comment le corriger. Les plus courants :
+| Message | Comment corriger |
+| Les parenthèses ne vont pas par paires | Mettez autant de ( que de ) |
+| 1.5 ne peut pas être lu (avec la virgule décimale) | Tapez 1,5 ; séparez les arguments par « ; » |
+| Les unités ne concordent pas | Additionnez des grandeurs de même type (m et kg ne s'additionnent pas) |
+| Tracez d'abord une fonction | Appuyez sur [[Draw]] dans le graphique avant d'ouvrir l'aire ou le solide |
+| Le temps limite est atteint | Allongez le [temps limite](#time-limit) ou simplifiez le calcul |
+
+## time-limit | Le temps limite d'un calcul
+:what: Un calcul très long s'arrête après [[Time limit (seconds)]] (20 secondes par défaut, de 1 à 3600).
+:step: Un avis s'affiche pendant le calcul ; touchez-le pour l'arrêter.
+:step: Pour laisser plus de temps, changez [[Time limit (seconds)]] dans [[More settings]] de [[Settings]].
+
+## caution | Avertissements sur l'usage des résultats
+:note: Les résultats de QCalc sont donnés à titre indicatif. Ne les utilisez pas pour le commerce ou la certification (y compris la métrologie légale), la conception et la construction, les déclarations fiscales, la médecine ni des décisions de sécurité.
+- La quantité dans une cuve suppose la forme idéale de la cuve ; une vraie cuve peut différer.
+- Les poids utilisent des masses volumiques typiques.
+- Les taxes sont les taux habituels de novembre 2026 et se modifient dans la case.
+- Les taux de change sont ceux téléchargés, pas ceux d'une vraie transaction.
+- Les outils d'argent ou de sécurité affichent une ligne d'avertissement sous les résultats.
+
+# glossary | Glossaire
+| Mot | Signification |
+| Valeur exacte | Une valeur avec des fractions, √ et π. Commence par « = » |
+| Valeur approchée | Une valeur en décimal. Commence par « ≈ » |
+| Chiffres significatifs | Le nombre de chiffres d'un résultat (la précision) |
+| ans | Le dernier résultat |
+| Aperçu | Le résultat sous le champ de saisie pendant la saisie |
+| Solide de révolution | Un solide obtenu en faisant tourner une région autour d'un axe |
+| Fond | Le couvercle de chaque extrémité d'une cuve |
+| Barème de jaugeage | Un tableau de la quantité pour chaque hauteur de liquide |
+| STL | Un format de fichier de solides pour imprimantes 3D |
+| CSV | Un tableau dans un fichier texte que les tableurs ouvrent |
+| QCalc Pro | Les fonctions pour le travail, débloquées par un achat |

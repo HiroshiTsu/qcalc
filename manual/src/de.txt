@@ -1,0 +1,528 @@
+// Die Quelle der Bedienungsanleitung von QCalc auf Deutsch (übersetzt aus dem Englischen; bitte von
+// Muttersprachlern prüfen lassen). [[...]] enthält den englischen Text der App; build.py setzt die
+// deutsche Übersetzung der App ein. Die ids der Überschriften sind in allen Sprachen gleich.
+= QCalc – Bedienungsanleitung
+@sub Ein vielseitiger Rechner für Android: Ausdrücke so eingeben, wie man sie schreibt
+
+# intro | Einführung
+
+## what-qcalc-does | Was QCalc kann
+QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Papier schreiben würden, und sofort das Ergebnis erhalten. Gerechnet wird mit libqalculate, der Rechenmaschine des Desktop-Rechners Qalculate!.
+- Von den Grundrechenarten über Brüche, Wurzeln, Einheiten, Währungen, Ableitungen, Integrale und Gleichungen bis zu Matrizen, alles in einer Zeile.
+- Wenn möglich ist das Ergebnis exakt (√2, π/2, 7/12), mit einem Dezimalnäherungswert daneben.
+- Alltägliche Rechnungen wie Preise, Kredite, Daten, Umrechnungen, Statistik und Tanks finden Sie unter „Werkzeuge“: Zahlen eingeben, das Ergebnis erscheint.
+- 2D- und 3D-Graphen mit Flächen, Längen und dem Volumen von Rotationskörpern.
+- QCalc sammelt keine persönlichen Daten. Das Internet wird nur für die Wechselkurse genutzt.
+:note: Die Ergebnisse dienen zur Orientierung. Verwenden Sie sie nicht, wo kein Fehler erlaubt ist, etwa im Handel oder bei Bescheinigungen, bei Planung und Bau oder für Steuererklärungen ([Hinweise](#caution)).
+
+## first-steps | Die ersten drei Rechnungen
+:what: Geben Sie einen Ausdruck mit den Tasten ein und drücken Sie [[!=]]: Das Ergebnis kommt in den Verlauf. Schon beim Tippen erscheint es unter dem Eingabefeld.
+:step: Öffnen Sie die App und tippen Sie `2 + 3 × 4`. Unter dem Eingabefeld erscheint „= 14“.
+:step: Drücken Sie [[!=]]. Ausdruck und „= 14“ kommen in den Verlauf, das Eingabefeld ist wieder leer.
+:step: Tippen Sie nun `60 mph to km/h` („to“ liegt auf der Taste →). Es erscheint „≈ 96,56064 km/h“.
+:step: Die dritte Rechnung ist `sqrt(2)`, auch über die Taste √: „= √2 ≈ 1,414213562“, der exakte Wert und die Näherung.
+:example: `1/3 + 1/4` → `= 7/12 ≈ 0,5833333333`
+:tip: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu übernehmen oder zu kopieren.
+:mistake: Der Buchstabe x ist eine Variable, kein „mal“. Multiplizieren Sie mit der Taste × (oder *).
+
+## new-1-12 | Neu in 1.12.0
+- **Übersichtlicher**: Das Menü hat acht Einträge, die Werkzeuge sind unter [[Tools]] zusammengefasst. In jedem Werkzeug füllt ein Beispiel per Tippen die Felder aus; das Ergebnis erscheint sofort.
+- **Alltagswerkzeuge**: [[Price: discount and tax]], [[Percentages]], [[Unit price: which is cheaper]], [[Split the bill]], [[Loan]], [[Savings and compound interest]], [[Dates]], [[Times]], [[Convert units and currencies]], [[Statistics]], [[Calculation notes]].
+- **Zahlenformat**: 1,234.5, 1.234,5 oder 1 234,5 ([Zahlenformat](#number-format)).
+- **Verlauf**: Suche, mit Stern anheften, kurze Notizen, Summe ausgewählter Zeilen; Speichertasten ([Verlauf und Speicher](#history)).
+- **Von 2D zu 3D**: [[!⟳ 3D]] macht aus einem Bereich des Graphen sofort einen Rotationskörper; dazu Körper mit bekannten Querschnitten, die Linien der Methode und die Guldinsche Regel ([Einen Körper bilden](#solid)).
+- **Schnell öffnen**: ein Widget, eine Kachel der Schnelleinstellungen und Verknüpfungen am Symbol ([Widget, Kachel und Verknüpfungen](#widget)).
+- **Teilen**: Bilder von Graphen, bei 3D auch als bewegtes GIF ([Teilen](#share)).
+- **QCalc Pro**: CSV von Tabellen, Tankböden mit Tabellen, Körper aus einem Profil, STL-Dateien, weitere Rechennotizen und mehr ([QCalc Pro](#pro)).
+- **Diese Anleitung**: Sie ist in der App. Das „?“ oben rechts in einem Werkzeug oder Fenster öffnet den passenden Abschnitt.
+
+## examples | Beispiele und Tipps in der App
+:what: [[Examples and tips]] im Menü enthält Ausdrücke, die mit einem Tippen ins Eingabefeld kommen, und Tipps. [[User manual]] ganz oben öffnet diese Anleitung.
+:step: Drücken Sie ☰ oben links und wählen Sie [[Examples and tips]].
+:step: Tippen Sie auf einen Ausdruck. Das Fenster schließt sich, der Ausdruck steht im Eingabefeld.
+:step: Drücken Sie [[!=]], um ihn zu berechnen.
+:tip: Diese Anleitung lässt sich ohne Internet lesen. Die ausführliche Fassung mit Fotos (Web) und das PDF öffnen sich über die Links ganz oben.
+
+# screen | Der Bildschirm
+:svg: main | Die Teile des Hauptbildschirms (die Nummern entsprechen der Tabelle)
+| Nr. | Name | Wofür |
+| 1 | ☰ (Menü) | Öffnet Werkzeuge, Graphen, Listen, Einstellungen und mehr |
+| 2 | Schalter | Winkeleinheit (RAD, DEG), exakt oder genähert, dezimal oder hexadezimal, mit einem Tippen |
+| 3 | 🕘 (Verlaufsmenü) | Verlauf durchsuchen, Zeilen auswählen, exportieren, löschen |
+| 4 | Verlauf | Die Ausdrücke mit ihren Ergebnissen, das neueste unten |
+| 5 | Eingabefeld | Hier wird getippt; darunter das Ergebnis beim Tippen (Vorschau) |
+| 6 | Tastenseiten | Wechsel zwischen den Seiten 123, Funktionen, Analysis und Matrix |
+| 7 | Tasten | Ziffern, Operatoren und Funktionen |
+| 8 | Taste = | Rechnet und legt Ausdruck und Ergebnis im Verlauf ab |
+:shot: main | Der Hauptbildschirm (die Nummern entsprechen der Tabelle)
+:tip: Auf einem Telefon mit großer Schrift ist die obere Tastenreihe (x, ans, Pfeile, ⌨) ausgeblendet. ⌨ am rechten Ende der Reiter zeigt sie an.
+
+# basics | Grundrechnen
+
+## typing | Einen Ausdruck eingeben
+:what: Geben Sie einen Ausdruck so ein, wie ein Mathematikbuch ihn schreibt, mit den Tasten oder nach ⌨ mit der Tastatur des Telefons.
+:step: Tippen Sie den Ausdruck mit den Ziffern- und Operatortasten. Klammern liegen auf den Tasten ( ).
+:step: Eine Funktionstaste der Seite Funktionen (sin, log, √ und andere) schreibt „sin(“ und Ähnliches.
+:step: Einheiten und Währungen schreiben Sie mit Namen (`5 km`, `100 USD`). Umgerechnet wird mit „to“ (`5 km to mi`).
+:step: Drücken Sie [[!=]], um zu rechnen.
+:example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
+:tip: ÷ × + und Ähnliches in einem leeren Eingabefeld rechnen mit dem letzten Ergebnis „ans“ weiter.
+:mistake: Klammern, die nicht paarweise stehen, führen zu einem Fehler. Die Meldung sagt, was zu korrigieren ist.
+
+## results | Das Ergebnis lesen: exakt, genähert, Brüche
+:what: Ein Ergebnis mit „=“ ist exakt, eines mit „≈“ genähert. Ergebnisse mit Brüchen oder √ zeigen auch die Dezimalzahl.
+- `1/3 + 1/4` → `= 7/12 ≈ 0,5833333333` (der Bruch bleibt, mit Dezimalzahl)
+- `sqrt(8)` → `= 2√2 ≈ 2,828427125`
+- `pi × 2` → `= 2π ≈ 6,283185307`
+:step: Der Schalter oben wechselt zwischen exakt, genähert und automatisch.
+:step: Die Stellenzahl ist [[Precision (significant digits)]] in den [[Settings]] (Standard 10).
+:pro: Bis 1000 Stellen kostenlos. Mehr als 1000, bis 200000 Stellen, ist eine Funktion von QCalc Pro.
+:tip: Ein sehr langes Ergebnis lässt sich im Verlauf scrollen, sodass jede Stelle lesbar ist; beim Kopieren wird jede Stelle kopiert.
+
+## undo | Löschen und rückgängig machen
+:what: ⌫ löscht ein Zeichen, AC leert das Eingabefeld. Gleich danach holt [[Undo]] über dem Eingabefeld es zurück.
+:step: ⌫ löscht das Zeichen vor dem Cursor; gedrückt halten löscht weiter.
+:step: AC leert das Eingabefeld, darüber erscheint [[Undo]].
+:step: [[Undo]] holt den Ausdruck zurück.
+:tip: Eine aus dem Verlauf gelöschte Zeile lässt sich ebenfalls einige Sekunden lang mit [[Undo]] unten am Bildschirm zurückholen.
+
+## number-format | Zahlenformat: das Dezimalzeichen
+:what: Wählen Sie, ob das Dezimalzeichen „.“ oder „,“ ist und wie Ziffern gruppiert werden. Anfangs schreibt QCalc Zahlen wie die Region Ihres Telefons.
+:step: Öffnen Sie die [[Settings]].
+:step: Wählen Sie unter [[Number format]] [[Automatic]], 1,234.5, 1.234,5 oder 1 234,5.
+:step: Eingabe und Anzeige folgen dem gewählten Format.
+:example: Bei 1.234,5 tippen Sie zweieinhalb als `2,5`: `2,5 + 3,75` → `= 6,25`
+:tip: Mit Dezimalkomma trennen Sie die Argumente einer Funktion mit „;“: `max(1,5; 2)`.
+:mistake: `1.5` mit Dezimalkomma ergibt einen Fehler; die Meldung zeigt die richtige Schreibweise.
+
+# history | Verlauf und Speicher
+:what: Ausdrücke und Ergebnisse bleiben im Verlauf, bis zu 300 Zeilen. 🕘 oben rechts sucht, summiert ausgewählte Zeilen, exportiert und löscht.
+:step: Tippen Sie auf ein Ergebnis im Verlauf, um [[Put the expression into the input field]], [[Copy the result]] und Ähnliches zu wählen.
+:step: ⋯ rechts an einer Zeile bietet [[☆ Pin at the top]] und [[Add a short note]].
+:step: 🕘 bietet [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] und [[Clear the whole history]].
+:shot: history | Das Verlaufsmenü von 🕘
+:tip: Mit Stern angeheftete Zeilen bleiben erhalten, wenn der Verlauf voll ist.
+
+## pins-notes | Anheften, Notizen und Suche
+:step: Wählen Sie [[☆ Pin at the top]] im ⋯ einer Zeile: Sie rückt zu den anderen angehefteten Zeilen nach oben.
+:step: Wählen Sie [[Add a short note]] im ⋯ und schreiben Sie eine kurze Notiz. Sie erscheint über dem Ausdruck.
+:step: In 🕘 zeigt [[Search the history]] nur die Zeilen, deren Ausdruck, Ergebnis oder Notiz die eingegebenen Wörter enthält.
+:example: Eine Zeile mit der Notiz „Miete“ findet die Suche nach „Miete“.
+
+## select-sum | Zeilen addieren
+:step: Wählen Sie [[Select lines: sum, average, copy]] in 🕘.
+:step: Tippen Sie auf die Zeilen, die addiert werden sollen.
+:step: Summe und Mittelwert erscheinen unten, mit Einheit, wenn die Einheiten passen. [[Copy]] kopiert die Zeilen.
+:mistake: Zeilen mit verschiedenen Einheiten (m und kg) lassen sich nicht addieren; der Grund wird angezeigt.
+
+## export | Den Verlauf exportieren (CSV)
+:pro:
+:what: Speichert den Verlauf als CSV-Datei, die Tabellenkalkulationen öffnen können.
+:step: Wählen Sie [[Export the history (CSV file)]] in 🕘.
+:step: Wählen Sie im Speichern-Bildschirm von Android den Ort.
+
+## memory-keys | Speichertasten (M+ M− MR MC)
+:what: Die Speichertasten eines Taschenrechners. Der Wert wird in seiner exakten Form gespeichert.
+:step: Öffnen Sie [[More settings]] in den [[Settings]] und schalten Sie [[Show the memory keys (M+ M− MR MC)]] ein.
+:step: Bei einem angezeigten Ergebnis addiert M+ es zum Speicher, M− zieht es ab.
+:step: MR setzt den Speicher ins Eingabefeld, MC löscht ihn.
+
+# keys | Tasten und Eingabehilfen
+
+## key-pages | Die vier Tastenseiten
+:what: Die Tasten liegen auf vier Seiten, die mit den Reitern darüber gewechselt werden.
+| Seite | Wichtigste Tasten |
+| 123 | Ziffern, + − × ÷, Klammern, %, ^, √ |
+| [[Functions]] | sin, cos, tan, log, ln, Betrag, Fakultät und mehr |
+| [[Calculus]] | Ableitung d/dx, Integral ∫, Grenzwert lim, Summe Σ, Produkt Π, Gleichungen |
+| [[Matrix]] | Matrix ▦, Determinante det, Transponierte, Inverse |
+:tip: Wenn Sie den Namen einer Funktion nicht kennen, suchen Sie in [[Lists: functions, units, constants]] ([Listen](#lists)).
+
+## boxes | Kästchen □ (die Formulare)
+:what: Die Tasten für Integral und Grenzwert öffnen ein Formular mit Kästchen □. Kästchen ausfüllen, und der Ausdruck ist fertig.
+:step: Drücken Sie ∫ auf der Seite [[Calculus]].
+:step: Tippen Sie Funktion, untere und obere Grenze. [[Next box ▶]] springt zum nächsten Kästchen.
+:step: Das Ergebnis erscheint darunter. [[!=]] legt es im Verlauf ab.
+:tip: Das ⋯ des Formulars enthält [[Clear all boxes]] und [[How to use this form ›]].
+
+## suggestions | Vorschläge
+:what: Beim Tippen erscheinen Vorschläge unter dem Eingabefeld: nach „to“ die Zieleinheiten, mit der Tastatur die Namen von Funktionen und Einheiten.
+:step: Tippen Sie `5 km to`: mi, m, ft und andere werden vorgeschlagen.
+:step: Tippen Sie auf einen Vorschlag, um ihn einzufügen.
+
+## writing | Funktionen, Einheiten und Währungen schreiben
+:what: Ausdrücke werden wie in Qalculate! geschrieben. Die üblichen Schreibweisen:
+| Schreibweise | Bedeutung |
+| `sqrt(x)`, `√x` | Quadratwurzel |
+| `x^2` | Potenz |
+| `5 km to mi` | Einheit umrechnen |
+| `100 USD to EUR` | Währung umrechnen (mit den Wechselkursen) |
+| `solve(x^2 − 5x + 6 = 0)` | Gleichung lösen |
+| `diff(x^3)` | Ableitung |
+| `integrate(x^2; 0; 1)` | Bestimmtes Integral (mit Dezimalkomma Argumente mit „;“ trennen) |
+| `ans` | Das letzte Ergebnis |
+:tip: Zehn traditionelle japanische Einheiten (tsubo, shaku, shō, kan und andere) funktionieren auch: `30 tsubo to m^2`.
+
+## lists | Listen: Funktionen, Einheiten, Konstanten, eigene Definitionen
+:what: [[Lists: functions, units, constants]] im Menü hat vier Reiter: Funktionen, Einheiten und Währungen, Variablen und Konstanten sowie Ihre eigenen Definitionen, jeweils mit Suche.
+:step: Öffnen Sie [[Lists: functions, units, constants]] über ☰.
+:step: Wählen Sie einen Reiter und tippen Sie einen Teil eines Namens in das Feld oben.
+:step: Tippen Sie auf einen Eintrag, um die Beschreibung zu lesen; [[Insert]] setzt ihn ins Eingabefeld.
+:tip: Im Reiter der eigenen Definitionen speichern Sie Variablen (r = 5 cm) und Funktionen; sie bleiben für das nächste Mal erhalten.
+
+## currencies | Währungen und Wechselkurse
+:what: Währungen werden wie `100 USD to EUR` umgerechnet. Die Wechselkurse werden alle 7 Tage von selbst aktualisiert (mit Internet).
+:step: Zum sofortigen Aktualisieren drücken Sie [[Update exchange rates now]] in den [[Settings]].
+:step: Der Zeitpunkt der letzten Aktualisierung steht in derselben Zeile.
+:mistake: Ohne Internet lassen sich die Kurse nicht aktualisieren; es gelten die zuletzt geladenen.
+
+# tools | Werkzeuge
+
+## find-tools | Ein Werkzeug finden
+:what: [[Tools]] im Menü enthält die Alltagswerkzeuge und die für Formen, Volumen und Daten. Suchen Sie nach dem, was Sie tun möchten.
+:svg: tool | Ein Werkzeug (alle Werkzeuge haben denselben Aufbau)
+:legend: 1 „?“: öffnet diese Anleitung beim Werkzeug; 2 Beispiele: ein Tippen füllt sie aus; 3 Felder: Zahlen eingeben (eine graue Zahl ist ein Beispiel); 4 Ergebnisse: ein Tippen übernimmt den Ausdruck ins Eingabefeld, legt das Ergebnis im Verlauf ab oder kopiert es; 5 Ein Hinweis (Werkzeuge für Geld oder Sicherheit); 6 Eine Zeile Erklärung
+:step: Öffnen Sie [[Tools]] über ☰.
+:step: Tippen Sie oben ein, was Sie tun möchten, etwa „Kredit“, „Tank“ oder „Mittelwert“.
+:step: Tippen Sie auf das Werkzeug.
+:step: Tippen Sie auf ein Beispiel oder geben Sie die Zahlen ein. Das Ergebnis erscheint sofort.
+:shot: tools | Der Bildschirm Werkzeuge: das Suchfeld und die Gruppen
+:tip: Zuletzt genutzte Werkzeuge stehen oben. [[Open QCalc quickly]] ganz unten fügt das Widget oder die Kachel hinzu.
+
+## price | Preis: Rabatt und Steuer
+:what: Der Preis mit oder ohne Steuer, ein oder zwei Rabatte, und wie gerundet wird.
+:step: Öffnen Sie [[Price: discount and tax]] in den [[Tools]].
+:step: Geben Sie Preis, Rabatt (%) und Steuersatz ein.
+:step: Wählen Sie, ob der Preis die Steuer enthält, und wie gerundet wird.
+:shot: price | [[Price: discount and tax]] mit einem Beispiel
+:example: 1500 mit 10 % Rabatt und 8 % Steuer → 1.458 mit Steuer (1.350 ohne Steuer, Steuer 108)
+:mistake: Um den Preis ohne Steuer aus einem Preis mit Steuer zu finden, wählen Sie zuerst „mit Steuer“.
+
+## percent | Prozente
+:what: A ist wie viel Prozent von B, und die Änderung von A nach B in Prozent.
+:step: Öffnen Sie [[Percentages]] und wählen Sie die Rechnung.
+:step: Geben Sie A und B ein.
+:example: 30 von 120 → 25 %. Von 80 auf 100 → plus 25 %
+
+## unit-price | Grundpreis: was ist günstiger
+:what: Vergleicht den Preis pro 100 g (100 mL, Stück) zweier Produkte.
+:step: Öffnen Sie [[Unit price: which is cheaper]].
+:step: Geben Sie Preis und Menge (500 g, 1 kg) von A und B ein.
+:example: 298 für 500 g und 498 für 1 kg → B ist günstiger (59,6 und 49,8 pro 100 g, 16,4 % weniger)
+
+## split | Rechnung teilen
+:what: Der Anteil jeder Person, gerundet wie gewählt.
+:step: Öffnen Sie [[Split the bill]] und geben Sie Gesamtbetrag und Personenzahl ein.
+:step: Wählen Sie Auf- oder Abrunden.
+:example: 10000 für 3 → je 3.333,34 (aufgerundet; 0,02 zu viel)
+
+## loan | Kredit
+:what: Monatliche Rate, Zinsen insgesamt und Tilgungsplan, mit gleichen Raten oder gleicher Tilgung.
+:step: Öffnen Sie [[Loan]].
+:step: Geben Sie Betrag, Jahreszins und Jahre ein.
+:step: Wählen Sie die Art der Rückzahlung.
+:step: Öffnen Sie [[Payments, month by month]] für den Plan.
+:shot: loan | [[Loan]] mit einem Beispiel (30.000.000 zu 1 % über 35 Jahre)
+:example: 30.000.000 zu 1 % über 35 Jahre (gleiche Raten) → 84.685,71 im Monat, Zinsen insgesamt 5.567.998,07
+:pro: Den Plan als CSV-Datei zu speichern ist eine Funktion von QCalc Pro (Anzeigen und Kopieren sind kostenlos).
+:mistake: 0,01 statt 1 % ergibt 0,01 %. Geben Sie die Prozentzahl ein.
+
+## savings | Sparen und Zinseszins
+:what: Was eine monatliche Sparrate oder ein Betrag mit Zinseszins wird.
+:step: Öffnen Sie [[Savings and compound interest]] und geben Sie Monatsbetrag (oder Anfangsbetrag), Jahreszins und Jahre ein.
+:example: 30.000 im Monat, 3 %, 20 Jahre → 9.849.059,94 (eingezahlt 7.200.000; Zinsen 2.649.059,94)
+
+## dates | Daten
+:what: Die Tage zwischen zwei Daten, n Tage danach oder davor, ein Alter, der Wochentag.
+:step: Öffnen Sie [[Dates]] und wählen Sie die Rechnung.
+:step: Geben Sie die Daten und die Tage ein.
+:example: 100 Tage ab heute → das Datum und sein Wochentag
+
+## times | Zeiten
+:what: Addiert und subtrahiert h:mm und gibt die Arbeitszeit ohne Pausen und den Lohn.
+:step: Öffnen Sie [[Times]] und geben Sie Beginn, Ende und Pause ein.
+:step: Mit dem Stundenlohn erhalten Sie den Lohn.
+:example: 9:00 bis 17:30 mit 1:00 Pause → 7:30 gearbeitet (7,5 Stunden)
+
+## convert | Einheiten und Währungen umrechnen
+:what: Geben Sie in einer von zwei Zeilen eine Zahl ein; die andere rechnet um. Länge, Gewicht, Volumen, Temperatur, Verbrauch, Währungen und mehr.
+:step: Öffnen Sie [[Convert units and currencies]] und wählen Sie die Größe mit den Chips oben.
+:step: Wählen Sie die Einheiten der beiden Zeilen.
+:step: Geben Sie in einer Zeile eine Zahl ein.
+:step: ⇅ tauscht die Zeilen.
+:shot: convert | Der Umrechnungsbildschirm
+:example: 5 km → 3,106855961 mi
+:tip: Tippen Sie auf die Ergebniszeile, um „5 km to mi“ ins Eingabefeld zu setzen oder im Verlauf abzulegen.
+
+## shapes | Formen: Fläche, Volumen, Länge
+:what: Wählen Sie eine Form nach ihrem Bild und geben Sie die Maße ein: Fläche, Umfang, Volumen und Oberfläche erscheinen.
+:step: Öffnen Sie [[Flat shapes]] oder [[Solids]] in den [[Tools]].
+:step: Tippen Sie auf das Bild einer Form.
+:step: Geben Sie die im Bild genannten Maße ein (r, h). Runde Maße als Radius oder Durchmesser.
+:step: Die Ergebnisse ändern sich beim Tippen; ein Tippen übernimmt oder kopiert den Ausdruck.
+:example: Kugel mit Radius 2 → Volumen 32π/3 ≈ 33,51032164, Oberfläche 16π
+:tip: Wählen Sie ein Material, um das Gewicht zu erhalten.
+
+## tanks | Tanks: Füllmenge und Füllhöhe
+:what: Die Flüssigkeitsmenge in einem liegenden oder stehenden Tank oder einem runden Behälter aus der Füllhöhe, und die Höhe zu einer Menge.
+:svg: tank | Ein liegender Tank (L die Länge, D der Durchmesser, h die Füllhöhe)
+:step: Öffnen Sie [[Tanks: liquid and level]] in den [[Tools]].
+:step: Wählen Sie die Form und geben Sie Durchmesser (oder Radius) und Länge ein.
+:step: Geben Sie die Füllhöhe ein und wählen Sie die Längeneinheit.
+:shot: tanks | Die Flüssigkeit in einem liegenden Tank
+:example: Liegend, Durchmesser 1 m, Länge 2 m, Füllhöhe 30 cm → 0,3963367126 m³ (etwa 396 L)
+:tip: [[Quick-reference table ▾]] listet die Menge zu jeder Höhe.
+:mistake: Ein Radius im Feld für den Durchmesser ergibt etwa ein Viertel der Menge. Prüfen Sie Radius oder Durchmesser.
+
+## tank-heads | Tankböden und Tabellen
+:pro:
+:what: Bezieht die Böden an beiden Enden eines Tanks (halbkugelförmig, halbelliptisch 2:1, gewölbt) in Füllmenge und Gesamtvolumen ein, mit einer Tabelle der Menge zu jeder Höhe.
+:step: Wählen Sie in [[Tanks: liquid and level]] einen liegenden oder stehenden Zylinder.
+:step: Wählen Sie [[Hemispherical]] oder [[Semi-elliptical 2:1]] unter [[Heads]]; gewölbte Böden stehen unter [[Other heads ▾]].
+:step: L ist die Länge des Mantels (ohne Böden).
+:step: Geben Sie unter [[Quick-reference table ▾]] die Schrittweite ein: eine Tabelle aus Höhen und Mengen, zum Kopieren oder als CSV.
+:tip: Flache Böden (ein einfacher Zylinder wie bisher) sind kostenlos.
+
+## measured | Volumen aus Messwerten
+:what: Das Volumen von Erdarbeiten oder einem Teich aus einer Tabelle von Querschnitten (Mittelflächenverfahren, Simpsonregel) oder aus einem Raster von Punkthöhen.
+:step: Öffnen Sie [[Volume from measured values]] in den [[Tools]].
+:step: Wählen Sie Querschnitte oder Punkthöhen und geben Sie Abstände und Flächen (oder Höhen) ein.
+:step: Wählen Sie die Längeneinheit: Das Volumen wird in m³ und L angegeben.
+:example: Querschnitte x² (0 bis 4, alle 1 m) → Mittelflächenverfahren 22 m³, Simpsonregel 64/3 m³ ≈ 21,33 m³
+:tip: Zwei aus einer Tabellenkalkulation kopierte Spalten lassen sich in die Tabelle einfügen.
+
+## profile | Körper aus einem Profil
+:pro:
+:what: Volumen, Fassungsvermögen, Gewicht und Oberfläche eines Drehteils oder Gefäßes aus einer Tabelle von Positionen und Durchmessern entlang der Achse.
+:svg: profile | Eine abgesetzte Welle (eine Tabelle der Positionen z und Durchmesser d ergibt die Form)
+:step: Öffnen Sie [[Solid from a profile]] in den [[Tools]].
+:step: Geben Sie Positionen und Durchmesser (oder Radien) ein. Zwei Zeilen an derselben Position ergeben einen Absatz.
+:step: Wählen Sie die Einheit (mm, cm, m, in).
+:step: [[More ▾]] ergänzt das Innenprofil eines Gefäßes und die Schwindung von Keramik.
+:shot: profile | Das Beispiel der abgesetzten Welle
+:example: Die Beispielwelle → Außenvolumen 4440π mm³ ≈ 13,95 cm³, etwa 109,5 g in Eisen
+:tip: [[View in 3D]] zeigt die Form; eine STL-Datei lässt sich mit einem 3D-Drucker drucken ([STL-Dateien](#stl)).
+
+## stl | STL-Dateien für 3D-Drucker
+:pro:
+:what: Speichert einen Rotationskörper, einen Körper mit Querschnitten oder einen Körper aus einem Profil als STL-Datei für 3D-Drucker.
+:step: Drücken Sie [[Save as STL]] unter den Ergebnissen des Körpers.
+:step: Wählen Sie „1 Einheit = □ mm“ und die Feinheit der Dreiecke.
+:step: Drücken Sie [[Save the STL file]] und wählen Sie den Speicherort.
+:tip: Prüfen Sie vor dem Drucken Größe und Wände in Ihrem Slicer.
+
+## stats | Statistik
+:what: Für eine Spalte: Mittelwert, Median, Standardabweichung, Quartile und mehr; für zwei Spalten: Regressionsgerade und Korrelation.
+:step: Öffnen Sie [[Statistics]] in den [[Tools]].
+:step: Geben Sie die Werte ein oder fügen Sie sie aus einer Tabellenkalkulation ein.
+:step: Bei zwei Spalten zeichnet [[📈 Show in a graph]] die Punkte und die Gerade.
+:shot: stats | [[Statistics]] mit einem Beispiel
+:example: Testergebnisse von 10 Personen → Mittelwert 73,9, Median 74, Standardabweichung (Stichprobe) 9,938142013
+:tip: Die Quartile kommen zuerst nach der Methode japanischer Schulbücher; die Methode der Tabellenkalkulationen steht unter „Mehr“.
+:mistake: Ein Wert, der keine Zahl ist, wird mit Zeile und Korrekturhinweis angezeigt.
+
+## notes | Rechennotizen
+:what: Eine Notiz mit einer Rechnung pro Zeile und ihrem Ergebnis rechts. Geben Sie einem Wert einen Namen und verwenden Sie ihn in den Zeilen darunter.
+:step: Öffnen Sie [[Calculation notes]] in den [[Tools]].
+:step: Schreiben Sie eine Rechnung pro Zeile, etwa `rent = 85000 JPY`.
+:step: Verwenden Sie den Namen in einer späteren Zeile: `rent × 12`.
+:step: Eine Zeile mit dem Summenwort addiert die Ergebnisse darüber.
+:shot: notes | [[Calculation notes]] mit einem Beispiel
+:example: Miete 85000, Strom 6200, Wasser 3100 (JPY) → die Summenzeile zeigt ¥94300
+:pro: Die erste Notiz ist kostenlos. Weitere Notizen und das Speichern als Text oder CSV sind Funktionen von QCalc Pro.
+:tip: Eine Zeile, die mit # oder // beginnt, ist eine Bemerkung (sie wird nicht berechnet).
+
+# graphs | Graphen
+
+## graph-2d | 2D-Graph
+:what: Zeichnet Graphen von y = f(x). Ziehen verschiebt, Spreizen zoomt.
+:step: Öffnen Sie [[Graph]] über ☰ (oder 📈 über dem Eingabefeld).
+:step: Geben Sie die Funktionen ein, eine pro Zeile, und den Bereich von x.
+:step: Drücken Sie [[Draw]].
+:step: Tippen Sie auf den Graphen, um die Koordinaten eines Punktes zu sehen.
+:tip: [[Calculus ▾]] liefert Ableitung, Tangenten, Nullstellen und Extrema.
+:tip: Tippen Sie auf ein Beispiel unter dem Graphen, um es zu zeichnen.
+
+## area-length | Fläche und Länge
+:what: Die Fläche zwischen einer Kurve und der x-Achse oder zwischen zwei Kurven, und die Länge einer Kurve. Die Enden des Bereichs lassen sich mit dem Finger ziehen.
+:step: Zeichnen Sie die Funktionen im 2D-Graphen.
+:step: Öffnen Sie [[Area and length ▾]].
+:step: Geben Sie den Bereich a und b ein oder ziehen Sie die Linien an den Enden.
+:shot: area | Die Fläche unter √x von 0 bis 2
+:example: √x von 0 bis 2 → Fläche 1,885618083
+:tip: Wechseln Sie zu [[Length]] für die Länge der Kurve.
+
+## solid | Einen Körper bilden (Rotationskörper)
+:what: Volumen und Oberfläche des Körpers, der entsteht, wenn ein Bereich des 2D-Graphen um eine Achse gedreht wird.
+:svg: solid | Der Bereich zwischen y = x und y = x² um die x-Achse gedreht
+:step: Zeichnen Sie die Funktionen im 2D-Graphen (zum Beispiel `x` und `x^2`).
+:step: Drücken Sie den runden Knopf [[!⟳ 3D]] am Graphen. Das Volumen um die x-Achse erscheint sofort.
+:step: Für eine andere Achse tippen Sie auf ihre Linie; die Linie y = k ziehen Sie mit dem Finger.
+:step: [[↶ Undo]] kehrt zur vorherigen Achse zurück.
+:shot: solid | Der Bereich zwischen y = x und y = x² um die x-Achse gedreht
+:example: Zwischen y = x und y = x², um die x-Achse → Volumen 2π/15 ≈ 0,4188790205
+:tip: [[Show the method with lines]] zeichnet die Scheiben (Ringe) oder Zylinderschalen. Die Zeile [[Pappus–Guldinus theorem: ]] vergleicht das Volumen aus dem Schwerpunkt mit dem Integral.
+:pro: Den Körper in [[View in 3D]] mit dem Finger zu drehen ist, wie der 3D-Graph, eine Funktion von QCalc Pro.
+
+## cross-sections | Körper mit bekannten Querschnitten
+:what: Das Volumen eines Körpers, dessen Grundfläche der Bereich zwischen zwei Kurven ist, mit darauf stehenden Quadraten, gleichseitigen Dreiecken oder Halbkreisen.
+:step: Öffnen Sie [[Make a solid ▾]].
+:step: Wählen Sie [[Cross sections (shapes standing on the region)]].
+:step: Wählen Sie die Form (□ △ ◠); weitere stehen unter [[More shapes ▾]].
+:example: Quadrate auf dem Bereich zwischen y = x und y = x² → Volumen 1/30
+
+## graph-3d | 3D-Graph
+:pro:
+:what: Zeichnet Flächen z = f(x, y) und Körper in 3D, die Sie mit dem Finger drehen können.
+:step: Wählen Sie [[!3D  z = f(x, y)]] unter [[Graph]].
+:step: Geben Sie bis zu vier Funktionen und die Bereiche von x und y ein und drücken Sie [[Draw]].
+:step: Mit einem Finger drehen, mit zwei zoomen.
+:shot: graph3d | Der 3D-Graph (die Beispielkugel)
+:tip: [[Partial derivatives ▾]] zeichnet ∂f/∂x und ∂f/∂y.
+
+## volume-3d | Volumen und Oberfläche (3D)
+:what: Das Volumen unter einer Fläche des 3D-Graphen (oder zwischen zwei Flächen) und die Oberfläche.
+:step: Zeichnen Sie die Flächen im 3D-Graphen.
+:step: Öffnen Sie [[Volume and surface ▾]]: Volumen und Oberfläche erscheinen sofort.
+:step: Wählen Sie den Bereich: ein Rechteck, eine Kreisscheibe, den eingeschlossenen Teil oder einen per Formel gegebenen.
+:example: Die Beispielkugel (Radius 2) → Volumen 32π/3, Oberfläche 16π
+
+## share | Bilder und GIFs teilen
+:what: Sendet ein Bild eines Graphen an eine andere App; einen 3D-Graphen auch als bewegtes GIF.
+:step: Drücken Sie ↗ ([[Share a picture of the graph]]) am Graphen.
+:step: Wählen Sie die App im Teilen-Menü.
+:pro: Bilder in voller Größe ohne Kennzeichnung und bewegte GIFs sind Funktionen von QCalc Pro. Ohne Pro ist das Bild höchstens 800 px breit, mit einem kleinen „QCalc“.
+
+# forms | Formulare: Analysis, Gleichungen, Matrizen
+
+## calculus | Ableitungen, Integrale, Grenzwerte, Summen
+:what: Die Tasten der Seite [[Calculus]] öffnen ein Formular mit Kästchen □.
+:step: Drücken Sie d/dx, ∫, lim, Σ oder eine andere Taste auf der Seite [[Calculus]].
+:step: Füllen Sie die Kästchen aus. Die Variable kann x bleiben.
+:step: Das Ergebnis erscheint darunter; [[!=]] legt es im Verlauf ab.
+:shot: form | Das Formular eines Integrals
+:example: ∫ x² sin(x) dx von 0 bis π → `π² − 4 ≈ 5,869604401`
+:tip: Ein Grenzwert kann [[Both sides]], [[From the right (+)]] oder [[From the left (−)]] sein.
+
+## equations | Gleichungen
+:what: Löst Gleichungen und Gleichungssysteme.
+:step: Drücken Sie die Gleichungstaste auf der Seite [[Calculus]] oder tippen Sie `solve(x^2 − 5x + 6 = 0)`.
+:step: Das Ergebnis wird als „x = 2 oder x = 3“ angezeigt.
+:example: `solve(x^2 − 5x + 6 = 0)` → x = 2, x = 3
+
+## matrices | Matrizen und Vektoren
+:what: ▦ auf der Seite [[Matrix]] gibt eine Matrix als Tabelle ein (bis 30 × 30).
+:step: Drücken Sie ▦ auf der Seite [[Matrix]].
+:step: Wählen Sie Zeilen und Spalten und füllen Sie die Kästchen aus.
+:step: Rechnen Sie mit det, Transponierte, Inverse und den anderen Tasten.
+:tip: Tabellen aus einer Tabellenkalkulation lassen sich einfügen; [[Copy as a table (for a spreadsheet)]] im ⋯ kopiert sie zurück.
+
+# setup | Einstellungen, Sprache, Widget
+
+## settings | Einstellungen
+:what: Die meistgenutzten Einstellungen stehen oben; die, die kaum jemand ändert, unter [[More settings]]. Eine Änderung gilt sofort.
+| Einstellung | Was sie ändert |
+| [[Angle unit]] | Radiant, Grad, Gon |
+| [[Exact or approximate]] | Automatisch, immer exakt, immer genähert |
+| [[Number format]] | Dezimalzeichen und Zifferngruppen ([Zahlenformat](#number-format)) |
+| [[Fractions]] | Automatisch, dezimal, Bruch, gemischter Bruch |
+| [[Precision (significant digits)]] | Die Rechengenauigkeit (Standard 10) |
+| [[Light or dark]] | Die Farben des Bildschirms |
+| [[Text size]] | Die Schrift von Verlauf, Eingabefeld und Ergebnis |
+| [[Color theme]] | Die Farbe der Tasten (außer Blau: QCalc Pro) |
+| [[Show the result while typing]] | Die Vorschau |
+| [[Update exchange rates now]] | Lädt die Kurse sofort |
+:shot: settings | Die Einstellungen
+:tip: [[Reset all settings]] setzt alles auf die Standardwerte zurück (die Sprache bleibt).
+
+## language | Sprache
+:what: Die App gibt es auf English, 日本語, Español, Deutsch, Français, 한국어 und 繁體中文.
+:step: Wählen Sie [[Language]] in ☰.
+:step: Wählen Sie eine Sprache: Die App öffnet sich darin neu, mit Verlauf und dem gerade getippten Ausdruck.
+:step: [[Same as device]] folgt wieder der Sprache des Telefons.
+:tip: Ab Android 13 lässt sich die Sprache auch für jede App in den Einstellungen des Telefons festlegen.
+
+## widget | Widget, Kachel und Verknüpfungen
+:what: QCalc schnell öffnen über ein Widget auf dem Startbildschirm, eine Kachel der Schnelleinstellungen oder die Verknüpfungen am Symbol. Alles kostenlos.
+:step: Öffnen Sie [[Open QCalc quickly]] ganz unten in den [[Tools]].
+:step: Wählen Sie Widget oder Kachel und folgen Sie dem Bildschirm.
+:step: Halten Sie das Symbol gedrückt für die Verknüpfungen [[New calculation]], [[Tools]] und [[Convert]].
+:tip: Das Widget zeigt das letzte Ergebnis und Knöpfe für Rechnen, Werkzeuge und Umrechnen.
+
+## about | Über diese App und Datenschutz
+:what: [[About this app]] zeigt die Version, den Datenschutz, die Lizenzen und Links zum Quellcode.
+- QCalc sammelt keine persönlichen Daten und sendet nichts.
+- Das Internet wird nur für die Wechselkurse genutzt.
+- Die Rechenmaschine steht unter der GNU GPL v2 oder später ([[Open source licenses]]).
+
+# pro | QCalc Pro
+
+## pro-free | Was kostenlos ist
+:what: Rechnungen, 2D-Graphen, Flächen und Längen, Rotationskörper, Formen, Tanks (flache Böden), die Alltagswerkzeuge, Umrechnung, Statistik, die erste Rechennotiz, das Widget und diese Anleitung sind kostenlos, ohne Werbung.
+
+## pro-features | Was QCalc Pro hinzufügt
+:what: Ein Kauf schaltet alle Pro-Funktionen frei, auch die späterer Updates. Kein Abo, keine Werbung.
+:shot: pro | Das Fenster QCalc Pro
+| Funktion | Abschnitt dieser Anleitung |
+| Mehr als 1000 signifikante Stellen (bis 200000) | [Das Ergebnis lesen](#results) |
+| 3D-Graphen, in 3D ansehen | [3D-Graph](#graph-3d) |
+| Farbthemen (7 Farben) | [Einstellungen](#settings) |
+| Verlauf exportieren (CSV) | [Den Verlauf exportieren](#export) |
+| Tabellen als CSV (Kredit, Sparen) | [Kredit](#loan) |
+| Tankböden und Tabellen | [Tankböden](#tank-heads) |
+| Körper aus einem Profil | [Körper aus einem Profil](#profile) |
+| STL-Dateien | [STL-Dateien](#stl) |
+| GIF und Bilder ohne Kennzeichnung | [Teilen](#share) |
+| Weitere Rechennotizen, als Datei gespeichert | [Rechennotizen](#notes) |
+:tip: [[How to use ›]] in einer Zeile der Pro-Funktionen öffnet den Abschnitt dieser Anleitung.
+
+## pro-buy | Kaufen und wiederherstellen
+:step: Öffnen Sie [[!QCalc Pro]] über ☰ (oder über das Fenster einer gesperrten Funktion).
+:step: Drücken Sie [[Buy QCalc Pro]] und kaufen Sie im Bildschirm von Google Play.
+:step: Auf einem Telefon, auf dem Sie schon gekauft haben, oder nach einer Neuinstallation drücken Sie [[Restore a purchase]].
+:tip: Der Kauf gehört zu Ihrem Google-Konto und gilt deshalb auch auf Ihren anderen Geräten.
+
+# trouble | Wenn etwas nicht klappt
+
+## faq | Häufige Fragen
+- **Das Ergebnis ist keine Dezimalzahl**: Prüfen Sie den Schalter oben oder [[Exact or approximate]].
+- **x ergibt seltsame Ergebnisse**: x ist eine Variable; multiplizieren Sie mit der Taste ×.
+- **Die Wechselkurse sind alt**: Drücken Sie [[Update exchange rates now]] (mit Internet).
+- **Die obere Tastenreihe fehlt**: Bei großer Schrift ist sie ausgeblendet; ⌨ am rechten Ende der Reiter zeigt sie.
+- **Der 3D-Graph öffnet sich nicht**: Der 3D-Graph ist eine Funktion von QCalc Pro ([QCalc Pro](#pro)).
+
+## errors | Fehlermeldungen und ihre Behebung
+:what: Eine Fehlermeldung sagt, was falsch ist und wie es zu beheben ist. Die häufigsten:
+| Meldung | Behebung |
+| Klammern passen nicht zusammen | Gleich viele ( und ) setzen |
+| 1.5 lässt sich nicht lesen (mit Dezimalkomma) | 1,5 tippen; Argumente mit „;“ trennen |
+| Die Einheiten passen nicht | Größen gleicher Art addieren (m und kg lassen sich nicht addieren) |
+| Zuerst eine Funktion zeichnen | Im Graphen [[Draw]] drücken, bevor Fläche oder Körper geöffnet werden |
+| Das Zeitlimit wurde erreicht | Das [Zeitlimit](#time-limit) verlängern oder den Ausdruck vereinfachen |
+
+## time-limit | Das Zeitlimit einer Rechnung
+:what: Eine sehr lange Rechnung stoppt nach [[Time limit (seconds)]] (Standard 20 Sekunden, 1 bis 3600).
+:step: Während der Rechnung erscheint ein Hinweis; ein Tippen darauf stoppt sie.
+:step: Für mehr Zeit ändern Sie [[Time limit (seconds)]] unter [[More settings]] in den [[Settings]].
+
+## caution | Hinweise zur Verwendung der Ergebnisse
+:note: Die Ergebnisse von QCalc dienen zur Orientierung. Verwenden Sie sie nicht für Handel oder Bescheinigungen (auch im gesetzlichen Messwesen), Planung und Bau, Steuererklärungen, Medizin oder Entscheidungen über Sicherheit.
+- Die Menge in einem Tank setzt die ideale Form des Tanks voraus; ein echter Tank kann abweichen.
+- Gewichte verwenden typische Dichten.
+- Die Steuersätze sind die üblichen Sätze vom November 2026 und können im Feld geändert werden.
+- Wechselkurse sind die geladenen, nicht die Kurse eines echten Geschäfts.
+- Die Werkzeuge für Geld oder Sicherheit zeigen unter den Ergebnissen eine Hinweiszeile.
+
+# glossary | Glossar
+| Wort | Bedeutung |
+| Exakter Wert | Ein Wert mit Brüchen, √ und π. Er beginnt mit „=“ |
+| Näherung | Ein Wert als Dezimalzahl. Er beginnt mit „≈“ |
+| Signifikante Stellen | Die Stellenzahl eines Ergebnisses (die Genauigkeit) |
+| ans | Das letzte Ergebnis |
+| Vorschau | Das Ergebnis unter dem Eingabefeld beim Tippen |
+| Rotationskörper | Ein Körper, der durch Drehen eines Bereichs um eine Achse entsteht |
+| Boden | Der Abschluss an jedem Ende eines Tanks |
+| Tabelle | Eine Tabelle der Menge zu jeder Füllhöhe |
+| STL | Ein Dateiformat für Körper für 3D-Drucker |
+| CSV | Eine Tabelle in einer Textdatei, die Tabellenkalkulationen öffnen |
+| QCalc Pro | Die Funktionen für die Arbeit, freigeschaltet mit einem Kauf |

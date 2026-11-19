@@ -1550,3 +1550,47 @@ body.hselect #history { padding-bottom: 150px; }
 .note-res.bad { color: var(--danger); font-weight: 400; font-size: 13px; }
 /* the line pictures of the Pro features (1.12.0, 要判断 14 B) */
 .pro-feat .ico svg { display: block; margin: 2px auto 0; color: var(--accent); }
+/* 1.12.0 (H): the user manual. "?" at the right end of a panel's bar (48 dp), the links "How to use ›" */
+.help-btn { flex: 0 0 48px; position: relative; font-weight: 700; font-size: 17px; color: var(--accent); }
+.help-btn::after { content: ''; position: absolute; inset: 11px; border: 1.5px solid currentColor; border-radius: 50%; opacity: .75; pointer-events: none; }
+.panel-bar .ptitle { min-width: 0; overflow-wrap: anywhere; line-height: 1.2; }
+.pro-how { display: inline-block; font-size: 14px; padding: 12px 0; }
+.pro-feat .pro-how { margin-top: -6px; }
+.manual-card { display: flex; flex-direction: column; gap: 4px; }
+.manual-btn { min-height: 48px; font-weight: 700; }
+.news-more { margin-top: 2px; }
+.manual-link { display: inline-block; min-height: 48px; line-height: 48px; }
+/* the user manual inside the app (1.12.0, H; made by manual/build.py): text and simple SVG pictures */
+.manual-body { --m-accent: var(--accent); --m-on-accent: var(--accent-text, #fff); --m-soft: var(--accent-soft); line-height: 1.65; }
+.manual-top { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.manual-search { box-sizing: border-box; width: 100%; min-height: 48px; padding: 10px 12px; margin: 4px 0 8px; font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; }
+.manual-doc h2 { font-size: 1.3em; margin: 1.6em 0 .4em; padding-top: .5em; border-top: 2px solid var(--line); line-height: 1.3; }
+.manual-doc h3 { font-size: 1.12em; margin: 1.4em 0 .35em; line-height: 1.35; }
+.manual-doc h4 { font-size: 1em; margin: 1em 0 .3em; }
+.manual-doc p { margin: .45em 0; }
+.manual-doc a { color: var(--accent); }
+.manual-doc .m-toc { background: var(--surface-2); border-radius: 12px; padding: 10px 14px; }
+.manual-doc .m-toc-t { font-weight: 700; }
+.manual-doc .m-toc ol { margin: 0; padding-left: 1.3em; }
+.manual-doc .m-toc ol ol { font-size: .94em; }
+.manual-doc .m-toc a { display: inline-block; min-height: 40px; line-height: 40px; }
+.manual-doc .m-lbl { font-weight: 700; }
+.manual-doc .m-what .m-lbl { display: block; color: var(--muted); font-size: .9em; }
+.manual-doc .m-steps ol { margin: .2em 0; padding-left: 1.5em; }
+.manual-doc .m-steps li { margin: .25em 0; }
+.manual-doc .m-box { border-radius: 10px; padding: 6px 12px; margin: .6em 0; background: var(--surface-2); }
+.manual-doc .m-box p, .manual-doc .m-box ul { margin: .2em 0; }
+.manual-doc .m-tip { border-left: 4px solid var(--accent); }
+.manual-doc .m-mis { border-left: 4px solid var(--warn, #c77700); }
+.manual-doc .m-note { border-left: 4px solid var(--danger, #c0392b); }
+.manual-doc .m-badge { display: inline-block; padding: 0 8px; border-radius: 6px; background: var(--accent); color: var(--accent-text, #fff); font-weight: 700; font-size: .85em; }
+.manual-doc b.ui { font-weight: 700; }
+.manual-doc code { font-family: ui-monospace, monospace; font-size: .92em; background: var(--surface-2); padding: 0 4px; border-radius: 4px; overflow-wrap: anywhere; }
+.manual-doc .m-tw { overflow-x: auto; }
+.manual-doc table { border-collapse: collapse; margin: .5em 0; font-size: .94em; }
+.manual-doc th, .manual-doc td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
+.manual-doc th { background: var(--surface-2); }
+.manual-doc .m-fig { margin: .8em 0; }
+.manual-doc .m-fig figcaption { color: var(--muted); font-size: .9em; }
+.manual-doc .m-svg svg { width: 100%; max-width: 280px; height: auto; color: var(--text); display: block; }
+.manual-doc .m-idx { padding-left: 1.1em; font-size: .92em; }

@@ -1447,7 +1447,7 @@
     "1 unit =": "1 單位 =",
     "Triangles": "三角形",
     "A closed mesh in millimetres (ASCII STL). Check the size and the walls in your slicer before printing.": "封閉的立體表面（ASCII 格式 STL，單位 mm）。列印前請在切片軟體中確認大小與壁厚。",
-    "{0} triangles · {1} mm · {2} cm³": "三角形 {0} 個・{1} mm・{2} cm³",
+    "{0} triangles · {1} mm · {2} cm³": "三角形 {0} 個 · {1} mm · {2} cm³",
     "The solid could not be made into a closed mesh, so it is not saved.": "無法做成封閉的立體表面，因此無法儲存。",
     "Enter the millimetres for one unit (a positive number, for example 10)": "請以正數輸入每單位的毫米數（例如 10）",
     "Save as STL": "存成 STL",
@@ -1510,7 +1510,17 @@
     "A cell takes one number or expression: \";\" cannot be used (the decimal sign is \",\")": "一格只能填一個數或運算式：不能使用「;」（小數點是「,」）",
     "A size is one number or expression (the decimal sign is \",\")": "尺寸請填一個數或運算式（小數點是「,」）",
     "Gray numbers are examples: the results use them until you type your own sizes.": "灰色的數字是範例：在輸入自己的尺寸之前，結果都用範例值計算。",
-    "Show the row of x, ans, the arrows and the keyboard": "顯示 x、ans、方向鍵和鍵盤那一列"
+    "Show the row of x, ans, the arrows and the keyboard": "顯示 x、ans、方向鍵和鍵盤那一列",
+    "The manual opens when you are connected to the internet.": "連上網路後即可開啟說明書。",
+    "Tips in the app": "App 內的使用說明",
+    "How to use this (opens the user manual)": "使用方法（開啟使用說明書）",
+    "How to use ›": "使用方法 ›",
+    "How to use the Pro features ›": "Pro 功能的使用方法 ›",
+    "How to use the Pro features": "Pro 功能的使用方法",
+    "What is new in 1.12.0 (user manual) ›": "1.12.0 的新功能（使用說明書）›",
+    "User manual": "使用說明書",
+    "Every feature step by step, on the web and as a PDF": "所有功能逐步說明，網頁版與 PDF",
+    "How to use this form ›": "這個表單的使用方法 ›"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",
