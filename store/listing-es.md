@@ -21,52 +21,44 @@ Escribe la matemática como en papel: unidades, monedas, ecuaciones y gráficos.
 
 ## Descripción completa
 
-QCalc es una calculadora para Android basada en libqalculate, el motor de cálculo de la calculadora de código abierto Qalculate!. Escribe las expresiones como las escribirías en papel, por ejemplo "60 mph to km/h" o "solve(x^2 − 5x + 6 = 0)".
+QCalc es una calculadora para Android basada en libqalculate, el motor de cálculo de la calculadora de código abierto Qalculate!. Escribe las expresiones como las escribirías en papel, por ejemplo «60 mph to km/h» o «solve(x^2 − 5x + 6 = 0)».
 
 ■ Funciones
-• Conversión de unidades: longitud, masa, velocidad, temperatura y muchas más (5 km to mi, 20 °C to °F)
-• Conversión de monedas con tipos de cambio del Banco Central Europeo y otros (100 USD to PEN)
-• Ecuaciones y sistemas de ecuaciones (solve, multisolve)
-• Derivadas, integrales, límites, sumatorias y ecuaciones diferenciales (diff, integrate, limit, sum, dsolve) en formularios como en papel, con el resultado al instante
-• La expresión se muestra en notación matemática mientras escribes
-• Ecuaciones y sistemas en un formulario; matrices de hasta 30 × 30 en una cuadrícula con determinante, inversa, rango, valores propios y sistemas lineales
-• Figuras: área, longitudes, volumen y área superficial de 22 figuras a partir de sus medidas; líquido en depósitos; volumen a partir de secciones medidas
-• Números complejos; números binarios, octales y hexadecimales
-• Cálculos con fechas (today + 100 days)
-• Propagación de incertidumbre ((5 ± 0.2) m × (3 ± 0.1) m)
-• Resultados exactos con fracciones y raíces, y alta precisión de hasta 200 000 cifras significativas (más de 1000 cifras con QCalc Pro). Los resultados largos se muestran y se copian completos
-• Funciones especiales rápidas con muchas cifras (zeta, gamma, erf, Bessel…); cálculos de hasta una hora
-• Gráficos 2D de y = f(x): varias funciones a la vez; arrastra para mover y pellizca para acercar. Derivadas, primitivas, tangentes, ceros y extremos; áreas (al instante; arrastra los bordes), longitudes de curvas y perímetros; sólidos de revolución; 17 muestras
-• Gráficos 3D de z = f(x, y) con sombras, que giras con un dedo: derivadas parciales, volumen y área superficial sobre un rectángulo, un disco, la parte entre dos superficies o una región escrita, 14 muestras (QCalc Pro)
-• 📈 dibuja lo que escribes: expresiones en x o en x e y, ecuaciones y matrices, también desde el historial
+• Unidades y monedas: longitud, masa, velocidad, temperatura, energía… (5 km to mi, 100 USD to EUR), escritas o en un conversor; tipos de cambio del BCE y otras fuentes
+• Herramientas con ejemplos y resultado al instante: precio con descuento e impuestos, porcentajes, precio por unidad, dividir la cuenta, préstamos con tabla de pagos, ahorro con interés compuesto, fechas, horas y jornada, estadística con regresión, notas de cálculo (un cálculo por línea, con nombres y totales)
+• Ecuaciones y sistemas; derivadas, integrales, límites, sumas y ecuaciones diferenciales en formularios como en papel, con deshacer y rehacer
+• La expresión en notación matemática mientras escribes
+• Matrices de hasta 30 × 30 en una cuadrícula: determinante, inversa, rango, valores propios, sistemas lineales
+• Figuras: área, longitudes, volumen y superficie de 22 figuras con dibujo y fórmula; líquido en depósitos; peso por densidad; volumen a partir de secciones
+• Números complejos; binario, octal y hexadecimal; fechas (today + 100 days); propagación de incertidumbres
+• Resultados exactos con fracciones y raíces, hasta 200 000 cifras (más de 1000 con QCalc Pro); funciones especiales rápidas (zeta, gamma, erf, Bessel…)
+• Gráficos 2D: varias funciones, arrastrar y ampliar; derivadas, tangentes, ceros y extremos; áreas con bordes que se arrastran, longitudes; «⟳ 3D» convierte una región en un sólido de revolución al instante, con secciones y el teorema de Pappus; 17 muestras
+• Gráficos 3D de z = f(x, y) con sombras, que giras con un dedo: derivadas parciales, volumen y superficie sobre un rectángulo, un disco, la parte entre dos superficies o una región escrita; 14 muestras (QCalc Pro)
+• Compartir un gráfico como imagen; widget, mosaico de ajustes rápidos y accesos directos
+• Toca un resultado: a la entrada, al historial o copiarlo. Historial con búsqueda, fijar, notas y sumas; teclas de memoria
+• Números como 1.234,5, 1,234.5 o 1 234,5, según tu región
 • Unidades tradicionales japonesas (30 tsubo to m²)
-• Ejemplos y consejos dentro de la app: toca uno para probarlo
-• Listas de funciones, unidades y constantes con búsqueda
-• Tus propias variables y funciones
-• El resultado aparece mientras escribes; reutiliza y copia resultados
-• Sugerencias mientras escribes: unidades después de "to" y nombres de funciones y unidades
-• Deshacer para una expresión o un historial borrados, tres tamaños de texto, siete temas de color (QCalc Pro)
-• Exporta el historial como archivo CSV para hojas de cálculo (QCalc Pro)
-• Cuatro páginas de teclas (123, Funciones, Cálculo, Matriz) o el teclado de tu teléfono
-• Modo claro u oscuro
-• En español, inglés, japonés, alemán, francés, coreano y chino tradicional (menú → Idioma / Language); empieza en el idioma del teléfono si la app lo tiene
-
-Nota: el separador decimal es el punto (1.5, no 1,5).
+• Ejemplos y consejos en la app; listas de funciones, unidades y constantes; tus propias variables y funciones
+• Sugerencias al escribir: unidades tras «to», nombres de funciones y unidades
+• Cuatro páginas de teclas (123, Funciones, Cálculo, Matriz) o el teclado del teléfono; tres tamaños de texto; claro u oscuro
+• En español, inglés, japonés, alemán, francés, coreano y chino tradicional
 
 ■ QCalc Pro
-Una compra única dentro de la app desbloquea una precisión de más de 1000 cifras (hasta 200 000), los gráficos 3D, los temas de color, la exportación del historial y las funciones Pro de versiones futuras. No hay suscripción y todo lo demás es gratis.
+Una compra única en la app desbloquea: más de 1000 cifras, gráficos 3D, temas de color, exportar el historial, tablas en CSV, fondos de depósitos con tablas de nivel, sólidos a partir de un perfil medido (volumen, capacidad, peso), archivos STL para impresoras 3D, imágenes GIF animadas de gráficos 3D e imágenes sin marca, más notas de cálculo y las funciones Pro de versiones futuras. No hay suscripción y todo lo demás es gratis.
 
 ■ Privacidad
-QCalc no recopila datos personales ni envía nada al desarrollador, y no tiene anuncios. Internet se usa solo para descargar los tipos de cambio; Google Play se encarga de la compra de QCalc Pro. El historial y los ajustes se quedan en tu dispositivo.
+QCalc no recopila datos personales ni envía nada al desarrollador, y no tiene anuncios. Internet se usa solo para los tipos de cambio; Google Play se encarga de la compra de QCalc Pro. El historial y los ajustes se quedan en tu dispositivo.
 
 ■ Código abierto
 QCalc es software libre bajo la GNU GPL versión 2 o posterior. El código fuente está en GitHub:
 https://github.com/HiroshiTsu/qcalc
 
-libqalculate es software de código abierto desarrollado por Hanna Knutsson y otras personas (https://qalculate.github.io/). QCalc no es una app oficial de Qalculate!; la hace una persona sin relación con sus desarrolladores.
+libqalculate es software de código abierto desarrollado por Hanna Knutsson y otros (https://qalculate.github.io/). QCalc no es una app oficial de Qalculate! y la hace una persona sin relación con los desarrolladores de Qalculate!.
 
 ■ Requisitos
 Android 7.0 o posterior en un dispositivo ARM de 64 bits (arm64).
+
+Los resultados son orientativos: no los uses para comercio o certificación, diseño y obra, ni impuestos; comprueba los resultados importantes con un método oficial.
 
 ## Notas de la versión
 
