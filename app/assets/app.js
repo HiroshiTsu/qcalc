@@ -8290,8 +8290,9 @@
       if (a < a0) a0 = a; if (a > a1) a1 = a; if (b < b0) b0 = b; if (b > b1) b1 = b;
     }
     if (!(a1 > a0 && b1 > b0)) return null;
-    // (cells of one CSS pixel, at most 900 on a side)
-    const cell = Math.max(1 / cam.S, (a1 - a0) / 900, (b1 - b0) / 900);
+    // (cells of one CSS pixel, at most 900 on a side; while the graph is turned, of three CSS pixels and
+    // at most 300 on a side, 1.12.0 BG08: a ninth of the work, the shadows a little softer)
+    const cell = cam.lite ? Math.max(3 / cam.S, (a1 - a0) / 300, (b1 - b0) / 300) : Math.max(1 / cam.S, (a1 - a0) / 900, (b1 - b0) / 900);
     const MW = Math.ceil((a1 - a0) / cell) + 6, MH = Math.ceil((b1 - b0) / cell) + 6, n = MW * MH;
     if (!C.lampBuf || C.lampBuf.length < n) C.lampBuf = new Float32Array(n);
     const map = C.lampBuf;
@@ -8386,14 +8387,19 @@
   // softness too, from three blurs of the shadow (about 2, 6 and 14 CSS pixels) blended by the height
   // of the surfaces around the point. tb: the triangles; o: the turn of the camera (ca, sa, ce, se),
   // the half sizes of the box (EX, EY, EZ), cam ({ cx, cy, S }), W and H of the canvas, dark, cache,
-  // pane0 (a path on the floor). Returns what was drawn, or null when the lamp is not above the floor.
+  // pane0 (a path on the floor), lite (while the graph is turned: a layer of a quarter of the size, 1.12.0
+  // BG08). Returns what was drawn, or null when the lamp is not above the floor.
+  // (1.12.0, BG08: the shadow fades out as the lamp comes down to the level of the floor and as the floor
+  // is seen more and more edge-on, instead of ending at once; until then it came and went while turning)
   function floorShadow(g, tb, o) {
     const { ca, sa, ce, se, EX, EY, EZ, cam } = o;
     const lx = LAMP[0], ly = LAMP[1], lz = LAMP[2];
     // the direction of the lamp in the box's axes (u, v, w): the camera's axes turned back (camN)
     const lu = ca * lx + sa * se * ly + sa * ce * lz, lv = -sa * lx + ca * se * ly + ca * ce * lz, lw = ce * ly - se * lz;
     if (!(lw > 0.2)) return null;
-    const T = tb.f, nt = tb.n, K = 0.5, LW = Math.ceil(o.W * K), LH = Math.ceil(o.H * K), n = LW * LH;
+    const fadeIn = smoothStep(0.2, 0.35, lw) * smoothStep(0, 0.15, se);
+    if (!(fadeIn > 0.004)) return null;
+    const T = tb.f, nt = tb.n, K = o.lite ? 0.25 : 0.5, LW = Math.ceil(o.W * K), LH = Math.ceil(o.H * K), n = LW * LH;
     const C = o.cache;
     if (!C.floorBuf || C.floorBuf.n < n) C.floorBuf = { n, h: new Float32Array(n), a: new Float32Array(n), m: new Float32Array(n), b1: new Float32Array(n), b2: new Float32Array(n), b3: new Float32Array(n), hb: new Float32Array(n), t: new Float32Array(n) };
     const B = C.floorBuf, fh = B.h;
@@ -8423,9 +8429,11 @@
       A[i] = 1 - 0.72 * f; M[i] = 1; fh[i] = h; any++;
     }
     if (!any) return { px: 0 };
-    boxBlur(A, B.b1, B.t, LW, LH, 1); boxBlur(A, B.b2, B.t, LW, LH, 3); boxBlur(A, B.b3, B.t, LW, LH, 7);
-    boxBlur(fh, B.hb, B.t, LW, LH, 7); boxBlur(M, M, B.t, LW, LH, 7);
-    const img = new ImageData(LW, LH), d = img.data, col = o.dark ? [0, 0, 0] : [28, 38, 66], A0 = (o.dark ? 0.5 : 0.3) * 255;
+    // (the blurs of about 2, 6 and 14 CSS pixels, in cells of the layer)
+    const r2 = o.lite ? 2 : 3, r3 = o.lite ? 4 : 7;
+    boxBlur(A, B.b1, B.t, LW, LH, 1); boxBlur(A, B.b2, B.t, LW, LH, r2); boxBlur(A, B.b3, B.t, LW, LH, r3);
+    boxBlur(fh, B.hb, B.t, LW, LH, r3); boxBlur(M, M, B.t, LW, LH, r3);
+    const img = new ImageData(LW, LH), d = img.data, col = o.dark ? [0, 0, 0] : [28, 38, 66], A0 = (o.dark ? 0.5 : 0.3) * 255 * fadeIn * (o.k === undefined ? 1 : o.k);
     for (let i = 0; i < n; i++) {
       const m = M[i];
       if (!(m > 0.002)) continue;
@@ -8444,8 +8452,10 @@
     g.imageSmoothingEnabled = true;
     g.drawImage(L, 0, 0, LW / K, LH / K);
     g.restore();
-    return { px: any };
+    return { px: any, k: K, fade: Math.round(fadeIn * 1000) / 1000 };
   }
+  // 0 below a, 1 above b, smoothly between them
+  function smoothStep(a, b, x) { const t = x <= a ? 0 : x >= b ? 1 : (x - a) / (b - a); return t * t * (3 - 2 * t); }
   // tb: the triangles (triBuf); o: W and H of the canvas (CSS pixels), q (pixels of the layer for each
   // CSS pixel), dark, mesh (the color of the grid lines [r, g, b, alpha] and their width, or null), fade
   // (a color the surfaces fade halfway to, or null), cache (an object that keeps the buffers), shadow
@@ -8514,7 +8524,7 @@
     // the shadows from the lamp (1.11.0): the map of the surfaces as the lamp sees them, and for each
     // pixel its point in the camera's axes (from its place on the screen and its depth)
     const t0 = performance.now();
-    const SM = o.shadow ? lampMap(T, nt, o.shadow, C) : null;
+    const SM = o.shadow ? lampMap(T, nt, o.shadow, C) : null, shK = o.shadow && o.shadow.k !== undefined ? o.shadow.k : 1;
     const tMap = performance.now() - t0;
     const scx = SM ? SM.cam.cx : 0, scy = SM ? SM.cam.cy : 0, iS = SM ? 1 / SM.cam.S : 0;
     let inShadow = 0, edge = 0;
@@ -8543,6 +8553,7 @@
         const py = (i / LW) | 0, pxl = i - py * LW;
         lit = lampLit(SM, ((lx0 + pxl + 0.5) / q - scx) * iS, (scy - (ly0 + py + 0.5) / q) * iS, zb[i], nx, ny, nz, dif);
         if (dif < 0.12) lit = 1 - (1 - lit) * (dif - 0.04) / 0.08;
+        if (shK < 1) lit = 1 - (1 - lit) * shK;
         if (lit < 0.5) inShadow++;
         if (lit > 0 && lit < 1) edge++;
       }
@@ -9212,9 +9223,54 @@
     if (Q3.canvas) Q3.canvas.dataset.grow = String(deg);
     draw3d();
   }
+  // (1.12.0, BG08) the shadows coming back after a turn in which they faded out: what is on the screen is
+  // copied to a layer over the graph, which fades out over 0.2 s once the full drawing is underneath
+  function shadowCrossFade(c) {
+    const wrap = c.parentElement;
+    if (!wrap || !c.width) return null;
+    let o = Q3.fadeLayer;
+    if (!o) { o = Q3.fadeLayer = el('canvas', { class: 'plot-fade', 'aria-hidden': 'true' }); }
+    if (o.parentElement !== wrap) wrap.insertBefore(o, c.nextSibling);
+    if (o.width !== c.width || o.height !== c.height) { o.width = c.width; o.height = c.height; }
+    const x = o.getContext('2d');
+    x.clearRect(0, 0, o.width, o.height); x.drawImage(c, 0, 0);
+    clearTimeout(Q3.fadeTimer);
+    o.style.transition = 'none'; o.style.opacity = '1'; o.hidden = false;
+    return o;
+  }
+  // the strength of the shadows while the graph is turned (1.12.0, BG08): they are drawn from a coarser map
+  // and a smaller layer; when the frames still come more slowly than 30 a second (the median of three
+  // frames of a turn after the first one: the time between two drawings, or the time of a drawing itself
+  // when the finger moves more slowly than the screen), they fade out over 0.2 s, and come back over 0.2 s
+  // when the finger is lifted. A graph found slow keeps that until another graph is drawn (or "Volume and
+  // surface" is opened or closed), so that the next turn fades at once. Returns the strength, 0 to 1.
+  function turnShadow(now) {
+    if (!Q3.turning) { Q3.shK = 1; Q3.lastTurn = 0; return 1; }
+    const key = Q3.volShade ? 'vol' : 'plain';  // (with "Volume and surface" open the frames take longer)
+    if (Q3.shSlowFor !== Q3.data || Q3.shSlowKey !== key) { Q3.shSlowFor = Q3.data; Q3.shSlowKey = key; Q3.shSlow = false; }
+    if (Q3.lastTurn && now - Q3.lastTurn < 250) {
+      const dt = Math.min(now - Q3.lastTurn, (Q3.lastDrawMs || 0) * 1.3 + 4);
+      Q3.turnN = (Q3.turnN || 0) + 1;
+      if (Q3.turnN > 1) {
+        const L = Q3.turnList || (Q3.turnList = []);
+        L.push(dt); if (L.length > 3) L.shift();
+        const med = L.length < 3 ? 0 : L.slice().sort((a, b) => a - b)[1];
+        Q3.turnMs = med || dt;
+        if (med > 36) Q3.shSlow = true;
+      }
+    }
+    const k0 = Q3.shK === undefined ? 1 : Q3.shK, step = Q3.lastTurn ? Math.min(250, now - Q3.lastTurn) / 200 : 0;
+    Q3.shK = Q3.shSlow ? Math.max(0, k0 - step) : Math.min(1, k0 + step);
+    Q3.lastTurn = now;
+    return Q3.shK;
+  }
   function draw3d() {
     const c = Q3.canvas;
     if (!c || !c.clientWidth) return;
+    const t3 = performance.now();
+    let crossFade = null;
+    if (Q3.fadeInNext && !Q3.turning) { Q3.fadeInNext = false; crossFade = shadowCrossFade(c); }
+    const shK = turnShadow(t3);
     const dpr = window.devicePixelRatio || 1;
     const W = c.clientWidth, H = c.clientHeight;
     const cw = Math.round(W * dpr), ch = Math.round(H * dpr);
@@ -9513,10 +9569,14 @@
     // (1.10.1: until 1.10.0 the shadow was the whole region, a square under a sphere drawn over a
     // rectangle, as when the app was opened again with the sphere). Only a mesh with no faces (no
     // solid can be drawn) leaves the region as before.
+    // (1.12.0, BG08: it fades out as the floor is seen more edge-on, from about 17° down to 1°, instead of
+    // ending at once at 3°: turning the graph made it come and go)
     let shadowFaces = 0, shadowArea = 0;
     const outline = [];  // (the closed paths of the shadow, 1.11.0: drawn as a line too for the enclosed part)
-    if (vc && se > 0.05) {
+    const volFade = smoothStep(0.02, 0.3, se);
+    if (vc && volFade > 0.004) {
       g.save();
+      g.globalAlpha = volFade;
       g.filter = 'blur(7px)';
       g.fillStyle = dark ? 'rgba(0,0,0,0.32)' : 'rgba(' + vc.deep.map((v) => Math.round(v * 0.55)).join(',') + ',0.16)';
       g.beginPath();
@@ -9570,6 +9630,7 @@
       // the outline of the enclosed part on the floor (1.11.0), so that what is measured is seen
       if (VS.enc && outline.length) {
         g.save();
+        g.globalAlpha = volFade;
         g.strokeStyle = vc.line; g.lineWidth = 1.3; g.setLineDash([5, 3]);
         g.beginPath(); outline.forEach(pane0); g.stroke();
         g.restore();
@@ -9640,19 +9701,21 @@
       for (let m = 1; m + 1 < vs.length; m++) tb.add(vs[0], vs[m], vs[m + 1]);
     }
     // shadows from the lamp of the highlight (1.11.0): on the floor of the box (while it is at the
-    // back, seen from above) and of the surfaces on themselves and on each other. Not while the graph
-    // is turned (they come with the full drawing when the finger is lifted), so that turning is as
-    // smooth as before; and not while "Volume and surface" shows the measured solid, which keeps its
-    // own look (the liquid casts no shadow from the lamp, and the shadows of the other surfaces alone
-    // looked out of place there).
-    const shadows = !Q3.turning && !vc;
+    // back, seen from above) and of the surfaces on themselves and on each other. Not while "Volume and
+    // surface" shows the measured solid, which keeps its own look (the liquid casts no shadow from the
+    // lamp, and the shadows of the other surfaces alone looked out of place there); that solid has its
+    // own soft shadow on the floor, above. While the graph is turned they are drawn too, from a coarser
+    // map and a smaller layer, and in full when the finger is lifted (1.12.0, BG08: until then they were
+    // left out while turning, and came and went with every touch).
+    // (and while the graph is turned on a slow phone, they fade out over 0.2 s instead: turnShadow)
+    const shadows = !vc && shK > 0.004, lite = !!Q3.turning;
     const tf = performance.now();
-    const floor = shadows && wb === -EZ ? floorShadow(g, tb, { ca, sa, ce, se, EX, EY, EZ, cam: { cx, cy, S }, W, H, dark, cache: Q3, pane0 }) : null;
+    const floor = shadows && wb === -EZ ? floorShadow(g, tb, { ca, sa, ce, se, EX, EY, EZ, cam: { cx, cy, S }, W, H, dark, cache: Q3, pane0, lite, k: shK }) : null;
     if (floor) floor.ms = Math.round((performance.now() - tf) * 10) / 10;
-    const surf = surfacePaint(g, tb, { W, H, q: Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S } : null });
+    const surf = surfacePaint(g, tb, { W, H, q: Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite, k: shK } : null });
     // (what was drawn, for the tests; shadow: the pixels in a shadow and at the soft edge of one, the
     // size of the lamp's map and the time to make it; floor: the cells of the floor's layer in a shadow)
-    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor,
+    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor, shk: Math.round(shK * 1000) / 1000, turnMs: Q3.turning ? Math.round(Q3.turnMs || 0) : null, turnL: Q3.turning ? (Q3.turnList || []).map(Math.round) : null, shSlow: !!Q3.shSlow, drawMs: Math.round(Q3.lastDrawMs || 0),
       rims: (D.series || []).reduce((n, s) => n + (s.rim ? Object.keys(s.rim).length : 0), 0) });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
@@ -9660,7 +9723,7 @@
     // the color of the solid in the box, and what was drawn (for the tests)
     const lg = Q3.volUI && Q3.volUI.legend;
     if (lg) { lg.hidden = !vc; if (vc) { lg.firstChild.style.background = vc.swatch; lg.firstChild.style.borderColor = vc.line; } }
-    if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: lmesh.walls, floor: lmesh.floor, tris: lmesh.tris, jelly, liquid: liquid.shown, thick: liquid.thick, odd: liquid.odd, q: liquid.q, faded, shadow: shadowFaces, shadowArea: Number(shadowArea.toFixed(4)) });
+    if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: lmesh.walls, floor: lmesh.floor, tris: lmesh.tris, jelly, liquid: liquid.shown, thick: liquid.thick, odd: liquid.odd, q: liquid.q, faded, shadow: shadowFaces, shadowArea: Number(shadowArea.toFixed(4)), shadowFade: Math.round(volFade * 1000) / 1000 });
     else delete c.dataset.vol;
     // axes on the front edges of the floor and the leftmost vertical edge, with labels
     const un = -ub, vn = -vb;
@@ -9700,6 +9763,16 @@
       const pr = Q3.mark.s.proj;
       g.fillStyle = '#e11d48'; g.strokeStyle = '#fff'; g.lineWidth = 2;
       g.beginPath(); g.arc(pr.px[Q3.mark.k], pr.py[Q3.mark.k], 5, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+    // (1.12.0, BG08: the time of this drawing, the fade of the shadows going on while the finger rests,
+    // and the layer of the last frame fading out over the full drawing)
+    Q3.lastDrawMs = performance.now() - t3;
+    if (Q3.turning && shK > 0 && shK < 1) requestDraw3d();
+    if (crossFade) {
+      c.dataset.fade = 'in';
+      void getComputedStyle(crossFade).opacity;
+      crossFade.style.transition = 'opacity 0.2s linear'; crossFade.style.opacity = '0';
+      Q3.fadeTimer = setTimeout(() => { crossFade.hidden = true; delete c.dataset.fade; }, 260);
     }
   }
   // tap: the grid point nearest to the finger; among close ones, the one in front
@@ -9767,7 +9840,11 @@
       pts.delete(e.pointerId);
       if (!moved && pts.size === 0 && e.type === 'pointerup') pick3d(e.clientX, e.clientY);
       start = pts.size ? snapshot() : null;
-      if (!pts.size && Q3.turning) { Q3.turning = false; requestDraw3d(); }
+      if (!pts.size && Q3.turning) {
+        // (1.12.0, BG08: shadows that faded out while turning come back over 0.2 s)
+        if (Q3.shK !== undefined && Q3.shK < 1) Q3.fadeInNext = true;
+        Q3.turning = false; Q3.turnN = 0; Q3.turnMs = 0; Q3.turnList = []; requestDraw3d();
+      }
     };
     wrap.addEventListener('pointerup', end);
     wrap.addEventListener('pointercancel', end);
