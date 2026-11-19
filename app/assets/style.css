@@ -1423,3 +1423,16 @@ body.hselect #history { padding-bottom: 150px; }
 .sheet .quick-icon { padding-top: 6px; }
 .quick-steps { margin: 2px 12px 8px 0; padding-left: 32px; line-height: 1.5; font-size: 15px; }
 .quick-steps li { margin: 6px 0; }
+
+/* UI review of B0-C3 (1.12.0): a number is never broken in the middle ("5,567,99 / 8.07"): when the
+   value does not fit beside its name, it goes under it (the everyday tools, the conversion, the volume
+   of a solid); a formula too wide even then scrolls instead of being cut */
+.tool-out .geo-row, .rev-out .geo-row { flex-wrap: wrap; row-gap: 2px; }
+.tool-out .geo-val, .rev-out .geo-val { flex: 1 1 auto; overflow-wrap: break-word; word-break: keep-all; } /* (keep-all: 令和9年 stays together) */
+.rev-out .geo-val { overflow-x: auto; overflow-y: hidden; }
+/* the value of "Lines n =" stays beside its slider */
+.area-box .plot-range.rev-n { flex-wrap: nowrap; }
+.rev-n input[type="range"] { min-width: 60px; }
+.rev-n-v { min-width: 2em; text-align: right; }
+/* the small choices inside a field (tax rates, "today"): touch areas of 48 dp */
+.tool-mini-chips .area-chip { min-height: 48px; min-width: 48px; padding: 0 10px; }

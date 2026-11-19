@@ -5948,7 +5948,7 @@
     revShow(vrow, V, vexpr.join(' + '));
     R.msg.textContent = '';
     R.method.textContent = 'V = ∫ A(s(x)) dx,  A(s) = ' + (d[0] === 'own' ? normalizeExpr(R.ownIn.value) : d[0] === 'rect' ? toDisplay(normalizeExpr(R.skIn.value)) + ' × s²' : d[2].replace('s^2', 's²').replace(' × ', '·')) +
-      ',  s = ' + toDisplay(clip(f.expr, 24)) + (g ? ' − (' + toDisplay(clip(g.expr, 24)) + ')' : '') + '\n' + tr('(the volume is the sum of the thin slices of area A and thickness dx)', '（面積 A、厚さ dx の薄い板を重ねた体積）');
+      ',  s = ' + revPretty(toDisplay(clip(f.expr, 24))) + (g ? ' − ' + (/^[^+\-−]+$/.test(g.expr.slice(1)) ? revPretty(toDisplay(clip(g.expr, 24))) : '(' + revPretty(toDisplay(clip(g.expr, 24))) + ')') : '') + '\n' + tr('(the volume is the sum of the thin slices of area A and thickness dx)', '（面積 A、厚さ dx の薄い板を重ねた体積）');
     P.revVolText = shortValue('V', vrow.result); draw();
     // the 3D view (Pro): the top of the cross sections over the region, z = 0 outside not drawn
     const hiE = g ? `max(${f.expr}, ${ge})` : `max(${f.expr}, 0)`, loE = g ? `min(${f.expr}, ${ge})` : `min(${f.expr}, 0)`;
@@ -6114,7 +6114,7 @@
     const A = await sumValues(As), M = await sumValues(Ms);
     if (stale() || !(A.v > 0)) return;
     const d = M.v / A.v, Vp = 2 * Math.PI * d * A.v, same = Math.abs(Vp - V) <= 1e-7 * Math.max(1, Math.abs(V));
-    R.pappus.textContent = head + 'A = ' + toDisplay(clip(A.text, 30)) + ',  d = ' + toDisplay(fmtV(+d.toPrecision(10))) + ',  V = 2π d A ≈ ' + toDisplay(fmtV(+Vp.toPrecision(10))) +
+    R.pappus.textContent = head + 'A = ' + toDisplay(clip(A.text, 30)) + ',  d = ' + toDisplay(fmtV(+d.toPrecision(9))) + ',  V = 2π d A ≈ ' + toDisplay(fmtV(+Vp.toPrecision(10))) +
       (same ? tr('  ✓ the same as the integral', '  ✓ 積分の値と一致') : '');
   }
   // a row of the results: its name, the formula in small letters, the value; tapping it offers to put
@@ -10874,7 +10874,7 @@
       const moreRows = rows.filter((r) => r._f.more);
       const more = moreRows.length ? el('details', { class: 'sec-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }), ...moreRows) : null;
       const msg = el('div', { class: 'geo-msg', role: 'alert' });
-      const outs = el('div', { class: 'geo-out', 'aria-live': 'polite' });
+      const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
       const tableBox = el('div', { class: 'tool-table' });
       const caution = spec.caution ? cautionLine(spec.caution) : null;
       // fields shown only for some choices (when: values → boolean)
@@ -11310,7 +11310,7 @@
       const kinds = el('div', { class: 'geo-chips conv-kinds', role: 'group', 'aria-label': tr('Kind of units', '単位の種類') });
       const other = el('select', { 'aria-label': tr('Other kinds', 'ほかの種類') });
       const recentRow = el('div', { class: 'rev-ex conv-recent' });
-      const outs = el('div', { class: 'geo-out', 'aria-live': 'polite' });
+      const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
       const msg = el('div', { class: 'geo-msg', role: 'alert' });
       const rates = el('div', { class: 'form-hint conv-rates' });
       const rowA = el('div', { class: 'conv-row' }, vA, uA), rowB = el('div', { class: 'conv-row' }, vB, uB);
