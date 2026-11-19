@@ -1005,13 +1005,23 @@ public class MainActivity extends Activity {
         /** "Put the widget on the home screen": "asked", "unsupported" or "failed" (Quick.pinWidget). */
         @JavascriptInterface
         public String pinWidget() {
-            return Quick.pinWidget(MainActivity.this);
+            try {
+                return Quick.pinWidget(MainActivity.this);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "pinWidget", e);
+                return "failed";
+            }
         }
 
         /** How many QCalc widgets are on the home screen. */
         @JavascriptInterface
         public int widgetCount() {
-            return Widget.count(MainActivity.this);
+            try {
+                return Widget.count(MainActivity.this);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "widgetCount", e);
+                return 0;
+            }
         }
 
         /**
@@ -1021,14 +1031,19 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public String addTile() {
-            if (Build.VERSION.SDK_INT < 33) return "unsupported";
-            onUi("addTile", new Runnable() {
-                @Override
-                public void run() {
-                    requestTile();
-                }
-            });
-            return "asked";
+            try {
+                if (Build.VERSION.SDK_INT < 33) return "unsupported";
+                onUi("addTile", new Runnable() {
+                    @Override
+                    public void run() {
+                        requestTile();
+                    }
+                });
+                return "asked";
+            } catch (RuntimeException e) {
+                Log.e(TAG, "addTile", e);
+                return "failed";
+            }
         }
 
         /**
