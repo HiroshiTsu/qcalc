@@ -581,14 +581,15 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Opens web links in the browser; other kinds of links are ignored. */
+    /** Opens web links in the browser and mailto: links in the mail app; other kinds of links are ignored. */
     private void openExternal(String url) {
-        if (url == null) return;
+        // a web page in the browser, or (1.12.0, "Send a bug report or an idea") a mail draft in the
+        // mail app; nothing else (Links)
+        String kind = Links.kind(url);
+        if (kind == null) return;
         Uri u = Uri.parse(url);
-        String scheme = u.getScheme();
-        if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) return;
         try {
-            startActivity(new Intent(Intent.ACTION_VIEW, u));
+            startActivity(new Intent(Links.MAIL.equals(kind) ? Intent.ACTION_SENDTO : Intent.ACTION_VIEW, u));
         } catch (Exception ignored) {
         }
     }

@@ -1519,7 +1519,16 @@
     "The manual could not be opened.": "Die Anleitung ließ sich nicht öffnen.",
     "Search the manual": "In der Anleitung suchen",
     "Nothing found. Try another word.": "Nichts gefunden. Versuchen Sie ein anderes Wort.",
-    "Detailed version with photos (web)": "Ausführliche Fassung mit Fotos (Web)"
+    "Detailed version with photos (web)": "Ausführliche Fassung mit Fotos (Web)",
+    "Tell someone about QCalc": "QCalc weiterempfehlen",
+    "Send a bug report or an idea": "Fehler oder Wunsch melden",
+    "The mail goes to {0} with only the version, the phone and the language. You decide whether to send it.": "Die Mail geht an {0} und enthält nur die Version, das Gerät und die Sprache. Ob du sie sendest, entscheidest du.",
+    "QCalc, a scientific calculator for Android: ": "QCalc, ein wissenschaftlicher Taschenrechner für Android: ",
+    "QCalc {0}: bug report or idea": "QCalc {0}: Fehler oder Wunsch",
+    "Version: ": "Version: ",
+    "Phone: ": "Gerät: ",
+    "Language: ": "Sprache: ",
+    "(Please write what happened, or your idea, here.)": "(Bitte schreib hier, was passiert ist, oder deinen Wunsch.)"
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",

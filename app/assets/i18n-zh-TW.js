@@ -1523,7 +1523,16 @@
     "The manual could not be opened.": "無法打開說明書。",
     "Search the manual": "在說明書中搜尋",
     "Nothing found. Try another word.": "找不到。請換個詞試試。",
-    "Detailed version with photos (web)": "附照片的詳細版（網頁）"
+    "Detailed version with photos (web)": "附照片的詳細版（網頁）",
+    "Tell someone about QCalc": "把 QCalc 告訴別人",
+    "Send a bug report or an idea": "回報問題或建議",
+    "The mail goes to {0} with only the version, the phone and the language. You decide whether to send it.": "郵件寄到 {0}，只包含版本、裝置和語言。要不要寄出由您決定。",
+    "QCalc, a scientific calculator for Android: ": "QCalc，Android 的工程計算機：",
+    "QCalc {0}: bug report or idea": "QCalc {0}：問題或建議",
+    "Version: ": "版本：",
+    "Phone: ": "裝置：",
+    "Language: ": "語言：",
+    "(Please write what happened, or your idea, here.)": "（請在這裡寫下發生的問題或您的建議。）"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",

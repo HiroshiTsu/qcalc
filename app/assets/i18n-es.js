@@ -1531,7 +1531,16 @@
     "The manual could not be opened.": "No se pudo abrir el manual.",
     "Search the manual": "Buscar en el manual",
     "Nothing found. Try another word.": "No se encontró nada. Prueba con otra palabra.",
-    "Detailed version with photos (web)": "Versión detallada con fotos (web)"
+    "Detailed version with photos (web)": "Versión detallada con fotos (web)",
+    "Tell someone about QCalc": "Recomendar QCalc a alguien",
+    "Send a bug report or an idea": "Enviar un error o una idea",
+    "The mail goes to {0} with only the version, the phone and the language. You decide whether to send it.": "El correo va a {0} y solo lleva la versión, el móvil y el idioma. Tú decides si lo envías.",
+    "QCalc, a scientific calculator for Android: ": "QCalc, una calculadora científica para Android: ",
+    "QCalc {0}: bug report or idea": "QCalc {0}: error o idea",
+    "Version: ": "Versión: ",
+    "Phone: ": "Móvil: ",
+    "Language: ": "Idioma: ",
+    "(Please write what happened, or your idea, here.)": "(Escribe aquí lo que pasó o tu idea.)"
   },
   messages: {
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (Ajustes → "Actualizar los tipos de cambio ahora")',
