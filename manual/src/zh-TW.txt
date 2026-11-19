@@ -450,6 +450,8 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 
 ## about | 關於這個 App 與隱私
 :what: [[About this app]] 顯示版本、隱私、授權和原始碼的連結。
+- 點 [[Tell someone about QCalc]] 可以分享 QCalc 在 Google Play 的網址。
+- 點 [[Send a bug report or an idea]] 會在郵件 App 開啟草稿，只包含版本、裝置和語言，要不要寄出由您決定。
 - QCalc 不收集個人資料，也不傳送任何東西。
 - 只有下載匯率時才使用網路。
 - 計算引擎採用 GNU GPL v2 或更新版本的授權（[[Open source licenses]]）。

@@ -1522,7 +1522,16 @@
     "The manual could not be opened.": "설명서를 열지 못했습니다.",
     "Search the manual": "설명서에서 찾기",
     "Nothing found. Try another word.": "찾지 못했습니다. 다른 말로 찾아 보세요.",
-    "Detailed version with photos (web)": "사진이 있는 자세한 판(웹)"
+    "Detailed version with photos (web)": "사진이 있는 자세한 판(웹)",
+    "Tell someone about QCalc": "QCalc 알려 주기",
+    "Send a bug report or an idea": "버그·요청 보내기",
+    "The mail goes to {0} with only the version, the phone and the language. You decide whether to send it.": "메일은 {0}(으)로 가며 버전, 기기, 언어만 들어갑니다. 보낼지는 직접 정합니다.",
+    "QCalc, a scientific calculator for Android: ": "QCalc, Android 공학용 계산기: ",
+    "QCalc {0}: bug report or idea": "QCalc {0}: 버그·요청",
+    "Version: ": "버전: ",
+    "Phone: ": "기기: ",
+    "Language: ": "언어: ",
+    "(Please write what happened, or your idea, here.)": "(여기에 일어난 일이나 요청을 적어 주세요.)"
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",

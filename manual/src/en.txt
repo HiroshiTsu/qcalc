@@ -451,6 +451,8 @@ QCalc is a calculator where you type an expression as you would write it on pape
 
 ## about | About this app and privacy
 :what: [[About this app]] shows the version, the privacy notes, the licenses and links to the source code.
+- [[Tell someone about QCalc]] shares the address of QCalc on Google Play.
+- [[Send a bug report or an idea]] opens a draft in your mail app with only the version, the phone and the language; you decide whether to send it.
 - QCalc collects no personal data and sends nothing anywhere.
 - It uses the internet only to download exchange rates.
 - The calculation engine is under the GNU GPL v2 or later ([[Open source licenses]]).

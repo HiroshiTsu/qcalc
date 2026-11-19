@@ -14,7 +14,17 @@
 - （済）U 全体の UI 改良 → リリース候補 1。D1〜D5 → リリース候補 2。BG08・BG09（本人の報告）、段階 U の 2 回目。
 - （済）F 全体の見直し（fix/sweep-1.12）。G（release/1.12.0）：設計書 14 文書（テスト仕様書・概要の §9 を含む）の更新、PDF の書き出し、design/README.md 第 18 版。
 - （済）最後の版でのテスト一式（17:17 の指示）：1,513 項目すべて合格（落ちたものは、どれも古いテストの期待値で、理由を書いて直して流し直した。下の「テストの結果」）。テスト版の APK は 7,512,350 バイト（SHA-256 7e2f059b6c375a96cc736fee3b3ff3042e3fc75212cd6dbc5d40ef9f80a07b11）。
-- 段階 M「ストアと宣伝の素材」（20:45 の指示、ブランチ docs/store-1.12、release/1.12.0 の上）：M0〜M6 の許可の要らない作業は済み（下の「段階 M」）。残りは、本人の許可が要るナレーションの音声（「本人に許可をもらうこと」）と、本人が決める要判断 64〜67。本人がすることの手順は store/launch-plan-ja.md。
+- 段階 M「ストアと宣伝の素材」（20:45 の指示、ブランチ docs/store-1.12、release/1.12.0 の上）：M0〜M6 の許可の要らない作業は済み（下の「段階 M」）。仮のナレーションの音声は 01:04 の許可で作り、本人に送った（「本人に許可をもらうこと」の 1）。要判断 64〜67 は 01:04 の本人の答え（おすすめどおり）：65・66 は 1.12.0 に入れ、64 (b) と 67 は 1.12.1。テスター向けの案内文は store/launch-plan-ja.md の 9。本人がすることの手順は store/launch-plan-ja.md。
+- （01:04 の本人の答え）要判断 65「人に教える」と 66「不具合・要望を送る」を 1.12.0 に入れた（e986dc9）。「このアプリについて」に 2 つのリンク。メールの宛先は hiroshitsu.apps@gmail.com で、本文は版・Android・端末・言語だけ。外のリンクを開くかどうかは Links.java が決める（http・https はブラウザー、mailto はメールのアプリ、ほかは開かない）。7 言語の文、説明書の「このアプリについて」の節、アプリの中・Web・PDF の説明書も直した。
+- （01:24 の指示。今回に限り、作業環境に残っているアップロード鍵での署名を本人が許可）クローズドテストに出す 1.12.0（versionCode 25、e986dc9）を本人にファイルで送った。
+
+  | ファイル | 大きさ | SHA-256 |
+  |---|---|---|
+  | QCalc-1.12.0-billing.aab（購入機能あり、署名済み。Play に出すもの） | 8,601,014 バイト | 5ef9a24adaae126c5289578cd499f99fe460c649e9ff879a83ac64236644872d |
+  | QCalc-1.12.0-debug.apk（スマホで確かめる用） | 7,516,446 バイト | 637b619fbb175e04c551a294d1979c6278b05bd07f4ad482625f6d5ad679a8ef |
+  | QCalc-1.12.0-billing-unsigned.aab（署名の前。送っていない） | 8,583,849 バイト | 0ff23991607fe0a3d3fb62ac0abc8f2b525b298cae398d30de73089fb6965b72 |
+
+  作り方は 1.11.0 の購入機能ありの版と同じ：コミットの写し（git archive。signing/ と keystore.properties は入らない）で `gradle --offline bundleRelease -Pqcalc.billing=true`（署名なし）、それを build-aab.sh と同じ設定（`jarsigner -digestalg SHA-256 -sigalg SHA256withRSA`、qcalc-upload.jks、別名 upload、パスワードは環境変数で渡し、どこにも出していない）で署名した。点検 K01〜K33 は 21/21 合格（$S/kcheck/run112.sh）：jarsigner -verify（jar verified。証明書 CN=QCalc upload key, O=HiroshiTsu、SHA-256 73:16:7B:03:1C:34:CC:0D:09:D2:A9:E1:D7:D1:E8:41:34:22:03:20:48:2A:B8:4B:80:0D:DB:0F:95:D2:E3:38 で 1.11.0 と同じ）、bundletool validate、dump config で uncompressNativeLibraries が有効でない（16 KB ページの設定だけ）、dump manifest（io.github.hiroshitsu.qcalc 25 / 1.12.0、target 36、extractNativeLibs、BILLING、debuggable でない）、スマホ向けの APK のエンジンが同じで圧縮して入っている、鍵・パスワードのファイルが入っていない。鍵はコミットしていない（signing/ は .gitignore）。
 - （済）H 取り扱い説明書（release/1.12.0 の上）。7 言語の原稿（manual/src）、アプリの中の版（app/assets/manual、7 言語で 594 KB）、Web の版と写真（docs/manual）、各道具・パネルの「？」などの入口、MN01〜MN10（日本語・英語 10/10）。説明書の写真で見つけた BG17（小数点が「,」で「輪郭から回転体」の重さが 100 倍）を直した。PDF（docs/manual/<言語>/QCalc-manual-<言語>.pdf）は点検のあと最後に 1 回だけコミットする（約 15 MB を履歴に 2 回残さないため）。次は入口のリンク切れのテスト、起動の時間、APK・AAB の大きさ、課題を説明書だけで通す点検、設計書への H の追記。
 
 ## 読み替え表
@@ -510,13 +520,13 @@
 61. （H、20:08 の指示）QCalc Pro の価格は ¥600（本人の決定、Play Console で本人が設定）。説明書（アプリの中・Web・PDF、7 言語）には価格を書かず、「価格は Google Play の購入画面に表示されます」の 1 文だけにした（購入と復元の節）。Pro の画面の写真は、Google Play から価格が届く前の表示（ボタンは「QCalc Pro を購入」だけ）で撮り直した（テストのサーバーに ?pro=play-noprice を足した）。届く前のボタンは 7 言語で価格も括弧も出ないことを PN01〜PN04 で確かめた。テストのサーバーの仮の価格（¥300）はテストの中だけのもので、テスト仕様書の結果の欄（Q17 など）はその値のまま。
 62. （20:45 の指示）「テスター向けの準備」が何を指すかは、指示の中に書かれていなかった。クローズドテストのテスターに渡す準備と読み、(1) 人に試してもらう手順（下の節。説明書を見ながらの課題を含む）、(2) 最後の作業ツリーのテスト版の APK（本人にファイルで送る）、(3) 説明書の Web の版（main に入れると GitHub Pages に出る）までを用意して区切りとした。テスターの感想を集める仕組み（「不具合・要望を送る」）は、段階 M の M4 の案として出す。ほかに必要なもの（テスターへの案内文など）があれば、段階 M の M5 の公開の計画に足す。
 63. （M1）Play Console の掲載情報の「ファイルをインポート」の形式は、ヘルプ（掲載情報の翻訳、answer 9844778）に書かれていなかった（2026 年 5 月の記事に「CSV か Google スプレッドシートの決まった形」とあるだけで、列の名前は確かめられなかった）。そのため、広く使われている fastlane の形（store/play-import/<地域>/title.txt・short_description.txt・full_description.txt）を作った。Play Console の画面で取り込みの形式が分かったら、store/tools/listing_check.py にその形を書き出す処理を足す（数分でできる）。それまでは、各ファイルの中身を貼り付ける。
-64. （M4、本人が決める）評価のお願い。(a) Google Play のアプリ内レビュー（Play Core の review ライブラリが要る。新しいライブラリを使わない決まりに反するので、使うなら本人の判断）と、(b) ライブラリを使わないカード、の 2 つの案。**おすすめは (b)、1.12.1 で入れる。**
+64. （M4、本人が決める）評価のお願い。(a) Google Play のアプリ内レビュー（Play Core の review ライブラリが要る。新しいライブラリを使わない決まりに反するので、使うなら本人の判断）と、(b) ライブラリを使わないカード、の 2 つの案。**おすすめは (b)、1.12.1 で入れる。** → （01:04 の本人の答え）おすすめどおり (b) を 1.12.1 で。
     - (b) の形：十分に使ったあと（使った日が 7 日以上、かつ「=」や道具の結果が 30 回以上。どちらも端末の中だけで数え、どこにも送らない）、アプリを開いたときに、履歴のいちばん下（新しい機能のカードと同じ場所。計算の途中には出さない）に控えめなカードを出す。文は「QCalc をお使いいただきありがとうございます。よろしければ Google Play で評価を書いてください。」、ボタンは「Google Play を開く」「あとで」「今後は表示しない」。「Google Play を開く」は https://play.google.com/store/apps/details?id=io.github.hiroshitsu.qcalc を開く（今ある openUrl。Play のアプリが開く）。版ごとに 1 回まで。「気に入りましたか？」のような前の質問はせず、見返りも付けない。
     - 1.12.1 にする理由：1.12.0 はテスト一式を終えて固まっている。数え方・出す条件（日付をまたぐ、時計を戻す、版が変わる）・表示しないの保存のテストが要る（RV01〜 の予定）。1.12.0 で入れたい場合は、テスト一式の該当部分をやり直す（約 30 分）。
     - (a) を選ぶ場合：Play Core（com.google.android.play:review）を Gradle の課金のある版にだけ入れ、build-apk.sh の版は (b) のまま、という分け方ができる。ライブラリの大きさは約 100 KB。
-65. （M4、本人が決める）「QCalc を人に教える」：「このアプリについて」の中に 1 行。押すと Android の共有シートに「QCalc（Android の関数電卓）https://play.google.com/store/apps/details?id=io.github.hiroshitsu.qcalc」を渡す（今ある shareText。新しい権限もライブラリも要らない）。7 言語の文を足す。**1.12.0 に入れても小さい**（ページだけの変更、テストは 2〜3 件）。おすすめは 1.12.0（クローズドテストの人が友だちに教えやすい）、ただし本人がテストを増やしたくなければ 1.12.1。
-66. （M4、本人が決める）「不具合・要望を送る」：「このアプリについて」の中に 1 行。押すと、メールのアプリで宛先 hiroshitsu.apps@gmail.com、件名「QCalc 1.12.0 フィードバック」、本文の先頭に「版：1.12.0（25）／端末：Android 14、機種名／言語：日本語」だけを入れた下書きを開く（履歴・式・設定などの個人データは入れない。送るかどうかは本人が決める）。Java の openExternal は今 http・https しか開かないので、mailto: を ACTION_SENDTO で開く 5 行ほどを足す。星 1 つのレビューではなく直接知らせてもらうためと、クローズドテストの感想を集めるため（本番の申請で、テストの感想の集め方を聞かれる）。**おすすめは 1.12.0 に入れる**（クローズドテストの版で使えるようにする）。テストは Java 1 件（mailto だけを開くこと）と画面 2 件。
-67. （M2 で気づいたこと、アプリは変えていない）計算メモの例「家賃と光熱費」は、どの言語でも円（85000 JPY など）。英語・ドイツ語などの人には円の例は不自然なので、1.12.1 の候補：例の金額と通貨を言語（または端末の地域）に合わせる（英語 1450 USD、ドイツ語 980 EUR、韓国語 650000 KRW など。掲載情報の文の例と同じ）。ストアの画像と動画では、例を押したあと最初の 3 行の金額をその地域の通貨で打ち直して撮った（名前の部分はアプリの言葉のまま。打ち直しは人が普通にする操作）。
+65. （M4、本人が決める）「QCalc を人に教える」：「このアプリについて」の中に 1 行。押すと Android の共有シートに「QCalc（Android の関数電卓）https://play.google.com/store/apps/details?id=io.github.hiroshitsu.qcalc」を渡す（今ある shareText。新しい権限もライブラリも要らない）。7 言語の文を足す。**1.12.0 に入れても小さい**（ページだけの変更、テストは 2〜3 件）。おすすめは 1.12.0（クローズドテストの人が友だちに教えやすい）、ただし本人がテストを増やしたくなければ 1.12.1。 → （01:04 の本人の答え）1.12.0 に入れた（e986dc9。FB02・FB03）。
+66. （M4、本人が決める）「不具合・要望を送る」：「このアプリについて」の中に 1 行。押すと、メールのアプリで宛先 hiroshitsu.apps@gmail.com、件名「QCalc 1.12.0 フィードバック」、本文の先頭に「版：1.12.0（25）／端末：Android 14、機種名／言語：日本語」だけを入れた下書きを開く（履歴・式・設定などの個人データは入れない。送るかどうかは本人が決める）。Java の openExternal は今 http・https しか開かないので、mailto: を ACTION_SENDTO で開く 5 行ほどを足す。星 1 つのレビューではなく直接知らせてもらうためと、クローズドテストの感想を集めるため（本番の申請で、テストの感想の集め方を聞かれる）。**おすすめは 1.12.0 に入れる**（クローズドテストの版で使えるようにする）。テストは Java 1 件（mailto だけを開くこと）と画面 2 件。 → （01:04 の本人の答え）1.12.0 に入れた（e986dc9。Links.java と FB01、画面は FB02・FB04・FB05）。件名は「QCalc 1.12.0：不具合・要望」、本文は版・Android・端末・言語と、書く場所の 1 行。
+67. （M2 で気づいたこと、アプリは変えていない）計算メモの例「家賃と光熱費」は、どの言語でも円（85000 JPY など）。英語・ドイツ語などの人には円の例は不自然なので、1.12.1 の候補：例の金額と通貨を言語（または端末の地域）に合わせる（英語 1450 USD、ドイツ語 980 EUR、韓国語 650000 KRW など。掲載情報の文の例と同じ）。ストアの画像と動画では、例を押したあと最初の 3 行の金額をその地域の通貨で打ち直して撮った（名前の部分はアプリの言葉のまま。打ち直しは人が普通にする操作）。 → （01:04 の本人の答え）1.12.1 で。
 20. B0 の軸のタップは、軸の線から 14 px、k の線のドラッグは 18 px の範囲にした。AQUOS sense8 で、狙いやすいか・誤ってグラフが動かないかを確かめていただきたい（端末で確かめること）。
 
 ## 分かりやすさの点検表
@@ -787,6 +797,7 @@ QCalc を使ったことのない人に、デバッグ版（QCalc-1.12.0-debug.a
 本人が画面を見られるときに、まとめてお願いします。それまでは許可の要らない作業を進めます。
 
 1. （M3）動画の仮のナレーションを音声合成で作ること。作業環境には音声合成の道具がない（espeak-ng・Piper などは入っていない）。入れるには、パッケージの取得（apt か pip）と、声のデータの取得（Piper は Hugging Face から。作業環境のネットの許可の範囲外の場合がある）の許可が要る。許可がなければ、台本と時刻（store/video/<言語>/script.md と *.srt）を本人に渡し、本人の録音か音声サービスで付ける。動画は音なしで、字幕を焼き込んである。音を付けるときは絵を作り直さずにできる（store/tools/video_render.py の説明）。
+   - （01:04 に許可、済）Ubuntu のパッケージ（Open JTalk と声のデータ、espeak-ng、MBROLA の声 us2・de6・es2・fr4）を apt で入れ、store/tools/video_voice.py で 7 言語 × 5 本の動画に仮のナレーションを入れた（日本語は Open JTalk、英語・ドイツ語・スペイン語・フランス語は espeak-ng と MBROLA、韓国語・繁體中文は espeak-ng）。字幕の時間に収まるよう、言語ごとに話す速さを決め、長い字幕だけ少し速くした（はみ出しは繁體中文の紹介動画の 1 か所 0.07 秒だけ）。mp4 はコミットせず、本人に送った。本番は人の声に替える前提の仮の音声。
 
 ## 本人がすること
 
@@ -795,7 +806,7 @@ QCalc を使ったことのない人に、デバッグ版（QCalc-1.12.0-debug.a
 - Play Console のアプリ内アイテム（pro。ID は qcalc_pro）の価格を ¥600 にする（ほかの国は自動の換算でよいか確認）。アプリと説明書には価格を書いていない（ボタンは Google Play から届いた価格を出し、届く前は「QCalc Pro を購入」だけ。説明書は「価格は Google Play の購入画面に表示されます」）。
 - 機械翻訳の言語（ドイツ語・スペイン語・フランス語・韓国語・繁體中文）の説明書を、できれば母語の人に読んでもらう（要判断 52）。
 - （段階 M）ストアと宣伝：store/launch-plan-ja.md の 1 の順番で行う。docs/store-1.12 を main に入れる → Play の検索を一度見る → qcalc_pro の価格 → 掲載情報の文（store/play-import/<地域>/、12 の地域）→ 画像（store/screenshots-1.12/、フィーチャー グラフィック）→ YouTube に動画（送った mp4。設定は launch-plan-ja.md の 2）→ Play の宣伝動画の URL → クローズドテスト → 本番 → レビューに 24 時間以内に返信（文例は launch-plan-ja.md の 5）。
-- （段階 M）要判断 64〜66（評価のお願い・人に教える・不具合と要望を送る）を決める。決めたものを、1.12.0 か 1.12.1 で作る。
+- （済、01:04）要判断 64〜67 はおすすめどおり。65・66 は 1.12.0 に入れた。64 (b) と 67 は 1.12.1 で作る。
 - （段階 M）掲載情報・画像の見出し・動画の字幕を、各国の人に見てもらう（launch-plan-ja.md の 7）。
 
 ## main へのマージの手順（G で仕上げる）
@@ -804,8 +815,28 @@ QCalc を使ったことのない人に、デバッグ版（QCalc-1.12.0-debug.a
 2. 「人に試してもらう手順」で 1〜2 人に試してもらい、結果を「分かりやすさの点検表」に書く（直すかどうかを決める）。
 3. release/1.12.0 で、作業用のファイルを外すコミットを作る（本人の手で）：`git rm WORK-IN-PROGRESS.md && git rm -r ui-review`。design/terms-draft/ は残す（要判断 13：確認前の案として公開してよい）。
 4. main へマージ（GitHub の Pull Request、または `git checkout main && git merge --no-ff release/1.12.0`）。force push はしない。
-5. 署名した App Bundle を作る（build-aab.sh、または Gradle の bundleRelease。署名の鍵は本人の手元だけで扱う）。Play Console に 1.12.0（versionCode 25）を出し、リリースノート（store/listing-en.md の「Release notes」の 1.12.0 の 7 言語）を貼る。
+5. 署名した App Bundle を作る（build-aab.sh、または Gradle の bundleRelease。署名の鍵は本人の手元だけで扱う）。1.12.0 は 01:24 の指示で作業環境で署名した QCalc-1.12.0-billing.aab がある（上の「朝に読むまとめ」）。作業環境に鍵を置かないときは、下の「Windows で署名するとき」。Play Console に 1.12.0（versionCode 25）を出し、リリースノート（store/listing-en.md の「Release notes」の 1.12.0 の 7 言語）を貼る。
 6. GitHub の Releases に v1.12.0 のタグを付ける。
+
+## Windows で署名するとき（作業環境に鍵を置かない場合。01:19 の指示）
+
+署名の前の App Bundle（QCalc-1.12.0-billing-unsigned.aab）を、本人のパソコンで build-aab.sh と同じ設定で署名する手順。パスワードは書かない。
+
+1. JDK を入れる（jarsigner と keytool は JDK に入っている）。
+   - コマンドプロンプトで `winget install EclipseAdoptium.Temurin.25.JDK`（Adoptium の案内にある今の LTS）。winget が無いときは https://adoptium.net/ から Windows・x64・JDK の .msi を入れる（「PATH に足す」は最初から選ばれている）。
+   - 新しく開いたコマンドプロンプトで `java -version` と `jarsigner -help` が動くことを確かめる。「認識されていません」と出るときは、`"C:\Program Files\Eclipse Adoptium\jdk-25…\bin\jarsigner.exe"` のように bin のフォルダーごと書く。Android Studio があれば、`"C:\Program Files\Android\Android Studio\jbr\bin\jarsigner.exe"` も使える。
+2. 1 つのフォルダーに qcalc-upload.jks、qcalc-upload.pass（1 行目がパスワード）、QCalc-1.12.0-billing-unsigned.aab を置き、そのフォルダーでコマンドプロンプトを開く。
+3. 受け取ったファイルが壊れていないか：`certutil -hashfile QCalc-1.12.0-billing-unsigned.aab SHA256`（上の表の値と同じなら良い）。
+4. 署名する：
+
+   ```
+   jarsigner -keystore qcalc-upload.jks -storepass:file qcalc-upload.pass -digestalg SHA-256 -sigalg SHA256withRSA -signedjar QCalc-1.12.0-billing.aab QCalc-1.12.0-billing-unsigned.aab upload
+   ```
+
+5. 確かめる：
+   - `jarsigner -verify QCalc-1.12.0-billing.aab` → 「jar verified.」（詳しくは `jarsigner -verify -verbose -certs QCalc-1.12.0-billing.aab`）。タイムスタンプが無いという警告は出てよい（Play に出すには要らない）。
+   - `keytool -printcert -jarfile QCalc-1.12.0-billing.aab` → 所有者 CN=QCalc upload key, O=HiroshiTsu、SHA256 が 73:16:7B:03:1C:34:CC:0D:09:D2:A9:E1:D7:D1:E8:41:34:22:03:20:48:2A:B8:4B:80:0D:DB:0F:95:D2:E3:38（1.11.0 と同じアップロード鍵）。
+6. 署名が済んだら、qcalc-upload.pass は元の安全な場所に戻す。
 
 ## 作業環境（再開するとき）
 

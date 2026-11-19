@@ -451,6 +451,8 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 
 ## about | Acerca de esta app y privacidad
 :what: [[About this app]] muestra la versión, la privacidad, las licencias y enlaces al código fuente.
+- [[Tell someone about QCalc]] comparte la dirección de QCalc en Google Play.
+- [[Send a bug report or an idea]] abre un borrador en la app de correo solo con la versión, el móvil y el idioma; tú decides si lo envías.
 - QCalc no recoge datos personales ni envía nada.
 - Solo usa internet para descargar los tipos de cambio.
 - El motor de cálculo tiene la licencia GNU GPL v2 o posterior ([[Open source licenses]]).
