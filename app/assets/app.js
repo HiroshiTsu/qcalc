@@ -5761,7 +5761,8 @@
     else { R3 = `max(abs(${u}), abs(${v}))`; r3 = hole ? `max(0, sgn((${u}) × (${v})) × min(abs(${u}), abs(${v})))` : ''; }
     const exprs = [`√((${R3})^2 − y^2)`, `−√((${R3})^2 − y^2)`].concat(hole && r3 ? [`√((${r3})^2 − y^2)`, `−√((${r3})^2 − y^2)`] : []);
     const lo = parts[0].lo, hi = parts[parts.length - 1].hi, w = r6((Rmax || 1) * 1.08);
-    const three = { exprs, range: [parts[0].a, parts[parts.length - 1].b, '−' + w, w], axis: 'h' };
+    // (its edges from its shape: specRims, 1.12.0 BG09; all its surfaces one solid)
+    const three = { exprs, range: [parts[0].a, parts[parts.length - 1].b, '−' + w, w], axis: 'h', rims: { kind: 'h', groups: [exprs.map((e, n) => n)] } };
     const one = cases.size === 1 && pieces.length === 1;
     const method = hole ? tr('Washers (thin rings stacked along the axis): V = π∫(R² − r²) dx (R, r: the distances of the outer and the inner curve from the axis)', 'ワッシャー法（穴のあいた薄い円板を軸に沿って重ねる）：V = π∫(R² − r²) dx（R・r：外側・内側の曲線と軸の距離）')
       : tr('Disks (thin disks stacked along the axis): V = π∫R² dx (R: the distance of the curve from the axis)', '円板の方法（薄い円板を軸に沿って重ねる）：V = π∫R² dx（R：曲線と軸の距離）');
@@ -5860,17 +5861,50 @@
       ends.push(subXY(`2π × (${rho}) × (${lenExpr(all)}${inter === '0' ? '' : ` − (${inter})`})`, '(' + text + ')', 'y'));
     }
     // the 3D view: the axis is the z axis, ρ = √(x² + y²); the top and the bottom of each side
-    // between its distances from the axis (√(min(0, …)) is not real outside them)
-    const r3 = '√(x^2 + y^2)', exprs = [];
-    for (const s of sides) {
+    // between its distances from the axis (√(min(0, …)) is not real outside them).
+    // 1.12.0 (BG09): a region on both sides of the axis is drawn as the union of the two solids, as its
+    // volume is: one top (the higher of the two tops where both sides are there) and one bottom (the
+    // lower bottom), instead of the two solids drawn over each other, whose equal surfaces (the same
+    // bottom on both sides) showed through each other in spots. (When the two sides leave a gap between
+    // them at some distance, or their distances from the axis do not meet, each side is drawn alone, as
+    // before: no two surfaces are then at the same place.) The edges, the circles at the ends of the
+    // distances, come with their heights (specRims), and the surfaces are one solid, in one color.
+    const r3 = '√(x^2 + y^2)', exprs = [], N15 = (v) => engineNum(+v.toPrecision(15));
+    const sideF = sides.map((s) => {
       const at = s.name === 'R' ? (k === '0' ? r3 : `${revParen(k)} + ${r3}`) : (k === '0' ? '−' + r3 : `${revParen(k)} − ${r3}`);
       const F = subXY(f, at, 'y'), G = subXY(g, at, 'y');
-      const p0 = s.parts[0].lo - kv, p1 = s.parts[s.parts.length - 1].hi - kv;
-      const cut = `√(min(0, (${r3} − ${engineNum(+p0.toPrecision(15))}) × (${engineNum(+p1.toPrecision(15))} − ${r3})))`;
-      exprs.push(`max(${F}, ${G}) + ${cut}`, `min(${F}, ${G}) + ${cut}`);
+      return { s, T: `max(${F}, ${G})`, B: `min(${F}, ${G})`, a: s.parts[0].lo - kv, b: s.parts[s.parts.length - 1].hi - kv };
+    });
+    const cutOf = (a, b) => `√(min(0, (${r3} − ${N15(a)}) × (${N15(b)} − ${r3})))`;
+    const oneGap = pieces.every((p) => p.surf.length === 2);  // (one interval at every distance)
+    const ivs = [];
+    if (sideF.length === 2 && oneGap && Math.max(sideF[0].a, sideF[1].a) <= Math.min(sideF[0].b, sideF[1].b)) {
+      const [A, B2] = sideF, lo = Math.min(A.a, B2.a), hi = Math.max(A.b, B2.b), cA = Math.max(A.a, B2.a), cB = Math.min(A.b, B2.b);
+      const first = A.a <= B2.a ? A : B2, last = A.b >= B2.b ? A : B2;
+      const merge = (key, fn) => `if(${r3} < ${N15(cA)}, ${first[key]}, if(${r3} < ${N15(cB)}, ${fn}(${A[key]}, ${B2[key]}), ${last[key]}))`;
+      exprs.push(`${merge('T', 'max')} + ${cutOf(lo, hi)}`, `${merge('B', 'min')} + ${cutOf(lo, hi)}`);
+      ivs.push([lo, hi], [lo, hi]);
+    } else {
+      for (const q of sideF) { exprs.push(`${q.T} + ${cutOf(q.a, q.b)}`, `${q.B} + ${cutOf(q.a, q.b)}`); ivs.push([q.a, q.b], [q.a, q.b]); }
+    }
+    // the heights at the edges: the top and the bottom of the sides there
+    const rimSurf = [];
+    for (let n = 0; n < exprs.length; n++) rimSurf.push({ iv: [ivs[n]], z: {} });
+    for (const rho of [...new Set(ivs.flat())]) {
+      if (!(rho > 1e-12)) continue;
+      const vals = await revAt(curves, engineNum(kv + rho));
+      if (!vals) continue;
+      for (let n = 0; n < exprs.length; n++) {
+        const [a, b] = ivs[n];
+        if (rho !== a && rho !== b) continue;
+        const top = n % 2 === 0, here = sideF.filter((q, m) => (ivs.length === 2 || m === (n >> 1)) && rho >= q.a - 1e-9 * (Math.abs(q.a) + 1) && rho <= q.b + 1e-9 * (Math.abs(q.b) + 1));
+        const zs = [];
+        for (const q of here) { const m = sides.indexOf(q.s), fv = vals[2 * m], gv = vals[2 * m + 1]; if (isFinite(fv) && isFinite(gv)) zs.push(top ? Math.max(fv, gv) : Math.min(fv, gv)); }
+        if (zs.length) rimSurf[n].z[String(rho)] = top ? Math.max(...zs) : Math.min(...zs);
+      }
     }
     const w = r6((X.hi - kv) * 1.06);
-    const three = { exprs, range: ['−' + w, w, '−' + w, w], axis: 'v' };
+    const three = { exprs, range: ['−' + w, w, '−' + w, w], axis: 'v', rims: { kind: 'v', groups: [exprs.map((e, n) => n)], surf: rimSurf } };
     const method = tr('Shells (thin cylinders around the axis): V = 2π∫ρ h dρ (ρ: the distance from the axis, h: the height of the region there)', '殻の方法（薄い円筒を軸のまわりに重ねる）：V = 2π∫ρ h dρ（ρ：軸からの距離、h：その距離での領域の高さ）');
     const one = pieces.length === 1;
     const detail = (one ? 'ρ = ' + revPretty(k === '0' ? rho : (await exactText(rho)) || rho) + ', h = ' + revPretty(pieces[0].h) : trf('h changes at {0}: calculated in {1} pieces', 'h は {0} で替わるので、{1} 個に分けて計算', pieces.slice(1).map((p) => p.a).slice(0, 4).join(', '), pieces.length))
@@ -6013,7 +6047,7 @@
     const more = el('details', { class: 'rev-more' }, el('summary', { text: tr('More: surface areas ▾', '詳しく：表面積 ▾') }), moreOuts);
     const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, () => {
       // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion")
-      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis });
+      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis, rims: R.three.rims });
     });
     // one tap: a graph, its range and the axis
     const EX = [
@@ -7832,7 +7866,7 @@
         // surfaces are drawn again with another grid or range; other surfaces drop them (1.8.3)
         if (plotExprs(ta.value, 4).join('\n') !== Q3.exprs.join('\n')) { Q3.equalOnce = false; if (Q3.samples) Q3.samples.clearChoice(); }
       }
-      if (!Q3.keep) { Q3.revInfo = null; Q3.grow = null; if (Q3.angleRow) Q3.angleRow.hidden = true; } // (another graph: not the solid of revolution)
+      if (!Q3.keep) { Q3.revInfo = null; Q3.grow = null; Q3.rimSpec = null; if (Q3.angleRow) Q3.angleRow.hidden = true; } // (another graph: not the solid of revolution)
       Q3.keep = false;
       store.set('qalc.plot3d.exprs', ta.value); store.set('qalc.plot3d.res', res.value);
       store.set('qalc.plot3d.xmin', xmin.value); store.set('qalc.plot3d.xmax', xmax.value);
@@ -7884,6 +7918,8 @@
     Q3.points = opts.points || null;
     Q3.equalOnce = !!opts.equal;
     Q3.growNext = opts.grow || null;
+    // (the edges of a solid of revolution, from its shape: specRims, 1.12.0 BG09)
+    Q3.rimSpec = opts.rims ? Object.assign({ exprs: list.join('\n') }, opts.rims) : null;
     Q3.revInfo = opts.grow || null; // (the angle row of B2)
     if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
     Q3.pending = null;
@@ -7956,7 +7992,9 @@
     });
     for (const p of Q3.points || []) vals.push(p.z);
     const [z0, z1] = zRange3d(vals);
-    const data = { xs: r.x, ys: r.y, nx, ny, series, z0, z1 };
+    const data = { xs: r.x, ys: r.y, nx, ny, series, z0, z1, seq };
+    // (for the tests, 1.12.0 BG09: the most grid points at which two surfaces have the same value)
+    { const tz = (z1 - z0) * 1e-9 || 1e-12; let most = 0; for (let a = 0; a < series.length; a++) for (let b = a + 1; b < series.length; b++) { let n = 0; const za = series[a].z, zb = series[b].z; for (let k = 0; k < za.length; k++) if (za[k] === za[k] && Math.abs(za[k] - zb[k]) <= tz) n++; most = Math.max(most, n); } data.same = most; }
     solidColors(data);
     const err = (r.messages || []).find((m) => m.type === 'error');
     const note = err ? localMessage(err.text)
@@ -7969,8 +8007,9 @@
       shown = true;
       Q3.data = data;
       clearMark3d();
-      if (Q3.growNext) { const ax = Q3.growNext; Q3.growNext = null; startGrow(ax); }
-      Q3.msg.textContent = note;
+      // (1.12.0, BG09: the solid turns into being once its edges are known; until then "Calculating…")
+      if (Q3.growNext && rimsReady()) { const ax = Q3.growNext; Q3.growNext = null; startGrow(ax); }
+      Q3.msg.textContent = Q3.growNext ? tr('Calculating…', '計算中…') : note;
       legend3d(data, vals.length > 0);
       if (Q3.volUI && !Q3.volUI.box.hidden) volumeSurfacesChanged();
       if (Q3.partUI && !Q3.partUI.box.hidden) partialSurfacesChanged();
@@ -7978,28 +8017,43 @@
       draw3d();
       store.set('qalc.plot3d.ok', true);
     };
-    // A surface with an edge (a sphere) is shown when its edge has been found (refineRims), and one
-    // that leaves the box when the places where it does are found (refineClips, 1.9.5), so that it
-    // does not appear torn first and whole a moment later. If that takes more than 2.5 seconds, the
-    // surface is shown as it is and drawn again afterwards.
-    const late = setTimeout(show, 2500);
-    const refined = await refineRims(series, r.x, r.y, seq);
-    if (seq !== Q3.seq) { clearTimeout(late); return; }
-    // (surfaces that close up into one solid are known when their edges are, 1.9.3)
-    data.groups = refined ? joinedSolid(series, r.x, r.y, z0, z1) : [];
-    solidColors(data);
-    // the range of z reaches the edges that were found (half a sphere alone: its rim at z = 0 lies
-    // below the lowest grid value, and was cut off; 1.9.3), unless that would widen it by more than half
-    if (refined) {
+    // The edges of the surfaces (1.12.0, BG09): known at once from the shape of a solid of revolution
+    // (specRims, nothing left to the engine), or first guessed for other surfaces (guessRims) and then
+    // found with the engine (refineRims), so that the first drawing has no saw teeth. A surface that
+    // leaves the box is shown when the places where it does are found (refineClips, 1.9.5), so that it
+    // does not appear torn first and whole a moment later; if that takes more than 2.5 seconds, it is
+    // shown as it is and drawn again afterwards. (Until 1.11.0 every surface with an edge waited for
+    // refineRims, up to 2.5 seconds, and was then shown with saw teeth, in two colors.)
+    const spec = Q3.rimSpec && Q3.rimSpec.exprs === Q3.exprs.join('\n') ? Q3.rimSpec : null;
+    let refined = !!spec && specRims(series, r.x, r.y, spec);
+    const guessed = refined ? null : guessRims(series, r.x, r.y);
+    function rimsReady() { return refined || !guessed || !guessed.length; }
+    const settle = () => {
+      // (surfaces that close up into one solid are known when their edges are, 1.9.3; those of a solid
+      // of revolution from its shape)
+      data.groups = spec && spec.groups ? spec.groups : joinedSolid(series, r.x, r.y, z0, z1);
+      solidColors(data);
+      // the range of z reaches the edges (half a sphere alone: its rim at z = 0 lies below the lowest
+      // grid value, and was cut off; 1.9.3), unless that would widen it by more than half
       let lo = data.z0, hi = data.z1;
       for (const s of series) for (const key in s.rim || {}) { const v = s.rim[key].z; if (v === v && v !== undefined) { if (v < lo) lo = v; if (v > hi) hi = v; } }
       if ((lo < data.z0 || hi > data.z1) && hi - lo <= 1.5 * (data.z1 - data.z0)) { data.z0 = lo; data.z1 = hi; }
-    }
+    };
+    settle();
+    const tolZ = (data.z1 - data.z0) * 4e-5, leaves = series.some((q) => q.z.some((v) => v === v && (v < data.z0 - tolZ || v > data.z1 + tolZ)));
+    if (!leaves) show();
+    const late = setTimeout(show, 2500);
+    if (!refined) refined = await refineRims(series, r.x, r.y, seq, guessed);
+    if (seq !== Q3.seq) { clearTimeout(late); return; }
+    if (!spec) settle();
     // where the surfaces leave the box at its top or bottom (1.9.5)
     const clipped = await refineClips(series, r.x, r.y, data.z0, data.z1, seq);
     clearTimeout(late);
     if (seq !== Q3.seq) return;
-    if (shown) { if (refined || clipped) { legend3d(data, vals.length > 0); draw3d(); } } else show();
+    if (shown) {
+      if (Q3.growNext && rimsReady()) { const ax = Q3.growNext; Q3.growNext = null; Q3.msg.textContent = note; startGrow(ax); }
+      if (refined || clipped) { legend3d(data, vals.length > 0); draw3d(); }
+    } else show();
     if (Q3.pending) { const run = Q3.pending; Q3.pending = null; run(); }
   }
   // The legend of the 3D graph: for one surface, or surfaces that all close up into one solid (1.9.3),
@@ -8131,12 +8185,10 @@
   // asked for in smaller batches. Until 1.10.x it was always 300: the edge of a long surface (a solid
   // of revolution around a vertical axis) was not found, and the surface was drawn with saw teeth
   const batchOf = (es) => Math.max(8, Math.min(300, Math.floor(9000 / (Math.max(...es.map((e) => subXY(e, '0.1234567890123', '0.1234567890123').length)) + 4))));
-  // The edge of a surface with no real values beyond it (a sphere: √(r² − x² − y²)). On each grid
-  // line from a point with a value to one without, the last point with a real value is found by
-  // halving the step 12 times (all such lines at once, in one calculation per step), so the drawing
-  // reaches the edge, and the two halves of a sphere meet instead of leaving a torn band between them.
-  async function refineRims(series, xs, ys, seq) {
-    const nx = xs.length, ny = ys.length, jobs = [];
+  // The grid lines from a point with a value to one without (the edge of a surface): [{ si, key, p, q }]
+  // (p the point with the value)
+  function rimJobs(series, nx, ny) {
+    const jobs = [];
     series.forEach((s, si) => {
       const z = s.z, ok = (k) => z[k] === z[k];
       for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
@@ -8145,6 +8197,114 @@
         if (j + 1 < ny && ok(k) !== ok(k + nx)) jobs.push({ si, key: 'v' + k, p: ok(k) ? k : k + nx, q: ok(k) ? k + nx : k });
       }
     });
+    return jobs;
+  }
+  // The edges of the surfaces of a solid of revolution, known from its shape (1.12.0, BG09: until then
+  // they were found by halving the step with the engine, 200 to 300 calculations, and the solid was
+  // shown with saw teeth and in two colors until they were found, which took seconds on a phone, the
+  // turning of the solid into being included). spec (openPlot3dWith's rims):
+  // - { kind: 'h' } the axis along x, the surfaces ±√(Q(x)² − y²): Q at a column of the grid is
+  //   √(z² + y²) of any of its points; the edge across a column is y = ±Q, z = 0; along a row, where
+  //   Q(x) = |y| (by halving the step on Q, a function in spec.Q when the shape gives one, as a profile
+  //   does, otherwise on the straight line between the columns)
+  // - { kind: 'v', surf: [{ iv: [[a, b], …], z: { b: height } }] } the axis along z, each surface
+  //   present where ρ = √(x² + y²) is in its intervals: its edges are the circles ρ = a and ρ = b,
+  //   crossed by the grid lines where the circle is, at the heights given (from the engine, at the ends
+  //   of the region)
+  // Sets s.rim as refineRims does; returns false when it could not (another kind of surface).
+  function specRims(series, xs, ys, spec) {
+    const nx = xs.length, ny = ys.length, jobs = rimJobs(series, nx, ny);
+    if (!jobs.length) { series.forEach((s) => { s.rim = {}; }); return true; }
+    const Qs = series.map((s, si) => {
+      if (spec.kind !== 'h') return null;
+      const q = new Float64Array(nx).fill(NaN);
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) { const z = s.z[j * nx + i]; if (z === z) { const v = Math.sqrt(z * z + ys[j] * ys[j]); if (!(v <= q[i])) q[i] = v; } }
+      return q;
+    });
+    series.forEach((s) => { s.rim = {}; });
+    for (const jb of jobs) {
+      const s = series[jb.si], zin = s.z[jb.p], sg = zin < 0 ? -1 : 1;
+      const xa = xs[jb.p % nx], ya = ys[(jb.p / nx) | 0], xb = xs[jb.q % nx], yb = ys[(jb.q / nx) | 0];
+      if (spec.kind === 'h') {
+        const Q = Qs[jb.si], ia = jb.p % nx, ib = jb.q % nx;
+        if (jb.key[0] === 'v') {
+          // (across a column: |y| = Q there)
+          const qv = Q[ia];
+          if (!(qv === qv)) continue;
+          s.rim[jb.key] = { x: xa, y: yb > ya ? Math.max(ya, Math.min(yb, qv)) : Math.min(ya, Math.max(yb, -qv)), z: 0 };
+          continue;
+        }
+        // (along a row: where Q(x) = |y|)
+        // (the height there: 0 where the edge crosses the row, more where the solid ends in a flat face or
+        // a step of a profile)
+        const yy = Math.abs(ya), fn = spec.Q && spec.Q[jb.si];
+        let f, qx;
+        if (fn) {
+          let lo = 0, hi = 1;
+          for (let n = 0; n < 40; n++) { const m = (lo + hi) / 2, v = fn(xa + (xb - xa) * m); if (v === v && v >= yy) lo = m; else hi = m; }
+          f = lo; qx = fn(xa + (xb - xa) * f);
+        } else {
+          const qa = Q[ia];
+          let qb = Q[ib];
+          if (!(qb === qb)) { const ic = 2 * ia - ib; qb = ic >= 0 && ic < nx && Q[ic] === Q[ic] ? 2 * qa - Q[ic] : 0; }
+          f = qa !== qb ? Math.max(0, Math.min(1, (qa - yy) / (qa - qb))) : 0;
+          qx = qa + (qb - qa) * f;
+        }
+        s.rim[jb.key] = { x: xa + (xb - xa) * f, y: ya, z: sg * Math.sqrt(Math.max(0, (qx === qx ? qx * qx : 0) - yy * yy)) };
+        continue;
+      }
+      if (spec.kind === 'v') {
+        const sp = spec.surf && spec.surf[jb.si];
+        if (!sp) continue;
+        const ra = Math.hypot(xa, ya), rb = Math.hypot(xb, yb);
+        // (the end of the interval of the surface that the line leaves)
+        let edge = null;
+        for (const [a, b] of sp.iv) { if (ra >= a - 1e-12 && ra <= b + 1e-12) edge = rb > ra ? b : a; }
+        if (edge === null) continue;
+        // where the line from (xa, ya) to (xb, yb) meets the circle ρ = edge
+        const dx = xb - xa, dy = yb - ya, A = dx * dx + dy * dy, B = 2 * (xa * dx + ya * dy), C = xa * xa + ya * ya - edge * edge, D = B * B - 4 * A * C;
+        let t = 0;
+        if (A > 0 && D >= 0) { const r1 = (-B - Math.sqrt(D)) / (2 * A), r2 = (-B + Math.sqrt(D)) / (2 * A); t = r1 >= -1e-9 && r1 <= 1 + 1e-9 ? r1 : r2; }
+        t = Math.max(0, Math.min(1, t));
+        const zk = sp.z && sp.z[String(edge)];
+        // (slant: the surface ends at a slant, not upright as a sphere at its rim)
+        s.rim[jb.key] = { x: xa + dx * t, y: ya + dy * t, z: zk === undefined || !(zk === zk) ? zin : zk, slant: true };
+      }
+    }
+    return spec.kind === 'h' || spec.kind === 'v';
+  }
+  // First guesses of the edges of other surfaces (1.12.0, BG09), without the engine, so that a surface
+  // with an edge (a sphere) is not shown with saw teeth while refineRims looks for it: near its edge z²
+  // of a surface such as √(r² − x² − y²) is close to a straight line, so the line through z² at the
+  // two points inside is followed out to 0 (and no farther than the point without a value). Sets s.rim;
+  // the guesses are kept in jb.g for refineRims.
+  function guessRims(series, xs, ys) {
+    const nx = xs.length, ny = ys.length, jobs = rimJobs(series, nx, ny);
+    series.forEach((s) => { s.rim = {}; });
+    for (const jb of jobs) {
+      const z = series[jb.si].z, k2 = 2 * jb.p - jb.q;
+      const sameLine = jb.key[0] === 'v' || ((k2 / nx) | 0) === ((jb.p / nx) | 0);
+      const za = z[jb.p], zb = k2 >= 0 && k2 < nx * ny && sameLine ? z[k2] : NaN;
+      let f = 0.5, zr = za;
+      if (zb === zb) {
+        const a2 = za * za, b2 = zb * zb;
+        // (z² falls toward the edge: where the straight line reaches 0, as a share of the step)
+        if (b2 > a2) { f = Math.min(1, a2 / (b2 - a2)); zr = (za < 0 ? -1 : 1) * Math.sqrt(Math.max(0, a2 - (b2 - a2) * f)); } else { f = 0; zr = za; }
+      }
+      const xa = xs[jb.p % nx], ya = ys[(jb.p / nx) | 0], xb = xs[jb.q % nx], yb = ys[(jb.q / nx) | 0];
+      jb.g = f;
+      series[jb.si].rim[jb.key] = { x: xa + (xb - xa) * f, y: ya + (yb - ya) * f, z: zr };
+    }
+    return jobs;
+  }
+  // The edge of a surface with no real values beyond it (a sphere: √(r² − x² − y²)). On each grid
+  // line from a point with a value to one without, the last point with a real value is found by
+  // halving the step 12 times (all such lines at once, in one calculation per step), so the drawing
+  // reaches the edge, and the two halves of a sphere meet instead of leaving a torn band between them.
+  // (1.12.0, BG09: from the first guesses of guessRims, when given: the guess is tried first, and then
+  // the step is halved 8 times; when the engine fails or is too slow, what was found is kept)
+  async function refineRims(series, xs, ys, seq, guessed) {
+    const nx = xs.length, ny = ys.length, jobs = guessed || rimJobs(series, nx, ny);
     if (!jobs.length || jobs.length > 2400) return false;
     for (const jb of jobs) {
       jb.px = xs[jb.p % nx]; jb.py = ys[(jb.p / nx) | 0]; jb.qx = xs[jb.q % nx]; jb.qy = ys[(jb.q / nx) | 0];
@@ -8153,25 +8313,29 @@
     // (plain decimal numbers whatever the settings of the results are: base 16 or 2 decimals, 1.8.3)
     const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect', base: 10, notation: 'auto', max_decimals: -1 });
     const B = batchOf(series.map((s) => s.expr));
-    for (let step = 0; step < 12; step++) {
+    const keep = () => { series.forEach((s) => { s.rim = {}; }); for (const jb of jobs) series[jb.si].rim[jb.key] = { x: jb.px, y: jb.py, z: jb.z }; };
+    // (with guesses: first the guess itself, then 8 halvings of what is left)
+    const steps = guessed ? 9 : 12;
+    let done = 0;
+    for (let step = 0; step < steps; step++) {
       for (let b0 = 0; b0 < jobs.length; b0 += B) {
         const part = jobs.slice(b0, b0 + B);
-        const mids = part.map((jb) => [(jb.px + jb.qx) / 2, (jb.py + jb.qy) / 2]);
+        const mids = part.map((jb) => { const f = guessed && step === 0 && jb.g > 0.02 && jb.g < 0.98 ? jb.g : 0.5; return [jb.px + (jb.qx - jb.px) * f, jb.py + (jb.qy - jb.py) * f]; });
         const expr = '[' + part.map((jb, n) => '(' + subXY(series[jb.si].expr, engineNum(mids[n][0]), engineNum(mids[n][1])) + ')').join(', ') + ']';
         const r = await Bridge.send('calc', { expr, opts, timeout: 5000, max_chars: 200000 });
-        if (seq !== Q3.seq || !r.ok || !r.result || r.timeout) return false;
-        const t = r.result.split(' ≈ ').pop().split(' = ').pop().trim();
-        if (t[0] !== '[' || t[t.length - 1] !== ']') return false;
-        const cells = t.slice(1, -1).trim().split(/\s{2,}/);
-        if (cells.length !== part.length) return false;
+        if (seq !== Q3.seq) return false;
+        const t = r.ok && r.result && !r.timeout ? r.result.split(' ≈ ').pop().split(' = ').pop().trim() : '';
+        const cells = t[0] === '[' && t[t.length - 1] === ']' ? t.slice(1, -1).trim().split(/\s{2,}/) : [];
+        // (the engine failed or was too slow: what was found so far, after a few halvings, is kept)
+        if (cells.length !== part.length) { if (done >= 4) { keep(); return true; } return false; }
         part.forEach((jb, n) => {
           const v = Number(cells[n].replace(/−/g, '-'));
           if (isFinite(v)) { jb.px = mids[n][0]; jb.py = mids[n][1]; jb.z = v; } else { jb.qx = mids[n][0]; jb.qy = mids[n][1]; }
         });
       }
+      done++;
     }
-    series.forEach((s) => { s.rim = {}; });
-    for (const jb of jobs) series[jb.si].rim[jb.key] = { x: jb.px, y: jb.py, z: jb.z };
+    keep();
     return true;
   }
   // 1:1:1 — automatic: on when the three ranges are about as long as each other (a sphere, a cone),
@@ -9333,6 +9497,7 @@
     // the surfaces: project every grid point once, then lay the cells over the pixels with a depth
     // buffer (surfacePaint, 1.9.2)
     const cells = [];
+    let cutLost = 0;  // (cells at the cut of a growing solid left out for want of a cut point, BG09)
     // a normal in the box's axes (u, v, w) in the camera's axes; grid coordinates of u and v
     const camN = (nu, nv, nw) => [nu * ca - nv * sa, nu * sa * se + nv * ca * se + nw * ce, nu * sa * ce + nv * ca * ce - nw * se];
     const giOf = (u) => (u / EX + 1) / 2 * (D.nx - 1), gjOf = (v) => (v / EY + 1) / 2 * (D.ny - 1);
@@ -9363,7 +9528,7 @@
         for (let i = 0; i < D.nx; i++) {
           const k = j * D.nx + i, z = s.z[k];
           if (z === null || z !== z) continue;
-          if (GR) { let ph = GR.ax === 'h' ? Math.atan2(z, ys[j]) : Math.atan2(ys[j], xs[i]); if (ph < 0) ph += 2 * Math.PI; if (ph > GR.theta + 1e-9) continue; }
+          if (GR) { let ph = GR.ax === 'h' ? Math.atan2(z, ys[j]) : Math.atan2(ys[j], xs[i]); if (ph < 0) ph += 2 * Math.PI; if (ph > GR.theta + 1e-9) { st[k] = 3; continue; } }
           const w = Wz(z);
           if (w > EZ * 1.0001 || w < -EZ * 1.0001) { st[k] = 2; continue; }  // outside the z range
           proj(U(xs[i]), v, w);
@@ -9387,7 +9552,40 @@
           let lu = NM[3 * kin], lv = NM[3 * kin + 1];
           const lh = Math.hypot(lu, lv);
           if (lh > 0.05) { lu /= lh; lv /= lh; } else { lu = U(e.x) - U(xs[kin % D.nx]); lv = V(e.y) - V(ys[(kin / D.nx) | 0]); }
-          s.rimP[key] = { x: T[0], y: T[1], d: T[2], u: U(e.x), v: V(e.y), w, n: camN(lu, lv, 0), gi: giOf(U(e.x)), gj: gjOf(V(e.y)) };
+          // (a surface of a solid around a vertical axis that ends at a slant: the normal of the point
+          // inside, 1.12.0 BG09: a level normal there darkened the edge in saw teeth)
+          const nr = e.slant ? [s.cnrm[3 * kin], s.cnrm[3 * kin + 1], s.cnrm[3 * kin + 2]] : camN(lu, lv, 0);
+          s.rimP[key] = { x: T[0], y: T[1], d: T[2], u: U(e.x), v: V(e.y), w, n: nr, gi: giOf(U(e.x)), gj: gjOf(V(e.y)) };
+        }
+      }
+      // while the solid turns into being (startGrow): where a grid line crosses the plane of the angle
+      // reached (or the plane where it started), a point on that plane, so that the cells are cut along it
+      // instead of left out whole (1.12.0, BG09: the cut was a staircase of cells)
+      s.angP = null;
+      if (GR) {
+        s.angP = {};
+        const TAU = 2 * Math.PI;
+        const phOf = (k) => { const z = s.z[k]; let ph = GR.ax === 'h' ? Math.atan2(z, ys[(k / D.nx) | 0]) : Math.atan2(ys[(k / D.nx) | 0], xs[k % D.nx]); return ph < 0 ? ph + TAU : ph; };
+        const cutAt = (key, ka, kb) => {
+          if (!((st[ka] === 1 && st[kb] === 3) || (st[ka] === 3 && st[kb] === 1))) return;
+          const kin = st[ka] === 1 ? ka : kb, kout = kin === ka ? kb : ka;
+          let p1 = phOf(kin), p2 = phOf(kout), tgt = GR.theta;
+          // (across the start, angle 0 = 2π: the plane where the turning began)
+          if (p2 - p1 > Math.PI) { p2 -= TAU; tgt = 0; }
+          const f = Math.max(0, Math.min(1, (tgt - p1) / ((p2 - p1) || 1)));
+          const xa = xs[kin % D.nx], ya = ys[(kin / D.nx) | 0], xb = xs[kout % D.nx], yb = ys[(kout / D.nx) | 0];
+          let x = xa + (xb - xa) * f, y = ya + (yb - ya) * f, z = s.z[kin] + (s.z[kout] - s.z[kin]) * f;
+          // (laid exactly on the plane, at the distance from the axis of the point between)
+          if (GR.ax === 'h') { const r = Math.hypot(y, z); y = r * Math.cos(tgt); z = r * Math.sin(tgt); } else { const r = Math.hypot(x, y); x = r * Math.cos(tgt); y = r * Math.sin(tgt); }
+          const w = Wz(z);
+          if (!(w <= EZ * 1.0001 && w >= -EZ * 1.0001)) return;
+          proj(U(x), V(y), w);
+          s.angP[key] = { x: T[0], y: T[1], d: T[2], u: U(x), v: V(y), w, n: [s.cnrm[3 * kin], s.cnrm[3 * kin + 1], s.cnrm[3 * kin + 2]], gi: giOf(U(x)), gj: gjOf(V(y)) };
+        };
+        for (let j = 0; j < D.ny; j++) for (let i = 0; i < D.nx; i++) {
+          const k = j * D.nx + i;
+          if (i + 1 < D.nx) cutAt('h' + k, k, k + 1);
+          if (j + 1 < D.ny) cutAt('v' + k, k, k + D.nx);
         }
       }
       // where the surface leaves the box (refineClips, 1.9.5): on its top or bottom, with the normal of
@@ -9412,7 +9610,7 @@
           if (!real || (out && !s.clipP)) continue;
           const du = U(xs[i + 1]) - U(xs[i]);
           let pts, nu, nv, nw;
-          if (real < 4 && (s.rimP || s.clipP)) {
+          if (real < 4 && (s.rimP || s.clipP || s.angP)) {
             // at the edge of the real values: the cell cut along the edge that was found (refineRims);
             // where the surface leaves the box: cut along the top or the bottom of the box (refineClips)
             const cs = [a, b, c2, d], eks = ['h' + a, 'v' + b, 'h' + d, 'v' + a];
@@ -9421,8 +9619,9 @@
               const k = cs[n], k2 = cs[(n + 1) % 4];
               if (st[k] === 1) poly.push({ k, x: px[k], y: py[k], d: pd[k], u: U(xs[k % D.nx]), v: V(ys[(k / D.nx) | 0]), w: pw[k], n: [s.cnrm[3 * k], s.cnrm[3 * k + 1], s.cnrm[3 * k + 2]], gi: k % D.nx, gj: (k / D.nx) | 0 });
               if ((st[k] === 1) !== (st[k2] === 1)) {
-                const rp = (s.rimP && s.rimP[eks[n]]) || (s.clipP && s.clipP[eks[n]]);
-                if (rp) poly.push(rp); else poly = null;
+                const byAngle = st[k] === 3 || st[k2] === 3;
+                const rp = byAngle ? s.angP && s.angP[eks[n]] : (s.rimP && s.rimP[eks[n]]) || (s.clipP && s.clipP[eks[n]]);
+                if (rp) poly.push(rp); else { poly = null; if (byAngle) cutLost++; }
               }
             }
             if (!poly || poly.length < 3) continue;
@@ -9719,7 +9918,11 @@
     // (what was drawn, for the tests; shadow: the pixels in a shadow and at the soft edge of one, the
     // size of the lamp's map and the time to make it; floor: the cells of the floor's layer in a shadow)
     c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor, shk: Math.round(shK * 1000) / 1000, turnMs: Q3.turning ? Math.round(Q3.turnMs || 0) : null, turnL: Q3.turning ? (Q3.turnList || []).map(Math.round) : null, shSlow: !!Q3.shSlow, drawMs: Math.round(Q3.lastDrawMs || 0),
-      rims: (D.series || []).reduce((n, s) => n + (s.rim ? Object.keys(s.rim).length : 0), 0) });
+      rims: (D.series || []).reduce((n, s) => n + (s.rim ? Object.keys(s.rim).length : 0), 0),
+      // (1.12.0, BG09: for each surface, the grid lines across its edge without an edge point; and the
+      // most grid points at which two surfaces have the same value)
+      rimMiss: (D.series || []).map((s) => { let m = 0; const z = s.z, nx = D.nx; for (let k = 0; k < z.length; k++) { const a = z[k] === z[k]; if ((k + 1) % nx && a !== (z[k + 1] === z[k + 1]) && !(s.rim && s.rim['h' + k])) m++; if (k + nx < z.length && a !== (z[k + nx] === z[k + nx]) && !(s.rim && s.rim['v' + k])) m++; } return m; }),
+      same: D.same || 0, seq: D.seq || 0, cut: GR ? { points: D.series.reduce((n, s) => n + (s.angP ? Object.keys(s.angP).length : 0), 0), dropped: cutLost } : null });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
     if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
@@ -10671,14 +10874,31 @@
   const pfExact = (pts) => 'π × (' + pts.slice(1).map((p, i) => [pts[i], p]).filter(([a, b]) => b.z > a.z)
     .map(([a, b]) => `(${b.zs} − ${a.zs}) × (${a.rs}^2 + ${a.rs} × ${b.rs} + ${b.rs}^2) / 3`).join(' + ') + ')';
   // the radius as one expression in x for the 3D graph (straight pieces; a smooth profile sampled)
-  function pfExpr(sh, pts, smooth) {
+  function pfNodes(sh, smooth) {
     const nodes = [];
     for (const s of sh.segs) {
       const n = smooth ? 8 : 1;
       for (let k = 0; k < n; k++) { const z0 = s.a.z + (s.b.z - s.a.z) * k / n, z1 = s.a.z + (s.b.z - s.a.z) * (k + 1) / n; nodes.push([z0, sh.at(s, z0)[0], z1, sh.at(s, Math.min(z1, s.b.z - 1e-12))[0]]); }
     }
+    const R = (v) => +v.toPrecision(10);
+    return nodes.map((q) => q.map(R));
+  }
+  // the radius of pfExpr as a function, for the edges of the 3D view (specRims, 1.12.0 BG09)
+  function pfQ(sh, pts, smooth) {
+    const nodes = pfNodes(sh, smooth), z0 = +pts[0].z.toPrecision(10);
+    return (x) => {
+      if (x < z0) return 0;
+      for (const [a, r0, b, r1] of nodes) if (x < b) return r0 + (r1 - r0) * (x - a) / (b - a);
+      const L = nodes[nodes.length - 1];
+      return L && x <= L[2] ? L[3] : 0;
+    };
+  }
+  function pfExpr(sh, pts, smooth) {
+    const nodes = pfNodes(sh, smooth);
     const N = (v) => engineNum(String(+v.toPrecision(10)));
-    let e = '0';
+    // (the last end itself too, 1.12.0 BG09: the last column of the 3D grid lies on it, and had no value)
+    const L = nodes[nodes.length - 1];
+    let e = L ? `if(x <= ${N(L[2])}, ${N(L[3])}, 0)` : '0';
     for (let i = nodes.length - 1; i >= 0; i--) { const [z0, r0, z1, r1] = nodes[i]; e = `if(x < ${N(z1)}, ${N(r0)} + (${N(r1 - r0)}) × (x − ${N(z0)}) / ${N(z1 - z0)}, ${e})`; }
     return `if(x < ${N(pts[0].z)}, 0, ${e})`;
   }
@@ -10731,7 +10951,7 @@
       const pic = el('div', { class: 'pf-pic' });
       const msg = el('div', { class: 'geo-msg', role: 'alert' });
       const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
-      const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る') }, () => { if (D.three) openPlot3dWith(D.three.exprs, { range: D.three.range, equal: true, res: 61, grow: 'h' }); });
+      const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る') }, () => { if (D.three) openPlot3dWith(D.three.exprs, { range: D.three.range, equal: true, res: 61, grow: 'h', rims: D.three.rims }); });
       const quickBox = el('div', { class: 'quick-box' });
       const quick = el('details', { class: 'sec-more quick-pf' }, el('summary', { text: tr('Height and amount: quick-reference table ▾', '高さと量の早見表 ▾') }), quickBox);
       quick.addEventListener('toggle', () => { if (quick.open) run(); });
@@ -10837,7 +11057,9 @@
         const w = +((Math.max(so.rmax, si ? si.rmax : 0) || 1) * 1.08).toPrecision(6);
         const R = pfExpr(so, o, D.smooth), exprs = [`√((${R})^2 − y^2)`, `−√((${R})^2 − y^2)`];
         if (si) { const r2 = pfExpr(si, i, D.smooth); exprs.push(`√((${r2})^2 − y^2)`, `−√((${r2})^2 − y^2)`); }
-        D.three = { exprs, range: [engineNum(String(o[0].z)), engineNum(String(o[o.length - 1].z)), engineNum(String(-w)), engineNum(String(w))] };
+        const Qo = pfQ(so, o, D.smooth), Qi = si ? pfQ(si, i, D.smooth) : null;
+        D.three = { exprs, range: [engineNum(String(o[0].z)), engineNum(String(o[o.length - 1].z)), engineNum(String(-w)), engineNum(String(w))],
+          rims: { kind: 'h', groups: [exprs.map((e, n) => n)], Q: si ? [Qo, Qo, Qi, Qi] : [Qo, Qo] } };
         view.hidden = false;
         // the quick-reference table: the height and the amount inside (or of the whole solid)
         if (quick.open) {
