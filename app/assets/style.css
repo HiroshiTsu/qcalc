@@ -1436,3 +1436,11 @@ body.hselect #history { padding-bottom: 150px; }
 .rev-n-v { min-width: 2em; text-align: right; }
 /* the small choices inside a field (tax rates, "today"): touch areas of 48 dp */
 .tool-mini-chips .area-chip { min-height: 48px; min-width: 48px; padding: 0 10px; }
+/* the first screen fits again at 360 × 740 (the keys became taller in A4, for 48 dp): on short screens
+   the empty history is tighter, without the line on tapping results (also in the tips) */
+@media (max-height: 780px) {
+  .history .empty { margin: 2px 0 4px; line-height: 1.4; }
+  .history .empty .empty-sub { display: none; }
+  .empty .empty-try { margin-top: 4px; }
+  .ex-chips { margin: 2px 0 6px; }
+}

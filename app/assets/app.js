@@ -2862,7 +2862,7 @@
       for (const x of STARTERS) chips.append(tapButton({ class: 'ex-chip', text: toDisplay(x) }, () => { setExpr(x); focusExpr(); }));
       histEl.append(el('div', { class: 'empty' },
         el('div', { class: 'empty-t', html: tr('Type an expression and press <b>=</b>: the results stay here', '式を入力して <b>=</b> を押すと、ここに結果が残ります') }),
-        el('div', { text: tr('Tap a result to insert it into the expression, or touch and hold it to copy it.', '結果をタップで式に挿入、長押しでコピーできます。') }),
+        el('div', { class: 'empty-sub', text: tr('Tap a result to insert it into the expression, or touch and hold it to copy it.', '結果をタップで式に挿入、長押しでコピーできます。') }),
         el('div', { class: 'empty-try', text: tr('Tap an example to try it', '例をタップして試す') }), chips,
         tapButton({ class: 'btn', text: tr('Examples and tips', '使い方と例を見る') }, () => openExamples())));
       histEl.scrollTop = 0; // read from the top (results are followed at the bottom)
