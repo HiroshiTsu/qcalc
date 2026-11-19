@@ -1467,3 +1467,9 @@ body.hselect #history { padding-bottom: 150px; }
    number, and the choices go under it when the row is too narrow */
 .geo-size:has(.tool-mini-chips) input { min-width: 88px; }
 .tool-mini-chips { margin-left: auto; }
+
+/* the heads of tanks and the quick-reference table (1.12.0, D1) */
+.head-more .seg.mini { flex-wrap: wrap; }
+.head-more .seg.mini button { flex: 1 1 auto; white-space: normal; }
+.head-row[hidden] { display: none; }
+.quick-tank .geo-size input { max-width: 10em; }

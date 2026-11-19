@@ -390,10 +390,11 @@
   // - Pro: the features for work. As before the 3D graph (also "View in 3D" and the solid growing in
   //   3D), more than 1000 digits, the colour themes and exporting the history; now also saving the
   //   tables as CSV files ('tables': the loan and savings tables of C1, the quick-reference tables of
-  //   D1; showing them stays free). Still to come, each with its own key: the heads of tanks
-  //   (hemispherical, semi-elliptical, dished) and their tables (D1; the flat-ended tanks of now stay
-  //   free), solids from a profile (D2), STL files (D3), GIFs, pictures without the mark and in a
-  //   higher resolution (D4), the second and later notes and exporting them (D5).
+  //   D1; showing the C1 tables stays free); the heads of tanks (hemispherical, semi-elliptical,
+  //   dished) and the quick-reference tables of tanks ('tank_heads', D1; the flat-ended tanks of
+  //   1.11.0 stay free). Still to come, each with its own key: solids from a profile (D2), STL files
+  //   (D3), GIFs, pictures without the mark and in a higher resolution (D4), the second and later
+  //   notes and exporting them (D5).
   // - A feature that was once free is never made Pro: the keys of 1.11.0 stay 'free'.
   // Those who used QCalc before Pro began have Pro for free (Pro.java); this does not change it.
   const PRO_GATES = {
@@ -410,7 +411,8 @@
     tables: 'pro',         // saving the tables as CSV files (1.12 C1, D1): Pro, as exporting the history
     convert: 'free',       // the conversion of units and currencies (1.12 C2)
     quick: 'free',         // the widget, the tile and the shortcuts of the icon (1.12 C3)
-    stats: 'free'          // statistics: one or two columns, regression, the graph (1.12 C4)
+    stats: 'free',         // statistics: one or two columns, regression, the graph (1.12 C4)
+    tank_heads: 'pro'      // the heads of tanks (hemispherical, semi-elliptical, dished) and the quick-reference tables of tanks (1.12 D1): Pro (work)
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -9881,6 +9883,145 @@
       out: [[tr('Liquid', '液量'), 'π R² h³ / (3 H²)', 'π × {R}^2 × {h}^3 / (3 × {H}^2)', 3], [tr('Full', '満杯に対して'), tr('liquid ÷ capacity', '液量 ÷ 満杯の量'), '({h} / {H})^3 × 100', 0, true, '%'], [tr('Capacity (full)', '満杯の量'), 'π R² H / 3', 'π × {R}^2 × {H} / 3', 3]],
       pic: (v) => tankPic('c', v) }
   ];
+  // ---- the heads of tanks (1.12.0, D1; QCalc Pro): a lying or standing cylinder with two heads of the
+  // same kind: hemispherical, semi-elliptical 2:1, torispherical (ASME F&D: crown radius = diameter,
+  // knuckle radius = 6 % of the diameter) or semi-elliptical of a depth typed. L or H is the length of
+  // the cylinder itself (between the heads). The lying ones with hemispherical or semi-elliptical heads
+  // are worked out exactly by the engine (the two heads together hold π a h² (3r − h) / (3r)); the
+  // others numerically here (Gauss–Legendre), shown with ≈.
+  const HEAD_TYPES = () => [['flat', tr('Flat', '平板')], ['hemi', tr('Hemispherical', '半球')], ['ell', tr('Semi-elliptical 2:1', '半楕円 2:1')]];
+  const HEAD_MORE = () => [['fd', tr('Dished (ASME F&D)', '皿形（ASME F&D）')], ['eld', tr('Semi-elliptical, depth typed', '半楕円（深さを入れる）')]];
+  // the shape of one head of radius r: depth a and the radius at the height z above its base (0 ≤ z ≤ a)
+  function headGeo(type, r, a) {
+    if (type === 'fd') {
+      const Rc = 2 * r, rk = 0.12 * r, c = Math.sqrt((Rc - rk) * (Rc - rk) - (r - rk) * (r - rk)), depth = Rc - c, zt = -c + Rc * c / (Rc - rk);
+      return { a: depth, breaks: [0, zt, depth], prof: (z) => (z <= zt ? (r - rk) + Math.sqrt(Math.max(0, rk * rk - z * z)) : Math.sqrt(Math.max(0, Rc * Rc - (z + c) * (z + c)))) };
+    }
+    const d = type === 'hemi' ? r : type === 'ell' ? r / 2 : a;
+    return { a: d, breaks: [0, d], prof: (z) => r * Math.sqrt(Math.max(0, 1 - (z / d) * (z / d))) };
+  }
+  // ∫ f over [lo, hi] (and over the pieces between the points pts) with n Gauss–Legendre points each
+  const glPiece = (f, lo, hi, n) => { const { x, w } = gaussLegendre(n || 24); const m = (lo + hi) / 2, hw = (hi - lo) / 2; let s = 0; for (let j = 0; j < x.length; j++) s += w[j] * f(m + hw * x[j]); return s * hw; };
+  const glSum = (f, pts, n) => { let s = 0; for (let i = 1; i < pts.length; i++) if (pts[i] > pts[i - 1]) s += glPiece(f, pts[i - 1], pts[i], n); return s; };
+  // the area of the part of a circle of radius q below a chord at the height d above its bottom
+  const circleSeg = (q, d) => (d <= 0 ? 0 : d >= 2 * q ? Math.PI * q * q : q * q * Math.acos((q - d) / q) - (q - d) * Math.sqrt(Math.max(0, 2 * q * d - d * d)));
+  // the volume of one head, and the liquid in it: standing (the head at the bottom, filled to the height
+  // y above its lowest point) or lying (the liquid at the height h above the bottom of the tank)
+  function headVolume(g) { return glSum((z) => Math.PI * g.prof(z) * g.prof(z), g.breaks, 32); }
+  function headStanding(g, y) {
+    if (y <= 0) return 0;
+    if (y >= g.a) return headVolume(g);
+    const lo = g.a - y;
+    return glSum((z) => Math.PI * g.prof(z) * g.prof(z), [lo].concat(g.breaks.filter((b) => b > lo)), 32);
+  }
+  function headLying(g, r, h) {
+    if (h <= 0) return 0;
+    if (h >= 2 * r) return headVolume(g);
+    // (the depth in each cross section changes its form where the radius there is |r − h|: a break)
+    const t = Math.abs(r - h);
+    let lo = 0, hi = g.a;
+    if (g.prof(0) > t) { for (let i = 0; i < 80; i++) { const m = (lo + hi) / 2; if (g.prof(m) > t) lo = m; else hi = m; } }
+    const pts = Array.from(new Set(g.breaks.concat([(lo + hi) / 2]))).sort((p, q) => p - q);
+    return glSum((z) => { const q = g.prof(z); return circleSeg(q, h - (r - q)); }, pts, 40);
+  }
+  // the volume at the height h for each tank with heads (numbers in one unit): s = { r, L or H, h, a }
+  function headTank(k) { const m = /^(h|v)tank_(\w+)$/.exec(k); return m ? { lying: m[1] === 'h', type: m[2] } : null; }
+  function headTankV(k, s, h) {
+    const t = headTank(k), g = headGeo(t.type, s.r, s.a);
+    if (t.lying) {
+      const cyl = s.L * circleSeg(s.r, h);
+      // (the two heads together: exactly π a h² (3r − h) / (3r) for the hemispherical and semi-elliptical ones)
+      return cyl + (t.type === 'fd' ? 2 * headLying(g, s.r, h) : Math.PI * g.a * h * h * (3 * s.r - h) / (3 * s.r));
+    }
+    const H = s.H, a = g.a;
+    if (h <= a) return headStanding(g, h);
+    const v1 = headVolume(g);
+    if (h <= a + H) return v1 + Math.PI * s.r * s.r * (h - a);
+    return v1 + Math.PI * s.r * s.r * H + (v1 - headStanding(g, Math.max(0, 2 * a + H - h)));
+  }
+  const headTankTop = (k, s) => { const t = headTank(k), g = headGeo(t.type, s.r, s.a); return t.lying ? 2 * s.r : s.H + 2 * g.a; };
+  for (const [base, lying] of [['htank', true], ['vtank', false]]) {
+    for (const [type] of HEAD_TYPES().slice(1).concat(HEAD_MORE())) {
+      const k = base + '_' + type, A = type === 'hemi' ? '{r}' : type === 'ell' ? '({r} / 2)' : '{a}';
+      const p = [['r', tr('Radius', '半径'), '', 'r', tr('Diameter', '直径')], lying ? ['L', tr('Length of the cylinder', '胴の長さ'), '', 'L'] : ['H', tr('Height of the cylinder', '胴の高さ'), '', 'H'], ['h', tr('Height of the liquid', '液面の高さ'), '', 'h']];
+      if (type === 'eld') p.push(['a', tr('Depth of a head', '鏡板の深さ'), '', 'a']);
+      const def = lying ? ['1', '2', '1/2'] : ['1', '3', '1'];
+      if (type === 'eld') def.push('1/3');
+      // the rows: exact (lying, hemispherical or semi-elliptical) or worked out here
+      const seg = '{r}^2 × acos(({r} − {h}) / {r}) × 2π / {turn} − ({r} − {h}) × √(2 × {r} × {h} − {h}^2)';
+      const liq = `{L} × (${seg}) + π × ${A} × {h}^2 × (3 × {r} − {h}) / (3 × {r})`, cap = `π × {r}^2 × {L} + 4/3 × π × {r}^2 × ${A}`;
+      const exact = lying && type !== 'fd';
+      const num = (what, dim, pct) => (v, ctx) => headRow(k, what, v, ctx, dim, pct);
+      const out = exact ? [
+        [tr('Liquid', '液量'), tr('cylinder + π a h² (3r − h) / (3r) for the two heads', '胴 + 鏡板 2 つ π a h² (3r − h) / (3r)'), liq, 3],
+        [tr('Full', '満杯に対して'), tr('liquid ÷ capacity', '液量 ÷ 満杯の量'), `(${liq}) / (${cap}) × 100`, 0, true, '%'],
+        [tr('Capacity (full)', '満杯の量'), 'π r² L + 4/3 π r² a', cap, 3],
+        [tr('One head', '鏡板 1 つの容積'), '2/3 π r² a', `2/3 × π × {r}^2 × ${A}`, 3],
+        [tr('Overall length', '全体の長さ'), 'L + 2a', `{L} + 2 × ${A}`, 1]
+      ] : [
+        [tr('Liquid', '液量'), tr('worked out numerically', '数値積分'), num('liq', 3), 3],
+        [tr('Full', '満杯に対して'), tr('liquid ÷ capacity', '液量 ÷ 満杯の量'), num('pct', 0, true), 0],
+        [tr('Capacity (full)', '満杯の量'), lying ? 'π r² L + 2 V₁' : 'π r² H + 2 V₁', num('cap', 3), 3],
+        [tr('One head', '鏡板 1 つの容積'), 'V₁', num('head', 3), 3],
+        [type === 'fd' ? tr('Depth of a head', '鏡板の深さ') : (lying ? tr('Overall length', '全体の長さ') : tr('Overall height', '全体の高さ')), type === 'fd' ? tr('crown D, knuckle 0.06 D', '皿の半径 D、ナックル 0.06 D') : (lying ? 'L + 2a' : 'H + 2a'), num(type === 'fd' ? 'depth' : 'all', 1), 1]
+      ];
+      if (type === 'fd') out.push([lying ? tr('Overall length', '全体の長さ') : tr('Overall height', '全体の高さ'), lying ? 'L + 2a' : 'H + 2a', num('all', 1), 1]);
+      GEO.push({ k, d: 4, head: type, base, name: GEO.find((x) => x.k === base).name, p, def, out, pic: (v) => tankHeadPic(lying, type, v) });
+    }
+  }
+  // a row of a tank with heads worked out here: the sizes as numbers in the unit of the panel (or the
+  // unit they have), then the volume; ≈ with 10 digits, in the volume unit chosen
+  const headCache = new Map();
+  async function headSizes(k, v, ctx) {
+    const key = JSON.stringify([k, v, ctx.unit, ctx.base]);
+    if (headCache.has(key)) return headCache.get(key);
+    const s = {};
+    for (const n of Object.keys(v)) {
+      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) to ${ctx.base}` : geoValue(v[n], '', '');
+      s[n] = await numValue(e);
+    }
+    if (headCache.size > 40) headCache.clear();
+    headCache.set(key, s);
+    return s;
+  }
+  async function headRow(k, what, v, ctx, dim, pct) {
+    const s = await headSizes(k, v, ctx);
+    if (!(s.r > 0) || !((s.L || s.H) > 0) || !(s.h >= 0) || (headTank(k).type === 'eld' && !(s.a > 0))) return null;
+    const top = headTankTop(k, s);
+    if (s.h > top * (1 + 1e-12)) return null;
+    const g = headGeo(headTank(k).type, s.r, s.a), full = headTankV(k, s, top);
+    const x = what === 'liq' ? headTankV(k, s, s.h) : what === 'cap' ? full : what === 'head' ? headVolume(g) : what === 'pct' ? headTankV(k, s, s.h) / full * 100 : what === 'depth' ? g.a : headTank(k).lying ? s.L + 2 * g.a : top;
+    if (!isFinite(x)) return null;
+    let val = x, unit = '';
+    if (dim === 3 && ctx.base) {
+      unit = ' ' + ctx.base + '³';
+      if (ctx.vu) { const f = await numValue(`(1 ${ctx.base}^3) to ${ctx.vu}`); if (f > 0) { val = x * f; unit = ' ' + (VOL_UNITS.find((u) => u[0] === ctx.vu) || [0, ctx.vu])[1]; } }
+    } else if (dim === 1 && ctx.base) unit = ' ' + ctx.base;
+    if (pct) unit = ' %';
+    const t = fmtV(+val.toPrecision(pct ? 10 : 10)), text = '≈ ' + t + unit;
+    return { result: text, shown: text, expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
+      vol: what === 'liq' && ctx.base ? `(${+x.toPrecision(12)} ${ctx.base}^3)` : '' };
+  }
+  // the picture of a tank with heads, filled to the level typed
+  function tankHeadPic(lying, type, v) {
+    const num = (s) => { const m = /^\s*([\d.]+)(?:\s*\/\s*([\d.]+))?\s*$/.exec(String(s || '')); return m ? Number(m[1]) / (m[2] ? Number(m[2]) : 1) : NaN; };
+    const V = v || {}, r = num(V.r), ratio = type === 'hemi' ? 1 : type === 'ell' ? 0.5 : type === 'fd' ? 0.339 : Math.min(1.2, num(V.a) / r) || 0.5;
+    const id = 'qtkh-' + (lying ? 'h' : 'v') + type;
+    if (lying) {
+      const R = 34, d = +(R * ratio).toFixed(1), x0 = 40, x1 = 120, top = 21, bot = 89;
+      let f = num(V.h) / (2 * r); if (!(f >= 0 && f <= 1)) f = 0.5;
+      const y = +(bot - (bot - top) * f).toFixed(1), mid = +((bot + y) / 2 + 4).toFixed(1);
+      const path = `M${x0} ${top}H${x1}A${d} ${R} 0 0 1 ${x1} ${bot}H${x0}A${d} ${R} 0 0 1 ${x0} ${top}Z`;
+      return `<defs><clipPath id="${id}"><path d="${path}"/></clipPath></defs><path class="g" d="${path}"/><rect class="liq" x="0" y="${y}" width="160" height="${+(bot - y).toFixed(1)}" clip-path="url(#${id})"/>`
+        + `<path class="e" d="M${x0} ${top}V${bot}M${x1} ${top}V${bot}"/><path class="d" d="M100 ${bot}V${y}"/><text x="104" y="${mid}">h</text><path class="d r" d="M${x0} 100H${x1}"/><text x="76" y="108">L</text>`;
+    }
+    const R = 26, d = +(R * ratio).toFixed(1), y0 = 22, y1 = 78, cx = 80;
+    const total = num(V.H) + 2 * r * ratio; let f = num(V.h) / total; if (!(f >= 0 && f <= 1)) f = 0.4;
+    const yl = +((y1 + d) - ((y1 + d) - (y0 - d)) * f).toFixed(1), mid = +((y1 + d + yl) / 2 + 4).toFixed(1);
+    const path = `M${cx - R} ${y0}A${R} ${d} 0 0 1 ${cx + R} ${y0}V${y1}A${R} ${d} 0 0 1 ${cx - R} ${y1}Z`;
+    return `<defs><clipPath id="${id}"><path d="${path}"/></clipPath></defs><path class="g" d="${path}"/><rect class="liq" x="0" y="${yl}" width="160" height="${+(y1 + d - yl).toFixed(1)}" clip-path="url(#${id})"/>`
+      + `<path class="e" d="M${cx - R} ${y0}H${cx + R}M${cx - R} ${y1}H${cx + R}"/><path class="d" d="M${cx + R + 10} ${y1 + d}V${yl}"/><text x="${cx + R + 14}" y="${mid}">h</text><path class="d r" d="M${cx - R - 12} ${y1}V${y0}"/><text x="${cx - R - 26}" y="54">H</text>`;
+  }
   // ---- containers and more solids (1.11.0)
   // the picture of a tank with the liquid up to its height (kind h: a cylinder lying down, v: standing,
   // s: a sphere, c: a cone with its point down); v: the sizes typed (the level is shown halfway when
@@ -9965,7 +10106,9 @@
     stank: (s, h) => Math.PI * h * h * (3 * s.r - h) / 3,
     ctank: (s, h) => Math.PI * s.R * s.R * h * h * h / (3 * s.H * s.H)
   };
-  const tankTop = (k, s) => (k === 'htank' || k === 'stank' ? 2 * s.r : s.H);
+  const tankTop = (k, s) => (headTank(k) ? headTankTop(k, s) : k === 'htank' || k === 'stank' ? 2 * s.r : s.H);
+  // (1.12.0, D1) the tanks with heads
+  for (const g of GEO) if (g.head) TANK_V[g.k] = (s, h) => headTankV(g.k, s, h);
   // the density of a material: [key, label, value with its unit] (typical values, said so)
   const DENSITIES = [
     ['water', tr('Water 1.000 g/cm³', '水 1.000 g/cm³'), '1.000 g/cm^3'],
@@ -10031,6 +10174,12 @@
     if (sh.k === 'pipe' && num.r >= num.R) return tr('The inner size must be smaller than the outer one', '内側の大きさは外側より小さくしてください');
     if ((sh.k === 'htank' || sh.k === 'stank') && num.h > 2 * num.r) return tr('The liquid cannot be higher than the tank (h ≤ 2r)', '液面はタンクの高さ以下にしてください（h ≤ 2r）');
     if ((sh.k === 'vtank' || sh.k === 'ctank') && num.h > num.H) return tr('The liquid cannot be higher than the tank (h ≤ H)', '液面はタンクの高さ以下にしてください（h ≤ H）');
+    // (1.12.0, D1) tanks with heads
+    if (sh.head && sh.base === 'htank' && num.h > 2 * num.r) return tr('The liquid cannot be higher than the tank (h ≤ 2r)', '液面はタンクの高さ以下にしてください（h ≤ 2r）');
+    if (sh.head && sh.base === 'vtank' && isFinite(num.h) && isFinite(num.H) && isFinite(num.r)) {
+      const a = sh.head === 'eld' ? num.a : headGeo(sh.head, num.r).a;
+      if (isFinite(a) && num.h > num.H + 2 * a * (1 + 1e-12)) return tr('The liquid cannot be higher than the tank (h ≤ H + 2a, with the heads)', '液面はタンクの高さ以下にしてください（h ≤ H + 2a、鏡板を含む）');
+    }
     return '';
   }
   // the shapes shown first in each kind (1.12.0); the others are behind "More shapes"
@@ -10042,11 +10191,12 @@
       // (1.11.0: dia, sizes of round shapes typed as diameters; vu and au, the units of the volumes and
       // areas shown; dens, the material for the weight (dv: its density when typed); amt, an amount
       // of liquid whose height is found)
-      const G = { k: GEO.some((s) => s.k === saved.k) ? saved.k : 'circle', unit: GEO_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : '', vals: saved.v || {}, seq: 0, last: {},
+      const savedShape = GEO.find((s) => s.k === saved.k);
+      const G = { k: savedShape ? (savedShape.head && PRO_GATES.tank_heads === 'pro' && !hasPro() ? savedShape.base : saved.k) : 'circle', unit: GEO_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : '', vals: saved.v || {}, seq: 0, last: {},
         dia: !!saved.dia, vu: VOL_UNITS.some((u) => u[0] === saved.vu) ? saved.vu : '', au: AREA_UNITS.some((u) => u[0] === saved.au) ? saved.au : '',
         dens: saved.dens === 'own' || DENSITIES.some((d) => d[0] === saved.dens) ? saved.dens : '', dv: saved.dv || '', amt: saved.amt || {}, more: {} };
       const cur = () => GEO.find((s) => s.k === G.k);
-      const save = () => store.set('qalc.shapes', { k: G.k, unit: G.unit, v: G.vals, dia: G.dia, vu: G.vu, au: G.au, dens: G.dens, dv: G.dv, amt: G.amt });
+      const save = () => store.set('qalc.shapes', { k: G.k, unit: G.unit, v: G.vals, dia: G.dia, vu: G.vu, au: G.au, dens: G.dens, dv: G.dv, amt: G.amt, q: G.q, qs: G.qs });
       const b2 = el('button', { text: tr('Flat shapes', '平面の図形') }), b3 = el('button', { text: tr('Solids', '立体の図形') }), b4 = el('button', { text: tr('Tanks', '容器の液量') });
       // radius or diameter for round shapes (on site a diameter is what is measured)
       const bRad = tapButton({ text: tr('Radius', '半径') }, () => { if (G.dia) { typed(); G.dia = false; choose(G.k); } });
@@ -10076,6 +10226,79 @@
       const pic = el('div', { class: 'geo-pic' }), sizes = el('div', { class: 'geo-sizes' });
       // the note under the results (A7): tanks (the shape is the ideal one), and the weight (a typical density)
       const cautionTank = cautionLine(tr('Assumes the ideal shape of the picture (no tilt, dents or fittings).', '前提：図のとおりの理想的な形（傾き・へこみ・付属物は含みません）。'));
+      // (1.12.0, D1; QCalc Pro) the heads of a lying or a standing cylinder, and the quick-reference
+      // table of every tank (the volume for each height, or the height for each volume)
+      const cautionHead = cautionLine(tr('Inside sizes (the thickness of the plates is not counted). Dished heads: ASME F&D, crown radius = diameter, knuckle radius = 6 % of the diameter.', '内側の寸法です（板の厚さは含みません）。皿形は ASME F&D（皿の半径 = 直径、ナックルの半径 = 直径の 6 %）。'));
+      const headSeg = el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Heads', '鏡板') });
+      const headMoreRow = el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Other heads', 'ほかの鏡板') });
+      const headMore = el('details', { class: 'sec-more head-more' }, el('summary', { text: tr('Other heads ▾', 'ほかの鏡板 ▾') }), headMoreRow);
+      const headRow = el('div', { class: 'head-row' }, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Heads', '鏡板') }), headSeg), headMore);
+      const setHead = (type) => {
+        const sh = cur(), base = sh.base || sh.k, k = type === 'flat' ? base : base + '_' + type;
+        if (k === sh.k) return;
+        if (type !== 'flat' && !proGate('tank_heads')) return;
+        typed();
+        // the sizes they have in common stay (radius, length, level)
+        const to = GEO.find((x) => x.k === k), old = G.vals[sh.k] || [], prev = G.vals[k] || to.def.map(toDisplay);
+        G.vals[k] = to.p.map(([n], i) => { const j = sh.p.findIndex((q) => q[0] === n); return j >= 0 && old[j] !== undefined ? old[j] : prev[i]; });
+        G.amt[k] = G.amt[k] || G.amt[sh.k] || '';
+        choose(k);
+      };
+      const showHeads = (sh) => {
+        const base = sh.base || sh.k;
+        headRow.hidden = !(base === 'htank' || base === 'vtank');
+        if (headRow.hidden) return;
+        const now = sh.head || 'flat', lock = PRO_GATES.tank_heads === 'pro' && !hasPro();
+        headSeg.textContent = ''; headMoreRow.textContent = '';
+        const add = (box, [t, label]) => box.append(tapButton({ class: now === t ? 'on' : '', 'aria-pressed': String(now === t), text: label + (t !== 'flat' && lock ? '  ⭐' : '') }, () => setHead(t)));
+        HEAD_TYPES().forEach((x) => add(headSeg, x));
+        HEAD_MORE().forEach((x) => add(headMoreRow, x));
+        if (HEAD_MORE().some(([t]) => t === now)) headMore.open = true;
+      };
+      const quickBox = el('div', { class: 'quick-box' });
+      const qStep = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: saved.qs || '', placeholder: tr('auto', '自動'), 'aria-label': tr('Step of the table', '早見表の刻み') });
+      const qUnit = el('span', { class: 'geo-unit' });
+      const qByH = tapButton({ text: tr('Height → amount', '高さ → 液量') }, () => setQ('h')), qByV = tapButton({ text: tr('Amount → height', '液量 → 高さ') }, () => setQ('v'));
+      const quick = el('details', { class: 'sec-more quick-tank' }, el('summary', { text: tr('Quick-reference table ▾', '早見表 ▾') + (PRO_GATES.tank_heads === 'pro' && !hasPro() ? '  ⭐ Pro' : '') }),
+        el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Table', '表') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Table', '表') }, qByH, qByV)),
+        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Step', '刻み') }), qStep, qUnit), quickBox);
+      G.q = saved.q === 'v' ? 'v' : 'h'; G.qs = saved.qs || '';
+      const setQ = (m, init) => { G.q = m; for (const [b, x] of [[qByH, 'h'], [qByV, 'v']]) { b.classList.toggle('on', m === x); b.setAttribute('aria-pressed', String(m === x)); } if (init) return; qStep.value = ''; G.qs = ''; save(); run(); };
+      setQ(G.q, true);
+      quick.addEventListener('toggle', () => { if (quick.open && !proGate('tank_heads')) { quick.open = false; return; } if (quick.open) run(); });
+      qStep.addEventListener('input', () => { G.qs = qStep.value; save(); run(); });
+      const quickTable = async (sh, v, base, seq) => {
+        const s = {};
+        for (const [n, , kind, , dl] of sh.p) {
+          if (n === 'h') continue;
+          const e = geoValue(v[n], kind, G.unit), x = await numValue(base ? `(${e}) / (1 ${base})` : e);
+          if (seq !== G.seq) return;
+          s[n] = x / (G.dia && dl ? 2 : 1);
+        }
+        quickBox.textContent = '';
+        if (!Object.values(s).every((x) => x > 0)) return;
+        const top = tankTop(sh.k, s), full = TANK_V[sh.k](s, top);
+        let f = 1, vName = base ? base + '³' : '';
+        if (base && G.vu) { const x = await numValue(`(1 ${base}^3) to ${G.vu}`); if (seq !== G.seq) return; if (x > 0) { f = x; vName = (VOL_UNITS.find((u) => u[0] === G.vu) || [0, G.vu])[1]; } }
+        const n6 = (x) => fmtV(+x.toPrecision(6)), pct = (x) => fmtV(+(x / full * 100).toPrecision(4));
+        const nice = (span) => { const raw = span / 10, p = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * p >= raw * 0.999) return m * p; return 10 * p; };
+        const heightOf = (want) => { let lo = 0, hi = top; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; } return (lo + hi) / 2; };
+        const span = G.q === 'h' ? top : full * f;
+        let step = boxNum(G.qs), note = '';
+        if (!(step > 0)) step = nice(span);
+        if (span / step > 200) { step = nice(span / 20); note = trf('Up to 200 rows: the step is {0}', '200 行までにするため、刻みを {0} にしました', n6(step)); }
+        const rows = [];
+        for (let i = 0; i * step < span * (1 - 1e-9); i++) {
+          const q = i * step;
+          if (G.q === 'h') { const vol = TANK_V[sh.k](s, q); rows.push([n6(q), n6(vol * f), pct(vol)]); } else { rows.push([n6(q), n6(heightOf(q / f)), pct(q / f)]); }
+        }
+        // the last row: the full tank
+        rows.push(G.q === 'h' ? [n6(top), n6(full * f), '100'] : [n6(full * f), n6(top), '100']);
+        qUnit.textContent = G.q === 'h' ? base : vName;
+        const hName = tr('Height h', '液面の高さ h') + (base ? ' (' + base + ')' : ''), vCol = tr('Liquid', '液量') + (vName ? ' (' + vName + ')' : '');
+        showTable(quickBox, { title: G.q === 'h' ? tr('The amount for each height', '高さごとの液量') : tr('The height for each amount', '液量ごとの高さ'), head: G.q === 'h' ? [hName, vCol, '%'] : [vCol, hName, '%'], rows, name: 'tank' });
+        if (note) quickBox.append(el('div', { class: 'form-hint', text: note }));
+      };
       const cautionWeight = cautionLine(tr('The densities of the list are typical values.', '前提：一覧の密度は代表的な値です。'));
       const outs = el('div', { class: 'geo-out', 'aria-live': 'polite' });
       const unit = el('select', { 'aria-label': tr('Unit of the lengths', '長さの単位') });
@@ -10163,10 +10386,10 @@
           const sub = (unit) => row.def[2].replace(/\{(\w+)\}/g, (m, n) => { if (n === 'turn') return fullTurn(); const q = sh.p.find((x) => x[0] === n) || [], g = geoValue(v[n], q[2], unit); return G.dia && q[4] ? `(${g} / 2)` : g; });
           // a row worked out by the page itself (the surface of an ellipsoid, 1.11.0)
           if (typeof row.def[2] === 'function') {
-            const rr = await row.def[2](G.dia ? Object.fromEntries(Object.entries(v).map(([n, x]) => [n, (sh.p.find((q) => q[0] === n) || [])[4] ? `(${x}) / 2` : x])) : v, { unit: G.unit, base });
+            const rr = await row.def[2](G.dia ? Object.fromEntries(Object.entries(v).map(([n, x]) => [n, (sh.p.find((q) => q[0] === n) || [])[4] ? `(${x}) / 2` : x])) : v, { unit: G.unit, base, vu: G.vu });
             if (seq !== G.seq) return;
             if (!rr) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
-            row.expr = rr.expr; row.result = rr.result; row.shown = rr.shown;
+            row.expr = rr.expr; row.result = rr.result; row.shown = rr.shown; row.vol = rr.vol || '';
             row.node.dataset.value = row.shown; showResult(row.val, row.shown);
             continue;
           }
@@ -10189,6 +10412,7 @@
         await weight(rows, seq);
         if (seq !== G.seq) return;
         if (sh.d === 4) await tankHeight(sh, v, base, seq);
+        if (sh.d === 4 && quick.open) await quickTable(sh, v, base, seq);
       }, 220);
       const choose = (k) => {
         G.k = k;
@@ -10205,10 +10429,10 @@
         chips.textContent = '';
         // 1.12.0: the six most used shapes of a kind first, the others behind "More shapes" (and the
         // one chosen, wherever it is), so that no more than about seven are offered at once
-        const all = GEO.filter((x) => x.d === sh.d), common = GEO_COMMON[sh.d];
-        const shown = common && !G.more[sh.d] ? all.filter((x) => common.indexOf(x.k) >= 0 || x.k === k) : all;
+        const all = GEO.filter((x) => x.d === sh.d && !x.head), common = GEO_COMMON[sh.d], bk = sh.base || k;
+        const shown = common && !G.more[sh.d] ? all.filter((x) => common.indexOf(x.k) >= 0 || x.k === bk) : all;
         for (const s of shown) {
-          chips.append(tapButton({ class: 'geo-chip' + (s.k === k ? ' on' : ''), 'aria-pressed': String(s.k === k), html: svg(s, null, true) + '<span></span>' }, () => { if (s.k !== G.k) { typed(); choose(s.k); } }));
+          chips.append(tapButton({ class: 'geo-chip' + (s.k === bk ? ' on' : ''), 'aria-pressed': String(s.k === bk), html: svg(s, null, true) + '<span></span>' }, () => { if (s.k !== bk) { typed(); choose(s.k); } }));
           chips.lastChild.lastChild.textContent = s.name;
         }
         if (shown.length < all.length) {
@@ -10216,6 +10440,7 @@
         } else if (common && G.more[sh.d]) {
           chips.append(tapButton({ class: 'geo-chip geo-more', 'aria-expanded': 'true', text: tr('Fewer ▴', '閉じる ▴') }, () => { G.more[sh.d] = false; choose(G.k); }));
         }
+        showHeads(sh);
         const old = G.vals[k] || [];
         inputs = {}; sizes.textContent = '';
         sh.p.forEach(([n, label0, kind, sym0, dl], i) => {
@@ -10253,14 +10478,14 @@
       p.showKind = (d) => { const b = { 2: b2, 3: b3, 4: b4 }[d]; if (b && cur().d !== d) b.click(); };
       vUnit.addEventListener('change', () => { G.vu = vUnit.value; save(); run(); });
       aUnit.addEventListener('change', () => { G.au = aUnit.value; save(); run(); });
-      const showCaution = () => { const d = cur().d; cautionTank.hidden = d !== 4; cautionWeight.hidden = d !== 3 || !G.dens; };
+      const showCaution = () => { const d = cur().d; cautionTank.hidden = d !== 4; cautionWeight.hidden = d !== 3 || !G.dens; cautionHead.hidden = !cur().head; };
       dens.addEventListener('change', () => { G.dens = dens.value; densIn.hidden = G.dens !== 'own'; showCaution(); save(); run(); if (G.dens === 'own') densIn.focus(); });
       densIn.addEventListener('input', () => { G.dv = densIn.value; save(); run(); });
       amtIn.addEventListener('input', () => { G.amt[G.k] = amtIn.value; save(); run(); });
-      p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips,
+      p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips, headRow,
         el('div', { class: 'geo-main' }, pic, el('div', { class: 'geo-side' }, rdSeg, sizes,
           el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
-        outUnits, msg, outs, amtRow, weightRow, cautionTank, cautionWeight, graph,
+        outUnits, msg, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
         // 1.11.0: the volume from measured values (a table of cross sections, a grid of heights)
         tapButton({ class: 'btn geo-link', text: tr('Volume from measured values (cross sections, grid of heights) ›', '測った値から体積（断面積の表・点高法）›') }, () => openSections()),
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
@@ -12178,7 +12403,8 @@
     tables: ['📄', tr('Tables as CSV files', '表の CSV 保存'), tr('Save the tables of a loan or of savings as CSV files for a spreadsheet (showing them stays free)', 'ローンや積立の表を、表計算ソフト用の CSV ファイルに保存（表を見るのは無料）')],
     convert: ['⇄', tr('Convert units and currencies', '単位・通貨の換算'), tr('Two boxes that convert both ways', '両方向に換算できる 2 つの欄')],
     quick: ['⌂', tr('Widget, tile and shortcuts', 'ウィジェット・タイル・ショートカット'), tr('Open QCalc from the home screen and the quick settings', 'ホーム画面やクイック設定から QCalc を開く')],
-    stats: ['📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰')]
+    stats: ['📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰')],
+    tank_heads: ['🛢', tr('Tank heads and quick-reference tables', 'タンクの鏡板と早見表'), tr('Hemispherical, semi-elliptical and dished heads; the amount for each height and the height for each amount', '半球・半楕円・皿形の鏡板、高さごとの液量と液量ごとの高さの表')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {
