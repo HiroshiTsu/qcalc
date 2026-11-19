@@ -1,0 +1,16 @@
+1
+00:00:00,150 --> 00:00:06,272
+Un prix avec remise et TVA ?
+
+2
+00:00:06,392 --> 00:00:10,730
+Touchez un exemple, c’est tout.
+
+3
+00:00:11,150 --> 00:00:15,310
+La mensualité d’un prêt
+
+4
+00:00:15,430 --> 00:00:21,730
+et tout le tableau d’un coup.
+

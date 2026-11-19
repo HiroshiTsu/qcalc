@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>QCalc press kit</title>
+<meta name="description" content="Facts, descriptions, pictures and contacts for writing about QCalc, a scientific calculator for Android.">
+<style>
+  :root { --bg: #ffffff; --text: #1d2433; --muted: #5b6475; --line: #dde2ea; --accent: #2459d9; --card: #f4f6fa; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #121418; --text: #e6e9ef; --muted: #a3abb9; --line: #2e333d; --accent: #7aa5ff; --card: #1b1e24; } }
+  html { background: var(--bg); }
+  body { margin: 0 auto; max-width: 860px; padding: 32px 16px 48px; background: var(--bg); color: var(--text);
+         font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Noto Sans CJK JP", Meiryo, sans-serif;
+         line-height: 1.7; font-size: 16px; }
+  header { display: flex; align-items: center; gap: 16px; }
+  header img { width: 72px; height: 72px; border-radius: 18px; }
+  h1 { font-size: 2em; margin: 0; line-height: 1.2; }
+  .sub { color: var(--muted); margin: 0; }
+  h2 { font-size: 1.15em; margin: 1.8em 0 .5em; padding-top: .6em; border-top: 1px solid var(--line); }
+  a { color: var(--accent); }
+  table { border-collapse: collapse; width: 100%; font-size: .95em; }
+  th, td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  th { width: 34%; color: var(--muted); font-weight: 600; }
+  .quote { background: var(--card); border-radius: 10px; padding: 12px 16px; margin: 8px 0; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .shots a { display: block; text-decoration: none; color: var(--muted); font-size: .85em; }
+  .shots img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); display: block; margin-bottom: 4px; }
+  .wide { grid-column: span 2; }
+  .lang { margin: 12px 0 0; font-size: .92em; }
+  hr { border: 0; border-top: 2px solid var(--line); margin: 48px 0 24px; }
+  ul { padding-left: 1.3em; }
+</style>
+</head>
+<body>
+<header>
+  <img src="../icon-512.png" alt="QCalc icon">
+  <div>
+    <h1>QCalc press kit</h1>
+    <p class="sub">A scientific calculator for Android that you type into the way you write math</p>
+  </div>
+</header>
+<p class="lang"><a href="#ja" lang="ja">日本語</a></p>
+
+<h2>In one sentence</h2>
+<div class="quote">QCalc is a scientific calculator for Android that you type into the way you write math on paper: units and currencies, everyday tools such as prices and loans, equations, graphs, and solids of revolution with their volume, all in one app that works offline.</div>
+
+<h2>A longer description</h2>
+<div class="quote">
+<p>QCalc lets you type a calculation as you would write it, such as <code>60 mph to km/h</code>, <code>solve(x^2 − 5x + 6 = 0)</code> or <code>integrate(x^2 sin(x), 0, pi)</code>, and keeps answers exact when it can (fractions, roots, π). Its Tools screen gathers everyday calculations — price with discount and tax, percentages, unit prices, splitting a bill, loans with a repayment table, savings, dates and hours worked — each with examples that give the answer with one tap. In the 2D graph, "⟳ 3D" turns the region between two curves into a solid of revolution and shows its volume at once.</p>
+<p>QCalc runs every calculation on the phone, collects no personal data and has no ads. It is open source (GNU GPL v2 or later) and uses libqalculate, the open-source calculation engine of Qalculate!; QCalc is made independently by one developer and is not affiliated with the Qalculate! project. The app and its user manual are in seven languages.</p>
+</div>
+
+<h2>Facts</h2>
+<table>
+  <tr><th>App</th><td>QCalc (package <code>io.github.hiroshitsu.qcalc</code>)</td></tr>
+  <tr><th>Version</th><td>1.12.0</td></tr>
+  <tr><th>Platform</th><td>Android 7.0 or later, 64-bit ARM (arm64)</td></tr>
+  <tr><th>Developer</th><td>HiroshiTsu (an individual developer)</td></tr>
+  <tr><th>Languages</th><td>English, Japanese, Spanish, German, French, Korean, Traditional Chinese (the app and its user manual)</td></tr>
+  <tr><th>Business model</th><td>Free to download. QCalc Pro, one in-app purchase (not a subscription), adds features for work: the 3D graph, more than 1,000 digits, tank heads, solids from a measured profile, STL files, CSV of tables and history, color themes, more calculation notes. Everything for learning and everyday use works without it. The price is shown on Google Play.</td></tr>
+  <tr><th>Ads</th><td>None</td></tr>
+  <tr><th>Privacy</th><td>No personal data is collected or sent. The internet is used only to fetch exchange rates. <a href="../privacy.html">Privacy policy</a></td></tr>
+  <tr><th>License</th><td>GNU General Public License v2 or later; <a href="https://github.com/HiroshiTsu/qcalc">source code on GitHub</a></td></tr>
+  <tr><th>Calculation engine</th><td>libqalculate 5.13 (open source, the engine of Qalculate!) with FLINT/Arb for fast special functions; up to 200,000 digits</td></tr>
+</table>
+
+<h2>What it does</h2>
+<ul>
+  <li>Expressions typed as written, with units, currencies, equations, calculus, matrices up to 30 × 30, complex numbers and number bases; exact answers</li>
+  <li>Tools with examples: price with discount and tax, percentages, unit prices, splitting a bill, loans, savings, dates, times, unit and currency conversion, statistics with regression, calculation notes</li>
+  <li>2D graphs with derivatives, areas and lengths; "⟳ 3D" turns a region into a solid of revolution with its volume; solids with known cross sections; Pappus's theorem</li>
+  <li>Areas and volumes of 22 shapes, liquid in tanks, volume from measured cross sections</li>
+  <li>History with search, pins, notes and sums; a home screen widget and a quick settings tile; sharing a graph as a picture</li>
+  <li>A user manual inside the app that works offline ("?" on every tool opens its page), and a <a href="../manual/">web version with photos and PDFs</a></li>
+</ul>
+
+<h2>Pictures</h2>
+<p>You may use these pictures and the icon in articles and reviews about QCalc. Please do not change them in a way that changes what the app does, and do not suggest that the Qalculate! project endorses QCalc. Click a picture for the full size.</p>
+<div class="shots">
+  <a href="img/feature-graphic-en.png" class="wide"><img src="img/feature-graphic-en.png" alt="QCalc feature graphic (English)">Feature graphic, 1024 × 500</a>
+  <a href="img/landscape-en.png" class="wide"><img src="img/landscape-en.png" alt="A region of a graph turned into a 3D solid">2D to 3D, 1920 × 1080</a>
+  <a href="img/phone-en-1.png"><img src="img/phone-en-1.png" alt="Typing math as you write it">Calculator</a>
+  <a href="img/phone-en-2.png"><img src="img/phone-en-2.png" alt="Price with discount and tax">Everyday tools</a>
+  <a href="img/phone-en-4.png"><img src="img/phone-en-4.png" alt="From 2D to a 3D solid">2D to 3D (3D view: QCalc Pro)</a>
+  <a href="img/phone-en-5.png"><img src="img/phone-en-5.png" alt="Volume and weight from a profile">Solid from a profile (QCalc Pro)</a>
+  <a href="../icon-512.png"><img src="../icon-512.png" alt="QCalc icon">Icon, 512 × 512</a>
+</div>
+<p>All pictures in every language: <a href="https://github.com/HiroshiTsu/qcalc/tree/main/store">store/ in the source code</a> (screenshots-1.12/, feature-graphic-1.12-*.png).</p>
+
+<h2>Links and contact</h2>
+<ul>
+  <li><a href="https://play.google.com/store/apps/details?id=io.github.hiroshitsu.qcalc">QCalc on Google Play</a></li>
+  <li><a href="../manual/">User manual</a> · <a href="../">Website</a> · <a href="https://github.com/HiroshiTsu/qcalc">Source code</a></li>
+  <li>Press and other questions: <a href="mailto:hiroshitsu.apps@gmail.com">hiroshitsu.apps@gmail.com</a></li>
+</ul>
+
+<hr>
+
+<div id="ja" lang="ja">
+<h1>QCalc プレスキット</h1>
+<p class="sub">式を紙に書くとおりに打てる、Android の関数電卓</p>
+
+<h2>ひとことで</h2>
+<div class="quote">QCalc は、式を紙に書くとおりに打って計算できる Android の関数電卓です。単位・通貨の換算、値段やローンなどの日常の道具、方程式、グラフ、回転体の体積までを、ネットなしで動く 1 つのアプリにまとめました。</div>
+
+<h2>少し長い説明</h2>
+<div class="quote">
+<p>QCalc では、<code>60 mph to km/h</code>、<code>solve(x^2 − 5x + 6 = 0)</code>、<code>integrate(x^2 sin(x), 0, pi)</code> のように、式を書くとおりに打つと答えが出ます。答えは、できるときは分数・√・π のままの厳密な形で出します。「道具」の画面には、値段（割引と税）、割合、単価、割り勘、ローンと返済表、積立、日付、勤務時間などの日常の計算をまとめ、どれも例をタップするとすぐ答えが出ます。2D グラフの「⟳ 3D」は、2 つの曲線で囲まれた部分を回転体にして、その体積をすぐ出します。</p>
+<p>計算はすべて端末の中で行い、個人データは集めず、広告もありません。オープンソース（GNU GPL v2 以降）で、オープンソースの計算エンジン libqalculate（Qalculate! の計算エンジン）を使っています。QCalc は Qalculate! の開発者とは関係のない個人が作っています。アプリと取扱説明書は 7 言語です。</p>
+</div>
+
+<h2>事実の一覧</h2>
+<table>
+  <tr><th>アプリ</th><td>QCalc（パッケージ名 <code>io.github.hiroshitsu.qcalc</code>）</td></tr>
+  <tr><th>版</th><td>1.12.0</td></tr>
+  <tr><th>対応</th><td>Android 7.0 以上、64 ビット ARM（arm64）</td></tr>
+  <tr><th>開発</th><td>HiroshiTsu（個人）</td></tr>
+  <tr><th>言語</th><td>日本語・英語・スペイン語・ドイツ語・フランス語・韓国語・繁體中文（アプリと取扱説明書）</td></tr>
+  <tr><th>仕組み</th><td>ダウンロードは無料。QCalc Pro（アプリ内での 1 回の購入。定期購入ではない）で、仕事向けの機能（3D グラフ、1,000 桁を超える計算、タンクの鏡板、輪郭から回転体、STL、表と履歴の CSV、配色テーマ、2 つ目からの計算メモ）が使えます。学習と日常に使う機能は、購入しなくてもすべて使えます。価格は Google Play に表示されます。</td></tr>
+  <tr><th>広告</th><td>なし</td></tr>
+  <tr><th>プライバシー</th><td>個人データを集めず、送りません。インターネットは為替レートの取得だけに使います。<a href="../privacy.html">プライバシーポリシー</a></td></tr>
+  <tr><th>ライセンス</th><td>GNU GPL v2 以降。<a href="https://github.com/HiroshiTsu/qcalc">ソースコード（GitHub）</a></td></tr>
+  <tr><th>計算エンジン</th><td>libqalculate 5.13（オープンソース、Qalculate! の計算エンジン）と、特殊関数を速くする FLINT/Arb。最大 20 万桁</td></tr>
+</table>
+
+<h2>画像</h2>
+<p>上の画像とアイコンは、QCalc についての記事やレビューに使っていただけます。アプリの働きが変わって見えるような加工と、Qalculate! の開発者が推薦しているように見せることはご遠慮ください。日本語の画像：<a href="img/phone-ja-1.png">計算画面</a>、<a href="img/phone-ja-4.png">2D から 3D</a>、<a href="img/feature-graphic-ja.png">フィーチャー グラフィック</a>。ほかの言語の画像は、ソースコードの <a href="https://github.com/HiroshiTsu/qcalc/tree/main/store">store/</a> にあります。</p>
+
+<h2>リンクと問い合わせ</h2>
+<ul>
+  <li><a href="https://play.google.com/store/apps/details?id=io.github.hiroshitsu.qcalc">Google Play の QCalc</a></li>
+  <li><a href="../manual/">取扱説明書</a> ・ <a href="../">ウェブサイト</a> ・ <a href="https://github.com/HiroshiTsu/qcalc">ソースコード</a></li>
+  <li>取材・お問い合わせ：<a href="mailto:hiroshitsu.apps@gmail.com">hiroshitsu.apps@gmail.com</a></li>
+</ul>
+</div>
+</body>
+</html>

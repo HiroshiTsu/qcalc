@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:07,417
+Escribe las cuentas como en papel.
+
+2
+00:00:07,538 --> 00:00:13,574
+¿Cuántas mph son 100 km/h?
+
+3
+00:00:13,694 --> 00:00:19,730
+Ecuaciones e integrales, tal cual.
+

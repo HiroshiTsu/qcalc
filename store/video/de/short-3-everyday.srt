@@ -1,0 +1,16 @@
+1
+00:00:00,150 --> 00:00:07,163
+Ein Preis mit Rabatt und MwSt.?
+
+2
+00:00:07,283 --> 00:00:10,730
+Beispiel antippen, fertig.
+
+3
+00:00:11,150 --> 00:00:15,786
+Die Monatsrate eines Kredits
+
+4
+00:00:15,906 --> 00:00:21,730
+und gleich der ganze Tilgungsplan.
+

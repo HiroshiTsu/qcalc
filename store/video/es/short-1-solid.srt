@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:07,417
+Toma la región entre dos gráficas,
+
+2
+00:00:07,538 --> 00:00:11,111
+toca ⟳ 3D
+
+3
+00:00:11,231 --> 00:00:19,730
+y obtén el sólido y su volumen.
+

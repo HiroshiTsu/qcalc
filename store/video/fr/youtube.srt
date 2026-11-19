@@ -1,0 +1,116 @@
+1
+00:00:00,150 --> 00:00:03,630
+Sur une calculatrice, taper une formule est pénible.
+
+2
+00:00:03,750 --> 00:00:08,580
+Les unités demandent une autre appli, les courbes encore une autre.
+
+3
+00:00:08,700 --> 00:00:11,730
+QCalc réunit tout dans une calculatrice scientifique.
+
+4
+00:00:12,150 --> 00:00:16,140
+Tapez vos calculs comme sur papier.
+
+5
+00:00:16,260 --> 00:00:21,620
+Avec les unités, comme 100 km/h to mph,
+
+6
+00:00:21,740 --> 00:00:25,730
+ou résolvez une équation, une intégrale.
+
+7
+00:00:26,150 --> 00:00:32,530
+Le résultat peut rester exact, avec fractions, racines et π.
+
+8
+00:00:32,650 --> 00:00:37,730
+Avec plus de précision, jusqu’à 200 000 chiffres.
+
+9
+00:00:38,150 --> 00:00:42,580
+Les calculs du quotidien sont dans Outils.
+
+10
+00:00:42,700 --> 00:00:49,730
+Le prix avec remise et TVA : touchez simplement un exemple.
+
+11
+00:00:50,150 --> 00:00:55,880
+Pour un prêt : mensualité, intérêts et tableau d’amortissement.
+
+12
+00:00:56,000 --> 00:01:01,730
+Et aussi l’addition partagée, les dates et les heures.
+
+13
+00:01:02,150 --> 00:01:10,895
+Dans le convertisseur, tapez un nombre, il est converti aussitôt :
+
+14
+00:01:11,015 --> 00:01:15,730
+longueur, masse, température, consommation et devises.
+
+15
+00:01:16,150 --> 00:01:22,310
+Tracez deux fonctions dans le graphique 2D et touchez ⟳ 3D :
+
+16
+00:01:22,430 --> 00:01:27,543
+la région devient un solide de révolution, avec son volume.
+
+17
+00:01:27,663 --> 00:01:31,730
+La vue 3D fait partie de QCalc Pro.
+
+18
+00:01:32,150 --> 00:01:38,195
+Touchez un axe pour faire tourner la région autour,
+
+19
+00:01:38,315 --> 00:01:45,730
+et montrez les disques ou les tubes qui font le volume.
+
+20
+00:01:46,150 --> 00:01:50,710
+QCalc Pro part des positions et diamètres mesurés,
+
+21
+00:01:50,830 --> 00:01:57,730
+donne le volume, la contenance et la masse, et enregistre un STL.
+
+22
+00:01:58,150 --> 00:02:05,730
+Il trouve aussi le liquide d’une cuve d’après sa hauteur.
+
+23
+00:02:06,150 --> 00:02:12,426
+Les notes de calcul vont ligne par ligne, avec le total.
+
+24
+00:02:12,546 --> 00:02:18,241
+On peut nommer les valeurs, comme loyer = 850 EUR.
+
+25
+00:02:18,361 --> 00:02:21,730
+L’historique se cherche, s’épingle et s’additionne.
+
+26
+00:02:22,150 --> 00:02:29,830
+Touchez ? sur un écran pour ouvrir sa page du mode d’emploi.
+
+27
+00:02:29,950 --> 00:02:33,730
+Le mode d’emploi fonctionne hors ligne.
+
+28
+00:02:34,150 --> 00:02:38,669
+Tout est calculé sur votre téléphone, sans collecte de données personnelles.
+
+29
+00:02:38,789 --> 00:02:43,730
+Vos calculs comme sur papier, du graphique au solide 3D. Voici QCalc.
+
