@@ -31,19 +31,19 @@
     ]
   },
   "scenes": {
-    "rev": "2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D (the region turns, V appears), then View in 3D (the solid grows from 0° to 360°; QCalc Pro)",
+    "rev": "2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D: the 3D view opens at once, the solid grows from 0° to 360° with its volume V large above the graph (QCalc Pro; 1.12.0, BG20), then turned with a finger",
     "type": "The calculator: 60 mph to km/h (or 100 km/h to mph), solve(x^2 − 5x + 6 = 0), integrate(x^2 sin(x), 0, pi), typed one character at a time, = after each",
     "exact": "The calculator: sqrt(8), 1/3 + 1/4, solve(x^2 = 2): exact answers",
     "price": "Tools → Price: discount and tax → the first example",
     "loan": "Tools → Loan → the first example, then down to the repayment table",
     "convert": "Tools → Convert units and currencies → 5 typed → km to mi, then the categories",
-    "axis": "2D graph with the region turned: tap the y axis (the axis changes), then Show the method with lines",
+    "axis": "2D graph with the region turned (⟳ 3D, then ← Back to 2D): tap the y axis (the axis changes), then Show the method with lines",
     "profile": "Tools → Solid from a profile (QCalc Pro) → the first example → View in 3D",
     "tank": "Tools → Tanks: liquid and level → horizontal cylinder 1 m × 2 m, 0.3 m → the results",
     "notes": "Tools → Calculation notes → the first example (names and a total)",
     "manual": "Tools → Price → ? → the page of the user manual (in the app, offline)",
     "end": "Closing card: the icon, QCalc and the line of the language (not the app)",
-    "rev3d": "2D graph with the region already turned: View in 3D (the solid grows from 0° to 360°), then turned with a finger (QCalc Pro)"
+    "rev3d": "2D graph with the region already turned (⟳ 3D, then ← Back to 2D): View in 3D (the solid grows from 0° to 360°), then turned with a finger (QCalc Pro)"
   },
   "langs": {
     "ja": {

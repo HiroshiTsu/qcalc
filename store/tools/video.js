@@ -70,6 +70,15 @@ async function smoothScroll(page, sel, off, ms) {
   }, [sel, off, ms || 700]);
   await sleep(300);
 }
+// (1.12.0, BG20) with Pro, ⟳ 3D shows the solid in 3D at once: back to the 2D graph ("← Back to 2D"), and
+// the hint about the axes (shown on coming back, the first time) gone
+async function back2d(page) {
+  for (let i = 0; i < 150; i++) {
+    const done = await page.evaluate(() => { const b = document.querySelector('.panel.open .rev3d-back'); if (b && !b.hidden && b.getClientRects().length) { b.querySelector('.btn').click(); return true; } return false; });
+    if (done) { await sleep(6800); return; }
+    await sleep(200);
+  }
+}
 async function graphReady(page, fns) {
   await Q.menu(page, 2);
   const m2 = page.locator('.panel.open .plot-mode').nth(0);
@@ -84,15 +93,15 @@ const SCENES = {
     run: async (page) => {
       const m2 = page.locator('.panel.open .plot-mode').nth(0);
       await sleep(500); await tap(page, m2.locator('.plot-form .btn.primary')); await sleep(2200);
-      await tap(page, m2.locator('button.rev3d')); await sleep(4200);
-      await smoothScroll(page, '.plot-wrap', 8); await sleep(800);
-      await view3d(page);
-      await sleep(4500); await smoothScroll(page, '.plot-wrap', 8); await sleep(600); await turn3d(page, 1800); await sleep(1500);
+      // (1.12.0, BG20: ⟳ 3D goes to the 3D view at once; the solid grows from 0° to 360° with its volume above)
+      await tap(page, m2.locator('button.rev3d')); await sleep(1500);
+      await smoothScroll(page, '.rev3d-back', 8); await sleep(4200);
+      await smoothScroll(page, '.plot-wrap', 8); await sleep(600); await turn3d(page, 1800); await sleep(1500);
     }
   },
   // the region already turned; View in 3D at once (for the first seconds of a video)
   rev3d: {
-    prep: async (page) => { const m2 = await graphReady(page, 'x\nx^2'); await m2.locator('.plot-form .btn.primary').click(); await sleep(2200); await m2.locator('button.rev3d').click(); await sleep(4500); await Q.scrollTo(page, '.plot-wrap', 8); },
+    prep: async (page) => { const m2 = await graphReady(page, 'x\nx^2'); await m2.locator('.plot-form .btn.primary').click(); await sleep(2200); await m2.locator('button.rev3d').click(); await sleep(1500); await back2d(page); await Q.scrollTo(page, '.plot-wrap', 8); },
     run: async (page) => { await sleep(700); await view3d(page); await sleep(4300); await smoothScroll(page, '.plot-wrap', 8); await sleep(300); await turn3d(page, 1600); await sleep(800); }
   },
   type: {
@@ -127,7 +136,7 @@ const SCENES = {
     }
   },
   axis: {
-    prep: async (page) => { const m2 = await graphReady(page, 'x\nx^2'); await m2.locator('.plot-form .btn.primary').click(); await sleep(2200); await m2.locator('button.rev3d').click(); await sleep(4500); await Q.scrollTo(page, '.plot-wrap', 8); },
+    prep: async (page) => { const m2 = await graphReady(page, 'x\nx^2'); await m2.locator('.plot-form .btn.primary').click(); await sleep(2200); await m2.locator('button.rev3d').click(); await sleep(1500); await back2d(page); await Q.scrollTo(page, '.plot-wrap', 8); },
     run: async (page) => {
       await sleep(600);
       // the y axis of the graph: tap on its line (14 px from it counts)

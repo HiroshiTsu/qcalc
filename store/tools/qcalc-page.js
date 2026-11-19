@@ -93,7 +93,14 @@ async function solid2d(page) {
   const m2 = page.locator('.panel.open .plot-mode').nth(0);
   await m2.locator('textarea').fill('x\nx^2'); await m2.locator('.plot-form .plot-range input').nth(0).fill('-0.5'); await m2.locator('.plot-form .plot-range input').nth(1).fill('1.5');
   await m2.locator('.plot-form .btn.primary').click(); await sleep(2500);
-  await m2.locator('button.rev3d').click(); await sleep(6000);
+  await m2.locator('button.rev3d').click(); await sleep(1500);
+  // (1.12.0, BG20: with Pro, ⟳ 3D shows the solid in 3D at once; this picture is of the 2D graph: back to it,
+  // and the hint about the axes, shown on coming back the first time, gone)
+  for (let i = 0; i < 150; i++) {
+    const done = await page.evaluate(() => { const b = document.querySelector('.panel.open .rev3d-back'); if (b && !b.hidden && b.getClientRects().length) { b.querySelector('.btn').click(); return true; } return false; });
+    if (done) { await sleep(6800); break; }
+    await sleep(200);
+  }
   await scrollTo(page, '.plot-wrap', 8);
 }
 // then "View in 3D": the 3D graph of the solid (QCalc Pro), after it has turned from 0° to 360°
