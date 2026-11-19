@@ -392,9 +392,9 @@
   //   tables as CSV files ('tables': the loan and savings tables of C1, the quick-reference tables of
   //   D1; showing the C1 tables stays free); the heads of tanks (hemispherical, semi-elliptical,
   //   dished) and the quick-reference tables of tanks ('tank_heads', D1; the flat-ended tanks of
-  //   1.11.0 stay free). Still to come, each with its own key: solids from a profile (D2), STL files
-  //   (D3), GIFs, pictures without the mark and in a higher resolution (D4), the second and later
-  //   notes and exporting them (D5).
+  //   1.11.0 stay free); a solid from a profile ('profile', D2). Still to come, each with its own
+  //   key: STL files (D3), GIFs, pictures without the mark and in a higher resolution (D4), the
+  //   second and later notes and exporting them (D5).
   // - A feature that was once free is never made Pro: the keys of 1.11.0 stay 'free'.
   // Those who used QCalc before Pro began have Pro for free (Pro.java); this does not change it.
   const PRO_GATES = {
@@ -412,7 +412,8 @@
     convert: 'free',       // the conversion of units and currencies (1.12 C2)
     quick: 'free',         // the widget, the tile and the shortcuts of the icon (1.12 C3)
     stats: 'free',         // statistics: one or two columns, regression, the graph (1.12 C4)
-    tank_heads: 'pro'      // the heads of tanks (hemispherical, semi-elliptical, dished) and the quick-reference tables of tanks (1.12 D1): Pro (work)
+    tank_heads: 'pro',     // the heads of tanks (hemispherical, semi-elliptical, dished) and the quick-reference tables of tanks (1.12 D1): Pro (work)
+    profile: 'pro'         // a solid from a measured profile: volume, capacity, weight, surface, its table (1.12 D2): Pro (work)
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -10497,6 +10498,284 @@
     if (kind && p.showKind) p.showKind(kind);
     return p;
   }
+  // ------------------------------------------------ solid from a profile (1.12.0, D2; QCalc Pro)
+  // A table of positions along the axis and diameters (or radii), as measured on a turned part, a pot
+  // or a vase; an inner profile (the inside of a container) under "More". Between the points: straight
+  // (stacked frustums; the volume exactly by the engine) or a smooth monotone cubic (worked out here).
+  // Two points at the same position make a step. The results: the outer volume, the inner capacity,
+  // the material and its weight, the surface; the shrinkage of pottery; a quick-reference table of
+  // the height and the amount; the profile drawn, and the solid in 3D (the 3D graph: Pro).
+  const PF_UNITS = ['mm', 'cm', 'm', 'in'];
+  const PF_CM3 = { mm: 1e-3, cm: 1, m: 1e6, in: 16.387064 }; // cm³ in one unit³
+  const PF_EX = () => [
+    [tr('Stepped shaft (iron)', '段付きの軸（鉄）'), { unit: 'mm', dia: true, rows: [[0, 20], [30, 20], [30, 12], [70, 12]], inner: [], dens: 'iron' }],
+    [tr('Cup', 'コップ'), { unit: 'cm', dia: true, rows: [[0, 6], [10, 8]], inner: [[0.5, 5.4], [10, 7.6]], dens: '' }],
+    [tr('Vase', '花瓶'), { unit: 'cm', dia: true, rows: [[0, 8], [6, 14], [14, 10], [20, 6], [24, 7]], inner: [], dens: '' }]
+  ];
+  // the points of a profile: [{ z, r, zs, rs (as typed, for the exact expression) }] or { error, row }
+  function pfPoints(rows, dia) {
+    const pts = [];
+    for (let i = 0; i < rows.length; i++) {
+      const a = String(rows[i][0] || '').trim(), b = String(rows[i][1] || '').trim();
+      if (!a && !b) continue;
+      if (!a || !b) return { error: trf('Row {0}: enter both the position and the size (or clear the row)', '{0} 行目：位置と大きさの両方を入れてください（使わない行は空にします）', i + 1), row: i, col: a ? 1 : 0 };
+      const z = statVal(a), d = statVal(b);
+      if (!isFinite(z)) return { error: trf('Row {0}: enter the position as a number', '{0} 行目：位置を数で入れてください', i + 1), row: i, col: 0 };
+      if (!isFinite(d)) return { error: trf('Row {0}: enter the size as a number', '{0} 行目：大きさを数で入れてください', i + 1), row: i, col: 1 };
+      if (d < 0) return { error: trf('Row {0}: a diameter or radius cannot be negative', '{0} 行目：直径・半径は負にできません', i + 1), row: i, col: 1 };
+      if (pts.length && z < pts[pts.length - 1].z) return { error: trf('Row {0}: the positions must not go down from row to row (the same position twice makes a step)', '{0} 行目：位置は行ごとに同じか大きくしてください（同じ位置を 2 回入れると段になります）', i + 1), row: i, col: 0 };
+      pts.push({ z, r: dia ? d / 2 : d, zs: exprNum(z), rs: dia ? '(' + exprNum(d) + ' / 2)' : exprNum(d) });
+    }
+    if (pts.length < 2 || pts[pts.length - 1].z === pts[0].z) return { error: tr('Enter at least two points at different positions', '位置の違う点を 2 つ以上入れてください') };
+    return pts;
+  }
+  // the radius along the profile: straight, or monotone cubic (Fritsch–Carlson) in each part between steps
+  function pfShape(pts, smooth) {
+    const segs = [];
+    for (let i = 1; i < pts.length; i++) if (pts[i].z > pts[i - 1].z) segs.push({ a: pts[i - 1], b: pts[i], i: i - 1 });
+    const slope = new Map();
+    if (smooth) {
+      // the runs without a step
+      let run = [pts[0]];
+      const runs = [];
+      for (let i = 1; i < pts.length; i++) { if (pts[i].z === pts[i - 1].z) { runs.push(run); run = [pts[i]]; } else run.push(pts[i]); }
+      runs.push(run);
+      for (const q of runs) {
+        const n = q.length;
+        if (n < 2) continue;
+        const d = [], m = new Array(n).fill(0);
+        for (let i = 0; i < n - 1; i++) d.push((q[i + 1].r - q[i].r) / (q[i + 1].z - q[i].z));
+        m[0] = d[0]; m[n - 1] = d[n - 2];
+        for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+        for (let i = 0; i < n - 1; i++) {
+          if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+          const al = m[i] / d[i], be = m[i + 1] / d[i], t = al * al + be * be;
+          if (t > 9) { const k = 3 / Math.sqrt(t); m[i] = k * al * d[i]; m[i + 1] = k * be * d[i]; }
+        }
+        q.forEach((p, i) => slope.set(p, m[i]));
+      }
+    }
+    // r(z) and r'(z) in a segment
+    const at = (s, z) => {
+      const h = s.b.z - s.a.z, t = (z - s.a.z) / h;
+      if (!smooth) return [s.a.r + (s.b.r - s.a.r) * t, (s.b.r - s.a.r) / h];
+      const m0 = slope.get(s.a), m1 = slope.get(s.b), t2 = t * t, t3 = t2 * t;
+      const r = (2 * t3 - 3 * t2 + 1) * s.a.r + (t3 - 2 * t2 + t) * h * m0 + (-2 * t3 + 3 * t2) * s.b.r + (t3 - t2) * h * m1;
+      const dr = ((6 * t2 - 6 * t) * s.a.r + (3 * t2 - 4 * t + 1) * h * m0 + (-6 * t2 + 6 * t) * s.b.r + (3 * t2 - 2 * t) * h * m1) / h;
+      return [Math.max(0, r), dr];
+    };
+    // the volume from the bottom up to the height y (above the first point)
+    const volumeTo = (y) => {
+      let v = 0;
+      const top = pts[0].z + y;
+      for (const s of segs) {
+        if (s.a.z >= top) break;
+        const hi = Math.min(s.b.z, top);
+        if (!smooth) {
+          const r0 = s.a.r, r1 = at(s, hi)[0], h = hi - s.a.z;
+          v += Math.PI * h * (r0 * r0 + r0 * r1 + r1 * r1) / 3;
+        } else v += glPiece((z) => { const r = at(s, z)[0]; return Math.PI * r * r; }, s.a.z, hi, 24);
+      }
+      return v;
+    };
+    const height = pts[pts.length - 1].z - pts[0].z;
+    let side = 0;
+    for (const s of segs) side += smooth ? glPiece((z) => { const [r, dr] = at(s, z); return 2 * Math.PI * r * Math.sqrt(1 + dr * dr); }, s.a.z, s.b.z, 32)
+      : Math.PI * (s.a.r + s.b.r) * Math.hypot(s.b.z - s.a.z, s.b.r - s.a.r);
+    let steps = 0;
+    for (let i = 1; i < pts.length; i++) if (pts[i].z === pts[i - 1].z) steps += Math.PI * Math.abs(pts[i].r * pts[i].r - pts[i - 1].r * pts[i - 1].r);
+    const ends = Math.PI * (pts[0].r * pts[0].r + pts[pts.length - 1].r * pts[pts.length - 1].r);
+    return { segs, at, volumeTo, height, volume: volumeTo(height), surface: side + steps + ends, rmax: Math.max(...pts.map((p) => p.r)) };
+  }
+  // the exact volume of a straight profile for the engine: π × Σ h (r₀² + r₀ r₁ + r₁²) / 3
+  const pfExact = (pts) => 'π × (' + pts.slice(1).map((p, i) => [pts[i], p]).filter(([a, b]) => b.z > a.z)
+    .map(([a, b]) => `(${b.zs} − ${a.zs}) × (${a.rs}^2 + ${a.rs} × ${b.rs} + ${b.rs}^2) / 3`).join(' + ') + ')';
+  // the radius as one expression in x for the 3D graph (straight pieces; a smooth profile sampled)
+  function pfExpr(sh, pts, smooth) {
+    const nodes = [];
+    for (const s of sh.segs) {
+      const n = smooth ? 8 : 1;
+      for (let k = 0; k < n; k++) { const z0 = s.a.z + (s.b.z - s.a.z) * k / n, z1 = s.a.z + (s.b.z - s.a.z) * (k + 1) / n; nodes.push([z0, sh.at(s, z0)[0], z1, sh.at(s, Math.min(z1, s.b.z - 1e-12))[0]]); }
+    }
+    const N = (v) => engineNum(String(+v.toPrecision(10)));
+    let e = '0';
+    for (let i = nodes.length - 1; i >= 0; i--) { const [z0, r0, z1, r1] = nodes[i]; e = `if(x < ${N(z1)}, ${N(r0)} + (${N(r1 - r0)}) × (x − ${N(z0)}) / ${N(z1 - z0)}, ${e})`; }
+    return `if(x < ${N(pts[0].z)}, 0, ${e})`;
+  }
+  // a density typed or chosen, in g/cm³ (t/m³ and kg/L are the same; kg/m³ is a thousandth)
+  function pfDensity(key, typed) {
+    const d = key === 'own' ? String(typed || '') : (DENSITIES.find((x) => x[0] === key) || [])[2];
+    if (!d) return NaN;
+    const m = /^\s*([^\s a-zA-Z]+)\s*(.*)$/.exec(d.replace(/\^3|³/g, '3'));
+    if (!m) return NaN;
+    const v = statVal(m[1]), u = m[2].replace(/\s+/g, '').toLowerCase();
+    if (!isFinite(v) || v <= 0) return NaN;
+    if (u === 'g/cm3' || u === 't/m3' || u === 'kg/l' || u === 'g/ml' || u === '') return v;
+    if (u === 'kg/m3') return v / 1000;
+    return NaN;
+  }
+  function openProfileTool() {
+    const p = panel('profile', tr('Solid from a profile', '輪郭から回転体'), (p) => {
+      const saved = store.get('qalc.profile', null) || {};
+      const ex = PF_EX()[0][1];
+      const D = { unit: PF_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : ex.unit, dia: saved.dia !== false, smooth: !!saved.smooth, shrink: saved.shrink || '',
+        rows: Array.isArray(saved.rows) && saved.rows.length ? saved.rows : ex.rows.map((r) => r.map(String)), inner: Array.isArray(saved.inner) ? saved.inner : [], dens: saved.dens !== undefined ? saved.dens : ex.dens, dv: saved.dv || '', seq: 0, q: '' };
+      const save = () => store.set('qalc.profile', { unit: D.unit, dia: D.dia, smooth: D.smooth, shrink: D.shrink, rows: D.rows, inner: D.inner, dens: D.dens, dv: D.dv });
+      const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
+        ...PF_EX().map(([label, e]) => tapButton({ class: 'area-chip', text: label }, () => {
+          Object.assign(D, { unit: e.unit, dia: e.dia, rows: e.rows.map((r) => r.map(String)), inner: e.inner.map((r) => r.map(String)), dens: e.dens });
+          if (e.inner.length) more.open = true;
+          sync(); save(); build(); run();
+        })));
+      const bD = tapButton({ text: tr('Diameter', '直径') }, () => { D.dia = true; sync(); save(); build(); run(); }), bR = tapButton({ text: tr('Radius', '半径') }, () => { D.dia = false; sync(); save(); build(); run(); });
+      const unitSel = el('select', { 'aria-label': tr('Unit of the lengths', '長さの単位') });
+      for (const u of PF_UNITS) unitSel.append(el('option', { value: u, text: u }));
+      unitSel.addEventListener('change', () => { D.unit = unitSel.value; save(); build(); run(); });
+      const table = el('div', { class: 'sec-table sec-2 pf-table', role: 'table' }), tools = el('div', { class: 'sec-tools' });
+      const itable = el('div', { class: 'sec-table sec-2 pf-table', role: 'table' }), itools = el('div', { class: 'sec-tools' });
+      const bLine = tapButton({ text: tr('Straight (frustums)', '直線（円錐台）') }, () => { D.smooth = false; sync(); save(); run(); }), bCurve = tapButton({ text: tr('Smooth (monotone cubic)', 'なめらか（単調な 3 次）') }, () => { D.smooth = true; sync(); save(); run(); });
+      const shrinkIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: D.shrink, placeholder: tr('e.g. 12.5', '例：12.5'), 'aria-label': tr('Shrinkage (%)', '収縮率（%）') });
+      shrinkIn.addEventListener('input', () => { D.shrink = shrinkIn.value; shrinkIn.removeAttribute('aria-invalid'); save(); run(); });
+      const more = el('details', { class: 'sec-more pf-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }),
+        el('div', { class: 'section-title', text: tr('Inner profile (the inside of a container)', '内側の輪郭（容器の内側）') }), itable, itools,
+        el('div', { class: 'geo-size pf-between' }, el('span', { class: 'geo-lbl', text: tr('Between the points', '点の間') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Between the points', '点の間') }, bLine, bCurve)),
+        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Shrinkage of pottery (%)', '陶芸の収縮率（%）') }), shrinkIn));
+      if (D.inner.length) more.open = true;
+      const dens = el('select', { 'aria-label': tr('Material (density)', '材料（密度）') });
+      dens.append(el('option', { value: '', text: tr('Weight: choose a material', '重さ：材料を選ぶ') }));
+      for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: s }));
+      dens.append(el('option', { value: 'own', text: tr('Another density…', 'ほかの密度…') }));
+      const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: D.dv, placeholder: tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³'), 'aria-label': tr('Density', '密度') });
+      dens.addEventListener('change', () => { D.dens = dens.value; sync(); save(); run(); });
+      densIn.addEventListener('input', () => { D.dv = densIn.value; save(); run(); });
+      const pic = el('div', { class: 'pf-pic' });
+      const msg = el('div', { class: 'geo-msg', role: 'alert' });
+      const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
+      const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る') }, () => { if (D.three) openPlot3dWith(D.three.exprs, { range: D.three.range, equal: true, res: 61, grow: 'h' }); });
+      const quickBox = el('div', { class: 'quick-box' });
+      const quick = el('details', { class: 'sec-more quick-pf' }, el('summary', { text: tr('Height and amount: quick-reference table ▾', '高さと量の早見表 ▾') }), quickBox);
+      quick.addEventListener('toggle', () => { if (quick.open) run(); });
+      const caution = cautionLine(tr('The solid is round about its axis, between the points as chosen; weights with typical densities.', '前提：軸のまわりに丸い形で、点の間は選んだつなぎ方。重さは代表的な密度です。'));
+      const hint = el('div', { class: 'form-hint', text: tr('Enter the positions along the axis from the bottom (or one end) and the diameters there; two rows at the same position make a step. Paste a table from a spreadsheet into the first box. Tap a result for the three actions.', '軸に沿った位置を下（または片方の端）から、その位置の直径といっしょに入れます。同じ位置を 2 行入れると段になります。表計算ソフトの表は最初の欄に貼り付けられます。結果をタップすると 3 つの操作ができます。') });
+      const sync = () => {
+        for (const [b, on] of [[bD, D.dia], [bR, !D.dia], [bLine, !D.smooth], [bCurve, D.smooth]]) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }
+        unitSel.value = D.unit; dens.value = D.dens; densIn.hidden = D.dens !== 'own';
+      };
+      // the cells of a table (as in Statistics; a paste fills the table from there)
+      const cell = (list, r, c, box) => {
+        const inp = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: (list()[r] || [])[c] || '', placeholder: c ? (D.dia ? 'D' : 'r') : 'z',
+          'aria-label': c ? trf('Size, row {0}', '{0} 行目の大きさ', r + 1) : trf('Position, row {0}', '{0} 行目の位置', r + 1) });
+        inp.addEventListener('input', () => { const L = list(); while (L[r].length <= c) L[r].push(''); L[r][c] = inp.value; inp.removeAttribute('aria-invalid'); save(); run(); });
+        inp.addEventListener('paste', (e) => {
+          const t = (e.clipboardData || window.clipboardData).getData('text');
+          if (!/[\t\n;]/.test(t.trim()) && !(!commaMode && /,/.test(t.trim()))) return;
+          e.preventDefault();
+          const lines = t.replace(/\r/g, '').split('\n').filter((l) => l.trim() !== '');
+          if (lines.length > 1 && !/\d/.test(lines[0])) lines.shift();
+          const cells = pastedDecimals(lines.map((l) => (/\t/.test(l) ? l.split('\t') : /;/.test(l) ? l.split(';') : !commaMode && /,/.test(l) ? l.split(',') : l.trim().split(/\s+/)).map((s) => s.trim())));
+          const L = list();
+          if (r === 0 && c === 0) L.length = 0;
+          cells.slice(0, 500).forEach((vals, i) => { while (L.length <= r + i) L.push(['', '']); vals.slice(0, 2 - c).forEach((v, j) => { L[r + i][c + j] = v; }); });
+          save(); build(); run();
+        });
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
+        return inp;
+      };
+      const fillTable = (box, bar, list, inner) => {
+        box.textContent = ''; bar.textContent = '';
+        const L = list();
+        if (inner && !L.length) L.push(['', ''], ['', '']);
+        box.append(el('div', { class: 'sec-h', role: 'columnheader', text: tr('Position z', '位置 z') + ' (' + D.unit + ')' }), el('div', { class: 'sec-h', role: 'columnheader', text: (D.dia ? tr('Diameter D', '直径 D') : tr('Radius r', '半径 r')) + ' (' + D.unit + ')' }));
+        L.forEach((row, r) => box.append(cell(list, r, 0, box), cell(list, r, 1, box)));
+        const btn = (text, label, f) => tapButton({ class: 'btn sec-btn', text, 'aria-label': label }, () => { f(); save(); build(); run(); });
+        bar.append(btn(tr('+ Row', '+ 行'), tr('Add a row', '行を追加'), () => L.push(['', ''])), btn(tr('− Row', '− 行'), tr('Delete the last row', '最後の行を削除'), () => { if (L.length > (inner ? 0 : 2)) L.pop(); }),
+          btn(tr('Clear', 'すべて消す'), tr('Clear the table', '表をすべて消す'), () => { L.length = 0; if (!inner) L.push(['', ''], ['', '']); }));
+      };
+      const build = () => { fillTable(table, tools, () => D.rows, false); fillTable(itable, itools, () => D.inner, true); };
+      const row = (name, small, shown, expr) => {
+        const node = tapButton({ class: 'geo-row' }, () => { if (expr) resultSheet(name, expr, shown); });
+        node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), el('span', { class: 'geo-val', text: shown }));
+        outs.append(node);
+        return node;
+      };
+      const mark = (box, r, c) => { const ins = box.querySelectorAll('input'); if (ins[r * 2 + c]) ins[r * 2 + c].setAttribute('aria-invalid', 'true'); };
+      // the cm³ of a volume in the unit, shown as cm³ (mL) or L
+      const inCm3 = (v) => { const c = v * PF_CM3[D.unit]; return c >= 1000 ? '≈ ' + statNum(c / 1000) + ' L' : D.unit === 'cm' ? '' : '≈ ' + statNum(c) + ' cm³'; };
+      // an amount in mL as mL or L
+      const mlText = (ml) => (ml >= 1000 ? '≈ ' + statNum(ml / 1000) + ' L' : '≈ ' + statNum(ml) + ' mL');
+      const drawPic = (o, i, so, si) => {
+        const top = Math.max(o[o.length - 1].z, i ? i[i.length - 1].z : -Infinity), bot = Math.min(o[0].z, i ? i[0].z : Infinity), rmax = Math.max(so.rmax, si ? si.rmax : 0) || 1;
+        const s = Math.min(120 / ((top - bot) || 1), 80 / rmax), X = (r) => +(100 + r * s).toFixed(1), Y = (z) => +(138 - (z - bot) * s).toFixed(1);
+        const line = (pts, sh) => { const out = []; for (const sg of sh.segs) { const n = D.smooth ? 10 : 1; for (let k = 0; k <= n; k++) { const z = sg.a.z + (sg.b.z - sg.a.z) * k / n; out.push([z, sh.at(sg, Math.min(z, sg.b.z))[0]]); } } return out; };
+        const poly = (pts, sh) => { const l = line(pts, sh); return l.map(([z, r]) => X(r) + ',' + Y(z)).concat(l.slice().reverse().map(([z, r]) => X(-r) + ',' + Y(z))).join(' '); };
+        let t = `<polygon class="g" points="${poly(o, so)}"/>`;
+        if (i) t += `<polygon class="g hole" points="${poly(i, si)}"/>`;
+        t += `<path class="e" d="M100 6V146"/>`;
+        pic.innerHTML = `<svg viewBox="0 0 200 150" role="img" aria-label="${tr('The profile turned about its axis', '軸のまわりに回した輪郭')}">${t}</svg>`;
+      };
+      const run = async () => {
+        const seq = ++D.seq;
+        msg.textContent = ''; outs.textContent = ''; quickBox.textContent = ''; view.hidden = true; D.three = null;
+        const o = pfPoints(D.rows, D.dia);
+        if (o.error) { if (o.row !== undefined) mark(table, o.row, o.col); msg.textContent = o.error; pic.textContent = ''; return; }
+        const hasInner = D.inner.some((r) => String(r[0] || '').trim() || String(r[1] || '').trim());
+        const i = hasInner ? pfPoints(D.inner, D.dia) : null;
+        if (i && i.error) { if (i.row !== undefined) mark(itable, i.row, i.col); msg.textContent = tr('Inner profile: ', '内側の輪郭：') + i.error; return; }
+        const so = pfShape(o, D.smooth), si = i ? pfShape(i, D.smooth) : null;
+        drawPic(o, i, so, si);
+        const u = D.unit, u3 = ' ' + u + '³';
+        // the exact outer volume (straight pieces) from the engine
+        let outerText = '≈ ' + statNum(so.volume) + u3, outerExpr = exprNum(so.volume) + ' ' + u + '^3';
+        if (!D.smooth) {
+          const r = await Bridge.send('calc', { expr: pfExact(o), opts: engineOpts(), timeout: 4000 });
+          if (seq !== D.seq) return;
+          if (r.ok && r.result && !r.timeout) { const ex = r.result.split(' ≈ ')[0].split(' = ')[0].trim(); outerText = '= ' + ex + u3 + (/π|√/.test(ex) ? ' ≈ ' + statNum(so.volume) + u3 : ''); outerExpr = '(' + pfExact(o) + ') ' + u + '^3'; }
+        }
+        row(tr('Outer volume', '外側の体積'), inCm3(so.volume), outerText, outerExpr).classList.add('tool-main');
+        let cap = 0;
+        if (si) {
+          cap = si.volume;
+          const ml = cap * PF_CM3[u];
+          row(tr('Inner capacity', '内側の容量'), mlText(ml), '≈ ' + statNum(cap) + u3, exprNum(cap) + ' ' + u + '^3');
+          const f = statVal(D.shrink);
+          if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）'); }
+          else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの容量', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), mlText(ml * k), exprNum(cap * k) + ' ' + u + '^3'); }
+        } else {
+          const f = statVal(D.shrink);
+          if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）'); }
+          else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの体積', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), '≈ ' + statNum(so.volume * k) + u3, exprNum(so.volume * k) + ' ' + u + '^3'); }
+        }
+        const mat = so.volume - cap;
+        if (si && mat < 0) msg.textContent = tr('The inner profile is larger than the outer one somewhere: check the sizes', '内側の輪郭が外側より大きいところがあります。大きさを確かめてください');
+        if (si) row(tr('Material', '材料の体積'), tr('outer − inner', '外側 − 内側'), '≈ ' + statNum(mat) + u3, exprNum(mat) + ' ' + u + '^3');
+        const rho = pfDensity(D.dens, D.dv);
+        if (D.dens && !isFinite(rho)) { densIn.setAttribute('aria-invalid', 'true'); row(tr('Weight', '重さ'), '', tr('check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）'), ''); }
+        else if (isFinite(rho)) { densIn.removeAttribute('aria-invalid'); const g = mat * PF_CM3[u] * rho; row(tr('Weight', '重さ'), trf('{0} g/cm³', '{0} g/cm³', statNum(rho)) + (D.dens !== 'own' && D.dens !== 'water' ? tr(' (typical)', '（目安）') : ''), g >= 1000 ? '≈ ' + statNum(g / 1000) + ' kg' : '≈ ' + statNum(g) + ' g', exprNum(g) + ' g'); }
+        row(tr('Surface area', '表面積'), tr('outside: the side, the steps and the two ends', '外側：側面・段・両端の面'), '≈ ' + statNum(so.surface) + ' ' + u + '²', exprNum(so.surface) + ' ' + u + '^2');
+        row(tr('Height', '高さ'), '', statNum(so.height) + ' ' + u, exprNum(so.height) + ' ' + u);
+        // 3D (the 3D graph: Pro)
+        const w = +((Math.max(so.rmax, si ? si.rmax : 0) || 1) * 1.08).toPrecision(6);
+        const R = pfExpr(so, o, D.smooth), exprs = [`√((${R})^2 − y^2)`, `−√((${R})^2 − y^2)`];
+        if (si) { const r2 = pfExpr(si, i, D.smooth); exprs.push(`√((${r2})^2 − y^2)`, `−√((${r2})^2 − y^2)`); }
+        D.three = { exprs, range: [engineNum(String(o[0].z)), engineNum(String(o[o.length - 1].z)), engineNum(String(-w)), engineNum(String(w))] };
+        view.hidden = false;
+        // the quick-reference table: the height and the amount inside (or of the whole solid)
+        if (quick.open) {
+          const sh = si || so, total = sh.volume, top = sh.height, inMl = (v) => v * PF_CM3[u];
+          const nice = (span) => { const raw = span / 10, q = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * q >= raw * 0.999) return m * q; return 10 * q; };
+          const step = nice(top), rows = [];
+          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([fmtV(+(k * step).toPrecision(6)), fmtV(+inMl(v).toPrecision(6)), fmtV(+(v / total * 100).toPrecision(4))]); }
+          rows.push([fmtV(+top.toPrecision(6)), fmtV(+inMl(total).toPrecision(6)), '100']);
+          showTable(quickBox, { title: si ? tr('The amount inside for each height', '高さごとの内側の量') : tr('The volume up to each height', '高さごとの体積'), head: [tr('Height', '高さ') + ' (' + u + ')', (si ? tr('Amount', '量') + ' (mL)' : tr('Volume', '体積') + ' (cm³)'), '%'], rows, name: 'profile' });
+        }
+      };
+      p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Sizes as', '大きさ') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Sizes as', '大きさ') }, bD, bR)),
+        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unitSel), table, tools, more,
+        el('div', { class: 'geo-weight' }, dens, densIn), pic, msg, outs, view, quick, caution, hint);
+      sync(); build(); run();
+    });
+    return p;
+  }
   // ------------------------------------------ volume from measured values (1.11.0)
   // Two ways that are used on site, from values typed or pasted from a spreadsheet:
   // - a table of cross sections (the distance along the axis and the area of the section there):
@@ -11966,6 +12245,10 @@
     ['revolution', 'geo', '🔄', tr('Solid of revolution (graph)', '回転体（グラフ）'), tr('Turn the region between two curves around an axis', '2 つの曲線の間を軸のまわりに回した立体'),
       'revolution solid rotate axis washer shell volume make 回転体 回転 体積 軸 立体 立体にする かいてんたい りったい Rotationskörper Drehkörper Körper Volumen sólido de revolución sólido volumen solide de révolution solide volume 회전체 입체 부피 旋轉體 立體 體積',
       () => openRevolutionTool()],
+    // 1.12.0 (D2, QCalc Pro): a solid from a measured profile
+    ['profile', 'geo', '🏺', tr('Solid from a profile', '輪郭から回転体'), tr('Positions and diameters along an axis: volume, capacity, weight, surface', '軸に沿った位置と直径から：体積・容量・重さ・表面積'),
+      'profile solid revolution turned part shaft vase pot cup capacity weight lathe pottery shrinkage 輪郭 回転体 旋盤 軸 段付き 花瓶 壺 コップ 器 容量 重さ 陶芸 収縮 りんかく Profil Drehteil Welle Vase Topf Volumen Gewicht Töpfern Schwindung perfil pieza torneada eje jarrón vasija capacidad peso cerámica contracción profil pièce tournée arbre vase pot capacité poids poterie retrait 윤곽 회전체 선반 축 꽃병 도자기 용량 무게 수축 輪廓 旋轉體 車床 軸 花瓶 陶藝 容量 重量 收縮',
+      () => openProfileTool()],
     ['area2d', 'geo', '📈', tr('Area and length in a graph', 'グラフの面積・長さ'), tr('Area between curves and the length of a curve', '曲線の間の面積、曲線の長さ'),
       'area integral between curves length curve graph 面積 積分 曲線 長さ めんせき Fläche Integral Kurvenlänge área integral longitud de curva aire intégrale longueur 넓이 적분 곡선 길이 面積 積分 曲線 長度',
       () => openAreaTool()]
@@ -12404,7 +12687,8 @@
     convert: ['⇄', tr('Convert units and currencies', '単位・通貨の換算'), tr('Two boxes that convert both ways', '両方向に換算できる 2 つの欄')],
     quick: ['⌂', tr('Widget, tile and shortcuts', 'ウィジェット・タイル・ショートカット'), tr('Open QCalc from the home screen and the quick settings', 'ホーム画面やクイック設定から QCalc を開く')],
     stats: ['📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰')],
-    tank_heads: ['🛢', tr('Tank heads and quick-reference tables', 'タンクの鏡板と早見表'), tr('Hemispherical, semi-elliptical and dished heads; the amount for each height and the height for each amount', '半球・半楕円・皿形の鏡板、高さごとの液量と液量ごとの高さの表')]
+    tank_heads: ['🛢', tr('Tank heads and quick-reference tables', 'タンクの鏡板と早見表'), tr('Hemispherical, semi-elliptical and dished heads; the amount for each height and the height for each amount', '半球・半楕円・皿形の鏡板、高さごとの液量と液量ごとの高さの表')],
+    profile: ['🏺', tr('Solid from a profile', '輪郭から回転体'), tr('Volume, capacity, weight and surface from positions and diameters (turned parts, pottery)', '位置と直径から体積・容量・重さ・表面積（旋盤の部品・陶芸）')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {

@@ -1473,3 +1473,13 @@ body.hselect #history { padding-bottom: 150px; }
 .head-more .seg.mini button { flex: 1 1 auto; white-space: normal; }
 .head-row[hidden] { display: none; }
 .quick-tank .geo-size input { max-width: 10em; }
+
+/* a solid from a profile (1.12.0, D2) */
+.pf-pic svg { display: block; width: 100%; max-width: 260px; height: auto; margin: 6px auto; }
+.pf-pic .g { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.pf-pic .g.hole { fill: var(--surface); }
+.pf-pic .e { stroke: var(--muted); stroke-dasharray: 4 3; fill: none; }
+.pf-table input { min-height: 44px; }
+.pf-between { flex-direction: column; align-items: stretch; gap: 4px; }
+.pf-between .seg.mini { display: flex; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.pf-between .seg.mini button { flex: 1 1 auto; white-space: normal; overflow-wrap: anywhere; min-width: 48px; min-height: 48px; }
