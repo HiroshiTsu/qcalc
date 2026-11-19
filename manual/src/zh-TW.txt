@@ -29,7 +29,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 - **日常工具**：[[Price: discount and tax]]、[[Percentages]]、[[Unit price: which is cheaper]]、[[Split the bill]]、[[Loan]]、[[Savings and compound interest]]、[[Dates]]、[[Times]]、[[Convert units and currencies]]、[[Statistics]]、[[Calculation notes]]。
 - **數字格式**：可選 1,234.5、1.234,5 或 1 234,5（[數字格式](#number-format)）。
 - **歷史紀錄**：搜尋、星號置頂、簡短備註、所選各行的合計；記憶鍵（[歷史紀錄與記憶](#history)）。
-- **從 2D 到 3D**：按一下 [[!⟳ 3D]]，圖形中的區域立刻變成旋轉體；還有已知截面的立體、說明方法的線，以及帕普斯定理（[製作立體](#solid)）。
+- **從 2D 到 3D**：按一下 [[!⟳ 3D]]，圖形中的區域立刻變成旋轉體並以 3D 顯示（3D：QCalc Pro）；還有已知截面的立體、說明方法的線，以及帕普斯定理（[製作立體](#solid)）。
 - **快速開啟**：小工具、快速設定圖塊、圖示上的捷徑（[小工具、圖塊與捷徑](#widget)）。
 - **分享**：圖形的圖片和 3D 圖形的動態 GIF（[分享](#share)）。
 - **QCalc Pro**：表格的 CSV、槽體的封頭與容量表、由剖面資料製作的立體、STL 檔、更多計算筆記等（[QCalc Pro](#pro)）。
@@ -355,13 +355,13 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :what: 把 2D 圖形中的區域繞軸旋轉所得立體的體積和表面積。
 :svg: solid | y = x 和 y = x² 之間的區域繞 x 軸旋轉
 :step: 在 2D 圖形中畫出函數（例如 `x` 和 `x^2`）。
-:step: 按圖形的圓形按鈕 [[!⟳ 3D]]。繞 x 軸的體積立刻顯示。
-:step: 要換其他軸，點一下那條線；y = k 的線可以用手指拖曳。
+:step: 按圖形的圓形按鈕 [[!⟳ 3D]]。繞 x 軸旋轉的立體立刻以 3D 顯示，上方以大字顯示體積（QCalc Pro）。免費版則在 2D 圖形中顯示立體的截面（映在軸的另一側）與體積。
+:step: 要換其他軸，按 [[← Back to 2D]] 回到 2D，再點一下那條線；y = k 的線可以用手指拖曳。按 [[View in 3D]] 可再以 3D 查看。
 :step: [[↶ Undo]] 回到上一個軸。
 :shot: solid | y = x 和 y = x² 之間的區域繞 x 軸旋轉
 :example: y = x 和 y = x² 之間，繞 x 軸 → 體積 2π/15 ≈ 0.4188790205
 :tip: [[Show the method with lines]] 會畫出圓盤（墊圈）或圓柱殼。[[Pappus–Guldinus theorem: ]] 這一行比較由重心求得的體積和積分。
-:pro: 在 [[View in 3D]] 中用手指旋轉立體，和 3D 圖形一樣是 QCalc Pro 的功能。
+:pro: 在 3D 中用手指旋轉立體，和 3D 圖形一樣是 QCalc Pro 的功能。免費版會改為顯示 [[Turn it in 3D (QCalc Pro)]] 這一列。
 
 ## cross-sections | 已知截面的立體
 :what: 以兩條曲線之間的區域為底，在上面立起正方形、正三角形或半圓的立體的體積。

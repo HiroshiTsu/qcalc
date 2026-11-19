@@ -3500,7 +3500,7 @@
     tr('The solve key opens a form for an equation (left side = right side); "+ Add an equation" makes a system of equations.', 'solve キーで方程式を入力する画面（左辺 = 右辺）が開きます。「＋ 式を追加」で連立方程式になります。'),
     tr('📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.', '入力欄の上の 📈 で、入力した式のグラフを描けます。x の式は 2D、x と y の式は 3D、y = 2x + 1、x² + y² = 4、z = x y のような方程式、2 列か 3 列の数の行列（点）も描けます。履歴の行を長押ししても同じことができます。'),
     tr('In the graph, "Area" finds the area between a function and the x axis or between two functions (the crossing points are offered as ranges), and "Length" the length of a curve or the perimeter between two functions. "Example" draws a circle or an ellipse.', 'グラフの「面積を求める」で、関数と x 軸の間や 2 つの関数の間の面積（交点の間の範囲を選べます）、「長さ・周」で曲線の長さや 2 つの関数に囲まれた部分の周の長さが求められます。「図形の例」で円や楕円を描けます。'),
-    tr('⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis at once and gives the volume. Tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.', '2D グラフの右の丸いボタン「⟳ 3D」で、色の付いた部分を x 軸のまわりに回した体積がすぐ出ます。y 軸（または x 軸）の線をタップすると、その軸のまわりに回します。y = k・x = k は線をドラッグして動かせます。軸の反対側に薄く映った形が、立体を軸で切った形です。変えたあとのメッセージの「↶ 元に戻す」で戻せます。'),
+    tr('⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis and shows the solid in 3D at once, with its volume (QCalc Pro; without it, the solid and its volume in the 2D graph). Back in 2D (← Back to 2D), tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.', '2D グラフの右の丸いボタン「⟳ 3D」で、色の付いた部分を x 軸のまわりに回した立体が 3D ですぐに出て、体積も出ます（QCalc Pro。無料では 2D のグラフに立体の形と体積が出ます）。「← 2D に戻る」で 2D に戻り、y 軸（または x 軸）の線をタップすると、その軸のまわりに回します。y = k・x = k は線をドラッグして動かせます。軸の反対側に薄く映った形が、立体を軸で切った形です。変えたあとのメッセージの「↶ 元に戻す」で戻せます。'),
     tr('"Make a solid ▾" → "Cross sections": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under "More shapes ▾"); the volume V = ∫ A(s(x)) dx, s being the width of the region.', '「立体にする ▾」→「断面の立体」では、色の付いた部分の上に、x 軸に垂直に正方形 □・正三角形 △・半円 ◠ を立てた立体の体積 V = ∫ A(s(x)) dx を出します（s は底面の幅。ほかの形は「詳しく：ほかの形 ▾」）。'),
     tr('In "Make a solid", "Show the method with lines" draws the thin disks or rings (across the axis) or the shells (along the axis) that the volume adds up, n of them. When the region is on one side of the axis, the theorem of Pappus and Guldinus is shown too: V = 2π d A (A the area, d the distance of its centre from the axis). In the 3D view the slider "Angle" turns the solid from 0° to 360° (180°: cut in half); ▶ turns it again.', '「立体にする」の「方法を線で見せる」では、体積を足し合わせる薄い円板・穴のあいた円板（軸に垂直）か、殻（軸に平行）を n 本の線で描きます。領域が軸の片側にあるときは、パップス・ギュルダンの定理 V = 2π d A（A は面積、d は重心から軸までの距離）も出します。3D で見るときは「角度」のスライダーで 0° から 360° まで回せます（180° で半分に切った形）。▶ でもう一度回ります。'),
     tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks like a pale gelatin in a skin of a deeper shade in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで濃い色の皮に包まれた薄い色のゼラチンのように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
@@ -4109,11 +4109,10 @@
           draw();
         } }),
         // 1.12.0 (B0): "Make a solid" with one tap: the shaded region turned around the x axis, the
-        // volume at once (in the corner of the graph and below it); tapped again, closed
-        P.revBtn = el('button', { class: 'rev3d', type: 'button', 'aria-label': tr('Turn into a solid', '回して立体にする'), 'aria-pressed': 'false', onclick: () => {
-          const R = P.areaUI && P.areaUI.rev;
-          if (R) R.toggle.click();
-        } }, el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' })),
+        // volume at once (in the corner of the graph and below it); (BG20) and the solid in 3D at once (Pro):
+        // revTo3d
+        P.revBtn = el('button', { class: 'rev3d', type: 'button', 'aria-label': tr('Turn into a solid (shown in 3D)', '回して立体にする（3D で表示）'), onclick: () => revTo3d() },
+          el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' })),
         // 1.12.0 (D4): a picture of the graph to the share sheet
         el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share a picture of the graph', 'グラフの画像を共有'), onclick: () => shareGraph2d() }));
       P.equal = P.equal || store.get('qalc.plot.equal', false) === true;
@@ -5286,7 +5285,7 @@
     U.box.hidden = !(U.areaOpen || !U.rev.box.hidden);
     U.areaOnly.hidden = !U.areaOpen;
     U.toggle.classList.toggle('on', U.areaOpen); U.toggle.setAttribute('aria-expanded', String(U.areaOpen));
-    if (P.revBtn) { const on = !U.rev.box.hidden; P.revBtn.classList.toggle('on', on); P.revBtn.setAttribute('aria-pressed', String(on)); }
+    if (P.revBtn) P.revBtn.classList.toggle('on', !U.rev.box.hidden);
   }
   // "Area and length ▾" opened or closed: opened, the area between the first function and the x axis
   // (or the second function), between crossing points when there are some, is shown at once
@@ -5312,6 +5311,44 @@
     else if (open) { if (P.area) computeRevolution(true); else computeArea(true); }
     else if (U.box.hidden) { P.area = null; P.revAxis = null; draw(); }
     else draw();
+  }
+  // "⟳ 3D" (1.12.0, BG20: until then it opened "Make a solid" in 2D only, and the 3D view needed "View in 3D"
+  // as well, though the button says 3D). With Pro: the solid of "Make a solid" (the shaded region around the
+  // axis chosen, the x axis at first) is calculated in 2D, and then the 3D view opens at once, where the
+  // solid grows from 0° to 360° and its volume is shown large; "← Back to 2D" goes back to the same region
+  // and axis. Without Pro: the solid in 2D (its mirrored cut and its volume, free), with the row "Turn it in
+  // 3D (QCalc Pro)" above the results, and the first time a line that says what happened.
+  function revTo3d() {
+    const U = P.areaUI, R = U && U.rev;
+    if (!R) return;
+    const pro = hasPro(), first = !pro && !store.get('qalc.rev3dfree', false);
+    // (the hint about the axes, shown the first time "Make a solid" opens, waits for a later time: it is
+    // about the 2D graph, which is left at once with Pro, and the line below says more without it)
+    const hint = store.get('qalc.revhint', false);
+    if (R.box.hidden) { store.set('qalc.revhint', true); R.open(); store.set('qalc.revhint', hint); }
+    if (R.box.hidden) return;
+    if (!pro) {
+      R.proRow.hidden = false; R.view.hidden = true;
+      if (first) { store.set('qalc.rev3dfree', true); setTimeout(() => toast(tr('The solid and its volume are shown in 2D. Turning it in 3D is a QCalc Pro feature.', '2D で立体の形と体積を出しました。3D で回して見るのは QCalc Pro の機能です'), 6000), 300); }
+      return;
+    }
+    if (R.three && !R.view.hidden) R.show3d();
+    else R.go3d = Date.now(); // (as soon as the solid is calculated: revReady)
+  }
+  // the hint about the axes, the first time the solid is seen in the 2D graph (B0; BG20: also on coming back
+  // from the 3D view, when "⟳ 3D" opened it at once)
+  function revHint() {
+    if (store.get('qalc.revhint', false)) return;
+    store.set('qalc.revhint', true);
+    setTimeout(() => toast(tr('Tap an axis to turn around it. Drag an edge ↔ to change the range.', '軸をタップすると、回す軸が変わります。端の ↔ をドラッグすると、範囲が変わります'), 6000), 400);
+  }
+  // the solid of "Make a solid" is calculated (the 3D view can be opened): with Pro, "⟳ 3D" pressed before
+  // opens it now; without Pro, the row "Turn it in 3D (QCalc Pro)" stands for "View in 3D" (BG20)
+  function revReady(R) {
+    if (!hasPro() && !R.proRow.hidden) R.view.hidden = true;
+    const t = R.go3d;
+    R.go3d = 0;
+    if (t && Date.now() - t < 60000 && hasPro()) R.show3d();
   }
   // shapes to draw and measure: a circle (radius r), an ellipse (half axes a and b)
   const PARAM_NAMES = { r: tr('radius r', '半径 r'), a: tr('half axis a (x)', 'x 方向の半径 a'), b: tr('half axis b (y)', 'y 方向の半径 b') };
@@ -6122,7 +6159,7 @@
     R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.outs.textContent = ''; R.method.textContent = ''; R.moreOuts.textContent = ''; R.more.hidden = true;
     R.stlBtn.hidden = true; R.stlSpec = null;
     P.revVolText = ''; P.revAxis = null; draw();
-    const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '立体を計算できませんでした'); R.outs.textContent = ''; } };
+    const fail = (text) => { if (!stale()) { R.go3d = 0; R.msg.textContent = text || tr('Could not calculate the solid', '立体を計算できませんでした'); R.outs.textContent = ''; } };
     const f = P.series[Number(U.f1.value)];
     if (!f) return fail(tr('Draw a function first', '先に関数を描いてください'));
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
@@ -6187,7 +6224,7 @@
       if (isFinite(y0) && isFinite(y1) && y1 > y0) {
         const m = (y1 - y0) * 0.06;
         R.three = { exprs: [top, `0 + ${cut}`], range: [engineNum(rn.lo), engineNum(rn.hi), engineNum(r6(y0 - m)), engineNum(r6(y1 + m))] };
-        R.view.hidden = false;
+        R.view.hidden = false; revReady(R);
       }
     }
   }
@@ -6231,10 +6268,15 @@
     const more = el('details', { class: 'rev-more' }, el('summary', { text: tr('More: surface areas ▾', '詳しく：表面積 ▾') }), moreOuts);
     // 1.12.0 (D3): the solid saved as an STL file (Pro)
     const stlBtn = tapButton({ class: 'btn stl-btn', text: tr('Save as STL', 'STL で保存'), hidden: true }, () => { if (R.stlSpec) openStlSheet(R.stlSpec, R.kind === 'sec' ? 'sections' : 'revolution', null); });
-    const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, () => {
-      // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion")
-      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis, rims: R.three.rims });
-    });
+    // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion"); (BG20)
+    // the volume is shown large above the 3D graph, with "← Back to 2D"
+    const show3d = () => {
+      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis, rims: R.three.rims, back: { vol: P.revVolText || '' } });
+    };
+    const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, show3d);
+    // (BG20, without Pro: after "⟳ 3D", above the results)
+    const proRow = tapButton({ class: 'rev-pro-row', hidden: true, 'aria-label': tr('Turn it in 3D (QCalc Pro)', '3D で回して見る（QCalc Pro）') }, () => proPrompt(tr('Turning the solid in 3D is a QCalc Pro feature', '3D で回して見るのは QCalc Pro の機能です'), '3d'));
+    proRow.append(el('span', { class: 'rev-pro-i', 'aria-hidden': 'true', text: '🧊' }), el('span', { class: 'rev-pro-t', text: tr('Turn it in 3D (QCalc Pro)', '3D で回して見る（QCalc Pro）') }), el('span', { class: 'rev-pro-go', 'aria-hidden': 'true', text: '›' }));
     // one tap: a graph, its range and the axis
     const EX = [
       [tr('y = √x, x axis', 'y = √x・x 軸'), ['√(x)'], [-0.5, 4.5], '0', '4', false, 'x'],
@@ -6290,20 +6332,17 @@
     };
     const slicesRow = el('div', { class: 'rev-slices-row' }, slicesBtn, nRow);
     const box = el('div', { class: 'rev-box' }, kinds, axisRow, secRow,
-      kErr, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
+      kErr, proRow, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
       el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
     box.hidden = true;
     const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Make a solid ▾', '立体にする ▾'), 'aria-expanded': 'false' }, () => {
       if (box.hidden && !proGate('revolution')) return;
       box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); save();
-      if (box.hidden) R.seq++;
+      if (box.hidden) { R.seq++; R.go3d = 0; proRow.hidden = true; }
       revToggled(!box.hidden);
-      if (!box.hidden && !store.get('qalc.revhint', false)) {
-        store.set('qalc.revhint', true);
-        setTimeout(() => toast(tr('Tap an axis to turn around it. Drag an edge ↔ to change the range.', '軸をタップすると、回す軸が変わります。端の ↔ をドラッグすると、範囲が変わります'), 6000), 400);
-      }
+      if (!box.hidden) revHint();
     });
-    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, more, method, pappus, view, stlBtn, setAxis, setKind, setShape, skIn, ownIn, open: () => { if (box.hidden) toggle.click(); } });
+    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, more, method, pappus, view, proRow, show3d, stlBtn, setAxis, setKind, setShape, skIn, ownIn, open: () => { if (box.hidden) toggle.click(); } });
     showSlices();
     setAxis(R.axis, true);
     setShape(R.shape, true);
@@ -6368,7 +6407,7 @@
     R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.k.removeAttribute('aria-invalid'); R.outs.textContent = ''; R.method.textContent = '';
     R.stlBtn.hidden = true; R.stlSpec = null;
     R.moreOuts.textContent = ''; R.more.hidden = false; R.pappus.textContent = ''; P.revVolText = '';
-    const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '回転体を計算できませんでした'); R.outs.textContent = ''; } };
+    const fail = (text) => { if (!stale()) { R.go3d = 0; R.msg.textContent = text || tr('Could not calculate the solid', '回転体を計算できませんでした'); R.outs.textContent = ''; } };
     const f = P.series[Number(U.f1.value)];
     if (!f) return fail(tr('Draw a function first', '先に関数を描いてください'));
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
@@ -6423,7 +6462,7 @@
     else if (!solid.pieces.some((p) => p.vol !== '0')) revShow(vrow, { text: '0', v: 0 }, '0');
     if (vrow.result) { P.revVolText = shortValue('V', vrow.result); draw(); } // also in the corner of the graph
     if (vols.length) revPappus(R, f, g, parts, ax, vols.reduce((t, v) => t + v.v, 0), stale);
-    R.three = solid.three; R.view.hidden = false;
+    R.three = solid.three; R.view.hidden = false; revReady(R);
     // (the STL file: the meridian from the same curves, its volume checked against this one; D3)
     if (vols.length && solid.stl) { R.stlSpec = Object.assign({}, solid.stl, { volume: vols.reduce((t, v) => t + v.v, 0) }); stlShow(R.stlBtn); }
     // the surfaces: each curve that bounds the solid, turned: 2π ∫ (its distance) √(1 + f′²) dx
@@ -8048,7 +8087,16 @@
     const half = tapButton({ class: 'btn', text: tr('Cut in half', '半分に切る') }, () => setAngle3d(180));
     angle.addEventListener('input', () => setAngle3d(Number(angle.value)));
     const angleRow = el('div', { class: 'plot-range rev-angle', hidden: true }, el('span', { text: tr('Angle', '角度') }), angle, angleVal, play, half);
-    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow });
+    // 1.12.0 (BG20): a solid made in the 2D graph ("⟳ 3D", "View in 3D"): its volume, large, and the way back
+    const backVol = el('div', { class: 'rev3d-vol', 'aria-live': 'polite' });
+    const backBtn = tapButton({ class: 'btn rev3d-back-btn', text: tr('← Back to 2D', '← 2D に戻る') }, () => {
+      if (!P.setMode) return;
+      P.setMode('2d');
+      const U = P.areaUI;
+      if (U && U.rev && !U.rev.box.hidden) revHint();
+    });
+    const backRow = el('div', { class: 'rev3d-back', hidden: true }, backBtn, backVol);
+    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow, backRow, backVol });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
@@ -8061,7 +8109,7 @@
         // surfaces are drawn again with another grid or range; other surfaces drop them (1.8.3)
         if (plotExprs(ta.value, 4).join('\n') !== Q3.exprs.join('\n')) { Q3.equalOnce = false; if (Q3.samples) Q3.samples.clearChoice(); }
       }
-      if (!Q3.keep) { Q3.revInfo = null; Q3.grow = null; Q3.rimSpec = null; if (Q3.angleRow) Q3.angleRow.hidden = true; } // (another graph: not the solid of revolution)
+      if (!Q3.keep) { Q3.revInfo = null; Q3.grow = null; Q3.rimSpec = null; Q3.from2d = null; showBack3d(); if (Q3.angleRow) Q3.angleRow.hidden = true; } // (another graph: not the solid of revolution)
       Q3.keep = false;
       store.set('qalc.plot3d.exprs', ta.value); store.set('qalc.plot3d.res', res.value);
       store.set('qalc.plot3d.xmin', xmin.value); store.set('qalc.plot3d.xmax', xmax.value);
@@ -8084,7 +8132,7 @@
           el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax),
           el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr(' to ', ' 〜 ').trim() }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
-      wrap, angleRow, legend, msg, el('div', { class: 'tools' }, buildPartial3d(), buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
+      backRow, wrap, angleRow, legend, msg, el('div', { class: 'tools' }, buildPartial3d(), buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
@@ -8117,12 +8165,16 @@
     Q3.rimSpec = opts.rims ? Object.assign({ exprs: list.join('\n') }, opts.rims) : null;
     Q3.revInfo = opts.grow || null; // (the angle row of B2)
     if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
+    // (a solid made in the 2D graph, BG20: its volume large above the graph, and "← Back to 2D")
+    Q3.from2d = opts.back || null;
+    showBack3d();
     Q3.pending = null;
     // (1.11.0: a finer grid when asked for, as for a solid of revolution with its round rims)
     if (opts.res && (Number(store.get('qalc.plot3d.res', '41')) || 41) < opts.res) store.set('qalc.plot3d.res', String(opts.res));
     if (opts.res && Q3.resEl && Number(Q3.resEl.value) < opts.res) Q3.resEl.value = String(opts.res);
     const built = !!panels.plot;
     openPlot();
+    showBack3d();
     if (built && Q3.ta) {
       Q3.ta.value = toDisplay(list.join('\n'));
       if (opts.range) Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(opts.range[i])); });
@@ -8130,6 +8182,13 @@
       Q3.keep = true;
       Q3.go.click();
     }
+  }
+  // the row above the 3D graph for a solid made in the 2D graph (BG20)
+  function showBack3d() {
+    if (!Q3.backRow) return;
+    const F = Q3.from2d;
+    Q3.backRow.hidden = !F;
+    Q3.backVol.textContent = F && F.vol ? tr('Volume ', '体積 ') + F.vol : '';
   }
   // the box of the graph around points only (no surface)
   function points3dData() {
@@ -8610,8 +8669,9 @@
   // The triangles: 11 numbers for each corner (CV), x and y (CSS pixels), depth (larger is farther),
   // the normal in the camera's axes (x right, y up, z away from the eye; any length: it is blended in a
   // straight line across the triangle and then made of length 1), the color (r, g, b) and the grid
-  // coordinates gi and gj (for the lines of the grid; NaN: no lines).
-  const CV = 11, CT = 3 * CV;
+  // coordinates gi and gj (for the lines of the grid; NaN: no lines); and (1.12.0, BG19) while the graph is
+  // turned, how much of the lamp reaches the corner (0 to 1), kept from the drawing before the turn.
+  const CV = 12, CT = 3 * CV;
   function triBuf(holder) {
     let a = holder && holder.triBuf;
     if (!a) { a = { f: new Float32Array(CT * 4096), n: 0 }; if (holder) holder.triBuf = a; }
@@ -8741,24 +8801,51 @@
   // floor along the light, so the shadow falls to the side away from the lamp and not straight down
   // (from straight above, a surface z = f(x, y) would only darken the whole floor). Where it is cast
   // by a part of a surface near the floor it is dark and sharp, and where by a high part pale and
-  // soft, as a shadow is: on a layer of half the size, every point of the floor keeps the height of
-  // the lowest part of a surface above it along the light; the strength follows that height, and the
+  // soft, as a shadow is: on a layer over the floor, every point of the floor keeps the height of the
+  // lowest part of a surface above it along the light; the strength follows that height, and the
   // softness too, from three blurs of the shadow (about 2, 6 and 14 CSS pixels) blended by the height
   // of the surfaces around the point. tb: the triangles; o: the turn of the camera (ca, sa, ce, se),
-  // the half sizes of the box (EX, EY, EZ), cam ({ cx, cy, S }), W and H of the canvas, dark, cache,
-  // pane0 (a path on the floor), lite (while the graph is turned: a layer of a quarter of the size, 1.12.0
-  // BG08). Returns what was drawn, or null when the lamp is not above the floor.
+  // the half sizes of the box (EX, EY, EZ), cam ({ cx, cy, S }), dark, cache, lamp (the lamp in the
+  // box's axes, or null: the one at the upper left of the screen), layer (a layer to draw again, or null),
+  // k (the strength, 0 to 1). Returns what was drawn, or null when the lamp is not above the floor.
   // (1.12.0, BG08: the shadow fades out as the lamp comes down to the level of the floor and as the floor
   // is seen more and more edge-on, instead of ending at once; until then it came and went while turning)
+  // (1.12.0, BG19: the layer is the floor itself, in the box's axes, so that it is drawn again with only a
+  // new projection while the graph is turned: the lamp then stays on the box, see draw3d)
   function floorShadow(g, tb, o) {
     const { ca, sa, ce, se, EX, EY, EZ, cam } = o;
-    const lx = LAMP[0], ly = LAMP[1], lz = LAMP[2];
     // the direction of the lamp in the box's axes (u, v, w): the camera's axes turned back (camN)
-    const lu = ca * lx + sa * se * ly + sa * ce * lz, lv = -sa * lx + ca * se * ly + ca * ce * lz, lw = ce * ly - se * lz;
+    const lp = o.lamp || lampInBox(ca, sa, ce, se), lw = lp[2];
     if (!(lw > 0.2)) return null;
     const fadeIn = smoothStep(0.2, 0.35, lw) * smoothStep(0, 0.15, se);
     if (!(fadeIn > 0.004)) return null;
-    const T = tb.f, nt = tb.n, K = o.lite ? 0.25 : 0.5, LW = Math.ceil(o.W * K), LH = Math.ceil(o.H * K), n = LW * LH;
+    const Lr = o.layer || floorLayer(tb, o, lp);
+    if (!Lr.px) return { px: 0, layer: Lr };
+    const alpha = fadeIn * (o.k === undefined ? 1 : o.k), S = cam.S, Ru = Lr.Ru, Rv = Lr.Rv;
+    g.save();
+    // (a cell (i, j) of the layer is the point u = i / Ru − EX, v = j / Rv − EY of the floor, w = −EZ: the
+    // projection is parallel, so the layer is laid on the floor by one affine map, and it covers the floor
+    // and nothing else: no clip, which made every frame of a turn slower)
+    g.transform(S * ca / Ru, -S * se * sa / Ru, -S * sa / Rv, -S * se * ca / Rv, cam.cx + S * (sa * EY - ca * EX), cam.cy + S * (EZ * ce + se * (sa * EX + ca * EY)));
+    g.globalAlpha = alpha;
+    g.imageSmoothingEnabled = true;
+    // (only the part of the layer with a shadow, BG19)
+    const b = Lr.box;
+    g.drawImage(Lr.canvas, b[0], b[1], b[2], b[3], b[0], b[1], b[2], b[3]);
+    g.restore();
+    return { px: Lr.px, cells: [Lr.LW, Lr.LH], fade: Math.round(fadeIn * 1000) / 1000, alpha: Math.round(alpha * 1000) / 1000, kept: !!o.layer, layer: Lr };
+  }
+  // the lamp (LAMP, in the camera's axes) in the box's axes for the camera turned by ca, sa, ce, se
+  function lampInBox(ca, sa, ce, se) {
+    const lx = LAMP[0], ly = LAMP[1], lz = LAMP[2];
+    return [ca * lx + sa * se * ly + sa * ce * lz, -sa * lx + ca * se * ly + ca * ce * lz, ce * ly - se * lz];
+  }
+  // the layer of floorShadow: Ru and Rv cells for each unit of the box along u and v (a cell about 2 CSS pixels
+  // wide; a whole number of cells across the floor), lp the lamp in the box's axes; the triangles are in the
+  // camera's axes of o
+  function floorLayer(tb, o, lp) {
+    const { ca, sa, ce, se, EX, EY, EZ, cam } = o, [lu, lv, lw] = lp;
+    const T = tb.f, nt = tb.n, R = Math.max(8, cam.S / 2), LW = Math.ceil(2 * EX * R), LH = Math.ceil(2 * EY * R), n = LW * LH, Ru = LW / (2 * EX), Rv = LH / (2 * EY);
     const C = o.cache;
     if (!C.floorBuf || C.floorBuf.n < n) C.floorBuf = { n, h: new Float32Array(n), a: new Float32Array(n), m: new Float32Array(n), b1: new Float32Array(n), b2: new Float32Array(n), b3: new Float32Array(n), hb: new Float32Array(n), t: new Float32Array(n) };
     const B = C.floorBuf, fh = B.h;
@@ -8771,9 +8858,9 @@
         const k = t * CT + m * CV;
         const xc = (T[k] - cam.cx) * iS, yc = (cam.cy - T[k + 1]) * iS, zc = T[k + 2];
         const u = ca * xc + sa * se * yc + sa * ce * zc, v = -sa * xc + ca * se * yc + ca * ce * zc, w = ce * yc - se * zc;
-        // along the light down to the floor, then on the screen (proj with w = −EZ), on the layer
-        const h = w + EZ > 0 ? w + EZ : 0, f = h / lw, fu = u - lu * f, fv = v - lv * f;
-        fx[m] = (cam.cx + (fu * ca - fv * sa) * cam.S) * K; fy[m] = (cam.cy - (-EZ * ce + (fu * sa + fv * ca) * se) * cam.S) * K; fz[m] = h;
+        // along the light down to the floor, on the layer
+        const h = w + EZ > 0 ? w + EZ : 0, f = h / lw;
+        fx[m] = (u - lu * f + EX) * Ru; fy[m] = (v - lv * f + EY) * Rv; fz[m] = h;
       }
       h0 = fz[0]; h1 = fz[1]; h2 = fz[2];
       rasterTri(fx[0], fy[0], fx[1], fy[1], fx[2], fy[2], LW, LH, px);
@@ -8787,16 +8874,15 @@
       const f = h < H2 ? h / H2 : 1;
       A[i] = 1 - 0.72 * f; M[i] = 1; fh[i] = h; any++;
     }
-    if (!any) return { px: 0 };
-    const img = new ImageData(LW, LH), d = img.data, col = o.dark ? [0, 0, 0] : [28, 38, 66], A0 = (o.dark ? 0.5 : 0.3) * 255 * fadeIn * (o.k === undefined ? 1 : o.k);
-    // (while the graph is turned: one blur of about 8 CSS pixels, 1.12.0 BG08)
-    if (o.lite) {
-      boxBlur(A, B.b2, B.t, LW, LH, 2);
-      for (let i = 0; i < n; i++) { const s = B.b2[i]; if (!(s > 0.002)) continue; const o4 = i * 4; d[o4] = col[0]; d[o4 + 1] = col[1]; d[o4 + 2] = col[2]; d[o4 + 3] = s * A0; }
-    }
+    const L = C.floorLayer || (C.floorLayer = document.createElement('canvas'));
+    if (L.width !== LW || L.height !== LH) { L.width = LW; L.height = LH; }
+    const out = { canvas: L, Ru, Rv, LW, LH, px: any, box: [0, 0, LW, LH] };
+    if (!any) return out;
+    const img = new ImageData(LW, LH), d = img.data, col = o.dark ? [0, 0, 0] : [28, 38, 66], A0 = (o.dark ? 0.5 : 0.3) * 255;
+    let bx0 = LW, bx1 = -1, by0 = LH, by1 = -1;
     // (the blurs of about 2, 6 and 14 CSS pixels, in cells of the layer)
-    if (!o.lite) { boxBlur(A, B.b1, B.t, LW, LH, 1); boxBlur(A, B.b2, B.t, LW, LH, 3); boxBlur(A, B.b3, B.t, LW, LH, 7); boxBlur(fh, B.hb, B.t, LW, LH, 7); boxBlur(M, M, B.t, LW, LH, 7); }
-    for (let i = 0; !o.lite && i < n; i++) {
+    boxBlur(A, B.b1, B.t, LW, LH, 1); boxBlur(A, B.b2, B.t, LW, LH, 3); boxBlur(A, B.b3, B.t, LW, LH, 7); boxBlur(fh, B.hb, B.t, LW, LH, 7); boxBlur(M, M, B.t, LW, LH, 7);
+    for (let i = 0; i < n; i++) {
       const m = M[i];
       if (!(m > 0.002)) continue;
       // (the height of the surfaces around: 0 near the floor, 1 at the top; it picks the blur)
@@ -8805,23 +8891,20 @@
       const s = f < 0.5 ? B.b1[i] + (B.b2[i] - B.b1[i]) * f * 2 : B.b2[i] + (B.b3[i] - B.b2[i]) * (f * 2 - 1);
       const o4 = i * 4;
       d[o4] = col[0]; d[o4 + 1] = col[1]; d[o4 + 2] = col[2]; d[o4 + 3] = s * A0;
+      if (d[o4 + 3]) { const y = (i / LW) | 0, x = i - y * LW; if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; }
     }
-    const L = C.floorLayer || (C.floorLayer = document.createElement('canvas'));
-    if (L.width !== LW || L.height !== LH) { L.width = LW; L.height = LH; }
     L.getContext('2d').putImageData(img, 0, 0);
-    g.save();
-    g.beginPath(); o.pane0([[-EX, -EY], [EX, -EY], [EX, EY], [-EX, EY]]); g.clip();
-    g.imageSmoothingEnabled = true;
-    g.drawImage(L, 0, 0, LW / K, LH / K);
-    g.restore();
-    return { px: any, k: K, fade: Math.round(fadeIn * 1000) / 1000 };
+    if (bx1 >= bx0) out.box = [Math.max(0, bx0 - 1), Math.max(0, by0 - 1), Math.min(LW, bx1 + 2) - Math.max(0, bx0 - 1), Math.min(LH, by1 + 2) - Math.max(0, by0 - 1)];
+    return out;
   }
   // 0 below a, 1 above b, smoothly between them
   function smoothStep(a, b, x) { const t = x <= a ? 0 : x >= b ? 1 : (x - a) / (b - a); return t * t * (3 - 2 * t); }
   // tb: the triangles (triBuf); o: W and H of the canvas (CSS pixels), q (pixels of the layer for each
   // CSS pixel), dark, mesh (the color of the grid lines [r, g, b, alpha] and their width, or null), fade
   // (a color the surfaces fade halfway to, or null), cache (an object that keeps the buffers), shadow
-  // ({ cx, cy, S }: the surfaces cast shadows from the lamp, 1.11.0; or null)
+  // ({ cx, cy, S }: the surfaces cast shadows from the lamp, 1.11.0; or null), lock (1.12.0, BG19: while the
+  // graph is turned, { L: the lamp in the camera's axes, map }: how much of the lamp reaches each corner is
+  // in the triangles, kept from the drawing before the turn, and is blended across them; or null)
   function surfacePaint(g, tb, o) {
     const T = tb.f, nt = tb.n, q = o.q, none = { shown: 0, q };
     if (!nt) return none;
@@ -8867,9 +8950,10 @@
         }
       }
     }
-    // the light (camera's axes): a lamp at the upper left in front (LAMP), the eye looking along +z
-    const dark = !!o.dark;
-    const Lx = LAMP[0], Ly = LAMP[1], Lz = LAMP[2];
+    // the light (camera's axes): a lamp at the upper left in front (LAMP), the eye looking along +z; while
+    // the graph is turned, the lamp where it was on the box when the turn began (1.12.0, BG19)
+    const dark = !!o.dark, LK = o.lock || null;
+    const Lx = LK ? LK.L[0] : LAMP[0], Ly = LK ? LK.L[1] : LAMP[1], Lz = LK ? LK.L[2] : LAMP[2];
     let Hx = Lx, Hy = Ly, Hz = Lz - 1;
     const hl = Math.hypot(Hx, Hy, Hz); Hx /= hl; Hy /= hl; Hz /= hl;
     const AMB = dark ? 0.3 : 0.34, SKY = 0.08, DIF = dark ? 0.66 : 0.62, KS = dark ? 0.42 : 0.38, SH = 56;
@@ -8886,7 +8970,7 @@
     // the shadows from the lamp (1.11.0): the map of the surfaces as the lamp sees them, and for each
     // pixel its point in the camera's axes (from its place on the screen and its depth)
     const t0 = performance.now();
-    const SM = o.shadow ? lampMap(T, nt, o.shadow, C) : null, shK = o.shadow && o.shadow.k !== undefined ? o.shadow.k : 1;
+    const SM = o.shadow && !LK ? lampMap(T, nt, o.shadow, C) : null, shK = o.shadow && o.shadow.k !== undefined ? o.shadow.k : 1;
     const tMap = performance.now() - t0;
     const scx = SM ? SM.cam.cx : 0, scy = SM ? SM.cam.cy : 0, iS = SM ? 1 / SM.cam.S : 0;
     let inShadow = 0, edge = 0;
@@ -8911,7 +8995,11 @@
       // below and what is mirrored stay. Where the lamp only grazes the surface it gives little light
       // anyway, and there the shadow fades out: the map is least sure there, and it saves time)
       let lit = 1;
-      if (SM && dif > 0.04) {
+      if (LK && o.shadow && dif > 0.04) {
+        lit = l0 * T[k + 11] + l1 * T[k + B + 11] + l2 * T[k + C2 + 11];
+        if (lit < 0.5) inShadow++;
+        if (lit > 0.002 && lit < 0.998) edge++;
+      } else if (SM && dif > 0.04) {
         const py = (i / LW) | 0, pxl = i - py * LW;
         lit = lampLit(SM, ((lx0 + pxl + 0.5) / q - scx) * iS, (scy - (ly0 + py + 0.5) / q) * iS, zb[i], nx, ny, nz, dif);
         if (dif < 0.12) lit = 1 - (1 - lit) * (dif - 0.04) / 0.08;
@@ -8992,7 +9080,7 @@
     g.imageSmoothingEnabled = true;
     g.drawImage(off, lx0 / q, ly0 / q, LW / q, LH / q);
     g.restore();
-    return { shown, q, shadow: SM ? { px: inShadow, edge, map: [SM.MW, SM.MH], ms: Math.round(tMap * 10) / 10 } : null };
+    return { shown, q, SM, shadow: LK && o.shadow ? { px: inShadow, edge, map: LK.map, lock: true } : SM ? { px: inShadow, edge, map: [SM.MW, SM.MH], ms: Math.round(tMap * 10) / 10 } : null };
   }
   // the slope at p0 (value w0) from the points on its two sides, [place, value] (a: before, b: after;
   // null if none): the parabola through the three, or the line to the one there is
@@ -9585,8 +9673,9 @@
     if (Q3.canvas) Q3.canvas.dataset.grow = String(deg);
     draw3d();
   }
-  // (1.12.0, BG08) the shadows coming back after a turn in which they faded out: what is on the screen is
-  // copied to a layer over the graph, which fades out over 0.2 s once the full drawing is underneath
+  // (1.12.0, BG08, BG19) the full drawing after a turn, with the lamp back at the upper left of the screen and
+  // the fine shadows: what is on the screen is copied to a layer over the graph, which fades out over 0.2 s
+  // once the full drawing is underneath, so that the shadows do not change at once
   function shadowCrossFade(c) {
     const wrap = c.parentElement;
     if (!wrap || !c.width) return null;
@@ -9600,31 +9689,27 @@
     o.style.transition = 'none'; o.style.opacity = '1'; o.hidden = false;
     return o;
   }
-  // the strength of the shadows while the graph is turned (1.12.0, BG08): they are drawn from a coarser map
-  // and a smaller layer; when the frames still come more slowly than 30 a second (the median of three
-  // frames of a turn after the first one: the time between two drawings, or the time of a drawing itself
-  // when the finger moves more slowly than the screen), they fade out over 0.2 s, and come back over 0.2 s
-  // when the finger is lifted. A graph found slow keeps that until another graph is drawn (or "Volume and
-  // surface" is opened or closed), so that the next turn fades at once. Returns the strength, 0 to 1.
+  // the time of the frames while the graph is turned (1.12.0, BG08; for the tests: the median of three frames of
+  // a turn after the first one, the time between two drawings, or the time of a drawing itself when the finger
+  // moves more slowly than the screen). Returns the strength of the shadows: always 1 (1.12.0, BG19: until
+  // then they faded out over 0.2 s when the frames came more slowly than 30 a second, and on a slow phone
+  // that still looked like the shadows going away; now the lamp stays on the box while the graph is turned,
+  // and the shadows of the drawing before the turn are drawn again with only a new projection, draw3d)
   function turnShadow(now) {
-    if (!Q3.turning) { Q3.shK = 1; Q3.lastTurn = 0; return 1; }
-    const key = Q3.volShade ? 'vol' : 'plain';  // (with "Volume and surface" open the frames take longer)
-    if (Q3.shSlowFor !== Q3.data || Q3.shSlowKey !== key) { Q3.shSlowFor = Q3.data; Q3.shSlowKey = key; Q3.shSlow = false; }
+    Q3.shK = 1; Q3.shSlow = false;
+    if (!Q3.turning) { Q3.lastTurn = 0; return 1; }
     if (Q3.lastTurn && now - Q3.lastTurn < 250) {
       const dt = Math.min(now - Q3.lastTurn, (Q3.lastDrawMs || 0) * 1.3 + 4);
       Q3.turnN = (Q3.turnN || 0) + 1;
       if (Q3.turnN > 1) {
         const L = Q3.turnList || (Q3.turnList = []);
         L.push(dt); if (L.length > 3) L.shift();
-        const med = L.length < 3 ? 0 : L.slice().sort((a, b) => a - b)[1];
+        const med = L.length < 3 ? 0 : L.slice().sort((x, y) => x - y)[1];
         Q3.turnMs = med || dt;
-        if (med > 36) Q3.shSlow = true;
       }
     }
-    const k0 = Q3.shK === undefined ? 1 : Q3.shK, step = Q3.lastTurn ? Math.min(250, now - Q3.lastTurn) / 200 : 0;
-    Q3.shK = Q3.shSlow ? Math.max(0, k0 - step) : Math.min(1, k0 + step);
     Q3.lastTurn = now;
-    return Q3.shK;
+    return 1;
   }
   function draw3d() {
     const c = Q3.canvas;
@@ -9696,11 +9781,57 @@
     // a normal in the box's axes (u, v, w) in the camera's axes; grid coordinates of u and v
     const camN = (nu, nv, nw) => [nu * ca - nv * sa, nu * sa * se + nv * ca * se + nw * ce, nu * sa * ce + nv * ca * ce - nw * se];
     const giOf = (u) => (u / EX + 1) / 2 * (D.nx - 1), gjOf = (v) => (v / EY + 1) / 2 * (D.ny - 1);
+    // (1.12.0, BG19) while the graph is turned, the lamp stays where it was on the box when the turn began, so
+    // that the shadows stay too: which points are in a shadow (the lamp's map of the drawing before the turn,
+    // looked up once for each grid point and kept) and the shadow on the floor (its layer, laid on the floor
+    // with the new projection) are not made again for every frame, and the light and the highlight follow
+    // the lamp on the box. When the finger is lifted, the lamp is back at the upper left of the screen, the
+    // shadows are made again in full and fade in over 0.2 s (shadowCrossFade). data-no-shadow: no shadows
+    // (for the tests)
+    let LKS = null;
+    const shadeOn = !c.dataset.noShadow;
+    // how much of the lamp reaches a point (u, v, w) of the box with the normal (nu, nv, nw) in the box's axes,
+    // from the lamp's map of the drawing before the turn: the point and the normal in that drawing's axes, the
+    // normal turned to the lamp (the side turned away from it gets none of its light anyway)
+    const lockLit = (u, v, w, nu, nv, nw) => {
+      const K = LKS, M = K.SM;
+      if (!M) return 1;
+      const yr = u * K.sa + v * K.ca, x = u * K.ca - v * K.sa, y = w * K.ce + yr * K.se, z = yr * K.ce - w * K.se;
+      const myr = nu * K.sa + nv * K.ca;
+      let mx = nu * K.ca - nv * K.sa, my = nw * K.ce + myr * K.se, mz = myr * K.ce - nw * K.se;
+      const nl = Math.hypot(mx, my, mz) || 1;
+      mx /= nl; my /= nl; mz /= nl;
+      let dif = mx * LAMP[0] + my * LAMP[1] + mz * LAMP[2];
+      if (dif < 0) { dif = -dif; mx = -mx; my = -my; mz = -mz; }
+      if (!(dif > 0.04)) return 1;
+      let lit = lampLit(M, x, y, z, mx, my, mz, dif);
+      if (dif < 0.12) lit = 1 - (1 - lit) * (dif - 0.04) / 0.08;
+      return lit;
+    };
+    // the same for a normal in the camera's axes (a point of a cut cell), and for a grid point (kept)
+    const lockLitN = (u, v, w, n) => lockLit(u, v, w, ca * n[0] + sa * se * n[1] + sa * ce * n[2], -sa * n[0] + ca * se * n[1] + ca * ce * n[2], ce * n[1] - se * n[2]);
+    const lockLitK = (s, k) => {
+      let A = s.lockLit;
+      if (!A || s.lockId !== LKS.id || A.length !== s.z.length) { A = s.lockLit = new Float32Array(s.z.length).fill(NaN); s.lockId = LKS.id; }
+      let r = A[k];
+      if (r !== r) { const N = s.nrm; r = A[k] = lockLit(U(xs[k % D.nx]), V(ys[(k / D.nx) | 0]), s.proj.pw[k], N[3 * k], N[3 * k + 1], N[3 * k + 2]); }
+      return r;
+    };
     const L = [-0.42, 0.62, -0.66];  // light from the upper left, in front
     // the solid that is measured while "Volume and surface" is open (1.8.4): drawn as a liquid (1.9.1,
     // liquidPaint); the measured parts of the surfaces are not drawn as cells (inR)
     const VS = Q3.volUI && !Q3.volUI.box.hidden && Q3.volShade && Q3.volShade.D === D ? Q3.volShade : null;
     const vf = VS ? D.series[VS.fi] || null : null, vg = vf && VS.gi >= 0 ? D.series[VS.gi] || null : null;
+    // (the lamp kept on the box while turning, BG19: not while "Volume and surface" shows the measured solid,
+    // which casts no shadow from the lamp)
+    if (Q3.turning && shadeOn && !vf) {
+      const F = Q3.lastShade, same = (o) => o && o.D === D && o.dark === dark && o.EX === EX && o.EY === EY && o.EZ === EZ;
+      if (!same(Q3.shLock)) {
+        Q3.lockSeq = (Q3.lockSeq || 0) + 1;
+        Q3.shLock = same(F) ? Object.assign({}, F, { id: Q3.lockSeq }) : { D, dark, EX, EY, EZ, ca, sa, ce, se, SM: null, floor: null, lamp: lampInBox(ca, sa, ce, se), id: Q3.lockSeq, fresh: true };
+      }
+      LKS = Q3.shLock;
+    }
     // a cell counts as inside the region when any part of it is (its point nearest to the centre of a disk)
     const inRegion = (i, j) => {
       // (1.11.0: the enclosed part: a cell whose four corners are inside)
@@ -10043,12 +10174,12 @@
     // (a corner, and for rimModel its G, its side of the edge and the level part of its normal)
     const vtxK = (s, k) => {
       const P = s.proj, N = s.cnrm, c3 = colorAt(s, P.pw[k]), rm = s.rm;
-      const v = [P.px[k], P.py[k], P.pd[k], N[3 * k], N[3 * k + 1], N[3 * k + 2], c3[0], c3[1], c3[2], k % D.nx, (k / D.nx) | 0];
+      const v = [P.px[k], P.py[k], P.pd[k], N[3 * k], N[3 * k + 1], N[3 * k + 2], c3[0], c3[1], c3[2], k % D.nx, (k / D.nx) | 0, LKS ? lockLitK(s, k) : 1];
       if (rm && rm.G[k] >= 0) { v.G = rm.G[k]; v.sg = rm.SG[k]; v.L = rm.L(k); v.zr = rm.ZR[k]; v.u = U(xs[k % D.nx]); v.v = V(ys[(k / D.nx) | 0]); }
       return v;
     };
     const vtxP = (s, p) => {
-      const c3 = colorAt(s, p.w), v = [p.x, p.y, p.d, p.n[0], p.n[1], p.n[2], c3[0], c3[1], c3[2], p.gi, p.gj];
+      const c3 = colorAt(s, p.w), v = [p.x, p.y, p.d, p.n[0], p.n[1], p.n[2], c3[0], c3[1], c3[2], p.gi, p.gj, LKS ? (p.k !== undefined ? lockLitK(s, p.k) : lockLitN(p.u, p.v, p.w, p.n)) : 1];
       if (p.G >= 0 && p.L) { v.G = p.G; v.sg = p.sg; v.L = p.L; v.zr = p.zr; v.u = p.u; v.v = p.v; }
       return v;
     };
@@ -10068,7 +10199,7 @@
           const G = a * A.G + b * B.G + c * C.G, w = a * A.zr + b * B.zr + c * C.zr + A.sg * Math.sqrt(G > 0 ? G : 0);
           proj(a * A.u + b * B.u + c * C.u, a * A.v + b * B.v + c * C.v, w);
           const c3 = colorAt(s, w), h = Math.sqrt(G > 0 ? G : 0);
-          rsub[m++] = [T[0], T[1], T[2], a * A.L[0] + b * B.L[0] + c * C.L[0] + h * upN[0], a * A.L[1] + b * B.L[1] + c * C.L[1] + h * upN[1], a * A.L[2] + b * B.L[2] + c * C.L[2] + h * upN[2], c3[0], c3[1], c3[2], L3(9), L3(10)];
+          rsub[m++] = [T[0], T[1], T[2], a * A.L[0] + b * B.L[0] + c * C.L[0] + h * upN[0], a * A.L[1] + b * B.L[1] + c * C.L[1] + h * upN[1], a * A.L[2] + b * B.L[2] + c * C.L[2] + h * upN[2], c3[0], c3[1], c3[2], L3(9), L3(10), L3(11)];
         }
       }
       // (the point (i, j) is number j·(RS + 1) − j·(j − 1)/2 + i)
@@ -10101,15 +10232,37 @@
     // back, seen from above) and of the surfaces on themselves and on each other. Not while "Volume and
     // surface" shows the measured solid, which keeps its own look (the liquid casts no shadow from the
     // lamp, and the shadows of the other surfaces alone looked out of place there); that solid has its
-    // own soft shadow on the floor, above. While the graph is turned they are drawn too, from a coarser
-    // map and a smaller layer, and in full when the finger is lifted (1.12.0, BG08: until then they were
-    // left out while turning, and came and went with every touch).
-    // (and while the graph is turned on a slow phone, they fade out over 0.2 s instead: turnShadow)
-    const shadows = !vc && shK > 0.004, lite = !!Q3.turning;
+    // own soft shadow on the floor, above. While the graph is turned they are drawn too (1.12.0, BG08: until
+    // then they were left out while turning, and came and went with every touch), and the lamp stays on the
+    // box: they are those of the drawing before the turn (1.12.0, BG19, LKS above), and in full again,
+    // with the lamp at the upper left of the screen, when the finger is lifted.
+    const shadows = !vc && shK > 0.004 && shadeOn;
+    // (a turn that began without a drawing to keep the shadows of: the lamp's map of this frame, once, from a
+    // coarser grid; the lamp's light at the corners looked up again)
+    if (LKS && shadows && !LKS.SM && LKS.fresh) {
+      LKS.SM = lampMap(tb.f, tb.n, { cx, cy, S, lite: true }, Q3);
+      LKS.fresh = false; LKS.id = Q3.lockSeq = (Q3.lockSeq || 0) + 1;
+      const F = tb.f, iS = 1 / S;
+      for (let v = 0; v < tb.n * 3; v++) {
+        const o = v * CV, xc = (F[o] - cx) * iS, yc = (cy - F[o + 1]) * iS, zc = F[o + 2];
+        F[o + 11] = lockLitN(ca * xc + sa * se * yc + sa * ce * zc, -sa * xc + ca * se * yc + ca * ce * zc, ce * yc - se * zc, [F[o + 3], F[o + 4], F[o + 5]]);
+      }
+    }
     const tf = performance.now();
-    const floor = shadows && wb === -EZ ? floorShadow(g, tb, { ca, sa, ce, se, EX, EY, EZ, cam: { cx, cy, S }, W, H, dark, cache: Q3, pane0, lite, k: shK }) : null;
-    if (floor) floor.ms = Math.round((performance.now() - tf) * 10) / 10;
-    const surf = surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite, k: shK } : null });
+    const floorO = { ca, sa, ce, se, EX, EY, EZ, cam: { cx, cy, S }, dark, cache: Q3, k: shK, lamp: LKS ? LKS.lamp : null, layer: LKS && LKS.floor && LKS.floor.lampKey === String(LKS.lamp) ? LKS.floor : null };
+    const floor = shadows && wb === -EZ ? floorShadow(g, tb, floorO) : null;
+    // (the layer of the floor: kept for a turn, BG19)
+    if (floor && floor.layer) {
+      floor.layer.lampKey = String(LKS ? LKS.lamp : lampInBox(ca, sa, ce, se));
+      if (LKS) LKS.floor = floor.layer;
+    }
+    const floorLayerNow = floor ? floor.layer : null;
+    if (floor) { delete floor.layer; floor.ms = Math.round((performance.now() - tf) * 10) / 10; }
+    const surf = surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite: !!Q3.turning, k: shK } : null,
+      lock: LKS && shadows ? { L: camN(LKS.lamp[0], LKS.lamp[1], LKS.lamp[2]), map: LKS.SM ? [LKS.SM.MW, LKS.SM.MH] : null } : null });
+    // (what the next turn keeps: the lamp's map and the floor's layer of this drawing, with its camera, BG19)
+    if (!Q3.turning && shadows && !Q3.captureQ) Q3.lastShade = { D, dark, EX, EY, EZ, ca, sa, ce, se, SM: surf.SM || null, floor: floorLayerNow, lamp: lampInBox(ca, sa, ce, se) };
+    else if (!Q3.turning && !shadows) Q3.lastShade = null;
     // (what was drawn, for the tests; shadow: the pixels in a shadow and at the soft edge of one, the
     // size of the lamp's map and the time to make it; floor: the cells of the floor's layer in a shadow)
     c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor, shk: Math.round(shK * 1000) / 1000, turnMs: Q3.turning ? Math.round(Q3.turnMs || 0) : null, turnL: Q3.turning ? (Q3.turnList || []).map(Math.round) : null, shSlow: !!Q3.shSlow, drawMs: Math.round(Q3.lastDrawMs || 0),
@@ -10165,10 +10318,10 @@
       g.fillStyle = '#e11d48'; g.strokeStyle = '#fff'; g.lineWidth = 2;
       g.beginPath(); g.arc(pr.px[Q3.mark.k], pr.py[Q3.mark.k], 5, 0, Math.PI * 2); g.fill(); g.stroke();
     }
-    // (1.12.0, BG08: the time of this drawing, the fade of the shadows going on while the finger rests,
-    // and the layer of the last frame fading out over the full drawing)
+    // (1.12.0, BG08: the time of this drawing, also in data-ms for the tests, and the layer of the last frame
+    // fading out over the full drawing)
     Q3.lastDrawMs = performance.now() - t3;
-    if (Q3.turning && shK > 0 && shK < 1) requestDraw3d();
+    c.dataset.ms = String(Math.round(Q3.lastDrawMs));
     if (crossFade) {
       c.dataset.fade = 'in';
       void getComputedStyle(crossFade).opacity;
@@ -10242,8 +10395,10 @@
       if (!moved && pts.size === 0 && e.type === 'pointerup') pick3d(e.clientX, e.clientY);
       start = pts.size ? snapshot() : null;
       if (!pts.size && Q3.turning) {
-        // (1.12.0, BG08: shadows that faded out while turning come back over 0.2 s)
-        if (Q3.shK !== undefined && Q3.shK < 1) Q3.fadeInNext = true;
+        // (1.12.0, BG08, BG19: the full drawing, with the lamp back at the upper left of the screen, fades in
+        // over 0.2 s)
+        if (Q3.shLock) Q3.fadeInNext = true;
+        Q3.shLock = null;
         Q3.turning = false; Q3.turnN = 0; Q3.turnMs = 0; Q3.turnList = []; requestDraw3d();
       }
     };

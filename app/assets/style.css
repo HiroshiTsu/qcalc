@@ -1403,6 +1403,16 @@ body.hselect #history { padding-bottom: 150px; }
 .plot-ctl button.rev3d .rev3d-i { font-size: 18px; }
 .plot-ctl button.rev3d small { font-size: 10px; font-weight: 700; }
 .plot-ctl button.rev3d.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); opacity: 1; }
+/* 1.12.0 (BG20): a solid made in the 2D graph, in 3D: its volume large, and the way back to 2D */
+.rev3d-back { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin: 4px 0 8px; }
+.rev3d-back .rev3d-back-btn { min-height: 48px; }
+.rev3d-vol { font-size: 20px; font-weight: 700; line-height: 1.3; color: var(--text); overflow-wrap: anywhere; }
+/* (without QCalc Pro: "Turn it in 3D (QCalc Pro)" above the results of "Make a solid") */
+.rev-pro-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; margin: 6px 0; padding: 8px 12px; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent-soft); color: var(--key-op-text); font-weight: 700; text-align: start; }
+.rev-pro-row .rev-pro-i { font-size: 20px; flex: 0 0 auto; }
+.rev-pro-row .rev-pro-t { flex: 1 1 auto; overflow-wrap: anywhere; }
+.rev-pro-row .rev-pro-go { flex: 0 0 auto; font-size: 20px; }
+.rev3d-back[hidden], .rev-pro-row[hidden] { display: none; }
 /* the solid: the volume first and large, the method small below it, the surfaces under "More ▾" */
 .rev-out .geo-row .geo-val { font-size: 1.45em; font-weight: 700; }
 .rev-more { margin: 6px 0; }

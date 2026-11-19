@@ -30,7 +30,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 - **Outils du quotidien** : [[Price: discount and tax]], [[Percentages]], [[Unit price: which is cheaper]], [[Split the bill]], [[Loan]], [[Savings and compound interest]], [[Dates]], [[Times]], [[Convert units and currencies]], [[Statistics]], [[Calculation notes]].
 - **Format des nombres** : choisissez 1,234.5, 1.234,5 ou 1 234,5 ([Format des nombres](#number-format)).
 - **Historique** : recherche, épinglage avec une étoile, notes courtes, somme des lignes choisies ; touches mémoire ([Historique et mémoire](#history)).
-- **De la 2D à la 3D** : [[!⟳ 3D]] transforme aussitôt une région du graphique en solide de révolution ; aussi des solides à sections connues, les lignes de la méthode et le théorème de Guldin ([Créer un solide](#solid)).
+- **De la 2D à la 3D** : [[!⟳ 3D]] transforme aussitôt une région du graphique en solide de révolution et le montre en 3D (3D : QCalc Pro) ; aussi des solides à sections connues, les lignes de la méthode et le théorème de Guldin ([Créer un solide](#solid)).
 - **Ouvrir vite** : un widget, une vignette des réglages rapides et des raccourcis sur l'icône ([Widget, vignette et raccourcis](#widget)).
 - **Partager** : images des graphiques et GIF animés des graphiques 3D ([Partager](#share)).
 - **QCalc Pro** : CSV des tableaux, fonds de cuves avec barèmes de jaugeage, solides à partir d'un profil, fichiers STL, plus de notes de calcul et plus encore ([QCalc Pro](#pro)).
@@ -356,13 +356,13 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :what: Le volume et la surface du solide obtenu en faisant tourner une région du graphique 2D autour d'un axe.
 :svg: solid | La région entre y = x et y = x² tournée autour de l'axe des x
 :step: Tracez les fonctions dans le graphique 2D (par exemple `x` et `x^2`).
-:step: Appuyez sur le bouton rond [[!⟳ 3D]] du graphique. Le volume autour de l'axe des x s'affiche aussitôt.
-:step: Pour un autre axe, touchez sa ligne ; la ligne y = k se glisse au doigt.
+:step: Appuyez sur le bouton rond [[!⟳ 3D]] du graphique. Le solide autour de l'axe des x s'affiche aussitôt en 3D, avec son volume en grand au-dessus (QCalc Pro). Sans Pro, le graphique 2D montre la coupe du solide (reflétée de l'autre côté de l'axe) et son volume.
+:step: Pour un autre axe, revenez avec [[← Back to 2D]] et touchez sa ligne ; la ligne y = k se glisse au doigt. [[View in 3D]] le montre de nouveau en 3D.
 :step: [[↶ Undo]] revient à l'axe précédent.
 :shot: solid | La région entre y = x et y = x² tournée autour de l'axe des x
 :example: Entre y = x et y = x², autour de l'axe des x → volume 2π/15 ≈ 0,4188790205
 :tip: [[Show the method with lines]] trace les disques (rondelles) ou les coquilles. La ligne [[Pappus–Guldinus theorem: ]] compare le volume obtenu par le centre de gravité à l'intégrale.
-:pro: Faire tourner le solide au doigt dans [[View in 3D]] est une fonction de QCalc Pro, comme le graphique 3D.
+:pro: Faire tourner le solide au doigt en 3D est une fonction de QCalc Pro, comme le graphique 3D. Sans Pro, la ligne [[Turn it in 3D (QCalc Pro)]] s'affiche à la place.
 
 ## cross-sections | Solides à sections connues
 :what: Le volume d'un solide dont la base est la région entre deux courbes, avec des carrés, des triangles équilatéraux ou des demi-cercles dressés dessus.

@@ -30,7 +30,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - **Everyday tools**: [[Price: discount and tax]], [[Percentages]], [[Unit price: which is cheaper]], [[Split the bill]], [[Loan]], [[Savings and compound interest]], [[Dates]], [[Times]], [[Convert units and currencies]], [[Statistics]], [[Calculation notes]].
 - **Number format**: choose 1,234.5, 1.234,5 or 1 234,5 ([Number format](#number-format)).
 - **History**: search, pin with a star, short notes, the sum of the lines you choose; memory keys ([History and memory](#history)).
-- **From 2D to 3D**: [[!⟳ 3D]] turns a region of the graph into a solid of revolution at once; also solids with known cross sections, the lines of the method and the theorem of Pappus ([Make a solid](#solid)).
+- **From 2D to 3D**: [[!⟳ 3D]] turns a region of the graph into a solid of revolution and shows it in 3D at once (3D: QCalc Pro); also solids with known cross sections, the lines of the method and the theorem of Pappus ([Make a solid](#solid)).
 - **Open quickly**: a widget, a quick settings tile and shortcuts on the icon ([Widget, tile and shortcuts](#widget)).
 - **Sharing**: pictures of graphs, and moving GIFs of 3D graphs ([Sharing](#share)).
 - **QCalc Pro**: the CSV of tables, tank heads with quick-reference tables, solids from a profile, STL files, more calculation notes and more ([QCalc Pro](#pro)).
@@ -356,13 +356,13 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :what: The volume and surface of the solid made by turning a region of the 2D graph around an axis.
 :svg: solid | The region between y = x and y = x² turned around the x axis
 :step: Draw the functions in the 2D graph (for example `x` and `x^2`).
-:step: Press the round button [[!⟳ 3D]] on the graph. The volume around the x axis appears at once.
-:step: For another axis, tap its line; drag the line y = k with a finger.
+:step: Press the round button [[!⟳ 3D]] on the graph. The solid around the x axis appears in 3D at once, with its volume large above it (QCalc Pro). Without Pro, the 2D graph shows the solid's cut (mirrored across the axis) and its volume.
+:step: For another axis, go back with [[← Back to 2D]] and tap its line; drag the line y = k with a finger. [[View in 3D]] shows it in 3D again.
 :step: [[↶ Undo]] goes back to the axis before.
 :shot: solid | The region between y = x and y = x² turned around the x axis
 :example: Between y = x and y = x², around the x axis → volume 2π/15 ≈ 0.4188790205
 :tip: [[Show the method with lines]] draws the disks (washers) or shells. The line [[Pappus–Guldinus theorem: ]] compares the volume from the centroid with the integral.
-:pro: Turning the solid with a finger in [[View in 3D]] is a QCalc Pro feature, like the 3D graph.
+:pro: Turning the solid with a finger in 3D is a QCalc Pro feature, like the 3D graph. Without Pro, the row [[Turn it in 3D (QCalc Pro)]] appears instead.
 
 ## cross-sections | Solids with known cross sections
 :what: The volume of a solid whose base is the region between two curves, with squares, equilateral triangles or semicircles standing on it.

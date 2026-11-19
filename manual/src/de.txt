@@ -30,7 +30,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 - **Alltagswerkzeuge**: [[Price: discount and tax]], [[Percentages]], [[Unit price: which is cheaper]], [[Split the bill]], [[Loan]], [[Savings and compound interest]], [[Dates]], [[Times]], [[Convert units and currencies]], [[Statistics]], [[Calculation notes]].
 - **Zahlenformat**: 1,234.5, 1.234,5 oder 1 234,5 ([Zahlenformat](#number-format)).
 - **Verlauf**: Suche, mit Stern anheften, kurze Notizen, Summe ausgewählter Zeilen; Speichertasten ([Verlauf und Speicher](#history)).
-- **Von 2D zu 3D**: [[!⟳ 3D]] macht aus einem Bereich des Graphen sofort einen Rotationskörper; dazu Körper mit bekannten Querschnitten, die Linien der Methode und die Guldinsche Regel ([Einen Körper bilden](#solid)).
+- **Von 2D zu 3D**: [[!⟳ 3D]] macht aus einem Bereich des Graphen sofort einen Rotationskörper und zeigt ihn in 3D (3D: QCalc Pro); dazu Körper mit bekannten Querschnitten, die Linien der Methode und die Guldinsche Regel ([Einen Körper bilden](#solid)).
 - **Schnell öffnen**: ein Widget, eine Kachel der Schnelleinstellungen und Verknüpfungen am Symbol ([Widget, Kachel und Verknüpfungen](#widget)).
 - **Teilen**: Bilder von Graphen, bei 3D auch als bewegtes GIF ([Teilen](#share)).
 - **QCalc Pro**: CSV von Tabellen, Tankböden mit Tabellen, Körper aus einem Profil, STL-Dateien, weitere Rechennotizen und mehr ([QCalc Pro](#pro)).
@@ -356,13 +356,13 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :what: Volumen und Oberfläche des Körpers, der entsteht, wenn ein Bereich des 2D-Graphen um eine Achse gedreht wird.
 :svg: solid | Der Bereich zwischen y = x und y = x² um die x-Achse gedreht
 :step: Zeichnen Sie die Funktionen im 2D-Graphen (zum Beispiel `x` und `x^2`).
-:step: Drücken Sie den runden Knopf [[!⟳ 3D]] am Graphen. Das Volumen um die x-Achse erscheint sofort.
-:step: Für eine andere Achse tippen Sie auf ihre Linie; die Linie y = k ziehen Sie mit dem Finger.
+:step: Drücken Sie den runden Knopf [[!⟳ 3D]] am Graphen. Der Körper um die x-Achse erscheint sofort in 3D, mit seinem Volumen groß darüber (QCalc Pro). Ohne Pro zeigt der 2D-Graph den Schnitt des Körpers (an der Achse gespiegelt) und sein Volumen.
+:step: Für eine andere Achse gehen Sie mit [[← Back to 2D]] zurück und tippen auf ihre Linie; die Linie y = k ziehen Sie mit dem Finger. [[View in 3D]] zeigt ihn wieder in 3D.
 :step: [[↶ Undo]] kehrt zur vorherigen Achse zurück.
 :shot: solid | Der Bereich zwischen y = x und y = x² um die x-Achse gedreht
 :example: Zwischen y = x und y = x², um die x-Achse → Volumen 2π/15 ≈ 0,4188790205
 :tip: [[Show the method with lines]] zeichnet die Scheiben (Ringe) oder Zylinderschalen. Die Zeile [[Pappus–Guldinus theorem: ]] vergleicht das Volumen aus dem Schwerpunkt mit dem Integral.
-:pro: Den Körper in [[View in 3D]] mit dem Finger zu drehen ist, wie der 3D-Graph, eine Funktion von QCalc Pro.
+:pro: Den Körper in 3D mit dem Finger zu drehen ist, wie der 3D-Graph, eine Funktion von QCalc Pro. Ohne Pro erscheint stattdessen die Zeile [[Turn it in 3D (QCalc Pro)]].
 
 ## cross-sections | Körper mit bekannten Querschnitten
 :what: Das Volumen eines Körpers, dessen Grundfläche der Bereich zwischen zwei Kurven ist, mit darauf stehenden Quadraten, gleichseitigen Dreiecken oder Halbkreisen.

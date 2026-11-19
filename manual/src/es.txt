@@ -30,7 +30,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 - **Herramientas cotidianas**: [[Price: discount and tax]], [[Percentages]], [[Unit price: which is cheaper]], [[Split the bill]], [[Loan]], [[Savings and compound interest]], [[Dates]], [[Times]], [[Convert units and currencies]], [[Statistics]], [[Calculation notes]].
 - **Formato de números**: elige 1,234.5, 1.234,5 o 1 234,5 ([Formato de números](#number-format)).
 - **Historial**: búsqueda, fijar con estrella, notas breves, suma de las líneas elegidas; teclas de memoria ([Historial y memoria](#history)).
-- **De 2D a 3D**: [[!⟳ 3D]] convierte al momento una región de la gráfica en un sólido de revolución; también sólidos de sección conocida, las líneas del método y el teorema de Pappus ([Crear un sólido](#solid)).
+- **De 2D a 3D**: [[!⟳ 3D]] convierte al momento una región de la gráfica en un sólido de revolución y lo muestra en 3D (3D: QCalc Pro); también sólidos de sección conocida, las líneas del método y el teorema de Pappus ([Crear un sólido](#solid)).
 - **Abrir rápido**: un widget, un mosaico de ajustes rápidos y accesos directos en el icono ([Widget, mosaico y accesos directos](#widget)).
 - **Compartir**: imágenes de gráficas y GIF animados de las gráficas 3D ([Compartir](#share)).
 - **QCalc Pro**: CSV de tablas, fondos de tanques con tablas de consulta, sólidos a partir de un perfil, archivos STL, más notas de cálculo y más ([QCalc Pro](#pro)).
@@ -356,13 +356,13 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :what: El volumen y la superficie del sólido que se obtiene al girar una región de la gráfica 2D alrededor de un eje.
 :svg: solid | La región entre y = x e y = x² girada alrededor del eje x
 :step: Dibuja las funciones en la gráfica 2D (por ejemplo `x` y `x^2`).
-:step: Pulsa el botón redondo [[!⟳ 3D]] de la gráfica. El volumen alrededor del eje x aparece al momento.
-:step: Para otro eje, toca su línea; la línea y = k se arrastra con el dedo.
+:step: Pulsa el botón redondo [[!⟳ 3D]] de la gráfica. El sólido alrededor del eje x aparece al momento en 3D, con su volumen grande encima (QCalc Pro). Sin Pro, la gráfica 2D muestra el corte del sólido (reflejado al otro lado del eje) y su volumen.
+:step: Para otro eje, vuelve con [[← Back to 2D]] y toca su línea; la línea y = k se arrastra con el dedo. [[View in 3D]] lo muestra de nuevo en 3D.
 :step: [[↶ Undo]] vuelve al eje anterior.
 :shot: solid | La región entre y = x e y = x² girada alrededor del eje x
 :example: Entre y = x e y = x², alrededor del eje x → volumen 2π/15 ≈ 0.4188790205
 :tip: [[Show the method with lines]] dibuja los discos (arandelas) o las capas. La línea [[Pappus–Guldinus theorem: ]] compara el volumen a partir del centroide con la integral.
-:pro: Girar el sólido con el dedo en [[View in 3D]] es una función de QCalc Pro, como la gráfica 3D.
+:pro: Girar el sólido con el dedo en 3D es una función de QCalc Pro, como la gráfica 3D. Sin Pro aparece en su lugar la fila [[Turn it in 3D (QCalc Pro)]].
 
 ## cross-sections | Sólidos de sección conocida
 :what: El volumen de un sólido cuya base es la región entre dos curvas, con cuadrados, triángulos equiláteros o semicírculos levantados sobre ella.
