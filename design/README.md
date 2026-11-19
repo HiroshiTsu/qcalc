@@ -1,22 +1,31 @@
-# QCalc design documents (v1.11.0)
+# QCalc design documents (v1.12.0)
 
 **English** | [日本語](#日本語)
 
-The design document set of QCalc 1.11.0 (versionCode 24, package name `io.github.hiroshitsu.qcalc`): requirements, design, usage, maintenance and tests. Every document is in English and in Japanese, with the same content. The documents match the 1.11.0 source code in this repository (commit `f59d558`).
+The design document set of QCalc 1.12.0 (versionCode 25, package name `io.github.hiroshitsu.qcalc`): requirements, design, usage, maintenance and tests. Every document is in English and in Japanese, with the same content. The documents match the 1.12.0 source code in this repository (commit `5eafa9f`).
 
 - Author: Hiroshi Tsukayama (津嘉山 弘)
-- Date: 2026-11-19 (17th edition, for 1.11.0)
+- Date: 2026-11-19 (18th edition, for 1.12.0)
 - Format: PDF (A4), with UML class, sequence and state diagrams and other figures
 
 | Document | English | Pages | Japanese | Pages | Contents |
 | --- | --- | ---: | --- | ---: | --- |
-| Overview | [00-overview-en.pdf](00-overview-en.pdf) | 62 | [00-overview.pdf](00-overview.pdf) (概要) | 35 | What QCalc is, what changed in 1.11.0, 1.10.1, 1.10.0, 1.9.5, 1.9.4, 1.9.3, 1.9.2, 1.9.1, 1.9.0, 1.8.4, 1.8.3, 1.8.2, 1.8.1, 1.8.0, 1.7.1, 1.7.0, 1.6.0, 1.5.0, 1.4.0, 1.3.0, 1.2.0 and 1.1.0, the design in brief, components and versions, list of the documents, glossary, revision history |
-| 1. Requirements definition | [01-requirements-en.pdf](01-requirements-en.pdf) | 45 | [01-requirements.pdf](01-requirements.pdf) (要件定義書) | 38 | Purpose, scope, 28 use cases, 61 functional requirements, non-functional requirements, constraints, 47 acceptance criteria, QCalc Pro |
-| 2. Basic design | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 42 | [02-basic-design.pdf](02-basic-design.pdf) (基本設計書) | 34 | System structure, deployment, modules, screens and screen transitions (with the forms), keys, main processing flows, stored data, external interfaces, error handling, security |
-| 3. Detailed design | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 122 | [03-detailed-design.pdf](03-detailed-design.pdf) (詳細設計書) | 113 | Class diagram, JavaScript bridge, protocol between the app and the engine, calculation, process supervision, user interface, data formats, time limits, error codes and messages, QCalc Pro, language, color themes, CSV export, suggestions, the Light or dark setting, special functions with Arb, the time limit setting, forms, the math view, □ boxes, actions on results, analysis and measuring in 2D and 3D graphs, graphs from forms, the Shapes panel, the area shown at once with edges that can be dragged, and for 1.8.0: forms that check, keep and undo, samples for the graphs, the volume of the drawn surface, notes on input, and for 1.8.2: the shorter search for exact values and the values kept, and for 1.8.3: the edge in the pictures of the samples and the scale kept for round samples, for 1.8.4: the measured solid shown filled with a pale liquid and graphs from expressions, equations, functions and matrices made anywhere in the app, for 1.9.0: Spanish as the third language of the screens, for 1.9.1: the measured solid drawn as a real pale liquid in a clear, glossy film, traced for every pixel, and for 1.9.2: smooth surfaces with a depth buffer and light at every pixel, and the measured solid as a pale gelatin in a clear skin of a deeper shade, for 1.9.3: a sphere drawn as one round, smooth ball, and for 1.9.4: measuring only where the functions have real values, with only the digits that can be trusted, and for 1.9.5: a solid drawn with other surfaces as one object in one color, and surfaces cut along the top and the bottom of the box, and for 1.10.0: German, French, Korean and Traditional Chinese, with one file of texts per language, and for 1.10.1: the shadow of the measured solid in the shape of the solid, and for 1.11.0: shadows in the 3D graph, the enclosed region, shapes, tanks and the weight, solids of revolution, regions given by formulas and the sign, volume from measured values, the language at start (Lang.java) and the faults of the inspection |
-| 4. User manual | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 51 | [04-user-manual.pdf](04-user-manual.pdf) (操作マニュアル) | 49 | Installation and the language (English, Japanese, Spanish, German, French, Korean, Traditional Chinese), the screen, calculating (□ boxes, fractions, the suggestions and very long results), the forms for calculus and matrices (up to 30 × 30; checking, Undo and Redo, pasting a table), keyboard input, examples, the menu (graphs with samples, analysis and measuring, drawn also from the input field, the history and saved functions; shapes: area, volume, length; volumes, solids of revolution and measured values), settings, troubleshooting; with screenshots |
+| Overview | [00-overview-en.pdf](00-overview-en.pdf) | 64 | [00-overview.pdf](00-overview.pdf) (概要) | 36 | What QCalc is, what changed in 1.12.0, 1.11.0, 1.10.1, 1.10.0, 1.9.5, 1.9.4, 1.9.3, 1.9.2, 1.9.1, 1.9.0, 1.8.4, 1.8.3, 1.8.2, 1.8.1, 1.8.0, 1.7.1, 1.7.0, 1.6.0, 1.5.0, 1.4.0, 1.3.0, 1.2.0 and 1.1.0, the design in brief, components and versions, list of the documents, glossary, revision history |
+| 1. Requirements definition | [01-requirements-en.pdf](01-requirements-en.pdf) | 52 | [01-requirements.pdf](01-requirements.pdf) (要件定義書) | 45 | Purpose, scope, 28 use cases, 82 functional requirements, non-functional requirements, constraints, 60 acceptance criteria, QCalc Pro (and what is free and what is Pro from 1.12.0) |
+| 2. Basic design | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 46 | [02-basic-design.pdf](02-basic-design.pdf) (基本設計書) | 38 | System structure, deployment, modules, screens and screen transitions (with the forms), keys, main processing flows, stored data, external interfaces, error handling, security |
+| 3. Detailed design | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 133 | [03-detailed-design.pdf](03-detailed-design.pdf) (詳細設計書) | 122 | Class diagram, JavaScript bridge, protocol between the app and the engine, calculation, process supervision, user interface, data formats, time limits, error codes and messages, QCalc Pro, language, color themes, CSV export, suggestions, the Light or dark setting, special functions with Arb, the time limit setting, forms, the math view, □ boxes, actions on results, analysis and measuring in 2D and 3D graphs, graphs from forms, the Shapes panel, the area shown at once with edges that can be dragged, and for 1.8.0: forms that check, keep and undo, samples for the graphs, the volume of the drawn surface, notes on input, and for 1.8.2: the shorter search for exact values and the values kept, and for 1.8.3: the edge in the pictures of the samples and the scale kept for round samples, for 1.8.4: the measured solid shown filled with a pale liquid and graphs from expressions, equations, functions and matrices made anywhere in the app, for 1.9.0: Spanish as the third language of the screens, for 1.9.1: the measured solid drawn as a real pale liquid in a clear, glossy film, traced for every pixel, and for 1.9.2: smooth surfaces with a depth buffer and light at every pixel, and the measured solid as a pale gelatin in a clear skin of a deeper shade, for 1.9.3: a sphere drawn as one round, smooth ball, and for 1.9.4: measuring only where the functions have real values, with only the digits that can be trusted, and for 1.9.5: a solid drawn with other surfaces as one object in one color, and surfaces cut along the top and the bottom of the box, and for 1.10.0: German, French, Korean and Traditional Chinese, with one file of texts per language, and for 1.10.1: the shadow of the measured solid in the shape of the solid, and for 1.11.0: shadows in the 3D graph, the enclosed region, shapes, tanks and the weight, solids of revolution, regions given by formulas and the sign, volume from measured values, the language at start (Lang.java) and the faults of the inspection |
+| 4. User manual | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 46 | [04-user-manual.pdf](04-user-manual.pdf) (取扱説明書) | 44 | From 1.12.0 the PDF of the user manual of docs/manual (made from manual/src; also inside the app and on the web, in seven languages): introduction, the screen, basic calculations, history and memory, keys and typing help, tools, graphs, forms, settings, language and widget, QCalc Pro, troubleshooting, glossary; with photos, numbered steps, examples, tips and common mistakes |
 | 5. Build and maintenance manual | [05-build-and-maintenance-en.pdf](05-build-and-maintenance-en.pdf) | 22 | [05-build-and-maintenance.pdf](05-build-and-maintenance.pdf) (ビルド・保守マニュアル) | 21 | Development environment, build steps (test APK and App Bundle for Google Play), FLINT and the patch to libqalculate, signing, the build with billing (Gradle), checks, updating libqalculate, Android Studio |
-| 6. Test specification and results | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 103 | [06-test-specification.pdf](06-test-specification.pdf) (テスト仕様書・結果) | 96 | Test policy, test items and their results for 1.11.0 (all 1,153 items passed, each test counted once; the engine tests are results of 1.6.0, as the engine is unchanged, and the Java tests were run again with 1.11.0), tests not yet done |
+| 6. Test specification and results | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 107 | [06-test-specification.pdf](06-test-specification.pdf) (テスト仕様書・結果) | 99 | Test policy, test items and their results for 1.12.0 (all 1,513 items passed, each test counted once; the engine tests are results of 1.6.0, as the engine is unchanged; the tests of the page and the Java tests were run again with 1.12.0), tests not yet done |
+
+### What changed in 1.12.0
+
+- Clarity first, at the user's request: anyone opening the app should find a tool and get a result without help. The menu has eight items; the tools are on one Tools screen with a search in the seven languages; every tool has examples filled in with one tap, a result at once and the same three actions on a result; touch targets are 48 dp.
+- Everyday tools: price with discounts and tax, percentages, unit price, splitting a bill, loans with a repayment table, savings, dates, times, a conversion screen, statistics with regression and calculation notes. Numbers follow the region's format (1,234.5, 1.234,5 or 1 234,5) or a chosen one. The history can be searched, pinned, noted and added up; memory keys can be shown; the language can follow the phone again.
+- From 2D to 3D by touch: "⟳ 3D" turns a region of the 2D graph into a solid of revolution at once; solids with known cross sections, the lines of the method and Pappus's theorem. A widget, a quick settings tile and shortcuts open QCalc quickly; pictures and GIFs of graphs can be shared.
+- QCalc Pro, as the author decided (free for learning and everyday use, Pro for work): the CSV of tables, tank heads with quick-reference tables, solids from a profile, STL files for 3D printers, full-size pictures and GIFs, and more calculation notes.
+- A user manual in the seven languages: a version read inside the app without the internet, opened at its section from the "?" of every tool and panel, and a web version with photos and a PDF (docs/manual, published with GitHub Pages). 04-user-manual(-en).pdf is now its Japanese and English PDF; the German, Spanish, French, Korean and Traditional Chinese manuals were translated by machine and are not yet checked by native speakers.
+- A review of the whole app fixed BG05 to BG18, among them the shadows while the 3D graph turns and the rims of solids of revolution (reported by the user), and numbers with a decimal comma. The engine did not change; the page, the five files of texts and the Java code changed, with six new Java classes (Widget, QuickTile, Quick, QuickText, ShareFiles, ShareProvider).
 
 ### What changed in 1.11.0
 
@@ -105,7 +114,7 @@ Only the page changed (app.js and style.css); the engine and the Java code are t
 
 ### Reading order
 
-- Users: 4. User manual
+- Users: 4. User manual (also inside the app: "?" on every tool, and at https://hiroshitsu.github.io/qcalc/manual/)
 - Developers and maintainers: Overview → 2. Basic design → 3. Detailed design → 5. Build and maintenance manual
 - Acceptance: 1. Requirements definition → 6. Test specification and results
 
@@ -113,25 +122,34 @@ Only the page changed (app.js and style.css); the engine and the Java code are t
 
 - The overview mentions a separate guide for publishing QCalc on Google Play. It is a working document for the developer's own Play Console tasks and is not included here.
 - The signing keys (the upload key and the test key) and their passwords are not in the documents or in this repository; the documents give only the file names and locations.
-- The screenshots in the user manuals were taken on a PC: the app's user interface was shown in Chromium at the size of a smartphone screen (details at the beginning of each manual). The English manual shows the English screens and the Japanese manual the Japanese screens. Two screen examples show 1.8.0 (the checked form, the pasted table), two show 1.8.4 (graphs drawn with 📈 and from the menu of the history), and two show 1.9.2: the volume in the 3D graph, where the measured solid looks like a pale gelatin in a clear skin of a deeper shade (the 2D half of one is from 1.8.0). One screen example in 4.1 shows 1.9.0 in Spanish (the same figure in both manuals). The others are from earlier versions, as the manuals say.
+- The photos in the user manual (from 1.12.0 the manual of docs/manual) were taken of 1.12.0 on a PC: the app was shown in Chromium at the size of a smartphone screen (360 × 720), in each language with the number format of a typical region of it (ja-JP, en-US, de-DE, es-MX, fr-FR, ko-KR, zh-TW), with manual/shots.js. The examples in the manual give the numbers the app gives in that language.
 
 ## 日本語
 
-QCalc 1.11.0（versionCode 24、パッケージ名 `io.github.hiroshitsu.qcalc`）の要件、設計、使い方、保守、テストをまとめた設計書です。どの文書も日本語と英語の 2 通りがあり、内容は同じです。内容はこのリポジトリの 1.11.0 のソースコード（コミット `f59d558`）に合わせています。
+QCalc 1.12.0（versionCode 25、パッケージ名 `io.github.hiroshitsu.qcalc`）の要件、設計、使い方、保守、テストをまとめた設計書です。どの文書も日本語と英語の 2 通りがあり、内容は同じです。内容はこのリポジトリの 1.11.0 のソースコード（コミット `f59d558`）に合わせています。
 
 - 作成：津嘉山 弘
-- 作成日：2026-11-19（第 17 版。1.11.0 に合わせて改訂）
+- 作成日：2026-11-19（第 18 版。1.12.0 に合わせて改訂）
 - 形式：PDF（A4）。UML のクラス図・シーケンス図・状態遷移図などの図を含みます。
 
 | 文書 | 日本語 | ページ | 英語 | ページ | 内容 |
 | --- | --- | ---: | --- | ---: | --- |
-| 概要 | [00-overview.pdf](00-overview.pdf) | 35 | [00-overview-en.pdf](00-overview-en.pdf) | 62 | 1.11.0・1.10.1・1.10.0・1.9.5・1.9.4・1.9.3・1.9.2・1.9.1・1.9.0・1.8.4・1.8.3・1.8.2・1.8.1・1.8.0・1.7.1・1.7.0・1.6.0・1.5.0・1.4.0・1.3.0・1.2.0・1.1.0 で変えたところ、文書の一覧、全体像の図、構成要素と版、用語集、改訂履歴（英語版は設計の要点のまとめも含む） |
-| 1. 要件定義書 | [01-requirements.pdf](01-requirements.pdf) | 38 | [01-requirements-en.pdf](01-requirements-en.pdf) | 45 | 目的、対象範囲、ユースケース 28、機能要件 61、非機能要件、制約、受け入れ基準 47、QCalc Pro |
-| 2. 基本設計書 | [02-basic-design.pdf](02-basic-design.pdf) | 34 | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 42 | システム構成、配置、モジュール、画面と画面遷移（フォームを含む）、キー、主要な処理の流れ、保存データ、外部インターフェース、エラー処理、セキュリティ |
-| 3. 詳細設計書 | [03-detailed-design.pdf](03-detailed-design.pdf) | 113 | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 122 | クラス図、JavaScript ブリッジ、計算エンジンとの通信プロトコル、計算処理、プロセス監視、画面処理、データ形式、時間制限、エラーコードとメッセージ、QCalc Pro、表示の言語、配色テーマ、履歴の書き出し、入力の候補、ライト／ダークの設定、Arb による特殊関数、計算の制限時間、入力フォーム、数式の形、□ の欄、結果からの操作、2D・3D グラフの解析と計測、フォームからのグラフ、図形の画面、すぐに出て端を指で動かせる面積。版 1.8.0 の、確かめる・残す・元に戻すフォーム、グラフのサンプル、描いている曲面の体積、入力への注意。版 1.8.2 の、厳密な値を探す時間の短縮と求めた値の記憶。版 1.8.3 の、サンプルの絵の縁と、丸いサンプルの比を保つこと。版 1.8.4 の、計測している立体を薄い液体で満たしたように示すことと、どこで作った式・方程式・関数・行列もグラフにすること。版 1.9.0 の、3 つ目の言語としてのスペイン語。版 1.9.1 の、計測している立体を、つやのある透明な膜に満たした本物の薄い液体として画素ごとに描くこと。版 1.9.2 の、深度バッファーと画素ごとの光によるなめらかな曲面と、計測している立体を濃い色の透明な皮に包まれた薄いゼラチンとして示すこと。版 1.9.3 の、球を 1 つのなめらかな球として描くこと。版 1.9.4 の、関数に実数の値がある部分だけで測り、信頼できる桁だけを示すこと。版 1.9.5 の、ほかの曲面と一緒に描く立体を 1 色の 1 つの物とし、箱の上端と下端で曲面を切ること。版 1.10.0 の、ドイツ語・フランス語・韓国語・繁体字中国語と、言語ごとに 1 つにした文のファイル。版 1.10.1 の、計測している立体の形の影。版 1.11.0 の、3D グラフの影、囲まれた部分、図形・容器・重さ、回転体、式で指定する範囲と符号、測った値から体積、起動時の言語（Lang.java）、点検で見つかった不具合 |
-| 4. 操作マニュアル | [04-user-manual.pdf](04-user-manual.pdf) | 49 | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 51 | インストールと表示の言語（英語・日本語・スペイン語・ドイツ語・フランス語・韓国語・繁体字中国語）、画面の見方、計算のしかた（□ の欄、分数、入力の候補、とても長い結果を含む）、解析と行列のフォーム（行列は 30 × 30 まで。欄の確認、「元に戻す」「やり直す」、表の貼り付け）、キーボード入力、式の例、メニュー（グラフのサンプル・解析・計測、入力欄・履歴・保存した関数からのグラフ、図形の面積・体積・長さ、体積・回転体・測った値）、設定、困ったとき。各画面の画像つき |
+| 概要 | [00-overview.pdf](00-overview.pdf) | 36 | [00-overview-en.pdf](00-overview-en.pdf) | 64 | 1.12.0・1.11.0・1.10.1・1.10.0・1.9.5・1.9.4・1.9.3・1.9.2・1.9.1・1.9.0・1.8.4・1.8.3・1.8.2・1.8.1・1.8.0・1.7.1・1.7.0・1.6.0・1.5.0・1.4.0・1.3.0・1.2.0・1.1.0 で変えたところ、文書の一覧、全体像の図、構成要素と版、用語集、改訂履歴（英語版は設計の要点のまとめも含む） |
+| 1. 要件定義書 | [01-requirements.pdf](01-requirements.pdf) | 45 | [01-requirements-en.pdf](01-requirements-en.pdf) | 52 | 目的、対象範囲、ユースケース 28、機能要件 82、非機能要件、制約、受け入れ基準 60、QCalc Pro（版 1.12.0 からの無料と Pro の分け方を含む） |
+| 2. 基本設計書 | [02-basic-design.pdf](02-basic-design.pdf) | 38 | [02-basic-design-en.pdf](02-basic-design-en.pdf) | 46 | システム構成、配置、モジュール、画面と画面遷移（フォームを含む）、キー、主要な処理の流れ、保存データ、外部インターフェース、エラー処理、セキュリティ |
+| 3. 詳細設計書 | [03-detailed-design.pdf](03-detailed-design.pdf) | 122 | [03-detailed-design-en.pdf](03-detailed-design-en.pdf) | 133 | クラス図、JavaScript ブリッジ、計算エンジンとの通信プロトコル、計算処理、プロセス監視、画面処理、データ形式、時間制限、エラーコードとメッセージ、QCalc Pro、表示の言語、配色テーマ、履歴の書き出し、入力の候補、ライト／ダークの設定、Arb による特殊関数、計算の制限時間、入力フォーム、数式の形、□ の欄、結果からの操作、2D・3D グラフの解析と計測、フォームからのグラフ、図形の画面、すぐに出て端を指で動かせる面積。版 1.8.0 の、確かめる・残す・元に戻すフォーム、グラフのサンプル、描いている曲面の体積、入力への注意。版 1.8.2 の、厳密な値を探す時間の短縮と求めた値の記憶。版 1.8.3 の、サンプルの絵の縁と、丸いサンプルの比を保つこと。版 1.8.4 の、計測している立体を薄い液体で満たしたように示すことと、どこで作った式・方程式・関数・行列もグラフにすること。版 1.9.0 の、3 つ目の言語としてのスペイン語。版 1.9.1 の、計測している立体を、つやのある透明な膜に満たした本物の薄い液体として画素ごとに描くこと。版 1.9.2 の、深度バッファーと画素ごとの光によるなめらかな曲面と、計測している立体を濃い色の透明な皮に包まれた薄いゼラチンとして示すこと。版 1.9.3 の、球を 1 つのなめらかな球として描くこと。版 1.9.4 の、関数に実数の値がある部分だけで測り、信頼できる桁だけを示すこと。版 1.9.5 の、ほかの曲面と一緒に描く立体を 1 色の 1 つの物とし、箱の上端と下端で曲面を切ること。版 1.10.0 の、ドイツ語・フランス語・韓国語・繁体字中国語と、言語ごとに 1 つにした文のファイル。版 1.10.1 の、計測している立体の形の影。版 1.11.0 の、3D グラフの影、囲まれた部分、図形・容器・重さ、回転体、式で指定する範囲と符号、測った値から体積、起動時の言語（Lang.java）、点検で見つかった不具合 |
+| 4. 取扱説明書 | [04-user-manual.pdf](04-user-manual.pdf) | 44 | [04-user-manual-en.pdf](04-user-manual-en.pdf) | 46 | 版 1.12.0 からは docs/manual の取扱説明書（manual/src から作る。アプリの中と Web にもあり、7 言語）の PDF：はじめに、画面の見方、基本の計算、履歴とメモリー、キーと入力の助け、道具、グラフ、式の画面、設定・言語・ウィジェット、QCalc Pro、困ったとき、用語集。写真、番号つきの手順、例、ヒント、よくある間違いつき |
 | 5. ビルド・保守マニュアル | [05-build-and-maintenance.pdf](05-build-and-maintenance.pdf) | 21 | [05-build-and-maintenance-en.pdf](05-build-and-maintenance-en.pdf) | 22 | 開発環境、ビルド手順（テスト用 APK と Google Play 用 App Bundle）、FLINT と libqalculate へのパッチ、署名、課金のある版（Gradle）、動作確認、libqalculate の更新手順、Android Studio |
-| 6. テスト仕様書・結果 | [06-test-specification.pdf](06-test-specification.pdf) | 96 | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 103 | テストの方針、テスト項目と 1.11.0 での結果（1,153 項目すべて合格。各試験を 1 回数える。計算エンジンは変えていないので、その試験は 1.6.0 の結果。Java の試験は 1.11.0 でやり直し）、未実施のテスト |
+| 6. テスト仕様書・結果 | [06-test-specification.pdf](06-test-specification.pdf) | 99 | [06-test-specification-en.pdf](06-test-specification-en.pdf) | 107 | テストの方針、テスト項目と 1.12.0 での結果（1,513 項目すべて合格。各試験を 1 回数える。計算エンジンは変えていないので、その試験は 1.6.0 の結果。画面と Java の試験は 1.12.0 でやり直し）、未実施のテスト |
+
+### 1.12.0 で変えたところ
+
+- 利用者の依頼で「分かりやすさを最優先」にしました。初めての人が、説明を読まずに道具を見つけて結果を出せることが目標です。メニューは 8 項目、道具は 7 言語で検索できる 1 つの「道具」の画面にまとめ、どの道具にもタップで入る例、すぐ出る結果、結果の 3 つの操作があります。押せる範囲は 48 dp です。
+- 日常の道具：値段（割引と税）、割合、単価、割り勘、ローン（返済表）、積立、日付、時間、換算の画面、統計（回帰）、計算メモ。数は地域の書き方（1,234.5・1.234,5・1 234,5）か、選んだ書き方。履歴は検索・固定・メモ・合計ができ、メモリーキーも出せ、言語を端末の設定に戻せます。
+- 2D から 3D へ触って：2D グラフの「⟳ 3D」で部分をすぐ回転体に。断面の立体、方法の線、パップスの定理。ウィジェット・クイック設定のタイル・ショートカットからすぐ開け、グラフの画像と GIF を共有できます。
+- QCalc Pro は作者の決定どおり（学習と日常は無料、仕事向けを Pro）：表の CSV、タンクの鏡板と早見表、輪郭から回転体、3D プリンター用の STL ファイル、最大の大きさの画像と GIF、2 つ目以降の計算メモ。
+- 7 言語の取扱説明書：アプリの中でネットなしで読める版（各道具・パネルの「？」からその節を開く）と、写真つきの Web の版・PDF（docs/manual。GitHub Pages で公開）。04-user-manual(-en).pdf は、その日本語・英語の PDF に置き換えました。ドイツ語・スペイン語・フランス語・韓国語・繁體中文の説明書は機械翻訳で、母語の人の確認はまだです。
+- アプリ全体の見直しで BG05〜BG18 を直しました（利用者が報告した 3D グラフを回している間の影と回転体の縁、小数点が「,」の数など）。計算エンジンは変えていません。変えたのは画面、5 つの文のファイル、Java で、Java のクラスを 6 つ加えました（Widget・QuickTile・Quick・QuickText・ShareFiles・ShareProvider）。
 
 ### 1.11.0 で変えたところ
 
@@ -220,7 +238,7 @@ QCalc 1.11.0（versionCode 24、パッケージ名 `io.github.hiroshitsu.qcalc`�
 
 ### 読む順の目安
 
-- アプリを使う人：4. 操作マニュアル
+- アプリを使う人：4. 取扱説明書（アプリの中の各道具の「？」と、https://hiroshitsu.github.io/qcalc/manual/ にもあります）
 - 開発・保守をする人：概要 → 2. 基本設計書 → 3. 詳細設計書 → 5. ビルド・保守マニュアル
 - 受け入れの確認をする人：1. 要件定義書 → 6. テスト仕様書・結果
 
@@ -228,4 +246,4 @@ QCalc 1.11.0（versionCode 24、パッケージ名 `io.github.hiroshitsu.qcalc`�
 
 - 概要に出てくる「QCalc を Google Play で公開する手順」は、開発者が Play Console で作業するための手順書で、ここには含めていません。
 - 署名の鍵（アップロード鍵とテスト用の鍵）とそのパスワードは、設計書にもこのリポジトリにも含まれていません（ファイル名と置き場所だけを記載しています）。
-- 操作マニュアルの画面の画像は、PC の Chromium でアプリと同じ画面をスマートフォン相当の大きさで表示して撮影したものです（詳しくは各マニュアルの冒頭）。日本語版は日本語の画面、英語版は英語の画面を載せています。2 つの画面例（確かめるフォーム、表の貼り付け）は版 1.8.0、2 つ（📈 と履歴のメニューから描いたグラフ）は版 1.8.4、2 つ（計測している立体を、濃い色の透明な皮に包まれた薄いゼラチンのように示す 3D グラフの体積。うち 1 つの左半分の 2D グラフは版 1.8.0）は版 1.9.2 のものです。4.1 の画面例 1 つは版 1.9.0 のスペイン語の画面です（日本語版と英語版で同じ画像）。ほかは、マニュアルに書いたとおり、それより前の版のものです。
+- 取扱説明書（版 1.12.0 からは docs/manual の説明書）の写真は、PC の Chromium で版 1.12.0 の画面をスマートフォン相当の大きさ（360 × 720）で表示し、言語ごとにその言語の代表的な地域の数の書き方（ja-JP、en-US、de-DE、es-MX、fr-FR、ko-KR、zh-TW）で manual/shots.js により撮影したものです。説明書の例の数は、その言語のアプリが出す数と同じです。
