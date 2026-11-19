@@ -1457,7 +1457,17 @@
     "Save as STL": "Als STL speichern",
     "STL file saved": "STL-Datei gespeichert",
     "STL files for 3D printers": "STL-Dateien für 3D-Drucker",
-    "Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres": "Drehkörper, Körper mit Querschnitten und Körper aus einem Profil, als geschlossene Netze in Millimetern gespeichert"
+    "Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres": "Drehkörper, Körper mit Querschnitten und Körper aus einem Profil, als geschlossene Netze in Millimetern gespeichert",
+    "Share the graph": "Graph teilen",
+    "Share a picture of the graph": "Ein Bild des Graphen teilen",
+    "Picture (PNG)": "Bild (PNG)",
+    "Moving picture (GIF)": "Bewegtes Bild (GIF)",
+    "The GIF shows the solid turning into being (3 seconds).": "Das GIF zeigt, wie der Körper entsteht (3 Sekunden).",
+    "The GIF shows the graph turning around once (3 seconds).": "Das GIF zeigt den Graphen, der sich einmal dreht (3 Sekunden).",
+    "Making the moving picture…": "Das bewegte Bild wird erstellt…",
+    "Could not share the image": "Das Bild konnte nicht geteilt werden",
+    "GIF and pictures without the mark": "GIF und Bilder ohne Zeichen",
+    "The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "Der 3D-Graph als bewegtes Bild (GIF) und Bilder der Graphen in voller Auflösung ohne „QCalc“ in der Ecke"
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",

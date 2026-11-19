@@ -21,6 +21,7 @@ import android.os.LocaleList;
 import android.os.Looper;
 import android.os.StrictMode;
 import android.os.SystemClock;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -43,6 +44,8 @@ import android.window.OnBackInvokedDispatcher;
 
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -1043,6 +1046,68 @@ public class MainActivity extends Activity {
             } catch (RuntimeException e) {
                 Log.e(TAG, "addTile", e);
                 return "failed";
+            }
+        }
+
+        /**
+         * Shares an image of a graph (1.12.0, D4): data is the PNG or GIF in base64, mime its type, text
+         * the words that go with it. The image is written to cache/shared/ on a thread (the images shared
+         * before are removed), and the system's share sheet opens with it: the receiving app may read that
+         * one image (ShareProvider, FLAG_GRANT_READ_URI_PERMISSION; no permission is added). The answer
+         * comes as the event {"event":"shared","ok":…}.
+         */
+        @JavascriptInterface
+        public void shareImage(final String data, final String mime, final String text) {
+            if (data == null || ShareFiles.typeOf(mime) == null || data.length() > ShareFiles.MAX_BYTES / 3 * 4 + 8) {
+                sendEvent("{\"event\":\"shared\",\"ok\":false,\"error\":\"Could not share the image\"}");
+                return;
+            }
+            try {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            byte[] bytes = Base64.decode(data, Base64.DEFAULT);
+                            if (bytes.length == 0 || bytes.length > ShareFiles.MAX_BYTES) throw new IllegalArgumentException("size");
+                            File dir = new File(getCacheDir(), ShareFiles.DIR);
+                            if (!dir.isDirectory() && !dir.mkdirs()) throw new IllegalStateException("dir");
+                            File[] old = dir.listFiles();
+                            if (old != null) for (File f : old) if (ShareFiles.isName(f.getName())) f.delete();
+                            final String name = ShareFiles.nameFor(mime, System.currentTimeMillis());
+                            FileOutputStream out = new FileOutputStream(new File(dir, name));
+                            try {
+                                out.write(bytes);
+                            } finally {
+                                out.close();
+                            }
+                            onUi("shareImage", new Runnable() {
+                                @Override
+                                public void run() {
+                                    Uri uri = ShareProvider.uriFor(getPackageName(), name);
+                                    Intent send = new Intent(Intent.ACTION_SEND);
+                                    send.setType(mime);
+                                    send.putExtra(Intent.EXTRA_STREAM, uri);
+                                    if (text != null && !text.isEmpty()) send.putExtra(Intent.EXTRA_TEXT, text);
+                                    send.setClipData(ClipData.newRawUri("", uri));
+                                    send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                    try {
+                                        startActivity(Intent.createChooser(send, null));
+                                        sendEvent("{\"event\":\"shared\",\"ok\":true}");
+                                    } catch (RuntimeException e) {
+                                        // no app to share with (ActivityNotFoundException)
+                                        sendEvent("{\"event\":\"shared\",\"ok\":false,\"error\":\"Could not share the image\"}");
+                                    }
+                                }
+                            });
+                        } catch (Exception e) {
+                            Log.w(TAG, "shareImage", e);
+                            sendEvent("{\"event\":\"shared\",\"ok\":false,\"error\":\"Could not share the image\"}");
+                        }
+                    }
+                }).start();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "shareImage", e);
+                sendEvent("{\"event\":\"shared\",\"ok\":false,\"error\":\"Could not share the image\"}");
             }
         }
 

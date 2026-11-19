@@ -1457,7 +1457,17 @@
     "Save as STL": "Enregistrer en STL",
     "STL file saved": "Fichier STL enregistré",
     "STL files for 3D printers": "Fichiers STL pour imprimantes 3D",
-    "Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres": "Solides de révolution, solides à sections et solides d’un profil, enregistrés en maillages fermés en millimètres"
+    "Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres": "Solides de révolution, solides à sections et solides d’un profil, enregistrés en maillages fermés en millimètres",
+    "Share the graph": "Partager le graphique",
+    "Share a picture of the graph": "Partager une image du graphique",
+    "Picture (PNG)": "Image (PNG)",
+    "Moving picture (GIF)": "Image animée (GIF)",
+    "The GIF shows the solid turning into being (3 seconds).": "Le GIF montre le solide en train de se former (3 secondes).",
+    "The GIF shows the graph turning around once (3 seconds).": "Le GIF montre le graphique faisant un tour (3 secondes).",
+    "Making the moving picture…": "Création de l’image animée…",
+    "Could not share the image": "Impossible de partager l’image",
+    "GIF and pictures without the mark": "GIF et images sans marque",
+    "The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "Le graphique 3D en image animée (GIF), et des images des graphiques en pleine résolution sans « QCalc » dans le coin"
   },
   messages: {
     "rates-old": (p1) => "Les taux de change n’ont pas été mis à jour depuis " + p1 + " " + (p1 === '1' ? "jour" : "jours") + " (Paramètres → « Mettre à jour les taux de change maintenant »)",

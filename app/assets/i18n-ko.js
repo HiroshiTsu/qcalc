@@ -1460,7 +1460,17 @@
     "Save as STL": "STL로 저장",
     "STL file saved": "STL 파일을 저장했습니다",
     "STL files for 3D printers": "STL 파일(3D 프린터)",
-    "Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres": "회전체·단면의 입체·윤곽에서 회전체를 닫힌 입체의 면(mm)으로 저장"
+    "Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres": "회전체·단면의 입체·윤곽에서 회전체를 닫힌 입체의 면(mm)으로 저장",
+    "Share the graph": "그래프 공유",
+    "Share a picture of the graph": "그래프 이미지 공유",
+    "Picture (PNG)": "이미지(PNG)",
+    "Moving picture (GIF)": "움직이는 이미지(GIF)",
+    "The GIF shows the solid turning into being (3 seconds).": "GIF는 입체가 만들어지는 모습입니다(3초).",
+    "The GIF shows the graph turning around once (3 seconds).": "GIF는 그래프가 한 바퀴 도는 모습입니다(3초).",
+    "Making the moving picture…": "움직이는 이미지를 만드는 중…",
+    "Could not share the image": "이미지를 공유할 수 없습니다",
+    "GIF and pictures without the mark": "GIF와 워터마크 없는 공유",
+    "The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "3D 그래프를 움직이는 이미지(GIF)로, 그래프 이미지를 높은 해상도·워터마크 없이 공유"
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",

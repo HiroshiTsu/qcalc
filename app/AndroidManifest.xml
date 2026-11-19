@@ -48,6 +48,15 @@
                 android:resource="@xml/widget_info" />
         </receiver>
 
+        <!-- 1.12.0 (D4): the images of the graphs that are shared, to read only, for the app that
+             receives one (ShareProvider.java, the app's own, not exported; the intent grants one image).
+             build-apk.sh and build-aab.sh put the application id in ${applicationId}, as Gradle does. -->
+        <provider
+            android:name=".ShareProvider"
+            android:authorities="${applicationId}.share"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+
         <service
             android:name=".QuickTile"
             android:exported="true"

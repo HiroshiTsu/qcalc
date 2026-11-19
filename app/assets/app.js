@@ -414,7 +414,9 @@
     stats: 'free',         // statistics: one or two columns, regression, the graph (1.12 C4)
     tank_heads: 'pro',     // the heads of tanks (hemispherical, semi-elliptical, dished) and the quick-reference tables of tanks (1.12 D1): Pro (work)
     profile: 'pro',        // a solid from a measured profile: volume, capacity, weight, surface, its table (1.12 D2): Pro (work)
-    stl: 'pro'             // the solids saved as STL files for 3D printers (1.12 D3): Pro (work)
+    stl: 'pro',            // the solids saved as STL files for 3D printers (1.12 D3): Pro (work)
+    share: 'free',         // sharing a picture of a graph, with a small "QCalc" in the corner (1.12 D4)
+    share_pro: 'pro'       // the moving picture (GIF) of the 3D graph, and pictures without the mark at full resolution (1.12 D4): Pro
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -1427,6 +1429,7 @@
   Bridge.setEventHandler((ev) => {
     if (ev.event === 'pro') { proChanged(ev); return; }
     if (ev.event === 'saved') { fileSaved(ev); return; }
+    if (ev.event === 'shared') { if (!ev.ok) toast(tr('Could not share the image', '画像を共有できませんでした'), 3500); return; }
     if (ev.event === 'quick') { quickAnswer(ev); return; }
     if (ev.event !== 'ans') return;
     const h = sessionEntries.get(ev.id);
@@ -3948,7 +3951,9 @@
         P.revBtn = el('button', { class: 'rev3d', type: 'button', 'aria-label': tr('Turn into a solid', '回して立体にする'), 'aria-pressed': 'false', onclick: () => {
           const R = P.areaUI && P.areaUI.rev;
           if (R) R.toggle.click();
-        } }, el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' })));
+        } }, el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' })),
+        // 1.12.0 (D4): a picture of the graph to the share sheet
+        el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share a picture of the graph', 'グラフの画像を共有'), onclick: () => shareGraph2d() }));
       P.equal = P.equal || store.get('qalc.plot.equal', false) === true;
       const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
       const legend = el('div', { class: 'legend' });
@@ -7853,7 +7858,9 @@
       el('button', { text: '+', 'aria-label': tr('Zoom in', '拡大'), onclick: () => zoom3d(1.25) }),
       el('button', { text: '−', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom3d(0.8) }),
       el('button', { text: '⟲', 'aria-label': tr('Reset the view', '向きと大きさを戻す'), onclick: () => { Object.assign(Q3, VIEW3D); clearMark3d(); draw3d(); } }),
-      Q3.eqBtn = el('button', { class: 'eq', text: '1:1', 'aria-label': tr('The same scale on the x, y and z axes', 'x・y・z の目盛りの間隔をそろえる'), onclick: () => { setEqual3d(!Q3.equalNow); clearMark3d(); draw3d(); } }));
+      Q3.eqBtn = el('button', { class: 'eq', text: '1:1', 'aria-label': tr('The same scale on the x, y and z axes', 'x・y・z の目盛りの間隔をそろえる'), onclick: () => { setEqual3d(!Q3.equalNow); clearMark3d(); draw3d(); } }),
+      // 1.12.0 (D4): a picture or a moving picture of the graph to the share sheet
+      el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share the graph', 'グラフを共有'), onclick: () => shareGraph3d() }));
     // (the choice made with 1:1 for the functions it was made for; a value saved before 1.9.3 for all
     // graphs, true or false, counts as no choice)
     const eq = store.get('qalc.plot3d.equal', 'auto');
@@ -9930,7 +9937,7 @@
     const tf = performance.now();
     const floor = shadows && wb === -EZ ? floorShadow(g, tb, { ca, sa, ce, se, EX, EY, EZ, cam: { cx, cy, S }, W, H, dark, cache: Q3, pane0, lite, k: shK }) : null;
     if (floor) floor.ms = Math.round((performance.now() - tf) * 10) / 10;
-    const surf = surfacePaint(g, tb, { W, H, q: Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite, k: shK } : null });
+    const surf = surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite, k: shK } : null });
     // (what was drawn, for the tests; shadow: the pixels in a shadow and at the soft edge of one, the
     // size of the lamp's map and the time to make it; floor: the cells of the floor's layer in a shadow)
     c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor, shk: Math.round(shK * 1000) / 1000, turnMs: Q3.turning ? Math.round(Q3.turnMs || 0) : null, turnL: Q3.turning ? (Q3.turnList || []).map(Math.round) : null, shSlow: !!Q3.shSlow, drawMs: Math.round(Q3.lastDrawMs || 0),
@@ -11096,6 +11103,169 @@
       sync(); build(); run();
     });
     return p;
+  }
+  // ------------------------------------------ sharing the graphs (1.12.0, D4)
+  // A share button (↗) on the 2D and the 3D graph: an image of the graph (PNG) with the functions under
+  // it, handed to the system's share sheet (QalcNative.shareImage; in a browser it is downloaded).
+  // Free: at most 800 pixels wide, with a small "QCalc" in the corner; QCalc Pro: the full resolution of
+  // the graph and no mark, and on the 3D graph also a short moving picture (GIF): the solid turning into
+  // being when it is a solid of revolution, else the graph turning around once; at most 480 pixels wide,
+  // 3 seconds and 2 MB, made here (gifEncode, no library).
+  const shareApi = () => (window.QalcNative && QalcNative.shareImage ? QalcNative : window.QalcDev && QalcDev.shareImage ? QalcDev : null);
+  const SHARE_FREE_W = 800, GIF_W = 480, GIF_FRAMES = 24, GIF_DELAY = 12, GIF_MAX = 2 * 1024 * 1024;
+  // the words of a legend: the functions, as shown under the graph
+  const legendWords = (lg) => (lg ? Array.from(lg.children).map((s) => Array.from(s.childNodes).map((n) => n.textContent.trim()).filter(Boolean).join(' – ')).filter(Boolean).join('   ') : '');
+  // the image of a canvas with a band under it for the words, and the mark when not Pro: a data URL
+  function graphPng(canvas, words, pro) {
+    const css = canvas.clientWidth || canvas.width, k = pro ? 1 : Math.min(1, SHARE_FREE_W / canvas.width);
+    const W = Math.round(canvas.width * k), H = Math.round(canvas.height * k), s = W / css, band = words || !pro ? Math.round(30 * s) : 0;
+    const c = el('canvas'); c.width = W; c.height = H + band;
+    const g = c.getContext('2d'), cs = getComputedStyle(document.documentElement);
+    g.fillStyle = cs.getPropertyValue('--plot-bg').trim() || '#fff'; g.fillRect(0, 0, W, H + band);
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(canvas, 0, 0, W, H);
+    if (band) {
+      g.fillStyle = cs.getPropertyValue('--surface').trim() || '#f4f6fa'; g.fillRect(0, H, W, band);
+      g.textBaseline = 'middle'; g.font = Math.round(13 * s) + 'px system-ui, sans-serif';
+      g.fillStyle = cs.getPropertyValue('--text').trim() || '#111';
+      const mark = pro ? 0 : Math.round(56 * s);
+      let t = words || '';
+      while (t && g.measureText(t).width > W - mark - 16 * s) t = t.slice(0, -2) + '…';
+      g.textAlign = 'left'; g.fillText(t, 8 * s, H + band / 2);
+      if (!pro) { g.textAlign = 'right'; g.font = '600 ' + Math.round(12 * s) + 'px system-ui, sans-serif'; g.globalAlpha = 0.6; g.fillText('QCalc', W - 8 * s, H + band / 2); g.globalAlpha = 1; }
+    }
+    return c.toDataURL('image/png');
+  }
+  // hands an image (a data URL) to the share sheet, or downloads it in a browser
+  function shareData(dataUrl, mime, text) {
+    const api = shareApi(), b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+    if (api) { api.shareImage(b64, mime, text); return; }
+    const a = el('a', { href: dataUrl, download: 'QCalc-graph.' + (mime === 'image/gif' ? 'gif' : 'png') });
+    document.body.append(a); a.click(); a.remove();
+  }
+  function shareGraph2d() {
+    const pro = hasPro() || PRO_GATES.share_pro !== 'pro';
+    const words = legendWords(P.legend);
+    shareData(graphPng(P.canvas, words, pro), 'image/png', words ? words + ' — QCalc' : 'QCalc');
+  }
+  async function shareGraph3d() {
+    if (!Q3.data) return;
+    const words = legendWords(Q3.legend), text = words ? words + ' — QCalc' : 'QCalc';
+    const locked = PRO_GATES.share_pro === 'pro' && !hasPro();
+    if (sheetResolve) closeSheet(null);
+    const sh = $('#sheet');
+    sh.textContent = '';
+    sh.append(el('div', { class: 'stitle', text: tr('Share the graph', 'グラフを共有') }),
+      el('button', { text: tr('Picture (PNG)', '画像（PNG）'), onclick: () => closeSheet('png') }),
+      el('button', { text: tr('Moving picture (GIF)', '動く画像（GIF）') + (locked ? '  ⭐ Pro' : ''), onclick: () => closeSheet('gif') }),
+      el('div', { class: 'pro-sheet-note', text: Q3.revInfo ? tr('The GIF shows the solid turning into being (3 seconds).', 'GIF は、立体ができていく様子です（3 秒）。') : tr('The GIF shows the graph turning around once (3 seconds).', 'GIF は、グラフが 1 回転する様子です（3 秒）。') }),
+      el('button', { text: tr('Not now', 'あとで'), onclick: () => closeSheet(null) }));
+    const k = await new Promise((resolve) => { sheetResolve = resolve; $('#scrim').classList.add('show', 'over-panels'); sh.classList.add('open'); sh.inert = false; });
+    if (k === 'png') shareData(graphPng(Q3.canvas, words, !locked), 'image/png', text);
+    else if (k === 'gif') { if (!proGate('share_pro')) return; const g = await gif3d(); if (g) shareData(g, 'image/gif', text); }
+  }
+  // The moving picture of the 3D graph: GIF_FRAMES frames drawn one after another (the angle of the solid
+  // turning into being, or the turn of the graph), each scaled to at most GIF_W pixels wide; made smaller
+  // when the file would be over 2 MB. A data URL, or null.
+  async function gif3d() {
+    const c = Q3.canvas;
+    if (!c || !Q3.data || Q3.gifBusy) return null;
+    Q3.gifBusy = true;
+    toast(tr('Making the moving picture…', '動く画像を作っています…'), 2500);
+    const keep = { az: Q3.az, grow: Q3.grow, gv: c.dataset.grow };
+    try {
+      let w = Math.min(GIF_W, c.width), out = null;
+      const frames = [];
+      for (let f = 0; f < GIF_FRAMES; f++) {
+        if (Q3.revInfo) { const th = 2 * Math.PI * (f + 1) / GIF_FRAMES; Q3.grow = f === GIF_FRAMES - 1 ? null : { ax: Q3.revInfo, theta: th, still: true }; }
+        else Q3.az = keep.az + 2 * Math.PI * f / GIF_FRAMES;
+        Q3.captureQ = 1.5;
+        draw3d();
+        frames.push(await new Promise((r) => requestAnimationFrame(() => { const q = el('canvas'); q.width = c.width; q.height = c.height; q.getContext('2d').drawImage(c, 0, 0); r(q); })));
+      }
+      for (; w >= 160 && !out; w = Math.round(w * 0.75)) {
+        const h = Math.round(c.height * w / c.width), small = el('canvas'); small.width = w; small.height = h;
+        const g = small.getContext('2d'), data = [];
+        for (const q of frames) { g.drawImage(q, 0, 0, w, h); data.push(g.getImageData(0, 0, w, h).data); }
+        const bytes = gifEncode(data, w, h, GIF_DELAY);
+        if (bytes.length <= GIF_MAX) {
+          let bin = '';
+          for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+          out = 'data:image/gif;base64,' + btoa(bin);
+          c.dataset.gif = JSON.stringify({ w, h, frames: data.length, bytes: bytes.length });
+        }
+      }
+      return out;
+    } finally {
+      Q3.captureQ = null; Q3.az = keep.az; Q3.grow = keep.grow; if (keep.gv !== undefined) c.dataset.grow = keep.gv;
+      Q3.gifBusy = false;
+      draw3d();
+    }
+  }
+  // A GIF89a of frames (RGBA data of w × h), looping, each shown delay hundredths of a second: one palette
+  // of 256 colors for all the frames (median cut of the colors of the frames), every frame in full,
+  // compressed with LZW. Returns the bytes (Uint8Array).
+  function gifEncode(frames, w, h, delay) {
+    // the palette: the colors of the frames (about 50 000 of their pixels) cut in two along their widest channel, at
+    // the median, until there are 256 boxes; each box's mean is a color
+    const sample = [], step = 4 * Math.max(1, Math.ceil(frames.length * w * h / 50000));
+    for (const d of frames) for (let i = 0; i < d.length; i += step) sample.push(d[i] | (d[i + 1] << 8) | (d[i + 2] << 16));
+    let boxes = [sample];
+    while (boxes.length < 256) {
+      let bi = -1, bw = 0, ch = 0;
+      boxes.forEach((b, n) => {
+        if (b.length < 2) return;
+        for (let q = 0; q < 3; q++) { let lo = 255, hi = 0; for (const v of b) { const x = (v >> (8 * q)) & 255; if (x < lo) lo = x; if (x > hi) hi = x; } if (hi - lo > bw) { bw = hi - lo; bi = n; ch = q; } }
+      });
+      if (bi < 0 || bw === 0) break;
+      const b = boxes[bi].sort((p, q) => ((p >> (8 * ch)) & 255) - ((q >> (8 * ch)) & 255)), m = b.length >> 1;
+      boxes.splice(bi, 1, b.slice(0, m), b.slice(m));
+    }
+    const pal = boxes.filter((b) => b.length).map((b) => { let r = 0, g = 0, bl = 0; for (const v of b) { r += v & 255; g += (v >> 8) & 255; bl += (v >> 16) & 255; } return [Math.round(r / b.length), Math.round(g / b.length), Math.round(bl / b.length)]; });
+    while (pal.length < 256) pal.push([0, 0, 0]);
+    const cache = new Map(), near = (r, g, b) => {
+      const key = ((r >> 2) << 12) | ((g >> 2) << 6) | (b >> 2);
+      let k = cache.get(key);
+      if (k === undefined) { let bd = Infinity; for (let i = 0; i < 256; i++) { const p = pal[i], d = (p[0] - r) ** 2 + (p[1] - g) ** 2 + (p[2] - b) ** 2; if (d < bd) { bd = d; k = i; } } cache.set(key, k); }
+      return k;
+    };
+    const out = [];
+    const u16 = (v) => out.push(v & 255, (v >> 8) & 255);
+    for (const ch of 'GIF89a') out.push(ch.charCodeAt(0));
+    u16(w); u16(h); out.push(0xf7, 0, 0);
+    for (const p of pal) out.push(p[0], p[1], p[2]);
+    out.push(0x21, 0xff, 0x0b); for (const ch of 'NETSCAPE2.0') out.push(ch.charCodeAt(0)); out.push(3, 1, 0, 0, 0);
+    for (const d of frames) {
+      out.push(0x21, 0xf9, 4, 4); u16(delay); out.push(0, 0);
+      out.push(0x2c); u16(0); u16(0); u16(w); u16(h); out.push(0);
+      const idx = new Uint8Array(w * h);
+      for (let i = 0, j = 0; i < idx.length; i++, j += 4) idx[i] = near(d[j], d[j + 1], d[j + 2]);
+      const lz = gifLzw(idx, 8);
+      out.push(8);
+      for (let i = 0; i < lz.length; i += 255) { const n = Math.min(255, lz.length - i); out.push(n); for (let q = 0; q < n; q++) out.push(lz[i + q]); }
+      out.push(0);
+    }
+    out.push(0x3b);
+    return Uint8Array.from(out);
+  }
+  // LZW for GIF (as in the GIF89a specification; the same steps as omggif's encoder)
+  function gifLzw(idx, min) {
+    const clear = 1 << min, eoi = clear + 1, out = [];
+    let size = min + 1, next = eoi + 1, cur = 0, shift = 0, table = new Map();
+    const emit = (c) => { cur |= c << shift; shift += size; while (shift >= 8) { out.push(cur & 255); cur >>>= 8; shift -= 8; } };
+    emit(clear);
+    let pre = idx[0];
+    for (let i = 1; i < idx.length; i++) {
+      const k = idx[i], key = (pre << 8) | k, c = table.get(key);
+      if (c !== undefined) { pre = c; continue; }
+      emit(pre);
+      if (next === 4096) { emit(clear); next = eoi + 1; size = min + 1; table = new Map(); }
+      else { if (next >= (1 << size)) size++; table.set(key, next++); }
+      pre = k;
+    }
+    emit(pre); emit(eoi);
+    if (shift > 0) out.push(cur & 255);
+    return out;
   }
   // ------------------------------------------ STL for 3D printers (1.12.0, D3; QCalc Pro)
   // The solids of the app as closed meshes of triangles, saved as ASCII STL files: a solid of revolution
@@ -13341,7 +13511,8 @@
     stats: ['📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰')],
     tank_heads: ['🛢', tr('Tank heads and quick-reference tables', 'タンクの鏡板と早見表'), tr('Hemispherical, semi-elliptical and dished heads; the amount for each height and the height for each amount', '半球・半楕円・皿形の鏡板、高さごとの液量と液量ごとの高さの表')],
     profile: ['🏺', tr('Solid from a profile', '輪郭から回転体'), tr('Volume, capacity, weight and surface from positions and diameters (turned parts, pottery)', '位置と直径から体積・容量・重さ・表面積（旋盤の部品・陶芸）')],
-    stl: ['🖨', tr('STL files for 3D printers', 'STL ファイル（3D プリンター）'), tr('Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres', '回転体・断面の立体・輪郭から回転体を、閉じた立体の面（mm）として保存')]
+    stl: ['🖨', tr('STL files for 3D printers', 'STL ファイル（3D プリンター）'), tr('Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres', '回転体・断面の立体・輪郭から回転体を、閉じた立体の面（mm）として保存')],
+    share_pro: ['🎞', tr('GIF and pictures without the mark', 'GIF と透かしなしの共有'), tr('The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without "QCalc" in the corner', '3D グラフを動く画像（GIF）で、グラフの画像を高い解像度・透かしなしで共有')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {

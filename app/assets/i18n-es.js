@@ -1469,7 +1469,17 @@
     "Save as STL": "Guardar como STL",
     "STL file saved": "Archivo STL guardado",
     "STL files for 3D printers": "Archivos STL para impresoras 3D",
-    "Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres": "Sólidos de revolución, sólidos de secciones y sólidos de un perfil, guardados como mallas cerradas en milímetros"
+    "Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres": "Sólidos de revolución, sólidos de secciones y sólidos de un perfil, guardados como mallas cerradas en milímetros",
+    "Share the graph": "Compartir la gráfica",
+    "Share a picture of the graph": "Compartir una imagen de la gráfica",
+    "Picture (PNG)": "Imagen (PNG)",
+    "Moving picture (GIF)": "Imagen animada (GIF)",
+    "The GIF shows the solid turning into being (3 seconds).": "El GIF muestra cómo se forma el sólido (3 segundos).",
+    "The GIF shows the graph turning around once (3 seconds).": "El GIF muestra la gráfica dando una vuelta (3 segundos).",
+    "Making the moving picture…": "Creando la imagen animada…",
+    "Could not share the image": "No se pudo compartir la imagen",
+    "GIF and pictures without the mark": "GIF e imágenes sin marca",
+    "The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "La gráfica 3D como imagen animada (GIF), e imágenes de las gráficas a resolución completa sin «QCalc» en la esquina"
   },
   messages: {
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (Ajustes → "Actualizar los tipos de cambio ahora")',

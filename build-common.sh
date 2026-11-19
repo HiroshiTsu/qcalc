@@ -26,12 +26,16 @@ check_inputs() {
   [ -f "$AAPT2_JAR" ] || { echo "android.jar (API 34) not found: $AAPT2_JAR (set AAPT2_JAR)"; exit 1; }
 }
 
-# make_manifest <package> <output file>
-# The source manifest has no package attribute (Gradle takes it from "namespace"); add it.
+# make_manifest <package> <output file> [application id]
+# The source manifest has no package attribute (Gradle takes it from "namespace"); add it. The
+# application id (the package as installed: ….debug for the test build) goes into ${applicationId}, as
+# Gradle does (the authority of ShareProvider, 1.12.0).
 make_manifest() {
-  sed "s|<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">|<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" package=\"$1\">|" \
+  sed -e "s|<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">|<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" package=\"$1\">|" \
+    -e "s|\${applicationId}|${3:-$1}|g" \
     "$A/AndroidManifest.xml" > "$2"
   grep -q "package=\"$1\"" "$2" || { echo "could not add the package attribute to the manifest"; exit 1; }
+  ! grep -q '\${applicationId}' "$2" || { echo "could not put the application id into the manifest"; exit 1; }
 }
 
 # build_dex <work dir>  ->  <work dir>/classes.dex

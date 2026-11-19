@@ -1461,7 +1461,17 @@
     "Save as STL": "存成 STL",
     "STL file saved": "已儲存 STL 檔案",
     "STL files for 3D printers": "STL 檔案（3D 印表機）",
-    "Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres": "旋轉體、截面立體與由輪廓求旋轉體，存成封閉的立體表面（mm）"
+    "Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres": "旋轉體、截面立體與由輪廓求旋轉體，存成封閉的立體表面（mm）",
+    "Share the graph": "分享圖形",
+    "Share a picture of the graph": "分享圖形的圖片",
+    "Picture (PNG)": "圖片（PNG）",
+    "Moving picture (GIF)": "動態圖片（GIF）",
+    "The GIF shows the solid turning into being (3 seconds).": "GIF 是立體逐漸形成的樣子（3 秒）。",
+    "The GIF shows the graph turning around once (3 seconds).": "GIF 是圖形旋轉一圈的樣子（3 秒）。",
+    "Making the moving picture…": "正在製作動態圖片…",
+    "Could not share the image": "無法分享圖片",
+    "GIF and pictures without the mark": "GIF 與無浮水印分享",
+    "The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "以動態圖片（GIF）分享 3D 圖形，並以高解析度、無「QCalc」浮水印分享圖形圖片"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",
