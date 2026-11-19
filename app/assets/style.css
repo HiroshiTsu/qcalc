@@ -1037,6 +1037,7 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .area-box .plot-range { flex-wrap: wrap; row-gap: 6px; }
 .seg.mini { display: inline-flex; margin: 0; flex: 0 0 auto; }
 .seg.mini button { flex: 0 0 auto; padding: 6px 12px; font-size: 13px; }
+.seg.mini button { min-width: 48px; } /* (F) a short label (Korean "x축") was 43 px wide */
 .disk-row { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
 .disk-row[hidden], .area-box .form-hint[hidden] { display: none; }
 .disk-row input { width: 5em; }

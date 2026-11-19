@@ -278,13 +278,18 @@
     return (navigator.languages && navigator.languages[0]) || navigator.language || 'en-US';
   }
   // the format of a locale ("de-DE" → comma), from the separators Intl gives for it
+  // (F: the first Intl.NumberFormat loads the data of the locale, about 45 ms of the start at a quarter of the
+  // CPU speed, at every start; the answer for the phone's locale is kept in qalc.nfcache)
   function localeFormat(tag) {
+    try { const c = JSON.parse(localStorage.getItem('qalc.nfcache') || 'null'); if (c && c.tag === tag && own(NUMFMTS, c.k)) return c.k; } catch (e) { }
+    let k = 'dot';
     try {
       const parts = new Intl.NumberFormat(tag).formatToParts(1234567.5);
       const dec = (parts.find((x) => x.type === 'decimal') || {}).value, group = (parts.find((x) => x.type === 'group') || {}).value || '';
-      if (dec !== ',') return 'dot';
-      return /^[\s\u00a0\u202f\u2009]$/.test(group) ? 'space' : 'comma';
+      k = dec !== ',' ? 'dot' : /^[\s\u00a0\u202f\u2009]$/.test(group) ? 'space' : 'comma';
     } catch (e) { return 'dot'; }
+    try { localStorage.setItem('qalc.nfcache', JSON.stringify({ tag, k })); } catch (e) { }
+    return k;
   }
   let NF = NUMFMTS.dot, commaMode = false;
   function applyNumFmt() {
@@ -10567,7 +10572,7 @@
       for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: decSign(s) })); // (BG13: 1.000 g/cm³ with a decimal comma)
       dens.append(el('option', { value: 'own', text: tr('Another density…', 'ほかの密度…') }));
       dens.value = G.dens;
-      const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³'), value: G.dv, 'aria-label': tr('Density', '密度') });
+      const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³')), value: G.dv, 'aria-label': tr('Density', '密度') });
       const weightVal = el('span', { class: 'geo-val' });
       const weightRow = el('div', { class: 'geo-weight' }, dens, densIn, weightVal);
       const amtIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: tr('e.g. 1000 L', '例：1000 L'), 'aria-label': tr('Amount of liquid', '液量') });
@@ -10698,7 +10703,7 @@
         const r = await Bridge.send('calc', { expr: `(${row.vol}) × (${d}) to kg`, opts: Object.assign(engineOpts(), { approx: 'approx' }), timeout: 4000 });
         if (seq !== G.seq) return;
         const ok = r.ok && r.result && !r.timeout && !(r.messages || []).some((m) => m.type === 'error') && / kg$/.test(r.result);
-        if (!ok) { weightVal.textContent = tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）'); return; }
+        if (!ok) { weightVal.textContent = decSign(tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')); return; }
         const kg = Number(numberPart(r.result.replace(/ kg$/, '')));
         weightVal.textContent = tr('Weight ', '重さ ') + resultText(r) + (kg >= 1000 ? tr(' = ', ' = ') + statNum(kg / 1000, 8) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
       };
@@ -11005,7 +11010,7 @@
       const table = el('div', { class: 'sec-table sec-2 pf-table', role: 'table' }), tools = el('div', { class: 'sec-tools' });
       const itable = el('div', { class: 'sec-table sec-2 pf-table', role: 'table' }), itools = el('div', { class: 'sec-tools' });
       const bLine = tapButton({ text: tr('Straight (frustums)', '直線（円錐台）') }, () => { D.smooth = false; sync(); save(); run(); }), bCurve = tapButton({ text: tr('Smooth (monotone cubic)', 'なめらか（単調な 3 次）') }, () => { D.smooth = true; sync(); save(); run(); });
-      const shrinkIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: D.shrink, placeholder: tr('e.g. 12.5', '例：12.5'), 'aria-label': tr('Shrinkage (%)', '収縮率（%）') });
+      const shrinkIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: D.shrink, placeholder: decSign(tr('e.g. 12.5', '例：12.5')), 'aria-label': tr('Shrinkage (%)', '収縮率（%）') });
       shrinkIn.addEventListener('input', () => { D.shrink = shrinkIn.value; shrinkIn.removeAttribute('aria-invalid'); save(); run(); });
       const more = el('details', { class: 'sec-more pf-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }),
         el('div', { class: 'section-title', text: tr('Inner profile (the inside of a container)', '内側の輪郭（容器の内側）') }), itable, itools,
@@ -11016,7 +11021,7 @@
       dens.append(el('option', { value: '', text: tr('Weight: choose a material', '重さ：材料を選ぶ') }));
       for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: decSign(s) })); // (BG13: 1.000 g/cm³ with a decimal comma)
       dens.append(el('option', { value: 'own', text: tr('Another density…', 'ほかの密度…') }));
-      const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: D.dv, placeholder: tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³'), 'aria-label': tr('Density', '密度') });
+      const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: D.dv, placeholder: decSign(tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³')), 'aria-label': tr('Density', '密度') });
       dens.addEventListener('change', () => { D.dens = dens.value; sync(); save(); run(); });
       densIn.addEventListener('input', () => { D.dv = densIn.value; save(); run(); });
       const pic = el('div', { class: 'pf-pic' });
@@ -11111,18 +11116,18 @@
           const ml = cap * PF_CM3[u];
           row(tr('Inner capacity', '内側の容量'), mlText(ml), '≈ ' + statNum(cap) + u3, exprNum(cap) + ' ' + u + '^3');
           const f = statVal(D.shrink);
-          if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）'); }
+          if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = decSign(tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）')); }
           else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの容量', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), mlText(ml * k), exprNum(cap * k) + ' ' + u + '^3'); }
         } else {
           const f = statVal(D.shrink);
-          if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）'); }
+          if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = decSign(tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）')); }
           else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの体積', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), '≈ ' + statNum(so.volume * k) + u3, exprNum(so.volume * k) + ' ' + u + '^3'); }
         }
         const mat = so.volume - cap;
         if (si && mat < 0) msg.textContent = tr('The inner profile is larger than the outer one somewhere: check the sizes', '内側の輪郭が外側より大きいところがあります。大きさを確かめてください');
         if (si) row(tr('Material', '材料の体積'), tr('outer − inner', '外側 − 内側'), '≈ ' + statNum(mat) + u3, exprNum(mat) + ' ' + u + '^3');
         const rho = pfDensity(D.dens, D.dv);
-        if (D.dens && !isFinite(rho)) { densIn.setAttribute('aria-invalid', 'true'); row(tr('Weight', '重さ'), '', tr('check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）'), ''); }
+        if (D.dens && !isFinite(rho)) { densIn.setAttribute('aria-invalid', 'true'); row(tr('Weight', '重さ'), '', decSign(tr('check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')), ''); }
         else if (isFinite(rho)) { densIn.removeAttribute('aria-invalid'); const g = mat * PF_CM3[u] * rho; row(tr('Weight', '重さ'), trf('{0} g/cm³', '{0} g/cm³', statNum(rho)) + (D.dens !== 'own' && D.dens !== 'water' ? tr(' (typical)', '（目安）') : ''), g >= 1000 ? '≈ ' + statNum(g / 1000) + ' kg' : '≈ ' + statNum(g) + ' g', exprNum(g) + ' g'); }
         row(tr('Surface area', '表面積'), tr('outside: the side, the steps and the two ends', '外側：側面・段・両端の面'), '≈ ' + statNum(so.surface) + ' ' + u + '²', exprNum(so.surface) + ' ' + u + '^2');
         row(tr('Height', '高さ'), '', statNum(so.height) + ' ' + u, exprNum(so.height) + ' ' + u);
@@ -12231,7 +12236,7 @@
           row._f = f;
           return row;
         }
-        const inp = el('input', { inputmode: f.kind === 'date' || f.kind === 'time' ? 'text' : 'decimal', type: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: f.ph || '', value: typeof saved[f.k] === 'string' ? saved[f.k] : (typeof f.def === 'function' ? f.def() : f.def || ''), 'aria-label': f.label });
+        const inp = el('input', { inputmode: f.kind === 'date' || f.kind === 'time' ? 'text' : 'decimal', type: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), value: typeof saved[f.k] === 'string' ? saved[f.k] : (typeof f.def === 'function' ? f.def() : f.def || ''), 'aria-label': f.label });
         inp.addEventListener('input', () => { inp.removeAttribute('aria-invalid'); save(); run(); });
         inp.addEventListener('focus', () => inp.select()); // (F, task 3: a value is replaced by typing, as in the shapes)
         inputs[f.k] = inp;
