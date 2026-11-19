@@ -3323,6 +3323,7 @@
     tr('📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.', '入力欄の上の 📈 で、入力した式のグラフを描けます。x の式は 2D、x と y の式は 3D、y = 2x + 1、x² + y² = 4、z = x y のような方程式、2 列か 3 列の数の行列（点）も描けます。履歴の行を長押ししても同じことができます。'),
     tr('In the graph, "Area" finds the area between a function and the x axis or between two functions (the crossing points are offered as ranges), and "Length" the length of a curve or the perimeter between two functions. "Example" draws a circle or an ellipse.', 'グラフの「面積を求める」で、関数と x 軸の間や 2 つの関数の間の面積（交点の間の範囲を選べます）、「長さ・周」で曲線の長さや 2 つの関数に囲まれた部分の周の長さが求められます。「図形の例」で円や楕円を描けます。'),
     tr('⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis at once and gives the volume. Tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.', '2D グラフの右の丸いボタン「⟳ 3D」で、色の付いた部分を x 軸のまわりに回した体積がすぐ出ます。y 軸（または x 軸）の線をタップすると、その軸のまわりに回します。y = k・x = k は線をドラッグして動かせます。軸の反対側に薄く映った形が、立体を軸で切った形です。変えたあとのメッセージの「↶ 元に戻す」で戻せます。'),
+    tr('"Make a solid ▾" → "Cross sections": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under "More shapes ▾"); the volume V = ∫ A(s(x)) dx, s being the width of the region.', '「立体にする ▾」→「断面の立体」では、色の付いた部分の上に、x 軸に垂直に正方形 □・正三角形 △・半円 ◠ を立てた立体の体積 V = ∫ A(s(x)) dx を出します（s は底面の幅。ほかの形は「詳しく：ほかの形 ▾」）。'),
     tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks like a pale gelatin in a skin of a deeper shade in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで濃い色の皮に包まれた薄い色のゼラチンのように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
     tr('Its region "Enclosed" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.',
       '範囲の「囲まれた部分」は、一方の曲面がもう一方より上にある部分（または z = 0 より上の部分）を、交線から自動で見つけます。例：z = x² + y² と z = 4 なら 8π。範囲を式（x² + y² ≤ 4）で示して床に輪郭を描き、部分が複数あれば部分ごとに出します。'),
@@ -5464,6 +5465,39 @@
       g.stroke();
       P.canvas.dataset.mirror = M.kind + ':' + M.v;
     } else delete P.canvas.dataset.mirror;
+    // 1.12.0 (B1): the cross sections, seen in 2D: at five places a band across the region and a small
+    // picture of the shape standing on it (drawn slanted: up is to the upper right)
+    const RS = P.areaUI && P.areaUI.rev;
+    if (RS && RS.kind === 'sec' && revOpen()) {
+      const n = 5, k = RS.shape, ppy = Math.abs(sy(1) - sy(0)) || 1;
+      const up = (z) => [z * ppy * 0.5, -z * ppy * 0.25]; // a height z on the screen, slanted
+      g.globalAlpha = 0.9; g.strokeStyle = f.color; g.lineWidth = 1.6; g.setLineDash([]);
+      for (let i = 0; i < n; i++) {
+        const x = A.a + (A.b - A.a) * (i + 0.5) / n, y1 = yAt(f, x), y2 = yAt(gs, x);
+        if (!isFinite(y1) || !isFinite(y2)) continue;
+        const lo = Math.min(y1, y2), hi = Math.max(y1, y2), w = hi - lo, X = sx(x);
+        if (w * ppy < 4) continue;
+        g.globalAlpha = 0.9; g.lineWidth = 2.6;
+        g.beginPath(); g.moveTo(X, sy(lo)); g.lineTo(X, sy(hi)); g.stroke();
+        // the outline of the shape, from its points (across, height): across from lo to hi
+        const sc = 0.45; // (small pictures)
+        let pts;
+        if (k === 'sq') pts = [[0, 0], [1, 0], [1, 1], [0, 1]].map(([u, z]) => [u, z * w]);
+        else if (k === 'rect') pts = [[0, 0], [1, 0], [1, 1], [0, 1]].map(([u, z]) => [u, z * w * (Number(String(RS.skIn.value).replace('−', '-')) || 0.5)]);
+        else if (k === 'eq') pts = [[0, 0], [1, 0], [0.5, w * Math.sqrt(3) / 2]];
+        else if (k === 'rl') pts = [[0, 0], [1, 0], [0, w]];
+        else if (k === 'rh') pts = [[0, 0], [1, 0], [0.5, w / 2]];
+        else if (k === 'semi') { pts = []; for (let t = 0; t <= 16; t++) { const a = Math.PI * t / 16; pts.push([0.5 - 0.5 * Math.cos(a), w / 2 * Math.sin(a)]); } }
+        else pts = [[0, 0], [1, 0], [1, 0.5 * w], [0, 0.5 * w]];
+        g.lineWidth = 1.4;
+        g.beginPath();
+        pts.forEach(([u, z], j) => { const [dx, dy] = up(z * sc); const px = X + dx, py = sy(lo + u * w) + dy; if (j) g.lineTo(px, py); else g.moveTo(px, py); });
+        g.closePath();
+        g.globalAlpha = 0.22; g.fillStyle = f.color; g.fill();
+        g.globalAlpha = 0.9; g.stroke();
+      }
+      P.canvas.dataset.sections = k + ':' + n;
+    } else delete P.canvas.dataset.sections;
     g.restore();
   }
   // k of y = k or x = k as typed back into its box: rounded to the step it was dragged in
@@ -5804,17 +5838,102 @@
     return true;
   }
 
+  // The shapes of the cross sections (1.12.0, B1): key, name, A(s) for the width s, a picture (□ △ ◠ …),
+  // a short label under it; c × s² for all but one's own (the sign of s, where the functions cross, does not matter)
+  const SEC_SHAPES = [
+    ['sq', tr('Square', '正方形'), 's^2', '<rect x="9" y="5" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4"/>', tr('Square', '正方形')],
+    ['eq', tr('Equilateral triangle', '正三角形'), '√(3)/4 × s^2', '<path d="M6 23 L30 23 L18 3 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>', tr('Triangle', '正三角形')],
+    ['semi', tr('Half disc (the width as its diameter)', '半円（底面の幅が直径）'), 'π/8 × s^2', '<path d="M5 22 A13 13 0 0 1 31 22 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>', tr('Half disc', '半円')],
+    ['rect', tr('Rectangle of height k·s', '長方形（高さ k·s）'), 'k × s^2', '<rect x="5" y="11" width="26" height="12" fill="none" stroke="currentColor" stroke-width="2.4"/>', tr('Rectangle', '長方形')],
+    ['rl', tr('Right isosceles triangle, a leg on the region', '直角二等辺三角形（脚が底面）'), 's^2/2', '<path d="M7 23 L29 23 L7 3 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>', tr('Right, leg', '直角・脚')],
+    ['rh', tr('Right isosceles triangle, the hypotenuse on the region', '直角二等辺三角形（斜辺が底面）'), 's^2/4', '<path d="M5 23 L31 23 L18 10 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>', tr('Right, hyp.', '直角・斜辺')],
+    ['own', tr('Your own A(s)', '自分の式 A(s)'), '', '<text x="18" y="20" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">A(s)</text>', tr('Your own', '自分の式')]
+  ];
+  // the volume of the solid whose cross sections across x stand on the region of the area tools:
+  // V = ∫ A(s(x)) dx, s = f − g (exact when the engine can integrate it); a > b is the same range
+  async function computeSections(auto) {
+    const U = P.areaUI, R = U.rev;
+    const seq = ++R.seq, stale = () => seq !== R.seq;
+    R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.outs.textContent = ''; R.method.textContent = ''; R.moreOuts.textContent = ''; R.more.hidden = true;
+    P.revVolText = ''; P.revAxis = null; draw();
+    const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '立体を計算できませんでした'); R.outs.textContent = ''; } };
+    const f = P.series[Number(U.f1.value)];
+    if (!f) return fail(tr('Draw a function first', '先に関数を描いてください'));
+    const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
+    if (!a || !b) return fail(tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'));
+    const g = areaG(), ge = g ? g.expr : '0';
+    const d = SEC_SHAPES.find((x) => x[0] === R.shape) || SEC_SHAPES[0];
+    const s = `((${f.expr}) − (${ge}))`;
+    let F;
+    if (d[0] === 'own') {
+      const own = normalizeExpr(R.ownIn.value);
+      if (!own || !/\bs\b/.test(own)) return fail(tr('Enter A(s) in s, for example s^2/2', 'A(s) を s の式で入れてください（例：s^2/2）'));
+      F = own.replace(/\bs\b/g, `abs${s}`);
+    } else if (d[0] === 'rect') {
+      const kk = normalizeExpr(R.skIn.value), kv = kk ? await numValue(kk) : NaN;
+      if (stale()) return;
+      if (!isFinite(kv) || kv <= 0) { R.skIn.setAttribute('aria-invalid', 'true'); return fail(tr('Enter a positive number for k (for example 1/2)', 'k に正の数を入れてください（例：1/2）')); }
+      R.skIn.removeAttribute('aria-invalid');
+      F = `(${kk}) × ${s}^2`;
+    } else F = d[2].replace('s^2', s + '^2');
+    R.msg.textContent = tr('Calculating…', '計算中…');
+    const t0 = Date.now(), limit = Math.max(30, timeLimit() * 2) * 1000, late = () => Date.now() - t0 > limit;
+    const rn = await rangeNums(a, b);
+    if (stale()) return;
+    if (!rn) return fail(tr('a and b must be two different numbers', 'a と b は異なる数にしてください'));
+    // (rangeNums puts the smaller end first: a > b is the same solid)
+    const rp = await realParts(g ? [f.expr, g.expr] : [f.expr], rn.a, rn.b, rn.lo, rn.hi);
+    if (stale()) return;
+    if (rp && !rp.parts.length) return fail(noRealText());
+    const parts = rp ? rp.parts : [rn];
+    const vrow = revRow(R, tr('Volume', '体積'), 'V = ∫ A(s(x)) dx');
+    const vals = [], vexpr = [];
+    for (const p of parts) {
+      const v = await revIntegral(F, p, []);
+      if (stale()) return;
+      if (late()) return fail(tr('It took too long (the time limit can be changed in the settings)', '時間がかかりすぎました（制限時間は設定で変えられます）'));
+      if (!v) { vrow.val.textContent = tr('could not be calculated', '計算できませんでした'); R.msg.textContent = ''; return; }
+      if (v.inf) { vrow.val.textContent = tr('infinite', '無限大'); R.msg.textContent = ''; return; }
+      vals.push(v); vexpr.push(`integrate(${F}, ${p.a}, ${p.b})`);
+    }
+    const V = await sumValues(vals);
+    if (stale()) return;
+    revShow(vrow, V, vexpr.join(' + '));
+    R.msg.textContent = '';
+    R.method.textContent = 'V = ∫ A(s(x)) dx,  A(s) = ' + (d[0] === 'own' ? normalizeExpr(R.ownIn.value) : d[0] === 'rect' ? toDisplay(normalizeExpr(R.skIn.value)) + ' × s²' : d[2].replace('s^2', 's²').replace(' × ', '·')) +
+      ',  s = ' + toDisplay(clip(f.expr, 24)) + (g ? ' − (' + toDisplay(clip(g.expr, 24)) + ')' : '') + '\n' + tr('(the volume is the sum of the thin slices of area A and thickness dx)', '（面積 A、厚さ dx の薄い板を重ねた体積）');
+    P.revVolText = shortValue('V', vrow.result); draw();
+    // the 3D view (Pro): the top of the cross sections over the region, z = 0 outside not drawn
+    const hiE = g ? `max(${f.expr}, ${ge})` : `max(${f.expr}, 0)`, loE = g ? `min(${f.expr}, ${ge})` : `min(${f.expr}, 0)`;
+    const cut = `√(min(0, (y − ${loE}) × (${hiE} − y)))`, w = `(${hiE} − ${loE})`;
+    const top = { sq: `${w} + ${cut}`, eq: `√(3) × min(y − ${loE}, ${hiE} − y) + ${cut}`, semi: `√((${w} / 2)^2 − (y − (${hiE} + ${loE}) / 2)^2)`,
+      rect: `(${normalizeExpr(R.skIn.value) || '1'}) × ${w} + ${cut}`, rl: `(${hiE} − y) + ${cut}`, rh: `min(y − ${loE}, ${hiE} − y) + ${cut}` }[d[0]];
+    if (top) {
+      let y0 = Infinity, y1 = -Infinity;
+      for (const ser of [f, g].filter(Boolean)) ser.x.forEach((x, i) => { const y = ser.y[i]; if (x >= rn.lo && x <= rn.hi && y !== null && isFinite(y)) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); } });
+      if (!g) { y0 = Math.min(y0, 0); y1 = Math.max(y1, 0); }
+      if (isFinite(y0) && isFinite(y1) && y1 > y0) {
+        const m = (y1 - y0) * 0.06;
+        R.three = { exprs: [top, `0 + ${cut}`], range: [engineNum(rn.lo), engineNum(rn.hi), engineNum(r6(y0 - m)), engineNum(r6(y1 + m))] };
+        R.view.hidden = false;
+      }
+    }
+  }
   // the part of the area tools for solids of revolution: the axis, the results (tap one to put its
   // integral into the input field or to copy it), the formula used, the 3D view and examples.
   // The axis and k are remembered (qalc.rev)
   function buildRevolution() {
     const saved = store.get('qalc.rev', null) || {};
-    const R = { axis: REV_AXES.some((x) => x[0] === saved.axis) ? saved.axis : 'x', seq: 0, three: null };
+    const R = { axis: REV_AXES.some((x) => x[0] === saved.axis) ? saved.axis : 'x', seq: 0, three: null,
+      // 1.12.0 (B1): the kind of solid ('rev' turned around an axis, 'sec' cross sections standing on
+      // the region) and the shape of the cross sections, with k of the rectangle and A(s) of one's own
+      kind: saved.kind === 'sec' ? 'sec' : 'rev', shape: SEC_SHAPES.some((x) => x[0] === saved.shape) ? saved.shape : 'sq',
+      sk: typeof saved.sk === 'string' ? saved.sk : '1/2', own: typeof saved.own === 'string' ? saved.own : 's^2/2' };
     const k = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: 'k', value: typeof saved.k === 'string' ? saved.k : '−1', 'aria-label': tr('k of the axis', '軸の k') });
     const kErr = el('div', { class: 'form-hint warn', role: 'alert' });
     const kRow = el('span', { class: 'rev-k' }, el('span', { class: 'rev-k-lbl', text: 'k =' }), k);
     const btns = REV_AXES.map(([key, label]) => tapButton({ text: label, 'aria-label': tr('Axis: ', '軸：') + label }, () => { if (key !== R.axis) { revUndoable(); setAxis(key); } }));
-    const save = () => store.set('qalc.rev', { axis: R.axis, k: k.value, open: !box.hidden });
+    const save = () => store.set('qalc.rev', { axis: R.axis, k: k.value, open: !box.hidden, kind: R.kind, shape: R.shape, sk: skIn.value, own: ownIn.value });
     const setAxis = (key, quiet) => {
       R.axis = key;
       btns.forEach((b, i) => { const on = REV_AXES[i][0] === key; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
@@ -5832,7 +5951,7 @@
     const more = el('details', { class: 'rev-more' }, el('summary', { text: tr('More: surface areas ▾', '詳しく：表面積 ▾') }), moreOuts);
     const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, () => {
       // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion")
-      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: true, res: 61, grow: R.three.axis });
+      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis });
     });
     // one tap: a graph, its range and the axis
     const EX = [
@@ -5848,10 +5967,46 @@
       })));
     // 1.12.0: "Make a solid ▾" holds the kinds of solids made from the shaded region (the solid of
     // revolution now; the solid with known cross sections follows)
-    const kinds = el('div', { class: 'seg mini solid-kinds', role: 'group', 'aria-label': tr('Kind of solid', '立体の種類') },
-      el('button', { class: 'on', 'aria-pressed': 'true', text: tr('Revolution (turned around an axis)', '回転体（軸のまわりに回す）') }));
-    const box = el('div', { class: 'rev-box' }, kinds,
-      el('div', { class: 'plot-range' }, el('span', { text: tr('Axis', '軸') }), el('span', { class: 'seg mini rev-axes' }, ...btns), kRow),
+    const kRev = tapButton({ text: tr('Revolution (turned around an axis)', '回転体（軸のまわりに回す）') }, () => setKind('rev'));
+    const kSec = tapButton({ text: tr('Cross sections (shapes standing on the region)', '断面の立体（底面に形を立てる）') }, () => setKind('sec'));
+    const kinds = el('div', { class: 'seg mini solid-kinds', role: 'group', 'aria-label': tr('Kind of solid', '立体の種類') }, kRev, kSec);
+    const axisRow = el('div', { class: 'plot-range' }, el('span', { text: tr('Axis', '軸') }), el('span', { class: 'seg mini rev-axes' }, ...btns), kRow);
+    // the shapes of the cross sections: the three common ones as picture buttons, the others under "More ▾"
+    const shapeBtn = (key) => {
+      const d = SEC_SHAPES.find((x) => x[0] === key);
+      const b = tapButton({ class: 'sec-shape', 'aria-label': d[1], title: d[1] }, () => { if (R.shape !== key) { revUndoable(); setShape(key); } });
+      b.innerHTML = `<svg viewBox="0 0 36 28" aria-hidden="true">${d[3]}</svg>`;
+      b.append(el('span', { text: d[4] }));
+      return b;
+    };
+    const shapeBtns = {};
+    for (const [key] of SEC_SHAPES) shapeBtns[key] = shapeBtn(key);
+    const skIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: R.sk, 'aria-label': tr('k of the rectangle (height k·s)', '長方形の k（高さ k·s）') });
+    const ownIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: R.own, placeholder: 's^2/2', 'aria-label': tr('Area A(s) of one cross section, in s', '断面 1 枚の面積 A(s)（s の式）') });
+    for (const inp of [skIn, ownIn]) inp.addEventListener('change', () => { save(); computeRevolution(); });
+    const secMore = el('details', { class: 'sec-more' }, el('summary', { text: tr('More shapes ▾', '詳しく：ほかの形 ▾') }),
+      el('div', { class: 'sec-shapes' }, shapeBtns.rect, shapeBtns.rl, shapeBtns.rh, shapeBtns.own),
+      el('label', { class: 'plot-range' }, el('span', { text: tr('Rectangle: k =', '長方形：k =') }), skIn),
+      el('label', { class: 'plot-range' }, el('span', { text: 'A(s) =' }), ownIn));
+    const secRow = el('div', { class: 'sec-row' },
+      el('div', { class: 'sec-shapes', role: 'group', 'aria-label': tr('Shape of the cross sections', '断面の形') }, shapeBtns.sq, shapeBtns.eq, shapeBtns.semi), secMore,
+      el('div', { class: 'form-hint', text: tr('Each cross section stands on the region across x (s: its width, the upper function − the lower one).', '断面は x 軸に垂直に、底面（色の付いた部分）の上に立ちます（s：底面の幅 ＝ 上の関数 − 下の関数）。') }));
+    const setShape = (key, quiet) => {
+      R.shape = key;
+      for (const [kk, b] of Object.entries(shapeBtns)) { b.classList.toggle('on', kk === key); b.setAttribute('aria-pressed', String(kk === key)); }
+      if (['rect', 'rl', 'rh', 'own'].indexOf(key) >= 0) secMore.open = true;
+      save();
+      if (!quiet) { computeRevolution(); draw(); }
+    };
+    const setKind = (kind, quiet) => {
+      R.kind = kind;
+      kRev.classList.toggle('on', kind === 'rev'); kSec.classList.toggle('on', kind === 'sec');
+      kRev.setAttribute('aria-pressed', String(kind === 'rev')); kSec.setAttribute('aria-pressed', String(kind === 'sec'));
+      axisRow.hidden = kind !== 'rev'; secRow.hidden = kind !== 'sec'; exRow.hidden = kind !== 'rev';
+      save();
+      if (!quiet) { computeRevolution(); }
+    };
+    const box = el('div', { class: 'rev-box' }, kinds, axisRow, secRow,
       kErr, msg, outs, method, more, view, exRow,
       el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
     box.hidden = true;
@@ -5865,8 +6020,10 @@
         setTimeout(() => toast(tr('Tap an axis to turn around it. Drag an edge ↔ to change the range.', '軸をタップすると、回す軸が変わります。端の ↔ をドラッグすると、範囲が変わります'), 6000), 400);
       }
     });
-    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, method, view, setAxis, open: () => { if (box.hidden) toggle.click(); } });
+    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, more, method, view, setAxis, setKind, setShape, skIn, ownIn, open: () => { if (box.hidden) toggle.click(); } });
     setAxis(R.axis, true);
+    setShape(R.shape, true);
+    setKind(R.kind, true);
     if (saved.open) { box.hidden = false; toggle.classList.add('on'); toggle.setAttribute('aria-expanded', 'true'); }
     return R;
   }
@@ -5889,9 +6046,10 @@
   async function computeRevolution(auto) {
     const U = P.areaUI, R = U && U.rev;
     if (!R || R.box.hidden || U.box.hidden) return;
+    if (R.kind === 'sec') return computeSections(auto);
     const seq = ++R.seq, stale = () => seq !== R.seq;
     R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.k.removeAttribute('aria-invalid'); R.outs.textContent = ''; R.method.textContent = '';
-    R.moreOuts.textContent = ''; P.revVolText = '';
+    R.moreOuts.textContent = ''; R.more.hidden = false; P.revVolText = '';
     const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '回転体を計算できませんでした'); R.outs.textContent = ''; } };
     const f = P.series[Number(U.f1.value)];
     if (!f) return fail(tr('Draw a function first', '先に関数を描いてください'));
