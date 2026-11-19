@@ -15,6 +15,16 @@
 - （済）F 全体の見直し（fix/sweep-1.12）。G（release/1.12.0）：設計書 14 文書（テスト仕様書・概要の §9 を含む）の更新、PDF の書き出し、design/README.md 第 18 版。
 - （済）最後の版でのテスト一式（17:17 の指示）：1,513 項目すべて合格（落ちたものは、どれも古いテストの期待値で、理由を書いて直して流し直した。下の「テストの結果」）。テスト版の APK は 7,512,350 バイト（SHA-256 7e2f059b6c375a96cc736fee3b3ff3042e3fc75212cd6dbc5d40ef9f80a07b11）。
 - 今：段階 M「ストアと宣伝の素材」（20:45 の指示、ブランチ docs/store-1.12、release/1.12.0 の上）。許可の要る操作（音声合成など）は「本人に許可をもらうこと」にためて、許可の要らない作業を先に進める（20:52 の指示）。
+- （01:04 の本人の答え）要判断 65「人に教える」と 66「不具合・要望を送る」を 1.12.0 に入れた（e986dc9）。「このアプリについて」に 2 つのリンク。メールの宛先は hiroshitsu.apps@gmail.com で、本文は版・Android・端末・言語だけ。外のリンクを開くかどうかは Links.java が決める（http・https はブラウザー、mailto はメールのアプリ、ほかは開かない）。7 言語の文、説明書の「このアプリについて」の節、アプリの中・Web・PDF の説明書も直した。
+- （01:24 の指示。今回に限り、作業環境に残っているアップロード鍵での署名を本人が許可）クローズドテストに出す 1.12.0（versionCode 25、e986dc9）を本人にファイルで送った。
+
+  | ファイル | 大きさ | SHA-256 |
+  |---|---|---|
+  | QCalc-1.12.0-billing.aab（購入機能あり、署名済み。Play に出すもの） | 8,601,014 バイト | 5ef9a24adaae126c5289578cd499f99fe460c649e9ff879a83ac64236644872d |
+  | QCalc-1.12.0-debug.apk（スマホで確かめる用） | 7,516,446 バイト | 637b619fbb175e04c551a294d1979c6278b05bd07f4ad482625f6d5ad679a8ef |
+  | QCalc-1.12.0-billing-unsigned.aab（署名の前。送っていない） | 8,583,849 バイト | 0ff23991607fe0a3d3fb62ac0abc8f2b525b298cae398d30de73089fb6965b72 |
+
+  作り方は 1.11.0 の購入機能ありの版と同じ：コミットの写し（git archive。signing/ と keystore.properties は入らない）で `gradle --offline bundleRelease -Pqcalc.billing=true`（署名なし）、それを build-aab.sh と同じ設定（`jarsigner -digestalg SHA-256 -sigalg SHA256withRSA`、qcalc-upload.jks、別名 upload、パスワードは環境変数で渡し、どこにも出していない）で署名した。点検 K01〜K33 は 21/21 合格（$S/kcheck/run112.sh）：jarsigner -verify（jar verified。証明書 CN=QCalc upload key, O=HiroshiTsu、SHA-256 73:16:7B:03:1C:34:CC:0D:09:D2:A9:E1:D7:D1:E8:41:34:22:03:20:48:2A:B8:4B:80:0D:DB:0F:95:D2:E3:38 で 1.11.0 と同じ）、bundletool validate、dump config で uncompressNativeLibraries が有効でない（16 KB ページの設定だけ）、dump manifest（io.github.hiroshitsu.qcalc 25 / 1.12.0、target 36、extractNativeLibs、BILLING、debuggable でない）、スマホ向けの APK のエンジンが同じで圧縮して入っている、鍵・パスワードのファイルが入っていない。鍵はコミットしていない（signing/ は .gitignore）。
 - （済）H 取り扱い説明書（release/1.12.0 の上）。7 言語の原稿（manual/src）、アプリの中の版（app/assets/manual、7 言語で 594 KB）、Web の版と写真（docs/manual）、各道具・パネルの「？」などの入口、MN01〜MN10（日本語・英語 10/10）。説明書の写真で見つけた BG17（小数点が「,」で「輪郭から回転体」の重さが 100 倍）を直した。PDF（docs/manual/<言語>/QCalc-manual-<言語>.pdf）は点検のあと最後に 1 回だけコミットする（約 15 MB を履歴に 2 回残さないため）。次は入口のリンク切れのテスト、起動の時間、APK・AAB の大きさ、課題を説明書だけで通す点検、設計書への H の追記。
 
 ## 読み替え表
@@ -776,8 +786,28 @@ QCalc を使ったことのない人に、デバッグ版（QCalc-1.12.0-debug.a
 2. 「人に試してもらう手順」で 1〜2 人に試してもらい、結果を「分かりやすさの点検表」に書く（直すかどうかを決める）。
 3. release/1.12.0 で、作業用のファイルを外すコミットを作る（本人の手で）：`git rm WORK-IN-PROGRESS.md && git rm -r ui-review`。design/terms-draft/ は残す（要判断 13：確認前の案として公開してよい）。
 4. main へマージ（GitHub の Pull Request、または `git checkout main && git merge --no-ff release/1.12.0`）。force push はしない。
-5. 署名した App Bundle を作る（build-aab.sh、または Gradle の bundleRelease。署名の鍵は本人の手元だけで扱う）。Play Console に 1.12.0（versionCode 25）を出し、リリースノート（store/listing-en.md の「Release notes」の 1.12.0 の 7 言語）を貼る。
+5. 署名した App Bundle を作る（build-aab.sh、または Gradle の bundleRelease。署名の鍵は本人の手元だけで扱う）。1.12.0 は 01:24 の指示で作業環境で署名した QCalc-1.12.0-billing.aab がある（上の「朝に読むまとめ」）。作業環境に鍵を置かないときは、下の「Windows で署名するとき」。Play Console に 1.12.0（versionCode 25）を出し、リリースノート（store/listing-en.md の「Release notes」の 1.12.0 の 7 言語）を貼る。
 6. GitHub の Releases に v1.12.0 のタグを付ける。
+
+## Windows で署名するとき（作業環境に鍵を置かない場合。01:19 の指示）
+
+署名の前の App Bundle（QCalc-1.12.0-billing-unsigned.aab）を、本人のパソコンで build-aab.sh と同じ設定で署名する手順。パスワードは書かない。
+
+1. JDK を入れる（jarsigner と keytool は JDK に入っている）。
+   - コマンドプロンプトで `winget install EclipseAdoptium.Temurin.25.JDK`（Adoptium の案内にある今の LTS）。winget が無いときは https://adoptium.net/ から Windows・x64・JDK の .msi を入れる（「PATH に足す」は最初から選ばれている）。
+   - 新しく開いたコマンドプロンプトで `java -version` と `jarsigner -help` が動くことを確かめる。「認識されていません」と出るときは、`"C:\Program Files\Eclipse Adoptium\jdk-25…\bin\jarsigner.exe"` のように bin のフォルダーごと書く。Android Studio があれば、`"C:\Program Files\Android\Android Studio\jbr\bin\jarsigner.exe"` も使える。
+2. 1 つのフォルダーに qcalc-upload.jks、qcalc-upload.pass（1 行目がパスワード）、QCalc-1.12.0-billing-unsigned.aab を置き、そのフォルダーでコマンドプロンプトを開く。
+3. 受け取ったファイルが壊れていないか：`certutil -hashfile QCalc-1.12.0-billing-unsigned.aab SHA256`（上の表の値と同じなら良い）。
+4. 署名する：
+
+   ```
+   jarsigner -keystore qcalc-upload.jks -storepass:file qcalc-upload.pass -digestalg SHA-256 -sigalg SHA256withRSA -signedjar QCalc-1.12.0-billing.aab QCalc-1.12.0-billing-unsigned.aab upload
+   ```
+
+5. 確かめる：
+   - `jarsigner -verify QCalc-1.12.0-billing.aab` → 「jar verified.」（詳しくは `jarsigner -verify -verbose -certs QCalc-1.12.0-billing.aab`）。タイムスタンプが無いという警告は出てよい（Play に出すには要らない）。
+   - `keytool -printcert -jarfile QCalc-1.12.0-billing.aab` → 所有者 CN=QCalc upload key, O=HiroshiTsu、SHA256 が 73:16:7B:03:1C:34:CC:0D:09:D2:A9:E1:D7:D1:E8:41:34:22:03:20:48:2A:B8:4B:80:0D:DB:0F:95:D2:E3:38（1.11.0 と同じアップロード鍵）。
+6. 署名が済んだら、qcalc-upload.pass は元の安全な場所に戻す。
 
 ## 作業環境（再開するとき）
 
