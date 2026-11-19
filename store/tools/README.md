@@ -41,6 +41,11 @@ python3 store/tools/assets_check.py --videos $W/out
 python3 store/tools/listing_check.py                        # the words on pictures and in subtitles
 ```
 
+The engine's own currency is set by the test server (on a phone it is the currency of the region). The
+calculation notes keep amounts in that currency, so the notes pictures and the notes scene of the videos are
+taken with a server in the region's currency: en USD, en-GB GBP, de/es/fr EUR, es-419 MXN, fr-CA CAD, ko KRW,
+zh-TW TWD (ja: JPY), e.g. `node store/tools/shots.js http://127.0.0.1:8803/ de phone notes`.
+
 The videos (`*.mp4`) are not committed: they are large and are sent to the owner as files.
 When the app's screens change, make the pictures and the videos again; the headlines and the narration
 are in `captions.json` and `video-plan.json`.
