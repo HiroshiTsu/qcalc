@@ -1406,3 +1406,11 @@ body.hselect #history { padding-bottom: 150px; }
 .tool-tbl th, .tool-tbl td { padding: 6px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
 .tool-tbl th { background: var(--surface-2); position: sticky; top: 0; }
 .tool-tbl-btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+
+/* the conversion (1.12.0, C2) */
+.conv-row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+.conv-row input { flex: 1 1 0; min-width: 0; font-size: 22px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--text); min-height: 48px; box-sizing: border-box; }
+.conv-row select { flex: 1 1 0; min-width: 0; max-width: 55%; padding: 10px 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--text); font-size: 15px; min-height: 48px; }
+.conv-mid { display: flex; justify-content: center; }
+.conv-swap { min-width: 64px; min-height: 48px; font-size: 20px; }
+.conv-kinds .geo-chip.on, .geo-chips .geo-chip[aria-pressed="true"] { background: var(--accent-soft); color: var(--key-op-text); border-color: var(--accent); }

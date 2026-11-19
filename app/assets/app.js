@@ -395,7 +395,8 @@
     cross_sections: 'free', // solids with known cross sections (1.12 B1): recommended free (2D and the volume; the 3D view needs Pro)
     rev_lines: 'free',     // the lines of the method in 2D and the theorem of Pappus (1.12 B2): recommended free (the angle of the 3D view needs Pro as 3D)
     everyday: 'free',      // the everyday tools: price, percentages, unit price, split, loan, savings, dates, times (1.12 C1): recommended free
-    tables: 'free'         // saving the tables of the tools as CSV files (1.12 C1): recommended Pro (as exporting the history)
+    tables: 'free',        // saving the tables of the tools as CSV files (1.12 C1): recommended Pro (as exporting the history)
+    convert: 'free'        // the conversion of units and currencies (1.12 C2): recommended free
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
   try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
@@ -11251,6 +11252,149 @@
     });
   }
 
+  // ---------------------------------------------------------- conversion (1.12.0, C2)
+  // Two boxes, each with a unit: what is typed in one is converted into the other (both ways), with
+  // ⇄ to swap them, the kinds of units as chips (the common ones; every kind of the engine under
+  // "Other kinds"), the pairs used last, and the result as a row (tap: field, history, copy). All the
+  // units of the engine, also the Japanese ones (尺, 坪, 升 …); currencies with the rates of the app
+  // (when they were last updated is shown; they work offline); fuel economy (km/L, L/100 km, mpg).
+  const FUEL = [['km/L', 'km/L', 1], ['L/100km', 'L/100 km', 0], ['mpgUS', 'mpg (US)', 0.425143707], ['mpgUK', 'mpg (UK)', 0.354006189]];
+  const fuelTo = (x, u) => (u === 'L/100km' ? 100 / x : x * FUEL.find((f) => f[0] === u)[2]); // to km/L
+  const fuelFrom = (k, u) => (u === 'L/100km' ? 100 / k : k / FUEL.find((f) => f[0] === u)[2]);
+  const MY_CURRENCY = { ja: 'JPY', de: 'EUR', fr: 'EUR', es: 'EUR', ko: 'KRW', 'zh-TW': 'TWD' }[LANG] || 'USD';
+  const CONV_KINDS = () => [
+    ['Length', tr('Length', '長さ'), ['km'], ['mi']], ['Mass', tr('Weight', '重さ'), ['kg'], ['lb']], ['Volume', tr('Volume', '体積'), ['L'], ['gal']],
+    ['Area', tr('Area', '面積'), ['m^2', 'm²'], JA ? ['坪'] : ['ft^2', 'ft²']], ['Temperature', tr('Temperature', '温度'), ['oC', '°C'], ['oF', '°F']],
+    ['Speed', tr('Speed', '速さ'), ['km/h', 'kph'], ['mph']], ['Time', tr('Time', '時間'), ['h'], ['min']],
+    ['fuel', tr('Fuel economy', '燃費'), ['km/L'], ['L/100km']], ['Currency', tr('Currency', '通貨'), [MY_CURRENCY], [MY_CURRENCY === 'USD' ? 'EUR' : 'USD']]
+  ];
+  const KIND_ALIASES = { Speed: ['Speed', 'Velocity'], Mass: ['Mass', 'Weight'] };
+  const JP_UNIT_KIND = { 坪: 'Area', 反: 'Area', 畝: 'Area', 町歩: 'Area', 歩: 'Area', 寸: 'Length', 尺: 'Length', 間: 'Length', 丈: 'Length', 里: 'Length', 町: 'Length',
+    合: 'Volume', 升: 'Volume', 斗: 'Volume', 石: 'Volume', 勺: 'Volume', 匁: 'Mass', 貫: 'Mass', 斤: 'Mass', 両: 'Mass' };
+  function openConverter() {
+    const p = panel('convert', tr('Convert units and currencies', '単位・通貨の換算'), (p) => {
+      const saved = store.get('qalc.conv', null) || {};
+      const C = { kind: saved.kind || 'Length', a: saved.a || '', b: saved.b || '', from: 'a', seq: 0, units: [] };
+      const save = () => store.set('qalc.conv', { kind: C.kind, a: uA.value, b: uB.value, va: vA.value });
+      const vA = el('input', { type: 'text', inputmode: 'decimal', autocapitalize: 'off', spellcheck: 'false', value: typeof saved.va === 'string' ? saved.va : '1', 'aria-label': tr('Value to convert', '換算する値') });
+      const vB = el('input', { type: 'text', inputmode: 'decimal', autocapitalize: 'off', spellcheck: 'false', 'aria-label': tr('Converted value', '換算した値') });
+      const uA = el('select', { 'aria-label': tr('Unit of the first value', '1 つめの単位') }), uB = el('select', { 'aria-label': tr('Unit of the second value', '2 つめの単位') });
+      const swap = tapButton({ class: 'btn conv-swap', 'aria-label': tr('Swap the units', '単位を入れ替える'), text: '⇅' }, () => {
+        const ua = uA.value; uA.value = uB.value; uB.value = ua;
+        const va = vA.value; vA.value = vB.value || va; C.from = 'a';
+        save(); convert();
+      });
+      const kinds = el('div', { class: 'geo-chips conv-kinds', role: 'group', 'aria-label': tr('Kind of units', '単位の種類') });
+      const other = el('select', { 'aria-label': tr('Other kinds', 'ほかの種類') });
+      const recentRow = el('div', { class: 'rev-ex conv-recent' });
+      const outs = el('div', { class: 'geo-out', 'aria-live': 'polite' });
+      const msg = el('div', { class: 'geo-msg', role: 'alert' });
+      const rates = el('div', { class: 'form-hint conv-rates' });
+      const rowA = el('div', { class: 'conv-row' }, vA, uA), rowB = el('div', { class: 'conv-row' }, vB, uB);
+      p.body.append(kinds, el('div', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Other kinds', 'ほかの種類') }), other),
+        rowA, el('div', { class: 'conv-mid' }, swap), rowB, msg, outs, rates, recentRow,
+        el('div', { class: 'form-hint', text: tr('Type in either box: the other follows. A value can be an expression (1/3, 2 + 3). Tap the result to keep it, put it into the field or copy it.', 'どちらの欄に入れても、もう一方が換算されます。値は式でもかまいません（1/3、2 + 3）。結果をタップすると、履歴に残す・入力欄に入れる・コピーができます。') }));
+      const fmtOut = (t) => toDisplay(String(t).replace(/^-/, '−'));
+      // the units of a kind (the engine's order: the common ones first)
+      const unitsOf = (kind) => {
+        if (kind === 'fuel') return FUEL.map(([n, label]) => ({ name: n, abbr: label, title: '' }));
+        const names = KIND_ALIASES[kind] || [kind];
+        // (the Japanese units are a category of their own in the engine: here also with their kind)
+        return (catalogs.units || []).filter((it) => names.indexOf(it._top) >= 0 || JP_UNIT_KIND[it.name] === kind || JP_UNIT_KIND[it.abbr] === kind).slice().sort((x, y) => x._i - y._i);
+      };
+      const label = (it) => {
+        if (!it.title) return it.abbr;
+        const ja = JA && it._ja ? it._ja.split(' ')[0] : '';
+        return it.abbr + '  ' + (ja || it.title);
+      };
+      const findUnit = (list, wants) => list.find((it) => wants.some((w) => it.name === w || it.abbr === w)) || null;
+      const setKind = (kind, keepUnits) => {
+        C.kind = kind;
+        const list = unitsOf(kind);
+        C.units = list;
+        for (const sel of [uA, uB]) { sel.textContent = ''; for (const it of list) sel.append(el('option', { value: it.name, text: label(it) })); }
+        const def = CONV_KINDS().find((k) => k[0] === kind);
+        const a0 = keepUnits && list.some((u) => u.name === keepUnits[0]) ? keepUnits[0] : (def && findUnit(list, def[2]) || list[0] || {}).name;
+        const b0 = keepUnits && list.some((u) => u.name === keepUnits[1]) ? keepUnits[1] : (def && findUnit(list, def[3]) || list[1] || list[0] || {}).name;
+        if (a0) uA.value = a0; if (b0) uB.value = b0;
+        kinds.querySelectorAll('button').forEach((b) => { const on = b.dataset.kind === kind; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+        other.value = CONV_KINDS().some((k) => k[0] === kind) ? '' : kind;
+        rates.textContent = '';
+        if (kind === 'Currency') { rates.append(tr('Exchange rates updated: ', '為替レートの更新：') + fmtTime(ratesTime) + ' ', el('a', { href: '#', text: tr('Update now', '今すぐ更新'), onclick: (e) => { e.preventDefault(); openRates(); } })); }
+        save();
+      };
+      const convert = debounce(async () => {
+        const seq = ++C.seq, src = C.from === 'a' ? vA : vB, dst = C.from === 'a' ? vB : vA, su = C.from === 'a' ? uA.value : uB.value, du = C.from === 'a' ? uB.value : uA.value;
+        msg.textContent = ''; outs.textContent = '';
+        const raw = src.value.trim();
+        if (!raw) { dst.value = ''; return; }
+        if (C.kind === 'fuel') {
+          const x = boxNum(raw);
+          if (!(x > 0)) { msg.textContent = tr('Enter a number above 0, such as 15', '15 のように、0 より大きい数を入れてください'); dst.value = ''; return; }
+          const y = fuelFrom(fuelTo(x, su), du);
+          const t = String(+y.toPrecision(8));
+          dst.value = fmtOut(t);
+          showRow(fmtOut(String(+x.toPrecision(10))) + ' ' + FUEL.find((f) => f[0] === su)[1], fmtOut(t) + ' ' + FUEL.find((f) => f[0] === du)[1], '');
+          return;
+        }
+        const v = withoutOpenTo(normalizeExpr(raw));
+        const A = C.units.find((u) => u.name === su) || { abbr: su, name: su }, B = C.units.find((u) => u.name === du) || { abbr: du, name: du };
+        // the number in the second unit: the ratio of the two amounts (no unit to read back; also for
+        // currencies, which the engine may show with a symbol); temperatures (with their zero points)
+        // with "to"
+        const temp = C.kind === 'Temperature';
+        const q = temp ? `(${v} (${A.abbr})) to ${B.name}` : `(${v} (${A.abbr})) / (1 (${B.abbr}))`;
+        const expr = `${v} ${A.abbr} to ${B.abbr}`;
+        const r = await Bridge.send('calc', { expr: q, opts: Object.assign(engineOpts(), { approx: 'approx', grouping: false, base: 10, notation: 'auto', fraction: 'decimal', mixed_units: false, units: 'none' }), timeout: 3000 });
+        if (seq !== C.seq) return;
+        const res = r.ok && r.result ? r.result.split(' ≈ ').pop().replace(/^[≈=]\s*/, '') : '';
+        const m = res.match(/^([−-]?[\d.]+(?:E[−+-]?\d+)?)\s*(°?[A-Za-zµ°]*)$/);
+        if (!r.ok || r.timeout || !m || (!temp && m[2]) || (r.messages || []).some((x) => x.type === 'error')) { msg.textContent = localMessage(r.error) || tr('This cannot be converted: check the value', '換算できません。値を確かめてください'); dst.value = ''; return; }
+        dst.value = fmtOut(m[1]);
+        showRow(toDisplay(v) + ' ' + A.abbr, fmtOut(m[1]) + ' ' + B.abbr, expr);
+      }, 150);
+      const showRow = (from, to, expr) => {
+        const node = tapButton({ class: 'geo-row tool-main' }, () => { resultSheet(from, expr || to, '= ' + to, to); });
+        node.append(el('span', { class: 'geo-name', text: from }), el('span', { class: 'geo-val', text: '= ' + to }));
+        outs.append(node);
+        // the pair, remembered (the four last)
+        const pair = { kind: C.kind, a: uA.value, b: uB.value };
+        const list = (store.get('qalc.conv.recent', []) || []).filter((q) => !(q.kind === pair.kind && q.a === pair.a && q.b === pair.b));
+        list.unshift(pair);
+        store.set('qalc.conv.recent', list.slice(0, 4));
+        showRecent();
+      };
+      const showRecent = () => {
+        recentRow.textContent = '';
+        const list = (store.get('qalc.conv.recent', []) || []).filter((q) => q && q.kind && q.a && q.b);
+        if (!list.length) return;
+        const abbr = (kind, name) => (kind === 'fuel' ? (FUEL.find((f) => f[0] === name) || [0, name])[1] : ((catalogs.units || []).find((u) => u.name === name) || { abbr: name }).abbr);
+        recentRow.append(el('span', { class: 'area-lbl', text: tr('Used last: ', '最近：') }),
+          ...list.map((q) => tapButton({ class: 'area-chip', text: abbr(q.kind, q.a) + ' → ' + abbr(q.kind, q.b) }, () => { setKind(q.kind, [q.a, q.b]); C.from = 'a'; convert(); })));
+      };
+      vA.addEventListener('input', () => { C.from = 'a'; save(); convert(); });
+      vB.addEventListener('input', () => { C.from = 'b'; convert(); });
+      uA.addEventListener('change', () => { save(); convert(); });
+      uB.addEventListener('change', () => { save(); convert(); });
+      other.addEventListener('change', () => { if (other.value) { setKind(other.value); C.from = 'a'; convert(); } });
+      msg.textContent = tr('Loading the units…', '単位を読み込み中…');
+      loadCatalog('units').then(() => {
+        msg.textContent = '';
+        for (const [k, name] of CONV_KINDS()) {
+          if (k !== 'fuel' && !unitsOf(k).length) continue;
+          kinds.append(tapButton({ class: 'geo-chip', 'data-kind': k, 'aria-pressed': 'false', text: name }, () => { setKind(k); C.from = 'a'; convert(); }));
+        }
+        const tops = Array.from(new Set((catalogs.units || []).map((it) => it._top))).filter((t) => t && !CONV_KINDS().some((k) => (KIND_ALIASES[k[0]] || [k[0]]).indexOf(t) >= 0)).sort((x, y) => catName(x).localeCompare(catName(y)));
+        other.append(el('option', { value: '', text: tr('Choose…', '選ぶ…') }), ...tops.map((t) => el('option', { value: t, text: catName(t) })));
+        setKind(C.kind, saved.a && saved.b ? [saved.a, saved.b] : null);
+        showRecent();
+        convert();
+      }).catch(() => { msg.textContent = tr('Could not load the units', '単位を読み込めませんでした'); });
+      p.conv = { vA, vB, uA, uB, setKind };
+    });
+    return p;
+  }
+
   // ---------------------------------------------------------------- tools
   // "Tools" (1.12.0): every tool in one place, found by what one wants to do. A search box on top
   // (the words of all seven languages find a tool, whatever the language of the page: VAT,
@@ -11260,6 +11404,10 @@
   const TOOL_GROUPS = [['shop', tr('Shopping', '買い物')], ['money', tr('Money', 'お金')], ['time', tr('Dates and times', '日付と時間')],
     ['convert', tr('Conversion', '換算')], ['geo', tr('Shapes and volumes', '図形と体積')], ['data', tr('Data', 'データ')]];
   const TOOLS = [
+    // 1.12.0 (C2): conversion
+    ['convert', 'convert', '⇄', tr('Convert units and currencies', '単位・通貨の換算'), tr('Length, weight, volume, temperature, fuel economy, currencies…', '長さ・重さ・体積・温度・燃費・通貨など'),
+      'convert conversion unit units currency exchange mile km inch feet pound kg celsius fahrenheit fuel mpg 換算 変換 単位 通貨 為替 マイル インチ フィート ポンド 摂氏 華氏 燃費 尺 坪 升 かんさん たんい umrechnen Einheit Währung convertir unidad moneda convertir unité devise 변환 단위 환율 통화 換算 單位 貨幣 匯率',
+      () => openConverter()],
     // 1.12.0 (C1): everyday calculations
     ['price', 'shop', '🏷', tr('Price: discount and tax', '値段：割引と税'), tr('Tax included or not, a discount (also two), rounding', '税込・税抜、割引（2 回も）、端数の扱い'),
       'price tax vat sales discount off percent sale shopping 値段 消費税 税込 税抜 税 割引 値引き 割 セール ぜいこみ わりびき Preis Mehrwertsteuer MwSt Steuer Rabatt precio IVA impuesto descuento prix TVA taxe remise réduction 가격 부가세 세금 할인 價格 營業稅 稅 折扣',
@@ -11731,7 +11879,8 @@
     cross_sections: ['◪', tr('Cross sections', '断面の立体'), tr('Squares, triangles or half discs on a base region', '底面の上に正方形・三角形・半円を立てた立体')],
     rev_lines: ['☰', tr('Lines of the method and Pappus', '方法の線とパップスの定理'), tr('Disks or shells drawn in the graph; V = 2π d A', 'グラフに円板・殻の線、V = 2π d A')],
     everyday: ['🏷', tr('Everyday tools', '日常の計算'), tr('Price and tax, loan, savings, dates and times', '値段と税、ローン、積立、日付と時間')],
-    tables: ['📄', tr('Tables as CSV files', '表の CSV 保存'), tr('Save the table of a loan or of savings for a spreadsheet', 'ローンや積立の表を、表計算ソフト用に保存')]
+    tables: ['📄', tr('Tables as CSV files', '表の CSV 保存'), tr('Save the table of a loan or of savings for a spreadsheet', 'ローンや積立の表を、表計算ソフト用に保存')],
+    convert: ['⇄', tr('Convert units and currencies', '単位・通貨の換算'), tr('Two boxes that convert both ways', '両方向に換算できる 2 つの欄')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {
