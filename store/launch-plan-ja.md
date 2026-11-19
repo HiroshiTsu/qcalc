@@ -47,7 +47,7 @@
    - アイコンは今までと同じ store/icon-512.png です。
 6. **YouTube**（下の 2 の設定で）：言語ごとに promo.mp4（Play の宣伝動画）、youtube.mp4（紹介動画）、short-1〜3.mp4（ショート）を上げます。
 7. **Play の宣伝動画**：Play Console の掲載情報の「動画」欄（YouTube の URL）に、言語ごとの promo の URL を入れます。
-8. **クローズドテスト**：テスト版を出し、感想を集めます（要判断 66 の「不具合・要望を送る」を入れた場合はそこから、入れない場合はメールで）。
+8. **クローズドテスト**：テスト版を出し、テスターに案内文（下の 9）を送り、感想を集めます（アプリの「このアプリについて」→「不具合・要望を送る」から届くメール）。12 人以上が 14 日続けて参加してから、本番を申請します。
 9. **本番の公開**のあと、24 時間以内にレビューへ返信します（下の 5）。
 10. **A/B テスト**は、公開して 1 日に数百人以上がストアの画面を見るようになってから（下の 3）。
 
@@ -110,7 +110,7 @@ Play Console →「ストアの掲載情報のテスト」。1 回に試すの�
 | 場面 | 日本語 | English |
 |---|---|---|
 | 良い評価 | レビューをありがとうございます。役に立っているとうかがい、うれしいです。これからも使いやすくしていきます。 | Thank you for the review. I'm glad QCalc is useful to you, and I'll keep making it easier to use. |
-| 不具合 | お知らせありがとうございます。直すために、式と手順、端末の機種を hiroshitsu.apps@gmail.com に送っていただけますか。 | Thank you for letting me know. To fix it, could you send the expression, the steps and your phone model to hiroshitsu.apps@gmail.com? |
+| 不具合 | お知らせありがとうございます。直すために、式と手順を、アプリの「このアプリについて」→「不具合・要望を送る」（版と端末は自動で入ります）か hiroshitsu.apps@gmail.com で教えていただけますか。 | Thank you for letting me know. To fix it, could you send the expression and the steps from "About this app" → "Send a bug report or an idea" (it adds the version and the phone) or to hiroshitsu.apps@gmail.com? |
 | 要望 | ご提案ありがとうございます。次の版で検討します。 | Thank you for the idea. I'll consider it for a coming version. |
 | 使い方が分からない | 各画面の「？」から、その画面の使い方が開きます。○○は「☰ → 道具 → ○○」にあります。 | Tap "?" on a screen to open its help. You'll find ... under ☰ → Tools → .... |
 | Pro について | Pro の機能は仕事向けのもので、学習と日常に使う機能は購入しなくてもすべて使えます。Pro は 1 回の購入で、定期購入ではありません。 | The Pro features are meant for work; everything for learning and everyday use works without buying it. Pro is a one-time purchase, not a subscription. |
@@ -149,6 +149,57 @@ docs/press/index.html に、記事を書く人のためのページを作りま�
 - **繁體中文（台灣）**：「工程計算機」「速查表」「封頭」「分帳」。**（香港）**：「計數機」「按揭」「夾錢」「地盤」が香港の言い方として自然か。
 - **英語（英・豪）**：「maths」「surds」「turning points」「VAT」「GST」の例。
 - どの言語も：スクリーンショットの見出しが 2 行に収まって読めるか（小さな表示で）、動画の字幕の速さ。
+
+## 9. クローズドテストのテスターへの案内文
+
+新しい個人の開発者アカウントは、本番に出す前に「12 人以上のテスターが 14 日以上続けて参加したクローズドテスト」が要ります。本番の申請では、テスターの集めやすさ、使われ方（すべての機能を使ったか）、感想の要約と集め方を聞かれます（Play Console ヘルプ answer 14151465）。1.12.0 には「このアプリについて」→「不具合・要望を送る」を入れたので（要判断 66）、感想はそこからのメールで集め、申請では「アプリの中のメールの下書き（版・端末・言語だけが入る）と、テスターへの直接の連絡で集めた」と書けます。
+
+送る前に本人が入れるもの：［テストに参加するリンク］（Play Console →「テスト」→「クローズド テスト」→ テスターのタブにある参加用の URL）、［締め切りの日付］（参加してから 14 日以上あと）。
+
+### 日本語
+
+件名：Android の電卓アプリ QCalc のテストへのご協力のお願い
+
+こんにちは。Android の関数電卓アプリ「QCalc」を作っています。Google Play で公開する前のテストに、ご協力いただけないでしょうか。
+
+1. 次のリンクを Android のスマートフォンで開き、「テスターになる」を押してください：［テストに参加するリンク］
+2. 同じページの「Google Play でダウンロード」から入れます（Android 7.0 以上、64 ビットの端末）。
+3. **14 日間は入れたままにして、テストから抜けないでください**（Google の決まりで、14 日続けて参加した人が 12 人以上いないと公開できません）。
+4. 時間のあるときに、次のうちいくつかを試してみてください（説明は見ずに、どこまでできるか）：
+   - 1,500 円の品物が 1 割引、税 8 % でいくら？
+   - 5 km は何マイル？
+   - 3,000 万円を年 1 %・35 年で借りると、毎月の返済は？
+   - 今日から 100 日後は何月何日？
+   - グラフで y = x と y = x² を描き、「⟳ 3D」を押す
+   - 困ったら、各画面の「？」から説明書を開く
+5. 分かりにくかった所、動かなかった所、ほしい機能は、アプリの「☰ → このアプリについて → 不具合・要望を送る」から送ってください（メールの下書きには版・端末・言語だけが入ります）。メールで直接 hiroshitsu.apps@gmail.com に送っていただいてもかまいません。
+
+QCalc は個人情報を集めず、広告もありません。テストで入れた QCalc は、公開後もそのまま使えます。［締め切りの日付］ごろまで、どうぞよろしくお願いします。
+
+### English
+
+Subject: Could you help test QCalc, a calculator app for Android?
+
+Hi! I'm making QCalc, a scientific calculator for Android, and I'd like to test it before it goes on Google Play. Could you help?
+
+1. Open this link on your Android phone and tap "Become a tester": [link to join the test]
+2. Install QCalc from "Download it on Google Play" on the same page (Android 7.0 or later, 64-bit).
+3. **Please keep it installed and stay in the test for 14 days** (Google lets an app be published only after at least 12 testers have stayed in for 14 days in a row).
+4. When you have time, try a few of these, without reading any help first:
+   - A price of 1,500 with 10 % off and 8 % tax: how much?
+   - How many miles is 5 km?
+   - Borrowing 300,000 at 5 % for 30 years: the monthly payment?
+   - What date is 100 days from today?
+   - In the graph, draw y = x and y = x² and tap "⟳ 3D"
+   - If you get stuck, tap "?" on the screen to open the manual
+5. Please tell me what was unclear, what didn't work and what you would like: in the app, ☰ → About this app → Send a bug report or an idea (the draft has only the version, the phone and the language), or by mail to hiroshitsu.apps@gmail.com.
+
+QCalc collects no personal data and has no ads. The copy you install for the test keeps working after the release. Thank you very much — the test runs until about [end date].
+
+### テスターの募集
+
+- 家族・友人・知人のほか、テスターを集める場（「12 人のテスター」を互いに手伝うコミュニティなど）があります。使うときは、その場の決まりと、Google の決まり（お金やお返しで評価を集めない）を守ります。
+- テスターには、評価やレビューを頼まないでください（クローズドテストの間はストアにレビューを書けません。公開後も、見返りのあるお願いは Google の方針に反します）。
 
 ## 8. 守っている決まり（確認用）
 

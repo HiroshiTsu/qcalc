@@ -11,7 +11,8 @@ owner's recording or a voice service before publishing if they are not good enou
   en, de, es, fr   eSpeak NG with MBROLA voices us2, de6, es2, fr4 (packages espeak-ng, mbrola,
           mbrola-us2, mbrola-de6, mbrola-es2, mbrola-fr4)
   ko, zh-TW        eSpeak NG (ko, cmn)
-A line that comes out longer than its subtitle is spoken faster (up to 1.35 times).
+A line that comes out longer than its subtitle is spoken faster (up to 1.35 times in Japanese, 1.5 in
+the others).
 Usage: python3 store/tools/video_voice.py <work folder> [langs] [videos]
 """
 import os
@@ -30,7 +31,7 @@ LANGS = sys.argv[2].split(',') if len(sys.argv) > 2 else list(PLAN['langs'])
 ONLY = sys.argv[3].split(',') if len(sys.argv) > 3 else None
 JDIC = '/var/lib/mecab/dic/open-jtalk/naist-jdic'
 HTS = '/usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice'
-ESPEAK = {'en': ('mb-us2', 150), 'de': ('mb-de6', 145), 'es': ('mb-es2', 150), 'fr': ('mb-fr4', 150), 'ko': ('ko', 165), 'zh-TW': ('cmn', 160)}
+ESPEAK = {'en': ('mb-us2', 150), 'de': ('mb-de6', 145), 'es': ('mb-es2', 150), 'fr': ('mb-fr4', 150), 'ko': ('ko', 165), 'zh-TW': ('cmn', 190)}
 # how the narration is read aloud (the subtitles keep the written form)
 SAY = {
     'ja': [('QCalc Pro', 'キューカルク・プロ'), ('QCalc', 'キューカルク'), ('⟳ 3D', 'スリーディー'), ('3D', 'スリーディー'), ('2D', 'ツーディー'), ('STL', 'エスティーエル'),
@@ -87,8 +88,9 @@ def voice(lang, name, segs):
         w = os.path.join(d, '%02d.wav' % i)
         speed = 1.0
         dur = synth(lang, text, w, speed)
-        while dur > slot and speed < 1.35:
-            speed = min(1.35, speed * dur / slot + 0.02)
+        top = 1.35 if lang == 'ja' else 1.5
+        while dur > slot and speed < top:
+            speed = min(top, speed * dur / slot + 0.02)
             dur = synth(lang, text, w, speed)
         parts.append((a, w, dur, slot))
     total = sum(float(s['dur']) for s in segs)
