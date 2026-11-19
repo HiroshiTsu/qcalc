@@ -1502,7 +1502,11 @@
     "A calculation on each line with its result; names, totals, units and currencies": "Un calcul par ligne avec son résultat ; noms, totaux, unités et devises",
     "Memo saved": "Note enregistrée",
     "More calculation notes, saved as files": "Plus de notes de calcul, enregistrées en fichiers",
-    "Several memos of calculations, and saving them as text or CSV (the first memo is free)": "Plusieurs notes de calcul, et leur enregistrement en texte ou CSV (la première note est gratuite)"
+    "Several memos of calculations, and saving them as text or CSV (the first memo is free)": "Plusieurs notes de calcul, et leur enregistrement en texte ou CSV (la première note est gratuite)",
+    "A cell takes one number or expression: \";\" cannot be used (the decimal sign is \",\")": "Une cellule contient un nombre ou une expression : « ; » ne peut pas être utilisé (le séparateur décimal est « , »)",
+    "A size is one number or expression (the decimal sign is \",\")": "Une dimension est un nombre ou une expression (le séparateur décimal est « , »)",
+    "Gray numbers are examples: the results use them until you type your own sizes.": "Les nombres en gris sont des exemples : les résultats les utilisent jusqu’à ce que vous saisissiez vos dimensions.",
+    "Show the row of x, ans, the arrows and the keyboard": "Afficher la rangée de x, ans, des flèches et du clavier"
   },
   messages: {
     "rates-old": (p1) => "Les taux de change n’ont pas été mis à jour depuis " + p1 + " " + (p1 === '1' ? "jour" : "jours") + " (Paramètres → « Mettre à jour les taux de change maintenant »)",

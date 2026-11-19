@@ -1502,7 +1502,11 @@
     "A calculation on each line with its result; names, totals, units and currencies": "Eine Rechnung pro Zeile mit Ergebnis; Namen, Summen, Einheiten und Währungen",
     "Memo saved": "Notiz gespeichert",
     "More calculation notes, saved as files": "Weitere Rechennotizen, als Dateien gespeichert",
-    "Several memos of calculations, and saving them as text or CSV (the first memo is free)": "Mehrere Rechennotizen und ihr Speichern als Text oder CSV (die erste Notiz ist kostenlos)"
+    "Several memos of calculations, and saving them as text or CSV (the first memo is free)": "Mehrere Rechennotizen und ihr Speichern als Text oder CSV (die erste Notiz ist kostenlos)",
+    "A cell takes one number or expression: \";\" cannot be used (the decimal sign is \",\")": "Eine Zelle nimmt eine Zahl oder einen Ausdruck auf: „;“ kann nicht verwendet werden (das Dezimaltrennzeichen ist „,“)",
+    "A size is one number or expression (the decimal sign is \",\")": "Eine Größe ist eine Zahl oder ein Ausdruck (das Dezimaltrennzeichen ist „,“)",
+    "Gray numbers are examples: the results use them until you type your own sizes.": "Graue Zahlen sind Beispiele: Die Ergebnisse verwenden sie, bis du deine eigenen Maße eingibst.",
+    "Show the row of x, ans, the arrows and the keyboard": "Die Reihe mit x, ans, den Pfeilen und der Tastatur zeigen"
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",

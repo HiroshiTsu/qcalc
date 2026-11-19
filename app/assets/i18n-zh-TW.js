@@ -1506,7 +1506,11 @@
     "A calculation on each line with its result; names, totals, units and currencies": "逐行計算並在右側顯示結果；名稱、合計、單位、貨幣皆可",
     "Memo saved": "已儲存筆記",
     "More calculation notes, saved as files": "第二則以後的計算筆記與匯出",
-    "Several memos of calculations, and saving them as text or CSV (the first memo is free)": "建立多則計算筆記，並存成文字或 CSV（第一則免費）"
+    "Several memos of calculations, and saving them as text or CSV (the first memo is free)": "建立多則計算筆記，並存成文字或 CSV（第一則免費）",
+    "A cell takes one number or expression: \";\" cannot be used (the decimal sign is \",\")": "一格只能填一個數或運算式：不能使用「;」（小數點是「,」）",
+    "A size is one number or expression (the decimal sign is \",\")": "尺寸請填一個數或運算式（小數點是「,」）",
+    "Gray numbers are examples: the results use them until you type your own sizes.": "灰色的數字是範例：在輸入自己的尺寸之前，結果都用範例值計算。",
+    "Show the row of x, ans, the arrows and the keyboard": "顯示 x、ans、方向鍵和鍵盤那一列"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",

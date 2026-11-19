@@ -1514,7 +1514,11 @@
     "A calculation on each line with its result; names, totals, units and currencies": "Un cálculo por línea con su resultado; nombres, totales, unidades y monedas",
     "Memo saved": "Nota guardada",
     "More calculation notes, saved as files": "Más notas de cálculo, guardadas como archivos",
-    "Several memos of calculations, and saving them as text or CSV (the first memo is free)": "Varias notas de cálculo y guardarlas como texto o CSV (la primera nota es gratis)"
+    "Several memos of calculations, and saving them as text or CSV (the first memo is free)": "Varias notas de cálculo y guardarlas como texto o CSV (la primera nota es gratis)",
+    "A cell takes one number or expression: \";\" cannot be used (the decimal sign is \",\")": "Una celda lleva un número o una expresión: no se puede usar \";\" (el separador decimal es \",\")",
+    "A size is one number or expression (the decimal sign is \",\")": "Una medida es un número o una expresión (el separador decimal es \",\")",
+    "Gray numbers are examples: the results use them until you type your own sizes.": "Los números en gris son ejemplos: los resultados los usan hasta que escribas tus medidas.",
+    "Show the row of x, ans, the arrows and the keyboard": "Mostrar la fila de x, ans, las flechas y el teclado"
   },
   messages: {
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (Ajustes → "Actualizar los tipos de cambio ahora")',

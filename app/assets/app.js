@@ -254,6 +254,7 @@
     document.documentElement.style.setProperty('--fs', String(textScale()));
     document.documentElement.style.setProperty('--pfs', String(Math.min(1.15, SYS_FONT)));
     autosize();
+    if (typeof applyCompactKeys === 'function') applyCompactKeys();
   }
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
   S.lang = LANG_AUTO ? 'auto' : LANG; // the language in use (qalc.lang, or 'auto'), whatever qalc.settings says
@@ -681,8 +682,36 @@
       bindPress(b, () => { vibrate(); setPage(id); });
       tabs.append(b);
     }
+    // 1.12.0 (F, 要判断 39 (b), the author's decision): the ⌨ at the end of the tabs, which shows the top row of
+    // keys when large text hides it (outside the tab list, for screen readers)
+    if (!$('#tb-toggle')) {
+      const row = el('div', { class: 'pages-row' });
+      tabs.parentNode.insertBefore(row, tabs);
+      row.append(tabs);
+      const t = el('button', { class: 'tb-toggle', id: 'tb-toggle', text: '⌨', 'aria-controls': 'toolbar', 'aria-expanded': 'false', 'aria-label': tr('Show the row of x, ans, the arrows and the keyboard', 'x・ans・矢印・キーボードの段を出す'), hidden: true });
+      bindPress(t, () => { vibrate(); store.set('qalc.tbopen', !$('#keypad').classList.contains('tb-open')); applyCompactKeys(); histEl.scrollTop = histEl.scrollHeight; });
+      row.append(t);
+    }
     renderPage();
     updateToolbar();
+    applyCompactKeys();
+  }
+  // 1.12.0 (F, 要判断 39 (b), the author's decision): with large text (the phone's text at 130 % or more, or
+  // "Extra large") on a phone, the top row of keys (x , a=b → ans ⌨ ◀ ▶) is hidden and shown from the ⌨ at the
+  // end of the tabs, so that the history keeps room for a result or two (320 × 640 at 200 %: one result
+  // before). A phone: the shorter side of the screen under 600 px (the screen, not the window, so that the
+  // phone keyboard opening does not hide the row). Whether the row is shown is remembered (qalc.tbopen).
+  function compactKeys() { return textScale() >= 1.3 && Math.min(screen.width || 9999, screen.height || 9999) < 600; }
+  function applyCompactKeys() {
+    const kp = $('#keypad'), t = $('#tb-toggle');
+    if (!kp || !t) return;
+    const on = compactKeys(), open = on && store.get('qalc.tbopen', false) === true;
+    kp.classList.toggle('kb-compact', on);
+    kp.classList.toggle('tb-open', open);
+    document.documentElement.classList.toggle('big-keys', on);
+    t.hidden = !on;
+    t.setAttribute('aria-expanded', String(open));
+    t.classList.toggle('on', open);
   }
   function setPage(id) {
     if (page === id || !PAGES[id]) return;
@@ -1643,7 +1672,8 @@
       const sc = scanBox(t), cell = CF.boxes[k].classList.contains('cell');
       if (sc.extra) add(k, tr('There is a ")" without its "("', '「)」に対応する「(」がありません'));
       else if (sc.comma && !(F.eqs && k === 'v')) {
-        add(k, cell ? tr('A cell takes one number or expression: "," and ";" cannot be used (the decimal point is ".")', '1 つの欄には数か式を 1 つだけ入れます。「,」や「;」は使えません（小数点は「.」）')
+        // (with a decimal comma, the message says so: 1.12.0, F)
+        add(k, cell ? (commaMode ? tr('A cell takes one number or expression: ";" cannot be used (the decimal sign is ",")', '1 つの欄には数か式を 1 つだけ入れます。「;」は使えません（小数点は「,」）') : tr('A cell takes one number or expression: "," and ";" cannot be used (the decimal point is ".")', '1 つの欄には数か式を 1 つだけ入れます。「,」や「;」は使えません（小数点は「.」）'))
           : tr('"," and ";" cannot be used in this box', 'この欄に「,」や「;」は使えません'));
       } else if (sc.bracket && cell) add(k, tr('A cell takes one number or expression, not a matrix', '欄の中に行列（[ ]）は入れられません'));
     }
@@ -3003,7 +3033,7 @@
     const mcols = mat ? parseMatrix(mat).rows[0].length : 0;
     if (mcols === 2) more.push(['m-plot', tr('Draw the rows as points (2D graph)', '各行を点としてグラフに描く（2D）')]);
     else if (mcols === 3) more.push(['m-plot', tr('Draw the rows as points (3D graph)', '各行を点としてグラフに描く（3D）')]);
-    const a = await sheet((h.t ? fmtTime(h.t / 1000) + '\n' : '') + clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300), more.concat([
+    const a = await sheet((h.t ? fmtTime(h.t / 1000) + '\n' : '') + clip(toDisplay(h.expr), 300) + '\n' + clip(displayText(h.result), 300), more.concat([
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')],
       ['star', h.star ? tr('★ Unpin', '★ 固定を外す') : tr('☆ Pin at the top', '☆ 上に固定')],
@@ -4005,8 +4035,9 @@
     // another graph than the sample whose card is marked (an example shape, a form): the mark goes (1.8.2)
     if (!opts.sample && P.samples) P.samples.clearChoice();
     const list = (Array.isArray(exprs) ? exprs : [exprs]).filter(Boolean).slice(0, 6);
-    store.set('qalc.plot.exprs', list.join('\n'));
-    if (opts.range) { store.set('qalc.plot.min', String(opts.range[0])); store.set('qalc.plot.max', String(opts.range[1])); }
+    // (the fields as typed: in the number format, BG14)
+    store.set('qalc.plot.exprs', toDisplay(list.join('\n')));
+    if (opts.range) { store.set('qalc.plot.min', toDisplay(String(opts.range[0]))); store.set('qalc.plot.max', toDisplay(String(opts.range[1]))); }
     store.set('qalc.plot.mode', '2d');
     P.points = opts.points || null;
     P.marks = [];
@@ -4017,8 +4048,8 @@
     if (!built) store.set('qalc.plot.ok', true);
     openPlot();
     if (built && P.ta) {
-      P.ta.value = list.join('\n');
-      if (opts.range) { P.xmin.value = String(opts.range[0]); P.xmax.value = String(opts.range[1]); }
+      P.ta.value = toDisplay(list.join('\n'));
+      if (opts.range) { P.xmin.value = toDisplay(String(opts.range[0])); P.xmax.value = toDisplay(String(opts.range[1])); }
       P.setMode('2d');
       P.keep = true;
       P.go.click();
@@ -4059,7 +4090,7 @@
     }
     if (o.tangentAt !== undefined && o.tangentAt !== null && o.tangentAt !== '' && f) {
       const line = await drawTangent(f, String(o.tangentAt));
-      if (line) { P.ta.value = P.ta.value.trim() + '\n' + line; P.keep = true; P.go.click(); return; }
+      if (line) { P.ta.value = P.ta.value.trim() + '\n' + toDisplay(line); P.keep = true; P.go.click(); return; }
     }
     if (o.area && f && P.areaUI) {
       const U = P.areaUI;
@@ -4069,7 +4100,7 @@
       areaFunctionsChanged();
       U.f1.value = '0'; U.f2.value = o.area.between && P.series.length > 1 ? '1' : 'axis';
       await areaPairChanged();
-      U.a.value = String(o.area.a); U.b.value = String(o.area.b);
+      U.a.value = toDisplay(String(o.area.a)); U.b.value = toDisplay(String(o.area.b));
       await computeArea(); // the result the switch shows (the area or the length/perimeter)
     }
     draw();
@@ -4116,7 +4147,7 @@
     P.dataX = isFinite(x0) ? [x0, x1] : null;
     if (!keepView) P.view = null;
     P.legend.textContent = '';
-    for (const s of P.series) P.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.y.some((v) => v !== null) ? '' : tr(' (no values)', '（値なし）')) }));
+    for (const s of P.series) P.legend.append(el('span', { style: '--c:' + s.color, text: toDisplay(s.expr) + (s.y.some((v) => v !== null) ? '' : tr(' (no values)', '（値なし）')) }));
     // (1.12.0, C4: the points of the statistics with their regression line)
     if (P.points && P.points.length) P.legend.append(el('span', { class: 'legend-points', style: '--c:' + COLORS[0], text: tr('Points: ', '点：') + P.points.length }));
     if (kept && P.series[kept[0]] && (kept[1] < 0 || P.series[kept[1]])) {
@@ -4510,7 +4541,7 @@
       const lines = P.ta.value.split('\n').map((t) => t.trim()).filter(Boolean);
       if (lines.indexOf(expr) >= 0) return;
       if (lines.length >= 6) { toast(tr('Up to 6 functions', '関数は 6 つまでです'), 1800); return; }
-      P.ta.value = lines.concat(expr).join('\n');
+      P.ta.value = lines.concat(toDisplay(expr)).join('\n');
       P.keep = true;
       P.go.click();
     };
@@ -4533,7 +4564,7 @@
   function calcFunctionsChanged() {
     const U = P.calcUI, keep = U.f.value;
     U.f.textContent = '';
-    P.series.forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(s1.expr, 34) })));
+    P.series.forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(toDisplay(s1.expr), 34) })));
     U.f.value = keep !== '' && P.series[Number(keep)] ? keep : '0';
   }
   // the tangent of f at x = a: its line as an expression (to draw), the point marked, the equation shown
@@ -5115,7 +5146,7 @@
     ins.addEventListener('click', () => { const e = P.areaUI.mode === 'len' ? P.lenExpr : P.areaExpr; if (e) useExample(e); });
     // a tap on the result offers the three actions of every tool
     out.addEventListener('click', () => { const U = P.areaUI; if (P.areaExpr && U.areaText && U.areaKey) resultSheet(tr('Area', '面積'), P.areaExpr, U.areaText); });
-    len.addEventListener('click', () => { const U = P.areaUI; if (P.lenExpr && U.lenText && U.lenKey) resultSheet(U.lenName || tr('Length', '長さ・周'), P.lenExpr, U.lenText); });
+    len.addEventListener('click', () => { const U = P.areaUI; if (P.lenExpr && U.lenText && U.lenKey) resultSheet(U.lenName || tr('Length', '長さ・周'), P.lenExpr, valueShown(U.lenText)); });
     P.areaUI = { f1, f2, a, b, cross, out, ins, box, areaOnly, areaOpen: false, len, rev, toggle, go, lenBtn, mode: store.get('qalc.area.mode', 'area') === 'len' ? 'len' : 'area' };
     showAreaMode();
     syncAreaBox(); // "Make a solid" open since the last time (qalc.rev, also of 1.11.0)
@@ -5200,8 +5231,8 @@
     const U = P.areaUI, keep1 = U.f1.value, keep2 = U.f2.value;
     U.f1.textContent = ''; U.f2.textContent = '';
     P.series.forEach((s, i) => {
-      U.f1.append(el('option', { value: String(i), text: clip(s.expr, 30) }));
-      U.f2.append(el('option', { value: String(i), text: clip(s.expr, 30) }));
+      U.f1.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) }));
+      U.f2.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) }));
     });
     U.f2.prepend(el('option', { value: 'axis', text: tr('the x axis', 'x 軸') }));
     // the same choice as before while the number of functions stays the same; else the first
@@ -5256,7 +5287,7 @@
     if (pts.length) {
       U.cross.append(el('span', { class: 'area-lbl', text: tr('Crossing points: ', '交点：') + pts.map((p) => short(p.x)).join(', ') }));
       const range = (i, j) => {
-        const c = tapButton({ class: 'area-chip', text: short(pts[i].x) + ' 〜 ' + short(pts[j].x) }, () => { U.a.value = pts[i].text; U.b.value = pts[j].text; computeArea(); });
+        const c = tapButton({ class: 'area-chip', text: short(pts[i].x) + ' 〜 ' + short(pts[j].x) }, () => { U.a.value = toDisplay(pts[i].text); U.b.value = toDisplay(pts[j].text); computeArea(); });
         U.cross.append(c);
       };
       for (let i = 0; i + 1 < pts.length && i < 6; i++) range(i, i + 1);
@@ -5264,9 +5295,9 @@
     }
     // the range to start with: from the first to the last crossing point, else the part of the
     // drawn range where the functions have real values
-    if (pts.length >= 2) { U.a.value = pts[0].text; U.b.value = pts[pts.length - 1].text; }
-    else if (real && real.clipped && real.parts.length) { U.a.value = real.parts[0].a; U.b.value = real.parts[real.parts.length - 1].b; }
-    else if (view) { U.a.value = String(view.lo); U.b.value = String(view.hi); }
+    if (pts.length >= 2) { U.a.value = toDisplay(pts[0].text); U.b.value = toDisplay(pts[pts.length - 1].text); }
+    else if (real && real.clipped && real.parts.length) { U.a.value = toDisplay(String(real.parts[0].a)); U.b.value = toDisplay(String(real.parts[real.parts.length - 1].b)); }
+    else if (view) { U.a.value = toDisplay(String(view.lo)); U.b.value = toDisplay(String(view.hi)); }
     if (auto) await computeArea(true);
     else if (U.rev && !U.rev.box.hidden) computeRevolution(true);
   }
@@ -5459,7 +5490,7 @@
       return;
     }
     U.out.textContent = '';
-    U.areaText = r.result.indexOf('≈ ') === 0 ? r.result : resultText(r);
+    U.areaText = r.result.indexOf('≈ ') === 0 ? valueShown(r.result) : resultText(r); // (as shown: BG13)
     showResult(U.out, tr('Area ', '面積 ') + U.areaText);
     if (real) U.out.append(el('div', { class: 'form-hint', text: realNote(!!g, real.parts) }));
     P.areaExpr = expr;
@@ -6182,7 +6213,7 @@
     const A = await sumValues(As), M = await sumValues(Ms);
     if (stale() || !(A.v > 0)) return;
     const d = M.v / A.v, Vp = 2 * Math.PI * d * A.v, same = Math.abs(Vp - V) <= 1e-7 * Math.max(1, Math.abs(V));
-    R.pappus.textContent = head + 'A = ' + toDisplay(clip(A.text, 30)) + ',  d = ' + toDisplay(fmtV(+d.toPrecision(9))) + ',  V = 2π d A ≈ ' + toDisplay(fmtV(+Vp.toPrecision(10))) +
+    R.pappus.textContent = head + 'A = ' + valueShown(clip(A.text, 30)) + ',  d = ' + valueShown(fmtV(+d.toPrecision(9))) + ',  V = 2π d A ≈ ' + valueShown(fmtV(+Vp.toPrecision(10))) +
       (same ? tr('  ✓ the same as the integral', '  ✓ 積分の値と一致') : '');
   }
   // a row of the results: its name, the formula in small letters, the value; tapping it offers to put
@@ -6192,7 +6223,7 @@
     const row = { val, expr: '', result: '' };
     row.node = tapButton({ class: 'geo-row' }, async () => {
       if (!row.expr) return;
-      resultSheet(name, row.expr, row.result);
+      resultSheet(name, row.expr, valueShown(row.result));
     });
     row.node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), val);
     R.outs.append(row.node);
@@ -6345,7 +6376,7 @@
       const lines = Q3.ta.value.split('\n').map((t) => t.trim()).filter(Boolean);
       if (lines.indexOf(expr) >= 0) return;
       if (lines.length >= 4) { toast(tr('Up to 4 surfaces', '曲面は 4 つまでです'), 1800); return; }
-      Q3.ta.value = lines.concat(expr).join('\n');
+      Q3.ta.value = lines.concat(toDisplay(expr)).join('\n');
       Q3.keep = true;
       Q3.go.click();
     };
@@ -6366,7 +6397,7 @@
     if (!U) return;
     const keep = U.f.value;
     U.f.textContent = '';
-    (Q3.data ? Q3.data.series : []).forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(s1.expr, 34) })));
+    (Q3.data ? Q3.data.series : []).forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(toDisplay(s1.expr), 34) })));
     U.f.value = keep !== '' && Q3.data && Q3.data.series[Number(keep)] ? keep : '0';
   }
 
@@ -6455,8 +6486,8 @@
         C.kind = kind; kindSel.value = kind; C.vals[kind] = Object.assign({}, vals);
         if (kind === 'sector') setUnit('deg');
         saveC(); buildFields(); C.clearErr();
-        Q3.ta.value = exprs;
-        Q3.inputs.forEach((e, i) => { e.value = range[i]; });
+        Q3.ta.value = toDisplay(exprs);
+        Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(range[i])); });
         Q3.equalOnce = false;
         if (Q3.samples) Q3.samples.clearChoice();
         setRegion('custom', true);
@@ -6540,8 +6571,8 @@
     const r2 = (await symText(`(${r})^2`)) || `(${r})^2`;
     const top = `√(${r2} − x^2 − y^2)`;
     const w = n * 1.1;
-    Q3.ta.value = top + '\n−' + top;
-    Q3.inputs.forEach((e, i) => { e.value = r6(i % 2 ? w : -w); });
+    Q3.ta.value = toDisplay(top + '\n−' + top);
+    Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(r6(i % 2 ? w : -w))); });
     if (Q3.resEl && Number(Q3.resEl.value) < 61) Q3.resEl.value = '61';
     Q3.equalOnce = true; // round for this drawing; the 1:1 setting itself stays as it was
     if (Q3.samples) Q3.samples.clearChoice(); // (the sphere is not the sample that was marked, 1.8.2)
@@ -6591,7 +6622,7 @@
     const k1 = U.s1.value, k2 = U.s2.value, D = Q3.data;
     U.s1.textContent = ''; U.s2.textContent = '';
     const series = D ? D.series : [];
-    series.forEach((s, i) => { U.s1.append(el('option', { value: String(i), text: clip(s.expr, 30) })); U.s2.append(el('option', { value: String(i), text: clip(s.expr, 30) })); });
+    series.forEach((s, i) => { U.s1.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) })); U.s2.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) })); });
     U.s2.prepend(el('option', { value: 'plane', text: tr('the plane z = 0', '平面 z = 0') }));
     const same = U.count === series.length;
     U.count = series.length;
@@ -6749,7 +6780,7 @@
     return { expr: ix, val: bestValue(ex, n.num, regionDigits(S, n)), missing: n.missing };
   }
   // a value shown before the exact one has been looked for: "about 39.939589 (checking…)"
-  const aboutValue = (name, val) => name + tr(' about ', ' 約 ') + val.text.replace(/^≈ /, '') + tr(' (checking for an exact value…)', '（厳密な値を確かめています…）');
+  const aboutValue = (name, val) => name + tr(' about ', ' 約 ') + valueShown(val.text.replace(/^≈ /, '')) + tr(' (checking for an exact value…)', '（厳密な値を確かめています…）');
   // seq: the number of this calculation (a button press takes a new one); a result is written only
   // while no newer calculation has started
   async function computeVolume(seq) {
@@ -7613,14 +7644,18 @@
   const encFits = (S) => !!S.g && signChanges(S);
 
   // the functions of a graph: one in each line; a line "sin(x), cos(x)" is two (a "," or ";" outside
-  // parentheses). Returns the first `max` of them; .more is how many were left out.
+  // parentheses). Returns the first `max` of them; .more is how many were left out. 1.12.0 (BG14): with
+  // a decimal comma, a "," that is a decimal sign (as toInternal reads it: "0,5x", ",5") does not split
+  // the line; until the fix "0,5x^2" was drawn as the two functions 0 and 5x^2.
   function plotExprs(text, max) {
     const all = [];
     for (const line of text.split('\n')) {
       let d = 0, cur = '';
-      for (const c of line) {
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
         if ('([{'.indexOf(c) >= 0) d++; else if (')]}'.indexOf(c) >= 0) d--;
-        if ((c === ',' || c === ';') && d <= 0) { all.push(cur); cur = ''; } else cur += c;
+        const dec = c === ',' && commaMode && isDigit(line[i + 1] || '') && (isDigit(line[i - 1] || '') || !/[\p{L}\p{N}_)\]]/u.test(line[i - 1] || ''));
+        if ((c === ',' || c === ';') && d <= 0 && !dec) { all.push(cur); cur = ''; } else cur += c;
       }
       all.push(cur);
     }
@@ -7823,8 +7858,8 @@
     openPlotWith(sampleExprs(d), { range: d.r, equal: !!d.eq, sample: true });
   }
   function drawSample3d(d) {
-    Q3.ta.value = sampleExprs(d).join('\n');
-    Q3.inputs.forEach((e, i) => { e.value = d.r[i]; });
+    Q3.ta.value = toDisplay(sampleExprs(d).join('\n'));
+    Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(d.r[i])); });
     if (Q3.resEl) Q3.resEl.value = d.res || '41';
     Q3.points = null; Q3.pending = null;
     Q3.equalOnce = !!d.eq; // round for this drawing; the 1:1 setting itself stays as it was
@@ -7943,8 +7978,8 @@
     opts = opts || {};
     if (Q3.samples) Q3.samples.clearChoice(); // (another graph than a sample, 1.8.2)
     const list = exprs.filter(Boolean).slice(0, 4);
-    store.set('qalc.plot3d.exprs', list.join('\n'));
-    if (opts.range) ['xmin', 'xmax', 'ymin', 'ymax'].forEach((k, i) => store.set('qalc.plot3d.' + k, String(opts.range[i])));
+    store.set('qalc.plot3d.exprs', toDisplay(list.join('\n')));
+    if (opts.range) ['xmin', 'xmax', 'ymin', 'ymax'].forEach((k, i) => store.set('qalc.plot3d.' + k, toDisplay(String(opts.range[i]))));
     store.set('qalc.plot.mode', '3d');
     store.set('qalc.plot3d.ok', true);
     Q3.points = opts.points || null;
@@ -7961,8 +7996,8 @@
     const built = !!panels.plot;
     openPlot();
     if (built && Q3.ta) {
-      Q3.ta.value = list.join('\n');
-      if (opts.range) Q3.inputs.forEach((e, i) => { e.value = String(opts.range[i]); });
+      Q3.ta.value = toDisplay(list.join('\n'));
+      if (opts.range) Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(opts.range[i])); });
       P.setMode('3d');
       Q3.keep = true;
       Q3.go.click();
@@ -8096,7 +8131,7 @@
     Q3.legend.textContent = '';
     if (data.oneSolid && any) {
       const step = niceStep(data.z1 - data.z0, 4);
-      Q3.legend.append(el('span', { class: 'zbar' }, series.map((s) => s.expr).join(tr(', ', '、')) + tr('   z: ', '　z：') + fmt(data.z0, step / 10), el('i'), fmt(data.z1, step / 10)));
+      Q3.legend.append(el('span', { class: 'zbar' }, series.map((s) => toDisplay(s.expr)).join(tr(', ', '、')) + tr('   z: ', '　z：') + fmt(data.z0, step / 10), el('i'), fmt(data.z1, step / 10)));
       return;
     }
     const done = new Set();
@@ -8105,9 +8140,9 @@
       const g = (data.groups || []).find((m) => m.includes(i));
       if (g) {
         g.forEach((m) => done.add(m));
-        Q3.legend.append(el('span', { style: '--c:' + s.color, text: g.map((m) => series[m].expr).join(tr(', ', '、')) }));
+        Q3.legend.append(el('span', { style: '--c:' + s.color, text: g.map((m) => toDisplay(series[m].expr)).join(tr(', ', '、')) }));
       } else {
-        Q3.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
+        Q3.legend.append(el('span', { style: '--c:' + s.color, text: toDisplay(s.expr) + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
       }
     });
   }
@@ -10314,8 +10349,8 @@
       if (ctx.vu) { const f = await numValue(`(1 ${ctx.base}^3) to ${ctx.vu}`); if (f > 0) { val = x * f; unit = ' ' + (VOL_UNITS.find((u) => u[0] === ctx.vu) || [0, ctx.vu])[1]; } }
     } else if (dim === 1 && ctx.base) unit = ' ' + ctx.base;
     if (pct) unit = ' %';
-    const t = fmtV(+val.toPrecision(pct ? 10 : 10)), text = '≈ ' + t + unit;
-    return { result: text, shown: text, expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
+    const t = String(+val.toPrecision(10)), text = '≈ ' + t + unit;
+    return { result: text, shown: valueShown(text), expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
       vol: what === 'liq' && ctx.base ? `(${+x.toPrecision(12)} ${ctx.base}^3)` : '' };
   }
   // the picture of a tank with heads, filled to the level typed
@@ -10412,8 +10447,8 @@
     }
     const r = ellipsoidAreaNum(nums[0], nums[1], nums[2]);
     if (!isFinite(r.v)) return null;
-    const unit = ctx.base ? ' ' + ctx.base + '²' : '', text = '≈ ' + fmtV(+r.v.toPrecision(Math.min(10, r.digits))) + unit;
-    return { result: text, shown: text, expr: fmtV(+r.v.toPrecision(Math.min(10, r.digits))) + (ctx.base ? ' ' + ctx.base + '^2' : '') };
+    const t = String(+r.v.toPrecision(Math.min(10, r.digits))), unit = ctx.base ? ' ' + ctx.base + '²' : '', text = '≈ ' + t + unit;
+    return { result: text, shown: valueShown(text), expr: t + (ctx.base ? ' ' + ctx.base + '^2' : '') };
   }
   // the volume of the liquid in a tank at height h (numbers in one unit), for the height from an amount
   const TANK_V = {
@@ -10451,7 +10486,7 @@
   // wrong, or ''. (Without this, a negative radius gave an area, and letters were read as units.)
   async function geoSizeProblem(t, kind) {
     const sc = scanBox(t);
-    if (sc.extra || sc.comma || sc.bracket) return tr('A size is one number or expression (the decimal point is ".")', '大きさは 1 つの数か式で入れてください（小数点は「.」）');
+    if (sc.extra || sc.comma || sc.bracket) return commaMode ? tr('A size is one number or expression (the decimal sign is ",")', '大きさは 1 つの数か式で入れてください（小数点は「,」）') : tr('A size is one number or expression (the decimal point is ".")', '大きさは 1 つの数か式で入れてください（小数点は「.」）');
     if (/^[\d.]+$/.test(t)) return '';
     const txt = t + ')'.repeat(sc.open);
     const val = async (e) => {
@@ -10529,7 +10564,7 @@
       const outUnits = el('div', { class: 'geo-units' }, vUnit, aUnit);
       const dens = el('select', { 'aria-label': tr('Material (density)', '材料（密度）') });
       dens.append(el('option', { value: '', text: tr('Weight: choose a material', '重さ：材料を選ぶ') }));
-      for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: s }));
+      for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: decSign(s) })); // (BG13: 1.000 g/cm³ with a decimal comma)
       dens.append(el('option', { value: 'own', text: tr('Another density…', 'ほかの密度…') }));
       dens.value = G.dens;
       const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³'), value: G.dv, 'aria-label': tr('Density', '密度') });
@@ -10555,7 +10590,7 @@
         if (type !== 'flat' && !proGate('tank_heads')) return;
         typed();
         // the sizes they have in common stay (radius, length, level)
-        const to = GEO.find((x) => x.k === k), old = G.vals[sh.k] || [], prev = G.vals[k] || to.def.map(toDisplay);
+        const to = GEO.find((x) => x.k === k), old = G.vals[sh.k] || [], prev = G.vals[k] || to.def.map(() => '');
         G.vals[k] = to.p.map(([n], i) => { const j = sh.p.findIndex((q) => q[0] === n); return j >= 0 && old[j] !== undefined ? old[j] : prev[i]; });
         G.amt[k] = G.amt[k] || G.amt[sh.k] || '';
         choose(k);
@@ -10596,7 +10631,7 @@
         const top = tankTop(sh.k, s), full = TANK_V[sh.k](s, top);
         let f = 1, vName = base ? base + '³' : '';
         if (base && G.vu) { const x = await numValue(`(1 ${base}^3) to ${G.vu}`); if (seq !== G.seq) return; if (x > 0) { f = x; vName = (VOL_UNITS.find((u) => u[0] === G.vu) || [0, G.vu])[1]; } }
-        const n6 = (x) => fmtV(+x.toPrecision(6)), pct = (x) => fmtV(+(x / full * 100).toPrecision(4));
+        const n6 = (x) => statNum(x, 6), pct = (x) => statNum(x / full * 100, 4);
         const nice = (span) => { const raw = span / 10, p = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * p >= raw * 0.999) return m * p; return 10 * p; };
         const heightOf = (want) => { let lo = 0, hi = top; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; } return (lo + hi) / 2; };
         const span = G.q === 'h' ? top : full * f;
@@ -10626,7 +10661,9 @@
         if (sh.k === 'sphere') showSphere(v.r); else drawShape2d(sh.k, v);
       });
       let inputs = {}, rows = [];
-      const values = () => { const v = {}; for (const [n] of cur().p) v[n] = normalizeExpr(inputs[n].value); return v; };
+      // 1.12.0 (F, task 3): a size not typed yet is its example, shown in gray in the field (the placeholder),
+      // and the results use it: nothing to delete before typing, and still a result at once
+      const values = () => { const v = {}; for (const [n] of cur().p) v[n] = normalizeExpr(inputs[n].value || inputs[n].placeholder); return v; };
       // the height of the liquid for the amount typed (tanks): the sizes as numbers in one unit, the
       // amount in that unit cubed, and the height found by halving the range (the amount grows with the height)
       const tankHeight = async (sh, v, base, seq) => {
@@ -10649,7 +10686,7 @@
         let lo = 0, hi = top;
         for (let i = 0; i < 200 && hi - lo > top * 1e-15; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; }
         const h = (lo + hi) / 2;
-        amtVal.textContent = 'h ≈ ' + fmtV(+h.toPrecision(6)) + (base ? ' ' + base : '') + tr(' (', '（') + fmtV(+(want / full * 100).toPrecision(4)) + ' %' + tr(' full)', '）');
+        amtVal.textContent = 'h ≈ ' + statNum(h, 6) + (base ? ' ' + base : '') + tr(' (', '（') + statNum(want / full * 100, 4) + ' %' + tr(' full)', '）');
       };
       // the weight of the first volume of the list (the liquid of a tank) with the density chosen
       const weight = async (rows, seq) => {
@@ -10663,7 +10700,7 @@
         const ok = r.ok && r.result && !r.timeout && !(r.messages || []).some((m) => m.type === 'error') && / kg$/.test(r.result);
         if (!ok) { weightVal.textContent = tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）'); return; }
         const kg = Number(numberPart(r.result.replace(/ kg$/, '')));
-        weightVal.textContent = tr('Weight ', '重さ ') + resultText(r) + (kg >= 1000 ? tr(' = ', ' = ') + fmtV(+(kg / 1000).toPrecision(8)) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
+        weightVal.textContent = tr('Weight ', '重さ ') + resultText(r) + (kg >= 1000 ? tr(' = ', ' = ') + statNum(kg / 1000, 8) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
       };
       const svg = (sh, v, small) => {
         let t = typeof sh.pic === 'function' ? sh.pic(v || {}) : sh.pic;
@@ -10674,6 +10711,7 @@
       const run = debounce(async () => {
         const sh = cur(), v = values(), seq = ++G.seq;
         G.vals[sh.k] = sh.p.map(([n]) => inputs[n].value);
+        exNote.hidden = !sh.p.some(([n]) => !inputs[n].value.trim());
         save();
         if (typeof sh.pic === 'function') pic.innerHTML = svg(sh, v);
         let problem = sh.p.some(([n]) => !v[n]) ? tr('Enter the sizes', '大きさを入れてください') : geoProblem(sh, v, G.dia);
@@ -10762,7 +10800,7 @@
         sh.p.forEach(([n, label0, kind, sym0, dl], i) => {
           // (a size of a round shape typed as a diameter: its label and its letter, D for R and d for r)
           const label = G.dia && dl ? dl : label0, sym = G.dia && dl ? ((sym0 || n) === 'R' ? 'D' : 'd') : sym0;
-          inputs[n] = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: old[i] !== undefined ? old[i] : toDisplay(sh.def[i]), 'aria-label': label });
+          inputs[n] = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: old[i] !== undefined ? old[i] : '', placeholder: toDisplay(sh.def[i]), 'aria-label': label });
           inputs[n].addEventListener('input', run);
           inputs[n].addEventListener('focus', () => inputs[n].select());
           sizes.append(el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl' }, label, kind === 'n' ? '' : el('i', { text: ' ' + (sym || n) })), inputs[n],
@@ -10774,7 +10812,7 @@
           const row = { def, val, expr: '', result: '' };
           row.node = tapButton({ class: 'geo-row' }, async () => {
             if (!row.expr) return;
-            resultSheet(def[0], row.expr, row.shown || row.result, row.result);
+            resultSheet(def[0], row.expr, row.shown || valueShown(row.result));
           });
           row.node.append(el('span', { class: 'geo-name' }, def[0], el('small', { text: def[1] })), val);
           return row;
@@ -10786,6 +10824,7 @@
         run();
       };
       const msg = el('div', { class: 'geo-msg', role: 'status' });
+      const exNote = el('div', { class: 'form-hint geo-ex-note', text: tr('Gray numbers are examples: the results use them until you type your own sizes.', '薄い字は例です。大きさを入れるまでは、例の値で計算しています。'), hidden: true });
       const typed = () => { G.vals[G.k] = cur().p.map(([n]) => inputs[n].value); };
       unit.addEventListener('change', () => { G.unit = unit.value; typed(); choose(G.k); });
       b2.addEventListener('click', () => { if (cur().d !== 2) { typed(); choose(G.last[2] || 'circle'); } });
@@ -10801,7 +10840,7 @@
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips, headRow,
         el('div', { class: 'geo-main' }, pic, el('div', { class: 'geo-side' }, rdSeg, sizes,
           el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
-        outUnits, msg, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
+        outUnits, msg, exNote, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
         // 1.11.0: the volume from measured values (a table of cross sections, a grid of heights)
         tapButton({ class: 'btn geo-link', text: tr('Volume from measured values (cross sections, grid of heights) ›', '測った値から体積（断面積の表・点高法）›') }, () => openSections()),
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
@@ -10975,7 +11014,7 @@
       if (D.inner.length) more.open = true;
       const dens = el('select', { 'aria-label': tr('Material (density)', '材料（密度）') });
       dens.append(el('option', { value: '', text: tr('Weight: choose a material', '重さ：材料を選ぶ') }));
-      for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: s }));
+      for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: decSign(s) })); // (BG13: 1.000 g/cm³ with a decimal comma)
       dens.append(el('option', { value: 'own', text: tr('Another density…', 'ほかの密度…') }));
       const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: D.dv, placeholder: tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³'), 'aria-label': tr('Density', '密度') });
       dens.addEventListener('change', () => { D.dens = dens.value; sync(); save(); run(); });
@@ -11101,8 +11140,8 @@
           const sh = si || so, total = sh.volume, top = sh.height, inMl = (v) => v * PF_CM3[u];
           const nice = (span) => { const raw = span / 10, q = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * q >= raw * 0.999) return m * q; return 10 * q; };
           const step = nice(top), rows = [];
-          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([fmtV(+(k * step).toPrecision(6)), fmtV(+inMl(v).toPrecision(6)), fmtV(+(v / total * 100).toPrecision(4))]); }
-          rows.push([fmtV(+top.toPrecision(6)), fmtV(+inMl(total).toPrecision(6)), '100']);
+          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([statNum(k * step, 6), statNum(inMl(v), 6), statNum(v / total * 100, 4)]); }
+          rows.push([statNum(top, 6), statNum(inMl(total), 6), '100']);
           showTable(quickBox, { title: si ? tr('The amount inside for each height', '高さごとの内側の量') : tr('The volume up to each height', '高さごとの体積'), head: [tr('Height', '高さ') + ' (' + u + ')', (si ? tr('Amount', '量') + ' (mL)' : tr('Volume', '体積') + ' (cm³)'), '%'], rows, name: 'profile' });
         }
       };
@@ -11575,7 +11614,7 @@
       sh.dataset.mesh = c ? JSON.stringify(Object.assign({ ok: st.mesh.ok }, c)) : '';
       if (!c) return;
       const k = mm(), s = c.size.map((q) => statNum(+(q * k).toPrecision(4))).join(' × ');
-      info.textContent = isFinite(k) ? trf('{0} triangles · {1} mm · {2} cm³', '三角形 {0} 個・{1} mm・{2} cm³', fmtV(c.tris), s, statNum(+(c.volume * k * k * k / 1000).toPrecision(5))) : '';
+      info.textContent = isFinite(k) ? trf('{0} triangles · {1} mm · {2} cm³', '三角形 {0} 個・{1} mm・{2} cm³', statNum(c.tris), s, statNum(+(c.volume * k * k * k / 1000).toPrecision(5))) : '';
       save.disabled = !st.mesh.ok || !isFinite(k);
       err.textContent = !st.mesh.ok ? tr('The solid could not be made into a closed mesh, so it is not saved.', '閉じた立体の面にできなかったため、保存できません。') : !isFinite(k) ? tr('Enter the millimetres for one unit (a positive number, for example 10)', '1 単位あたりの mm を正の数で入れてください（例：10）') : '';
       if (!isFinite(k)) mmIn.setAttribute('aria-invalid', 'true'); else mmIn.removeAttribute('aria-invalid');
@@ -11725,9 +11764,9 @@
           // ("21333.33333 L", "0.0000025 m³": the number and its unit)
           if (c.ok && c.result) text += (c.result.indexOf('≈') >= 0 || v.approx || v.result.indexOf(' ≈ ') >= 0 ? ' ≈ ' : ' = ') + numberPart(c.result).replace(/-/g, '−').replace(/^([−\d.Ee+×^]+)(.*)$/, (all, n, un) => n + ' ' + (un || (to === 'L' ? 'L' : 'm³')));
         }
-        // (as plain text: the math notation would put the unit into the fraction)
-        r.val.textContent = text;
-        r.result = text; r.expr = withUnit.replace(`(${e})`, '(' + exact + ')');
+        // (as plain text: the math notation would put the unit into the fraction; BG13: in the number format)
+        r.val.textContent = valueShown(text);
+        r.result = valueShown(text); r.expr = withUnit.replace(`(${e})`, '(' + exact + ')');
         return true;
       };
       const num = async (t) => { const s = normalizeExpr(t); return s ? { t: s, v: await numValue(s) } : null; };
@@ -12183,7 +12222,7 @@
         if (f.opts) {
           // a choice of a few: a switch (aria-pressed)
           chosen[f.k] = f.opts.some((o) => o[0] === saved[f.k]) ? saved[f.k] : f.def;
-          const btns = f.opts.map(([v, label]) => tapButton({ text: label, 'aria-pressed': String(v === chosen[f.k]), class: v === chosen[f.k] ? 'on' : '' }, () => {
+          const btns = f.opts.map(([v, label]) => tapButton({ text: decSign(label), 'aria-pressed': String(v === chosen[f.k]), class: v === chosen[f.k] ? 'on' : '' }, () => {
             chosen[f.k] = v;
             btns.forEach((b, i) => { const on = f.opts[i][0] === v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
             save(); showFields(); run();
@@ -12194,6 +12233,7 @@
         }
         const inp = el('input', { inputmode: f.kind === 'date' || f.kind === 'time' ? 'text' : 'decimal', type: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: f.ph || '', value: typeof saved[f.k] === 'string' ? saved[f.k] : (typeof f.def === 'function' ? f.def() : f.def || ''), 'aria-label': f.label });
         inp.addEventListener('input', () => { inp.removeAttribute('aria-invalid'); save(); run(); });
+        inp.addEventListener('focus', () => inp.select()); // (F, task 3: a value is replaced by typing, as in the shapes)
         inputs[f.k] = inp;
         const row = el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: f.label }), inp);
         if (f.chips) row.append(el('span', { class: 'tool-mini-chips' }, ...f.chips().map((c) => tapButton({ class: 'area-chip', text: c }, () => { inp.value = c; save(); run(); }))));
@@ -12647,11 +12687,11 @@
     [tr('Height and weight (2 columns)', '身長と体重（2 列）'), 2, [[155, 50], [160, 54], [165, 59], [170, 62], [175, 68], [180, 72]].map((r) => r.map(String))],
     [tr('Temperature and sales (2 columns)', '気温と売上（2 列）'), 2, [[18, 120], [21, 135], [24, 160], [27, 190], [30, 230], [33, 260]].map((r) => r.map(String))]
   ];
-  // a number as shown: 10 significant digits, the number format, "× 10^−5" for very small or large ones
-  function statNum(v) {
+  // a number as shown: 10 significant digits (or digits), the number format, "× 10^−5" for very small or large ones
+  function statNum(v, digits) {
     if (!isFinite(v)) return '';
     if (v === 0) return '0';
-    let s = String(+v.toPrecision(10)), exp = '';
+    let s = String(+v.toPrecision(digits || 10)), exp = '';
     const m = s.match(/^(-?[\d.]+)e([+-]\d+)$/);
     if (m) { s = m[1]; exp = ' × 10^' + String(Number(m[2])).replace('-', '−'); }
     const neg = s[0] === '-';
@@ -13357,13 +13397,27 @@
   // A tap on a result of a tool offers the same three things in every tool (1.12.0): put its
   // expression into the input field, keep it in the history (staying in the tool), copy it.
   // (copy: the text copied, when not the result as shown)
+  // result: as the tool shows it (the number format); copy: what is copied, as shown too (the result without
+  // the "= " or "≈ " in front when not given, like a result copied from the history). 1.12.0 (BG12): until the fix, some tools gave their text as shown and others in the
+  // engine's form, and "Keep it in the history" put the shown text into the history, where it was taken for
+  // the engine's: with a decimal comma 1.458 (yen) came back as 1,458 and 84.685,71 as 84,685;71.
   async function resultSheet(title, expr, result, copy) {
     const shown = String(result || '');
+    if (copy === undefined) copy = shown.replace(/^[=≈]\s*/, '');
     const k = await sheet(title + '  ' + clip(shown, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'],
       ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy the result', '結果をコピー')]]);
     if (k === 'use') useExample(expr);
-    else if (k === 'keep') keepResult(expr, shown);
+    else if (k === 'keep') keepResult(expr, shownToEngine(shown));
     else if (k === 'copy') copyText(copy || shown);
+  }
+  // a text as shown (the number format) → the engine's form, as the history keeps its results: the digit
+  // groups as thin spaces (shown again in the number format), the decimal sign ".", ";" between arguments ","
+  function shownToEngine(t) {
+    t = String(t || '');
+    const g = NF.group === '.' ? '\\.' : NF.group === ',' ? ',' : '[\\u202f\\u00a0]';
+    t = t.replace(new RegExp('(\\d)' + g + '(?=\\d{3}(?!\\d))', 'g'), '$1\u202f');
+    if (commaMode) t = t.replace(/(\d),(?=\d)/g, '$1.').replace(/;/g, ',');
+    return t;
   }
   // a result of a tool as a line of the history, as the tool showed it ("= 8π ≈ 25.13274123")
   function keepResult(expr, shown) {

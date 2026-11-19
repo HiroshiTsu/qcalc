@@ -1505,7 +1505,11 @@
     "A calculation on each line with its result; names, totals, units and currencies": "한 행씩 계산하고 결과를 오른쪽에. 이름·합계·단위·통화도",
     "Memo saved": "메모를 저장했습니다",
     "More calculation notes, saved as files": "계산 메모 2개째부터와 내보내기",
-    "Several memos of calculations, and saving them as text or CSV (the first memo is free)": "계산 메모를 여러 개 만들고 텍스트나 CSV로 저장(첫 메모는 무료)"
+    "Several memos of calculations, and saving them as text or CSV (the first memo is free)": "계산 메모를 여러 개 만들고 텍스트나 CSV로 저장(첫 메모는 무료)",
+    "A cell takes one number or expression: \";\" cannot be used (the decimal sign is \",\")": "한 칸에는 수나 식을 하나만 넣습니다. ‘;’는 쓸 수 없습니다(소수점은 ‘,’)",
+    "A size is one number or expression (the decimal sign is \",\")": "크기는 수나 식 하나로 넣으세요(소수점은 ‘,’)",
+    "Gray numbers are examples: the results use them until you type your own sizes.": "회색 숫자는 예시입니다. 크기를 입력할 때까지 결과는 예시 값으로 계산합니다.",
+    "Show the row of x, ans, the arrows and the keyboard": "x·ans·화살표·키보드 줄 보이기"
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",
