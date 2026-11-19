@@ -3500,7 +3500,7 @@
     tr('The solve key opens a form for an equation (left side = right side); "+ Add an equation" makes a system of equations.', 'solve キーで方程式を入力する画面（左辺 = 右辺）が開きます。「＋ 式を追加」で連立方程式になります。'),
     tr('📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.', '入力欄の上の 📈 で、入力した式のグラフを描けます。x の式は 2D、x と y の式は 3D、y = 2x + 1、x² + y² = 4、z = x y のような方程式、2 列か 3 列の数の行列（点）も描けます。履歴の行を長押ししても同じことができます。'),
     tr('In the graph, "Area" finds the area between a function and the x axis or between two functions (the crossing points are offered as ranges), and "Length" the length of a curve or the perimeter between two functions. "Example" draws a circle or an ellipse.', 'グラフの「面積を求める」で、関数と x 軸の間や 2 つの関数の間の面積（交点の間の範囲を選べます）、「長さ・周」で曲線の長さや 2 つの関数に囲まれた部分の周の長さが求められます。「図形の例」で円や楕円を描けます。'),
-    tr('⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis at once and gives the volume. Tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.', '2D グラフの右の丸いボタン「⟳ 3D」で、色の付いた部分を x 軸のまわりに回した体積がすぐ出ます。y 軸（または x 軸）の線をタップすると、その軸のまわりに回します。y = k・x = k は線をドラッグして動かせます。軸の反対側に薄く映った形が、立体を軸で切った形です。変えたあとのメッセージの「↶ 元に戻す」で戻せます。'),
+    tr('⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis and shows the solid in 3D at once, with its volume (QCalc Pro; without it, the solid and its volume in the 2D graph). Back in 2D (← Back to 2D), tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.', '2D グラフの右の丸いボタン「⟳ 3D」で、色の付いた部分を x 軸のまわりに回した立体が 3D ですぐに出て、体積も出ます（QCalc Pro。無料では 2D のグラフに立体の形と体積が出ます）。「← 2D に戻る」で 2D に戻り、y 軸（または x 軸）の線をタップすると、その軸のまわりに回します。y = k・x = k は線をドラッグして動かせます。軸の反対側に薄く映った形が、立体を軸で切った形です。変えたあとのメッセージの「↶ 元に戻す」で戻せます。'),
     tr('"Make a solid ▾" → "Cross sections": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under "More shapes ▾"); the volume V = ∫ A(s(x)) dx, s being the width of the region.', '「立体にする ▾」→「断面の立体」では、色の付いた部分の上に、x 軸に垂直に正方形 □・正三角形 △・半円 ◠ を立てた立体の体積 V = ∫ A(s(x)) dx を出します（s は底面の幅。ほかの形は「詳しく：ほかの形 ▾」）。'),
     tr('In "Make a solid", "Show the method with lines" draws the thin disks or rings (across the axis) or the shells (along the axis) that the volume adds up, n of them. When the region is on one side of the axis, the theorem of Pappus and Guldinus is shown too: V = 2π d A (A the area, d the distance of its centre from the axis). In the 3D view the slider "Angle" turns the solid from 0° to 360° (180°: cut in half); ▶ turns it again.', '「立体にする」の「方法を線で見せる」では、体積を足し合わせる薄い円板・穴のあいた円板（軸に垂直）か、殻（軸に平行）を n 本の線で描きます。領域が軸の片側にあるときは、パップス・ギュルダンの定理 V = 2π d A（A は面積、d は重心から軸までの距離）も出します。3D で見るときは「角度」のスライダーで 0° から 360° まで回せます（180° で半分に切った形）。▶ でもう一度回ります。'),
     tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks like a pale gelatin in a skin of a deeper shade in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで濃い色の皮に包まれた薄い色のゼラチンのように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
@@ -4109,11 +4109,10 @@
           draw();
         } }),
         // 1.12.0 (B0): "Make a solid" with one tap: the shaded region turned around the x axis, the
-        // volume at once (in the corner of the graph and below it); tapped again, closed
-        P.revBtn = el('button', { class: 'rev3d', type: 'button', 'aria-label': tr('Turn into a solid', '回して立体にする'), 'aria-pressed': 'false', onclick: () => {
-          const R = P.areaUI && P.areaUI.rev;
-          if (R) R.toggle.click();
-        } }, el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' })),
+        // volume at once (in the corner of the graph and below it); (BG20) and the solid in 3D at once (Pro):
+        // revTo3d
+        P.revBtn = el('button', { class: 'rev3d', type: 'button', 'aria-label': tr('Turn into a solid (shown in 3D)', '回して立体にする（3D で表示）'), onclick: () => revTo3d() },
+          el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' })),
         // 1.12.0 (D4): a picture of the graph to the share sheet
         el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share a picture of the graph', 'グラフの画像を共有'), onclick: () => shareGraph2d() }));
       P.equal = P.equal || store.get('qalc.plot.equal', false) === true;
@@ -5286,7 +5285,7 @@
     U.box.hidden = !(U.areaOpen || !U.rev.box.hidden);
     U.areaOnly.hidden = !U.areaOpen;
     U.toggle.classList.toggle('on', U.areaOpen); U.toggle.setAttribute('aria-expanded', String(U.areaOpen));
-    if (P.revBtn) { const on = !U.rev.box.hidden; P.revBtn.classList.toggle('on', on); P.revBtn.setAttribute('aria-pressed', String(on)); }
+    if (P.revBtn) P.revBtn.classList.toggle('on', !U.rev.box.hidden);
   }
   // "Area and length ▾" opened or closed: opened, the area between the first function and the x axis
   // (or the second function), between crossing points when there are some, is shown at once
@@ -5312,6 +5311,44 @@
     else if (open) { if (P.area) computeRevolution(true); else computeArea(true); }
     else if (U.box.hidden) { P.area = null; P.revAxis = null; draw(); }
     else draw();
+  }
+  // "⟳ 3D" (1.12.0, BG20: until then it opened "Make a solid" in 2D only, and the 3D view needed "View in 3D"
+  // as well, though the button says 3D). With Pro: the solid of "Make a solid" (the shaded region around the
+  // axis chosen, the x axis at first) is calculated in 2D, and then the 3D view opens at once, where the
+  // solid grows from 0° to 360° and its volume is shown large; "← Back to 2D" goes back to the same region
+  // and axis. Without Pro: the solid in 2D (its mirrored cut and its volume, free), with the row "Turn it in
+  // 3D (QCalc Pro)" above the results, and the first time a line that says what happened.
+  function revTo3d() {
+    const U = P.areaUI, R = U && U.rev;
+    if (!R) return;
+    const pro = hasPro(), first = !pro && !store.get('qalc.rev3dfree', false);
+    // (the hint about the axes, shown the first time "Make a solid" opens, waits for a later time: it is
+    // about the 2D graph, which is left at once with Pro, and the line below says more without it)
+    const hint = store.get('qalc.revhint', false);
+    if (R.box.hidden) { store.set('qalc.revhint', true); R.open(); store.set('qalc.revhint', hint); }
+    if (R.box.hidden) return;
+    if (!pro) {
+      R.proRow.hidden = false; R.view.hidden = true;
+      if (first) { store.set('qalc.rev3dfree', true); setTimeout(() => toast(tr('The solid and its volume are shown in 2D. Turning it in 3D is a QCalc Pro feature.', '2D で立体の形と体積を出しました。3D で回して見るのは QCalc Pro の機能です'), 6000), 300); }
+      return;
+    }
+    if (R.three && !R.view.hidden) R.show3d();
+    else R.go3d = Date.now(); // (as soon as the solid is calculated: revReady)
+  }
+  // the hint about the axes, the first time the solid is seen in the 2D graph (B0; BG20: also on coming back
+  // from the 3D view, when "⟳ 3D" opened it at once)
+  function revHint() {
+    if (store.get('qalc.revhint', false)) return;
+    store.set('qalc.revhint', true);
+    setTimeout(() => toast(tr('Tap an axis to turn around it. Drag an edge ↔ to change the range.', '軸をタップすると、回す軸が変わります。端の ↔ をドラッグすると、範囲が変わります'), 6000), 400);
+  }
+  // the solid of "Make a solid" is calculated (the 3D view can be opened): with Pro, "⟳ 3D" pressed before
+  // opens it now; without Pro, the row "Turn it in 3D (QCalc Pro)" stands for "View in 3D" (BG20)
+  function revReady(R) {
+    if (!hasPro() && !R.proRow.hidden) R.view.hidden = true;
+    const t = R.go3d;
+    R.go3d = 0;
+    if (t && Date.now() - t < 60000 && hasPro()) R.show3d();
   }
   // shapes to draw and measure: a circle (radius r), an ellipse (half axes a and b)
   const PARAM_NAMES = { r: tr('radius r', '半径 r'), a: tr('half axis a (x)', 'x 方向の半径 a'), b: tr('half axis b (y)', 'y 方向の半径 b') };
@@ -6122,7 +6159,7 @@
     R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.outs.textContent = ''; R.method.textContent = ''; R.moreOuts.textContent = ''; R.more.hidden = true;
     R.stlBtn.hidden = true; R.stlSpec = null;
     P.revVolText = ''; P.revAxis = null; draw();
-    const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '立体を計算できませんでした'); R.outs.textContent = ''; } };
+    const fail = (text) => { if (!stale()) { R.go3d = 0; R.msg.textContent = text || tr('Could not calculate the solid', '立体を計算できませんでした'); R.outs.textContent = ''; } };
     const f = P.series[Number(U.f1.value)];
     if (!f) return fail(tr('Draw a function first', '先に関数を描いてください'));
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
@@ -6187,7 +6224,7 @@
       if (isFinite(y0) && isFinite(y1) && y1 > y0) {
         const m = (y1 - y0) * 0.06;
         R.three = { exprs: [top, `0 + ${cut}`], range: [engineNum(rn.lo), engineNum(rn.hi), engineNum(r6(y0 - m)), engineNum(r6(y1 + m))] };
-        R.view.hidden = false;
+        R.view.hidden = false; revReady(R);
       }
     }
   }
@@ -6231,10 +6268,15 @@
     const more = el('details', { class: 'rev-more' }, el('summary', { text: tr('More: surface areas ▾', '詳しく：表面積 ▾') }), moreOuts);
     // 1.12.0 (D3): the solid saved as an STL file (Pro)
     const stlBtn = tapButton({ class: 'btn stl-btn', text: tr('Save as STL', 'STL で保存'), hidden: true }, () => { if (R.stlSpec) openStlSheet(R.stlSpec, R.kind === 'sec' ? 'sections' : 'revolution', null); });
-    const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, () => {
-      // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion")
-      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis, rims: R.three.rims });
-    });
+    // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion"); (BG20)
+    // the volume is shown large above the 3D graph, with "← Back to 2D"
+    const show3d = () => {
+      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis, rims: R.three.rims, back: { vol: P.revVolText || '' } });
+    };
+    const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, show3d);
+    // (BG20, without Pro: after "⟳ 3D", above the results)
+    const proRow = tapButton({ class: 'rev-pro-row', hidden: true, 'aria-label': tr('Turn it in 3D (QCalc Pro)', '3D で回して見る（QCalc Pro）') }, () => proPrompt(tr('Turning the solid in 3D is a QCalc Pro feature', '3D で回して見るのは QCalc Pro の機能です'), '3d'));
+    proRow.append(el('span', { class: 'rev-pro-i', 'aria-hidden': 'true', text: '🧊' }), el('span', { class: 'rev-pro-t', text: tr('Turn it in 3D (QCalc Pro)', '3D で回して見る（QCalc Pro）') }), el('span', { class: 'rev-pro-go', 'aria-hidden': 'true', text: '›' }));
     // one tap: a graph, its range and the axis
     const EX = [
       [tr('y = √x, x axis', 'y = √x・x 軸'), ['√(x)'], [-0.5, 4.5], '0', '4', false, 'x'],
@@ -6290,20 +6332,17 @@
     };
     const slicesRow = el('div', { class: 'rev-slices-row' }, slicesBtn, nRow);
     const box = el('div', { class: 'rev-box' }, kinds, axisRow, secRow,
-      kErr, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
+      kErr, proRow, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
       el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
     box.hidden = true;
     const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Make a solid ▾', '立体にする ▾'), 'aria-expanded': 'false' }, () => {
       if (box.hidden && !proGate('revolution')) return;
       box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); save();
-      if (box.hidden) R.seq++;
+      if (box.hidden) { R.seq++; R.go3d = 0; proRow.hidden = true; }
       revToggled(!box.hidden);
-      if (!box.hidden && !store.get('qalc.revhint', false)) {
-        store.set('qalc.revhint', true);
-        setTimeout(() => toast(tr('Tap an axis to turn around it. Drag an edge ↔ to change the range.', '軸をタップすると、回す軸が変わります。端の ↔ をドラッグすると、範囲が変わります'), 6000), 400);
-      }
+      if (!box.hidden) revHint();
     });
-    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, more, method, pappus, view, stlBtn, setAxis, setKind, setShape, skIn, ownIn, open: () => { if (box.hidden) toggle.click(); } });
+    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, more, method, pappus, view, proRow, show3d, stlBtn, setAxis, setKind, setShape, skIn, ownIn, open: () => { if (box.hidden) toggle.click(); } });
     showSlices();
     setAxis(R.axis, true);
     setShape(R.shape, true);
@@ -6368,7 +6407,7 @@
     R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.k.removeAttribute('aria-invalid'); R.outs.textContent = ''; R.method.textContent = '';
     R.stlBtn.hidden = true; R.stlSpec = null;
     R.moreOuts.textContent = ''; R.more.hidden = false; R.pappus.textContent = ''; P.revVolText = '';
-    const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '回転体を計算できませんでした'); R.outs.textContent = ''; } };
+    const fail = (text) => { if (!stale()) { R.go3d = 0; R.msg.textContent = text || tr('Could not calculate the solid', '回転体を計算できませんでした'); R.outs.textContent = ''; } };
     const f = P.series[Number(U.f1.value)];
     if (!f) return fail(tr('Draw a function first', '先に関数を描いてください'));
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
@@ -6423,7 +6462,7 @@
     else if (!solid.pieces.some((p) => p.vol !== '0')) revShow(vrow, { text: '0', v: 0 }, '0');
     if (vrow.result) { P.revVolText = shortValue('V', vrow.result); draw(); } // also in the corner of the graph
     if (vols.length) revPappus(R, f, g, parts, ax, vols.reduce((t, v) => t + v.v, 0), stale);
-    R.three = solid.three; R.view.hidden = false;
+    R.three = solid.three; R.view.hidden = false; revReady(R);
     // (the STL file: the meridian from the same curves, its volume checked against this one; D3)
     if (vols.length && solid.stl) { R.stlSpec = Object.assign({}, solid.stl, { volume: vols.reduce((t, v) => t + v.v, 0) }); stlShow(R.stlBtn); }
     // the surfaces: each curve that bounds the solid, turned: 2π ∫ (its distance) √(1 + f′²) dx
@@ -8048,7 +8087,16 @@
     const half = tapButton({ class: 'btn', text: tr('Cut in half', '半分に切る') }, () => setAngle3d(180));
     angle.addEventListener('input', () => setAngle3d(Number(angle.value)));
     const angleRow = el('div', { class: 'plot-range rev-angle', hidden: true }, el('span', { text: tr('Angle', '角度') }), angle, angleVal, play, half);
-    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow });
+    // 1.12.0 (BG20): a solid made in the 2D graph ("⟳ 3D", "View in 3D"): its volume, large, and the way back
+    const backVol = el('div', { class: 'rev3d-vol', 'aria-live': 'polite' });
+    const backBtn = tapButton({ class: 'btn rev3d-back-btn', text: tr('← Back to 2D', '← 2D に戻る') }, () => {
+      if (!P.setMode) return;
+      P.setMode('2d');
+      const U = P.areaUI;
+      if (U && U.rev && !U.rev.box.hidden) revHint();
+    });
+    const backRow = el('div', { class: 'rev3d-back', hidden: true }, backBtn, backVol);
+    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow, backRow, backVol });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
@@ -8061,7 +8109,7 @@
         // surfaces are drawn again with another grid or range; other surfaces drop them (1.8.3)
         if (plotExprs(ta.value, 4).join('\n') !== Q3.exprs.join('\n')) { Q3.equalOnce = false; if (Q3.samples) Q3.samples.clearChoice(); }
       }
-      if (!Q3.keep) { Q3.revInfo = null; Q3.grow = null; Q3.rimSpec = null; if (Q3.angleRow) Q3.angleRow.hidden = true; } // (another graph: not the solid of revolution)
+      if (!Q3.keep) { Q3.revInfo = null; Q3.grow = null; Q3.rimSpec = null; Q3.from2d = null; showBack3d(); if (Q3.angleRow) Q3.angleRow.hidden = true; } // (another graph: not the solid of revolution)
       Q3.keep = false;
       store.set('qalc.plot3d.exprs', ta.value); store.set('qalc.plot3d.res', res.value);
       store.set('qalc.plot3d.xmin', xmin.value); store.set('qalc.plot3d.xmax', xmax.value);
@@ -8084,7 +8132,7 @@
           el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax),
           el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr(' to ', ' 〜 ').trim() }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
-      wrap, angleRow, legend, msg, el('div', { class: 'tools' }, buildPartial3d(), buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
+      backRow, wrap, angleRow, legend, msg, el('div', { class: 'tools' }, buildPartial3d(), buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
@@ -8117,12 +8165,16 @@
     Q3.rimSpec = opts.rims ? Object.assign({ exprs: list.join('\n') }, opts.rims) : null;
     Q3.revInfo = opts.grow || null; // (the angle row of B2)
     if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
+    // (a solid made in the 2D graph, BG20: its volume large above the graph, and "← Back to 2D")
+    Q3.from2d = opts.back || null;
+    showBack3d();
     Q3.pending = null;
     // (1.11.0: a finer grid when asked for, as for a solid of revolution with its round rims)
     if (opts.res && (Number(store.get('qalc.plot3d.res', '41')) || 41) < opts.res) store.set('qalc.plot3d.res', String(opts.res));
     if (opts.res && Q3.resEl && Number(Q3.resEl.value) < opts.res) Q3.resEl.value = String(opts.res);
     const built = !!panels.plot;
     openPlot();
+    showBack3d();
     if (built && Q3.ta) {
       Q3.ta.value = toDisplay(list.join('\n'));
       if (opts.range) Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(opts.range[i])); });
@@ -8130,6 +8182,13 @@
       Q3.keep = true;
       Q3.go.click();
     }
+  }
+  // the row above the 3D graph for a solid made in the 2D graph (BG20)
+  function showBack3d() {
+    if (!Q3.backRow) return;
+    const F = Q3.from2d;
+    Q3.backRow.hidden = !F;
+    Q3.backVol.textContent = F && F.vol ? tr('Volume ', '体積 ') + F.vol : '';
   }
   // the box of the graph around points only (no surface)
   function points3dData() {

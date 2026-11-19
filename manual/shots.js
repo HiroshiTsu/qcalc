@@ -111,6 +111,12 @@ const SHOTS = {
     await m2.locator('textarea').fill('x\nx^2'); await m2.locator('.plot-form .plot-range input').nth(0).fill('-0.5'); await m2.locator('.plot-form .plot-range input').nth(1).fill('1.5');
     await m2.locator('.plot-form .btn.primary').click(); await sleep(2500);
     await m2.locator('button.rev3d').click(); await sleep(6000);
+    // (1.12.0, BG20: with Pro, ⟳ 3D shows the solid in 3D; this photo is of the 2D graph: "← Back to 2D")
+    for (let i = 0; i < 100; i++) {
+      const back = await page.evaluate(() => { const b = document.querySelector('.panel.open .rev3d-back'); if (b && !b.hidden && b.getClientRects().length) { b.querySelector('.btn').click(); return true; } return false; });
+      if (back) { await sleep(7000); break; } // (the hint about the axes is shown on coming back: wait until it is gone)
+      await sleep(200);
+    }
     await page.evaluate(() => { const b = Array.from(document.querySelectorAll('.panel.open .panel-body')).pop(); b.scrollTop = 120; });
     await sleep(400);
   },
