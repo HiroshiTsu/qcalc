@@ -1519,8 +1519,6 @@
     "A size is one number or expression (the decimal sign is \",\")": "Una medida es un número o una expresión (el separador decimal es \",\")",
     "Gray numbers are examples: the results use them until you type your own sizes.": "Los números en gris son ejemplos: los resultados los usan hasta que escribas tus medidas.",
     "Show the row of x, ans, the arrows and the keyboard": "Mostrar la fila de x, ans, las flechas y el teclado",
-    "The manual opens when you are connected to the internet.": "El manual se abre cuando tengas conexión a internet.",
-    "Tips in the app": "Consejos en la app",
     "How to use this (opens the user manual)": "Cómo se usa (abre el manual de uso)",
     "How to use ›": "Cómo se usa ›",
     "How to use the Pro features ›": "Cómo usar las funciones Pro ›",
@@ -1528,7 +1526,12 @@
     "What is new in 1.12.0 (user manual) ›": "Novedades de 1.12.0 (manual de uso) ›",
     "User manual": "Manual de uso",
     "Every feature step by step, on the web and as a PDF": "Todas las funciones paso a paso, en la web y en PDF",
-    "How to use this form ›": "Cómo usar este formulario ›"
+    "How to use this form ›": "Cómo usar este formulario ›",
+    "The detailed version opens when you are connected to the internet.": "La versión detallada se abre cuando tienes conexión a internet.",
+    "The manual could not be opened.": "No se pudo abrir el manual.",
+    "Search the manual": "Buscar en el manual",
+    "Nothing found. Try another word.": "No se encontró nada. Prueba con otra palabra.",
+    "Detailed version with photos (web)": "Versión detallada con fotos (web)"
   },
   messages: {
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (Ajustes → "Actualizar los tipos de cambio ahora")',

@@ -1507,8 +1507,6 @@
     "A size is one number or expression (the decimal sign is \",\")": "Eine Größe ist eine Zahl oder ein Ausdruck (das Dezimaltrennzeichen ist „,“)",
     "Gray numbers are examples: the results use them until you type your own sizes.": "Graue Zahlen sind Beispiele: Die Ergebnisse verwenden sie, bis du deine eigenen Maße eingibst.",
     "Show the row of x, ans, the arrows and the keyboard": "Die Reihe mit x, ans, den Pfeilen und der Tastatur zeigen",
-    "The manual opens when you are connected to the internet.": "Die Anleitung öffnet sich, wenn eine Internetverbindung besteht.",
-    "Tips in the app": "Tipps in der App",
     "How to use this (opens the user manual)": "So geht’s (öffnet die Bedienungsanleitung)",
     "How to use ›": "So geht’s ›",
     "How to use the Pro features ›": "So nutzen Sie die Pro-Funktionen ›",
@@ -1516,7 +1514,12 @@
     "What is new in 1.12.0 (user manual) ›": "Neu in 1.12.0 (Bedienungsanleitung) ›",
     "User manual": "Bedienungsanleitung",
     "Every feature step by step, on the web and as a PDF": "Alle Funktionen Schritt für Schritt, im Web und als PDF",
-    "How to use this form ›": "So nutzen Sie dieses Formular ›"
+    "How to use this form ›": "So nutzen Sie dieses Formular ›",
+    "The detailed version opens when you are connected to the internet.": "Die ausführliche Fassung öffnet sich, wenn Sie mit dem Internet verbunden sind.",
+    "The manual could not be opened.": "Die Anleitung ließ sich nicht öffnen.",
+    "Search the manual": "In der Anleitung suchen",
+    "Nothing found. Try another word.": "Nichts gefunden. Versuchen Sie ein anderes Wort.",
+    "Detailed version with photos (web)": "Ausführliche Fassung mit Fotos (Web)"
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",

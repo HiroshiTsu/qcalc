@@ -1511,8 +1511,6 @@
     "A size is one number or expression (the decimal sign is \",\")": "尺寸請填一個數或運算式（小數點是「,」）",
     "Gray numbers are examples: the results use them until you type your own sizes.": "灰色的數字是範例：在輸入自己的尺寸之前，結果都用範例值計算。",
     "Show the row of x, ans, the arrows and the keyboard": "顯示 x、ans、方向鍵和鍵盤那一列",
-    "The manual opens when you are connected to the internet.": "連上網路後即可開啟說明書。",
-    "Tips in the app": "App 內的使用說明",
     "How to use this (opens the user manual)": "使用方法（開啟使用說明書）",
     "How to use ›": "使用方法 ›",
     "How to use the Pro features ›": "Pro 功能的使用方法 ›",
@@ -1520,7 +1518,12 @@
     "What is new in 1.12.0 (user manual) ›": "1.12.0 的新功能（使用說明書）›",
     "User manual": "使用說明書",
     "Every feature step by step, on the web and as a PDF": "所有功能逐步說明，網頁版與 PDF",
-    "How to use this form ›": "這個表單的使用方法 ›"
+    "How to use this form ›": "這個表單的使用方法 ›",
+    "The detailed version opens when you are connected to the internet.": "連上網路後即可打開詳細版。",
+    "The manual could not be opened.": "無法打開說明書。",
+    "Search the manual": "在說明書中搜尋",
+    "Nothing found. Try another word.": "找不到。請換個詞試試。",
+    "Detailed version with photos (web)": "附照片的詳細版（網頁）"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",

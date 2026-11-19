@@ -1510,8 +1510,6 @@
     "A size is one number or expression (the decimal sign is \",\")": "크기는 수나 식 하나로 넣으세요(소수점은 ‘,’)",
     "Gray numbers are examples: the results use them until you type your own sizes.": "회색 숫자는 예시입니다. 크기를 입력할 때까지 결과는 예시 값으로 계산합니다.",
     "Show the row of x, ans, the arrows and the keyboard": "x·ans·화살표·키보드 줄 보이기",
-    "The manual opens when you are connected to the internet.": "설명서는 인터넷에 연결되면 열립니다.",
-    "Tips in the app": "앱 안의 사용법",
     "How to use this (opens the user manual)": "사용법(사용 설명서 열기)",
     "How to use ›": "사용법 ›",
     "How to use the Pro features ›": "Pro 기능 사용법 ›",
@@ -1519,7 +1517,12 @@
     "What is new in 1.12.0 (user manual) ›": "1.12.0의 새 기능(사용 설명서) ›",
     "User manual": "사용 설명서",
     "Every feature step by step, on the web and as a PDF": "모든 기능을 단계별로, 웹과 PDF로",
-    "How to use this form ›": "이 양식의 사용법 ›"
+    "How to use this form ›": "이 양식의 사용법 ›",
+    "The detailed version opens when you are connected to the internet.": "자세한 판은 인터넷에 연결되면 열 수 있습니다.",
+    "The manual could not be opened.": "설명서를 열지 못했습니다.",
+    "Search the manual": "설명서에서 찾기",
+    "Nothing found. Try another word.": "찾지 못했습니다. 다른 말로 찾아 보세요.",
+    "Detailed version with photos (web)": "사진이 있는 자세한 판(웹)"
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",

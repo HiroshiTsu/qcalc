@@ -114,8 +114,8 @@ th { background: var(--box); }
 <section class="m-sec" id="first-steps">
 <h3>Vos trois premiers calculs</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Tapez un calcul avec les touches et appuyez sur <b class="ui">=</b> : le résultat passe dans l'historique. Pendant la saisie, le résultat s'affiche déjà sous le champ de saisie.</p>
-<div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez l'app et tapez <code>2 + 3 × 4</code> avec les touches. « = 14 » s'affiche sous le champ.</li><li>Appuyez sur <b class="ui">=</b>. Le calcul et « = 14 » passent dans l'historique et le champ se vide.</li><li>Tapez ensuite <code>60 mph to km/h</code> (« to » est sur la touche →). « ≈ 96.56064 km/h » s'affiche.</li><li>Le troisième est <code>sqrt(2)</code>, aussi avec la touche √ : « = √2 ≈ 1.414213562 », la valeur exacte et la valeur approchée.</li></ol></div>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p><code>1/3 + 1/4</code> → <code>= 7/12 ≈ 0.5833333333</code></p></div>
+<div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez l'app et tapez <code>2 + 3 × 4</code> avec les touches. « = 14 » s'affiche sous le champ.</li><li>Appuyez sur <b class="ui">=</b>. Le calcul et « = 14 » passent dans l'historique et le champ se vide.</li><li>Tapez ensuite <code>60 mph to km/h</code> (« to » est sur la touche →). « ≈ 96,56064 km/h » s'affiche.</li><li>Le troisième est <code>sqrt(2)</code>, aussi avec la touche √ : « = √2 ≈ 1,414213562 », la valeur exacte et la valeur approchée.</li></ol></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p><code>1/3 + 1/4</code> → <code>= 7/12 ≈ 0,5833333333</code></p></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p>Touchez un résultat de l'historique pour le mettre dans le champ de saisie ou le copier.</p></div>
 <div class="m-box m-mis"><div class="m-lbl">Erreurs fréquentes</div><ul><li>La lettre x est une variable, pas « fois ». Multipliez avec la touche × (ou *).</li></ul></div>
 </section>
@@ -175,7 +175,7 @@ th { background: var(--box); }
 <section class="m-sec" id="results">
 <h3>Lire le résultat : exact, approché, fractions</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Un résultat qui commence par « = » est exact ; un résultat qui commence par « ≈ » est approché. Les résultats avec des fractions ou √ affichent aussi la valeur décimale.</p>
-<ul><li><code>1/3 + 1/4</code> → <code>= 7/12 ≈ 0.5833333333</code> (la fraction reste, avec sa valeur décimale)</li><li><code>sqrt(8)</code> → <code>= 2√2 ≈ 2.828427125</code></li><li><code>pi × 2</code> → <code>= 2π ≈ 6.283185307</code></li></ul>
+<ul><li><code>1/3 + 1/4</code> → <code>= 7/12 ≈ 0,5833333333</code> (la fraction reste, avec sa valeur décimale)</li><li><code>sqrt(8)</code> → <code>= 2√2 ≈ 2,828427125</code></li><li><code>pi × 2</code> → <code>= 2π ≈ 6,283185307</code></li></ul>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Le bouton du haut passe d'exact à approché ou automatique.</li><li>Le nombre de chiffres est <b class="ui">Précision (chiffres significatifs)</b> dans <b class="ui">Paramètres</b> (10 par défaut).</li></ol></div>
 <p class="m-pro"><span class="m-badge">Pro</span> C’est une fonction de QCalc Pro. Jusqu'à 1000 chiffres, c'est gratuit. Au-delà de 1000, jusqu'à 200000 chiffres, c'est une fonction de QCalc Pro.</p>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p>Un résultat très long défile dans l'historique pour lire tous les chiffres ; le copier copie tous les chiffres.</p></div>
@@ -190,7 +190,7 @@ th { background: var(--box); }
 <h3>Format des nombres : le séparateur décimal</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Choisissez si le séparateur décimal est « . » ou « , » et comment les chiffres sont groupés. Au départ, QCalc écrit les nombres comme la région de votre téléphone.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Paramètres</b>.</li><li>Dans <b class="ui">Format des nombres</b>, choisissez <b class="ui">Automatique</b>, 1,234.5, 1.234,5 ou 1 234,5.</li><li>Ce que vous tapez et ce que vous voyez suit le format choisi.</li></ol></div>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Avec 1.234,5, deux et demi s'écrit <code>2,5</code> : <code>2,5 + 3,75</code> → <code>= 6,25</code></p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Avec 1 234,5 (le format habituel en France), deux et demi s'écrit <code>2,5</code> : <code>2,5 + 3,75</code> → <code>= 6,25</code></p></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p>Avec la virgule décimale, séparez les arguments d'une fonction par « ; » : <code>max(1,5; 2)</code>.</p></div>
 <div class="m-box m-mis"><div class="m-lbl">Erreurs fréquentes</div><ul><li>Taper <code>1.5</code> avec la virgule décimale donne une erreur ; le message montre la bonne forme.</li></ul></div>
 </section>
@@ -246,7 +246,7 @@ th { background: var(--box); }
 <section class="m-sec" id="writing">
 <h3>Écrire des fonctions, des unités et des devises</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Les calculs s'écrivent comme dans Qalculate!. Les formes courantes :</p>
-<div class="m-tw"><table><thead><tr><th>Tapez</th><th>Signifie</th></tr></thead><tbody><tr><td><code>sqrt(x)</code>, <code>√x</code></td><td>Racine carrée</td></tr><tr><td><code>x^2</code></td><td>Puissance</td></tr><tr><td><code>5 km to mi</code></td><td>Convertir une unité</td></tr><tr><td><code>100 USD to EUR</code></td><td>Convertir une devise (avec les taux de change)</td></tr><tr><td><code>solve(x^2 − 5x + 6 = 0)</code></td><td>Résoudre une équation</td></tr><tr><td><code>diff(x^3)</code></td><td>Dérivée</td></tr><tr><td><code>integrate(x^2, 0, 1)</code></td><td>Intégrale définie</td></tr><tr><td><code>ans</code></td><td>Le dernier résultat</td></tr></tbody></table></div>
+<div class="m-tw"><table><thead><tr><th>Tapez</th><th>Signifie</th></tr></thead><tbody><tr><td><code>sqrt(x)</code>, <code>√x</code></td><td>Racine carrée</td></tr><tr><td><code>x^2</code></td><td>Puissance</td></tr><tr><td><code>5 km to mi</code></td><td>Convertir une unité</td></tr><tr><td><code>100 USD to EUR</code></td><td>Convertir une devise (avec les taux de change)</td></tr><tr><td><code>solve(x^2 − 5x + 6 = 0)</code></td><td>Résoudre une équation</td></tr><tr><td><code>diff(x^3)</code></td><td>Dérivée</td></tr><tr><td><code>integrate(x^2; 0; 1)</code></td><td>Intégrale définie (avec la virgule décimale, séparez les arguments par « ; »)</td></tr><tr><td><code>ans</code></td><td>Le dernier résultat</td></tr></tbody></table></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p>Dix unités japonaises traditionnelles (tsubo, shaku, shō, kan et d'autres) fonctionnent aussi : <code>30 tsubo to m^2</code>.</p></div>
 </section>
 <section class="m-sec" id="lists">
@@ -297,7 +297,7 @@ th { background: var(--box); }
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Le prix avec ou sans taxe, une ou deux remises, et comment arrondir.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Prix : remise et taxe</b> dans <b class="ui">Outils</b>.</li><li>Tapez le prix, la remise (%) et la taxe.</li><li>Choisissez si le prix inclut la taxe et comment arrondir.</li></ol></div>
 <figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/price.jpg" alt="Prix : remise et taxe avec un exemple" width="360"><span class="m-mark" style="left:91.1%;top:3.5%" aria-hidden="true">1</span><span class="m-mark" style="left:34.2%;top:14.7%" aria-hidden="true">2</span><span class="m-mark" style="left:54.4%;top:33.8%" aria-hidden="true">3</span><span class="m-mark" style="left:50.0%;top:80.1%" aria-hidden="true">4</span><span class="m-mark" style="left:50.0%;top:50.0%" aria-hidden="true">5</span><span class="m-mark" style="left:50.0%;top:17.1%" aria-hidden="true">6</span></div><figcaption>Prix : remise et taxe avec un exemple</figcaption></figure>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>1500 avec 10 % de remise et 8 % de taxe → 1,458 taxe comprise (1,350 hors taxe, taxe 108)</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>1500 avec 10 % de remise et 8 % de taxe → 1 458 taxe comprise (1 350 hors taxe, taxe 108)</p></div>
 <div class="m-box m-mis"><div class="m-lbl">Erreurs fréquentes</div><ul><li>Pour obtenir le prix hors taxe à partir d'un prix taxe comprise, choisissez d'abord « taxe comprise ».</li></ul></div>
 </section>
 <section class="m-sec" id="percent">
@@ -310,28 +310,28 @@ th { background: var(--box); }
 <h3>Prix unitaire : lequel est le moins cher</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Compare le prix aux 100 g (100 mL, à la pièce) de deux produits.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Prix unitaire : lequel est moins cher</b>.</li><li>Tapez le prix et la quantité (500 g, 1 kg) de A et de B.</li></ol></div>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>298 pour 500 g et 498 pour 1 kg → B est moins cher (59.6 et 49.8 aux 100 g, 16.4 % de moins)</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>298 pour 500 g et 498 pour 1 kg → B est moins cher (59,6 et 49,8 aux 100 g, 16,4 % de moins)</p></div>
 </section>
 <section class="m-sec" id="split">
 <h3>Partager l'addition</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Ce que paie chaque personne, arrondi comme vous le choisissez.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Partager l’addition</b> et tapez le total et le nombre de personnes.</li><li>Choisissez d'arrondir au-dessus ou au-dessous.</li></ol></div>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>10000 pour 3 → chacun 3,333.34 (au-dessus ; 0.02 de trop)</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>10000 pour 3 → chacun 3 333,34 (au-dessus ; 0,02 de trop)</p></div>
 </section>
 <section class="m-sec" id="loan">
 <h3>Prêt</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> La mensualité, le total des intérêts et le tableau des paiements, en mensualités égales ou en capital égal.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Prêt</b>.</li><li>Tapez le montant, le taux annuel et les années.</li><li>Choisissez le mode de remboursement.</li><li>Ouvrez <b class="ui">Échéances, mois par mois</b> pour voir le tableau.</li></ol></div>
-<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/loan.jpg" alt="Prêt avec un exemple (30,000,000 à 1 % sur 35 ans)" width="360"></div><figcaption>Prêt avec un exemple (30,000,000 à 1 % sur 35 ans)</figcaption></figure>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>30,000,000 à 1 % sur 35 ans (mensualités égales) → 84,685.71 par mois, total des intérêts 5,567,998.07</p></div>
+<figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/loan.jpg" alt="Prêt avec un exemple (30 000 000 à 1 % sur 35 ans)" width="360"></div><figcaption>Prêt avec un exemple (30 000 000 à 1 % sur 35 ans)</figcaption></figure>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>30 000 000 à 1 % sur 35 ans (mensualités égales) → 84 685,71 par mois, total des intérêts 5 567 998,07</p></div>
 <p class="m-pro"><span class="m-badge">Pro</span> C’est une fonction de QCalc Pro. Enregistrer le tableau en fichier CSV est une fonction de QCalc Pro (le voir et le copier est gratuit).</p>
-<div class="m-box m-mis"><div class="m-lbl">Erreurs fréquentes</div><ul><li>Taper 0.01 pour 1 % donne 0.01 %. Tapez le nombre de pour cent.</li></ul></div>
+<div class="m-box m-mis"><div class="m-lbl">Erreurs fréquentes</div><ul><li>Taper 0,01 pour 1 % donne 0,01 %. Tapez le nombre de pour cent.</li></ul></div>
 </section>
 <section class="m-sec" id="savings">
 <h3>Épargne et intérêts composés</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Ce que devient une épargne mensuelle ou une somme avec des intérêts composés.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Épargne et intérêts composés</b> et tapez le montant mensuel (ou la somme de départ), le taux annuel et les années.</li></ol></div>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>30,000 par mois, 3 %, 20 ans → 9,849,059.94 (versé 7,200,000 ; intérêts 2,649,059.94)</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>30 000 par mois, 3 %, 20 ans → 9 849 059,94 (versé 7 200 000 ; intérêts 2 649 059,94)</p></div>
 </section>
 <section class="m-sec" id="dates">
 <h3>Dates</h3>
@@ -343,21 +343,21 @@ th { background: var(--box); }
 <h3>Heures</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Additionne et soustrait des h:mm, et donne les heures travaillées sans les pauses et la paie.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Durées</b> et tapez l'heure de début, l'heure de fin et la pause.</li><li>Tapez le salaire horaire pour obtenir la paie.</li></ol></div>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>De 9:00 à 17:30 avec 1:00 de pause → 7:30 travaillées (7.5 heures)</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>De 9:00 à 17:30 avec 1:00 de pause → 7:30 travaillées (7,5 heures)</p></div>
 </section>
 <section class="m-sec" id="convert">
 <h3>Convertir des unités et des devises</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Tapez un nombre dans l'une des deux lignes ; l'autre est convertie. Longueur, poids, volume, température, consommation, devises et plus.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Convertir unités et devises</b> et choisissez le type de grandeur avec les boutons du haut.</li><li>Choisissez les unités des deux lignes.</li><li>Tapez un nombre dans l'une d'elles.</li><li>⇅ échange les lignes.</li></ol></div>
 <figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/convert.jpg" alt="L&#x27;écran de conversion" width="360"></div><figcaption>L'écran de conversion</figcaption></figure>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>5 km → 3.106855961 mi</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>5 km → 3,106855961 mi</p></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p>Touchez la ligne du résultat pour mettre « 5 km to mi » dans le champ de saisie ou le garder dans l'historique.</p></div>
 </section>
 <section class="m-sec" id="shapes">
 <h3>Formes : aire, volume, longueur</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Choisissez une forme d'après son dessin et tapez ses mesures : l'aire, le périmètre, le volume et la surface s'affichent.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Formes planes</b> ou <b class="ui">Solides</b> dans <b class="ui">Outils</b>.</li><li>Touchez le dessin d'une forme.</li><li>Tapez les mesures indiquées sur le dessin (r, h). Les mesures rondes peuvent être un rayon ou un diamètre.</li><li>Les résultats changent pendant la saisie ; un toucher utilise ou copie leur calcul.</li></ol></div>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Une sphère de rayon 2 → volume 32π/3 ≈ 33.51032164, surface 16π</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Une sphère de rayon 2 → volume 32π/3 ≈ 33,51032164, surface 16π</p></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p>Choisissez un matériau pour obtenir le poids.</p></div>
 </section>
 <section class="m-sec" id="tanks">
@@ -376,7 +376,7 @@ th { background: var(--box); }
 </svg><figcaption>Une cuve horizontale (L la longueur, D le diamètre, h la hauteur du liquide)</figcaption></figure>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Cuves : liquide et niveau</b> dans <b class="ui">Outils</b>.</li><li>Choisissez la forme et tapez le diamètre (ou le rayon) et la longueur.</li><li>Tapez la hauteur du liquide et choisissez l'unité de longueur.</li></ol></div>
 <figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/tanks.jpg" alt="Le liquide d&#x27;une cuve horizontale" width="360"></div><figcaption>Le liquide d'une cuve horizontale</figcaption></figure>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Horizontale, diamètre 1 m, longueur 2 m, liquide à 30 cm → 0.3963367126 m³ (environ 396 L)</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Horizontale, diamètre 1 m, longueur 2 m, liquide à 30 cm → 0,3963367126 m³ (environ 396 L)</p></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p><b class="ui">Tableau de référence ▾</b> donne la quantité pour chaque hauteur.</p></div>
 <div class="m-box m-mis"><div class="m-lbl">Erreurs fréquentes</div><ul><li>Un rayon tapé dans la case du diamètre donne à peu près le quart. Vérifiez rayon ou diamètre.</li></ul></div>
 </section>
@@ -391,7 +391,7 @@ th { background: var(--box); }
 <h3>Volume à partir de mesures</h3>
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Le volume d'un terrassement ou d'un bassin à partir d'un tableau de sections (sections moyennes, méthode de Simpson) ou d'une grille de hauteurs.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Volume à partir de mesures</b> dans <b class="ui">Outils</b>.</li><li>Choisissez sections ou hauteurs de points, et tapez les distances et les aires (ou les hauteurs).</li><li>Choisissez l'unité de longueur : le volume est donné en m³ et en L.</li></ol></div>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Sections x² (de 0 à 4, tous les 1 m) → sections moyennes 22 m³, méthode de Simpson 64/3 m³ ≈ 21.33 m³</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Sections x² (de 0 à 4, tous les 1 m) → sections moyennes 22 m³, méthode de Simpson 64/3 m³ ≈ 21,33 m³</p></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p>Deux colonnes copiées d'un tableur peuvent être collées dans le tableau.</p></div>
 </section>
 <section class="m-sec" id="profile">
@@ -407,7 +407,7 @@ th { background: var(--box); }
 </svg><figcaption>Un arbre étagé (un tableau de positions z et de diamètres d donne sa forme)</figcaption></figure>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Solide à partir d’un profil</b> dans <b class="ui">Outils</b>.</li><li>Tapez les positions et les diamètres (ou les rayons). Deux lignes à la même position font une marche.</li><li>Choisissez l'unité (mm, cm, m, in).</li><li><b class="ui">Plus ▾</b> ajoute le profil intérieur d'un récipient et le retrait de la céramique.</li></ol></div>
 <figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/profile.jpg" alt="L&#x27;exemple de l&#x27;arbre étagé" width="360"></div><figcaption>L'exemple de l'arbre étagé</figcaption></figure>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>L'arbre étagé de l'exemple → volume extérieur 4440π mm³ ≈ 13.95 cm³, environ 109.5 g en fer</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>L'arbre étagé de l'exemple → volume extérieur 4440π mm³ ≈ 13,95 cm³, environ 109,5 g en fer</p></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p><b class="ui">Voir en 3D</b> montre la forme ; un fichier STL s'imprime avec une imprimante 3D (<a href="#stl">Fichiers STL</a>).</p></div>
 </section>
 <section class="m-sec" id="stl">
@@ -422,7 +422,7 @@ th { background: var(--box); }
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Pour une colonne : la moyenne, la médiane, l'écart type, les quartiles et plus ; pour deux colonnes : la droite de régression et la corrélation.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Ouvrez <b class="ui">Statistiques</b> dans <b class="ui">Outils</b>.</li><li>Tapez les valeurs ou collez-les depuis un tableur.</li><li>Avec deux colonnes, <b class="ui">📈 Voir dans un graphique</b> trace les points et la droite.</li></ol></div>
 <figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/stats.jpg" alt="Statistiques avec un exemple" width="360"></div><figcaption>Statistiques avec un exemple</figcaption></figure>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Notes de 10 personnes → moyenne 73.9, médiane 74, écart type (échantillon) 9.938142013</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Notes de 10 personnes → moyenne 73,9, médiane 74, écart type (échantillon) 9,938142013</p></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p>Les quartiles sont d'abord donnés par la méthode des manuels du lycée au Japon ; celle des tableurs est dans « Plus ».</p></div>
 <div class="m-box m-mis"><div class="m-lbl">Erreurs fréquentes</div><ul><li>Une valeur qui n'est pas un nombre s'affiche avec sa ligne et comment la corriger.</li></ul></div>
 </section>
@@ -451,7 +451,7 @@ th { background: var(--box); }
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> L'aire entre une courbe et l'axe des x ou entre deux courbes, et la longueur d'une courbe. Les bornes de l'intervalle se glissent au doigt.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Tracez les fonctions dans le graphique 2D.</li><li>Ouvrez <b class="ui">Aire et longueur ▾</b>.</li><li>Tapez l'intervalle a et b, ou glissez les lignes de ses bornes.</li></ol></div>
 <figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/area.jpg" alt="L&#x27;aire sous √x de 0 à 2" width="360"></div><figcaption>L'aire sous √x de 0 à 2</figcaption></figure>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>√x de 0 à 2 → aire 1.885618083</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>√x de 0 à 2 → aire 1,885618083</p></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p>Passez à <b class="ui">Longueur</b> pour la longueur de la courbe.</p></div>
 </section>
 <section class="m-sec" id="solid">
@@ -473,7 +473,7 @@ th { background: var(--box); }
 </svg><figcaption>La région entre y = x et y = x² tournée autour de l'axe des x</figcaption></figure>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Tracez les fonctions dans le graphique 2D (par exemple <code>x</code> et <code>x^2</code>).</li><li>Appuyez sur le bouton rond <b class="ui">⟳ 3D</b> du graphique. Le volume autour de l'axe des x s'affiche aussitôt.</li><li>Pour un autre axe, touchez sa ligne ; la ligne y = k se glisse au doigt.</li><li><b class="ui">↶ Annuler</b> revient à l'axe précédent.</li></ol></div>
 <figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/solid.jpg" alt="La région entre y = x et y = x² tournée autour de l&#x27;axe des x" width="360"></div><figcaption>La région entre y = x et y = x² tournée autour de l'axe des x</figcaption></figure>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Entre y = x et y = x², autour de l'axe des x → volume 2π/15 ≈ 0.4188790205</p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>Entre y = x et y = x², autour de l'axe des x → volume 2π/15 ≈ 0,4188790205</p></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p><b class="ui">Montrer la méthode par des lignes</b> trace les disques (rondelles) ou les coquilles. La ligne <b class="ui">Théorème de Pappus-Guldin : </b> compare le volume obtenu par le centre de gravité à l'intégrale.</p></div>
 <p class="m-pro"><span class="m-badge">Pro</span> C’est une fonction de QCalc Pro. Faire tourner le solide au doigt dans <b class="ui">Voir en 3D</b> est une fonction de QCalc Pro, comme le graphique 3D.</p>
 </section>
@@ -512,7 +512,7 @@ th { background: var(--box); }
 <p class="m-what"><span class="m-lbl">Ce qu’il fait</span> Les touches de la page <b class="ui">Analyse</b> ouvrent un formulaire avec des cases □.</p>
 <div class="m-steps"><div class="m-lbl">Étapes</div><ol><li>Appuyez sur d/dx, ∫, lim, Σ ou une autre touche de la page <b class="ui">Analyse</b>.</li><li>Remplissez les cases. La variable peut rester x.</li><li>Le résultat s'affiche en bas ; <b class="ui">=</b> le garde dans l'historique.</li></ol></div>
 <figure class="m-fig m-shot"><div class="m-shot-in"><img src="img/form.jpg" alt="Le formulaire d&#x27;une intégrale" width="360"></div><figcaption>Le formulaire d'une intégrale</figcaption></figure>
-<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>∫ x² sin(x) dx de 0 à π → <code>π² − 4 ≈ 5.869604401</code></p></div>
+<div class="m-box m-ex"><div class="m-lbl">Exemple</div><p>∫ x² sin(x) dx de 0 à π → <code>π² − 4 ≈ 5,869604401</code></p></div>
 <div class="m-box m-tip"><div class="m-lbl">Astuce</div><p>Une limite peut être <b class="ui">Des deux côtés</b>, <b class="ui">Par la droite (+)</b> ou <b class="ui">Par la gauche (−)</b>.</p></div>
 </section>
 <section class="m-sec" id="equations">

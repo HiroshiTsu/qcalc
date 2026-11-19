@@ -1088,7 +1088,8 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .geo-unit:empty { display: none; }
 .geo-msg { color: var(--danger); font-size: 14px; margin: 8px 2px 0; }
 /* 1.11.0: radius or diameter, the units of the results, the weight and the height from an amount */
-.geo-rd { margin: 0 0 4px; }
+.geo-rd { margin: 0 0 4px; flex-wrap: wrap; max-width: 100%; } /* (BG18: "Radius | Durchmesser" with large text at 320 px) */
+.geo-rd button { flex: 1 0 auto; }
 .geo-units, .geo-weight { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
 .geo-units select, .geo-weight select, .geo-weight input, .geo-amt input { flex: 1 1 140px; min-width: 0; min-height: 40px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 15px; }
 .geo-weight .geo-val, .geo-amt .geo-val { flex: 1 1 100%; font-size: 15px; }

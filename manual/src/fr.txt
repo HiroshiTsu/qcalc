@@ -19,9 +19,9 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :what: Tapez un calcul avec les touches et appuyez sur [[!=]] : le résultat passe dans l'historique. Pendant la saisie, le résultat s'affiche déjà sous le champ de saisie.
 :step: Ouvrez l'app et tapez `2 + 3 × 4` avec les touches. « = 14 » s'affiche sous le champ.
 :step: Appuyez sur [[!=]]. Le calcul et « = 14 » passent dans l'historique et le champ se vide.
-:step: Tapez ensuite `60 mph to km/h` (« to » est sur la touche →). « ≈ 96.56064 km/h » s'affiche.
-:step: Le troisième est `sqrt(2)`, aussi avec la touche √ : « = √2 ≈ 1.414213562 », la valeur exacte et la valeur approchée.
-:example: `1/3 + 1/4` → `= 7/12 ≈ 0.5833333333`
+:step: Tapez ensuite `60 mph to km/h` (« to » est sur la touche →). « ≈ 96,56064 km/h » s'affiche.
+:step: Le troisième est `sqrt(2)`, aussi avec la touche √ : « = √2 ≈ 1,414213562 », la valeur exacte et la valeur approchée.
+:example: `1/3 + 1/4` → `= 7/12 ≈ 0,5833333333`
 :tip: Touchez un résultat de l'historique pour le mettre dans le champ de saisie ou le copier.
 :mistake: La lettre x est une variable, pas « fois ». Multipliez avec la touche × (ou *).
 
@@ -71,9 +71,9 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 
 ## results | Lire le résultat : exact, approché, fractions
 :what: Un résultat qui commence par « = » est exact ; un résultat qui commence par « ≈ » est approché. Les résultats avec des fractions ou √ affichent aussi la valeur décimale.
-- `1/3 + 1/4` → `= 7/12 ≈ 0.5833333333` (la fraction reste, avec sa valeur décimale)
-- `sqrt(8)` → `= 2√2 ≈ 2.828427125`
-- `pi × 2` → `= 2π ≈ 6.283185307`
+- `1/3 + 1/4` → `= 7/12 ≈ 0,5833333333` (la fraction reste, avec sa valeur décimale)
+- `sqrt(8)` → `= 2√2 ≈ 2,828427125`
+- `pi × 2` → `= 2π ≈ 6,283185307`
 :step: Le bouton du haut passe d'exact à approché ou automatique.
 :step: Le nombre de chiffres est [[Precision (significant digits)]] dans [[Settings]] (10 par défaut).
 :pro: Jusqu'à 1000 chiffres, c'est gratuit. Au-delà de 1000, jusqu'à 200000 chiffres, c'est une fonction de QCalc Pro.
@@ -91,7 +91,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Ouvrez [[Settings]].
 :step: Dans [[Number format]], choisissez [[Automatic]], 1,234.5, 1.234,5 ou 1 234,5.
 :step: Ce que vous tapez et ce que vous voyez suit le format choisi.
-:example: Avec 1.234,5, deux et demi s'écrit `2,5` : `2,5 + 3,75` → `= 6,25`
+:example: Avec 1 234,5 (le format habituel en France), deux et demi s'écrit `2,5` : `2,5 + 3,75` → `= 6,25`
 :tip: Avec la virgule décimale, séparez les arguments d'une fonction par « ; » : `max(1,5; 2)`.
 :mistake: Taper `1.5` avec la virgule décimale donne une erreur ; le message montre la bonne forme.
 
@@ -159,7 +159,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 | `100 USD to EUR` | Convertir une devise (avec les taux de change) |
 | `solve(x^2 − 5x + 6 = 0)` | Résoudre une équation |
 | `diff(x^3)` | Dérivée |
-| `integrate(x^2, 0, 1)` | Intégrale définie |
+| `integrate(x^2; 0; 1)` | Intégrale définie (avec la virgule décimale, séparez les arguments par « ; ») |
 | `ans` | Le dernier résultat |
 :tip: Dix unités japonaises traditionnelles (tsubo, shaku, shō, kan et d'autres) fonctionnent aussi : `30 tsubo to m^2`.
 
@@ -195,7 +195,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Tapez le prix, la remise (%) et la taxe.
 :step: Choisissez si le prix inclut la taxe et comment arrondir.
 :shot: price | [[Price: discount and tax]] avec un exemple
-:example: 1500 avec 10 % de remise et 8 % de taxe → 1,458 taxe comprise (1,350 hors taxe, taxe 108)
+:example: 1500 avec 10 % de remise et 8 % de taxe → 1 458 taxe comprise (1 350 hors taxe, taxe 108)
 :mistake: Pour obtenir le prix hors taxe à partir d'un prix taxe comprise, choisissez d'abord « taxe comprise ».
 
 ## percent | Pourcentages
@@ -208,13 +208,13 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :what: Compare le prix aux 100 g (100 mL, à la pièce) de deux produits.
 :step: Ouvrez [[Unit price: which is cheaper]].
 :step: Tapez le prix et la quantité (500 g, 1 kg) de A et de B.
-:example: 298 pour 500 g et 498 pour 1 kg → B est moins cher (59.6 et 49.8 aux 100 g, 16.4 % de moins)
+:example: 298 pour 500 g et 498 pour 1 kg → B est moins cher (59,6 et 49,8 aux 100 g, 16,4 % de moins)
 
 ## split | Partager l'addition
 :what: Ce que paie chaque personne, arrondi comme vous le choisissez.
 :step: Ouvrez [[Split the bill]] et tapez le total et le nombre de personnes.
 :step: Choisissez d'arrondir au-dessus ou au-dessous.
-:example: 10000 pour 3 → chacun 3,333.34 (au-dessus ; 0.02 de trop)
+:example: 10000 pour 3 → chacun 3 333,34 (au-dessus ; 0,02 de trop)
 
 ## loan | Prêt
 :what: La mensualité, le total des intérêts et le tableau des paiements, en mensualités égales ou en capital égal.
@@ -222,15 +222,15 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Tapez le montant, le taux annuel et les années.
 :step: Choisissez le mode de remboursement.
 :step: Ouvrez [[Payments, month by month]] pour voir le tableau.
-:shot: loan | [[Loan]] avec un exemple (30,000,000 à 1 % sur 35 ans)
-:example: 30,000,000 à 1 % sur 35 ans (mensualités égales) → 84,685.71 par mois, total des intérêts 5,567,998.07
+:shot: loan | [[Loan]] avec un exemple (30 000 000 à 1 % sur 35 ans)
+:example: 30 000 000 à 1 % sur 35 ans (mensualités égales) → 84 685,71 par mois, total des intérêts 5 567 998,07
 :pro: Enregistrer le tableau en fichier CSV est une fonction de QCalc Pro (le voir et le copier est gratuit).
-:mistake: Taper 0.01 pour 1 % donne 0.01 %. Tapez le nombre de pour cent.
+:mistake: Taper 0,01 pour 1 % donne 0,01 %. Tapez le nombre de pour cent.
 
 ## savings | Épargne et intérêts composés
 :what: Ce que devient une épargne mensuelle ou une somme avec des intérêts composés.
 :step: Ouvrez [[Savings and compound interest]] et tapez le montant mensuel (ou la somme de départ), le taux annuel et les années.
-:example: 30,000 par mois, 3 %, 20 ans → 9,849,059.94 (versé 7,200,000 ; intérêts 2,649,059.94)
+:example: 30 000 par mois, 3 %, 20 ans → 9 849 059,94 (versé 7 200 000 ; intérêts 2 649 059,94)
 
 ## dates | Dates
 :what: Les jours entre deux dates, n jours après ou avant, un âge, le jour de la semaine.
@@ -242,7 +242,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :what: Additionne et soustrait des h:mm, et donne les heures travaillées sans les pauses et la paie.
 :step: Ouvrez [[Times]] et tapez l'heure de début, l'heure de fin et la pause.
 :step: Tapez le salaire horaire pour obtenir la paie.
-:example: De 9:00 à 17:30 avec 1:00 de pause → 7:30 travaillées (7.5 heures)
+:example: De 9:00 à 17:30 avec 1:00 de pause → 7:30 travaillées (7,5 heures)
 
 ## convert | Convertir des unités et des devises
 :what: Tapez un nombre dans l'une des deux lignes ; l'autre est convertie. Longueur, poids, volume, température, consommation, devises et plus.
@@ -251,7 +251,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Tapez un nombre dans l'une d'elles.
 :step: ⇅ échange les lignes.
 :shot: convert | L'écran de conversion
-:example: 5 km → 3.106855961 mi
+:example: 5 km → 3,106855961 mi
 :tip: Touchez la ligne du résultat pour mettre « 5 km to mi » dans le champ de saisie ou le garder dans l'historique.
 
 ## shapes | Formes : aire, volume, longueur
@@ -260,7 +260,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Touchez le dessin d'une forme.
 :step: Tapez les mesures indiquées sur le dessin (r, h). Les mesures rondes peuvent être un rayon ou un diamètre.
 :step: Les résultats changent pendant la saisie ; un toucher utilise ou copie leur calcul.
-:example: Une sphère de rayon 2 → volume 32π/3 ≈ 33.51032164, surface 16π
+:example: Une sphère de rayon 2 → volume 32π/3 ≈ 33,51032164, surface 16π
 :tip: Choisissez un matériau pour obtenir le poids.
 
 ## tanks | Cuves : liquide et niveau
@@ -270,7 +270,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Choisissez la forme et tapez le diamètre (ou le rayon) et la longueur.
 :step: Tapez la hauteur du liquide et choisissez l'unité de longueur.
 :shot: tanks | Le liquide d'une cuve horizontale
-:example: Horizontale, diamètre 1 m, longueur 2 m, liquide à 30 cm → 0.3963367126 m³ (environ 396 L)
+:example: Horizontale, diamètre 1 m, longueur 2 m, liquide à 30 cm → 0,3963367126 m³ (environ 396 L)
 :tip: [[Quick-reference table ▾]] donne la quantité pour chaque hauteur.
 :mistake: Un rayon tapé dans la case du diamètre donne à peu près le quart. Vérifiez rayon ou diamètre.
 
@@ -288,7 +288,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Ouvrez [[Volume from measured values]] dans [[Tools]].
 :step: Choisissez sections ou hauteurs de points, et tapez les distances et les aires (ou les hauteurs).
 :step: Choisissez l'unité de longueur : le volume est donné en m³ et en L.
-:example: Sections x² (de 0 à 4, tous les 1 m) → sections moyennes 22 m³, méthode de Simpson 64/3 m³ ≈ 21.33 m³
+:example: Sections x² (de 0 à 4, tous les 1 m) → sections moyennes 22 m³, méthode de Simpson 64/3 m³ ≈ 21,33 m³
 :tip: Deux colonnes copiées d'un tableur peuvent être collées dans le tableau.
 
 ## profile | Solide à partir d'un profil
@@ -300,7 +300,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Choisissez l'unité (mm, cm, m, in).
 :step: [[More ▾]] ajoute le profil intérieur d'un récipient et le retrait de la céramique.
 :shot: profile | L'exemple de l'arbre étagé
-:example: L'arbre étagé de l'exemple → volume extérieur 4440π mm³ ≈ 13.95 cm³, environ 109.5 g en fer
+:example: L'arbre étagé de l'exemple → volume extérieur 4440π mm³ ≈ 13,95 cm³, environ 109,5 g en fer
 :tip: [[View in 3D]] montre la forme ; un fichier STL s'imprime avec une imprimante 3D ([Fichiers STL](#stl)).
 
 ## stl | Fichiers STL pour imprimantes 3D
@@ -317,7 +317,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Tapez les valeurs ou collez-les depuis un tableur.
 :step: Avec deux colonnes, [[📈 Show in a graph]] trace les points et la droite.
 :shot: stats | [[Statistics]] avec un exemple
-:example: Notes de 10 personnes → moyenne 73.9, médiane 74, écart type (échantillon) 9.938142013
+:example: Notes de 10 personnes → moyenne 73,9, médiane 74, écart type (échantillon) 9,938142013
 :tip: Les quartiles sont d'abord donnés par la méthode des manuels du lycée au Japon ; celle des tableurs est dans « Plus ».
 :mistake: Une valeur qui n'est pas un nombre s'affiche avec sa ligne et comment la corriger.
 
@@ -349,7 +349,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Ouvrez [[Area and length ▾]].
 :step: Tapez l'intervalle a et b, ou glissez les lignes de ses bornes.
 :shot: area | L'aire sous √x de 0 à 2
-:example: √x de 0 à 2 → aire 1.885618083
+:example: √x de 0 à 2 → aire 1,885618083
 :tip: Passez à [[Length]] pour la longueur de la courbe.
 
 ## solid | Créer un solide (solides de révolution)
@@ -360,7 +360,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Pour un autre axe, touchez sa ligne ; la ligne y = k se glisse au doigt.
 :step: [[↶ Undo]] revient à l'axe précédent.
 :shot: solid | La région entre y = x et y = x² tournée autour de l'axe des x
-:example: Entre y = x et y = x², autour de l'axe des x → volume 2π/15 ≈ 0.4188790205
+:example: Entre y = x et y = x², autour de l'axe des x → volume 2π/15 ≈ 0,4188790205
 :tip: [[Show the method with lines]] trace les disques (rondelles) ou les coquilles. La ligne [[Pappus–Guldinus theorem: ]] compare le volume obtenu par le centre de gravité à l'intégrale.
 :pro: Faire tourner le solide au doigt dans [[View in 3D]] est une fonction de QCalc Pro, comme le graphique 3D.
 
@@ -401,7 +401,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Remplissez les cases. La variable peut rester x.
 :step: Le résultat s'affiche en bas ; [[!=]] le garde dans l'historique.
 :shot: form | Le formulaire d'une intégrale
-:example: ∫ x² sin(x) dx de 0 à π → `π² − 4 ≈ 5.869604401`
+:example: ∫ x² sin(x) dx de 0 à π → `π² − 4 ≈ 5,869604401`
 :tip: Une limite peut être [[Both sides]], [[From the right (+)]] ou [[From the left (−)]].
 
 ## equations | Équations
