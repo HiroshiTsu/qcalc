@@ -493,6 +493,9 @@
 
   // ---------------------------------------------------------- elements
   const exprEl = $('#expr');
+  // (1.12.0, 要判断 27 (b) as the author decided: on a screen lower than 600 px the field is drawn lower, and
+  // a tap on the padding of its section, above or below it, goes to the field, so that 48 dp stay to touch)
+  $('.entry').addEventListener('pointerdown', (e) => { if (e.target === e.currentTarget || (e.target.classList && e.target.classList.contains('parsed-row'))) { e.preventDefault(); exprEl.focus(); } });
   const parsedEl = $('#parsed');
   const previewEl = $('#preview');
   const msgEl = $('#msg');

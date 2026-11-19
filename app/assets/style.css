@@ -1485,3 +1485,26 @@ body.hselect #history { padding-bottom: 150px; }
 .pf-between { flex-direction: column; align-items: stretch; gap: 4px; }
 .pf-between .seg.mini { display: flex; flex-wrap: wrap; min-width: 0; max-width: 100%; }
 .pf-between .seg.mini button { flex: 1 1 auto; white-space: normal; overflow-wrap: anywhere; min-width: 48px; min-height: 48px; }
+
+/* stage U, round 2 (1.12.0) */
+/* 要判断 27, (b) as the author decided: on screens lower than 600 px the tabs, the top row of keys and the
+   input field are drawn lower (about 40 px), and the 48 dp to touch reach around them (the tabs and the keys
+   with ::before; the input field takes the touches on the padding of its section, app.js) */
+@media (max-height: 599px) {
+  .ptab { height: 30px; }
+  .ptab::before { top: -8px; bottom: -10px; }
+  .toolbar .key { height: 36px; }
+  .toolbar .key::before { top: -6px; bottom: -6px; }
+  #expr { min-height: 40px; }
+}
+/* the results of the shapes and the tanks as those of the tools (record 8): a value that does not fit beside
+   its name goes below it, and a number or an exact expression is not broken in the middle */
+.geo-out .geo-row { flex-wrap: wrap; row-gap: 2px; }
+.geo-out .geo-val { flex: 1 1 auto; overflow-wrap: break-word; word-break: keep-all; }
+/* the converter: the number and the unit list each on their own line when they do not both fit (320 px, large text) */
+.conv-row { flex-wrap: wrap; }
+.conv-row input { flex: 1 1 8em; }
+.conv-row select { flex: 1 1 9em; max-width: none; }
+/* an exact result with its approximation that is wider than the history (320 px, large text): the line breaks after
+   = or ≈ instead of the end being hidden off the right (it still scrolls when one part alone is too wide) */
+.h-res.math { white-space: normal; }
