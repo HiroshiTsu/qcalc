@@ -33,6 +33,8 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 - **Von 2D zu 3D**: [[!⟳ 3D]] macht aus einem Bereich des Graphen sofort einen Rotationskörper und zeigt ihn in 3D (3D: QCalc Pro); dazu Körper mit bekannten Querschnitten, die Linien der Methode und die Guldinsche Regel ([Einen Körper bilden](#solid)).
 - **Schnell öffnen**: ein Widget, eine Kachel der Schnelleinstellungen und Verknüpfungen am Symbol ([Widget, Kachel und Verknüpfungen](#widget)).
 - **Teilen**: Bilder von Graphen, bei 3D auch als bewegtes GIF ([Teilen](#share)).
+- **Körper und Tanks in 3D**: [[!⟳ 3D]] oben links am Bild in [[Solids]] und [[Tanks]] zeigt die Form mit den eingegebenen Maßen in 3D; bei einem Tank lässt sich der Füllstand ziehen, um die Menge zu sehen ([Körper und Tanks in 3D](#shapes-3d); 3D ist QCalc Pro).
+- **Stellen der Ergebnisse**: die Stellen der Ergebnisse von Figuren, Tanks usw., als Nachkommastellen oder gültige Ziffern, für jede Art von Größe, mit der Rundung; jedes % hat anfangs eine Nachkommastelle ([Stellen der Ergebnisse](#digits)).
 - **QCalc Pro**: CSV von Tabellen, Tankböden mit Tabellen, Körper aus einem Profil, STL-Dateien, weitere Rechennotizen und mehr ([QCalc Pro](#pro)).
 - **Diese Anleitung**: Sie ist in der App. Das „?“ oben rechts in einem Werkzeug oder Fenster öffnet den passenden Abschnitt.
 
@@ -268,6 +270,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Die Ergebnisse ändern sich beim Tippen; ein Tippen übernimmt oder kopiert den Ausdruck.
 :example: Kugel mit Radius 2 → Volumen 32π/3 ≈ 33,5103, Oberfläche 16π
 :tip: Wählen Sie ein Material, um das Gewicht zu erhalten.
+:tip: [[!⟳ 3D]] oben links am Bild zeigt den Körper in 3D zum Drehen ([Körper und Tanks in 3D](#shapes-3d)).
 
 ## tanks | Tanks: Füllmenge und Füllhöhe
 :what: Die Flüssigkeitsmenge in einem liegenden oder stehenden Tank oder einem runden Behälter aus der Füllhöhe, und die Höhe zu einer Menge.
@@ -288,6 +291,33 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: L ist die Länge des Mantels (ohne Böden).
 :step: Geben Sie unter [[Quick-reference table ▾]] die Schrittweite ein: eine Tabelle aus Höhen und Mengen, zum Kopieren oder als CSV.
 :tip: Flache Böden (ein einfacher Zylinder wie bisher) sind kostenlos.
+
+## shapes-3d | Körper und Tanks in 3D
+:pro:
+:what: Die Form aus [[Solids]] oder [[Tanks]] mit den eingegebenen Maßen in 3D zum Drehen. Darüber groß das Volumen und die Oberfläche des Werkzeugs (bei einem Tank die Füllmenge und das Fassungsvermögen).
+:step: Wählen Sie in [[Solids]] oder [[Tanks]] der Werkzeuge eine Form und geben Sie die Maße ein.
+:step: Tippen Sie oben links am Bild auf [[!⟳ 3D]] (vorgelesen als [[View in 3D]]). Die Form wächst in 3D.
+:step: Mit einem Finger drehen, mit zwei zoomen. Ein Rotationskörper zeigt mit [[Cut in half]] seinen Schnitt.
+:step: [[← Back to the shape]] führt mit derselben Form und denselben Maßen zum Werkzeug zurück.
+:shot: shapes3d | Ein liegender Tank mit Böden in 3D
+:example: Ein Zylinder mit 30 cm Durchmesser und 50 cm Höhe → Volumen 11250π ≈ 35342,91735 cm³
+:tip: Ein Tank wird durchsichtig gezeichnet, die Flüssigkeit als Körper in eigener Farbe. Ziehen Sie vom Füllstand (dem Kästchen mit der Menge) nach oben oder unten, um ihn zu bewegen: [[Height of the liquid]] im Werkzeug ändert sich mit. Ein Ziehen an anderer Stelle dreht den Graphen. Auch der Regler [[Level]] darunter bewegt ihn.
+:tip: Die Striche an der Wand sind runde Mengen: Bei einem liegenden oder kugelförmigen Tank sind ihre Abstände sichtbar ungleich.
+:tip: Die Zahlen am Füllstand sind zum Ablesen gerundet (3 gültige Ziffern, % mit einer Nachkommastelle); die genauen Werte stehen über dem Graphen und im Werkzeug ([Stellen der Ergebnisse](#digits)).
+:note: Ohne QCalc Pro erscheint direkt über den Ergebnissen die Zeile [[Turn it in 3D (QCalc Pro)]].
+
+## digits | Stellen der Ergebnisse
+:what: Wie viele Stellen die Ergebnisse von Figuren, Tanks, Körper aus einem Profil und Körper bilden nach „≈“ zeigen. Exakte Werte (11250π) bleiben. Das ist unabhängig von [[Precision (significant digits)]] des Rechners.
+:step: Wählen Sie über den Ergebnissen in [[Digits: auto]] zum Beispiel [[Digits: 2 decimal places]].
+:step: Für mehr öffnen Sie [[Digits in detail ▾]].
+:step: Wählen Sie [[Decimal places]] oder [[Significant digits]] und geben Sie die Anzahl der Stellen ein (0 bis 15).
+:step: [[Each kind of quantity on its own]] stellt Volumen, Fläche, Länge, Gewicht und % einzeln ein.
+:example: Das Volumen eines Zylinders 11250π ≈ 35342,91735 cm³ → mit 2 Nachkommastellen 11250π ≈ 35342,92 cm³; mit 4 gültigen Ziffern 11250π ≈ 35340 cm³
+:tip: Die Zahlen [[In the 3D picture]] (am Füllstand, an der Skala, die Maße) haben eine eigene Einstellung: Auto sind 3 gültige Ziffern, % mit einer Nachkommastelle.
+:tip: Gerundet wird [[Round half up]], [[Round down]] oder [[Round up]]; Nullen am Ende [[Keep (2.50)]] oder [[Drop (2.5)]].
+:tip: Eine als CSV gespeicherte Tabelle hat anfangs alle Stellen; mit [[As shown]] hat sie die Stellen des Bildschirms.
+:tip: Dieselben Punkte stehen in [[Settings]] unter [[Digits of the tools]]; [[Back to the first settings]] stellt Auto wieder her.
+:note: Nicht mehr als 15 Stellen: Die Zahlen werden mit doppelter Genauigkeit berechnet. Mit den ersten Einstellungen hat jedes % eine Nachkommastelle.
 
 ## measured | Volumen aus Messwerten
 :what: Das Volumen von Erdarbeiten oder einem Teich aus einer Tabelle von Querschnitten (Mittelflächenverfahren, Simpsonregel) oder aus einem Raster von Punkthöhen.
@@ -392,6 +422,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Öffnen Sie [[Volume and surface ▾]]: Volumen und Oberfläche erscheinen sofort.
 :step: Wählen Sie den Bereich: ein Rechteck, eine Kreisscheibe, den eingeschlossenen Teil oder einen per Formel gegebenen.
 :example: Die Beispielkugel (Radius 2) → Volumen 32π/3, Oberfläche 16π
+:tip: Unter [[Example]] unten lässt sich jeder Körper wählen: [[Draw]] zeichnet ihn in 3D mit den Werten der Figuren, [[Change the numbers]] öffnet die Figuren.
 :tip: Für einen im 2D-Graphen ([[!⟳ 3D]]) oder in [[Solid from a profile]] gebildeten Körper zeigt [[Volume and surface ▾]] in seiner 3D-Ansicht die dort gefundenen Werte ([[Values of the solid of revolution]]). Die Werkzeuge für den Bereich erscheinen wieder, wenn andere Formeln gezeichnet werden.
 :tip: Wo die Flächen in einem Teil des Bereichs keine reellen Werte haben, misst [[Measure the enclosed part]] nur dort, wo sie reell sind.
 
@@ -435,6 +466,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 | [[Number format]] | Dezimalzeichen und Zifferngruppen ([Zahlenformat](#number-format)) |
 | [[Fractions]] | Automatisch, dezimal, Bruch, gemischter Bruch |
 | [[Precision (significant digits)]] | Die Rechengenauigkeit (Standard 10) |
+| [[Digits of the tools]] | Die Stellen der Ergebnisse von Figuren, Tanks usw. ([Stellen der Ergebnisse](#digits)) |
 | [[Light or dark]] | Die Farben des Bildschirms |
 | [[Text size]] | Die Schrift von Verlauf, Eingabefeld und Ergebnis |
 | [[Color theme]] | Die Farbe der Tasten (außer Blau: QCalc Pro) |
@@ -443,7 +475,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :shot: settings | Die Einstellungen
 :tip: [[Reset all settings]] setzt alles auf die Standardwerte zurück (die Sprache bleibt).
 
-## digits | Angezeigte Stellen je Werkzeug
+## screen-digits | Angezeigte Stellen je Werkzeug
 :what: Jedes Werkzeug kann seine Ergebnisse mit eigener Stellenzahl zeigen. Öffnen Sie [[Digits shown…]] über ⋯ rechts neben dem Titel des Werkzeugs.
 :step: Drücken Sie in einem Werkzeug ⋯ und wählen Sie [[Digits shown…]].
 :step: Wählen Sie [[Recommended (automatic)]], [[Significant digits]] oder [[Decimals]] und stellen Sie die Zahl mit + und − ein. Jedes Werkzeug merkt sich seine Wahl.
@@ -496,6 +528,7 @@ Geldbeträge werden bis zur kleinsten Einheit der Währung Ihrer Region gezeigt 
 | Tabellen als CSV (Kredit, Sparen) | [Kredit](#loan) |
 | Tankböden und Tabellen | [Tankböden](#tank-heads) |
 | Körper aus einem Profil | [Körper aus einem Profil](#profile) |
+| Körper und Tanks in 3D | [Körper und Tanks in 3D](#shapes-3d) |
 | STL-Dateien | [STL-Dateien](#stl) |
 | GIF und Bilder ohne Kennzeichnung | [Teilen](#share) |
 | Weitere Rechennotizen, als Datei gespeichert | [Rechennotizen](#notes) |
