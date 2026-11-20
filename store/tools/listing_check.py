@@ -105,6 +105,11 @@ def check_text(where, locale, text, strict, problems):
     for p in PRICE:
         if re.search(p, text, re.I):
             problems.append('%s: looks like a price (%s)' % (where, p))
+    # Traditional Chinese: no Japanese middle dot (・ U+30FB, ･ U+FF65); bullets are • (U+2022), as in English and Korean
+    if fam == 'zh':
+        n = len(re.findall('[\u30fb\uff65]', text))
+        if n:
+            problems.append('%s: %d Japanese middle dot(s) (・) in Traditional Chinese; use • (U+2022) for bullets' % (where, n))
 
 
 def read_listings():
