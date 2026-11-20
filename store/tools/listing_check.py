@@ -63,7 +63,8 @@ ANYWHERE = {
 OTHERS = ['realcalc', 'hiper', 'panecal', 'desmos', 'geogebra', 'photomath', 'symbolab', 'mathway', 'wolfram', 'techcalc', 'clevcalc', 'ncalc',
           'casio', 'カシオ', 'texas instruments', 'ti-84', 'ti-nspire', 'sharp', 'シャープ', 'numworks', 'myscript', 'mathlab', '매스렙', 'calculator++',
           'one calculator', 'uno calculator', 'microsoft', 'apple', 'samsung', '万能電卓', '萬能計算器', 'calcpro', 'panecalst']
-PRIVATE = ['tsukayamahiroshi', 'tsukayamahiroshidev']
+# any mail address but the public contact counts as private (the private addresses are not named here)
+MAIL = re.compile(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}')
 CONTACT = 'hiroshitsu.apps@gmail.com'
 PRICE = [r'[¥￥]\s?\d', r'\b600\s?円', r'\$\s?\d+\.\d\d\b.*pro', r'qcalc pro.{0,40}(¥|\$|€|₩|nt\$)\s?\d']
 
@@ -98,8 +99,8 @@ def check_text(where, locale, text, strict, problems):
             problems.append('%s: "%s" (a superlative or call to action)' % (where, w))
     for w in find_words(text, OTHERS, True):
         problems.append('%s: names another app or maker ("%s")' % (where, w))
-    for p in PRIVATE:
-        if p in text.lower():
+    for m in MAIL.findall(text):
+        if m.lower() != CONTACT:
             problems.append('%s: a private address' % where)
     for p in PRICE:
         if re.search(p, text, re.I):
