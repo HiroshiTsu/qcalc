@@ -13,7 +13,17 @@ owner's recording or a voice service before publishing if they are not good enou
   ko, zh-TW        eSpeak NG (ko, cmn)
 A line that comes out longer than its subtitle is spoken faster (up to 1.35 times in Japanese, 1.5 in
 the others).
-Usage: python3 store/tools/video_voice.py <work folder> [langs] [videos]
+
+With --engine gemini the narration is made by the Gemini API instead (store/tools/gemini_tts.py; the key
+from GEMINI_API_KEY or GOOGLE_API_KEY): one request for all the videos of a language (split between
+paragraphs when it would be longer than one request), each segment a paragraph with a pause between, the
+answer cut at its pauses into the segments, and each segment put at the start of its narration (faster,
+as above, when it is longer). --model gemini-3.8-flash-tts (the default) or gemini-3.8-flash-lite-tts (the
+spare, with its own daily count); --voice (a prebuilt voice, Kore by default); --style (how to read, sent
+as speech_metadata, never in the text). The answers are kept in <work>/voice-gemini/cache, so a video made
+again uses no request. When the daily limit is reached, it says when it starts again (Japan time).
+Usage: python3 store/tools/video_voice.py <work folder> [langs] [videos] [--engine local|gemini]
+       [--model M] [--voice V] [--style S]
 """
 import os
 import re
@@ -26,9 +36,34 @@ sys.path.insert(0, TOOLS)
 import video_plan  # noqa: E402
 
 PLAN = video_plan.PLAN
-WORK = sys.argv[1] if len(sys.argv) > 1 else '/tmp/qcalc-video'
-LANGS = sys.argv[2].split(',') if len(sys.argv) > 2 else list(PLAN['langs'])
-ONLY = sys.argv[3].split(',') if len(sys.argv) > 3 else None
+
+def options(argv):
+    """The positional arguments (work folder, langs, videos) and the --name value options."""
+    pos, opt, i = [], {'engine': 'local', 'model': None, 'voice': None, 'style': None}, 0
+    while i < len(argv):
+        a = argv[i]
+        if a.startswith('--'):
+            k, _, v = a[2:].partition('=')
+            if k not in opt:
+                raise SystemExit('unknown option --%s' % k)
+            if not _:
+                i += 1
+                if i >= len(argv):
+                    raise SystemExit('--%s needs a value' % k)
+                v = argv[i]
+            opt[k] = v
+        else:
+            pos.append(a)
+        i += 1
+    if opt['engine'] not in ('local', 'gemini'):
+        raise SystemExit('--engine is local or gemini')
+    return pos, opt
+
+
+ARGS, OPT = options(sys.argv[1:])
+WORK = ARGS[0] if len(ARGS) > 0 else '/tmp/qcalc-video'
+LANGS = ARGS[1].split(',') if len(ARGS) > 1 else list(PLAN['langs'])
+ONLY = ARGS[2].split(',') if len(ARGS) > 2 else None
 JDIC = '/var/lib/mecab/dic/open-jtalk/naist-jdic'
 HTS = '/usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice'
 ESPEAK = {'en': ('mb-us2', 150), 'de': ('mb-de6', 145), 'es': ('mb-es2', 150), 'fr': ('mb-fr4', 150), 'ko': ('ko', 165), 'zh-TW': ('cmn', 190)}
@@ -101,25 +136,118 @@ def voice(lang, name, segs):
     mix = ';'.join(fl) + ';' + ''.join('[a%d]' % k for k in range(len(parts))) + 'amix=inputs=%d:normalize=0:dropout_transition=0,apad,atrim=duration=%.3f,volume=1.3[out]' % (len(parts), total)
     track = os.path.join(d, 'voice.wav')
     subprocess.run(['ffmpeg', '-loglevel', 'error', '-y'] + ins + ['-filter_complex', mix, '-map', '[out]', track], check=True)
+    mux(lang, name, src, track)
+    long_ = sum(1 for p in parts if p[2] > p[3])
+    print('%s %s: %d lines, %d still longer than the subtitle' % (lang, name, len(parts), long_))
+
+
+def mux(lang, name, src, track):
     od = os.path.join(WORK, 'out-voice', lang)
     os.makedirs(od, exist_ok=True)
     out, tmp = os.path.join(od, name + '.mp4'), os.path.join(od, name + '.part.mp4')
     subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', src, '-i', track, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '128k',
                     '-shortest', '-movflags', '+faststart', tmp], check=True)
     os.replace(tmp, out)
-    long_ = sum(1 for p in parts if p[2] > p[3])
-    print('%s %s: %d lines, %d still longer than the subtitle' % (lang, name, len(parts), long_))
+
+
+# ---- the Gemini API (--engine gemini)
+
+def gemini_text(lang, lines):
+    """The paragraph of a segment as it is to be read: the lines of the subtitles, without the symbol of the
+    3D button; nothing else is added (the text is read word for word)."""
+    sep = '' if lang in ('ja', 'zh-TW') else ' '
+    return sep.join(l.replace('⟳ ', '').strip() for l in lines).strip()
+
+
+def segments_of(lang, vids):
+    """Every segment with narration of the videos made so far: (video, start of its narration, its room, text)."""
+    out = []
+    for name, segs in vids:
+        if not os.path.exists(os.path.join(WORK, 'out', lang, name + '.mp4')):
+            continue
+        t0 = 0.0
+        for s in segs:
+            d = float(s['dur'])
+            if s['lines']:
+                out.append((name, t0 + 0.15, d - 0.3, gemini_text(lang, s['lines'])))
+            t0 += d
+    return out
+
+
+def gemini_voices(lang, vids, opt, tts=None, cut=None):
+    """The narration of every video of a language by the Gemini API; returns the videos made."""
+    import gemini_tts as G
+    tts = tts or G.synthesize
+    model = G.check_model(opt.get('model') or G.DEFAULT_MODEL)
+    voice_name, style = opt.get('voice') or G.DEFAULT_VOICE, opt.get('style') or G.DEFAULT_STYLE
+    items = segments_of(lang, vids)
+    if not items:
+        return []
+    base = os.path.join(WORK, 'voice-gemini')
+    rate = G.Rate(os.path.join(base, 'rate.json'))
+    texts = [it[3] for it in items]
+    groups = G.split_paragraphs(texts, extra=G.estimate_tokens(style))
+    pieces = [None] * len(items)
+    for gi, idx in enumerate(groups):
+        text = G.transcript([texts[i] for i in idx])
+        print('%s: request %d of %d (%d paragraphs, about %d tokens, %s)' % (lang, gi + 1, len(groups), len(idx), G.estimate_tokens(text), model))
+        wav = tts(text, model=model, voice=voice_name, style=style, rate=rate, cache_dir=os.path.join(base, 'cache'))
+        samples, sr = G.read_pcm(wav)
+        got = (cut or G.cut_at_pauses)(samples, sr, len(idx))
+        if got is None:
+            raise G.TtsError('%s: the answer could not be cut into its %d paragraphs at the pauses.' % (lang, len(idx)))
+        for i, p in zip(idx, got):
+            pieces[i] = (p, sr)
+    made = []
+    for name, segs in vids:
+        mine = [(k, it) for k, it in enumerate(items) if it[0] == name]
+        if not mine:
+            continue
+        d = os.path.join(base, lang, name)
+        os.makedirs(d, exist_ok=True)
+        ins, fl, long_ = [], [], 0
+        for j, (k, (_, start, room, _t)) in enumerate(mine):
+            w = os.path.join(d, '%02d.wav' % j)
+            p, sr = pieces[k]
+            G.write_wav(w, p, sr)
+            dur = len(p) / float(sr)
+            top = 1.35 if lang == 'ja' else 1.5
+            speed = min(top, dur / room) if dur > room else 1.0
+            if dur / speed > room + 0.05:
+                long_ += 1
+            tempo = ',atempo=%.4f' % speed if speed > 1.0 else ''
+            ins += ['-i', w]
+            fl.append('[%d:a]aresample=48000,aformat=channel_layouts=mono%s,adelay=%d:all=1[a%d]' % (j, tempo, int(start * 1000), j))
+        total = sum(float(s['dur']) for s in segs)
+        mix = ';'.join(fl) + ';' + ''.join('[a%d]' % j for j in range(len(mine))) + 'amix=inputs=%d:normalize=0:dropout_transition=0,apad,atrim=duration=%.3f,volume=1.3[out]' % (len(mine), total)
+        track = os.path.join(d, 'voice.wav')
+        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y'] + ins + ['-filter_complex', mix, '-map', '[out]', track], check=True)
+        mux(lang, name, os.path.join(WORK, 'out', lang, name + '.mp4'), track)
+        print('%s %s: %d paragraphs (Gemini %s, %s), %d still longer than the segment' % (lang, name, len(mine), model, voice_name, long_))
+        made.append(name)
+    return made
 
 
 def main():
     for lang in LANGS:
         L = PLAN['langs'][lang]
         vids = [('promo', L['promo']), ('youtube', L['youtube'])] + [(s['name'], s['segments']) for s in L['shorts']]
+        vids = [(n, s) for n, s in vids if not ONLY or n in ONLY]
+        if OPT['engine'] == 'gemini':
+            import gemini_tts as G
+            try:
+                gemini_voices(lang, vids, OPT)
+            except G.DailyLimit as e:
+                print(str(e))
+                return 2
+            except G.TtsError as e:
+                print('%s: %s' % (lang, e))
+                return 1
+            continue
         for name, segs in vids:
-            if ONLY and name not in ONLY:
-                continue
             voice(lang, name, segs)
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

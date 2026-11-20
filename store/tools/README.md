@@ -19,6 +19,9 @@ added to the app.
 | `video.js` | Records the scenes of the app (the taps shown as circles) as frames with their times, and makes a portrait clip of each with ffmpeg. |
 | `video_cards.js` | Draws the backgrounds of the segments (headline, label, the frame of the phone, the closing card) and the YouTube thumbnails (`store/video/<lang>/thumbnail.png`). |
 | `video_render.py` | Puts each video together (one file per segment, joined without encoding again), with the subtitles burnt in. Silent; a narration can be added later without encoding the picture again. |
+| `video_voice.py` | Adds a narration to the videos at the times of the subtitles: a placeholder by speech synthesis on the work machine (Open JTalk, eSpeak NG), or with `--engine gemini` by the Gemini API (`gemini_tts.py`). |
+| `gemini_tts.py` | Speech synthesis with the Gemini API (gemini-3.8-flash-tts; the spare gemini-3.8-flash-lite-tts with `--model`): the Interactions API, the text read word for word with how to read in `speech_metadata`, WAV as it comes (a header only for headerless PCM), the free tier's limits kept here (3 a minute, 10 a day, 10,000 input tokens a minute; at most 8,192 a request, longer narrations split between paragraphs), the time the daily count starts again (midnight Pacific time, 17:00 in Japan in winter), answers kept so a video made again uses no request. The key from `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). |
+| `test_gemini_tts.py` | Tests of the two with made-up answers of the server (a local HTTP server; no key, no network). |
 
 ## Making everything again
 
@@ -38,6 +41,9 @@ node store/tools/video.js $B $W                             # record the scenes 
 node store/tools/video_cards.js $B $W                       # backgrounds and thumbnails
 python3 store/tools/video_render.py $W                      # → $W/out/<lang>/*.mp4
 python3 store/tools/assets_check.py --videos $W/out
+python3 store/tools/video_voice.py $W                       # placeholder narration (Open JTalk, eSpeak NG) → $W/out-voice/
+GEMINI_API_KEY=… python3 store/tools/video_voice.py $W ja --engine gemini   # the narration by the Gemini API
+python3 store/tools/test_gemini_tts.py                      # its tests (no key, no network)
 python3 store/tools/listing_check.py                        # the words on pictures and in subtitles
 ```
 
