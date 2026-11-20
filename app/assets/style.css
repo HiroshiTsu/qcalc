@@ -1629,12 +1629,14 @@ body.hselect #history { padding-bottom: 150px; }
 .manual-doc .m-svg svg { width: 100%; max-width: 280px; height: auto; color: var(--text); display: block; }
 .manual-doc .m-idx { padding-left: 1.1em; font-size: .92em; }
 /* 1.12.0 (D7): the digits of the results of the tools */
+/* (touch areas of at least 48 × 48 dp, as every control: A4; UX01 of the suite found 40) */
+.dig-sel, .geo-units .dig-sel { min-height: 48px; }
 .dig-more { margin: 6px 0 2px; }
 .dig-body { display: flex; flex-direction: column; gap: 8px; padding: 6px 0 4px; }
 .dig-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .dig-row .dig-lbl { flex: 0 0 auto; min-width: 7em; font-size: 14px; color: var(--muted); }
 .dig-row .seg.mini { flex: 0 1 auto; flex-wrap: wrap; }
-.dig-n { width: 4.2em; min-height: 40px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 15px; text-align: center; }
+.dig-n { width: 4.2em; min-height: 48px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 15px; text-align: center; }
 .dig-per { gap: 8px; font-size: 14px; }
 .dig-per input { width: 22px; height: 22px; }
 .dig-kinds { display: flex; flex-direction: column; gap: 6px; padding-left: 8px; border-left: 2px solid var(--line); }
