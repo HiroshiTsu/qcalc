@@ -1422,6 +1422,19 @@ body.hselect #history { padding-bottom: 150px; }
 .rev-pro-row .rev-pro-t { flex: 1 1 auto; overflow-wrap: anywhere; }
 .rev-pro-row .rev-pro-go { flex: 0 0 auto; font-size: 20px; }
 .rev3d-back[hidden], .rev-pro-row[hidden] { display: none; }
+/* 1.12.0 (D6): "⟳ 3D" beside the picture of a solid or a tank of "Shapes", and the shape in the 3D graph */
+.geo-pic-box { flex: 0 0 42%; max-width: 190px; position: relative; min-width: 0; }
+.geo-pic-box.has3d { align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding-top: 52px; }
+.geo-3d { position: absolute; left: 0; top: 0; width: 48px; height: 48px; border-radius: 24px; border: 1px solid var(--line); background: var(--surface); color: var(--text); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; gap: 0; padding: 0; opacity: .96; box-shadow: 0 1px 3px rgba(0, 0, 0, .14); }
+.geo-3d .rev3d-i { font-size: 18px; }
+.geo-3d small { font-size: 10px; font-weight: 700; }
+.geo-3d[hidden] { display: none; }
+.legend .msw::before { width: 12px; height: 12px; border-radius: 3px; }
+.legend .msw.glass::before { background: rgba(120, 160, 205, .16); border: 1.5px solid rgba(45, 62, 90, .7); box-sizing: border-box; }
+.dark .legend .msw.glass::before { background: rgba(190, 215, 255, .1); border-color: rgba(215, 228, 250, .7); }
+.legend .note::before { display: none; }
+.plot-form[hidden], .smp-wrap[hidden], .area-wrap[hidden], .tank-level[hidden] { display: none; }
+.rev3d-vol > div + div { font-size: 16px; font-weight: 600; }
 /* the solid: the volume first and large, the method small below it, the surfaces under "More ▾" */
 .rev-out .geo-row .geo-val { font-size: 1.45em; font-weight: 700; }
 .rev-more { margin: 6px 0; }
