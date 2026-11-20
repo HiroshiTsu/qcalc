@@ -5357,7 +5357,8 @@
   // shapes to draw and measure: a circle (radius r), an ellipse (half axes a and b)
   const PARAM_NAMES = { r: tr('radius r', '半径 r'), a: tr('half axis a (x)', 'x 方向の半径 a'), b: tr('half axis b (y)', 'y 方向の半径 b') };
   const SHAPES2D = [['circle', tr('Circle', '円'), ['r'], ['2']], ['ellipse', tr('Ellipse', '楕円'), ['a', 'b'], ['3', '2']]];
-  function buildShapes(defs, run) {
+  // (defs: [key, name, sizes, first values, names read out of the sizes]; more: a second button { text, fn }, D6)
+  function buildShapes(defs, run, more) {
     const sel = el('select', { 'aria-label': tr('Shape', '図形') });
     for (const [k, t] of defs) sel.append(el('option', { value: k, text: t }));
     const params = el('span', { class: 'shape-params' });
@@ -5366,21 +5367,23 @@
       params.textContent = '';
       const d = defs.find((x) => x[0] === sel.value);
       d[2].forEach((n, i) => {
-        inputs[n] = inputs[n] || el('input', { inputmode: 'text', autocapitalize: 'off', value: d[3][i] });
-        inputs[n].setAttribute('aria-label', d[1] + ' ' + (PARAM_NAMES[n] || n));
-        params.append(el('span', { text: n + ' =' }), inputs[n]);
+        const key = d[0] + ':' + n;
+        inputs[key] = inputs[key] || el('input', { inputmode: 'text', autocapitalize: 'off', value: toDisplay(d[3][i]) });
+        inputs[key].setAttribute('aria-label', d[1] + ' ' + (d[4] ? d[4][i] : PARAM_NAMES[n] || n));
+        params.append(el('span', { text: n + ' =' }), inputs[key]);
       });
     };
     sel.addEventListener('change', build);
     build();
-    const go = tapButton({ class: 'btn', text: tr('Draw', '描く') }, () => {
-      const d = defs.find((x) => x[0] === sel.value);
-      const v = {};
-      for (const n of d[2]) v[n] = normalizeExpr(inputs[n].value);
-      if (d[2].some((n) => !v[n])) { toast(tr('Enter the sizes', '大きさを入れてください'), 1800); return; }
-      run(sel.value, v);
-    });
-    return el('div', { class: 'plot-range shapes' }, el('span', { text: tr('Example', '図形の例') }), sel, params, go);
+    const sizes = () => {
+      const d = defs.find((x) => x[0] === sel.value), v = {};
+      for (const n of d[2]) v[n] = normalizeExpr(inputs[d[0] + ':' + n].value);
+      if (d[2].some((n) => !v[n])) { toast(tr('Enter the sizes', '大きさを入れてください'), 1800); return null; }
+      return v;
+    };
+    const go = tapButton({ class: 'btn', text: tr('Draw', '描く') }, () => { const v = sizes(); if (v) run(sel.value, v); });
+    const second = more ? tapButton({ class: 'btn shape-more', text: more.text }, () => { const v = sizes(); if (v) more.fn(sel.value, v); }) : null;
+    return el('div', { class: 'plot-range shapes' }, el('span', { text: tr('Example', '図形の例') }), sel, params, go, ...(second ? [second] : []));
   }
   function buildShapes2d() { return buildShapes(SHAPES2D, drawShape2d); }
   // a circle (v.r) or an ellipse (v.a, v.b) in the 2D graph, with its area and perimeter:
@@ -6342,8 +6345,11 @@
       if (!quiet) { computeRevolution(); }
     };
     const slicesRow = el('div', { class: 'rev-slices-row' }, slicesBtn, nRow);
+    // (1.12.0, D7) the digits of the results
+    const dig = digitsControl();
+    digRuns.add(() => { if (!box.hidden) { if (R.kind === 'sec') computeSections(); else computeRevolution(); } });
     const box = el('div', { class: 'rev-box' }, kinds, axisRow, secRow,
-      kErr, proRow, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
+      kErr, el('div', { class: 'geo-units' }, dig.sel), dig.more, proRow, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
       el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
     box.hidden = true;
     const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Make a solid ▾', '立体にする ▾'), 'aria-expanded': 'false' }, () => {
@@ -6407,7 +6413,13 @@
     R.outs.append(row.node);
     return row;
   }
-  const revShow = (row, val, expr) => { row.result = val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text; row.val.textContent = ''; showResult(row.val, valueShown(row.result)); row.expr = expr; };
+  // (1.12.0, D7: the number after ≈ with the digits set: a volume, or a surface area for the rows of the surfaces)
+  const revShow = (row, val, expr) => {
+    row.result = val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text;
+    const sp = digSpec(row.kind || 'vol');
+    if (sp && isFinite(val.v) && row.result.indexOf('≈') >= 0) row.result = withApprox(row.result, digRound(val.v, sp));
+    row.val.textContent = ''; showResult(row.val, valueShown(row.result)); row.expr = expr;
+  };
   // the volume and the surface of the solid, for the functions and the range of the area tools.
   // auto: opened or drawn (not a tap on the axis): the same, it only tells how long it took
   async function computeRevolution(auto) {
@@ -6453,9 +6465,11 @@
     if (!solid || solid.error) return fail(solid && solid.error);
     const vrow = revRow(R, tr('Volume', '体積'), ax.kind === 'h' ? 'π∫(R² − r²) dx' : '2π∫ρ h dρ');
     const srow = revRow(R, tr('Surface area (curved surfaces)', '表面積（曲面だけ）'), '2π∫ρ ds');
+    srow.kind = 'area';
     R.moreOuts.append(srow.node); // (1.12.0, B0: the surfaces under "More ▾")
     const erow = revRow(R, tr('Surface area (with the end faces)', '表面積（端の面も含む）'), ax.kind === 'h' ? tr('+ the flat faces at x = a and b', '＋ x = a、b の平らな面') : tr('+ the faces the sides at x = a and b make', '＋ x = a、b の辺が作る面'));
     R.moreOuts.append(erow.node);
+    erow.kind = 'area';
     // (BG21: the rows of this solid, for "Volume and surface" in its 3D view)
     R.rows = [{ row: vrow, name: tr('Volume', '体積'), small: ax.kind === 'h' ? 'π∫(R² − r²) dx' : '2π∫ρ h dρ' },
       { row: srow, name: tr('Surface area (curved surfaces)', '表面積（曲面だけ）'), small: '2π∫ρ ds' },
@@ -6595,7 +6609,17 @@
   // area are calculated at once (volumeAuto). The example (a sphere) at the bottom of the box is
   // the only thing that draws another graph.
   const VOL_N = 101;
-  const SHAPES3D = [['sphere', tr('Sphere', '球'), ['r'], ['2']]];
+  // (1.12.0, D6: every solid of "Shapes", drawn there and shown in 3D with the same values; until then the sphere
+  // only, drawn with formulas)
+  const SHAPES3D = () => GEO.filter((g) => g.d === 3).map((g) => [g.k, g.name, g.p.map((q) => q[0]), g.def.slice(), g.p.map((q) => q[1])]);
+  // a solid of the examples: into "Shapes" (its sizes typed there) and, draw: in 3D at once
+  function shapeTo3d(k, v, draw) {
+    const p = openShapes(3);
+    if (!p.setShape) return;
+    const sh = GEO.find((g) => g.k === k);
+    p.setShape(k, sh.p.map(([n]) => v[n] || ''));
+    if (draw) p.view3d();
+  }
   function buildVolume3d() {
     const s1 = el('select', { 'aria-label': tr('Surface', '曲面') }), s2 = el('select', { 'aria-label': tr('and', 'と') });
     const out = el('div', { class: 'area-out', 'aria-live': 'polite' });
@@ -6717,8 +6741,7 @@
       cusBox, signRow,
       legend, out, ins,
       hint, hintEnc,
-      buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
-      tapButton({ class: 'btn geo-link', text: tr('More shapes: cylinder, cone, box… ›', 'ほかの図形（円柱・円錐・直方体など）›') }, () => openShapes()));
+      buildShapes(SHAPES3D(), (k, v) => shapeTo3d(k, v, true), { text: tr('Change the numbers', '数を変える'), fn: (k, v) => shapeTo3d(k, v, false) }));
     const solidBox = el('div', { class: 'solid-vals', hidden: true, 'aria-live': 'polite' });
     const box = el('div', { class: 'area-box' }, solidBox, tools);
     box.hidden = true;
@@ -8363,6 +8386,8 @@
     if (Q3.levelRow) Q3.levelRow.hidden = !(Md && Md.tank);
     syncLevelRow();
   }
+  // a size written on a model ({ sym, val, unit } → "r = 15 cm"; D7: the digits of the 3D picture)
+  const labText = (o) => (!o ? '' : typeof o === 'string' ? o : o.sym + ' = ' + digPic(o.val, 'dim') + (o.unit ? ' ' + o.unit : ''));
   // the slider of the level (for the keyboard and a screen reader): steps of about a hundredth of the tank's
   // height, rounded (the same rounding as a drag)
   function levelStep(T) { return Math.pow(10, Math.floor(Math.log10(T.top)) - 2); }
@@ -8371,9 +8396,9 @@
     if (!T || !r) return;
     const st = levelStep(T);
     r.max = String(Math.round(T.top / st)); r.value = String(Math.round(T.h / st));
-    const txt = (Md.lab.h || 'h = ' + statNum(T.h, 6)) + (Md.levelText ? tr(', ', '、') + Md.levelText() : '');
+    const lh = labText(Md.lab.h) || 'h = ' + digPic(T.h, 'dim'), txt = lh + (Md.levelText ? tr(', ', '、') + Md.levelText() : '');
     r.setAttribute('aria-valuetext', txt);
-    Q3.levelVal.textContent = Md.lab.h || '';
+    Q3.levelVal.textContent = lh;
   }
   // the level of the liquid moved here (a drag, the slider): drawn at once, and into the tool (final: when
   // the finger is lifted, or the slider let go)
@@ -8446,6 +8471,223 @@
       best = Math.min(best, Math.hypot(xi + t * dx - x, yi + t * dy - y));
     }
     return inside || best < 18;
+  }
+  // ---- the digits of the results of the tools (1.12.0, D7)
+  // How many digits the tools for shapes, tanks and solids (Shapes, Tanks, Solid from a profile, Make a solid)
+  // show after "≈": automatic (as the calculator shows its results; % with one decimal), or a number of
+  // decimal places or of significant digits (0 to 15: the page works with numbers of double precision), the
+  // same for every result or for each kind of quantity (volume, area, length, weight, %), and on its own for
+  // the numbers in the 3D picture (automatic: 3 significant digits, % with one decimal). The exact part of a
+  // result (11250π) stays as the engine gives it. Rounding half up, down or up; trailing zeros kept or not;
+  // tables saved as CSV with all the digits or as shown. Kept in the settings (S.digits), separate from the
+  // calculator's precision.
+  const DIG_KINDS = () => [['vol', tr('Volume, liquid', '体積・液量')], ['area', tr('Area', '面積')], ['len', tr('Length, height', '長さ・高さ')], ['mass', tr('Weight', '重さ')], ['pct', '%']];
+  const DIG_MAX = 15;
+  const DIG_DEF = () => ({ mode: 'auto', n: 2, per: false, kinds: {}, pic: { mode: 'auto', n: 3 }, round: 'half', zeros: true, csv: 'full' });
+  function digits() {
+    const d = S.digits, D = DIG_DEF();
+    if (!d || typeof d !== 'object') return D;
+    const ok = (m) => m === 'auto' || m === 'dec' || m === 'sig', num = (n, sig) => (Number.isInteger(n) && n >= (sig ? 1 : 0) && n <= DIG_MAX ? n : null);
+    const one = (o, def) => { o = o && typeof o === 'object' ? o : {}; const m = ok(o.mode) ? o.mode : def.mode; const n = num(o.n, m === 'sig'); return { mode: m, n: n === null ? (m === 'sig' ? Math.max(1, def.n) : def.n) : n }; };
+    const top = one(d, D), kinds = {};
+    for (const [k] of DIG_KINDS()) if (d.kinds && d.kinds[k]) kinds[k] = one(d.kinds[k], { mode: 'auto', n: 2 });
+    return Object.assign(D, top, { per: !!d.per, kinds, pic: one(d.pic, D.pic), round: ['half', 'down', 'up'].indexOf(d.round) >= 0 ? d.round : 'half', zeros: d.zeros !== false, csv: d.csv === 'shown' ? 'shown' : 'full' });
+  }
+  // the rule for a kind of result: null (as the engine shows it) or { mode: 'dec' | 'sig', n }
+  function digSpec(kind) {
+    const d = digits(), k = d.per && d.kinds[kind] ? d.kinds[kind] : d;
+    if (k.mode === 'dec' || k.mode === 'sig') return { mode: k.mode, n: k.n };
+    return kind === 'pct' ? { mode: 'dec', n: 1 } : null;
+  }
+  // the rule for a number in the 3D picture: what 'amount' (at the level), 'pct', 'scale' (the marks of the
+  // scale) or 'dim' (the sizes written on the solid); automatic: up to 3 significant digits (the amount with
+  // trailing zeros as set, 9.60; the marks and the sizes without them, 15 cm), % with one decimal
+  function digSpecPic(what) {
+    const p = digits().pic;
+    if (p.mode === 'dec' || p.mode === 'sig') return { mode: p.mode, n: p.n };
+    return what === 'pct' ? { mode: 'dec', n: 1 } : { mode: 'sig', n: 3, trim: what !== 'amount' };
+  }
+  // x rounded by a rule as plain digits ("35342.92", "-0.050"): from its 15 significant digits, as a whole
+  // number q times 10^sc, so that no binary fraction moves the rounding (2.675 to 2 places is 2.68)
+  function digRound(x, spec) {
+    if (!isFinite(x)) return String(x);
+    const d = digits(), how = d.round, zeros = d.zeros && !spec.trim;
+    const m = /^(\d)(?:\.(\d+))?e([+-]\d+)$/.exec(Math.abs(x).toExponential(14));
+    let q = BigInt(m[1] + (m[2] || '')), sc = Number(m[3]) - (m[2] || '').length;
+    while (q > 0n && q % 10n === 0n) { q /= 10n; sc++; }
+    if (q === 0n) sc = 0;
+    const len = (v) => (v === 0n ? 1 : v.toString().length);
+    // (dropping the last digits: rounded half up, down or up, away from zero)
+    const cut = (drop) => {
+      if (drop <= 0) return;
+      const p = 10n ** BigInt(drop), r = q % p;
+      q /= p; sc += drop;
+      if ((how === 'half' && r * 2n >= p) || (how === 'up' && r > 0n)) q += 1n;
+    };
+    if (spec.mode === 'dec') {
+      cut(-spec.n - sc);
+      if (zeros && sc > -spec.n) { q *= 10n ** BigInt(sc + spec.n); sc = -spec.n; }
+    } else {
+      cut(len(q) - spec.n);
+      if (len(q) > spec.n && q % 10n === 0n) { q /= 10n; sc++; }
+      if (zeros && len(q) < spec.n) { const k = spec.n - len(q); q *= 10n ** BigInt(k); sc -= k; }
+    }
+    let s = q.toString();
+    if (sc >= 0) s += '0'.repeat(q === 0n ? 0 : sc);
+    else { const f = -sc; s = s.padStart(f + 1, '0'); s = s.slice(0, s.length - f) + '.' + s.slice(s.length - f); }
+    if (!zeros && s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+    return (x < 0 && /[1-9]/.test(s) ? '-' : '') + s;
+  }
+  // the text of a rounded number: the decimal sign of the number format, groups of three digits when asked
+  function digText(x, spec, group) {
+    let s = digRound(x, spec);
+    const neg = s[0] === '-';
+    if (neg) s = s.slice(1);
+    let [i, f] = s.split('.');
+    if (group) i = i.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group);
+    return (neg ? '−' : '') + i + (f !== undefined ? NF.dec + f : '');
+  }
+  // a number of a tool worked out by the page: rounded for its kind, or as before (statNum with its digits)
+  function digNum(x, kind, auto) {
+    const sp = digSpec(kind);
+    return sp ? digText(x, sp, true) : statNum(x, auto);
+  }
+  // a number in the 3D picture
+  const digPic = (x, what) => digText(x, digSpecPic(what), true);
+  // the text of a result with the number after its last "≈" written anew (its unit stays)
+  function withApprox(shown, num) {
+    const s = String(shown || ''), i = s.lastIndexOf('≈');
+    if (i < 0) return s;
+    const tail = s.slice(i + 1), m = /^(\s*)([−-]?[\d    .,'’]*\d(?:\s*E[−+-]?\d+|\s*×\s*10\^[−+-]?\d+)?)/.exec(tail);
+    return m ? s.slice(0, i + 1) + m[1] + num + tail.slice(m[0].length) : s;
+  }
+  // the number of a result worked out again with 16 significant digits (for rounding it here), or NaN
+  async function digValue(expr) {
+    const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { approx: 'approx', precision: 16, grouping: false, base: 10, fraction: 'decimal', max_decimals: -1 }), timeout: 4000 });
+    if (!r.ok || !r.result || r.timeout) return NaN;
+    const t = r.result.split('≈').pop().replace(/^\s*=\s*/, '').trim().replace(/−/g, '-'), m = /^-?\d+(?:\.\d+)?(?:E[+-]?\d+)?/.exec(t);
+    return m ? Number(m[0].replace('E', 'e')) : NaN;
+  }
+  // a row of a tool after the engine (row.result, row.shown): its number after "≈" rounded for its kind (x: the
+  // number when the page has it, or expr to work it out); row.num keeps the number
+  async function digRow(row, kind, x, expr) {
+    const sp = digSpec(kind);
+    if (!sp || String(row.shown || '').indexOf('≈') < 0) return;
+    if (!isFinite(x)) x = await digValue(expr);
+    if (!isFinite(x)) return;
+    row.num = x;
+    row.shown = withApprox(row.shown, digText(x, sp, !!S.grouping));
+    row.result = withApprox(row.result, digRound(x, sp));
+  }
+  // the kind of a row of the shapes tool (its power of the length, or a %)
+  const geoKind = (def) => (def[5] === '%' || def[0] === tr('Full', '満杯に対して') ? 'pct' : def[3] === 3 ? 'vol' : def[3] === 2 ? 'area' : 'len');
+  // a number of a table saved as CSV: all its digits (15 significant, the decimal sign of the file), or as shown
+  const csvNum = (x) => (isFinite(x) ? String(+x.toPrecision(15)).replace('.', commaMode ? ',' : '.') : '');
+  // what to work out again when the digits change: the tools that are open (their run), and the 3D picture
+  const digRuns = new Set();
+  function digitsChanged() {
+    saveSettings();
+    for (const c of digUIs) c.sync();
+    for (const f of digRuns) { try { f(); } catch (e) { /* a tool closed meanwhile */ } }
+    if (Q3.model) { syncLevelRow(); requestDraw3d(); }
+  }
+  // The control of the digits: "Digits: auto ▾" with the usual choices (auto, 0 to 3 decimal places), and
+  // "Digits in detail ▾" with the rest. Every control shows the same settings.
+  const digUIs = new Set();
+  function digitsControl() {
+    const set = (f) => { const d = digits(); f(d); S.digits = d; digitsChanged(); };
+    const QUICK = [['auto', tr('Digits: auto', '桁：自動')], ['d0', tr('Digits: 0 decimal places', '桁：小数点以下 0 桁')], ['d1', tr('Digits: 1 decimal place', '桁：小数点以下 1 桁')], ['d2', tr('Digits: 2 decimal places', '桁：小数点以下 2 桁')], ['d3', tr('Digits: 3 decimal places', '桁：小数点以下 3 桁')]];
+    const sel = el('select', { class: 'dig-sel', 'aria-label': tr('Digits of the results', '結果の桁') });
+    for (const [v, t] of QUICK) sel.append(el('option', { value: v, text: t }));
+    const custom = el('option', { value: 'custom', text: tr('Digits: as set in detail', '桁：詳しく設定') });
+    sel.append(custom);
+    sel.addEventListener('change', () => { const v = sel.value; if (v === 'custom') return; set((d) => { d.per = false; if (v === 'auto') d.mode = 'auto'; else { d.mode = 'dec'; d.n = Number(v.slice(1)); } }); });
+    // a number of digits typed: only digits (no minus sign), at most 15 (at least 1 for significant digits)
+    const numIn = (label, get, put, sigOf) => {
+      const i = el('input', { class: 'dig-n', inputmode: 'numeric', maxlength: '2', 'aria-label': label, autocomplete: 'off' });
+      i.addEventListener('input', () => {
+        let t = i.value.replace(/[^0-9]/g, '');
+        if (t.length > 2) t = t.slice(0, 2);
+        let n = t === '' ? null : Number(t), clipped = false;
+        if (n !== null && n > DIG_MAX) { n = DIG_MAX; clipped = true; }
+        if (n !== null && n < 1 && sigOf()) { n = 1; clipped = true; }
+        if (n !== null) t = String(n);
+        if (i.value !== t) i.value = t;
+        warn.hidden = !clipped;
+        if (n !== null) set((d) => put(d, n));
+      });
+      i.addEventListener('blur', () => { i.value = String(get(digits())); });
+      const w = el('span', { class: 'dig-nw' }, i, el('span', { class: 'dig-unit', text: tr('digits', '桁') }));
+      w.input = i;
+      return w;
+    };
+    const warn = el('div', { class: 'form-hint dig-warn', role: 'status', hidden: true, text: tr('From 0 to 15 digits (1 to 15 significant digits).', '0〜15 桁です（有効数字は 1〜15 桁）。') });
+    // how: decimal places or significant digits, and how many (for every result)
+    const modeSeg = (get, put, withAuto) => {
+      const s = el('span', { class: 'seg mini', role: 'group' });
+      const items = (withAuto ? [['auto', tr('Auto', '自動')]] : []).concat([['dec', tr('Decimal places', '小数点以下の桁数')], ['sig', tr('Significant digits', '有効数字の桁数')]]);
+      const bs = items.map(([m, t]) => { const b = tapButton({ text: t }, () => set((d) => put(d, m))); b.dataset.m = m; return b; });
+      s.append(...bs);
+      s.sync = () => { const m = get(digits()); for (const b of bs) { b.classList.toggle('on', b.dataset.m === m); b.setAttribute('aria-pressed', String(b.dataset.m === m)); } };
+      return s;
+    };
+    const allMode = modeSeg((d) => d.mode, (d, m) => { d.mode = m; if (m === 'sig' && d.n < 1) d.n = 1; }, true);
+    allMode.setAttribute('aria-label', tr('How the digits are counted', '桁の決め方'));
+    const allN = numIn(tr('Number of digits', '桁数'), (d) => d.n, (d, n) => { d.n = n; if (d.mode === 'auto') d.mode = 'dec'; }, () => digits().mode === 'sig');
+    const rowOf = (label, ...kids) => el('div', { class: 'dig-row' }, el('span', { class: 'dig-lbl', text: label }), ...kids);
+    const note = el('div', { class: 'form-hint', text: tr('Up to 15 digits: the numbers are worked out with double precision. Exact values (11250π) stay; only the decimals after "≈" change.', '15 桁までです（中の計算が倍精度のため）。厳密な値（11250π など）はそのままで、変わるのは「≈」の後ろの小数だけです。') });
+    // each kind of quantity on its own
+    const perBox = el('input', { type: 'checkbox' });
+    perBox.addEventListener('change', () => set((d) => { d.per = perBox.checked; if (d.per) for (const [k] of DIG_KINDS()) if (!d.kinds[k]) d.kinds[k] = { mode: d.mode, n: d.n }; }));
+    const perList = el('div', { class: 'dig-kinds' });
+    const kindRows = DIG_KINDS().map(([k, label]) => {
+      const seg = modeSeg((d) => (d.kinds[k] || { mode: 'auto' }).mode, (d, m) => { const o = d.kinds[k] || { mode: 'auto', n: 2 }; o.mode = m; if (m === 'sig' && o.n < 1) o.n = 1; d.kinds[k] = o; }, true);
+      seg.setAttribute('aria-label', label);
+      const n = numIn(label + tr(': number of digits', '：桁数'), (d) => (d.kinds[k] || { n: 2 }).n, (d, v) => { const o = d.kinds[k] || { mode: 'dec', n: 2 }; o.n = v; if (o.mode === 'auto') o.mode = 'dec'; d.kinds[k] = o; }, () => ((digits().kinds[k] || {}).mode === 'sig'));
+      perList.append(rowOf(label, seg, n));
+      return { k, seg, n };
+    });
+    const same = tapButton({ class: 'btn', text: tr('The same for all', 'すべて同じにする') }, () => set((d) => { d.per = false; }));
+    perList.append(same);
+    // the 3D picture
+    const picSeg = modeSeg((d) => d.pic.mode, (d, m) => { d.pic.mode = m; if (m === 'sig' && d.pic.n < 1) d.pic.n = 1; }, true);
+    picSeg.setAttribute('aria-label', tr('Numbers in the 3D picture', '3D の絵の中の数'));
+    const picN = numIn(tr('Numbers in the 3D picture: number of digits', '3D の絵の中の数：桁数'), (d) => d.pic.n, (d, n) => { d.pic.n = n; if (d.pic.mode === 'auto') d.pic.mode = 'sig'; }, () => digits().pic.mode === 'sig');
+    const picNote = el('div', { class: 'form-hint', text: tr('Auto: 3 significant digits, % with 1 decimal place (the amount at the level, the scale, the sizes).', '自動：有効数字 3 桁、% は小数点以下 1 桁（液面のそばの量、目盛り、寸法）。') });
+    const choice = (label, opts, get, put) => {
+      const s = el('span', { class: 'seg mini', role: 'group', 'aria-label': label });
+      const bs = opts.map(([v, t]) => { const b = tapButton({ text: t }, () => set((d) => put(d, v))); b.dataset.v = v; return b; });
+      s.append(...bs);
+      s.sync = () => { const v = String(get(digits())); for (const b of bs) { b.classList.toggle('on', b.dataset.v === v); b.setAttribute('aria-pressed', String(b.dataset.v === v)); } };
+      return s;
+    };
+    const roundSeg = choice(tr('Rounding', '丸め方'), [['half', tr('Round half up', '四捨五入')], ['down', tr('Round down', '切り捨て')], ['up', tr('Round up', '切り上げ')]], (d) => d.round, (d, v) => { d.round = v; });
+    const zeroSeg = choice(tr('Trailing zeros', '末尾の 0'), [['true', decSign(tr('Keep (2.50)', '残す（2.50）'))], ['false', decSign(tr('Drop (2.5)', '残さない（2.5）'))]], (d) => d.zeros, (d, v) => { d.zeros = v === 'true'; });
+    const csvSeg = choice(tr('Tables saved as CSV', 'CSV で保存する表'), [['full', tr('All the digits', '全部の桁')], ['shown', tr('As shown', '表示どおり')]], (d) => d.csv, (d, v) => { d.csv = v; });
+    const reset = tapButton({ class: 'btn', text: tr('Back to the first settings', '最初の設定に戻す') }, () => { S.digits = DIG_DEF(); digitsChanged(); });
+    const body = el('div', { class: 'dig-body' },
+      rowOf(tr('Digits', '桁'), allMode, allN), warn, note,
+      el('label', { class: 'dig-row dig-per' }, perBox, el('span', { text: tr('Each kind of quantity on its own', '量の種類ごとに決める') })), perList,
+      rowOf(tr('In the 3D picture', '3D の絵の中'), picSeg, picN), picNote,
+      rowOf(tr('Rounding', '丸め方'), roundSeg), rowOf(tr('Trailing zeros', '末尾の 0'), zeroSeg), rowOf(tr('CSV files', 'CSV ファイル'), csvSeg), reset);
+    const more = el('details', { class: 'sec-more dig-more' }, el('summary', { text: tr('Digits in detail ▾', '桁を詳しく ▾') }), body);
+    const ui = {
+      sel, more,
+      sync() {
+        const d = digits(), q = d.per ? 'custom' : d.mode === 'auto' ? 'auto' : d.mode === 'dec' && d.n <= 3 ? 'd' + d.n : 'custom';
+        custom.hidden = q !== 'custom'; sel.value = q;
+        allMode.sync();
+        if (document.activeElement !== allN.input) allN.input.value = String(d.n);
+        allN.hidden = d.mode === 'auto';
+        perBox.checked = d.per; perList.hidden = !d.per;
+        for (const r of kindRows) { const o = d.kinds[r.k] || { mode: 'auto', n: d.n }; r.seg.sync(); if (document.activeElement !== r.n.input) r.n.input.value = String(o.n); r.n.hidden = o.mode === 'auto'; }
+        picSeg.sync(); if (document.activeElement !== picN.input) picN.input.value = String(d.pic.n); picN.hidden = d.pic.mode === 'auto';
+        roundSeg.sync(); zeroSeg.sync(); csvSeg.sync();
+      }
+    };
+    ui.sync();
+    digUIs.add(ui);
+    return ui;
   }
   // the box of the graph around points only (no surface)
   function points3dData() {
@@ -10177,7 +10419,8 @@
   //   0 to 1), made again only when f changes
   //   tank: the container and the liquid (below)
   function shapeModel(k, s, lab) {
-    const C = modelColors(), N = 72, MER = Math.PI / 6;
+    // (no lines along the solid: its sides are smooth, and only its edges have lines (D6, 11:05))
+    const C = modelColors(), N = 72, MER = 0;
     const ok = (...xs) => xs.every((x) => x > 0 && isFinite(x));
     const M = { k, s, lab: lab || {}, colors: C };
     const roomR = (R, top) => { const m = Math.max(R * 0.28, top * 0.06); return [-R - m, R + m, -R - m, R + m, 0, top * 1.08 + m * 0.3]; };
@@ -10192,11 +10435,11 @@
       };
       return M;
     };
-    // the latitude lines of a sphere every 36° (none at the poles)
-    const lat = (a) => (Math.PI / 2 - a) / (Math.PI / 5);
+    // (no latitude lines on a sphere either; the edge of a hemisphere, 0)
+    const lat = (a) => (Math.abs(a - Math.PI / 2) < 1e-9 ? 0 : 0.5);
     if (k === 'sphere') {
       const R = s.r; if (!ok(R)) return null;
-      return rev([arcSeg(R, 0, R, Math.PI, 0, 48, (a) => lat(a))], R, 2 * R);
+      return rev([arcSeg(R, 0, R, Math.PI, 0, 48, () => 0.5)], R, 2 * R);
     }
     if (k === 'cyl') {
       const R = s.r, H = s.h; if (!ok(R, H)) return null;
@@ -10221,11 +10464,11 @@
     }
     if (k === 'torus') {
       const R = s.R, r = s.r; if (!ok(R, r) || r > R) return null;
-      return rev([arcSeg(r, R, r, -Math.PI, Math.PI, 48, (a) => (a + Math.PI) / (Math.PI / 2) + 0.5)], R + r, 2 * r);
+      return rev([arcSeg(r, R, r, -Math.PI, Math.PI, 48, () => 0.5)], R + r, 2 * r);
     }
     if (k === 'ellipsoid') {
       const a = s.a, b = s.b, c = s.c; if (!ok(a, b, c)) return null;
-      const segs = [arcSeg(1, 0, 1, Math.PI, 0, 48, (al) => lat(al))], out = profileOutline(segs);
+      const segs = [arcSeg(1, 0, 1, Math.PI, 0, 48, () => 0.5)], out = profileOutline(segs);
       M.grow = 'rev'; M.R = Math.max(a, b); M.top = 2 * c;
       const m = Math.max(Math.max(a, b) * 0.28, 2 * c * 0.06);
       M.box = [-a - m, a + m, -b - m, b + m, 0, 2 * c * 1.08 + m * 0.3];
@@ -10252,7 +10495,7 @@
     }
     // solids pulled up from their base
     const up = (base, h, apex, R) => {
-      M.grow = 'up'; M.R = R; M.top = h; M.box = roomR(R, h);
+      M.grow = 'up'; M.R = R; M.top = h; M.box = roomR(R, h); M.base = base;
       M.mesh = (f) => {
         if (M.meshF === f && M.meshC) return M.meshC;
         M.meshF = f;
@@ -10605,7 +10848,8 @@
       const box = pill(txt, mx, my, sx < -0.35 ? 'left' : sx > 0.35 ? 'right' : 'center');
       out.dims.push({ txt, a: [Math.round(A[0]), Math.round(A[1])], b: [Math.round(B[0]), Math.round(B[1])], box: [Math.round(box.x), Math.round(box.y), Math.round(box.w), Math.round(box.h)], hidden: runs.filter((r) => !r.v).length });
     };
-    const L = Md.lab, k = Md.k, sR = Md.R;
+    const L = { dia: Md.lab.dia }, k = Md.k, sR = Md.R;
+    for (const n in Md.lab) if (n !== 'dia') L[n] = labText(Md.lab[n]);
     const at = (d, q, z) => [d[0] * q, d[1] * q, z];
     const sgn = (x) => (x < 0 ? -1 : 1);
     // the screen's right as an arrow for a label
@@ -10633,7 +10877,6 @@
         dim([0, 0, 0], [0, 0, H], L.h, LEFT);
         const rb = k === 'hemi' ? sR : Math.sqrt(Math.max(0, Md.s.h * (2 * Md.s.r - Md.s.h)));
         if (k === 'hemi') { if (dd) dim(at(rgt, -rb, 0), at(rgt, rb, 0), rad, DOWN); else dim([0, 0, 0], at(rgt, rb, 0), rad, DOWN); }
-        else dim(at(rgt, -(rb * 1.2 + sR * 0.1), 0), at(rgt, -(rb * 1.2 + sR * 0.1), H), L.h, LEFT);
       } else if (k === 'torus') {
         const R = Md.s.R, r = Md.s.r;
         dim([0, 0, r], at(rgt, R, r), L.R, UP);
@@ -10656,6 +10899,18 @@
         } else if (k === 'pyr') {
           const fy = sgn(twd[1]) * s.a / 2;
           dim([-s.a / 2, fy, 0], [s.a / 2, fy, 0], L.a, DOWN);
+        } else if (k === 'nprism' && Md.base) {
+          // (the side: the edge of the base nearest the eye)
+          const B = Md.base;
+          let best = 0, bi = 0;
+          for (let i = 0; i < B.length; i++) { const a = B[i], b = B[(i + 1) % B.length], d = (a[0] + b[0]) * twd[0] + (a[1] + b[1]) * twd[1]; if (i === 0 || d > best) { best = d; bi = i; } }
+          const a = B[bi], b = B[(bi + 1) % B.length];
+          dim([a[0], a[1], 0], [b[0], b[1], 0], L.a, DOWN);
+        } else if (k === 'prism' && L.A) {
+          // (the area of the base, written on the top)
+          const c = P3([0, 0, H]);
+          const box = pill(L.A, c[0], c[1], 'center');
+          out.dims.push({ txt: L.A, a: [Math.round(c[0]), Math.round(c[1])], b: [Math.round(c[0]), Math.round(c[1])], box: [Math.round(box.x), Math.round(box.y), Math.round(box.w), Math.round(box.h)], hidden: 0 });
         }
       }
     }
@@ -10690,7 +10945,7 @@
           if (major) {
             const lx = Math.min(a1[0], a2[0], p[0]) - 6;
             g.globalAlpha = 1; g.font = '11px system-ui, sans-serif'; g.textAlign = 'right'; g.textBaseline = 'middle';
-            const txt = statNum(i * sc.step, 6) + (sc.unit ? ' ' + sc.unit : '');
+            const txt = digPic(i * sc.step, 'scale') + (sc.unit ? ' ' + sc.unit : '');
             g.strokeStyle = bg; g.lineWidth = 3; g.globalAlpha = 0.8; g.strokeText(txt, lx, p[1]);
             g.globalAlpha = 1; g.fillStyle = ink; g.fillText(txt, lx, p[1]);
             g.strokeStyle = ink;
@@ -10734,10 +10989,12 @@
         const ind = g.measureText('⇕ ').width, w = Math.max(...lines.map((s, i) => g.measureText(s).width + (i ? ind : 0))) + 16, hh = 8 + 17 * lines.length;
         const A = o.avoid, clash = (x) => A && x + w > A.x && x < A.x + A.w && y0 + hh > A.y && y0 < A.y + A.h;
         const y0 = Math.max(2, Math.min(o.H - hh - 2, lv[1] - hh / 2));
-        // (on the right of the level on the wall; on its left when there is no room)
+        // (on the right of the level on the wall; on its left when there is no room; not over the labels of the sizes)
         let x0 = lv[0] + 14;
         if (x0 + w > o.W - 2 || clash(x0)) x0 = lv[0] - 14 - w;
         if (x0 < 2) { x0 = 2; if (clash(x0)) x0 = Math.max(2, A.x - w - 4); }
+        const over = (x, y) => out.dims.some((d) => x < d.box[0] + d.box[2] && x + w > d.box[0] && y < d.box[1] + d.box[3] && y + hh > d.box[1]);
+        if (over(x0, y0)) { const alt = [lv[0] - 14 - w, lv[0] + 14].filter((x) => x >= 2 && x + w <= o.W - 2 && !clash(x) && !over(x, y0)); if (alt.length) x0 = alt[0]; }
         // (a little pointer from the box to the level on the wall, under the box)
         g.strokeStyle = ink; g.lineWidth = 1.2; g.globalAlpha = 0.85;
         g.beginPath(); g.moveTo(lv[0], lv[1]); g.lineTo(x0 + w / 2, y0 + hh / 2); g.stroke();
@@ -11731,7 +11988,7 @@
     } else if (dim === 1 && ctx.base) unit = ' ' + ctx.base;
     if (pct) unit = ' %';
     const t = String(+val.toPrecision(10)), text = '≈ ' + t + unit;
-    return { result: text, shown: valueShown(text), expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
+    return { result: text, shown: valueShown(text), num: val, expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
       vol: what === 'liq' && ctx.base ? `(${+x.toPrecision(12)} ${ctx.base}^3)` : '' };
   }
   // the picture of a tank with heads, filled to the level typed
@@ -11829,7 +12086,7 @@
     const r = ellipsoidAreaNum(nums[0], nums[1], nums[2]);
     if (!isFinite(r.v)) return null;
     const t = String(+r.v.toPrecision(Math.min(10, r.digits))), unit = ctx.base ? ' ' + ctx.base + '²' : '', text = '≈ ' + t + unit;
-    return { result: text, shown: valueShown(text), expr: t + (ctx.base ? ' ' + ctx.base + '^2' : '') };
+    return { result: text, shown: valueShown(text), num: r.v, expr: t + (ctx.base ? ' ' + ctx.base + '^2' : '') };
   }
   // the volume of the liquid in a tank at height h (numbers in one unit), for the height from an amount
   const TANK_V = {
@@ -11942,7 +12199,9 @@
       aUnit.append(el('option', { value: '', text: tr('Area: auto', '面積：自動') }));
       for (const [u, s] of AREA_UNITS) aUnit.append(el('option', { value: u, text: s }));
       vUnit.value = G.vu; aUnit.value = G.au;
-      const outUnits = el('div', { class: 'geo-units' }, vUnit, aUnit);
+      // (1.12.0, D7) the digits of the results, beside the units
+      const dig = digitsControl();
+      const outUnits = el('div', { class: 'geo-units' }, vUnit, aUnit, dig.sel);
       const dens = el('select', { 'aria-label': tr('Material (density)', '材料（密度）') });
       dens.append(el('option', { value: '', text: tr('Weight: choose a material', '重さ：材料を選ぶ') }));
       for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: decSign(s) })); // (BG13: 1.000 g/cm³ with a decimal comma)
@@ -12020,23 +12279,25 @@
         const top = tankTop(sh.k, s), full = TANK_V[sh.k](s, top);
         let f = 1, vName = base ? base + '³' : '';
         if (base && G.vu) { const x = await numValue(`(1 ${base}^3) / (1 ${G.vu})`); if (seq !== G.seq) return; if (x > 0) { f = x; vName = (VOL_UNITS.find((u) => u[0] === G.vu) || [0, G.vu])[1]; } }
-        const n6 = (x) => statNum(x, 6), pct = (x) => statNum(x / full * 100, 4);
+        const n6 = (x) => statNum(x, 6), pct = (x) => digNum(x / full * 100, 'pct', 4), nh = (x) => digNum(x, 'len', 6), nv = (x) => digNum(x, 'vol', 6);
         const nice = (span) => { const raw = span / 10, p = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * p >= raw * 0.999) return m * p; return 10 * p; };
         const heightOf = (want) => { let lo = 0, hi = top; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; } return (lo + hi) / 2; };
         const span = G.q === 'h' ? top : full * f;
         let step = boxNum(G.qs), note = '';
         if (!(step > 0)) step = nice(span);
         if (span / step > 200) { step = nice(span / 20); note = trf('Up to 200 rows: the step is {0}', '200 行までにするため、刻みを {0} にしました', n6(step)); }
-        const rows = [];
+        // (D7: the heights, the amounts and the % with the digits set; raw: all their digits, for CSV)
+        const rows = [], raw = [];
         for (let i = 0; i * step < span * (1 - 1e-9); i++) {
           const q = i * step;
-          if (G.q === 'h') { const vol = TANK_V[sh.k](s, q); rows.push([n6(q), n6(vol * f), pct(vol)]); } else { rows.push([n6(q), n6(heightOf(q / f)), pct(q / f)]); }
+          if (G.q === 'h') { const vol = TANK_V[sh.k](s, q); rows.push([n6(q), nv(vol * f), pct(vol)]); raw.push([q, vol * f, vol / full * 100]); } else { const hq = heightOf(q / f); rows.push([n6(q), nh(hq), pct(q / f)]); raw.push([q, hq, q / f / full * 100]); }
         }
         // the last row: the full tank
-        rows.push(G.q === 'h' ? [n6(top), n6(full * f), '100'] : [n6(full * f), n6(top), '100']);
+        rows.push(G.q === 'h' ? [n6(top), nv(full * f), pct(full)] : [n6(full * f), nh(top), pct(full)]);
+        raw.push(G.q === 'h' ? [top, full * f, 100] : [full * f, top, 100]);
         qUnit.textContent = G.q === 'h' ? base : vName;
         const hName = tr('Height h', '液面の高さ h') + (base ? ' (' + base + ')' : ''), vCol = tr('Liquid', '液量') + (vName ? ' (' + vName + ')' : '');
-        showTable(quickBox, { title: G.q === 'h' ? tr('The amount for each height', '高さごとの液量') : tr('The height for each amount', '液量ごとの高さ'), head: G.q === 'h' ? [hName, vCol, '%'] : [vCol, hName, '%'], rows, name: 'tank' });
+        showTable(quickBox, { title: G.q === 'h' ? tr('The amount for each height', '高さごとの液量') : tr('The height for each amount', '液量ごとの高さ'), head: G.q === 'h' ? [hName, vCol, '%'] : [vCol, hName, '%'], rows, raw, name: 'tank' });
         if (note) quickBox.append(el('div', { class: 'form-hint', text: note }));
       };
       const cautionWeight = cautionLine(tr('The densities of the list are typical values.', '前提：一覧の密度は代表的な値です。'));
@@ -12075,7 +12336,7 @@
         let lo = 0, hi = top;
         for (let i = 0; i < 200 && hi - lo > top * 1e-15; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; }
         const h = (lo + hi) / 2;
-        amtVal.textContent = 'h ≈ ' + statNum(h, 6) + (base ? ' ' + base : '') + tr(' (', '（') + statNum(want / full * 100, 4) + ' %' + tr(' full)', '）');
+        amtVal.textContent = 'h ≈ ' + digNum(h, 'len', 6) + (base ? ' ' + base : '') + tr(' (', '（') + digNum(want / full * 100, 'pct', 4) + ' %' + tr(' full)', '）');
       };
       // the weight of the first volume of the list (the liquid of a tank) with the density chosen
       const weight = async (rows, seq) => {
@@ -12089,7 +12350,11 @@
         const ok = r.ok && r.result && !r.timeout && !(r.messages || []).some((m) => m.type === 'error') && / kg$/.test(r.result);
         if (!ok) { weightVal.textContent = decSign(tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')); return; }
         const kg = Number(numberPart(r.result.replace(/ kg$/, '')));
-        weightVal.textContent = tr('Weight ', '重さ ') + resultText(r) + (kg >= 1000 ? tr(' = ', ' = ') + statNum(kg / 1000, 8) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
+        // (D7: the weight with the digits set for weights)
+        const wsp = digSpec('mass'), kgx = wsp ? await digValue(`(${row.vol}) × (${d}) to kg`) : kg;
+        if (seq !== G.seq) return;
+        const wtxt = wsp && isFinite(kgx) ? (/≈/.test(resultText(r)) ? withApprox(resultText(r), digText(kgx, wsp, !!S.grouping)) : resultText(r)) : resultText(r);
+        weightVal.textContent = tr('Weight ', '重さ ') + wtxt + (kg >= 1000 ? tr(' = ', ' = ') + digNum((isFinite(kgx) ? kgx : kg) / 1000, 'mass', 8) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
       };
       const svg = (sh, v, small) => {
         let t = typeof sh.pic === 'function' ? sh.pic(v || {}) : sh.pic;
@@ -12134,7 +12399,8 @@
             const rr = await row.def[2](G.dia ? Object.keys(v).reduce((o, n) => { o[n] = (sh.p.find((q) => q[0] === n) || [])[4] ? `(${v[n]}) / 2` : v[n]; return o; }, {}) : v, { unit: G.unit, base, vu: G.vu });
             if (seq !== G.seq) return;
             if (!rr) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
-            row.expr = rr.expr; row.result = rr.result; row.shown = rr.shown; row.vol = rr.vol || '';
+            row.expr = rr.expr; row.result = rr.result; row.shown = rr.shown; row.vol = rr.vol || ''; row.num = rr.num;
+            await digRow(row, geoKind(row.def), rr.num); // (D7: the digits set)
             row.node.dataset.value = row.shown; showResult(row.val, row.shown);
             continue;
           }
@@ -12149,7 +12415,9 @@
           if (seq !== G.seq) return;
           const bad = !r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error') || /(^|[^\p{L}])i($|[^\p{L}])|undefined/u.test(r.result);
           if (bad) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
-          row.expr = full; row.vol = pow === 3 && (G.unit || own.length) ? `(${sub(G.unit || target)})` : ''; row.result = r.result + suffix; row.shown = resultText(r) + suffix;
+          row.expr = full; row.vol = pow === 3 && (G.unit || own.length) ? `(${sub(G.unit || target)})` : ''; row.result = r.result + suffix; row.shown = resultText(r) + suffix; row.num = NaN;
+          await digRow(row, geoKind(row.def), NaN, expr); // (D7: the digits set, from the number worked out again)
+          if (seq !== G.seq) return;
           row.node.dataset.value = row.shown;
           showResult(row.val, row.shown);
         }
@@ -12172,7 +12440,7 @@
         const round = sh.p.some((q) => q[4]);
         rdSeg.hidden = !round; bRad.classList.toggle('on', !G.dia); bDia.classList.toggle('on', G.dia);
         bRad.setAttribute('aria-pressed', String(!G.dia)); bDia.setAttribute('aria-pressed', String(G.dia));
-        outUnits.hidden = sh.d === 2 && !sh.out.some((o) => o[3] === 2); weightRow.hidden = sh.d === 2; amtRow.hidden = sh.d !== 4;
+        vUnit.hidden = aUnit.hidden = sh.d === 2 && !sh.out.some((o) => o[3] === 2); weightRow.hidden = sh.d === 2; amtRow.hidden = sh.d !== 4;
         densIn.hidden = G.dens !== 'own'; amtIn.value = G.amt[k] || '';
         showCaution();
         chips.textContent = '';
@@ -12238,14 +12506,14 @@
         }
         return s;
       };
-      // the labels of the sizes on the solid ("r = 15 cm", "d = 30 cm" for a diameter), as typed
-      const labelsOf = (sh, v) => {
+      // the labels of the sizes on the solid ("r = 15 cm", "d = 30 cm" for a diameter): the letter, the number in
+      // the unit of the sizes (written with the digits of the 3D picture, D7) and the unit
+      const labelsOf = (sh, s, base) => {
         const lab = { dia: G.dia };
         for (const [n, , kind, sym0, dl] of sh.p) {
           if (kind === 'n' || kind === 'deg') continue;
-          const sym = G.dia && dl ? ((sym0 || n) === 'R' ? 'D' : 'd') : (sym0 || n), own = /\p{L}/u.test(v[n].replace(/π/g, ''));
-          const u = kind === 'a2' ? (G.unit && !own ? ' ' + G.unit + '²' : '') : G.unit && !own ? ' ' + G.unit : '';
-          lab[n] = sym + ' = ' + toDisplay(v[n]) + u;
+          const d2 = G.dia && dl, sym = d2 ? ((sym0 || n) === 'R' ? 'D' : 'd') : (sym0 || n);
+          lab[n] = { sym, val: d2 ? 2 * s[n] : s[n], unit: base ? base + (kind === 'a2' ? '²' : '') : '' };
         }
         return lab;
       };
@@ -12266,7 +12534,7 @@
         if (msg.textContent) { toast(msg.textContent, 2600); return; }
         const { own, base } = baseOf(sh, v), s = await sizesNum(sh, v, base);
         if (G.k !== sh.k) return;
-        const model = Object.values(s).every((x) => isFinite(x)) ? shapeModel(sh.k, s, labelsOf(sh, v)) : null;
+        const model = Object.values(s).every((x) => isFinite(x)) ? shapeModel(sh.k, s, labelsOf(sh, s, base)) : null;
         if (!model) { toast(tr('These sizes cannot be drawn in 3D', 'この大きさでは 3D で描けません'), 2600); return; }
         // a tank: the volume scale (round amounts in the unit of the results; about 3 with their numbers)
         let scale = null;
@@ -12288,8 +12556,8 @@
         const tankNow = () => {
           const T = model.tank, liq = rowOf((r) => r.def[3] === 3), pc = rowOf((r) => r.def[0] === FULL()), cap = rowOf((r) => r.def[0] === CAP());
           if (fresh() && liq && liq.result && pc && pc.result) return { amount: approxOf(liq.shown), pct: approxOf(pc.shown), liq: liq.shown, cap: cap && cap.result ? cap.shown : '' };
-          const x = T.V(T.h) * model.vf, u = model.vunit ? ' ' + model.vunit : '';
-          return { amount: statNum(x, 6) + u, pct: statNum(T.V(T.h) / T.full * 100, 4) + ' %', liq: '≈ ' + statNum(x, 6) + u, cap: '≈ ' + statNum(T.full * model.vf, 6) + u };
+          const x = T.V(T.h) * model.vf, u = model.vunit ? ' ' + model.vunit : '', pq = digNum(T.V(T.h) / T.full * 100, 'pct', 4) + ' %';
+          return { amount: digNum(x, 'vol', 10) + u, pct: pq, liq: '≈ ' + digNum(x, 'vol', 10) + u, cap: '≈ ' + digNum(T.full * model.vf, 'vol', 10) + u };
         };
         const link = G.link3d = {
           model, title: sh.name, scale,
@@ -12299,7 +12567,9 @@
             return [vol && vol.result ? vol.def[0] + ' ' + vol.shown : '', ar && ar.result ? ar.def[0] + ' ' + ar.shown : ''];
           },
           rows: () => rows.map((q) => ({ name: q.def[0], small: typeof q.def[1] === 'string' ? q.def[1] : '', result: q.result, expr: q.expr, text: q.result ? '' : q.val.textContent })),
-          levelText: () => { const q = tankNow(); return q.amount + tr(' (', '（') + q.pct + tr(')', '）'); },
+          // (the amount at the level in the 3D picture: rounded for reading, with the digits of the picture (D7: auto, 3
+          // significant digits, % with one decimal); the exact values stay above the graph and in the tool)
+          levelText: () => { const T = model.tank, u = model.vunit ? ' ' + model.vunit : ''; return digPic(T.V(T.h) * model.vf, 'amount') + u + tr(' (', '（') + digPic(T.V(T.h) / T.full * 100, 'pct') + ' %' + tr(')', '）'); },
           // the height dragged into the tool's field (in the unit of the sizes, rounded as the slider is)
           setLevel: (h, final) => {
             const inp = inputs.h;
@@ -12307,7 +12577,7 @@
             const st = levelStep(model.tank), dec = Math.max(0, -Math.floor(Math.log10(st) + 1e-9)), num = String(+h.toFixed(dec));
             const ownU = own.length && !G.unit ? ' ' + base : '';
             inp.value = toDisplay(num) + ownU;
-            model.lab.h = 'h = ' + toDisplay(num) + (G.unit ? ' ' + G.unit : ownU);
+            model.lab.h = { sym: 'h', val: +num, unit: base };
             G.vals[sh.k] = sh.p.map(([n]) => inputs[n].value);
             G.done = null;
             clearTimeout(liveT);
@@ -12337,11 +12607,16 @@
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips, headRow,
         el('div', { class: 'geo-main' }, picBox, el('div', { class: 'geo-side' }, rdSeg, sizes,
           el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
-        outUnits, msg, exNote, proRow3d, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
+        outUnits, dig.more, msg, exNote, proRow3d, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
         // 1.11.0: the volume from measured values (a table of cross sections, a grid of heights)
         tapButton({ class: 'btn geo-link', text: tr('Volume from measured values (cross sections, grid of heights) ›', '測った値から体積（断面積の表・点高法）›') }, () => openSections()),
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
       p.run = run;
+      digRuns.add(() => run());
+      // (D6: a solid of the examples of the 3D graph: its sizes typed here (as radii), and shown in 3D once its
+      // values are there)
+      p.setShape = (k, vals) => { typed(); G.dia = false; G.vals[k] = vals.map((x) => toDisplay(x)); choose(k); };
+      p.view3d = async () => { await runNow(); show3d(); };
       choose(G.k);
     });
     // opened again: the precision or the angle unit of the settings may have changed
@@ -12569,6 +12844,7 @@
           btn(tr('Clear', 'すべて消す'), tr('Clear the table', '表をすべて消す'), () => { L.length = 0; if (!inner) L.push(['', ''], ['', '']); }));
       };
       const build = () => { fillTable(table, tools, () => D.rows, false); fillTable(itable, itools, () => D.inner, true); };
+      const dig = digitsControl(); // (1.12.0, D7)
       const row = (name, small, shown, expr) => {
         const node = tapButton({ class: 'geo-row' }, () => { if (expr) resultSheet(name, expr, shown); });
         node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), el('span', { class: 'geo-val', text: shown }));
@@ -12578,9 +12854,10 @@
       };
       const mark = (box, r, c) => { const ins = box.querySelectorAll('input'); if (ins[r * 2 + c]) ins[r * 2 + c].setAttribute('aria-invalid', 'true'); };
       // the cm³ of a volume in the unit, shown as cm³ (mL) or L
-      const inCm3 = (v) => { const c = v * PF_CM3[D.unit]; return c >= 1000 ? '≈ ' + statNum(c / 1000) + ' L' : D.unit === 'cm' ? '' : '≈ ' + statNum(c) + ' cm³'; };
+      // (1.12.0, D7: the numbers after ≈ with the digits set for their kind)
+      const inCm3 = (v) => { const c = v * PF_CM3[D.unit]; return c >= 1000 ? '≈ ' + digNum(c / 1000, 'vol', 10) + ' L' : D.unit === 'cm' ? '' : '≈ ' + digNum(c, 'vol', 10) + ' cm³'; };
       // an amount in mL as mL or L
-      const mlText = (ml) => (ml >= 1000 ? '≈ ' + statNum(ml / 1000) + ' L' : '≈ ' + statNum(ml) + ' mL');
+      const mlText = (ml) => (ml >= 1000 ? '≈ ' + digNum(ml / 1000, 'vol', 10) + ' L' : '≈ ' + digNum(ml, 'vol', 10) + ' mL');
       const drawPic = (o, i, so, si) => {
         const top = Math.max(o[o.length - 1].z, i ? i[i.length - 1].z : -Infinity), bot = Math.min(o[0].z, i ? i[0].z : Infinity), rmax = Math.max(so.rmax, si ? si.rmax : 0) || 1;
         const s = Math.min(120 / ((top - bot) || 1), 80 / rmax), X = (r) => +(100 + r * s).toFixed(1), Y = (z) => +(138 - (z - bot) * s).toFixed(1);
@@ -12603,33 +12880,33 @@
         drawPic(o, i, so, si);
         const u = D.unit, u3 = ' ' + u + '³';
         // the exact outer volume (straight pieces) from the engine
-        let outerText = '≈ ' + statNum(so.volume) + u3, outerExpr = exprNum(so.volume) + ' ' + u + '^3';
+        let outerText = '≈ ' + digNum(so.volume, 'vol', 10) + u3, outerExpr = exprNum(so.volume) + ' ' + u + '^3';
         if (!D.smooth) {
           const r = await Bridge.send('calc', { expr: pfExact(o), opts: engineOpts(), timeout: 4000 });
           if (seq !== D.seq) return;
-          if (r.ok && r.result && !r.timeout) { const ex = r.result.split(' ≈ ')[0].split(' = ')[0].trim(); outerText = '= ' + ex + u3 + (/π|√/.test(ex) ? ' ≈ ' + statNum(so.volume) + u3 : ''); outerExpr = '(' + pfExact(o) + ') ' + u + '^3'; }
+          if (r.ok && r.result && !r.timeout) { const ex = r.result.split(' ≈ ')[0].split(' = ')[0].trim(); outerText = '= ' + ex + u3 + (/π|√/.test(ex) ? ' ≈ ' + digNum(so.volume, 'vol', 10) + u3 : ''); outerExpr = '(' + pfExact(o) + ') ' + u + '^3'; }
         }
         row(tr('Outer volume', '外側の体積'), inCm3(so.volume), outerText, outerExpr).classList.add('tool-main');
         let cap = 0;
         if (si) {
           cap = si.volume;
           const ml = cap * PF_CM3[u];
-          row(tr('Inner capacity', '内側の容量'), mlText(ml), '≈ ' + statNum(cap) + u3, exprNum(cap) + ' ' + u + '^3');
+          row(tr('Inner capacity', '内側の容量'), mlText(ml), '≈ ' + digNum(cap, 'vol', 10) + u3, exprNum(cap) + ' ' + u + '^3');
           const f = statVal(D.shrink);
           if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = decSign(tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）')); }
           else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの容量', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), mlText(ml * k), exprNum(cap * k) + ' ' + u + '^3'); }
         } else {
           const f = statVal(D.shrink);
           if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = decSign(tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）')); }
-          else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの体積', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), '≈ ' + statNum(so.volume * k) + u3, exprNum(so.volume * k) + ' ' + u + '^3'); }
+          else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの体積', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), '≈ ' + digNum(so.volume * k, 'vol', 10) + u3, exprNum(so.volume * k) + ' ' + u + '^3'); }
         }
         const mat = so.volume - cap;
         if (si && mat < 0) msg.textContent = tr('The inner profile is larger than the outer one somewhere: check the sizes', '内側の輪郭が外側より大きいところがあります。大きさを確かめてください');
-        if (si) row(tr('Material', '材料の体積'), tr('outer − inner', '外側 − 内側'), '≈ ' + statNum(mat) + u3, exprNum(mat) + ' ' + u + '^3');
+        if (si) row(tr('Material', '材料の体積'), tr('outer − inner', '外側 − 内側'), '≈ ' + digNum(mat, 'vol', 10) + u3, exprNum(mat) + ' ' + u + '^3');
         const rho = pfDensity(D.dens, D.dv);
         if (D.dens && !isFinite(rho)) { densIn.setAttribute('aria-invalid', 'true'); row(tr('Weight', '重さ'), '', decSign(tr('check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')), ''); }
-        else if (isFinite(rho)) { densIn.removeAttribute('aria-invalid'); const g = mat * PF_CM3[u] * rho; row(tr('Weight', '重さ'), trf('{0} g/cm³', '{0} g/cm³', statNum(rho)) + (D.dens !== 'own' && D.dens !== 'water' ? tr(' (typical)', '（目安）') : ''), g >= 1000 ? '≈ ' + statNum(g / 1000) + ' kg' : '≈ ' + statNum(g) + ' g', exprNum(g) + ' g'); }
-        row(tr('Surface area', '表面積'), tr('outside: the side, the steps and the two ends', '外側：側面・段・両端の面'), '≈ ' + statNum(so.surface) + ' ' + u + '²', exprNum(so.surface) + ' ' + u + '^2');
+        else if (isFinite(rho)) { densIn.removeAttribute('aria-invalid'); const g = mat * PF_CM3[u] * rho; row(tr('Weight', '重さ'), trf('{0} g/cm³', '{0} g/cm³', statNum(rho)) + (D.dens !== 'own' && D.dens !== 'water' ? tr(' (typical)', '（目安）') : ''), g >= 1000 ? '≈ ' + digNum(g / 1000, 'mass', 10) + ' kg' : '≈ ' + digNum(g, 'mass', 10) + ' g', exprNum(g) + ' g'); }
+        row(tr('Surface area', '表面積'), tr('outside: the side, the steps and the two ends', '外側：側面・段・両端の面'), '≈ ' + digNum(so.surface, 'area', 10) + ' ' + u + '²', exprNum(so.surface) + ' ' + u + '^2');
         row(tr('Height', '高さ'), '', statNum(so.height) + ' ' + u, exprNum(so.height) + ' ' + u);
         // 3D (the 3D graph: Pro)
         const w = +((Math.max(so.rmax, si ? si.rmax : 0) || 1) * 1.08).toPrecision(6);
@@ -12644,15 +12921,16 @@
         if (quick.open) {
           const sh = si || so, total = sh.volume, top = sh.height, inMl = (v) => v * PF_CM3[u];
           const nice = (span) => { const raw = span / 10, q = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * q >= raw * 0.999) return m * q; return 10 * q; };
-          const step = nice(top), rows = [];
-          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([statNum(k * step, 6), statNum(inMl(v), 6), statNum(v / total * 100, 4)]); }
-          rows.push([statNum(top, 6), statNum(inMl(total), 6), '100']);
-          showTable(quickBox, { title: si ? tr('The amount inside for each height', '高さごとの内側の量') : tr('The volume up to each height', '高さごとの体積'), head: [tr('Height', '高さ') + ' (' + u + ')', (si ? tr('Amount', '量') + ' (mL)' : tr('Volume', '体積') + ' (cm³)'), '%'], rows, name: 'profile' });
+          const step = nice(top), rows = [], raw = [];
+          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([statNum(k * step, 6), digNum(inMl(v), 'vol', 6), digNum(v / total * 100, 'pct', 4)]); raw.push([k * step, inMl(v), v / total * 100]); }
+          rows.push([statNum(top, 6), digNum(inMl(total), 'vol', 6), digNum(100, 'pct', 4)]); raw.push([top, inMl(total), 100]);
+          showTable(quickBox, { title: si ? tr('The amount inside for each height', '高さごとの内側の量') : tr('The volume up to each height', '高さごとの体積'), head: [tr('Height', '高さ') + ' (' + u + ')', (si ? tr('Amount', '量') + ' (mL)' : tr('Volume', '体積') + ' (cm³)'), '%'], rows, raw, name: 'profile' });
         }
       };
       p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Sizes as', '大きさ') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Sizes as', '大きさ') }, bD, bR)),
         el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unitSel), table, tools, more,
-        el('div', { class: 'geo-weight' }, dens, densIn), pic, msg, outs, el('div', { class: 'tool-tbl-btns' }, view, stlBtn), quick, caution, hint);
+        el('div', { class: 'geo-weight' }, dens, densIn), pic, el('div', { class: 'geo-units' }, dig.sel), dig.more, msg, outs, el('div', { class: 'tool-tbl-btns' }, view, stlBtn), quick, caution, hint);
+      digRuns.add(() => run());
       sync(); build(); run();
     });
     return p;
@@ -13809,7 +14087,9 @@
     if (!proGate('tables')) return;
     const sep = commaMode ? ';' : ',', cell = (v) => '"' + String(v).replace(/"/g, '""') + '"';
     const plain = (c) => String(c).replace(new RegExp('\\' + NF.group.replace(/[ ]/, ' '), 'g'), '').replace(/−/g, '-');
-    const csv = '﻿' + [t.head.map(cell).join(sep)].concat(t.rows.map((r) => r.map((c, i) => (i === 0 ? cell(c) : cell(plain(c)))).join(sep))).join('\r\n') + '\r\n';
+    // (1.12.0, D7: the tables of the tools with all the digits of their numbers, unless "as shown" is chosen)
+    const full = t.raw && digits().csv === 'full';
+    const csv = '﻿' + [t.head.map(cell).join(sep)].concat(t.rows.map((r, j) => r.map((c, i) => (full ? cell(csvNum(t.raw[j][i])) : i === 0 ? cell(c) : cell(plain(c)))).join(sep))).join('\r\n') + '\r\n';
     const d = new Date(), z = (n) => String(n).padStart(2, '0');
     const name = 'QCalc-' + t.name + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.csv';
     savingWhat = 'table';
@@ -14980,6 +15260,12 @@
       ['text_size', tr('Text size', '文字の大きさ'), [['normal', tr('Normal', '標準')], ['large', tr('Large', '大きめ')], ['xlarge', tr('Extra large', '特大')]], tr('Text in the history, the input field and the result', '履歴・入力欄・結果の文字の大きさ')],
       ['theme', tr('Color theme', '配色テーマ'), THEMES, tr('The color of the keys and the highlights, in the light and the dark theme', 'キーや強調表示の色（ライト・ダークの両方）')]
     ]],
+    // 1.12.0 (D7): the digits of the results of the tools for shapes, tanks and solids (the same control as above
+    // their results)
+    [tr('Digits of the tools', '道具の結果の桁'), [
+      ['digits', tr('Shapes, tanks, solid from a profile, make a solid', '図形・容器・輪郭から回転体・立体にする'), 'digits',
+        tr('Separate from the precision of the calculator. Exact values stay; only the decimals after "≈" change', '計算機の「有効桁数」とは別です。厳密な値はそのままで、変わるのは「≈」の後ろの小数だけです')]
+    ]],
     [tr('Input', '操作'), [
       ['preview', tr('Show the result while typing', '入力中に結果を表示'), 'bool'],
       ['auto_ans', tr('An operator in an empty field continues from ans', '空欄で演算子を押すと ans から続ける'), 'bool'],
@@ -15015,6 +15301,11 @@
             p.ratesWhen();
             part.append(tapButton({ class: 'setting setting-link' }, () => openRates()).appendChild(el('div', { class: 'lbl' }, el('div', { text: label }), when)).parentNode
               .appendChild(el('span', { class: 'chev', text: '›', 'aria-hidden': 'true' })).parentNode);
+            continue;
+          }
+          if (type === 'digits') {
+            const c = digitsControl();
+            part.append(el('div', { class: 'setting dig-setting' }, el('div', { class: 'lbl' }, el('div', { text: label }), sub ? el('div', { class: 's', text: sub }) : null), c.sel), c.more);
             continue;
           }
           if (type === 'bool') {
@@ -15061,6 +15352,7 @@
         el('button', { class: 'btn', text: tr('Reset all settings', '設定を初期値に戻す'), onclick: async () => {
           if (!(await confirmSheet(tr('Reset all settings to their defaults?', '設定を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
           S = Object.assign({}, DEFAULTS, { lang: LANG_AUTO ? 'auto' : LANG }); settingsChanged(); // the language stays
+          digitsChanged(); // (D7: the digits of the tools too)
           for (const k of Object.keys(p.inputs)) { const i = p.inputs[k]; if (i.type === 'checkbox') i.checked = !!S[k]; else i.value = String(S[k]); }
         } }));
     });
