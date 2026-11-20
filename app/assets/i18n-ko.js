@@ -1532,7 +1532,6 @@
     "The solid and its volume are shown in 2D. Turning it in 3D is a QCalc Pro feature.": "입체의 모양과 부피를 2D로 보여 줍니다. 3D로 돌려 보기는 QCalc Pro 기능입니다.",
     "⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis and shows the solid in 3D at once, with its volume (QCalc Pro; without it, the solid and its volume in the 2D graph). Back in 2D (← Back to 2D), tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.": "2D 그래프 오른쪽의 둥근 버튼 ‘⟳ 3D’를 누르면 색칠한 부분을 x축 둘레로 돌린 입체가 바로 3D로 나오고 부피도 나옵니다(QCalc Pro. 무료에서는 2D 그래프에 입체의 모양과 부피가 나옵니다). ‘← 2D로 돌아가기’로 2D로 돌아와 y축(또는 x축) 선을 탭하면 그 축 둘레로 돌립니다. y = k·x = k는 선을 끌어서 움직일 수 있습니다. 축 반대쪽에 흐리게 비친 모양이 입체를 축으로 자른 모양입니다. 바꾼 뒤 메시지의 ‘↶ 실행 취소’로 되돌릴 수 있습니다.",
     "The solid measured": "재는 입체",
-    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D) or in \"Solid from a profile\", it shows the values found there. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.": "3D 그래프의 ‘부피·겉넓이’를 열면 지금 그린 곡면 아래(곡면이 둘이면 그 사이)의 부피와 겉넓이가 바로 나옵니다. 범위는 직사각형이나 원 x² + y² ≤ R²입니다. 2D 그래프(⟳ 3D)나 ‘윤곽에서 회전체’에서 만든 입체는 거기서 구한 값이 나옵니다. 아래의 예시는 구를 그리며, r = 2이면 32π/3과 16π가 나옵니다.",
     "Values of the solid of revolution": "회전체의 값",
     "Values of the solid with cross sections": "단면 입체의 값",
     "The values found in \"Make a solid\" of the 2D graph. Other formulas drawn here are measured as an ordinary 3D graph.": "2D 그래프의 ‘입체 만들기’에서 구한 값입니다. 여기서 다른 식을 그리면 보통의 3D 그래프로 잴 수 있습니다.",
@@ -1596,7 +1595,8 @@
     "Values from \"Shapes\": ": "‘도형’의 값: ",
     "Volume, liquid": "부피·액량",
     "digits": "자리",
-    "← Back to the shape": "← 도형으로 돌아가기"
+    "← Back to the shape": "← 도형으로 돌아가기",
+    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "3D 그래프의 ‘부피·겉넓이’를 열면 지금 그린 곡면 아래(곡면이 둘이면 그 사이)의 부피와 겉넓이가 바로 나옵니다. 범위는 직사각형이나 원 x² + y² ≤ R²입니다. 2D 그래프(⟳ 3D), ‘윤곽에서 회전체’, ‘도형’(⟳ 3D)에서 만든 입체에서는 거기서 구한 값이 나옵니다. 아래의 ‘도형 예시’에서는 ‘도형’의 모든 입체를 그 값 그대로 3D로 그릴 수 있습니다(‘수 바꾸기’로 ‘도형’이 열립니다)."
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",

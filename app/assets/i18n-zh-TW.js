@@ -1533,7 +1533,6 @@
     "The solid and its volume are shown in 2D. Turning it in 3D is a QCalc Pro feature.": "已在 2D 中顯示立體的形狀與體積。在 3D 中旋轉查看是 QCalc Pro 的功能。",
     "⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis and shows the solid in 3D at once, with its volume (QCalc Pro; without it, the solid and its volume in the 2D graph). Back in 2D (← Back to 2D), tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.": "2D 圖形右側圓形按鈕「⟳ 3D」會把著色部分繞 x 軸旋轉成的立體立即以 3D 顯示，並求出體積（QCalc Pro；免費版則在 2D 圖形中顯示立體的形狀與體積）。按「← 回到 2D」回到 2D 後，點一下 y 軸（或 x 軸）的線，即改為繞該軸旋轉；y = k、x = k 可拖曳其線移動。軸另一側淡淡映出的形狀，就是以軸切開立體的截面。變更後訊息中的「↶ 復原」可還原。",
     "The solid measured": "所測量的立體",
-    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D) or in \"Solid from a profile\", it shows the values found there. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.": "在 3D 圖形中，開啟「體積與表面積」就會立即顯示所畫曲面下方（或兩個曲面之間）的體積與表面積，範圍是長方形或圓盤 x² + y² ≤ R²。在 2D 圖形（⟳ 3D）或「由輪廓求旋轉體」做成的立體，會顯示在那裡求出的值。下方的範例會畫出一個球：r = 2 時為 32π/3 與 16π。",
     "Values of the solid of revolution": "旋轉體的值",
     "Values of the solid with cross sections": "截面立體的值",
     "The values found in \"Make a solid\" of the 2D graph. Other formulas drawn here are measured as an ordinary 3D graph.": "這是 2D 圖形「做成立體」求出的值。在這裡畫別的式子，就會當成一般的 3D 圖形來測量。",
@@ -1597,7 +1596,8 @@
     "Values from \"Shapes\": ": "「幾何圖形」的值：",
     "Volume, liquid": "體積・液量",
     "digits": "位",
-    "← Back to the shape": "← 回到幾何圖形"
+    "← Back to the shape": "← 回到幾何圖形",
+    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "在 3D 圖形中，開啟「體積與表面積」就會立即顯示所畫曲面下方（或兩個曲面之間）的體積與表面積，範圍是長方形或圓盤 x² + y² ≤ R²。在 2D 圖形（⟳ 3D）、「由輪廓求旋轉體」或「幾何圖形」（⟳ 3D）中做出的立體，會顯示在那裡求出的值。下方的「圖形範例」可以用幾何圖形的值，以 3D 繪製任何立體（「更改數值」會開啟幾何圖形）。"
   },
   messages: {
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",
