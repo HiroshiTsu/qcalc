@@ -257,7 +257,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Type a number in either row.
 :step: ⇅ swaps the rows.
 :shot: convert | The conversion screen
-:example: 5 km → 3.106855961 mi
+:example: 5 km → 3.106856 mi
 :tip: Tap the result row to put "5 km to mi" into the input field or keep it in the history.
 
 ## shapes | Shapes: area, volume, length
@@ -266,7 +266,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Tap the picture of a shape.
 :step: Type the sizes named in the picture (r, h). Round sizes can be a radius or a diameter.
 :step: The results change while you type; tap one to use or copy its expression.
-:example: A sphere of radius 2 → volume 32π/3 ≈ 33.51032164, surface 16π
+:example: A sphere of radius 2 → volume 32π/3 ≈ 33.5103, surface 16π
 :tip: Choose a material to get the weight.
 
 ## tanks | Tanks: liquid and level
@@ -276,7 +276,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Choose the shape and type the diameter (or radius) and the length.
 :step: Type the height of the liquid and choose the unit of the lengths.
 :shot: tanks | The liquid in a lying tank
-:example: Lying, diameter 1 m, length 2 m, liquid 30 cm → 0.3963367126 m³ (about 396 L)
+:example: Lying, diameter 1 m, length 2 m, liquid 30 cm → 0.396337 m³ (about 396 L)
 :tip: [[Quick-reference table ▾]] lists the amount for each height.
 :mistake: A radius typed in the diameter box gives about a quarter of the amount. Check radius or diameter.
 
@@ -323,7 +323,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Type the values, or paste them from a spreadsheet.
 :step: With two columns, [[📈 Show in a graph]] draws the points and the line.
 :shot: stats | [[Statistics]] with an example
-:example: Test scores of 10 people → mean 73.9, median 74, standard deviation (sample) 9.938142013
+:example: Test scores of 10 people → mean 73.90, median 74.00, standard deviation (sample) 9.94
 :tip: The quartiles come first by the method of Japanese high school textbooks; the method of spreadsheets is under "More".
 :mistake: A value that is not a number is shown with its row and how to fix it.
 
@@ -355,7 +355,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Open [[Area and length ▾]].
 :step: Type the range a and b, or drag the lines at its ends.
 :shot: area | The area under √x from 0 to 2
-:example: √x from 0 to 2 → area 1.885618083
+:example: √x from 0 to 2 → area 1.8856181
 :tip: Switch to [[Length]] for the length of the curve.
 
 ## solid | Make a solid (solids of revolution)
@@ -366,7 +366,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: For another axis, go back with [[← Back to 2D]] and tap its line; drag the line y = k with a finger. [[View in 3D]] shows it in 3D again.
 :step: [[↶ Undo]] goes back to the axis before.
 :shot: solid | The region between y = x and y = x² turned around the x axis
-:example: Between y = x and y = x², around the x axis → volume 2π/15 ≈ 0.4188790205
+:example: Between y = x and y = x², around the x axis → volume 2π/15 ≈ 0.41887902
 :tip: [[Show the method with lines]] draws the disks (washers) or shells. The line [[Pappus–Guldinus theorem: ]] compares the volume from the centroid with the integral.
 :pro: Turning the solid with a finger in 3D is a QCalc Pro feature, like the 3D graph. Without Pro, the row [[Turn it in 3D (QCalc Pro)]] appears instead.
 
@@ -442,6 +442,20 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 | [[Show the result while typing]] | The preview |
 | [[Update exchange rates now]] | Downloads the rates at once |
 :tip: [[Reset all settings]] sets everything back to the defaults (the language stays).
+
+## digits | Digits shown by each tool
+:what: Each tool can show its results with its own number of digits. Open [[Digits shown…]] from ⋯ at the right of the tool's title.
+:step: In a tool, press ⋯ and choose [[Digits shown…]].
+:step: Choose [[Recommended (automatic)]], [[Significant digits]] or [[Decimals]], and set the number with + and −. Each tool keeps its own choice.
+:step: To go back, press [[Back to the recommended]]. [[Digits shown by each tool]] in the settings lists every tool and has [[All back to the recommended]].
+The recommended digits are a digit or two more than are usually needed (no digits are added to values that are exact).
+
+The calculation is made with 4 digits more than are shown; the result is rounded half up for showing.
+
+Numeric integration (areas, lengths and volumes of the graph) is certain to about 20 digits: more than 20 are not shown. The tools that calculate in JavaScript (price, percentages, unit price, statistics and others) show 12 digits at most.
+
+Amounts of money are shown to the smallest unit of the currency of your region (1 yen, 0.01 dollar); the calculation is exact in it.
+:tip: The calculator, the forms and the notes use [[Precision (significant digits)]] in the [[Settings]].
 
 ## language | Language
 :what: The app is in English, 日本語, Español, Deutsch, Français, 한국어 or 繁體中文.

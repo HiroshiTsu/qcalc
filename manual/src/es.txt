@@ -257,7 +257,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Escribe un número en cualquiera de ellas.
 :step: ⇅ intercambia las filas.
 :shot: convert | La pantalla de conversión
-:example: 5 km → 3.106855961 mi
+:example: 5 km → 3.106856 mi
 :tip: Toca la fila del resultado para poner «5 km to mi» en el campo de entrada o guardarlo en el historial.
 
 ## shapes | Figuras: área, volumen, longitud
@@ -266,7 +266,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Toca el dibujo de una figura.
 :step: Escribe las medidas indicadas en el dibujo (r, h). Las medidas redondas pueden ser radio o diámetro.
 :step: Los resultados cambian mientras escribes; un toque usa o copia su expresión.
-:example: Una esfera de radio 2 → volumen 32π/3 ≈ 33.51032164, superficie 16π
+:example: Una esfera de radio 2 → volumen 32π/3 ≈ 33.5103, superficie 16π
 :tip: Elige un material para obtener el peso.
 
 ## tanks | Tanques: líquido y nivel
@@ -276,7 +276,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Elige la forma y escribe el diámetro (o el radio) y la longitud.
 :step: Escribe la altura del líquido y elige la unidad de longitud.
 :shot: tanks | El líquido de un tanque horizontal
-:example: Horizontal, diámetro 1 m, longitud 2 m, líquido a 30 cm → 0.3963367126 m³ (unos 396 L)
+:example: Horizontal, diámetro 1 m, longitud 2 m, líquido a 30 cm → 0.396337 m³ (unos 396 L)
 :tip: [[Quick-reference table ▾]] da la cantidad para cada altura.
 :mistake: Un radio escrito en la casilla del diámetro da más o menos la cuarta parte. Comprueba radio o diámetro.
 
@@ -323,7 +323,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Escribe los valores o pégalos de una hoja de cálculo.
 :step: Con dos columnas, [[📈 Show in a graph]] dibuja los puntos y la recta.
 :shot: stats | [[Statistics]] con un ejemplo
-:example: Notas de 10 personas → media 73.9, mediana 74, desviación típica (muestra) 9.938142013
+:example: Notas de 10 personas → media 73.90, mediana 74.00, desviación típica (muestra) 9.94
 :tip: Los cuartiles salen primero por el método de los libros de bachillerato de Japón; el de las hojas de cálculo está en «Más».
 :mistake: Un valor que no es un número se muestra con su fila y cómo corregirlo.
 
@@ -355,7 +355,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Abre [[Area and length ▾]].
 :step: Escribe el intervalo a y b, o arrastra las líneas de sus extremos.
 :shot: area | El área bajo √x de 0 a 2
-:example: √x de 0 a 2 → área 1.885618083
+:example: √x de 0 a 2 → área 1.8856181
 :tip: Cambia a [[Length]] para la longitud de la curva.
 
 ## solid | Crear un sólido (sólidos de revolución)
@@ -366,7 +366,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Para otro eje, vuelve con [[← Back to 2D]] y toca su línea; la línea y = k se arrastra con el dedo. [[View in 3D]] lo muestra de nuevo en 3D.
 :step: [[↶ Undo]] vuelve al eje anterior.
 :shot: solid | La región entre y = x e y = x² girada alrededor del eje x
-:example: Entre y = x e y = x², alrededor del eje x → volumen 2π/15 ≈ 0.4188790205
+:example: Entre y = x e y = x², alrededor del eje x → volumen 2π/15 ≈ 0.41887902
 :tip: [[Show the method with lines]] dibuja los discos (arandelas) o las capas. La línea [[Pappus–Guldinus theorem: ]] compara el volumen a partir del centroide con la integral.
 :pro: Girar el sólido con el dedo en 3D es una función de QCalc Pro, como la gráfica 3D. Sin Pro aparece en su lugar la fila [[Turn it in 3D (QCalc Pro)]].
 
@@ -442,6 +442,20 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 | [[Update exchange rates now]] | Descarga los tipos al momento |
 :shot: settings | Los ajustes
 :tip: [[Reset all settings]] devuelve todo a los valores iniciales (el idioma se mantiene).
+
+## digits | Cifras mostradas en cada herramienta
+:what: Cada herramienta puede mostrar sus resultados con su propio número de cifras. Abre [[Digits shown…]] desde ⋯ a la derecha del título de la herramienta.
+:step: En una herramienta, pulsa ⋯ y elige [[Digits shown…]].
+:step: Elige [[Recommended (automatic)]], [[Significant digits]] o [[Decimals]], y ajusta el número con + y −. Cada herramienta recuerda su elección.
+:step: Para volver, pulsa [[Back to the recommended]]. [[Digits shown by each tool]] en los ajustes muestra todas las herramientas y tiene [[All back to the recommended]].
+Las cifras recomendadas son una o dos más de las que suelen hacer falta (a los valores exactos no se les añaden cifras).
+
+El cálculo se hace con 4 cifras más de las que se muestran, y el resultado se redondea para mostrarlo.
+
+La integración numérica (áreas, longitudes y volúmenes del gráfico) es segura hasta unas 20 cifras: no se muestran más de 20. Las herramientas que calculan en JavaScript (precio, porcentajes, precio por unidad, estadística y otras) muestran como máximo 12 cifras.
+
+Los importes de dinero se muestran hasta la unidad más pequeña de la moneda de tu región (0,01 euros); el cálculo es exacto en ella.
+:tip: La calculadora, los formularios y las notas usan [[Precision (significant digits)]] de los [[Settings]].
 
 ## language | Idioma
 :what: La app está en English, 日本語, Español, Deutsch, Français, 한국어 y 繁體中文.

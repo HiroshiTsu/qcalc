@@ -256,7 +256,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :step: 在任一行輸入數字。
 :step: ⇅ 交換上下兩行。
 :shot: convert | 換算畫面
-:example: 5 km → 3.106855961 mi
+:example: 5 km → 3.106856 mi
 :tip: 點一下結果行，可以把「5 km to mi」放入輸入欄或留在歷史紀錄。
 
 ## shapes | 圖形：面積、體積、長度
@@ -265,7 +265,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :step: 點一下圖形的圖。
 :step: 輸入圖上標示的尺寸（r、h）。圓的尺寸可選半徑或直徑。
 :step: 輸入時結果會變化；點一下可使用或複製其算式。
-:example: 半徑 2 的球 → 體積 32π/3 ≈ 33.51032164，表面積 16π
+:example: 半徑 2 的球 → 體積 32π/3 ≈ 33.5103，表面積 16π
 :tip: 選擇材質就能算出重量。
 
 ## tanks | 槽體：液量與液位
@@ -275,7 +275,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :step: 選擇形狀，輸入直徑（或半徑）和長度。
 :step: 輸入液面高度，選擇長度單位。
 :shot: tanks | 臥式槽的液量
-:example: 臥式，直徑 1 m，長度 2 m，液面 30 cm → 0.3963367126 m³（約 396 L）
+:example: 臥式，直徑 1 m，長度 2 m，液面 30 cm → 0.396337 m³（約 396 L）
 :tip: [[Quick-reference table ▾]] 可看到每個高度的液量。
 :mistake: 在直徑欄輸入半徑，結果大約只有四分之一。請確認是半徑還是直徑。
 
@@ -322,7 +322,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :step: 輸入數值，或從試算表貼上。
 :step: 兩欄時，[[📈 Show in a graph]] 會畫出點和直線。
 :shot: stats | 填入範例的 [[Statistics]]
-:example: 10 人的分數 → 平均 73.9，中位數 74，標準差（樣本）9.938142013
+:example: 10 人的分數 → 平均 73.90，中位數 74.00，標準差（樣本）9.94
 :tip: 四分位數先以日本高中課本的方法顯示；試算表的方法在「更多」裡。
 :mistake: 有不是數字的值時，會顯示所在行和修正方法。
 
@@ -354,7 +354,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :step: 打開 [[Area and length ▾]]。
 :step: 輸入區間 a、b，或拖曳兩端的線。
 :shot: area | √x 從 0 到 2 的面積
-:example: √x，0 到 2 → 面積 1.885618083
+:example: √x，0 到 2 → 面積 1.8856181
 :tip: 切換到 [[Length]] 就是曲線的長度。
 
 ## solid | 製作立體（旋轉體）
@@ -365,7 +365,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :step: 要換其他軸，按 [[← Back to 2D]] 回到 2D，再點一下那條線；y = k 的線可以用手指拖曳。按 [[View in 3D]] 可再以 3D 查看。
 :step: [[↶ Undo]] 回到上一個軸。
 :shot: solid | y = x 和 y = x² 之間的區域繞 x 軸旋轉
-:example: y = x 和 y = x² 之間，繞 x 軸 → 體積 2π/15 ≈ 0.4188790205
+:example: y = x 和 y = x² 之間，繞 x 軸 → 體積 2π/15 ≈ 0.41887902
 :tip: [[Show the method with lines]] 會畫出圓盤（墊圈）或圓柱殼。[[Pappus–Guldinus theorem: ]] 這一行比較由重心求得的體積和積分。
 :pro: 在 3D 中用手指旋轉立體，和 3D 圖形一樣是 QCalc Pro 的功能。免費版會改為顯示 [[Turn it in 3D (QCalc Pro)]] 這一列。
 
@@ -441,6 +441,20 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 | [[Update exchange rates now]] | 立刻下載匯率 |
 :shot: settings | 設定
 :tip: [[Reset all settings]] 會把全部恢復成初始值（語言不變）。
+
+## digits | 各畫面的顯示位數
+:what: 每個工具畫面都能改變結果的顯示位數。從畫面標題右邊的 ⋯ 打開 [[Digits shown…]]。
+:step: 在工具畫面按 ⋯，選擇 [[Digits shown…]]。
+:step: 從 [[Recommended (automatic)]]、[[Significant digits]]、[[Decimals]] 中選擇，再用 + 和 − 決定位數。選好的位數每個畫面各自記住。
+:step: 要恢復時按 [[Back to the recommended]]。設定中的 [[Digits shown by each tool]] 有一覽和 [[All back to the recommended]]。
+建議的位數比通常需要的多 1～2 位（原本就精確的值不會加位數）。
+
+計算比顯示的位數多 4 位，顯示時再四捨五入。
+
+數值積分（圖形的面積、長度、體積等）可信的位數約到 20 位，選得更多也以 20 位顯示。以 JavaScript 計算的工具（價格、比例、單價、統計等）最多 12 位。
+
+金額顯示到裝置所在地區貨幣的最小單位（新臺幣為 1 元）。計算以該單位精確進行。
+:tip: 計算畫面、公式畫面、計算筆記使用 [[Settings]] 中的 [[Precision (significant digits)]]。
 
 ## language | 語言
 :what: App 可用 English、日本語、Español、Deutsch、Français、한국어、繁體中文。

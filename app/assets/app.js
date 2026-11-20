@@ -4152,6 +4152,12 @@
       setupPlotGestures(wrap);
       window.addEventListener('resize', debounce(() => { draw(); draw3d(); }, 120));
       P.exprs = plotExprs(ta.value, 6);
+      // ⋯: the digits of the graph's values (area, length, solids, volume and surface area in 3D)
+      digitsButton(p, 'graph');
+      digitsRefresh.graph = () => {
+        if (P.areaUI && !P.areaUI.box.hidden) computeArea(true);
+        if (Q3.volUI && !Q3.volUI.box.hidden) volumeAndSurface(++Q3.volUI.seq);
+      };
       setMode(store.get('qalc.plot.mode', '2d') === '3d' ? '3d' : '2d');
     });
     return p;
@@ -4757,7 +4763,10 @@
   // The angle unit of the settings is kept, as for drawing the graph (sin(x) in degrees has its area
   // and length in degrees too); polar coordinates go round a full turn in that unit (2π, 360° or
   // 400 gradians) and are scaled to radians by 2π / (full turn).
-  const iOpts = (more) => Object.assign(engineOpts(), { grouping: false }, more || {});
+  // (feature/screen-digits: the values of the graph are calculated with the digits shown + 4, 12 when recommended)
+  const iOpts = (more) => Object.assign(engineOpts(), { grouping: false, precision: digitsPrecision('graph', digitsAuto('graph')) }, more || {});
+  // (the samples of the curves and surfaces stay with the precision of the settings: they are doubles anyway)
+  const sampleOpts = (more) => Object.assign(engineOpts(), { grouping: false }, more || {});
   const fullTurn = () => ({ deg: '360', gra: '400' })[S.angle] || '2π';
   // x and y of an expression replaced by other expressions; "2xy" (x times y) counts too
   function subXY(expr, xs, ys) {
@@ -4928,7 +4937,7 @@
   // 1.9.3: masks, the surfaces themselves: a point counts only where they have real values too
   async function simpsonRect(F, x0, x1, y0, y1, masks, smooth) {
     const exprs = [F].concat(masks || []);
-    const r = await Bridge.send('plot3d', { exprs, xmin: x0, xmax: x1, ymin: y0, ymax: y1, nx: VOL_N, ny: VOL_N, opts: iOpts(), timeout: Math.max(15000, timeLimit() * 1000) });
+    const r = await Bridge.send('plot3d', { exprs, xmin: x0, xmax: x1, ymin: y0, ymax: y1, nx: VOL_N, ny: VOL_N, opts: sampleOpts(), timeout: Math.max(15000, timeLimit() * 1000) });
     if (!r.ok || !Array.isArray(r.series) || r.series.length !== exprs.length || r.series.some((s) => s.complete === false)) return { v: NaN, missing: 0, error: r.error };
     const nx = r.x.length, ny = r.y.length, z = r.series[0].z;
     const hx = (r.x[nx - 1] - r.x[0]) / (nx - 1), hy = (r.y[ny - 1] - r.y[0]) / (ny - 1);
@@ -4978,7 +4987,8 @@
   // (decimal point; the decimals made here grouped with commas, fmtV), and showResult takes the form shown:
   // with a decimal comma their decimal point was taken for a group separator and dropped (0.4188790205 was
   // shown as 04188790205)
-  const valueShown = (t) => displayText(commaMode ? String(t).replace(/(\d),(?=\d{3}(?!\d))/g, '$1') : String(t));
+  // (feature/screen-digits: rounded for the digits of the screen, the graph's unless another is given)
+  const valueShown = (t, key) => { const d = digitsText(key || 'graph', String(t), digitsAuto(key || 'graph')); return displayText(commaMode ? d.replace(/(\d),(?=\d{3}(?!\d))/g, '$1') : d); };
   // the exact form of an expression of exact values (calculated with "exact"), or ''
   async function exactForm(expr) {
     const r = await Bridge.send('calc', { expr, opts: iOpts({ approx: 'exact' }), timeout: 3000 });
@@ -5023,7 +5033,7 @@
   }
   // the values of the functions es (in x) sampled by the engine on a..b: for each, [[x, real?]], or null
   async function realSamples(es, a, b, steps) {
-    const r = await Bridge.send('plot', { exprs: es, min: String(a), max: String(b), steps: steps || 400, var: 'x', opts: iOpts({ complex: 'rect' }), timeout: 8000 });
+    const r = await Bridge.send('plot', { exprs: es, min: String(a), max: String(b), steps: steps || 400, var: 'x', opts: sampleOpts({ complex: 'rect' }), timeout: 8000 });
     if (!r.ok || !Array.isArray(r.series) || r.series.length !== es.length) return null;
     return r.series.map((s) => s.x.map((x, i) => [x, s.y[i] !== null && s.y[i] !== undefined]));
   }
@@ -5649,7 +5659,8 @@
       for (let i = 0; i + 1 < bounds.length; i++) pieces.push(`abs(integrate(${d}, ${bounds[i]}, ${bounds[i + 1]}))`);
     }
     const expr = pieces.length <= 8 ? pieces.join(' + ') : real ? real.parts.map((p) => `integrate(abs(${d}), ${p.a}, ${p.b})`).join(' + ') : `integrate(abs(${d}), ${a}, ${b})`;
-    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: auto ? Math.min(5000, timeLimit() * 1000) : timeLimit() * 1000 });
+    // (the engine works with the digits shown + 4: 12 when recommended, 24 at most; feature/screen-digits)
+    const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { precision: digitsPrecision('graph', digitsAuto('graph')) }), timeout: auto ? Math.min(5000, timeLimit() * 1000) : timeLimit() * 1000 });
     if (areaKey() !== key) return; // (another range or other functions meanwhile: that run writes, 1.12.0)
     const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
     // a result the engine could not integrate exactly still has its approximate value after ≈
@@ -5662,7 +5673,7 @@
       return;
     }
     U.out.textContent = '';
-    U.areaText = r.result.indexOf('≈ ') === 0 ? valueShown(r.result) : resultText(r); // (as shown: BG13)
+    U.areaText = r.result.indexOf('≈ ') === 0 ? valueShown(r.result) : resultText(Object.assign({}, r, { result: digitsText('graph', r.result, digitsAuto('graph')) })); // (as shown: BG13)
     showResult(U.out, tr('Area ', '面積 ') + U.areaText);
     if (real) U.out.append(el('div', { class: 'form-hint', text: realNote(!!g, real.parts) }));
     P.areaExpr = expr;
@@ -5891,7 +5902,7 @@
   // the engine's samples of the expressions es on a..b: for each, { x: [], y: [] } (y null where not real)
   async function revSamplesOf(es, a, b) {
     if (!es.length) return [];
-    const r = await Bridge.send('plot', { exprs: es, min: String(a), max: String(b), steps: 400, var: 'x', opts: iOpts(), timeout: 8000 });
+    const r = await Bridge.send('plot', { exprs: es, min: String(a), max: String(b), steps: 400, var: 'x', opts: sampleOpts(), timeout: 8000 });
     if (!r.ok || !Array.isArray(r.series) || r.series.length !== es.length) return null;
     return r.series.map((s) => ({ x: s.x, y: s.y }));
   }
@@ -7161,7 +7172,7 @@
   const encD = (S, sign) => (S.g ? (sign > 0 ? `(${S.f.expr}) − (${S.g.expr})` : `(${S.g.expr}) − (${S.f.expr})`) : S.f.expr);
   // the grid: { xs, ys, z: [d, …integrands] } or null
   async function encGrid(S, exprs) {
-    const r = await Bridge.send('plot3d', { exprs, xmin: S.x0, xmax: S.x1, ymin: S.y0, ymax: S.y1, nx: ENC_N, ny: ENC_N, opts: iOpts(), timeout: Math.max(20000, timeLimit() * 1000) });
+    const r = await Bridge.send('plot3d', { exprs, xmin: S.x0, xmax: S.x1, ymin: S.y0, ymax: S.y1, nx: ENC_N, ny: ENC_N, opts: sampleOpts(), timeout: Math.max(20000, timeLimit() * 1000) });
     if (!r.ok || !Array.isArray(r.series) || r.series.length !== exprs.length || r.series.some((s) => s.complete === false)) return null;
     return { xs: r.x, ys: r.y, z: r.series.map((s) => s.z.map((v) => (typeof v === 'number' && isFinite(v) ? v : NaN))) };
   }
@@ -7719,7 +7730,7 @@
   const TS2_N = 40;
   async function tsGrid(G) {
     const n = 2 * TS2_N + 1, h = 3 / TS2_N;
-    const r = await Bridge.send('plot3d', { exprs: [G], xmin: '−3', xmax: '3', ymin: '−3', ymax: '3', nx: n, ny: n, opts: iOpts(), timeout: Math.max(20000, timeLimit() * 1000) });
+    const r = await Bridge.send('plot3d', { exprs: [G], xmin: '−3', xmax: '3', ymin: '−3', ymax: '3', nx: n, ny: n, opts: sampleOpts(), timeout: Math.max(20000, timeLimit() * 1000) });
     if (!r.ok || !Array.isArray(r.series) || !r.series[0] || r.series[0].complete === false) return null;
     const z = r.series[0].z;
     let s1 = 0, s2 = 0, bad = 0, pos = false, neg = false;
@@ -7818,7 +7829,7 @@
   // the region shown in the graph: d at the points of the drawn grid
   async function cusShade(S, dExpr) {
     const D = Q3.data;
-    const r = await Bridge.send('plot3d', { exprs: [dExpr], xmin: S.x0, xmax: S.x1, ymin: S.y0, ymax: S.y1, nx: D.nx, ny: D.ny, opts: iOpts(), timeout: 15000 });
+    const r = await Bridge.send('plot3d', { exprs: [dExpr], xmin: S.x0, xmax: S.x1, ymin: S.y0, ymax: S.y1, nx: D.nx, ny: D.ny, opts: sampleOpts(), timeout: 15000 });
     if (!r.ok || !r.series || !r.series[0] || r.x.length !== D.nx || r.y.length !== D.ny) { Q3.volShade = null; requestDraw3d(); return false; }
     const z = r.series[0].z, d = new Float64Array(z.length);
     for (let k = 0; k < z.length; k++) d[k] = typeof z[k] === 'number' && isFinite(z[k]) ? z[k] : NaN;
@@ -10741,7 +10752,7 @@
     } else if (dim === 1 && ctx.base) unit = ' ' + ctx.base;
     if (pct) unit = ' %';
     const t = String(+val.toPrecision(10)), text = '≈ ' + t + unit;
-    return { result: text, shown: valueShown(text), expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
+    return { result: text, shown: valueShown(text, 'shapes'), expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
       vol: what === 'liq' && ctx.base ? `(${+x.toPrecision(12)} ${ctx.base}^3)` : '' };
   }
   // the picture of a tank with heads, filled to the level typed
@@ -10839,7 +10850,7 @@
     const r = ellipsoidAreaNum(nums[0], nums[1], nums[2]);
     if (!isFinite(r.v)) return null;
     const t = String(+r.v.toPrecision(Math.min(10, r.digits))), unit = ctx.base ? ' ' + ctx.base + '²' : '', text = '≈ ' + t + unit;
-    return { result: text, shown: valueShown(text), expr: t + (ctx.base ? ' ' + ctx.base + '^2' : '') };
+    return { result: text, shown: valueShown(text, 'shapes'), expr: t + (ctx.base ? ' ' + ctx.base + '^2' : '') };
   }
   // the volume of the liquid in a tank at height h (numbers in one unit), for the height from an amount
   const TANK_V = {
@@ -11022,7 +11033,7 @@
         const top = tankTop(sh.k, s), full = TANK_V[sh.k](s, top);
         let f = 1, vName = base ? base + '³' : '';
         if (base && G.vu) { const x = await numValue(`(1 ${base}^3) to ${G.vu}`); if (seq !== G.seq) return; if (x > 0) { f = x; vName = (VOL_UNITS.find((u) => u[0] === G.vu) || [0, G.vu])[1]; } }
-        const n6 = (x) => statNum(x, 6), pct = (x) => statNum(x / full * 100, 4);
+        const n6 = (x) => fmtDigits('shapes', x, { m: 'sig', n: 6 }), pct = (x) => statNum(x / full * 100, 4);
         const nice = (span) => { const raw = span / 10, p = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * p >= raw * 0.999) return m * p; return 10 * p; };
         const heightOf = (want) => { let lo = 0, hi = top; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; } return (lo + hi) / 2; };
         const span = G.q === 'h' ? top : full * f;
@@ -11077,7 +11088,7 @@
         let lo = 0, hi = top;
         for (let i = 0; i < 200 && hi - lo > top * 1e-15; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; }
         const h = (lo + hi) / 2;
-        amtVal.textContent = 'h ≈ ' + statNum(h, 6) + (base ? ' ' + base : '') + tr(' (', '（') + statNum(want / full * 100, 4) + ' %' + tr(' full)', '）');
+        amtVal.textContent = 'h ≈ ' + fmtDigits('shapes', h, { m: 'sig', n: 6 }) + (base ? ' ' + base : '') + tr(' (', '（') + statNum(want / full * 100, 4) + ' %' + tr(' full)', '）');
       };
       // the weight of the first volume of the list (the liquid of a tank) with the density chosen
       const weight = async (rows, seq) => {
@@ -11091,7 +11102,7 @@
         const ok = r.ok && r.result && !r.timeout && !(r.messages || []).some((m) => m.type === 'error') && / kg$/.test(r.result);
         if (!ok) { weightVal.textContent = decSign(tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')); return; }
         const kg = Number(numberPart(r.result.replace(/ kg$/, '')));
-        weightVal.textContent = tr('Weight ', '重さ ') + resultText(r) + (kg >= 1000 ? tr(' = ', ' = ') + statNum(kg / 1000, 8) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
+        weightVal.textContent = tr('Weight ', '重さ ') + resultText(Object.assign({}, r, { result: digitsText('shapes', r.result, digitsAuto('shapes')) })) + (kg >= 1000 ? tr(' = ', ' = ') + statNum(kg / 1000, 8) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
       };
       const svg = (sh, v, small) => {
         let t = typeof sh.pic === 'function' ? sh.pic(v || {}) : sh.pic;
@@ -11145,10 +11156,11 @@
           else if (!own.length && G.unit) { if (pow) { full = `(${sub(G.unit)})` + to(G.unit); suffix = ' ' + G.unit + ['', '', '²', '³'][pow]; } }
           else if (own.length && pow) { expr = sub(G.unit || target); if (target) expr = `(${expr})` + to(target); full = expr; } // "2 in" and "4": both in inches
           else if (own.length) { expr = sub(G.unit || target); full = expr; }
-          const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), row.def[4] ? { approx: 'approx' } : {}), timeout: 4000 });
+          const r0 = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { precision: digitsPrecision('shapes', digitsAuto('shapes')) }, row.def[4] ? { approx: 'approx' } : {}), timeout: 4000 });
           if (seq !== G.seq) return;
-          const bad = !r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error') || /(^|[^\p{L}])i($|[^\p{L}])|undefined/u.test(r.result);
+          const bad = !r0.ok || !r0.result || r0.timeout || (r0.messages || []).some((m) => m.type === 'error') || /(^|[^\p{L}])i($|[^\p{L}])|undefined/u.test(r0.result);
           if (bad) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
+          const r = Object.assign({}, r0, { result: digitsText('shapes', r0.result, digitsAuto('shapes')) }); // (the digits of the screen: 6 significant, recommended)
           row.expr = full; row.vol = pow === 3 && (G.unit || own.length) ? `(${sub(G.unit || target)})` : ''; row.result = r.result + suffix; row.shown = resultText(r) + suffix;
           row.node.dataset.value = row.shown;
           showResult(row.val, row.shown);
@@ -11203,7 +11215,7 @@
           const row = { def, val, expr: '', result: '' };
           row.node = tapButton({ class: 'geo-row' }, async () => {
             if (!row.expr) return;
-            resultSheet(def[0], row.expr, row.shown || valueShown(row.result));
+            resultSheet(def[0], row.expr, row.shown || valueShown(row.result, 'shapes'));
           });
           row.node.append(el('span', { class: 'geo-name' }, def[0], el('small', { text: def[1] })), val);
           return row;
@@ -11237,6 +11249,7 @@
         tapButton({ class: 'btn geo-link', text: tr('Volume from measured values (cross sections, grid of heights) ›', '測った値から体積（断面積の表・点高法）›') }, () => openSections()),
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
       p.run = run;
+      digitsButton(p, 'shapes'); digitsRefresh.shapes = () => run();
       choose(G.k);
     });
     // opened again: the precision or the angle unit of the settings may have changed
@@ -11473,9 +11486,11 @@
       };
       const mark = (box, r, c) => { const ins = box.querySelectorAll('input'); if (ins[r * 2 + c]) ins[r * 2 + c].setAttribute('aria-invalid', 'true'); };
       // the cm³ of a volume in the unit, shown as cm³ (mL) or L
-      const inCm3 = (v) => { const c = v * PF_CM3[D.unit]; return c >= 1000 ? '≈ ' + statNum(c / 1000) + ' L' : D.unit === 'cm' ? '' : '≈ ' + statNum(c) + ' cm³'; };
+      // (feature/screen-digits: the values with the digits of the screen, 6 significant when recommended)
+      const pv = (x) => fmtDigits('profile', x, { m: 'sig', n: 6 });
+      const inCm3 = (v) => { const c = v * PF_CM3[D.unit]; return c >= 1000 ? '≈ ' + pv(c / 1000) + ' L' : D.unit === 'cm' ? '' : '≈ ' + pv(c) + ' cm³'; };
       // an amount in mL as mL or L
-      const mlText = (ml) => (ml >= 1000 ? '≈ ' + statNum(ml / 1000) + ' L' : '≈ ' + statNum(ml) + ' mL');
+      const mlText = (ml) => (ml >= 1000 ? '≈ ' + pv(ml / 1000) + ' L' : '≈ ' + pv(ml) + ' mL');
       const drawPic = (o, i, so, si) => {
         const top = Math.max(o[o.length - 1].z, i ? i[i.length - 1].z : -Infinity), bot = Math.min(o[0].z, i ? i[0].z : Infinity), rmax = Math.max(so.rmax, si ? si.rmax : 0) || 1;
         const s = Math.min(120 / ((top - bot) || 1), 80 / rmax), X = (r) => +(100 + r * s).toFixed(1), Y = (z) => +(138 - (z - bot) * s).toFixed(1);
@@ -11498,18 +11513,18 @@
         drawPic(o, i, so, si);
         const u = D.unit, u3 = ' ' + u + '³';
         // the exact outer volume (straight pieces) from the engine
-        let outerText = '≈ ' + statNum(so.volume) + u3, outerExpr = exprNum(so.volume) + ' ' + u + '^3';
+        let outerText = '≈ ' + pv(so.volume) + u3, outerExpr = exprNum(so.volume) + ' ' + u + '^3';
         if (!D.smooth) {
           const r = await Bridge.send('calc', { expr: pfExact(o), opts: engineOpts(), timeout: 4000 });
           if (seq !== D.seq) return;
-          if (r.ok && r.result && !r.timeout) { const ex = r.result.split(' ≈ ')[0].split(' = ')[0].trim(); outerText = '= ' + ex + u3 + (/π|√/.test(ex) ? ' ≈ ' + statNum(so.volume) + u3 : ''); outerExpr = '(' + pfExact(o) + ') ' + u + '^3'; }
+          if (r.ok && r.result && !r.timeout) { const ex = r.result.split(' ≈ ')[0].split(' = ')[0].trim(); outerText = '= ' + ex + u3 + (/π|√/.test(ex) ? ' ≈ ' + pv(so.volume) + u3 : ''); outerExpr = '(' + pfExact(o) + ') ' + u + '^3'; }
         }
         row(tr('Outer volume', '外側の体積'), inCm3(so.volume), outerText, outerExpr).classList.add('tool-main');
         let cap = 0;
         if (si) {
           cap = si.volume;
           const ml = cap * PF_CM3[u];
-          row(tr('Inner capacity', '内側の容量'), mlText(ml), '≈ ' + statNum(cap) + u3, exprNum(cap) + ' ' + u + '^3');
+          row(tr('Inner capacity', '内側の容量'), mlText(ml), '≈ ' + pv(cap) + u3, exprNum(cap) + ' ' + u + '^3');
           const f = statVal(D.shrink);
           if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = decSign(tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）')); }
           else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの容量', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), mlText(ml * k), exprNum(cap * k) + ' ' + u + '^3'); }
@@ -11520,12 +11535,12 @@
         }
         const mat = so.volume - cap;
         if (si && mat < 0) msg.textContent = tr('The inner profile is larger than the outer one somewhere: check the sizes', '内側の輪郭が外側より大きいところがあります。大きさを確かめてください');
-        if (si) row(tr('Material', '材料の体積'), tr('outer − inner', '外側 − 内側'), '≈ ' + statNum(mat) + u3, exprNum(mat) + ' ' + u + '^3');
+        if (si) row(tr('Material', '材料の体積'), tr('outer − inner', '外側 − 内側'), '≈ ' + pv(mat) + u3, exprNum(mat) + ' ' + u + '^3');
         const rho = pfDensity(D.dens, D.dv);
         if (D.dens && !isFinite(rho)) { densIn.setAttribute('aria-invalid', 'true'); row(tr('Weight', '重さ'), '', decSign(tr('check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')), ''); }
-        else if (isFinite(rho)) { densIn.removeAttribute('aria-invalid'); const g = mat * PF_CM3[u] * rho; row(tr('Weight', '重さ'), trf('{0} g/cm³', '{0} g/cm³', statNum(rho)) + (D.dens !== 'own' && D.dens !== 'water' ? tr(' (typical)', '（目安）') : ''), g >= 1000 ? '≈ ' + statNum(g / 1000) + ' kg' : '≈ ' + statNum(g) + ' g', exprNum(g) + ' g'); }
-        row(tr('Surface area', '表面積'), tr('outside: the side, the steps and the two ends', '外側：側面・段・両端の面'), '≈ ' + statNum(so.surface) + ' ' + u + '²', exprNum(so.surface) + ' ' + u + '^2');
-        row(tr('Height', '高さ'), '', statNum(so.height) + ' ' + u, exprNum(so.height) + ' ' + u);
+        else if (isFinite(rho)) { densIn.removeAttribute('aria-invalid'); const g = mat * PF_CM3[u] * rho; row(tr('Weight', '重さ'), trf('{0} g/cm³', '{0} g/cm³', statNum(rho)) + (D.dens !== 'own' && D.dens !== 'water' ? tr(' (typical)', '（目安）') : ''), g >= 1000 ? '≈ ' + pv(g / 1000) + ' kg' : '≈ ' + pv(g) + ' g', exprNum(g) + ' g'); }
+        row(tr('Surface area', '表面積'), tr('outside: the side, the steps and the two ends', '外側：側面・段・両端の面'), '≈ ' + pv(so.surface) + ' ' + u + '²', exprNum(so.surface) + ' ' + u + '^2');
+        row(tr('Height', '高さ'), '', pv(so.height) + ' ' + u, exprNum(so.height) + ' ' + u);
         // 3D (the 3D graph: Pro)
         const w = +((Math.max(so.rmax, si ? si.rmax : 0) || 1) * 1.08).toPrecision(6);
         const R = pfExpr(so, o, D.smooth), exprs = [`√((${R})^2 − y^2)`, `−√((${R})^2 − y^2)`];
@@ -11540,7 +11555,7 @@
           const sh = si || so, total = sh.volume, top = sh.height, inMl = (v) => v * PF_CM3[u];
           const nice = (span) => { const raw = span / 10, q = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * q >= raw * 0.999) return m * q; return 10 * q; };
           const step = nice(top), rows = [];
-          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([statNum(k * step, 6), statNum(inMl(v), 6), statNum(v / total * 100, 4)]); }
+          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([pv(k * step), pv(inMl(v)), statNum(v / total * 100, 4)]); }
           rows.push([statNum(top, 6), statNum(inMl(total), 6), '100']);
           showTable(quickBox, { title: si ? tr('The amount inside for each height', '高さごとの内側の量') : tr('The volume up to each height', '高さごとの体積'), head: [tr('Height', '高さ') + ' (' + u + ')', (si ? tr('Amount', '量') + ' (mL)' : tr('Volume', '体積') + ' (cm³)'), '%'], rows, name: 'profile' });
         }
@@ -11548,6 +11563,7 @@
       p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Sizes as', '大きさ') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Sizes as', '大きさ') }, bD, bR)),
         el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unitSel), table, tools, more,
         el('div', { class: 'geo-weight' }, dens, densIn), pic, msg, outs, el('div', { class: 'tool-tbl-btns' }, view, stlBtn), quick, caution, hint);
+      digitsButton(p, 'profile'); digitsRefresh.profile = () => run();
       sync(); build(); run();
     });
     return p;
@@ -11845,7 +11861,7 @@
   // the engine's samples of expressions on a..b (about steps + 1 points, closer where a curve bends, and
   // not at the same places for each expression): [{ x, y }] or null
   async function stlSamples(es, a, b, steps) {
-    const r = await Bridge.send('plot', { exprs: es, min: String(a), max: String(b), steps, var: 'x', opts: iOpts(), timeout: 8000 });
+    const r = await Bridge.send('plot', { exprs: es, min: String(a), max: String(b), steps, var: 'x', opts: sampleOpts(), timeout: 8000 });
     if (!r.ok || !Array.isArray(r.series) || r.series.length !== es.length) return null;
     return r.series.map((s) => ({ x: s.x, y: s.y.map((q) => (q === null || !isFinite(q) ? null : q)) }));
   }
@@ -12153,21 +12169,21 @@
       // (in m³ too when the unit is another one); the expression for the input field has the unit
       const show = async (r, e, seq) => {
         const u = M.unit, withUnit = `(${e}) × 1 ${u}^3`;
-        const v = await Bridge.send('calc', { expr: e, opts: iOpts(), timeout: 3000 });
+        const v = await Bridge.send('calc', { expr: e, opts: iOpts({ precision: digitsPrecision('sections', digitsAuto('sections')) }), timeout: 3000 });
         if (seq !== M.seq) return false;
         if (!v.ok || !v.result || v.timeout || (v.messages || []).some((m) => m.type === 'error')) { r.val.textContent = tr('could not be calculated', '計算できませんでした'); return false; }
         const exact = v.result.split(' ≈ ')[0].split(' = ')[0].trim(), dec = numberPart(v.result).replace(/-/g, '−');
         let text = '= ' + exact + ' ' + u + '³';
         if (dec !== exact) text += (v.result.indexOf(' ≈ ') >= 0 || v.approx ? ' ≈ ' : ' = ') + dec + ' ' + u + '³';
         for (const to of (u === 'm' ? [] : ['m^3']).concat(['L'])) {
-          const c = await Bridge.send('calc', { expr: `${withUnit} to ${to}`, opts: Object.assign(iOpts(), { approx: 'approx' }), timeout: 3000 });
+          const c = await Bridge.send('calc', { expr: `${withUnit} to ${to}`, opts: iOpts({ approx: 'approx', precision: digitsPrecision('sections', digitsAuto('sections')) }), timeout: 3000 });
           if (seq !== M.seq) return false;
           // ("21333.33333 L", "0.0000025 m³": the number and its unit)
           if (c.ok && c.result) text += (c.result.indexOf('≈') >= 0 || v.approx || v.result.indexOf(' ≈ ') >= 0 ? ' ≈ ' : ' = ') + numberPart(c.result).replace(/-/g, '−').replace(/^([−\d.Ee+×^]+)(.*)$/, (all, n, un) => n + ' ' + (un || (to === 'L' ? 'L' : 'm³')));
         }
         // (as plain text: the math notation would put the unit into the fraction; BG13: in the number format)
-        r.val.textContent = valueShown(text);
-        r.result = valueShown(text); r.expr = withUnit.replace(`(${e})`, '(' + exact + ')');
+        r.val.textContent = valueShown(text, 'sections');
+        r.result = valueShown(text, 'sections'); r.expr = withUnit.replace(`(${e})`, '(' + exact + ')');
         return true;
       };
       const num = async (t) => { const s = normalizeExpr(t); return s ? { t: s, v: await numValue(s) } : null; };
@@ -12261,6 +12277,7 @@
         cautionLine(tr('Between the measured values the shape is filled in by the formulas shown.', '前提：測った値の間は、表示した公式で補っています。')), ex,
         el('div', { class: 'form-hint', text: tr('Type the values or paste a table from a spreadsheet (columns separated by tabs or commas) into a box: it fills the table from there. Tap a result to put its expression into the input field or to copy it. The tables are kept for the next time.', '値を入れるか、表計算ソフトの表（タブかカンマ区切り）を欄に貼り付けると、そこから表に入ります。結果をタップすると、式を入力欄に入れたりコピーしたりできます。表は次回のために残ります。') }));
       p.run = run;
+      digitsButton(p, 'sections'); digitsRefresh.sections = () => run();
       setMode(M.mode);
     });
     return p;
@@ -12587,6 +12604,289 @@
     // its title and × in sight, also when the history is short (memory keys, a small screen)
     histEl.scrollTop = Math.max(0, card.offsetTop - histEl.offsetTop - 4);
   }
+  // ------------------------------------------------- display digits per screen (feature/screen-digits)
+  // Each tool keeps its own number of digits (qalc.digits.<screen>): "Recommended" (automatic: a digit or
+  // two more than is usually needed, nothing added to values that are exact), n significant digits, or n
+  // decimals. The calculator, the forms and the notes keep the setting "Precision". The engine works with
+  // 4 digits more than are shown, and the result is rounded half up on its digits as a string (never
+  // through a JavaScript number). Limits: the shown digits are at most the precision of the engine − 4
+  // (996 without QCalc Pro); 20 for the values found by numeric integration (the graph: the engine works
+  // with 24 at most, 30 digits and more take much longer and are no more certain); 12 for the tools that
+  // calculate in JavaScript (a double has about 16 digits: 4 are kept in reserve).
+  const DIGITS_GUARD = 4, JS_DIGITS = 12, INT_DIGITS = 20, INT_PRECISION = 24;
+  // [key, title, kind]: kind 'js' (calculated in JavaScript), 'engine', 'integral' (the graph's values)
+  const DIGIT_SCREENS = () => [
+    ['price', tr('Price: discount and tax', '値段：割引と税'), 'js'],
+    ['percent', tr('Percentages', '割合'), 'js'],
+    ['unitprice', tr('Unit price: which is cheaper', '単価の比較'), 'js'],
+    ['split', tr('Split the bill', '割り勘'), 'js'],
+    ['loan', tr('Loan', 'ローン'), 'js'],
+    ['savings', tr('Savings and compound interest', '積立と複利'), 'js'],
+    ['stats', tr('Statistics', '統計'), 'js'],
+    ['convert', tr('Convert units and currencies', '単位・通貨の換算'), 'engine'],
+    ['graph', tr('Graph: area, length, volume', 'グラフ：面積・長さ・体積'), 'integral'],
+    ['shapes', tr('Shapes: area, length, volume', '図形：面積・長さ・体積'), 'engine'],
+    ['sections', tr('Volume from measured values', '測った値から体積'), 'engine'],
+    ['profile', tr('Solid from a profile', '輪郭から回転体'), 'js']
+  ];
+  const digitScreen = (key) => DIGIT_SCREENS().find((s) => s[0] === key) || [key, key, 'engine'];
+  // what is chosen: null (recommended) or { m: 'sig' | 'dec', n }
+  function digitsChosen(key) {
+    const d = store.get('qalc.digits.' + key, null);
+    if (!d || (d.m !== 'sig' && d.m !== 'dec') || !(d.n >= 0)) return null;
+    return { m: d.m, n: Math.min(Math.round(d.n), digitsMax(key, d.m)) };
+  }
+  // the most digits that can be chosen (significant digits; decimals for 'dec')
+  function digitsMax(key, m) {
+    const kind = digitScreen(key)[2];
+    if (kind === 'js') return JS_DIGITS;
+    return Math.max(2, maxPrecision() - DIGITS_GUARD);
+  }
+  const DIGITS_MIN = { sig: 1, dec: 0 };
+  // The money of the device's region (not of the language: a Japanese text on a phone in Germany counts in
+  // euros), and its decimals as Intl gives them (0 for the yen, 2 for the dollar, 3 for the Kuwaiti dinar;
+  // the Taiwan dollar is written without decimals in practice). Until this the decimals came from the
+  // language (MONEY_DEC: 0 for Japanese, Korean, Chinese, otherwise 2).
+  const REGION_CURRENCY = (() => {
+    const m = {};
+    ('AD:EUR AE:AED AF:AFN AG:XCD AI:XCD AL:ALL AM:AMD AO:AOA AR:ARS AS:USD AT:EUR AU:AUD AW:AWG AX:EUR AZ:AZN BA:BAM BB:BBD BD:BDT ' +
+     'BE:EUR BF:XOF BG:BGN BH:BHD BI:BIF BJ:XOF BL:EUR BM:BMD BN:BND BO:BOB BQ:USD BR:BRL BS:BSD BT:BTN BW:BWP BY:BYN BZ:BZD CA:CAD ' +
+     'CC:AUD CD:CDF CF:XAF CG:XAF CH:CHF CI:XOF CK:NZD CL:CLP CM:XAF CN:CNY CO:COP CR:CRC CU:CUP CV:CVE CW:ANG CX:AUD CY:EUR CZ:CZK ' +
+     'DE:EUR DJ:DJF DK:DKK DM:XCD DO:DOP DZ:DZD EC:USD EE:EUR EG:EGP ER:ERN ES:EUR ET:ETB FI:EUR FJ:FJD FK:FKP FM:USD FO:DKK FR:EUR ' +
+     'GA:XAF GB:GBP GD:XCD GE:GEL GF:EUR GG:GBP GH:GHS GI:GIP GL:DKK GM:GMD GN:GNF GP:EUR GQ:XAF GR:EUR GT:GTQ GU:USD GW:XOF GY:GYD ' +
+     'HK:HKD HN:HNL HR:EUR HT:HTG HU:HUF ID:IDR IE:EUR IL:ILS IM:GBP IN:INR IQ:IQD IR:IRR IS:ISK IT:EUR JE:GBP JM:JMD JO:JOD JP:JPY ' +
+     'KE:KES KG:KGS KH:KHR KI:AUD KM:KMF KN:XCD KP:KPW KR:KRW KW:KWD KY:KYD KZ:KZT LA:LAK LB:LBP LC:XCD LI:CHF LK:LKR LR:LRD LS:LSL ' +
+     'LT:EUR LU:EUR LV:EUR LY:LYD MA:MAD MC:EUR MD:MDL ME:EUR MF:EUR MG:MGA MH:USD MK:MKD ML:XOF MM:MMK MN:MNT MO:MOP MP:USD MQ:EUR ' +
+     'MR:MRU MS:XCD MT:EUR MU:MUR MV:MVR MW:MWK MX:MXN MY:MYR MZ:MZN NA:NAD NC:XPF NE:XOF NF:AUD NG:NGN NI:NIO NL:EUR NO:NOK NP:NPR ' +
+     'NR:AUD NU:NZD NZ:NZD OM:OMR PA:PAB PE:PEN PF:XPF PG:PGK PH:PHP PK:PKR PL:PLN PM:EUR PN:NZD PR:USD PS:ILS PT:EUR PW:USD PY:PYG ' +
+     'QA:QAR RE:EUR RO:RON RS:RSD RU:RUB RW:RWF SA:SAR SB:SBD SC:SCR SD:SDG SE:SEK SG:SGD SH:SHP SI:EUR SK:EUR SL:SLE SM:EUR SN:XOF ' +
+     'SO:SOS SR:SRD SS:SSP ST:STN SV:USD SX:ANG SY:SYP SZ:SZL TC:USD TD:XAF TG:XOF TH:THB TJ:TJS TK:NZD TL:USD TM:TMT TN:TND TO:TOP ' +
+     'TR:TRY TT:TTD TV:AUD TW:TWD TZ:TZS UA:UAH UG:UGX UM:USD US:USD UY:UYU UZ:UZS VA:EUR VC:XCD VE:VES VG:USD VI:USD VN:VND VU:VUV ' +
+     'WF:XPF WS:WST XK:EUR YE:YER YT:EUR ZA:ZAR ZM:ZMW ZW:USD').split(' ').forEach((p) => { m[p.slice(0, 2)] = p.slice(3); });
+    return m;
+  })();
+  // the currency of the region: from the device's first locale ("de-DE" → EUR); a locale without a region
+  // ("en") falls back on the language (ja JPY, ko KRW, zh-TW TWD, otherwise USD)
+  function regionCurrency() {
+    const tag = String(deviceLocale() || '');
+    const m = tag.match(/[-_]([A-Za-z]{2})(?=$|[-_])/g);
+    const reg = m ? m.map((x) => x.slice(1).toUpperCase()).find((r) => REGION_CURRENCY[r]) : '';
+    if (reg) return REGION_CURRENCY[reg];
+    const lang = tag.toLowerCase();
+    return /^ja/.test(lang) ? 'JPY' : /^ko/.test(lang) ? 'KRW' : /^zh.*(tw|hant)/.test(lang) ? 'TWD' : { ja: 'JPY', ko: 'KRW', 'zh-TW': 'TWD' }[LANG] || 'USD';
+  }
+  // the decimals of a currency (its smallest unit): Intl's, the Taiwan dollar 0
+  function currencyDecimals(c) {
+    if (c === 'TWD') return 0;
+    try { const d = new Intl.NumberFormat('en', { style: 'currency', currency: c }).resolvedOptions().maximumFractionDigits; return d >= 0 && d <= 4 ? d : 2; } catch (e) { return 2; }
+  }
+  let moneyCur = null;
+  const MONEY = () => { if (!moneyCur) { const c = regionCurrency(); moneyCur = { cur: c, dec: currencyDecimals(c) }; } return moneyCur; };
+  // ---- rounding on the digits of a number written in decimal
+  // s: "−1234.5678", "1.25E−7", "1.2345e+21", "12,345.6" (groups with ","); m 'sig' (n significant digits) or
+  // 'dec' (n decimals); minDec: at least this many decimals (when the digits are there); zeros: keep the
+  // zeros at the end. Half up, on the digits themselves. Returns a plain number in the engine's form
+  // ("-" sign, "." point, no groups), with "E" only when it is very large or very small, or null.
+  // noPad: the zeros that rounding leaves are kept, but none are added (a value whose digits are not all known)
+  function roundDigits(s, m, n, zeros, minDec, noPad) {
+    const t = String(s).trim().replace(/−/g, '-').replace(/,/g, '').replace(/×\s*10\^/, 'E');
+    const x = t.match(/^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/);
+    if (!x || (!x[2] && !x[3])) return null;
+    const neg = x[1] === '-';
+    let digits = (x[2] || '') + (x[3] || ''), point = (x[2] || '').length + (x[4] ? Number(x[4]) : 0);
+    // without the zeros in front (the point moves with them)
+    const lead = digits.match(/^0*/)[0].length;
+    if (lead === digits.length) return zeros && m === 'dec' && n > 0 ? '0.' + '0'.repeat(n) : '0';
+    digits = digits.slice(lead); point -= lead;
+    // how many digits are kept
+    let keep = m === 'sig' ? n : point + n;
+    if (m === 'sig' && minDec > 0) keep = Math.max(keep, point + minDec);
+    if (keep < 0) return zeros && m === 'dec' && n > 0 ? '0.' + '0'.repeat(n) : '0';
+    if (keep < digits.length) {
+      const up = digits.charCodeAt(keep) >= 53; // "5" to "9": up
+      let d = digits.slice(0, keep).split('');
+      if (up) {
+        let i = d.length - 1;
+        while (i >= 0 && d[i] === '9') { d[i] = '0'; i--; }
+        if (i < 0) { d.unshift('1'); point++; if (m === 'sig') d.pop(); } else d[i] = String(Number(d[i]) + 1);
+      }
+      digits = d.join('');
+      if (!digits.replace(/0/g, '')) return zeros && m === 'dec' && n > 0 ? '0.' + '0'.repeat(n) : '0';
+    } else if (zeros && !noPad) {
+      // the zeros asked for (only for values not known to be exact: the caller decides)
+      const want = m === 'sig' ? Math.max(n, minDec > 0 ? point + minDec : 0) : point + n;
+      if (want > digits.length) digits += '0'.repeat(want - digits.length);
+    }
+    // written out: plain up to 21 digits before the point and 20 zeros after it, else with E
+    let out;
+    if (point > 21 || point < -20) {
+      let mant = digits[0] + (digits.length > 1 ? '.' + digits.slice(1) : '');
+      if (!zeros) mant = mant.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+      out = mant + 'E' + (point - 1);
+    } else {
+      let int, frac;
+      if (point <= 0) { int = '0'; frac = '0'.repeat(-point) + digits; } else if (point >= digits.length) { int = digits + '0'.repeat(point - digits.length); frac = ''; } else { int = digits.slice(0, point); frac = digits.slice(point); }
+      if (!zeros) frac = frac.replace(/0+$/, '');
+      out = int + (frac ? '.' + frac : '');
+    }
+    return (neg && /[1-9]/.test(out.replace(/E.*/, '')) ? '-' : '') + out;
+  }
+  // a JavaScript number as the digits it has (17 significant digits, then rounded as a string)
+  const jsDigits = (v) => (Object.is(v, -0) ? '0' : Number(v).toPrecision(16));
+  // a plain number (engine form) grouped in the number format: 1,234.5 / 1.234,5 / 1 234,5
+  function groupedNum(s) {
+    if (s === null || s === undefined) return '';
+    const neg = s[0] === '-';
+    let t = neg ? s.slice(1) : s, exp = '';
+    const e = t.indexOf('E');
+    if (e >= 0) { exp = ' × 10^' + t.slice(e + 1).replace('-', '−'); t = t.slice(0, e); }
+    let [i, f] = t.split('.');
+    i = i.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group);
+    return (neg ? '−' : '') + i + (f ? NF.dec + f : '') + exp;
+  }
+  // what is used for a value: the choice of the screen, or the recommended rule (auto: { m, n, zeros, minDec })
+  function digitsRule(key, auto) {
+    const c = digitsChosen(key);
+    return c ? { m: c.m, n: c.n, zeros: true, chosen: true } : Object.assign({ zeros: false }, auto);
+  }
+  // a JavaScript value shown with the digits of a screen (tools that calculate in JavaScript)
+  function fmtDigits(key, v, auto) {
+    if (!isFinite(v)) return '';
+    const r = digitsRule(key, auto || digitsAuto(key));
+    return groupedNum(roundDigits(jsDigits(v), r.m, r.n, r.zeros, r.minDec));
+  }
+  // the decimals of the numbers typed (the statistics: 12.3 and 14.1 have 1)
+  const decimalsOf = (t) => { const s = String(t).replace(/[eE].*$/, ''); const i = Math.max(s.lastIndexOf('.'), commaMode ? s.lastIndexOf(',') : -1); return i < 0 ? 0 : s.length - i - 1; };
+  // The precision the engine works with for a screen: 4 more than are shown (with n decimals: the size of
+  // the value, when it is known, + n + 4); the graph's values at most 24.
+  function digitsPrecision(key, auto, size) {
+    const r = digitsRule(key, auto), kind = digitScreen(key)[2];
+    const mag = size > 0 && isFinite(size) ? Math.max(1, Math.floor(Math.log10(size)) + 1) : 8;
+    let p = (r.m === 'dec' ? mag + r.n : Math.max(r.n, r.minDec ? r.minDec + 1 : 0)) + DIGITS_GUARD;
+    if (kind === 'integral') p = Math.min(p, INT_PRECISION);
+    return Math.max(6, Math.min(p, maxPrecision()));
+  }
+  // the digits shown for a screen (the graph: 20 at most)
+  function shownRule(key, auto) {
+    const r = digitsRule(key, auto);
+    if (digitScreen(key)[2] === 'integral' && r.m === 'sig' && r.n > INT_DIGITS) return Object.assign({}, r, { n: INT_DIGITS, capped: true });
+    return r;
+  }
+  // A text of the engine (or made here) with its approximate numbers rounded for a screen: "8π ≈ 25.13274123",
+  // "≈ 0.3333333333", "12.566370614 m²". The numbers after the first "≈" are rounded; a text without "≈" keeps the
+  // numbers that are not longer than the digits shown (an exact 0.25 stays as it is; zeros are not added).
+  function digitsText(key, text, auto) {
+    if (!text) return text;
+    const r = shownRule(key, auto);
+    const s = String(text), at = s.indexOf('≈');
+    const head = at >= 0 ? s.slice(0, at + 1) : '', tail = at >= 0 ? s.slice(at + 1) : s;
+    const re = /(\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:E[−+-]?\d+)?/g;
+    const out = tail.replace(re, (num, intPart, off, all) => {
+      if (at < 0 && num.indexOf('.') < 0 && num.indexOf('E') < 0) return num; // an integer of an exact text
+      if (/[\p{L}_^]/u.test(all[off - 1] || '') && !/[×·]/.test(all[off - 1])) return num; // a power or a name (x^2.5, a2)
+      const sign = /[−-]$/.test(all.slice(0, off)) ? '-' : '';
+      const rounded = roundDigits(sign + num, r.m, r.n, at >= 0 && r.zeros, r.minDec, true);
+      if (rounded === null) return num;
+      const plain = rounded.replace(/^-/, '');
+      if (at < 0 && plain.replace(/\D/g, '').replace(/^0+/, '').length >= num.replace(/\D/g, '').replace(/^0+/, '').length) return num;
+      const grouped = /,/.test(num) ? plain.replace(/^(\d+)/, (i) => i.replace(/\B(?=(\d{3})+(?!\d))/g, ',')) : plain;
+      return grouped.replace('-', '−').replace(/E-/, 'E−');
+    });
+    return head + out;
+  }
+  // the recommended rule of a screen, and the line that says what it is now and why
+  function digitsAuto(key) {
+    const M = MONEY();
+    switch (key) {
+      case 'price': case 'split': case 'loan': case 'savings':
+        return { m: 'dec', n: M.dec, zeros: true, why: trf('{0} decimals: the smallest unit of {1} (the calculation is exact in it)', '小数 {0} 桁：{1} の最小の単位（計算はこの単位で正確）', M.dec, M.cur) };
+      case 'unitprice': return { m: 'dec', n: M.dec + 1, zeros: true, why: trf('{0} decimals: one more than the smallest unit of {1} (two more below 1)', '小数 {0} 桁：{1} の最小の単位より 1 桁多め（1 より小さい単価は 2 桁）', M.dec + 1, M.cur) };
+      case 'percent': return { m: 'dec', n: 3, why: tr('3 decimals', '小数 3 桁') };
+      case 'stats': return { m: 'dec', n: 2, zeros: true, why: tr('The decimals of the data + 2 (the smallest, the largest and the sum: as the data; r and R²: 4)', 'データの小数の桁 ＋ 2 桁（最小・最大・合計はデータと同じ、r と R² は 4 桁）') };
+      case 'convert': return { m: 'sig', n: 8, why: tr('8 significant digits (all of an exact answer); currencies: the smallest unit + 2 decimals; fuel economy: 2 decimals', '有効 8 桁（ぴったりの答えは全部）、通貨は最小の単位 ＋ 2 桁、燃費は小数 2 桁') };
+      case 'graph': return { m: 'sig', n: 8, minDec: 5, why: tr('8 significant digits, at least 5 decimals, never more than the estimated error allows', '有効 8 桁（小数は 5 桁以上。誤差の見積もりで確かな桁まで）') };
+      default: return { m: 'sig', n: 6, why: tr('6 significant digits', '有効 6 桁') };
+    }
+  }
+  const digitsDesc = (c) => (c.m === 'dec' ? trf('{0} decimals', '小数点以下 {0} 桁', c.n) : trf('{0} significant digits', '有効数字 {0} 桁', c.n));
+  const digitsNow = (key) => { const c = digitsChosen(key); return c ? digitsDesc(c) : tr('Recommended', 'おすすめ'); };
+  // the screens to calculate again when their digits change
+  const digitsRefresh = {};
+  function digitsChanged(key) {
+    try { if (digitsRefresh[key]) digitsRefresh[key](); } catch (e) { }
+    try { if (panels.settings && panels.settings.digitsList) panels.settings.digitsList(); } catch (e) { }
+  }
+  // ⋯ of a screen (at the right of its title): "Digits shown"
+  function digitsButton(p, key) {
+    const b = el('button', { class: 'icon-btn digits-btn', type: 'button', 'aria-label': tr('More: digits shown', 'その他（表示桁数）'), title: tr('More: digits shown', 'その他（表示桁数）'), text: '⋯' });
+    b.addEventListener('click', async () => {
+      const a = await sheet(digitScreen(key)[1], [['digits', tr('Digits shown…', '表示桁数…')]]);
+      if (a === 'digits') digitsSheet(key);
+    });
+    p.bar.append(b);
+  }
+  // the sheet of the digits of a screen: Recommended / n significant digits / n decimals, − n +, "Back to
+  // the recommended", and one line on what is used now (and why), or on a limit
+  function digitsSheet(key) {
+    if (sheetResolve) closeSheet(null);
+    const sh = $('#sheet');
+    sh.textContent = '';
+    const kind = digitScreen(key)[2];
+    const cur = () => digitsChosen(key);
+    const set = (c) => { if (c) store.set('qalc.digits.' + key, { m: c.m, n: c.n }); else store.del('qalc.digits.' + key); show(); digitsChanged(key); };
+    const seg = el('div', { class: 'seg digits-seg', role: 'group', 'aria-label': tr('Digits shown', '表示桁数') });
+    const modes = [['auto', tr('Recommended (automatic)', 'おすすめ（自動）')], ['sig', tr('Significant digits', '有効数字')], ['dec', tr('Decimals', '小数点以下')]];
+    const btns = modes.map(([m, label]) => tapButton({ text: label, 'data-m': m }, () => {
+      const c = cur();
+      if (m === 'auto') { set(null); return; }
+      if (c && c.m === m) return;
+      const a = digitsAuto(key);
+      // from the recommended rule (or the other choice), the same count of digits where it makes sense
+      const n = c ? c.n : (a.m === m ? a.n : m === 'sig' ? 8 : 2);
+      set({ m, n: Math.max(DIGITS_MIN[m], Math.min(n, digitsMax(key, m))) });
+    }));
+    seg.append(...btns);
+    const minus = tapButton({ class: 'btn digits-minus', text: '−', 'aria-label': tr('One digit fewer', '1 桁減らす') }, () => step(-1));
+    const plus = tapButton({ class: 'btn digits-plus', text: '+', 'aria-label': tr('One digit more', '1 桁増やす') }, () => step(1));
+    const num = el('span', { class: 'digits-n', 'aria-live': 'polite' });
+    const row = el('div', { class: 'digits-row' }, minus, num, plus);
+    const line = el('div', { class: 'digits-why' });
+    const back = el('button', { class: 'digits-back', text: tr('Back to the recommended', 'おすすめに戻す'), onclick: () => set(null) });
+    const step = (d) => {
+      const c = cur();
+      if (!c) return;
+      const n = c.n + d, max = digitsMax(key, c.m);
+      if (n < DIGITS_MIN[c.m]) return;
+      if (n > max) {
+        if (kind !== 'js' && !hasPro()) { closeSheet(null); proPrompt(trf('More than {0} digits is a QCalc Pro feature', '{0} 桁を超える表示は QCalc Pro の機能です', max), 'precision'); }
+        return;
+      }
+      set({ m: c.m, n });
+    };
+    function show() {
+      const c = cur(), a = digitsAuto(key);
+      btns.forEach((b, i) => { const on = modes[i][0] === (c ? c.m : 'auto'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+      row.hidden = !c;
+      back.hidden = !c;
+      if (c) {
+        num.textContent = digitsDesc(c);
+        const max = digitsMax(key, c.m);
+        minus.disabled = c.n <= DIGITS_MIN[c.m];
+        plus.disabled = kind === 'js' && c.n >= max;
+      }
+      line.textContent = !c ? tr('Recommended now: ', 'おすすめ（今）：') + a.why
+        : kind === 'js' && c.n >= JS_DIGITS ? trf('At most {0} digits: this tool calculates with the about 16 digits of a JavaScript number, and keeps 4 in reserve', '{0} 桁まで：この道具は JavaScript の数（約 16 桁）で計算するため、4 桁の余裕を残しています', JS_DIGITS)
+        : kind === 'integral' && c.m === 'sig' && c.n > INT_DIGITS ? trf('Numeric integration is certain to about {0} digits: {0} are shown (the engine works with {1})', '数値積分で確かなのは約 {0} 桁までです（{0} 桁で表示し、計算は {1} 桁）', INT_DIGITS, INT_PRECISION)
+        : trf('The engine works with {0} digits more than are shown', '計算は表示より {0} 桁多く行います', DIGITS_GUARD);
+    }
+    sh.append(el('div', { class: 'stitle', text: tr('Digits shown: ', '表示桁数：') + digitScreen(key)[1] }), el('div', { class: 'digits-box' }, seg, row, line), back,
+      el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
+    show();
+    sheetResolve = () => sh.classList.remove('digits-sheet');
+    $('#scrim').classList.add('show', 'over-panels');
+    sh.classList.add('open', 'digits-sheet');
+    sh.inert = false;
+  }
   // ------------------------------------------------- everyday calculations (1.12.0, C1)
   // Every tool has the same form (as the shapes): example chips above, the boxes, the results at once
   // as rows (tap one: put its expression into the field, keep it in the history, copy it), one line
@@ -12615,7 +12915,12 @@
   const exprNum = (v) => String(+(+v).toPrecision(12)).replace('-', '−');
   // the defaults of the language: the tax rates, and the unit of rounding money (1 yen, 0.01 euro)
   const TAX_RATES = { ja: ['10', '8'], de: ['19', '7'], fr: ['20', '10', '5.5'], es: ['21', '10', '4'], ko: ['10'], 'zh-TW': ['5'], en: [] };
-  const MONEY_DEC = { ja: 0, ko: 0, 'zh-TW': 0 }[LANG] !== undefined ? 0 : 2;
+  // (MONEY_DEC, the decimals of money by the language, was replaced by those of the region's currency: MONEY)
+  // money not set by a screen (the pay of "Time"): the decimals of the currency, with the zeros at the end
+  const fmtMoney = (v) => (isFinite(v) ? groupedNum(roundDigits(jsDigits(v), 'dec', MONEY().dec, true)) : '');
+  // the steps of money: 0.01 for 2 decimals, 0.001 for 3, 1 for none; the factor of an expression rounded in them
+  const moneyStep = () => Math.pow(10, -MONEY().dec), moneyStepText = () => (MONEY().dec ? '0.' + '0'.repeat(MONEY().dec - 1) + '1' : '1');
+  const moneyScale = () => (MONEY().dec ? ' × ' + Math.pow(10, MONEY().dec) + ') / ' + Math.pow(10, MONEY().dec) : ')');
   function simpleTool(id, title, spec) {
     const p = panel(id, title, (p) => {
       const saved = store.get('qalc.tool.' + id, null) || {};
@@ -12682,6 +12987,8 @@
       p.body.append(chips, main, ...(more ? [more] : []), msg, outs, ...(caution ? [caution] : []), tableBox, el('div', { class: 'form-hint', text: spec.hint }));
       showFields();
       p.run = run;
+      // ⋯: the digits shown (feature/screen-digits), for the tools that have them (not dates and times)
+      if (DIGIT_SCREENS().some((d) => d[0] === id)) { digitsButton(p, id); digitsRefresh[id] = () => p.run(); }
       run();
     });
     p.run && p.run();
@@ -12717,7 +13024,7 @@
   const roundBy = (x, mode, u) => { const q = x / u; const r = mode === 'down' ? Math.floor(q + 1e-9) : mode === 'up' ? Math.ceil(q - 1e-9) : Math.round(q); return r * u; };
   const roundFn = (mode) => (mode === 'down' ? 'floor' : mode === 'up' ? 'ceil' : 'round');
   const ROUNDING = () => [['down', tr('Down', '切り捨て')], ['near', tr('Nearest', '四捨五入')], ['up', tr('Up', '切り上げ')]];
-  const unitWord = () => (MONEY_DEC ? '' : tr('', '円'));
+  const unitWord = () => (MONEY().cur === 'JPY' ? tr('', '円') : '');
 
   // ---- Shopping: the price with a discount and the tax
   function openPriceTool() {
@@ -12727,7 +13034,7 @@
         [tr('Tax included 1100 → before tax', '税込 1100 円 → 税抜'), { price: '1100', off: '', tax: rates[0] || '10', dir: 'remove' }]],
       fields: [
         { k: 'dir', label: tr('The price is', '値段は'), opts: [['add', tr('before tax', '税抜')], ['remove', tr('with tax', '税込')]], def: 'add' },
-        { k: 'price', label: tr('Price', '値段'), def: '', ph: MONEY_DEC ? 'e.g. 19,99' : tr('e.g. 1500', '例：1500') },
+        { k: 'price', label: tr('Price', '値段'), def: '', ph: MONEY().dec ? 'e.g. 19,99' : tr('e.g. 1500', '例：1500') },
         { k: 'off', label: tr('Discount (%)', '割引（% か ○割）'), def: '', ph: tr('e.g. 10', '例：10、3割'), when: (v) => v.dir === 'add' },
         { k: 'tax', label: tr('Tax rate (%)', '税率（%）'), def: rates[0] ? toDisplay(rates[0]) : '', ph: tr('e.g. 10', '例：10'), chips: () => rates.map((r) => toDisplay(r)) },
         { k: 'round', label: tr('Rounding', '端数'), opts: ROUNDING(), def: LANG === 'ja' ? 'down' : 'near' },
@@ -12741,21 +13048,21 @@
         if (!(price >= 0)) return { msg: tr('The price must be a number, such as 1500', '値段は 1500 のような数にしてください'), bad: 'price' };
         if (!(tax >= 0 && tax < 100)) return { msg: tr('The tax rate must be a number from 0 to 100, such as 10', '税率は 0〜100 の数にしてください（例：10）'), bad: 'tax' };
         if (!(off >= 0 && off <= 100) || !(off2 >= 0 && off2 <= 100)) return { msg: tr('A discount must be from 0 to 100 %', '割引は 0〜100 % にしてください'), bad: 'off' };
-        const u = MONEY_DEC ? 0.01 : 1, uE = MONEY_DEC ? '0.01' : '1', fn = roundFn(v.round), m = v.round;
+        const u = moneyStep(), uE = moneyStepText(), fn = roundFn(v.round), m = v.round;
         const rows = [];
         if (v.dir === 'add') {
           const after = price * (1 - off / 100) * (1 - off2 / 100);
           const disc = `${exprNum(price)}${off ? ` × (1 − ${exprNum(off)}%)` : ''}${off2 ? ` × (1 − ${exprNum(off2)}%)` : ''}`;
           const total = roundBy(after * (1 + tax / 100), m, u);
-          const totalE = `${fn}(${disc} × (1 + ${exprNum(tax)}%)${MONEY_DEC ? ' × 100) / 100' : ')'}`;
-          rows.push({ name: tr('With tax', '税込'), small: off || off2 ? tr('after the discount', '割引のあと') : '', value: fmtNum(total, MONEY_DEC) + unitWord(), expr: totalE });
-          if (off || off2) rows.push({ name: tr('After the discount (before tax)', '割引後（税抜）'), value: fmtNum(roundBy(after, m, u), MONEY_DEC) + unitWord(), expr: MONEY_DEC ? `${fn}(${disc} × 100) / 100` : `${fn}(${disc})` });
-          rows.push({ name: tr('Tax', '税'), value: fmtNum(total - roundBy(after, m, u), MONEY_DEC) + unitWord(), expr: '' });
-          if (off || off2) rows.push({ name: tr('You save (with tax)', '安くなった額（税込）'), value: fmtNum(roundBy(price * (1 + tax / 100), m, u) - total, MONEY_DEC) + unitWord(), expr: '' });
+          const totalE = `${fn}(${disc} × (1 + ${exprNum(tax)}%)${moneyScale()}`;
+          rows.push({ name: tr('With tax', '税込'), small: off || off2 ? tr('after the discount', '割引のあと') : '', value: fmtDigits('price', total) + unitWord(), expr: totalE });
+          if (off || off2) rows.push({ name: tr('After the discount (before tax)', '割引後（税抜）'), value: fmtDigits('price', roundBy(after, m, u)) + unitWord(), expr: `${fn}(${disc}${moneyScale()}` });
+          rows.push({ name: tr('Tax', '税'), value: fmtDigits('price', total - roundBy(after, m, u)) + unitWord(), expr: '' });
+          if (off || off2) rows.push({ name: tr('You save (with tax)', '安くなった額（税込）'), value: fmtDigits('price', roundBy(price * (1 + tax / 100), m, u) - total) + unitWord(), expr: '' });
         } else {
           const before = roundBy(price / (1 + tax / 100), m, u);
-          rows.push({ name: tr('Before tax', '税抜'), value: fmtNum(before, MONEY_DEC) + unitWord(), expr: `${fn}(${exprNum(price)} / (1 + ${exprNum(tax)}%)${MONEY_DEC ? ' × 100) / 100' : ')'}` });
-          rows.push({ name: tr('Tax', '税'), value: fmtNum(price - before, MONEY_DEC) + unitWord(), expr: '' });
+          rows.push({ name: tr('Before tax', '税抜'), value: fmtDigits('price', before) + unitWord(), expr: `${fn}(${exprNum(price)} / (1 + ${exprNum(tax)}%)${moneyScale()}` });
+          rows.push({ name: tr('Tax', '税'), value: fmtDigits('price', price - before) + unitWord(), expr: '' });
         }
         void uE;
         return { rows };
@@ -12779,12 +13086,12 @@
         if (!isFinite(b)) return { msg: tr('B must be a number', 'B は数にしてください'), bad: 'b' };
         if (v.mode === 'of') {
           if (b === 0) return { msg: tr('B must not be 0', 'B は 0 以外にしてください'), bad: 'b' };
-          return { rows: [{ name: tr('A is … % of B', 'A は B の'), value: fmtNum(a / b * 100, 4) + ' %', expr: `${exprNum(a)} / ${exprNum(b)} to %` }] };
+          return { rows: [{ name: tr('A is … % of B', 'A は B の'), value: fmtDigits('percent', a / b * 100) + ' %', expr: `${exprNum(a)} / ${exprNum(b)} to %` }] };
         }
         if (a === 0) return { msg: tr('A must not be 0 (a change from 0 has no rate)', 'A は 0 以外にしてください（0 からの増減率はありません）'), bad: 'a' };
         const c = (b - a) / a * 100;
-        return { rows: [{ name: tr('Change', '増減率'), value: (c > 0 ? '+' : '') + fmtNum(c, 4) + ' %', expr: `(${exprNum(b)} − ${exprNum(a)}) / ${exprNum(a)} to %` },
-          { name: tr('Difference', '差'), value: (b - a > 0 ? '+' : '') + fmtNum(b - a, 6), expr: `${exprNum(b)} − ${exprNum(a)}` }] };
+        return { rows: [{ name: tr('Change', '増減率'), value: (c > 0 ? '+' : '') + fmtDigits('percent', c) + ' %', expr: `(${exprNum(b)} − ${exprNum(a)}) / ${exprNum(a)} to %` },
+          { name: tr('Difference', '差'), value: (b - a > 0 ? '+' : '') + fmtDigits('percent', b - a, { m: 'dec', n: Math.max(decimalsOf(v.a), decimalsOf(v.b)) }), expr: `${exprNum(b)} − ${exprNum(a)}` }] };
       }
     });
   }
@@ -12824,23 +13131,25 @@
         if (a1.kind !== a2.kind) return { msg: tr('A and B must be amounts of the same kind (both a weight, both a volume or both pieces)', 'A と B は同じ種類の量にしてください（両方とも重さ、両方とも体積、両方とも個数）') };
         const per = a1.kind === 'pc' ? 1 : 100, unit = a1.kind === 'pc' ? tr('1 piece', '1 個') : '100 ' + a1.kind;
         const u1 = p1 / a1.n * per, u2 = p2 / a2.n * per;
+        // (the price per unit: a digit more than the smallest unit of the money, two more below 1)
+        const upAuto = (x) => ({ m: 'dec', n: MONEY().dec + (Math.abs(x) < 1 ? 2 : 1), zeros: true });
         const better = Math.abs(u1 - u2) <= 1e-12 * Math.max(u1, u2) ? tr('The same', '同じ') : u1 < u2 ? tr('A is cheaper', 'A が安い') : tr('B is cheaper', 'B が安い');
         const diff = Math.abs(u1 - u2) / Math.max(u1, u2) * 100;
         return { rows: [
           { name: better, small: diff > 1e-9 ? trf('by {0} % per unit', '単価で {0} % 安い', fmtNum(diff, 1)) : '', value: '', expr: '' },
-          { name: tr('A per ', 'A の単価（') + unit + tr('', '）'), value: fmtNum(u1, 2), expr: `${exprNum(p1)} / ${exprNum(a1.n)} × ${per}` },
-          { name: tr('B per ', 'B の単価（') + unit + tr('', '）'), value: fmtNum(u2, 2), expr: `${exprNum(p2)} / ${exprNum(a2.n)} × ${per}` }] };
+          { name: tr('A per ', 'A の単価（') + unit + tr('', '）'), value: fmtDigits('unitprice', u1, upAuto(u1)), expr: `${exprNum(p1)} / ${exprNum(a1.n)} × ${per}` },
+          { name: tr('B per ', 'B の単価（') + unit + tr('', '）'), value: fmtDigits('unitprice', u2, upAuto(u2)), expr: `${exprNum(p2)} / ${exprNum(a2.n)} × ${per}` }] };
       }
     });
   }
   // ---- Shopping: splitting a bill
   function openSplitTool() {
     return simpleTool('split', tr('Split the bill', '割り勘'), {
-      chips: [[tr('10000 for 3', '10000 円を 3 人'), { total: '10000', n: '3', unit: MONEY_DEC ? '0.01' : '100' }], [tr('7777 for 4', '7777 円を 4 人'), { total: '7777', n: '4', unit: MONEY_DEC ? '0.01' : '10' }]],
+      chips: [[tr('10000 for 3', '10000 円を 3 人'), { total: '10000', n: '3', unit: MONEY().dec ? moneyStepText() : '100' }], [tr('7777 for 4', '7777 円を 4 人'), { total: '7777', n: '4', unit: MONEY().dec ? moneyStepText() : '10' }]],
       fields: [
         { k: 'total', label: tr('Total', '合計'), def: '', ph: tr('e.g. 10000', '例：10000') },
         { k: 'n', label: tr('People', '人数'), def: '', ph: tr('e.g. 3', '例：3') },
-        { k: 'unit', label: tr('Each pays in steps of', '1 人分の単位'), opts: MONEY_DEC ? [['0.01', '0.01'], ['0.1', '0.10'], ['1', '1']] : [['1', JA ? '1 円' : '1'], ['10', JA ? '10 円' : '10'], ['100', JA ? '100 円' : '100']], def: MONEY_DEC ? '0.01' : '100' }
+        { k: 'unit', label: tr('Each pays in steps of', '1 人分の単位'), opts: MONEY().dec ? [0, 1, 2].map((k) => { const d = MONEY().dec - k, v = d > 0 ? '0.' + '0'.repeat(d - 1) + '1' : String(Math.pow(10, -d)); return [v, d > 0 ? decSign((+v).toFixed(MONEY().dec)) : v]; }) : [['1', JA ? '1 円' : '1'], ['10', JA ? '10 円' : '10'], ['100', JA ? '100 円' : '100']], def: MONEY().dec ? moneyStepText() : '100' }
       ],
       hint: tr('Each pays the share rounded up to the step; what is paid too much is shown (or, rounded down, what one person pays more).', '1 人分を単位で切り上げた額と、集めすぎた額を出します（切り捨てたときに 1 人が多く払う額も）。'),
       run: async (v) => {
@@ -12849,11 +13158,10 @@
         if (!(t >= 0)) return { msg: tr('The total must be a number', '合計は数にしてください'), bad: 'total' };
         if (!(n >= 1) || n !== Math.floor(n)) return { msg: tr('The number of people must be a whole number of 1 or more', '人数は 1 以上の整数にしてください'), bad: 'n' };
         const up = Math.ceil(t / n / u - 1e-9) * u, down = Math.floor(t / n / u + 1e-9) * u;
-        const dec = u < 1 ? 2 : 0;
         return { rows: [
-          { name: tr('Each (rounded up)', '1 人（切り上げ）'), value: fmtNum(up, dec) + unitWord(), expr: `ceil(${exprNum(t)} / ${exprNum(n)} / ${exprNum(u)}) × ${exprNum(u)}` },
-          { name: tr('Paid too much', '集めすぎ'), value: fmtNum(up * n - t, dec) + unitWord(), expr: '' },
-          { name: tr('Rounded down: each', '切り捨て：1 人'), small: trf('one person pays {0} more', '1 人が {0} 多く払う', fmtNum(t - down * n, dec)), value: fmtNum(down, dec) + unitWord(), expr: `floor(${exprNum(t)} / ${exprNum(n)} / ${exprNum(u)}) × ${exprNum(u)}` }] };
+          { name: tr('Each (rounded up)', '1 人（切り上げ）'), value: fmtDigits('split', up) + unitWord(), expr: `ceil(${exprNum(t)} / ${exprNum(n)} / ${exprNum(u)}) × ${exprNum(u)}` },
+          { name: tr('Paid too much', '集めすぎ'), value: fmtDigits('split', up * n - t) + unitWord(), expr: '' },
+          { name: tr('Rounded down: each', '切り捨て：1 人'), small: trf('one person pays {0} more', '1 人が {0} 多く払う', fmtDigits('split', t - down * n)), value: fmtDigits('split', down) + unitWord(), expr: `floor(${exprNum(t)} / ${exprNum(n)} / ${exprNum(u)}) × ${exprNum(u)}` }] };
       }
     });
   }
@@ -12876,7 +13184,7 @@
         if (!(P0 > 0)) return { msg: tr('The amount must be a number above 0', '借りる額は 0 より大きい数にしてください'), bad: 'amount' };
         if (!(R >= 0 && R < 100)) return { msg: tr('The interest must be from 0 to 100 %', '年利は 0〜100 % にしてください'), bad: 'rate' };
         if (!(y > 0 && y <= 100) || Math.round(y * 12) !== y * 12) return { msg: tr('The years must be a number of months: 35, or 2.5', '年数は 35 や 2.5 のように、月の数になる値にしてください'), bad: 'years' };
-        const n = Math.round(y * 12), r = R / 100 / 12, dec = MONEY_DEC;
+        const n = Math.round(y * 12), r = R / 100 / 12;
         const rowsT = [];
         let monthly, total, interest, first = 0, last = 0;
         const rE = `${exprNum(R)}% / 12`;
@@ -12886,18 +13194,18 @@
           total = monthly * n; interest = total - P0;
           expr = r ? `${exprNum(P0)} × (${rE}) / (1 − (1 + ${rE})^(−${n}))` : `${exprNum(P0)} / ${n}`;
           let bal = P0;
-          for (let k = 1; k <= n; k++) { const i = bal * r, pr = monthly - i; bal -= pr; rowsT.push([String(k), fmtNum(monthly, dec), fmtNum(pr, dec), fmtNum(i, dec), fmtNum(Math.max(0, bal), dec)]); }
+          for (let k = 1; k <= n; k++) { const i = bal * r, pr = monthly - i; bal -= pr; rowsT.push([String(k), fmtDigits('loan', monthly), fmtDigits('loan', pr), fmtDigits('loan', i), fmtDigits('loan', Math.max(0, bal))]); }
         } else {
           const pr = P0 / n;
           let bal = P0; total = 0;
-          for (let k = 1; k <= n; k++) { const i = bal * r, pay = pr + i; if (k === 1) first = pay; if (k === n) last = pay; total += pay; bal -= pr; rowsT.push([String(k), fmtNum(pay, dec), fmtNum(pr, dec), fmtNum(i, dec), fmtNum(Math.max(0, bal), dec)]); }
+          for (let k = 1; k <= n; k++) { const i = bal * r, pay = pr + i; if (k === 1) first = pay; if (k === n) last = pay; total += pay; bal -= pr; rowsT.push([String(k), fmtDigits('loan', pay), fmtDigits('loan', pr), fmtDigits('loan', i), fmtDigits('loan', Math.max(0, bal))]); }
           interest = total - P0;
           expr = `${exprNum(P0)} / ${n} + ${exprNum(P0)} × (${rE})`;
         }
         const rows = v.method === 'equal'
-          ? [{ name: tr('Each month', '毎月の返済額'), value: fmtNum(monthly, dec) + unitWord(), expr }]
-          : [{ name: tr('First month', '最初の月'), small: trf('last month {0}', '最後の月 {0}', fmtNum(last, dec) + unitWord()), value: fmtNum(first, dec) + unitWord(), expr }];
-        rows.push({ name: tr('Interest in all', '利息の合計'), value: fmtNum(interest, dec) + unitWord(), expr: '' }, { name: tr('Paid in all', '返す額の合計'), value: fmtNum(total, dec) + unitWord(), expr: '' });
+          ? [{ name: tr('Each month', '毎月の返済額'), value: fmtDigits('loan', monthly) + unitWord(), expr }]
+          : [{ name: tr('First month', '最初の月'), small: trf('last month {0}', '最後の月 {0}', fmtDigits('loan', last) + unitWord()), value: fmtDigits('loan', first) + unitWord(), expr }];
+        rows.push({ name: tr('Interest in all', '利息の合計'), value: fmtDigits('loan', interest) + unitWord(), expr: '' }, { name: tr('Paid in all', '返す額の合計'), value: fmtDigits('loan', total) + unitWord(), expr: '' });
         return { rows, table: { title: tr('Payments, month by month', '返済表（月ごと）'), name: 'loan', head: [tr('Month', '回'), tr('Payment', '返済額'), tr('Principal', '元金'), tr('Interest', '利息'), tr('Left', '残り')], rows: rowsT } };
       }
     });
@@ -12921,14 +13229,14 @@
         if (!(R >= 0 && R < 100)) return { msg: tr('The interest must be from 0 to 100 %', '年利は 0〜100 % にしてください'), bad: 'rate' };
         if (!(y > 0 && y <= 100) || Math.round(y * 12) !== y * 12) return { msg: tr('The years must be a number of months: 20, or 2.5', '年数は 20 や 2.5 のように、月の数になる値にしてください'), bad: 'years' };
         if (!(s0 >= 0)) return { msg: tr('The amount at the start must be a number', '最初にある額は数にしてください'), bad: 'start' };
-        const n = Math.round(y * 12), i = R / 100 / 12, dec = MONEY_DEC;
+        const n = Math.round(y * 12), i = R / 100 / 12;
         let bal = s0, paid = s0;
         const rowsT = [];
-        for (let k = 1; k <= n; k++) { bal = bal * (1 + i) + m; paid += m; if (k % 12 === 0 || k === n) rowsT.push([String(Math.ceil(k / 12)), fmtNum(paid, dec), fmtNum(bal - paid, dec), fmtNum(bal, dec)]); }
+        for (let k = 1; k <= n; k++) { bal = bal * (1 + i) + m; paid += m; if (k % 12 === 0 || k === n) rowsT.push([String(Math.ceil(k / 12)), fmtDigits('savings', paid), fmtDigits('savings', bal - paid), fmtDigits('savings', bal)]); }
         const iE = `${exprNum(R)}% / 12`;
         const expr = i ? `${exprNum(s0)} × (1 + ${iE})^${n} + ${exprNum(m)} × ((1 + ${iE})^${n} − 1) / (${iE})` : `${exprNum(s0)} + ${exprNum(m)} × ${n}`;
-        return { rows: [{ name: tr('At the end', '最後の額'), value: fmtNum(bal, dec) + unitWord(), expr },
-          { name: tr('Put in', '入れた額'), value: fmtNum(paid, dec) + unitWord(), expr: '' }, { name: tr('Interest', '増えた額（利息）'), value: fmtNum(bal - paid, dec) + unitWord(), expr: '' }],
+        return { rows: [{ name: tr('At the end', '最後の額'), value: fmtDigits('savings', bal) + unitWord(), expr },
+          { name: tr('Put in', '入れた額'), value: fmtDigits('savings', paid) + unitWord(), expr: '' }, { name: tr('Interest', '増えた額（利息）'), value: fmtDigits('savings', bal - paid) + unitWord(), expr: '' }],
           table: { title: tr('Year by year', '年ごと'), name: 'savings', head: [tr('Year', '年'), tr('Put in', '入れた額'), tr('Interest', '利息'), tr('Amount', '額')], rows: rowsT } };
       }
     });
@@ -13050,7 +13358,7 @@
         if (v.wage) {
           const pay = boxNum(v.wage);
           if (!(pay >= 0)) return { msg: tr('The pay must be a number', '時給は数にしてください'), bad: 'wage' };
-          rows.push({ name: tr('Pay', '給料'), value: fmtNum(pay * w / 60, MONEY_DEC) + unitWord(), expr: `${exprNum(pay)} × ${w} / 60` });
+          rows.push({ name: tr('Pay', '給料'), value: fmtMoney(pay * w / 60) + unitWord(), expr: `${exprNum(pay)} × ${w} / 60` });
         }
         return { rows };
       }
@@ -13440,36 +13748,43 @@
       const run = () => {
         msg.textContent = ''; outs.textContent = ''; moreOut.textContent = ''; more.hidden = false; D.fit = null;
         const xs = [], ys = [];
+        let dx = 0, dy = 0; // the decimals of the data (feature/screen-digits)
         for (let r = 0; r < D.rows.length; r++) {
           const a = String(D.rows[r][0] || '').trim(), b = D.cols === 2 ? String(D.rows[r][1] || '').trim() : '';
           if (!a && !b) continue;
           if (D.cols === 2 && (!a || !b)) return fail(inputAt(r, a ? 1 : 0), trf('Row {0}: enter both x and y (or clear the row)', '{0} 行目：x と y の両方を入れてください（使わない行は空にします）', r + 1));
           const va = statVal(a);
           if (!isFinite(va)) return fail(inputAt(r, 0), trf('Row {0}: enter a number, such as 12.5', '{0} 行目：数を入れてください（例：12.5）', r + 1).replace('12.5', toDisplay('12.5')));
-          xs.push(va);
+          xs.push(va); dx = Math.max(dx, decimalsOf(a));
           if (D.cols === 2) {
             const vb = statVal(b);
             if (!isFinite(vb)) return fail(inputAt(r, 1), trf('Row {0}: enter a number, such as 12.5', '{0} 行目：数を入れてください（例：12.5）', r + 1).replace('12.5', toDisplay('12.5')));
-            ys.push(vb);
+            ys.push(vb); dy = Math.max(dy, decimalsOf(b));
           }
         }
         if (!xs.length) return fail(null, tr('Enter the values in the table, one in each row (or paste them)', '表に値を 1 行に 1 つずつ入れてください（貼り付けもできます）'));
+        // the digits (recommended): the mean, the median, the quartiles and the standard deviations with 2 decimals
+        // more than the data (the zeros kept, so that they line up), the smallest, the largest and the sum as the
+        // data, r and R² with 4 decimals
+        const A = (v, d) => fmtDigits('stats', v, { m: 'dec', n: (d === undefined ? dx : d) + 2, zeros: true });
+        const Bd = (v, d) => fmtDigits('stats', v, { m: 'dec', n: d === undefined ? dx : d, zeros: true });
+        const R4 = (v) => fmtDigits('stats', v, { m: 'dec', n: 4, zeros: true });
         if (D.cols === 1) {
           const s = statOne(xs), L = list(xs), dash = '—';
-          row(outs, tr('Mean', '平均'), 'x̄', statNum(s.mean), 'mean(' + L + ')', true);
+          row(outs, tr('Mean', '平均'), 'x̄', A(s.mean), 'mean(' + L + ')', true);
           row(outs, tr('Count', '個数'), 'n', String(s.n), String(s.n));
-          row(outs, tr('Sum', '合計'), 'Σx', statNum(s.sum), 'total(' + L + ')');
-          row(outs, tr('Median', '中央値'), '', statNum(s.median), 'median(' + L + ')');
-          const mo = row(outs, tr('Mode', '最頻値'), s.modes.length ? trf('{0} times', '{0} 回', s.top) : '', s.modes.length ? s.modes.map(statNum).join(', ') : tr('none (every value once)', 'なし（どの値も 1 回）'), s.modes.length === 1 ? 'mode(' + L + ')' : '');
+          row(outs, tr('Sum', '合計'), 'Σx', Bd(s.sum), 'total(' + L + ')');
+          row(outs, tr('Median', '中央値'), '', A(s.median), 'median(' + L + ')');
+          const mo = row(outs, tr('Mode', '最頻値'), s.modes.length ? trf('{0} times', '{0} 回', s.top) : '', s.modes.length ? s.modes.map((x) => Bd(x)).join(', ') : tr('none (every value once)', 'なし（どの値も 1 回）'), s.modes.length === 1 ? 'mode(' + L + ')' : '');
           if (!s.modes.length) mo.querySelector('.geo-val').classList.add('geo-val-text'); // (words, not a number)
-          row(outs, tr('Standard deviation (sample)', '標準偏差（標本）'), tr('s, divided by n − 1', 's、n − 1 で割る'), s.n > 1 ? statNum(Math.sqrt(s.vs)) : dash, s.n > 1 ? 'stdev(' + L + ')' : '');
-          row(outs, tr('Standard deviation (population)', '標準偏差（母集団）'), tr('σ, divided by n', 'σ、n で割る'), statNum(Math.sqrt(s.vp)), 'stdevp(' + L + ')');
-          row(outs, tr('Quartiles', '四分位数'), 'Q1 / Q3', s.n > 1 ? statNum(s.q1) + ' / ' + statNum(s.q3) : dash, s.n > 1 ? 'median(' + list(s.lower) + ')' : '');
-          row(moreOut, tr('Smallest / largest', '最小値 / 最大値'), '', statNum(s.min) + ' / ' + statNum(s.max), 'min(' + L + ')');
-          row(moreOut, tr('Range', '範囲'), tr('largest − smallest', '最大 − 最小'), statNum(s.max - s.min), 'max(' + L + ') − min(' + L + ')');
-          if (s.n > 1) row(moreOut, tr('Interquartile range', '四分位範囲'), 'Q3 − Q1', statNum(s.q3 - s.q1), 'median(' + list(s.upper) + ') − median(' + list(s.lower) + ')');
-          if (s.n > 1) row(moreOut, tr('Variance (sample / population)', '分散（標本 / 母集団）'), 's² / σ²', statNum(s.vs) + ' / ' + statNum(s.vp), 'var(' + L + ')');
-          row(moreOut, tr('Quartiles as in spreadsheets', '表計算ソフトの四分位数'), 'QUARTILE.INC', statNum(s.inc1) + ' / ' + statNum(s.inc3), 'quartile(' + L + ', 1)');
+          row(outs, tr('Standard deviation (sample)', '標準偏差（標本）'), tr('s, divided by n − 1', 's、n − 1 で割る'), s.n > 1 ? A(Math.sqrt(s.vs)) : dash, s.n > 1 ? 'stdev(' + L + ')' : '');
+          row(outs, tr('Standard deviation (population)', '標準偏差（母集団）'), tr('σ, divided by n', 'σ、n で割る'), A(Math.sqrt(s.vp)), 'stdevp(' + L + ')');
+          row(outs, tr('Quartiles', '四分位数'), 'Q1 / Q3', s.n > 1 ? A(s.q1) + ' / ' + A(s.q3) : dash, s.n > 1 ? 'median(' + list(s.lower) + ')' : '');
+          row(moreOut, tr('Smallest / largest', '最小値 / 最大値'), '', Bd(s.min) + ' / ' + Bd(s.max), 'min(' + L + ')');
+          row(moreOut, tr('Range', '範囲'), tr('largest − smallest', '最大 − 最小'), Bd(s.max - s.min), 'max(' + L + ') − min(' + L + ')');
+          if (s.n > 1) row(moreOut, tr('Interquartile range', '四分位範囲'), 'Q3 − Q1', A(s.q3 - s.q1), 'median(' + list(s.upper) + ') − median(' + list(s.lower) + ')');
+          if (s.n > 1) row(moreOut, tr('Variance (sample / population)', '分散（標本 / 母集団）'), 's² / σ²', A(s.vs) + ' / ' + A(s.vp), 'var(' + L + ')');
+          row(moreOut, tr('Quartiles as in spreadsheets', '表計算ソフトの四分位数'), 'QUARTILE.INC', A(s.inc1) + ' / ' + A(s.inc3), 'quartile(' + L + ', 1)');
           hint.textContent = tr('The sample standard deviation divides by n − 1 (for a part of all the data), the population one by n (for all of it). The quartiles are the medians of the lower and the upper half (without the median when n is odd), as in school books.',
             '標本の標準偏差は n − 1 で割ります（全体の一部のデータから全体を推し量るとき）。母集団の標準偏差は n で割ります（データが全体のとき）。四分位数は、下半分と上半分のそれぞれの中央値です（n が奇数のときは中央値を除く。教科書の方法）。');
           return;
@@ -13480,19 +13795,19 @@
         D.fit = { xs, ys, expr: lin[3] };
         const L = lin[6];
         row(outs, tr('Regression line', '回帰直線'), tr('least squares', '最小二乗法'), lin[2], lin[3], true);
-        row(outs, tr('Correlation coefficient', '相関係数'), 'r', isFinite(L.r) ? statNum(L.r) : '—', isFinite(L.r) ? exprNum(L.r) : '');
-        row(outs, tr('Coefficient of determination', '決定係数'), 'R²', isFinite(lin[5]) ? statNum(lin[5]) : '—', isFinite(lin[5]) ? exprNum(lin[5]) : '');
+        row(outs, tr('Correlation coefficient', '相関係数'), 'r', isFinite(L.r) ? R4(L.r) : '—', isFinite(L.r) ? exprNum(L.r) : '');
+        row(outs, tr('Coefficient of determination', '決定係数'), 'R²', isFinite(lin[5]) ? R4(lin[5]) : '—', isFinite(lin[5]) ? exprNum(lin[5]) : '');
         const pxv = statVal(D.px);
         if (String(D.px).trim() && !isFinite(pxv)) pxIn.setAttribute('aria-invalid', 'true');
-        if (isFinite(pxv)) row(outs, trf('Predicted y at x = {0}', 'x = {0} のときの y（予測）', statNum(pxv)), 'ŷ', statNum(lin[4](pxv)), lin[3].replace(/x/g, '(' + exprNum(pxv) + ')'));
+        if (isFinite(pxv)) row(outs, trf('Predicted y at x = {0}', 'x = {0} のときの y（予測）', statNum(pxv)), 'ŷ', A(lin[4](pxv), dy), lin[3].replace(/x/g, '(' + exprNum(pxv) + ')'));
         row(outs, tr('Rows', '行の数'), 'n', String(xs.length), String(xs.length));
         for (const m of models.filter((q) => q[0] !== 'linear')) {
           if (m.length === 3) { row(moreOut, m[1], '', m[2], ''); continue; }
-          const at = isFinite(pxv) ? '  ' + trf('(x = {0}: {1})', '（x = {0} で {1}）', statNum(pxv), statNum(m[4](pxv))) : '';
-          row(moreOut, m[1], 'R² = ' + (isFinite(m[5]) ? statNum(m[5]) : '—') + at, m[2], m[3]);
+          const at = isFinite(pxv) ? '  ' + trf('(x = {0}: {1})', '（x = {0} で {1}）', statNum(pxv), A(m[4](pxv), dy)) : '';
+          row(moreOut, m[1], 'R² = ' + (isFinite(m[5]) ? R4(m[5]) : '—') + at, m[2], m[3]);
         }
         const xm = xs.reduce((a, b) => a + b, 0) / xs.length, ym = ys.reduce((a, b) => a + b, 0) / ys.length;
-        row(moreOut, tr('Means of x and y', 'x と y の平均'), 'x̄ / ȳ', statNum(xm) + ' / ' + statNum(ym), 'mean(' + list(xs) + ')');
+        row(moreOut, tr('Means of x and y', 'x と y の平均'), 'x̄ / ȳ', A(xm, dx) + ' / ' + A(ym, dy), 'mean(' + list(xs) + ')');
         hint.textContent = tr('The line is found by least squares; r near ±1 means the points lie close to it. Other curves are under "More"; their R² is worked out on the y values themselves.',
           '回帰直線は最小二乗法で求めます。r が ±1 に近いほど、点は直線の近くに並びます。ほかの曲線は「詳しく」の中にあります（決定係数は元の y の値で計算）。');
       };
@@ -13505,6 +13820,7 @@
         openPlotWith([expr], { points: xs.map((x, i) => ({ x, y: ys[i] })), range: [+(lo - pad).toPrecision(6), +(hi + pad).toPrecision(6)] });
       };
       p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Columns', '列') }), seg), table, tools, pxRow, msg, outs, more, graph, hint);
+      digitsButton(p, 'stats'); digitsRefresh.stats = () => run();
       setCols(D.cols);
     });
     return p;
@@ -13533,6 +13849,7 @@
         rowA, el('div', { class: 'conv-mid' }, swap), rowB, msg, outs, rates, recentRow,
         el('div', { class: 'form-hint', text: tr('Type in either box: the other follows. A value can be an expression (1/3, 2 + 3). Tap the result to keep it, put it into the field or copy it.', 'どちらの欄に入れても、もう一方が換算されます。値は式でもかまいません（1/3、2 + 3）。結果をタップすると、履歴に残す・入力欄に入れる・コピーができます。') }));
       const fmtOut = (t) => toDisplay(String(t).replace(/^-/, '−'));
+      digitsButton(p, 'convert'); digitsRefresh.convert = () => convert();
       // the units of a kind (the engine's order: the common ones first)
       const unitsOf = (kind) => {
         if (kind === 'fuel') return FUEL.map(([n, label]) => ({ name: n, abbr: label, title: '' }));
@@ -13570,7 +13887,9 @@
           const x = boxNum(raw);
           if (!(x > 0)) { msg.textContent = tr('Enter a number above 0, such as 15', '15 のように、0 より大きい数を入れてください'); dst.value = ''; return; }
           const y = fuelFrom(fuelTo(x, su), du);
-          const t = String(+y.toPrecision(8));
+          // (fuel economy: 2 decimals, recommended; calculated in JavaScript, so 12 digits at most)
+          const fr = digitsRule('convert', { m: 'dec', n: 2 });
+          const t = roundDigits(jsDigits(y), fr.m, Math.min(fr.n, JS_DIGITS), fr.zeros);
           dst.value = fmtOut(t);
           showRow(fmtOut(String(+x.toPrecision(10))) + ' ' + FUEL.find((f) => f[0] === su)[1], fmtOut(t) + ' ' + FUEL.find((f) => f[0] === du)[1], '');
           return;
@@ -13583,13 +13902,27 @@
         const temp = C.kind === 'Temperature';
         const q = temp ? `(${v} (${A.abbr})) to ${B.name}` : `(${v} (${A.abbr})) / (1 (${B.abbr}))`;
         const expr = `${v} ${A.abbr} to ${B.abbr}`;
-        const r = await Bridge.send('calc', { expr: q, opts: Object.assign(engineOpts(), { approx: 'approx', grouping: false, base: 10, notation: 'auto', fraction: 'decimal', mixed_units: false, units: 'none' }), timeout: 3000 });
+        // the digits (feature/screen-digits): currencies with 2 decimals more than the smallest unit of the
+        // currency converted to, the other kinds 8 significant digits (an exact answer in full); the engine
+        // works with 4 digits more (with decimals: also as many as the size of the answer, found the first time)
+        const cur = C.kind === 'Currency' && /^[A-Z]{3}$/.test(B.abbr);
+        const auto = cur ? { m: 'dec', n: currencyDecimals(B.abbr) + 2, zeros: true } : { m: 'sig', n: 8 };
+        const ask = (prec) => Bridge.send('calc', { expr: q, opts: Object.assign(engineOpts(), { approx: 'approx', grouping: false, base: 10, notation: 'auto', fraction: 'decimal', mixed_units: false, units: 'none', precision: prec }), timeout: 3000 });
+        const answer = (r) => { const res = r.ok && r.result ? r.result.split(' ≈ ').pop().replace(/^[≈=]\s*/, '') : ''; return res.match(/^([−-]?[\d.]+(?:E[−+-]?\d+)?)\s*(°?[A-Za-zµ°]*)$/); };
+        const p1 = digitsPrecision('convert', auto, Math.abs(boxNum(raw)) || 0);
+        let r = await ask(p1);
         if (seq !== C.seq) return;
-        const res = r.ok && r.result ? r.result.split(' ≈ ').pop().replace(/^[≈=]\s*/, '') : '';
-        const m = res.match(/^([−-]?[\d.]+(?:E[−+-]?\d+)?)\s*(°?[A-Za-zµ°]*)$/);
+        let m = answer(r);
+        if (m) {
+          const p2 = digitsPrecision('convert', auto, Math.abs(Number(m[1].replace('−', '-'))));
+          if (p2 > p1) { r = await ask(p2); if (seq !== C.seq) return; m = answer(r); }
+        }
         if (!r.ok || r.timeout || !m || (!temp && m[2]) || (r.messages || []).some((x) => x.type === 'error')) { msg.textContent = localMessage(r.error) || tr('This cannot be converted: check the value', '換算できません。値を確かめてください'); dst.value = ''; return; }
-        dst.value = fmtOut(m[1]);
-        showRow(toDisplay(v) + ' ' + A.abbr, fmtOut(m[1]) + ' ' + B.abbr, expr);
+        const rule = digitsRule('convert', auto);
+        // (an exact answer is shown in full when the digits are the recommended ones: 1 acre = 4046.8564224 m²)
+        const num = !rule.chosen && !cur && !r.approx ? m[1] : (roundDigits(m[1], rule.m, rule.n, rule.zeros, rule.minDec) || m[1]).replace(/^-/, '−');
+        dst.value = fmtOut(num);
+        showRow(toDisplay(v) + ' ' + A.abbr, fmtOut(num) + ' ' + B.abbr, expr);
       }, 150);
       const showRow = (from, to, expr) => {
         const node = tapButton({ class: 'geo-row tool-main' }, () => { resultSheet(from, expr || to, '= ' + to, to); });
@@ -13952,6 +14285,25 @@
         }
       }
       p.body.append(adv);
+      // the digits shown by each tool (feature/screen-digits): the list, each opening its sheet, and "All back to
+      // the recommended"; the calculator, the forms and the notes use "Precision" above
+      const digitsList = el('div', { class: 'digits-list' });
+      p.digitsList = () => {
+        digitsList.textContent = '';
+        digitsList.append(el('div', { class: 'setting digits-main' }, el('div', { class: 'lbl' }, tr('Calculator, forms and notes', '計算の画面・式の画面・計算メモ'),
+          el('div', { class: 's', text: trf('"Precision (significant digits)" above: {0}', '上の「有効桁数」：{0} 桁', Math.min(Number(S.precision) || 10, maxPrecision())) }))));
+        for (const [key, name] of DIGIT_SCREENS()) {
+          digitsList.append(tapButton({ class: 'setting setting-link', 'data-digits': key }, () => digitsSheet(key)).appendChild(el('div', { class: 'lbl' }, el('div', { text: name }), el('div', { class: 's', text: digitsNow(key) }))).parentNode
+            .appendChild(el('span', { class: 'chev', text: '›', 'aria-hidden': 'true' })).parentNode);
+        }
+      };
+      p.digitsList();
+      p.body.append(el('div', { class: 'section-title', text: tr('Digits shown by each tool', '画面ごとの表示桁数') }), digitsList,
+        el('button', { class: 'btn digits-all', text: tr('All back to the recommended', 'すべておすすめに戻す'), onclick: () => {
+          for (const [key] of DIGIT_SCREENS()) { if (digitsChosen(key)) { store.del('qalc.digits.' + key); digitsChanged(key); } }
+          p.digitsList();
+          toast(tr('Every tool shows the recommended digits', 'すべての画面をおすすめの桁に戻しました'), 1800);
+        } }));
       p.body.append(el('div', { class: 'section-title', text: '' }),
         el('button', { class: 'btn', text: tr('Reset all settings', '設定を初期値に戻す'), onclick: async () => {
           if (!(await confirmSheet(tr('Reset all settings to their defaults?', '設定を初期値に戻しますか？'), tr('Reset', '戻す')))) return;

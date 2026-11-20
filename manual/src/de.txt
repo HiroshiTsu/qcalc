@@ -257,7 +257,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Geben Sie in einer Zeile eine Zahl ein.
 :step: ⇅ tauscht die Zeilen.
 :shot: convert | Der Umrechnungsbildschirm
-:example: 5 km → 3,106855961 mi
+:example: 5 km → 3,106856 mi
 :tip: Tippen Sie auf die Ergebniszeile, um „5 km to mi“ ins Eingabefeld zu setzen oder im Verlauf abzulegen.
 
 ## shapes | Formen: Fläche, Volumen, Länge
@@ -266,7 +266,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Tippen Sie auf das Bild einer Form.
 :step: Geben Sie die im Bild genannten Maße ein (r, h). Runde Maße als Radius oder Durchmesser.
 :step: Die Ergebnisse ändern sich beim Tippen; ein Tippen übernimmt oder kopiert den Ausdruck.
-:example: Kugel mit Radius 2 → Volumen 32π/3 ≈ 33,51032164, Oberfläche 16π
+:example: Kugel mit Radius 2 → Volumen 32π/3 ≈ 33,5103, Oberfläche 16π
 :tip: Wählen Sie ein Material, um das Gewicht zu erhalten.
 
 ## tanks | Tanks: Füllmenge und Füllhöhe
@@ -276,7 +276,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Wählen Sie die Form und geben Sie Durchmesser (oder Radius) und Länge ein.
 :step: Geben Sie die Füllhöhe ein und wählen Sie die Längeneinheit.
 :shot: tanks | Die Flüssigkeit in einem liegenden Tank
-:example: Liegend, Durchmesser 1 m, Länge 2 m, Füllhöhe 30 cm → 0,3963367126 m³ (etwa 396 L)
+:example: Liegend, Durchmesser 1 m, Länge 2 m, Füllhöhe 30 cm → 0,396337 m³ (etwa 396 L)
 :tip: [[Quick-reference table ▾]] listet die Menge zu jeder Höhe.
 :mistake: Ein Radius im Feld für den Durchmesser ergibt etwa ein Viertel der Menge. Prüfen Sie Radius oder Durchmesser.
 
@@ -323,7 +323,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Geben Sie die Werte ein oder fügen Sie sie aus einer Tabellenkalkulation ein.
 :step: Bei zwei Spalten zeichnet [[📈 Show in a graph]] die Punkte und die Gerade.
 :shot: stats | [[Statistics]] mit einem Beispiel
-:example: Testergebnisse von 10 Personen → Mittelwert 73,9, Median 74, Standardabweichung (Stichprobe) 9,938142013
+:example: Testergebnisse von 10 Personen → Mittelwert 73,90, Median 74,00, Standardabweichung (Stichprobe) 9,94
 :tip: Die Quartile kommen zuerst nach der Methode japanischer Schulbücher; die Methode der Tabellenkalkulationen steht unter „Mehr“.
 :mistake: Ein Wert, der keine Zahl ist, wird mit Zeile und Korrekturhinweis angezeigt.
 
@@ -355,7 +355,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Öffnen Sie [[Area and length ▾]].
 :step: Geben Sie den Bereich a und b ein oder ziehen Sie die Linien an den Enden.
 :shot: area | Die Fläche unter √x von 0 bis 2
-:example: √x von 0 bis 2 → Fläche 1,885618083
+:example: √x von 0 bis 2 → Fläche 1,8856181
 :tip: Wechseln Sie zu [[Length]] für die Länge der Kurve.
 
 ## solid | Einen Körper bilden (Rotationskörper)
@@ -366,7 +366,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Für eine andere Achse gehen Sie mit [[← Back to 2D]] zurück und tippen auf ihre Linie; die Linie y = k ziehen Sie mit dem Finger. [[View in 3D]] zeigt ihn wieder in 3D.
 :step: [[↶ Undo]] kehrt zur vorherigen Achse zurück.
 :shot: solid | Der Bereich zwischen y = x und y = x² um die x-Achse gedreht
-:example: Zwischen y = x und y = x², um die x-Achse → Volumen 2π/15 ≈ 0,4188790205
+:example: Zwischen y = x und y = x², um die x-Achse → Volumen 2π/15 ≈ 0,41887902
 :tip: [[Show the method with lines]] zeichnet die Scheiben (Ringe) oder Zylinderschalen. Die Zeile [[Pappus–Guldinus theorem: ]] vergleicht das Volumen aus dem Schwerpunkt mit dem Integral.
 :pro: Den Körper in 3D mit dem Finger zu drehen ist, wie der 3D-Graph, eine Funktion von QCalc Pro. Ohne Pro erscheint stattdessen die Zeile [[Turn it in 3D (QCalc Pro)]].
 
@@ -442,6 +442,20 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 | [[Update exchange rates now]] | Lädt die Kurse sofort |
 :shot: settings | Die Einstellungen
 :tip: [[Reset all settings]] setzt alles auf die Standardwerte zurück (die Sprache bleibt).
+
+## digits | Angezeigte Stellen je Werkzeug
+:what: Jedes Werkzeug kann seine Ergebnisse mit eigener Stellenzahl zeigen. Öffnen Sie [[Digits shown…]] über ⋯ rechts neben dem Titel des Werkzeugs.
+:step: Drücken Sie in einem Werkzeug ⋯ und wählen Sie [[Digits shown…]].
+:step: Wählen Sie [[Recommended (automatic)]], [[Significant digits]] oder [[Decimals]] und stellen Sie die Zahl mit + und − ein. Jedes Werkzeug merkt sich seine Wahl.
+:step: Zurück geht es mit [[Back to the recommended]]. [[Digits shown by each tool]] in den Einstellungen listet alle Werkzeuge auf und hat [[All back to the recommended]].
+Die empfohlenen Stellen sind ein bis zwei mehr, als meist nötig ist (genauen Werten werden keine Stellen angehängt).
+
+Gerechnet wird mit 4 Stellen mehr als angezeigt; zum Anzeigen wird kaufmännisch gerundet.
+
+Numerische Integration (Flächen, Längen und Volumen im Graphen) ist auf etwa 20 Stellen sicher: Mehr als 20 werden nicht angezeigt. Die Werkzeuge, die in JavaScript rechnen (Preis, Prozente, Grundpreis, Statistik und andere), zeigen höchstens 12 Stellen.
+
+Geldbeträge werden bis zur kleinsten Einheit der Währung Ihrer Region gezeigt (0,01 Euro); darin wird genau gerechnet.
+:tip: Rechner, Formulare und Notizen verwenden [[Precision (significant digits)]] in den [[Settings]].
 
 ## language | Sprache
 :what: Die App gibt es auf English, 日本語, Español, Deutsch, Français, 한국어 und 繁體中文.
