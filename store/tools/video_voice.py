@@ -22,14 +22,29 @@ as above, when it is longer). --model gemini-3.8-flash-tts (the default) or gemi
 spare, with its own daily count); --voice (a prebuilt voice, Kore by default); --style (how to read, sent
 as speech_metadata, never in the text). The answers are kept in <work>/voice-gemini/cache, so a video made
 again uses no request. When the daily limit is reached, it says when it starts again (Japan time).
+The requests are always made of every paragraph of every video of the language (made or not), so they are the
+same in every kind of run. After the cut, the seconds of each paragraph per character are compared: one under
+half or over twice the median stops the run with the paragraph named (the answer is set aside, .rejected.wav,
+and asked for again next time), so that no narration out of place is made.
+  --sample [N]    the first N paragraphs (3) of each language in one request for each voice of --voice
+                  (Kore,Achird,Sulafat), written to <work>/voice-gemini/sample/<lang>-<model>-<voice>.wav, to
+                  compare the voices; no video and no ffmpeg needed
+  --synth-only    the audio of every paragraph of the languages into <work>/voice-gemini/cache, without the
+                  videos and without ffmpeg (Python only: Cloud Shell or any computer), then
+                  <work>/voice-gemini-<date>.zip with the cache, the samples and a manifest; unpacked into the
+                  work folder here, the usual run with --engine gemini puts it into the videos with no request
+                  and no key (store/tools/TTS-GEMINI-ja.md)
 Usage: python3 store/tools/video_voice.py <work folder> [langs] [videos] [--engine local|gemini]
-       [--model M] [--voice V] [--style S]
+       [--model M] [--voice V] [--style S] [--sample [N] | --synth-only]
 """
+import datetime
+import json
 import os
 import re
 import subprocess
 import sys
 import wave
+import zipfile
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
@@ -38,25 +53,44 @@ import video_plan  # noqa: E402
 PLAN = video_plan.PLAN
 
 def options(argv):
-    """The positional arguments (work folder, langs, videos) and the --name value options."""
-    pos, opt, i = [], {'engine': 'local', 'model': None, 'voice': None, 'style': None}, 0
+    """The positional arguments (work folder, langs, videos) and the options: --engine, --model, --voice (a
+    list with commas for --sample), --style, --sample [N] (3 when N is left out), --synth-only."""
+    pos, opt, i = [], {'engine': 'local', 'model': None, 'voice': None, 'style': None, 'sample': None, 'synth-only': False}, 0
     while i < len(argv):
         a = argv[i]
         if a.startswith('--'):
-            k, _, v = a[2:].partition('=')
+            k, eq, v = a[2:].partition('=')
             if k not in opt:
                 raise SystemExit('unknown option --%s' % k)
-            if not _:
-                i += 1
-                if i >= len(argv):
-                    raise SystemExit('--%s needs a value' % k)
-                v = argv[i]
-            opt[k] = v
+            if k == 'synth-only':
+                opt[k] = True
+            elif k == 'sample' and not eq:
+                if i + 1 < len(argv) and argv[i + 1].isdigit():
+                    i += 1
+                    v = argv[i]
+                else:
+                    v = '3'
+                opt[k] = v
+            else:
+                if not eq:
+                    i += 1
+                    if i >= len(argv):
+                        raise SystemExit('--%s needs a value' % k)
+                    v = argv[i]
+                opt[k] = v
         else:
             pos.append(a)
         i += 1
     if opt['engine'] not in ('local', 'gemini'):
         raise SystemExit('--engine is local or gemini')
+    if opt['sample'] is not None or opt['synth-only']:
+        opt['engine'] = 'gemini'
+    if opt['sample'] is not None:
+        if not str(opt['sample']).isdigit() or int(opt['sample']) < 1:
+            raise SystemExit('--sample takes a number of paragraphs (1 or more)')
+        opt['sample'] = int(opt['sample'])
+    if opt['sample'] is not None and opt['synth-only']:
+        raise SystemExit('--sample and --synth-only are separate runs')
     return pos, opt
 
 
@@ -150,7 +184,7 @@ def mux(lang, name, src, track):
     os.replace(tmp, out)
 
 
-# ---- the Gemini API (--engine gemini)
+# ---- the Gemini API (--engine gemini, --sample, --synth-only)
 
 def gemini_text(lang, lines):
     """The paragraph of a segment as it is to be read: the lines of the subtitles, without the symbol of the
@@ -159,12 +193,17 @@ def gemini_text(lang, lines):
     return sep.join(l.replace('⟳ ', '').strip() for l in lines).strip()
 
 
-def segments_of(lang, vids):
-    """Every segment with narration of the videos made so far: (video, start of its narration, its room, text)."""
+def all_videos(lang):
+    L = PLAN['langs'][lang]
+    return [('promo', L['promo']), ('youtube', L['youtube'])] + [(s['name'], s['segments']) for s in L['shorts']]
+
+
+def paragraphs_of(lang):
+    """Every segment with narration of every video of the language, in the order of the plan: (video, start of its
+    narration, its room, text). Always all of them, made or not, so that a run with the videos and a run of
+    --synth-only (without them) send the same requests and find the same answers in the cache."""
     out = []
-    for name, segs in vids:
-        if not os.path.exists(os.path.join(WORK, 'out', lang, name + '.mp4')):
-            continue
+    for name, segs in all_videos(lang):
         t0 = 0.0
         for s in segs:
             d = float(s['dur'])
@@ -174,35 +213,71 @@ def segments_of(lang, vids):
     return out
 
 
-def gemini_voices(lang, vids, opt, tts=None, cut=None):
-    """The narration of every video of a language by the Gemini API; returns the videos made."""
+def gemini_settings(opt, one_voice=True):
     import gemini_tts as G
-    tts = tts or G.synthesize
     model = G.check_model(opt.get('model') or G.DEFAULT_MODEL)
-    voice_name, style = opt.get('voice') or G.DEFAULT_VOICE, opt.get('style') or G.DEFAULT_STYLE
-    items = segments_of(lang, vids)
-    if not items:
-        return []
-    base = os.path.join(WORK, 'voice-gemini')
-    rate = G.Rate(os.path.join(base, 'rate.json'))
+    voices = [v.strip() for v in (opt.get('voice') or G.DEFAULT_VOICE).split(',') if v.strip()]
+    if one_voice and len(voices) != 1:
+        raise G.TtsError('One voice, please (several voices are for --sample): %s' % ','.join(voices))
+    return model, voices, opt.get('style') or G.DEFAULT_STYLE
+
+
+def requests_of(lang, opt):
+    """The requests of a language: [(indexes of the paragraphs, transcript)] and the paragraphs."""
+    import gemini_tts as G
+    _, _, style = gemini_settings(opt, one_voice=False)
+    items = paragraphs_of(lang)
     texts = [it[3] for it in items]
     groups = G.split_paragraphs(texts, extra=G.estimate_tokens(style))
+    return [(idx, G.transcript([texts[i] for i in idx])) for idx in groups], items
+
+
+def gemini_pieces(lang, opt, tts=None, cut=None, log=print):
+    """The audio of every paragraph of the language (from the cache, or by requests), cut and checked."""
+    import gemini_tts as G
+    tts = tts or G.synthesize
+    model, (voice_name,), style = gemini_settings(opt)
+    base = os.path.join(WORK, 'voice-gemini')
+    rate = G.Rate(os.path.join(base, 'rate.json'))
+    reqs, items = requests_of(lang, opt)
     pieces = [None] * len(items)
-    for gi, idx in enumerate(groups):
-        text = G.transcript([texts[i] for i in idx])
-        print('%s: request %d of %d (%d paragraphs, about %d tokens, %s)' % (lang, gi + 1, len(groups), len(idx), G.estimate_tokens(text), model))
+    files = []
+    for gi, (idx, text) in enumerate(reqs):
+        name = G.cache_name(model, voice_name, style, text)
+        files.append(name)
+        log('%s: request %d of %d (%d paragraphs, about %d tokens, %s, %s)%s' % (
+            lang, gi + 1, len(reqs), len(idx), G.estimate_tokens(text), model, voice_name,
+            ' — in the cache' if os.path.exists(os.path.join(base, 'cache', name)) else ''))
         wav = tts(text, model=model, voice=voice_name, style=style, rate=rate, cache_dir=os.path.join(base, 'cache'))
         samples, sr = G.read_pcm(wav)
-        got = (cut or G.cut_at_pauses)(samples, sr, len(idx))
-        if got is None:
-            raise G.TtsError('%s: the answer could not be cut into its %d paragraphs at the pauses.' % (lang, len(idx)))
+        try:
+            got = (cut or G.cut_at_pauses)(samples, sr, len(idx))
+            if got is None:
+                raise G.TtsError('%s: the answer could not be cut into its %d paragraphs at the pauses.' % (lang, len(idx)))
+            G.check_lengths(got, sr, [items[i][3] for i in idx], ['%s %s' % (lang, items[i][0]) for i in idx])
+        except G.TtsError:
+            # (this answer is not used again: the next run asks anew; the file is kept beside, renamed)
+            G.reject(os.path.join(base, 'cache'), name)
+            raise
         for i, p in zip(idx, got):
             pieces[i] = (p, sr)
+    return pieces, items, files
+
+
+def gemini_voices(lang, vids, opt, tts=None, cut=None):
+    """The narration of the given videos of a language by the Gemini API (only those made); returns the videos made."""
+    import gemini_tts as G
+    model, (voice_name,), _ = gemini_settings(opt)
+    want = [n for n, _ in vids if os.path.exists(os.path.join(WORK, 'out', lang, n + '.mp4'))]
+    if not want:
+        return []
+    pieces, items, _ = gemini_pieces(lang, opt, tts, cut)
+    base = os.path.join(WORK, 'voice-gemini')
     made = []
     for name, segs in vids:
-        mine = [(k, it) for k, it in enumerate(items) if it[0] == name]
-        if not mine:
+        if name not in want:
             continue
+        mine = [(k, it) for k, it in enumerate(items) if it[0] == name]
         d = os.path.join(base, lang, name)
         os.makedirs(d, exist_ok=True)
         ins, fl, long_ = [], [], 0
@@ -228,23 +303,95 @@ def gemini_voices(lang, vids, opt, tts=None, cut=None):
     return made
 
 
-def main():
-    for lang in LANGS:
-        L = PLAN['langs'][lang]
-        vids = [('promo', L['promo']), ('youtube', L['youtube'])] + [(s['name'], s['segments']) for s in L['shorts']]
-        vids = [(n, s) for n, s in vids if not ONLY or n in ONLY]
-        if OPT['engine'] == 'gemini':
-            import gemini_tts as G
-            try:
-                gemini_voices(lang, vids, OPT)
-            except G.DailyLimit as e:
-                print(str(e))
-                return 2
-            except G.TtsError as e:
-                print('%s: %s' % (lang, e))
-                return 1
+def gemini_sample(lang, opt, tts=None):
+    """--sample N: the first N paragraphs of the language in one request for each voice, written to
+    voice-gemini/sample/<lang>-<model>-<voice>.wav (no video, no ffmpeg)."""
+    import gemini_tts as G
+    tts = tts or G.synthesize
+    model, voices, style = gemini_settings(opt, one_voice=False)
+    base = os.path.join(WORK, 'voice-gemini')
+    rate = G.Rate(os.path.join(base, 'rate.json'))
+    paras = [it[3] for it in paragraphs_of(lang)[:opt['sample']]]
+    text = G.transcript(paras)
+    out = []
+    for v in voices:
+        wav = tts(text, model=model, voice=v, style=style, rate=rate, cache_dir=os.path.join(base, 'cache'))
+        d = os.path.join(base, 'sample')
+        os.makedirs(d, exist_ok=True)
+        path = os.path.join(d, '%s-%s-%s.wav' % (lang, model, v))
+        with open(path + '.part', 'wb') as f:
+            f.write(wav)
+        os.replace(path + '.part', path)
+        print('%s: %s (%d paragraphs, %.1f s)' % (lang, os.path.relpath(path, WORK), len(paras), G.wav_seconds(wav)))
+        out.append(path)
+    return out
+
+
+def gemini_synth_only(langs, opt, tts=None, today=None):
+    """--synth-only: the audio of every paragraph of the languages (without the videos), into voice-gemini/cache,
+    checked as the run with the videos checks it; then voice-gemini-<date>.zip with the cache, the samples and a
+    manifest (no ffmpeg). Returns (the zip, the languages done, the error that stopped it or None)."""
+    import gemini_tts as G
+    model, (voice_name,), style = gemini_settings(opt)
+    base = os.path.join(WORK, 'voice-gemini')
+    done, man, err = [], {'model': model, 'voice': voice_name, 'style': style, 'langs': {}}, None
+    for lang in langs:
+        try:
+            pieces, items, files = gemini_pieces(lang, opt, tts)
+        except G.DailyLimit as e:
+            err = e
+            break
+        except G.TtsError as e:
+            err = e
+            print('%s: %s' % (lang, e))
             continue
-        for name, segs in vids:
+        man['langs'][lang] = {'paragraphs': len(items), 'files': files,
+                              'seconds': round(sum(len(p) / float(sr) for p, sr in pieces), 1)}
+        print('%s: %d paragraphs, %.1f s of narration in %s' % (lang, len(items), man['langs'][lang]['seconds'], ', '.join(files)))
+        done.append(lang)
+    os.makedirs(base, exist_ok=True)
+    with open(os.path.join(base, 'manifest.json'), 'w', encoding='utf-8') as f:
+        json.dump(man, f, ensure_ascii=False, indent=1)
+    day = (today or datetime.datetime.now(G.JST)).strftime('%Y%m%d')
+    zpath = os.path.join(WORK, 'voice-gemini-%s.zip' % day)
+    with zipfile.ZipFile(zpath + '.part', 'w', zipfile.ZIP_DEFLATED) as z:
+        z.write(os.path.join(base, 'manifest.json'), 'voice-gemini/manifest.json')
+        for sub in ('cache', 'sample'):
+            d = os.path.join(base, sub)
+            for fn in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+                if fn.endswith('.wav') and not fn.endswith('.rejected.wav'):
+                    z.write(os.path.join(d, fn), 'voice-gemini/%s/%s' % (sub, fn))
+    os.replace(zpath + '.part', zpath)
+    print('%s (%d of %d languages)' % (os.path.relpath(zpath, WORK), len(done), len(langs)))
+    return zpath, done, err
+
+
+def main():
+    if OPT['engine'] == 'gemini':
+        import gemini_tts as G
+        try:
+            if OPT['synth-only']:
+                _, _, err = gemini_synth_only(LANGS, OPT)
+                if err:
+                    print(str(err))
+                    return 2 if isinstance(err, G.DailyLimit) else 1
+                return 0
+            for lang in LANGS:
+                if OPT['sample'] is not None:
+                    gemini_sample(lang, OPT)
+                else:
+                    gemini_voices(lang, [(n, s) for n, s in all_videos(lang) if not ONLY or n in ONLY], OPT)
+        except G.DailyLimit as e:
+            print(str(e))
+            return 2
+        except G.TtsError as e:
+            print(str(e))
+            return 1
+        return 0
+    for lang in LANGS:
+        for name, segs in all_videos(lang):
+            if ONLY and name not in ONLY:
+                continue
             voice(lang, name, segs)
     return 0
 

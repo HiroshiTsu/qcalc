@@ -19,7 +19,7 @@ the Text-to-speech guide; the Interactions API):
 
   - The text is read word for word: an instruction such as "read it brightly:" in the text would be read
     out too. How to speak goes into speech_metadata (its style); the text has only the narration, with
-    the point-in-time tag <short pause> between paragraphs.
+    the documented tag <long pause> between paragraphs (once: stacking tags is not documented).
   - The audio is WAV by default (audio/wav, a RIFF header, 24 kHz, mono, 16-bit). It is written as it
     comes; a WAV header is added only to headerless PCM (audio/l16), never a second time. The format is
     decided by what comes back (the mime type and the first bytes).
@@ -58,7 +58,8 @@ TOKENS_PER_MINUTE = 10000
 TOKENS_PER_REQUEST = 8192
 # what one request may hold, by the estimate below (which counts high): under both limits, with room
 REQUEST_BUDGET = 7000
-PAUSE = '<short pause>'
+# between paragraphs: the documented tag for a long pause (Text-to-speech guide), once (stacking tags is not documented)
+PAUSE = '<long pause>'
 DEFAULT_VOICE = 'Kore'
 DEFAULT_STYLE = 'A calm, friendly and clear narrator introducing an app, at a natural, unhurried pace.'
 
@@ -265,8 +266,10 @@ def quota_kind(err):
 # ---- the local count of requests (rate.json)
 
 class Rate:
-    def __init__(self, path, clock=time.time, sleep=time.sleep, log=print):
-        self.path, self.clock, self.sleep, self.log = path, clock, sleep, log
+    def __init__(self, path, clock=None, sleep=None, log=print):
+        self.path, self.log = path, log
+        self.clock = clock or (lambda: time.time())
+        self.sleep = sleep or (lambda s: time.sleep(s))
         try:
             with open(path, encoding='utf-8') as f:
                 self.s = json.load(f)
@@ -323,15 +326,15 @@ class Rate:
 # ---- one narration
 
 def synthesize(text, model=DEFAULT_MODEL, voice=DEFAULT_VOICE, style=DEFAULT_STYLE, key=None, rate=None,
-               cache_dir=None, url=URL, post=post_json, log=print, tries=3):
+               cache_dir=None, url=URL, post=None, log=print, tries=3):
     """WAV bytes of the text read by the model (from the cache when the same request was answered)."""
     check_model(model)
+    post = post or post_json
     tokens = estimate_tokens(text) + estimate_tokens(style or '')
     if tokens > TOKENS_PER_REQUEST:
         raise TtsError('The text is too long for one request (about %d tokens, at most %d); split it.' % (tokens, TOKENS_PER_REQUEST))
     body = request_body(model, text, voice, style)
-    h = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()[:20]
-    cached = os.path.join(cache_dir, '%s-%s.wav' % (model, h)) if cache_dir else None
+    cached = os.path.join(cache_dir, cache_name(model, voice, style, text)) if cache_dir else None
     if cached and os.path.exists(cached):
         with open(cached, 'rb') as f:
             return f.read()
@@ -370,6 +373,30 @@ def synthesize(text, model=DEFAULT_MODEL, voice=DEFAULT_VOICE, style=DEFAULT_STY
         msg = ((ans or {}).get('error') or {}).get('message') or raw[:300]
         raise TtsError('The server answered %d: %s' % (status, msg))
     raise TtsError('No answer after %d tries.' % tries)
+
+
+# ---- the cache: one file for each request, named by what decides the answer
+
+def _h(s, n):
+    return hashlib.sha256((s or '').encode('utf-8')).hexdigest()[:n]
+
+
+def cache_name(model, voice, style, text):
+    """<model>-<voice>-s<hash of the style>-t<hash of the text>.wav: the same on any computer for the same request
+    (a run of --synth-only elsewhere and a run here with the videos find the same file)."""
+    return '%s-%s-s%s-t%s.wav' % (model, re.sub(r'[^A-Za-z0-9_.-]', '_', voice), _h(style, 8), _h(text, 16))
+
+
+def reject(cache_dir, name):
+    """An answer that could not be used: renamed beside (<name>.rejected.wav), so the next run asks anew."""
+    p = os.path.join(cache_dir, name)
+    if os.path.exists(p):
+        os.replace(p, p[:-4] + '.rejected.wav')
+
+
+def wav_seconds(wav_bytes):
+    with wave.open(io.BytesIO(wav_bytes)) as w:
+        return w.getnframes() / float(w.getframerate())
 
 
 # ---- the audio of several paragraphs, cut at its pauses
@@ -428,3 +455,24 @@ def cut_at_pauses(samples, rate, parts, min_gap=0.25):
         b = min(len(rms), b + 5)
         pieces.append(samples[a * win:b * win])
     return pieces
+
+
+def check_lengths(pieces, rate, texts, names=None):
+    """After the cut: the seconds of each paragraph per character of its text. A paragraph under half or over twice
+    the median was most likely cut in the wrong place (a pause inside a sentence longer than one between
+    paragraphs); it stops with those paragraphs named, so that no audio out of place is made."""
+    if len(pieces) < 2:
+        return []
+    names = names or ['paragraph'] * len(pieces)
+    per = []
+    for p, t in zip(pieces, texts):
+        n = max(1, len(re.sub(r'\s+', '', t)))
+        per.append(len(p) / float(rate) / n)
+    s = sorted(per)
+    k = len(s) // 2
+    m = s[k] if len(s) % 2 else (s[k - 1] + s[k]) / 2
+    bad = [i for i, x in enumerate(per) if x < m / 2 or x > m * 2]
+    if bad:
+        rows = ['paragraph %d (%s): %.3f s a character (median %.3f), "%s"' % (i + 1, names[i], per[i], m, texts[i][:30]) for i in bad]
+        raise TtsError('The cut at the pauses looks wrong:\n  ' + '\n  '.join(rows))
+    return per
