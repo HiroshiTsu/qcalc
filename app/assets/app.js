@@ -6817,6 +6817,8 @@
   // the tools come back only when other formulas are drawn. (exprs: the formulas as first read; fresh until then)
   function solidNow() {
     const so = Q3.solid;
+    // (D6: a solid of "Shapes" has no formulas: its values stay while it is shown)
+    if (so && so.model) { if (!Q3.model) Q3.solid = null; return Q3.solid; }
     if (so && !so.fresh && (!Q3.exprs || so.exprs !== Q3.exprs.join('\n'))) Q3.solid = null;
     return Q3.solid;
   }
@@ -11707,7 +11709,7 @@
     if (headCache.has(key)) return headCache.get(key);
     const s = {};
     for (const n of Object.keys(v)) {
-      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) to ${ctx.base}` : geoValue(v[n], '', '');
+      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) / (1 ${ctx.base})` : geoValue(v[n], '', ''); // (BG22: a number without a unit)
       s[n] = await numValue(e);
     }
     if (headCache.size > 40) headCache.clear();
@@ -11819,7 +11821,7 @@
   async function ellipsoidArea(v, ctx) {
     const nums = [];
     for (const n of ['a', 'b', 'c']) {
-      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) to ${ctx.base}` : geoValue(v[n], '', '');
+      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) / (1 ${ctx.base})` : geoValue(v[n], '', ''); // (BG22: a number without a unit)
       const x = await numValue(e);
       if (!(x > 0)) return null;
       nums.push(x);
@@ -12248,7 +12250,7 @@
         return lab;
       };
       // the number of a result as the tool shows it (the part after ≈, without "≈")
-      const approxOf = (t) => { const s = String(t || ''), i = s.lastIndexOf('≈'); return (i >= 0 ? s.slice(i + 1) : s).trim(); };
+      const approxOf = (t) => { const s = String(t || ''), i = s.lastIndexOf('≈'); return (i >= 0 ? s.slice(i + 1) : s).replace(/^\s*=\s*/, '').trim(); };
       const rowOf = (pred) => rows.find(pred);
       const FULL = () => tr('Full', '満杯に対して'), CAP = () => tr('Capacity (full)', '満杯の量');
       let liveT = 0, liveAt = 0;
