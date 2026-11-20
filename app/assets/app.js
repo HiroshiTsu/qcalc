@@ -12556,8 +12556,12 @@
         const tankNow = () => {
           const T = model.tank, liq = rowOf((r) => r.def[3] === 3), pc = rowOf((r) => r.def[0] === FULL()), cap = rowOf((r) => r.def[0] === CAP());
           if (fresh() && liq && liq.result && pc && pc.result) return { amount: approxOf(liq.shown), pct: approxOf(pc.shown), liq: liq.shown, cap: cap && cap.result ? cap.shown : '' };
-          const x = T.V(T.h) * model.vf, u = model.vunit ? ' ' + model.vunit : '', pq = digNum(T.V(T.h) / T.full * 100, 'pct', 4) + ' %';
-          return { amount: digNum(x, 'vol', 10) + u, pct: pq, liq: '≈ ' + digNum(x, 'vol', 10) + u, cap: '≈ ' + digNum(T.full * model.vf, 'vol', 10) + u };
+          // (while the level is dragged, before the tool has worked its rows out: the numbers written as the tool
+          // writes them (the digits of the setting, or the calculator's precision; groups of three only with "Digit
+          // grouping"), and the capacity, which does not change, as the tool has it; D6P)
+          const asRow = (v, kind) => digText(v, digSpec(kind) || { mode: 'sig', n: Math.min(Number(S.precision) || 10, DIG_MAX), trim: true }, !!S.grouping);
+          const x = T.V(T.h) * model.vf, u = model.vunit ? ' ' + model.vunit : '', pq = asRow(T.V(T.h) / T.full * 100, 'pct') + ' %';
+          return { amount: asRow(x, 'vol') + u, pct: pq, liq: '≈ ' + asRow(x, 'vol') + u, cap: cap && cap.result ? cap.shown : '≈ ' + asRow(T.full * model.vf, 'vol') + u };
         };
         const link = G.link3d = {
           model, title: sh.name, scale,
