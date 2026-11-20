@@ -22,6 +22,8 @@ added to the app.
 | `video_voice.py` | Adds a narration to the videos at the times of the subtitles: a placeholder by speech synthesis on the work machine (Open JTalk, eSpeak NG), or with `--engine gemini` by the Gemini API (`gemini_tts.py`). |
 | `gemini_tts.py` | Speech synthesis with the Gemini API (gemini-3.8-flash-tts; the spare gemini-3.8-flash-lite-tts with `--model`): the Interactions API, the text read word for word with how to read in `speech_metadata`, WAV as it comes (a header only for headerless PCM), the free tier's limits kept here (3 a minute, 10 a day, 10,000 input tokens a minute; at most 8,192 a request, longer narrations split between paragraphs), the time the daily count starts again (midnight Pacific time, 17:00 in Japan in winter), answers kept so a video made again uses no request (named by model, voice, style and text, the same on any computer), the cut at the pauses checked by the seconds per character. `video_voice.py --sample` (voices to compare) and `--synth-only` (all the audio without videos, then a zip) need Python only; the steps for the owner are in `TTS-GEMINI-ja.md`. The key from `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). |
 | `test_gemini_tts.py` | Tests of the two with made-up answers of the server (a local HTTP server; no key, no network). |
+| `chatterbox_tts.py` | The narration by Chatterbox Multilingual V3 (Resemble AI, MIT) on the owner's own computer: free, no daily limit, one synthesis per paragraph (the same paragraphs and texts as `video_voice.py`), so nothing is cut afterwards. Writes `<work>/voice-chatterbox/<lang>/<video>-<NN>-<hash>.wav`, a `manifest.json` (video, segment, start, room, text, file, seconds, seed) and a zip per language; goes on where it stopped; `--sample tricky` (the paragraphs with numbers and signs), `--redo lang:n` (another seed), readings from `tts-readings.json`. Runs in a Python 3.11 environment with chatterbox-tts; the steps for the owner are in `TTS-CHATTERBOX-ja.md`. |
+| `test_chatterbox_tts.py` | Its tests with a made-up engine (no model, no network, no torch). |
 
 ## Making everything again
 
@@ -46,6 +48,8 @@ GEMINI_API_KEY=… python3 store/tools/video_voice.py $W ja --engine gemini   # 
 python3 store/tools/video_voice.py $W ja,en --sample 3 --voice Kore,Achird,Sulafat   # voices to compare (one request each)
 python3 store/tools/video_voice.py $W --synth-only --voice Achird   # all the audio without videos → $W/voice-gemini-<date>.zip
 python3 store/tools/test_gemini_tts.py                      # its tests (no key, no network)
+python store/tools/chatterbox_tts.py $W                      # the narration by Chatterbox, on the owner's computer (TTS-CHATTERBOX-ja.md)
+python3 store/tools/test_chatterbox_tts.py                  # its tests (no model)
 python3 store/tools/listing_check.py                        # the words on pictures and in subtitles
 ```
 
