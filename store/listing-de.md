@@ -37,7 +37,7 @@ Probier „100 km/h to mph“, „solve(x^2 − 5x + 6 = 0)“ oder „3/8 + 1/6
 ■ Für Baustelle, Werkstatt und Konstruktion
 • Flächen und Volumen von 22 Formen, Füllmenge von Tanks (Füllhöhe ⇄ Volumen), Volumen aus gemessenen Querschnitten, Gewicht aus der Dichte
 • Mit Einheiten rechnen (2,4 m × 1,8 m × 0,15 m to L) und mit Fehlerfortpflanzung
-• QCalc Pro: Tankböden (Halbkugel, Halbellipse, Klöpperboden) mit Peiltabellen; Volumen, Fassungsvermögen und Gewicht eines Körpers aus einem gemessenen Profil; STL-Dateien für den 3D-Druck; Tabellen als CSV
+• QCalc Pro: Figuren und Tanks in 3D (Füllstand ziehen); Tankböden (Halbkugel, Halbellipse, Klöpperboden) mit Peiltabellen; Volumen, Fassungsvermögen und Gewicht eines Körpers aus einem gemessenen Profil; STL-Dateien für den 3D-Druck; Tabellen als CSV
 
 ■ Für Einkauf und Haushaltskasse
 • Preis mit Rabatt und MwSt. (19 % oder 7 %), Prozentrechnung, Grundpreise vergleichen, Rechnung teilen, monatliche Kreditrate mit Tilgungsplan, Sparen mit Zinseszins, Daten (Tage ab heute, Alter), Arbeitszeit und Lohn
@@ -51,7 +51,7 @@ Probier „100 km/h to mph“, „solve(x^2 − 5x + 6 = 0)“ oder „3/8 + 1/6
 • Sieben Sprachen, darunter Deutsch. Die Anleitung ist in der App und funktioniert offline: „?“ öffnet die passende Seite
 
 ■ QCalc Pro (ein In-App-Kauf)
-Der 3D-Graph (Volumen und Oberfläche, Rotationskörper in 3D, bewegte GIFs), mehr als 1.000 Stellen, Tankböden, Körper aus einem Profil, STL, CSV von Tabellen und Verlauf, Farbthemen und mehr als eine Rechennotiz. Kein Abo. Alles für Lernen und Alltag funktioniert auch ohne Kauf. Den Preis zeigt Google Play beim Kauf an.
+Der 3D-Graph (Volumen und Oberfläche, Rotationskörper, Figuren und Tanks in 3D, bewegte GIFs), mehr als 1.000 Stellen, Tankböden, Körper aus einem Profil, STL, CSV von Tabellen und Verlauf, Farbthemen und mehr als eine Rechennotiz. Kein Abo. Alles für Lernen und Alltag funktioniert auch ohne Kauf. Den Preis zeigt Google Play beim Kauf an.
 
 ■ Datenschutz und offener Quellcode
 • Es gibt keine Werbung und kein Abo.

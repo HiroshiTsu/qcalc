@@ -18,8 +18,8 @@ Chapters:
 1:02 單位與匯率換算
 1:16 從 2D 到 3D 旋轉體
 1:46 儲槽、輪廓與 STL（Pro）
-2:06 紀錄與計算筆記
-2:22 使用說明與總結
+2:10 紀錄與計算筆記
+2:26 使用說明與總結
 
 User manual: https://hiroshitsu.github.io/qcalc/manual/
 Source code: https://github.com/HiroshiTsu/qcalc

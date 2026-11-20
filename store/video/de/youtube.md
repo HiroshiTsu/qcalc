@@ -18,8 +18,8 @@ Chapters:
 1:02 Einheiten und Währungen
 1:16 Vom 2D-Graphen zum 3D-Körper
 1:46 Tanks, Profile und STL (Pro)
-2:06 Verlauf und Rechennotizen
-2:22 Hilfe und Zusammenfassung
+2:10 Verlauf und Rechennotizen
+2:26 Hilfe und Zusammenfassung
 
 User manual: https://hiroshitsu.github.io/qcalc/manual/
 Source code: https://github.com/HiroshiTsu/qcalc

@@ -30,7 +30,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:39–0:44**
 - 00:39–00:43 Rechnen wie auf Papier, vom Graphen zum 3D-Körper. QCalc.
 
-## YouTube video (16:9, 2:44) — youtube.srt
+## YouTube video (16:9, 2:48) — youtube.srt
 
 **0:00–0:12** 【Einleitung】
 - 00:00–00:02 Im Taschenrechner sind Formeln mühsam einzutippen.
@@ -71,21 +71,22 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 - 01:46–01:51 QCalc Pro nimmt gemessene Positionen und Durchmesser,
 - 01:51–01:57 berechnet Volumen, Inhalt und Gewicht und speichert eine STL-Datei.
 
-**1:58–2:06**
-- 01:58–02:05 Auch die Füllmenge eines Tanks aus der Füllhöhe.
+**1:58–2:10**
+- 01:58–02:02 Auch die Füllmenge eines Tanks aus der Füllhöhe.
+- 02:02–02:09 Mit QCalc Pro den Füllstand in 3D ziehen und die Menge ablesen.
 
-**2:06–2:22** 【Verlauf und Rechennotizen】
-- 02:06–02:10 Rechennotizen rechnen Zeile für Zeile, mit Summe.
-- 02:10–02:16 Werte bekommen Namen, etwa Miete = 980 EUR.
-- 02:16–02:21 Den Verlauf kannst du durchsuchen, anheften und addieren.
+**2:10–2:26** 【Verlauf und Rechennotizen】
+- 02:10–02:14 Rechennotizen rechnen Zeile für Zeile, mit Summe.
+- 02:14–02:20 Werte bekommen Namen, etwa Miete = 980 EUR.
+- 02:20–02:25 Den Verlauf kannst du durchsuchen, anheften und addieren.
 
-**2:22–2:34** 【Hilfe und Zusammenfassung】
-- 02:22–02:30 Das ? auf jedem Bildschirm öffnet die passende Seite der Anleitung.
-- 02:30–02:33 Die Anleitung funktioniert offline.
+**2:26–2:38** 【Hilfe und Zusammenfassung】
+- 02:26–02:34 Das ? auf jedem Bildschirm öffnet die passende Seite der Anleitung.
+- 02:34–02:37 Die Anleitung funktioniert offline.
 
-**2:34–2:44**
-- 02:34–02:38 Alles wird auf deinem Handy berechnet, ohne persönliche Daten zu sammeln.
-- 02:39–02:43 Rechnen wie auf Papier, vom Graphen zum 3D-Körper. Das ist QCalc.
+**2:38–2:48**
+- 02:38–02:42 Alles wird auf deinem Handy berechnet, ohne persönliche Daten zu sammeln.
+- 02:43–02:47 Rechnen wie auf Papier, vom Graphen zum 3D-Körper. Das ist QCalc.
 
 ## Short 1 (9:16, 20 s) — short-1-solid.srt
 
@@ -110,3 +111,10 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:11–0:22**
 - 00:11–00:15 Die Monatsrate eines Kredits
 - 00:15–00:21 und gleich der ganze Tilgungsplan.
+
+## Short 4 (9:16, 16 s) — short-4-tank.srt
+
+**0:00–0:16**
+- 00:00–00:05 Ein liegender Tank mit Böden: ⟳ 3D antippen.
+- 00:05–00:10 Die Flüssigkeit, mit Menge und % am Füllstand.
+- 00:11–00:15 Den Füllstand ziehen, und die Menge folgt.

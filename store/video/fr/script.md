@@ -30,7 +30,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:39–0:44**
 - 00:39–00:43 Vos calculs comme sur papier, du graphique au solide 3D. QCalc.
 
-## YouTube video (16:9, 2:44) — youtube.srt
+## YouTube video (16:9, 2:48) — youtube.srt
 
 **0:00–0:12** 【Introduction】
 - 00:00–00:03 Sur une calculatrice, taper une formule est pénible.
@@ -71,21 +71,22 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 - 01:46–01:50 QCalc Pro part des positions et diamètres mesurés,
 - 01:50–01:57 donne le volume, la contenance et la masse, et enregistre un STL.
 
-**1:58–2:06**
-- 01:58–02:05 Il trouve aussi le liquide d’une cuve d’après sa hauteur.
+**1:58–2:10**
+- 01:58–02:03 Il trouve aussi le liquide d’une cuve d’après sa hauteur.
+- 02:03–02:09 Avec QCalc Pro, faites glisser le niveau en 3D : la quantité suit.
 
-**2:06–2:22** 【Historique et notes de calcul】
-- 02:06–02:12 Les notes de calcul vont ligne par ligne, avec le total.
-- 02:12–02:18 On peut nommer les valeurs, comme loyer = 850 EUR.
-- 02:18–02:21 L’historique se cherche, s’épingle et s’additionne.
+**2:10–2:26** 【Historique et notes de calcul】
+- 02:10–02:16 Les notes de calcul vont ligne par ligne, avec le total.
+- 02:16–02:22 On peut nommer les valeurs, comme loyer = 850 EUR.
+- 02:22–02:25 L’historique se cherche, s’épingle et s’additionne.
 
-**2:22–2:34** 【Aide et résumé】
-- 02:22–02:29 Touchez ? sur un écran pour ouvrir sa page du mode d’emploi.
-- 02:29–02:33 Le mode d’emploi fonctionne hors ligne.
+**2:26–2:38** 【Aide et résumé】
+- 02:26–02:33 Touchez ? sur un écran pour ouvrir sa page du mode d’emploi.
+- 02:33–02:37 Le mode d’emploi fonctionne hors ligne.
 
-**2:34–2:44**
-- 02:34–02:38 Tout est calculé sur votre téléphone, sans collecte de données personnelles.
-- 02:38–02:43 Vos calculs comme sur papier, du graphique au solide 3D. Voici QCalc.
+**2:38–2:48**
+- 02:38–02:42 Tout est calculé sur votre téléphone, sans collecte de données personnelles.
+- 02:42–02:47 Vos calculs comme sur papier, du graphique au solide 3D. Voici QCalc.
 
 ## Short 1 (9:16, 20 s) — short-1-solid.srt
 
@@ -110,3 +111,10 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:11–0:22**
 - 00:11–00:15 La mensualité d’un prêt
 - 00:15–00:21 et tout le tableau d’un coup.
+
+## Short 4 (9:16, 16 s) — short-4-tank.srt
+
+**0:00–0:16**
+- 00:00–00:05 Une cuve couchée avec ses fonds : touchez ⟳ 3D.
+- 00:05–00:11 Le liquide, avec la quantité et le % au niveau.
+- 00:11–00:15 Faites glisser le niveau : la quantité suit.

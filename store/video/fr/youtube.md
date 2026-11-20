@@ -18,8 +18,8 @@ Chapters:
 1:02 Unités et devises
 1:16 Du graphique 2D au solide 3D
 1:46 Cuves, profils et STL (Pro)
-2:06 Historique et notes de calcul
-2:22 Aide et résumé
+2:10 Historique et notes de calcul
+2:26 Aide et résumé
 
 User manual: https://hiroshitsu.github.io/qcalc/manual/
 Source code: https://github.com/HiroshiTsu/qcalc

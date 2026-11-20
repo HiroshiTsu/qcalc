@@ -8,7 +8,7 @@
 |---|---|
 | 調べた結果（よく出るアプリ、不満、検索の言葉、方針） | store/research-1.12.md |
 | 掲載情報（12 の地域） | store/listing-<言語>.md、貼り付け用は store/play-import/<地域>/ |
-| スクリーンショット | store/screenshots-1.12/<セット>/（スマホ 8 枚、横長 1 枚、7 インチ 4 枚、10 インチ 4 枚） |
+| スクリーンショット | store/screenshots-1.12/<セット>/（スマホ 8 枚、横長 1 枚、7 インチ 5 枚、10 インチ 5 枚。alt/ はスマホ 5 枚目の差し替え候補で、上げない） |
 | フィーチャー グラフィック | store/feature-graphic-1.12-<言語>.png（ja・en・de・es・fr・ko・zh-TW） |
 | 動画の台本・絵コンテ・字幕・YouTube の文 | store/video/<言語>/（script.md、storyboard.md、*.srt、youtube.md、thumbnail.png） |
 | 動画（mp4） | リポジトリには入れていない。ファイルで送ったもの（言語ごとに promo・youtube・short-1〜3） |

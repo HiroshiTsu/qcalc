@@ -18,8 +18,8 @@ QCalc は、式を紙に書くとおりに打って計算できる Android の�
 1:02 単位・通貨の換算
 1:16 2D から 3D の回転体
 1:46 タンク・輪郭・STL（Pro）
-2:06 履歴・計算メモ
-2:22 使い方とまとめ
+2:10 履歴・計算メモ
+2:26 使い方とまとめ
 
 取扱説明書：https://hiroshitsu.github.io/qcalc/manual/
 ソースコード：https://github.com/HiroshiTsu/qcalc

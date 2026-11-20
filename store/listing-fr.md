@@ -40,7 +40,7 @@ Essayez « 100 km/h to mph », « solve(x^2 − 5x + 6 = 0) » ou « 3/8 + 1/6 �
 ■ Pour le chantier, l’atelier et le bureau d’études
 • Aires et volumes de 22 formes, liquide dans une cuve (hauteur ⇄ volume), volume d’après des sections mesurées, masse d’après la masse volumique
 • Calculez avec les unités (2,4 m × 1,8 m × 0,15 m to L) et la propagation des incertitudes
-• QCalc Pro : fonds de cuves (hémisphériques, elliptiques, torisphériques) avec barèmes de jaugeage ; volume, contenance et masse d’un solide d’après un profil mesuré ; fichiers STL pour l’impression 3D ; tableaux en CSV
+• QCalc Pro : formes et cuves en 3D (niveau à glisser) ; fonds de cuves (hémisphériques, elliptiques, torisphériques) avec barèmes de jaugeage ; volume, contenance et masse d’un solide d’après un profil mesuré ; fichiers STL pour l’impression 3D ; tableaux en CSV
 
 ■ Pour les courses et le budget
 • Prix avec remise et TVA (20 %, 10 %, 5,5 %), pourcentages, prix au kilo ou à l’unité, partage de l’addition, mensualité d’un prêt immobilier avec tableau d’amortissement, épargne, dates (dans X jours, âge), heures travaillées et salaire
@@ -54,7 +54,7 @@ Essayez « 100 km/h to mph », « solve(x^2 − 5x + 6 = 0) » ou « 3/8 + 1/6 �
 • Sept langues, dont le français. Le mode d’emploi est dans l’application et fonctionne hors ligne : « ? » ouvre la bonne page
 
 ■ QCalc Pro (un achat dans l’application)
-Graphique 3D (volume et aire, solides de révolution en 3D, GIF animés), plus de 1 000 chiffres, fonds de cuves, solides d’après un profil, STL, CSV des tableaux et de l’historique, thèmes de couleurs, plusieurs notes de calcul. Pas d’abonnement. Tout ce qui sert aux études et au quotidien fonctionne sans achat. Le prix s’affiche sur l’écran d’achat de Google Play.
+Graphique 3D (volume et aire, solides de révolution, formes et cuves en 3D, GIF animés), plus de 1 000 chiffres, fonds de cuves, solides d’après un profil, STL, CSV des tableaux et de l’historique, thèmes de couleurs, plusieurs notes de calcul. Pas d’abonnement. Tout ce qui sert aux études et au quotidien fonctionne sans achat. Le prix s’affiche sur l’écran d’achat de Google Play.
 
 ■ Confidentialité et code ouvert
 • Il n’y a ni publicité ni abonnement.
@@ -98,11 +98,11 @@ Essayez « 100 km/h to mph », « solve(x^2 − 5x + 6 = 0) » ou « 3/8 + 1/6 �
 ■ Pour le chantier, l’atelier et la conception
 • Aires et volumes de 22 formes, liquide dans un réservoir (hauteur ⇄ volume), volume d’après des sections mesurées, masse d’après la masse volumique
 • Calculez avec les unités (12 ft × 9,5 ft to m²) et la propagation des incertitudes
-• QCalc Pro : fonds de réservoirs (hémisphériques, elliptiques, torisphériques) avec tables de jaugeage ; volume, contenance et masse d’un solide d’après un profil mesuré ; fichiers STL pour l’impression 3D ; tableaux en CSV
+• QCalc Pro : formes et réservoirs en 3D (niveau à glisser) ; fonds de réservoirs (hémisphériques, elliptiques, torisphériques) avec tables de jaugeage ; volume, contenance et masse d’un solide d’après un profil mesuré ; fichiers STL pour l’impression 3D ; tableaux en CSV
 
 ■ Pour l’épicerie et le budget
-• Prix avec rabais et taxes (TPS et TVQ), pourcentages, prix à l’unité, partage de la facture, paiement mensuel d’un prêt hypothécaire avec tableau d’amortissement, épargne, dates (dans X jours, âge), heures travaillées et salaire
-• Devises aux taux de la Banque centrale européenne et d’autres sources
+• Prix avec rabais et taxes (TPS et TVQ), pourcentages, prix à l’unité, partage de facture, paiement mensuel d’un prêt hypothécaire avec tableau d’amortissement, épargne, dates (dans X jours, âge), heures travaillées et salaire
+• Devises aux taux de la Banque centrale européenne et d’autres
 • Notes de calcul : un calcul par ligne, avec total et valeurs nommées (loyer = 1650 CAD)
 
 ■ Simple à utiliser
@@ -112,7 +112,7 @@ Essayez « 100 km/h to mph », « solve(x^2 − 5x + 6 = 0) » ou « 3/8 + 1/6 �
 • Sept langues, dont le français. Le guide d’utilisation est dans l’application et fonctionne hors ligne : « ? » ouvre la bonne page
 
 ■ QCalc Pro (un achat intégré)
-Graphique 3D (volume et aire, solides de révolution en 3D, GIF animés), plus de 1 000 chiffres, fonds de réservoirs, solides d’après un profil, STL, CSV des tableaux et de l’historique, thèmes de couleurs, plusieurs notes de calcul. Pas d’abonnement. Tout ce qui sert aux études et au quotidien fonctionne sans achat. Le prix s’affiche sur l’écran d’achat de Google Play.
+Graphique 3D (volume et aire, solides de révolution, formes et réservoirs en 3D, GIF animés), plus de 1 000 chiffres, fonds de réservoirs, solides d’après un profil, STL, CSV des tableaux et de l’historique, thèmes de couleurs, plusieurs notes de calcul. Pas d’abonnement. Tout ce qui sert aux études et au quotidien fonctionne sans achat. Le prix s’affiche sur l’écran d’achat de Google Play.
 
 ■ Confidentialité et code ouvert
 • Il n’y a ni publicité ni abonnement.
@@ -127,7 +127,7 @@ Les résultats sont fournis à titre indicatif. Ne les utilisez pas pour des tra
 ■ Contact
 Bogues et suggestions : hiroshitsu.apps@gmail.com
 Guide d’utilisation avec photos et en PDF : https://hiroshitsu.github.io/qcalc/manual/
-Nécessite Android 7.0 ou plus récent sur un appareil ARM 64 bits (arm64).
+Nécessite Android 7.0 ou plus récent, ARM 64 bits (arm64).
 <!-- /listing -->
 
 ## Notes de version

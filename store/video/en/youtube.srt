@@ -83,34 +83,38 @@ QCalc Pro takes the positions and diameters you measured,
 gives the volume, capacity and weight, and saves an STL file.
 
 22
-00:01:58,150 --> 00:02:05,730
+00:01:58,150 --> 00:02:03,392
 It also finds the liquid in a tank from its level.
 
 23
-00:02:06,150 --> 00:02:11,985
-Calculation notes work a line at a time, with a total.
+00:02:03,512 --> 00:02:09,730
+With QCalc Pro, drag the level in 3D and watch the amount change.
 
 24
-00:02:12,105 --> 00:02:16,858
-You can name values, like rent = 1450 USD.
+00:02:10,150 --> 00:02:15,985
+Calculation notes work a line at a time, with a total.
 
 25
-00:02:16,978 --> 00:02:21,730
-The history can be searched, pinned and added up.
+00:02:16,105 --> 00:02:20,858
+You can name values, like rent = 1450 USD.
 
 26
-00:02:22,150 --> 00:02:30,977
-Tap ? on a screen to open its page of the user manual.
+00:02:20,978 --> 00:02:25,730
+The history can be searched, pinned and added up.
 
 27
-00:02:31,097 --> 00:02:33,730
-The manual works offline.
+00:02:26,150 --> 00:02:34,977
+Tap ? on a screen to open its page of the user manual.
 
 28
-00:02:34,150 --> 00:02:38,686
-Everything is calculated on your phone, and no personal data is collected.
+00:02:35,097 --> 00:02:37,730
+The manual works offline.
 
 29
-00:02:38,806 --> 00:02:43,730
+00:02:38,150 --> 00:02:42,686
+Everything is calculated on your phone, and no personal data is collected.
+
+30
+00:02:42,806 --> 00:02:47,730
 Math as you write it, from graphs to 3D solids. This is QCalc.
 

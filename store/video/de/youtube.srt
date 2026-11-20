@@ -83,34 +83,38 @@ QCalc Pro nimmt gemessene Positionen und Durchmesser,
 berechnet Volumen, Inhalt und Gewicht und speichert eine STL-Datei.
 
 22
-00:01:58,150 --> 00:02:05,730
+00:01:58,150 --> 00:02:02,710
 Auch die Füllmenge eines Tanks aus der Füllhöhe.
 
 23
-00:02:06,150 --> 00:02:10,808
-Rechennotizen rechnen Zeile für Zeile, mit Summe.
+00:02:02,830 --> 00:02:09,730
+Mit QCalc Pro den Füllstand in 3D ziehen und die Menge ablesen.
 
 24
-00:02:10,928 --> 00:02:16,269
-Werte bekommen Namen, etwa Miete = 980 EUR.
+00:02:10,150 --> 00:02:14,808
+Rechennotizen rechnen Zeile für Zeile, mit Summe.
 
 25
-00:02:16,389 --> 00:02:21,730
-Den Verlauf kannst du durchsuchen, anheften und addieren.
+00:02:14,928 --> 00:02:20,269
+Werte bekommen Namen, etwa Miete = 980 EUR.
 
 26
-00:02:22,150 --> 00:02:30,610
-Das ? auf jedem Bildschirm öffnet die passende Seite der Anleitung.
+00:02:20,389 --> 00:02:25,730
+Den Verlauf kannst du durchsuchen, anheften und addieren.
 
 27
-00:02:30,730 --> 00:02:33,730
-Die Anleitung funktioniert offline.
+00:02:26,150 --> 00:02:34,610
+Das ? auf jedem Bildschirm öffnet die passende Seite der Anleitung.
 
 28
-00:02:34,150 --> 00:02:38,880
-Alles wird auf deinem Handy berechnet, ohne persönliche Daten zu sammeln.
+00:02:34,730 --> 00:02:37,730
+Die Anleitung funktioniert offline.
 
 29
-00:02:39,000 --> 00:02:43,730
+00:02:38,150 --> 00:02:42,880
+Alles wird auf deinem Handy berechnet, ohne persönliche Daten zu sammeln.
+
+30
+00:02:43,000 --> 00:02:47,730
 Rechnen wie auf Papier, vom Graphen zum 3D-Körper. Das ist QCalc.
 

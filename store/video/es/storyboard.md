@@ -14,7 +14,7 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 | 0:33–0:39 | Tools → Calculation notes → the first example (names and a total) | Funciona sin conexión / No recoge datos personales | Todo se calcula en tu móvil. QCalc no recoge datos personales. |
 | 0:39–0:44 | Closing card: the icon, QCalc and the line of the language (not the app) | QCalc / Cuentas como en papel. De la gráfica al sólido 3D. | Cuentas como en papel, de la gráfica al sólido 3D. QCalc. |
 
-## YouTube video (16:9, 2:44)
+## YouTube video (16:9, 2:48)
 
 | Time | Screen | Headline on screen | Narration (subtitle) |
 |---|---|---|---|
@@ -27,10 +27,10 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 | 1:16–1:32 | 2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D: the 3D view opens at once, the solid grows from 0° to 360° with its volume V large above the graph (QCalc Pro; 1.12.0, BG20), then turned with a finger | Gira una región / y obtén un sólido (Vista 3D: QCalc Pro) | Dibuja dos funciones en la gráfica 2D y toca ⟳ 3D: la región se convierte en un sólido de revolución, con su volumen. Verlo en 3D es una función de QCalc Pro. |
 | 1:32–1:46 | 2D graph with the region turned (⟳ 3D, then ← Back to 2D): tap the y axis (the axis changes), then Show the method with lines | Cambia el eje / y ve el método | Toca un eje para girar la región a su alrededor, y muestra los discos o capas que suman el volumen. |
 | 1:46–1:58 | Tools → Solid from a profile (QCalc Pro) → the first example → View in 3D | Volumen y peso / de un perfil (QCalc Pro) | QCalc Pro toma las posiciones y diámetros medidos, da el volumen, la capacidad y el peso, y guarda un archivo STL. |
-| 1:58–2:06 | Tools → Tanks: liquid and level → horizontal cylinder 1 m × 2 m, 0.3 m → the results | Líquido en un depósito | También el líquido de un depósito según su nivel. |
-| 2:06–2:22 | Tools → Calculation notes → the first example (names and a total) | Notas de cálculo | Las notas de cálculo van línea a línea, con total. Puedes poner nombre a los valores, como alquiler = 950 EUR. El historial se puede buscar, fijar y sumar. |
-| 2:22–2:34 | Tools → Price → ? → the page of the user manual (in the app, offline) | Ayuda con ? | Toca ? en una pantalla para abrir su página del manual. El manual funciona sin conexión. |
-| 2:34–2:44 | Closing card: the icon, QCalc and the line of the language (not the app) | QCalc / Cuentas como en papel. De la gráfica al sólido 3D. | Todo se calcula en tu móvil y no se recogen datos personales. Cuentas como en papel, de la gráfica al sólido 3D. Esto es QCalc. |
+| 1:58–2:10 | Tools → Tanks: liquid and level → horizontal cylinder with semi-elliptical 2:1 heads, 1.2 m × 2.4 m, 30 % full, in litres → ⟳ 3D: the tank grows and the liquid rises, the amount and % at the level and the volume scale on the wall; a finger drags the level up (the amount follows), then turns the graph (QCalc Pro; 1.12.0, D6) | Líquido en un depósito, en 3D (QCalc Pro) | También el líquido de un depósito según su nivel. Con QCalc Pro, arrastra el nivel en 3D y mira cómo cambia la cantidad. |
+| 2:10–2:26 | Tools → Calculation notes → the first example (names and a total) | Notas de cálculo | Las notas de cálculo van línea a línea, con total. Puedes poner nombre a los valores, como alquiler = 950 EUR. El historial se puede buscar, fijar y sumar. |
+| 2:26–2:38 | Tools → Price → ? → the page of the user manual (in the app, offline) | Ayuda con ? | Toca ? en una pantalla para abrir su página del manual. El manual funciona sin conexión. |
+| 2:38–2:48 | Closing card: the icon, QCalc and the line of the language (not the app) | QCalc / Cuentas como en papel. De la gráfica al sólido 3D. | Todo se calcula en tu móvil y no se recogen datos personales. Cuentas como en papel, de la gráfica al sólido 3D. Esto es QCalc. |
 
 ## Short 1 (9:16, 20 s)
 
@@ -50,3 +50,9 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 |---|---|---|---|
 | 0:00–0:11 | Tools → Price: discount and tax → the first example | Precio con IVA | ¿Un precio con IVA? Toca un ejemplo y listo. |
 | 0:11–0:22 | Tools → Loan → the first example, then down to the repayment table | Cuota del préstamo | La cuota mensual de un préstamo y todo el cuadro a la vez. |
+
+## Short 4 (9:16, 16 s)
+
+| Time | Screen | Headline on screen | Narration (subtitle) |
+|---|---|---|---|
+| 0:00–0:16 | Tools → Tanks: liquid and level → horizontal cylinder with semi-elliptical 2:1 heads, 1.2 m × 2.4 m, 30 % full, in litres → ⟳ 3D: the tank grows and the liquid rises, the amount and % at the level and the volume scale on the wall; a finger drags the level up (the amount follows), then turns the graph (QCalc Pro; 1.12.0, D6) | El líquido del depósito, / en 3D (QCalc Pro) | Un depósito horizontal con fondos: toca ⟳ 3D. El líquido, con su cantidad y % junto al nivel. Arrastra el nivel y la cantidad cambia. |

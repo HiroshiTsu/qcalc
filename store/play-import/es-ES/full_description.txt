@@ -11,7 +11,7 @@ Prueba «100 km/h to mph», «solve(x^2 − 5x + 6 = 0)» o «3/8 + 1/6»: el re
 ■ Para la obra y el diseño
 • Áreas y volúmenes de 22 figuras, líquido en depósitos (nivel ⇄ volumen), volumen a partir de secciones medidas, peso a partir de la densidad
 • Calcula con las unidades puestas (2,4 m × 1,8 m × 0,15 m to L) y con propagación de errores
-• QCalc Pro: fondos de depósitos (semiesféricos, semielípticos, toriesféricos) con tablas de consulta; volumen, capacidad y peso de un sólido a partir de un perfil medido; archivos STL para impresión 3D; tablas en CSV
+• QCalc Pro: figuras y depósitos en 3D (nivel arrastrable); fondos de depósitos (semiesféricos, semielípticos, toriesféricos) con tablas de consulta; volumen, capacidad y peso de un sólido a partir de un perfil medido; archivos STL para impresión 3D; tablas en CSV
 
 ■ Para la compra y las cuentas de casa
 • Precio con descuento e IVA (21 %, 10 %, 4 %), porcentajes, comparar precio por unidad, dividir la cuenta, cuota mensual de un préstamo o hipoteca con cuadro de amortización, ahorro, fechas (días desde hoy, edad), horas trabajadas y sueldo
@@ -25,7 +25,7 @@ Prueba «100 km/h to mph», «solve(x^2 − 5x + 6 = 0)» o «3/8 + 1/6»: el re
 • Siete idiomas, entre ellos el español. El manual va dentro de la app y funciona sin conexión: toca «?» para abrir su página
 
 ■ QCalc Pro (una compra dentro de la app)
-La gráfica 3D (volumen y área, sólidos de revolución en 3D, GIF animados), más de 1000 cifras, fondos de depósitos, sólidos a partir de un perfil, STL, CSV de tablas y del historial, temas de color y más de una nota de cálculo. No es una suscripción. Todo lo necesario para estudiar y para el día a día funciona sin comprarlo. El precio aparece en la pantalla de compra de Google Play.
+La gráfica 3D (volumen y área, sólidos de revolución, figuras y depósitos en 3D, GIF animados), más de 1000 cifras, fondos de depósitos, sólidos a partir de un perfil, STL, CSV de tablas y del historial, temas de color y más de una nota de cálculo. No es una suscripción. Todo lo necesario para estudiar y para el día a día funciona sin comprarlo. El precio aparece en la pantalla de compra de Google Play.
 
 ■ Privacidad y código abierto
 • No hay anuncios ni suscripciones.

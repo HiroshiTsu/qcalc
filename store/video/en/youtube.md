@@ -18,8 +18,8 @@ Chapters:
 1:02 Units and currencies
 1:16 From 2D to a 3D solid
 1:46 Tanks, profiles and STL (Pro)
-2:06 History and calculation notes
-2:22 Help and summary
+2:10 History and calculation notes
+2:26 Help and summary
 
 User manual: https://hiroshitsu.github.io/qcalc/manual/
 Source code: https://github.com/HiroshiTsu/qcalc

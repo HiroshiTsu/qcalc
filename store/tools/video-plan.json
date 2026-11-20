@@ -1,5 +1,5 @@
 {
-  "_note": "The videos of stage M3 (QCalc 1.12.0). For each language: the Google Play promo (16:9, about 43 s), the YouTube video (16:9, about 2:42, with chapters) and three shorts (9:16, 20-22 s). Each segment: the scene of the app recorded for it (store/tools/video.js; 'end' is the closing card), its length in seconds, the headline on the screen, the label of a QCalc Pro feature, and the narration, which is also the subtitle (one cue per line). The narration is written to be read at the pace in 'pace' (characters or words per second). store/tools/video_plan.py writes script.md, storyboard.md, the SRT files and youtube.md from this file. No rank, price or promotion words on the screen or in the subtitles (store/tools/listing_check.py checks the SRT files).",
+  "_note": "The videos of stage M3 (QCalc 1.12.0). For each language: the Google Play promo (16:9, about 43 s), the YouTube video (16:9, about 2:42, with chapters) and four shorts (9:16, 16-22 s; the fourth, the tank in 3D, from 1.12.0 D6). Each segment: the scene of the app recorded for it (store/tools/video.js; 'end' is the closing card), its length in seconds, the headline on the screen, the label of a QCalc Pro feature, and the narration, which is also the subtitle (one cue per line). The narration is written to be read at the pace in 'pace' (characters or words per second). store/tools/video_plan.py writes script.md, storyboard.md, the SRT files and youtube.md from this file. No rank, price or promotion words on the screen or in the subtitles (store/tools/listing_check.py checks the SRT files).",
   "pace": {
     "ja": [
       7.0,
@@ -43,7 +43,8 @@
     "notes": "Tools → Calculation notes → the first example (names and a total)",
     "manual": "Tools → Price → ? → the page of the user manual (in the app, offline)",
     "end": "Closing card: the icon, QCalc and the line of the language (not the app)",
-    "rev3d": "2D graph with the region already turned (⟳ 3D, then ← Back to 2D): View in 3D (the solid grows from 0° to 360°), then turned with a finger (QCalc Pro)"
+    "rev3d": "2D graph with the region already turned (⟳ 3D, then ← Back to 2D): View in 3D (the solid grows from 0° to 360°), then turned with a finger (QCalc Pro)",
+    "tank3d": "Tools → Tanks: liquid and level → horizontal cylinder with semi-elliptical 2:1 heads, 1.2 m × 2.4 m, 30 % full, in litres → ⟳ 3D: the tank grows and the liquid rises, the amount and % at the level and the volume scale on the wall; a finger drags the level up (the amount follows), then turns the graph (QCalc Pro; 1.12.0, D6)"
   },
   "langs": {
     "ja": {
@@ -248,13 +249,15 @@
           ]
         },
         {
-          "scene": "tank",
-          "dur": 8,
+          "scene": "tank3d",
+          "dur": 12,
           "title": [
-            "タンクの液量"
+            "タンクの液量を 3D で"
           ],
+          "tag": "QCalc Pro",
           "lines": [
-            "タンクの液量は、液面の高さから出せます。"
+            "タンクの液量は、液面の高さから出せます。",
+            "QCalc Pro なら 3D で、液面をドラッグすると量が変わります。"
           ]
         },
         {
@@ -353,6 +356,25 @@
               "lines": [
                 "ローンの毎月の返済も、",
                 "返済表まで一度に。"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "short-4-tank",
+          "segments": [
+            {
+              "scene": "tank3d",
+              "dur": 16,
+              "title": [
+                "タンクの液量を",
+                "3D で見る"
+              ],
+              "tag": "QCalc Pro",
+              "lines": [
+                "横置きタンクに鏡板を付けて「⟳ 3D」。",
+                "液体が見え、液面のそばに量と %。",
+                "液面をドラッグすると量が変わります。"
               ]
             }
           ]
@@ -583,13 +605,15 @@
           ]
         },
         {
-          "scene": "tank",
-          "dur": 8,
+          "scene": "tank3d",
+          "dur": 12,
           "title": [
-            "Liquid in a tank"
+            "Liquid in a tank, in 3D"
           ],
+          "tag": "QCalc Pro",
           "lines": [
-            "It also finds the liquid in a tank from its level."
+            "It also finds the liquid in a tank from its level.",
+            "With QCalc Pro, drag the level in 3D and watch the amount change."
           ]
         },
         {
@@ -688,6 +712,25 @@
               "lines": [
                 "A monthly loan payment,",
                 "and the whole table at once."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "short-4-tank",
+          "segments": [
+            {
+              "scene": "tank3d",
+              "dur": 16,
+              "title": [
+                "Liquid in a tank,",
+                "in 3D"
+              ],
+              "tag": "QCalc Pro",
+              "lines": [
+                "A lying tank with heads: tap ⟳ 3D.",
+                "The liquid, with its amount and % at the level.",
+                "Drag the level, and the amount follows."
               ]
             }
           ]
@@ -917,13 +960,15 @@
           ]
         },
         {
-          "scene": "tank",
-          "dur": 8,
+          "scene": "tank3d",
+          "dur": 12,
           "title": [
-            "Füllmenge im Tank"
+            "Füllmenge im Tank in 3D"
           ],
+          "tag": "QCalc Pro",
           "lines": [
-            "Auch die Füllmenge eines Tanks aus der Füllhöhe."
+            "Auch die Füllmenge eines Tanks aus der Füllhöhe.",
+            "Mit QCalc Pro den Füllstand in 3D ziehen und die Menge ablesen."
           ]
         },
         {
@@ -1022,6 +1067,25 @@
               "lines": [
                 "Die Monatsrate eines Kredits",
                 "und gleich der ganze Tilgungsplan."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "short-4-tank",
+          "segments": [
+            {
+              "scene": "tank3d",
+              "dur": 16,
+              "title": [
+                "Füllmenge im Tank,",
+                "in 3D"
+              ],
+              "tag": "QCalc Pro",
+              "lines": [
+                "Ein liegender Tank mit Böden: ⟳ 3D antippen.",
+                "Die Flüssigkeit, mit Menge und % am Füllstand.",
+                "Den Füllstand ziehen, und die Menge folgt."
               ]
             }
           ]
@@ -1251,13 +1315,15 @@
           ]
         },
         {
-          "scene": "tank",
-          "dur": 8,
+          "scene": "tank3d",
+          "dur": 12,
           "title": [
-            "Líquido en un depósito"
+            "Líquido en un depósito, en 3D"
           ],
+          "tag": "QCalc Pro",
           "lines": [
-            "También el líquido de un depósito según su nivel."
+            "También el líquido de un depósito según su nivel.",
+            "Con QCalc Pro, arrastra el nivel en 3D y mira cómo cambia la cantidad."
           ]
         },
         {
@@ -1356,6 +1422,25 @@
               "lines": [
                 "La cuota mensual de un préstamo",
                 "y todo el cuadro a la vez."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "short-4-tank",
+          "segments": [
+            {
+              "scene": "tank3d",
+              "dur": 16,
+              "title": [
+                "El líquido del depósito,",
+                "en 3D"
+              ],
+              "tag": "QCalc Pro",
+              "lines": [
+                "Un depósito horizontal con fondos: toca ⟳ 3D.",
+                "El líquido, con su cantidad y % junto al nivel.",
+                "Arrastra el nivel y la cantidad cambia."
               ]
             }
           ]
@@ -1585,13 +1670,15 @@
           ]
         },
         {
-          "scene": "tank",
-          "dur": 8,
+          "scene": "tank3d",
+          "dur": 12,
           "title": [
-            "Liquide dans une cuve"
+            "Liquide dans une cuve, en 3D"
           ],
+          "tag": "QCalc Pro",
           "lines": [
-            "Il trouve aussi le liquide d’une cuve d’après sa hauteur."
+            "Il trouve aussi le liquide d’une cuve d’après sa hauteur.",
+            "Avec QCalc Pro, faites glisser le niveau en 3D : la quantité suit."
           ]
         },
         {
@@ -1690,6 +1777,25 @@
               "lines": [
                 "La mensualité d’un prêt",
                 "et tout le tableau d’un coup."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "short-4-tank",
+          "segments": [
+            {
+              "scene": "tank3d",
+              "dur": 16,
+              "title": [
+                "Le liquide d’une cuve,",
+                "en 3D"
+              ],
+              "tag": "QCalc Pro",
+              "lines": [
+                "Une cuve couchée avec ses fonds : touchez ⟳ 3D.",
+                "Le liquide, avec la quantité et le % au niveau.",
+                "Faites glisser le niveau : la quantité suit."
               ]
             }
           ]
@@ -1919,13 +2025,15 @@
           ]
         },
         {
-          "scene": "tank",
-          "dur": 8,
+          "scene": "tank3d",
+          "dur": 12,
           "title": [
-            "탱크의 액량"
+            "탱크의 액량을 3D로"
           ],
+          "tag": "QCalc Pro",
           "lines": [
-            "탱크의 액량도 액면 높이로 구할 수 있습니다."
+            "탱크의 액량도 액면 높이로 구할 수 있습니다.",
+            "QCalc Pro에서는 3D로 액면을 끌면 양이 바뀝니다."
           ]
         },
         {
@@ -2024,6 +2132,25 @@
               "lines": [
                 "대출의 월 상환액도",
                 "상환표까지 한 번에."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "short-4-tank",
+          "segments": [
+            {
+              "scene": "tank3d",
+              "dur": 16,
+              "title": [
+                "탱크의 액량을",
+                "3D로"
+              ],
+              "tag": "QCalc Pro",
+              "lines": [
+                "경판이 달린 가로형 탱크에서 「⟳ 3D」.",
+                "액체가 보이고, 액면 옆에 양과 %.",
+                "액면을 끌면 양이 바뀝니다."
               ]
             }
           ]
@@ -2253,13 +2380,15 @@
           ]
         },
         {
-          "scene": "tank",
-          "dur": 8,
+          "scene": "tank3d",
+          "dur": 12,
           "title": [
-            "儲槽的液量"
+            "儲槽的液量，用 3D 看"
           ],
+          "tag": "QCalc Pro",
           "lines": [
-            "儲槽的液量也能由液面高度算出。"
+            "儲槽的液量也能由液面高度算出。",
+            "使用 QCalc Pro，在 3D 中拖曳液面，量就跟著變。"
           ]
         },
         {
@@ -2358,6 +2487,25 @@
               "lines": [
                 "房貸每月要還多少，",
                 "連還款表一次看完。"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "short-4-tank",
+          "segments": [
+            {
+              "scene": "tank3d",
+              "dur": 16,
+              "title": [
+                "儲槽的液量",
+                "用 3D 看"
+              ],
+              "tag": "QCalc Pro",
+              "lines": [
+                "臥式儲槽加上封頭，按「⟳ 3D」。",
+                "看得到液體，液面旁有量與 %。",
+                "拖曳液面，量就跟著變。"
               ]
             }
           ]

@@ -11,7 +11,7 @@ Try "70 mph to km/h", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can st
 ■ For work on site and in design
 • Areas and volumes of 22 shapes, liquid in tanks (level ⇄ volume), volume from measured cross-sections, weight from density
 • Calculate with the units attached (4.2 m × 3.6 m to ft², 2.4 m × 1.8 m × 0.15 m to L) and with error propagation
-• QCalc Pro: tank heads (hemispherical, semi-elliptical, dished) with quick-reference tables; volume, capacity and weight of a solid from a measured profile; STL files for 3D printing; tables saved as CSV
+• QCalc Pro: shapes and tanks in 3D (drag the level); tank heads (hemispherical, semi-elliptical, dished) with quick-reference tables; volume, capacity and weight of a solid from a measured profile; STL files for 3D printing; tables saved as CSV
 
 ■ For shopping and the household budget
 • Price with a discount and 20 % VAT, percentages, unit price comparison, splitting a bill, monthly loan or mortgage repayments with a repayment table, savings, dates (days from today, age), hours worked and pay
@@ -26,7 +26,7 @@ Try "70 mph to km/h", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can st
 • Seven languages: English, Japanese, Spanish, German, French, Korean and Traditional Chinese. The user manual is inside the app and works offline: tap "?" on a screen to open its page
 
 ■ QCalc Pro (one in-app purchase)
-The 3D graph (volume and area of surfaces, solids of revolution in 3D, moving GIFs), more than 1,000 digits, tank heads, solids from a profile, STL, CSV of tables and of the history, colour themes, and more than one calculation note. It is not a subscription. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
+The 3D graph (volume and area of surfaces, solids of revolution, shapes and tanks in 3D, moving GIFs), more than 1,000 digits, tank heads, solids from a profile, STL, CSV of tables and of the history, colour themes, and more than one calculation note. It is not a subscription. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
 
 ■ Privacy and openness
 • There are no ads and no subscriptions.

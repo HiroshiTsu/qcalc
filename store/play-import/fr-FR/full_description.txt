@@ -11,7 +11,7 @@ Essayez « 100 km/h to mph », « solve(x^2 − 5x + 6 = 0) » ou « 3/8 + 1/6 �
 ■ Pour le chantier, l’atelier et le bureau d’études
 • Aires et volumes de 22 formes, liquide dans une cuve (hauteur ⇄ volume), volume d’après des sections mesurées, masse d’après la masse volumique
 • Calculez avec les unités (2,4 m × 1,8 m × 0,15 m to L) et la propagation des incertitudes
-• QCalc Pro : fonds de cuves (hémisphériques, elliptiques, torisphériques) avec barèmes de jaugeage ; volume, contenance et masse d’un solide d’après un profil mesuré ; fichiers STL pour l’impression 3D ; tableaux en CSV
+• QCalc Pro : formes et cuves en 3D (niveau à glisser) ; fonds de cuves (hémisphériques, elliptiques, torisphériques) avec barèmes de jaugeage ; volume, contenance et masse d’un solide d’après un profil mesuré ; fichiers STL pour l’impression 3D ; tableaux en CSV
 
 ■ Pour les courses et le budget
 • Prix avec remise et TVA (20 %, 10 %, 5,5 %), pourcentages, prix au kilo ou à l’unité, partage de l’addition, mensualité d’un prêt immobilier avec tableau d’amortissement, épargne, dates (dans X jours, âge), heures travaillées et salaire
@@ -25,7 +25,7 @@ Essayez « 100 km/h to mph », « solve(x^2 − 5x + 6 = 0) » ou « 3/8 + 1/6 �
 • Sept langues, dont le français. Le mode d’emploi est dans l’application et fonctionne hors ligne : « ? » ouvre la bonne page
 
 ■ QCalc Pro (un achat dans l’application)
-Graphique 3D (volume et aire, solides de révolution en 3D, GIF animés), plus de 1 000 chiffres, fonds de cuves, solides d’après un profil, STL, CSV des tableaux et de l’historique, thèmes de couleurs, plusieurs notes de calcul. Pas d’abonnement. Tout ce qui sert aux études et au quotidien fonctionne sans achat. Le prix s’affiche sur l’écran d’achat de Google Play.
+Graphique 3D (volume et aire, solides de révolution, formes et cuves en 3D, GIF animés), plus de 1 000 chiffres, fonds de cuves, solides d’après un profil, STL, CSV des tableaux et de l’historique, thèmes de couleurs, plusieurs notes de calcul. Pas d’abonnement. Tout ce qui sert aux études et au quotidien fonctionne sans achat. Le prix s’affiche sur l’écran d’achat de Google Play.
 
 ■ Confidentialité et code ouvert
 • Il n’y a ni publicité ni abonnement.

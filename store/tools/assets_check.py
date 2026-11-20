@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Checks the pictures (and, when a folder is given, the videos) of the QCalc store listing (stage M6):
 
-  - every set in store/screenshots-1.12/ has 8 phone pictures 1080 × 1920, one 1920 × 1080, and 4 each
-    for 7-inch (1200 × 1920) and 10-inch tablets (1600 × 2560);
+  - every set in store/screenshots-1.12/ has 8 phone pictures 1080 × 1920, one 1920 × 1080, and 5 each
+    for 7-inch (1200 × 1920) and 10-inch tablets (1600 × 2560) (alt/: alternatives, not counted);
   - Google Play's rules for screenshots: PNG or JPEG, no transparency, sides 320-3840 px, the long side at
     most twice the short one, at most 8 MB; the feature graphics 1024 × 500 without transparency, at most
     15 MB; the YouTube thumbnails 1280 × 720, at most 2 MB;
@@ -40,7 +40,7 @@ def main():
     sheets = args[args.index('--sheets') + 1] if '--sheets' in args else None
     videos = args[args.index('--videos') + 1] if '--videos' in args else None
     problems, n = [], 0
-    want = {'phone': (1080, 1920, 8), 'landscape': (1920, 1080, 1), 'tablet7': (1200, 1920, 4), 'tablet10': (1600, 2560, 4)}
+    want = {'phone': (1080, 1920, 8), 'landscape': (1920, 1080, 1), 'tablet7': (1200, 1920, 5), 'tablet10': (1600, 2560, 5)}
     for s in sorted(os.listdir(SHOTS)):
         d = os.path.join(SHOTS, s)
         if not os.path.isdir(d):

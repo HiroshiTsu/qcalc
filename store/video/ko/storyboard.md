@@ -14,7 +14,7 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 | 0:33–0:39 | Tools → Calculation notes → the first example (names and a total) | 인터넷 없이 작동 / 개인정보 수집 없음 | 계산은 모두 휴대폰 안에서. 개인정보를 수집하지 않습니다. |
 | 0:39–0:44 | Closing card: the icon, QCalc and the line of the language (not the app) | QCalc / 수식을 쓰듯이 계산. 그래프에서 입체까지. | 수식을 쓰듯이 계산, 그래프에서 입체까지. QCalc. |
 
-## YouTube video (16:9, 2:44)
+## YouTube video (16:9, 2:48)
 
 | Time | Screen | Headline on screen | Narration (subtitle) |
 |---|---|---|---|
@@ -27,10 +27,10 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 | 1:16–1:32 | 2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D: the 3D view opens at once, the solid grows from 0° to 360° with its volume V large above the graph (QCalc Pro; 1.12.0, BG20), then turned with a finger | 그래프의 영역을 / 돌려 입체로 (3D 보기: QCalc Pro) | 2D 그래프에 두 함수를 그리고 ⟳ 3D를 누르면, 둘러싸인 부분을 돌린 입체와 그 부피가 바로 나옵니다. 3D로 보기는 QCalc Pro 기능입니다. |
 | 1:32–1:46 | 2D graph with the region turned (⟳ 3D, then ← Back to 2D): tap the y axis (the axis changes), then Show the method with lines | 축을 바꾸고 / 방법을 선으로 | 돌리는 축은 축의 선을 탭해서 바꿀 수 있습니다. 원판이나 원통 껍질의 선으로 부피 구하는 법도 볼 수 있습니다. |
 | 1:46–1:58 | Tools → Solid from a profile (QCalc Pro) → the first example → View in 3D | 윤곽으로 / 부피와 무게 (QCalc Pro) | QCalc Pro에서는 측정한 위치와 지름으로 회전체의 부피, 용량, 무게를 구하고 STL 파일로 저장합니다. |
-| 1:58–2:06 | Tools → Tanks: liquid and level → horizontal cylinder 1 m × 2 m, 0.3 m → the results | 탱크의 액량 | 탱크의 액량도 액면 높이로 구할 수 있습니다. |
-| 2:06–2:22 | Tools → Calculation notes → the first example (names and a total) | 계산 메모 | 계산 메모는 한 줄씩 계산하고 합계를 냅니다. '월세 = 650000 KRW'처럼 이름도 붙일 수 있습니다. 기록은 검색, 고정, 합계가 됩니다. |
-| 2:22–2:34 | Tools → Price → ? → the page of the user manual (in the app, offline) | 사용법은 ?에서 | 사용법은 각 화면의 ?에서. 사용 설명서는 인터넷 없이도 읽을 수 있습니다. |
-| 2:34–2:44 | Closing card: the icon, QCalc and the line of the language (not the app) | QCalc / 수식을 쓰듯이 계산. 그래프에서 입체까지. | 계산은 모두 휴대폰 안에서, 개인정보는 수집하지 않습니다. 수식을 쓰듯이 계산, 그래프에서 입체까지. QCalc입니다. |
+| 1:58–2:10 | Tools → Tanks: liquid and level → horizontal cylinder with semi-elliptical 2:1 heads, 1.2 m × 2.4 m, 30 % full, in litres → ⟳ 3D: the tank grows and the liquid rises, the amount and % at the level and the volume scale on the wall; a finger drags the level up (the amount follows), then turns the graph (QCalc Pro; 1.12.0, D6) | 탱크의 액량을 3D로 (QCalc Pro) | 탱크의 액량도 액면 높이로 구할 수 있습니다. QCalc Pro에서는 3D로 액면을 끌면 양이 바뀝니다. |
+| 2:10–2:26 | Tools → Calculation notes → the first example (names and a total) | 계산 메모 | 계산 메모는 한 줄씩 계산하고 합계를 냅니다. '월세 = 650000 KRW'처럼 이름도 붙일 수 있습니다. 기록은 검색, 고정, 합계가 됩니다. |
+| 2:26–2:38 | Tools → Price → ? → the page of the user manual (in the app, offline) | 사용법은 ?에서 | 사용법은 각 화면의 ?에서. 사용 설명서는 인터넷 없이도 읽을 수 있습니다. |
+| 2:38–2:48 | Closing card: the icon, QCalc and the line of the language (not the app) | QCalc / 수식을 쓰듯이 계산. 그래프에서 입체까지. | 계산은 모두 휴대폰 안에서, 개인정보는 수집하지 않습니다. 수식을 쓰듯이 계산, 그래프에서 입체까지. QCalc입니다. |
 
 ## Short 1 (9:16, 20 s)
 
@@ -50,3 +50,9 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 |---|---|---|---|
 | 0:00–0:11 | Tools → Price: discount and tax → the first example | 가격과 부가세 | 부가세를 넣은 가격은? 예시를 탭하면 바로 답. |
 | 0:11–0:22 | Tools → Loan → the first example, then down to the repayment table | 대출 상환 | 대출의 월 상환액도 상환표까지 한 번에. |
+
+## Short 4 (9:16, 16 s)
+
+| Time | Screen | Headline on screen | Narration (subtitle) |
+|---|---|---|---|
+| 0:00–0:16 | Tools → Tanks: liquid and level → horizontal cylinder with semi-elliptical 2:1 heads, 1.2 m × 2.4 m, 30 % full, in litres → ⟳ 3D: the tank grows and the liquid rises, the amount and % at the level and the volume scale on the wall; a finger drags the level up (the amount follows), then turns the graph (QCalc Pro; 1.12.0, D6) | 탱크의 액량을 / 3D로 (QCalc Pro) | 경판이 달린 가로형 탱크에서 「⟳ 3D」. 액체가 보이고, 액면 옆에 양과 %. 액면을 끌면 양이 바뀝니다. |

@@ -83,34 +83,38 @@ QCalc Pro part des positions et diamètres mesurés,
 donne le volume, la contenance et la masse, et enregistre un STL.
 
 22
-00:01:58,150 --> 00:02:05,730
+00:01:58,150 --> 00:02:03,117
 Il trouve aussi le liquide d’une cuve d’après sa hauteur.
 
 23
-00:02:06,150 --> 00:02:12,426
-Les notes de calcul vont ligne par ligne, avec le total.
+00:02:03,237 --> 00:02:09,730
+Avec QCalc Pro, faites glisser le niveau en 3D : la quantité suit.
 
 24
-00:02:12,546 --> 00:02:18,241
-On peut nommer les valeurs, comme loyer = 850 EUR.
+00:02:10,150 --> 00:02:16,426
+Les notes de calcul vont ligne par ligne, avec le total.
 
 25
-00:02:18,361 --> 00:02:21,730
-L’historique se cherche, s’épingle et s’additionne.
+00:02:16,546 --> 00:02:22,241
+On peut nommer les valeurs, comme loyer = 850 EUR.
 
 26
-00:02:22,150 --> 00:02:29,830
-Touchez ? sur un écran pour ouvrir sa page du mode d’emploi.
+00:02:22,361 --> 00:02:25,730
+L’historique se cherche, s’épingle et s’additionne.
 
 27
-00:02:29,950 --> 00:02:33,730
-Le mode d’emploi fonctionne hors ligne.
+00:02:26,150 --> 00:02:33,830
+Touchez ? sur un écran pour ouvrir sa page du mode d’emploi.
 
 28
-00:02:34,150 --> 00:02:38,669
-Tout est calculé sur votre téléphone, sans collecte de données personnelles.
+00:02:33,950 --> 00:02:37,730
+Le mode d’emploi fonctionne hors ligne.
 
 29
-00:02:38,789 --> 00:02:43,730
+00:02:38,150 --> 00:02:42,669
+Tout est calculé sur votre téléphone, sans collecte de données personnelles.
+
+30
+00:02:42,789 --> 00:02:47,730
 Vos calculs comme sur papier, du graphique au solide 3D. Voici QCalc.
 

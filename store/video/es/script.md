@@ -30,7 +30,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:39–0:44**
 - 00:39–00:43 Cuentas como en papel, de la gráfica al sólido 3D. QCalc.
 
-## YouTube video (16:9, 2:44) — youtube.srt
+## YouTube video (16:9, 2:48) — youtube.srt
 
 **0:00–0:12** 【Introducción】
 - 00:00–00:02 En la calculadora cuesta escribir fórmulas.
@@ -71,21 +71,22 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 - 01:46–01:50 QCalc Pro toma las posiciones y diámetros medidos,
 - 01:50–01:57 da el volumen, la capacidad y el peso, y guarda un archivo STL.
 
-**1:58–2:06**
-- 01:58–02:05 También el líquido de un depósito según su nivel.
+**1:58–2:10**
+- 01:58–02:02 También el líquido de un depósito según su nivel.
+- 02:02–02:09 Con QCalc Pro, arrastra el nivel en 3D y mira cómo cambia la cantidad.
 
-**2:06–2:22** 【Historial y notas de cálculo】
-- 02:06–02:11 Las notas de cálculo van línea a línea, con total.
-- 02:11–02:17 Puedes poner nombre a los valores, como alquiler = 950 EUR.
-- 02:17–02:21 El historial se puede buscar, fijar y sumar.
+**2:10–2:26** 【Historial y notas de cálculo】
+- 02:10–02:15 Las notas de cálculo van línea a línea, con total.
+- 02:15–02:21 Puedes poner nombre a los valores, como alquiler = 950 EUR.
+- 02:21–02:25 El historial se puede buscar, fijar y sumar.
 
-**2:22–2:34** 【Ayuda y resumen】
-- 02:22–02:30 Toca ? en una pantalla para abrir su página del manual.
-- 02:30–02:33 El manual funciona sin conexión.
+**2:26–2:38** 【Ayuda y resumen】
+- 02:26–02:34 Toca ? en una pantalla para abrir su página del manual.
+- 02:34–02:37 El manual funciona sin conexión.
 
-**2:34–2:44**
-- 02:34–02:38 Todo se calcula en tu móvil y no se recogen datos personales.
-- 02:38–02:43 Cuentas como en papel, de la gráfica al sólido 3D. Esto es QCalc.
+**2:38–2:48**
+- 02:38–02:42 Todo se calcula en tu móvil y no se recogen datos personales.
+- 02:42–02:47 Cuentas como en papel, de la gráfica al sólido 3D. Esto es QCalc.
 
 ## Short 1 (9:16, 20 s) — short-1-solid.srt
 
@@ -110,3 +111,10 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:11–0:22**
 - 00:11–00:15 La cuota mensual de un préstamo
 - 00:16–00:21 y todo el cuadro a la vez.
+
+## Short 4 (9:16, 16 s) — short-4-tank.srt
+
+**0:00–0:16**
+- 00:00–00:05 Un depósito horizontal con fondos: toca ⟳ 3D.
+- 00:05–00:11 El líquido, con su cantidad y % junto al nivel.
+- 00:11–00:15 Arrastra el nivel y la cantidad cambia.

@@ -83,34 +83,38 @@ QCalc Pro toma las posiciones y diámetros medidos,
 da el volumen, la capacidad y el peso, y guarda un archivo STL.
 
 22
-00:01:58,150 --> 00:02:05,730
+00:01:58,150 --> 00:02:02,608
 También el líquido de un depósito según su nivel.
 
 23
-00:02:06,150 --> 00:02:11,444
-Las notas de cálculo van línea a línea, con total.
+00:02:02,728 --> 00:02:09,730
+Con QCalc Pro, arrastra el nivel en 3D y mira cómo cambia la cantidad.
 
 24
-00:02:11,564 --> 00:02:17,399
-Puedes poner nombre a los valores, como alquiler = 950 EUR.
+00:02:10,150 --> 00:02:15,444
+Las notas de cálculo van línea a línea, con total.
 
 25
-00:02:17,519 --> 00:02:21,730
-El historial se puede buscar, fijar y sumar.
+00:02:15,564 --> 00:02:21,399
+Puedes poner nombre a los valores, como alquiler = 950 EUR.
 
 26
-00:02:22,150 --> 00:02:30,074
-Toca ? en una pantalla para abrir su página del manual.
+00:02:21,519 --> 00:02:25,730
+El historial se puede buscar, fijar y sumar.
 
 27
-00:02:30,194 --> 00:02:33,730
-El manual funciona sin conexión.
+00:02:26,150 --> 00:02:34,074
+Toca ? en una pantalla para abrir su página del manual.
 
 28
-00:02:34,150 --> 00:02:38,686
-Todo se calcula en tu móvil y no se recogen datos personales.
+00:02:34,194 --> 00:02:37,730
+El manual funciona sin conexión.
 
 29
-00:02:38,806 --> 00:02:43,730
+00:02:38,150 --> 00:02:42,686
+Todo se calcula en tu móvil y no se recogen datos personales.
+
+30
+00:02:42,806 --> 00:02:47,730
 Cuentas como en papel, de la gráfica al sólido 3D. Esto es QCalc.
 

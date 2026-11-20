@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:05,637
+Une cuve couchée avec ses fonds : touchez ⟳ 3D.
+
+2
+00:00:05,757 --> 00:00:11,244
+Le liquide, avec la quantité et le % au niveau.
+
+3
+00:00:11,364 --> 00:00:15,730
+Faites glisser le niveau : la quantité suit.
+

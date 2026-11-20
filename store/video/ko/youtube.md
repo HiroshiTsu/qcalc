@@ -18,8 +18,8 @@ Chapters:
 1:02 단위·환율 변환
 1:16 2D에서 3D 회전체로
 1:46 탱크·윤곽·STL (Pro)
-2:06 기록·계산 메모
-2:22 사용법과 정리
+2:10 기록·계산 메모
+2:26 사용법과 정리
 
 User manual: https://hiroshitsu.github.io/qcalc/manual/
 Source code: https://github.com/HiroshiTsu/qcalc

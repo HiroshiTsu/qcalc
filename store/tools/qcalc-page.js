@@ -123,6 +123,40 @@ async function profile(page) {
   await tool(page, 'profile', 0); await sleep(1500);
   await scrollTo(page, '.pf-pic', 4);
 }
+// (1.12.0, D6) a lying tank with semi-elliptical 2:1 heads, 1.2 m across and 2.4 m long, in litres, filled to pc %,
+// shown in 3D with "⟳ 3D" (QCalc Pro): the liquid, the amount and % at the level, the scale on the wall
+async function tank3d(page, set, pc) {
+  await tankSetup(page, set, pc);
+  await page.locator('.panel.open .geo-3d').last().click();
+  await modelDone(page);
+  await sleep(1200);
+}
+// the 3D graph of a solid or tank of "Shapes" when it has grown and the liquid has risen
+const modelDone = (page) => page.waitForFunction(() => {
+  const c = Array.from(document.querySelectorAll('.panel.open .plot-mode')).filter((m) => !m.hidden).pop();
+  const cv = c && c.querySelector('.plot-wrap canvas[aria-label]');
+  if (!cv || !cv.dataset.model) return false;
+  const m = JSON.parse(cv.dataset.model); return m.grow === 1 && !m.fill;
+}, null, { timeout: 30000 });
+// the tank of tank3d in the tool, before "⟳ 3D"
+async function tankSetup(page, set, pc) {
+  await tool(page, 'tanks');
+  const num = (x) => (COMMA[set] ? String(x).replace('.', ',') : String(x));
+  await page.evaluate(() => { const c = document.querySelectorAll('.panel.open .geo-chip')[0]; if (c && c.getAttribute('aria-pressed') !== 'true') c.click(); }); await sleep(800);
+  await page.evaluate(() => { const b = document.querySelectorAll('.panel.open .head-row button')[2]; if (b) b.click(); }); await sleep(1000);
+  await page.locator('.panel.open .geo-side select').last().selectOption('m'); await sleep(500);
+  await page.locator('.panel.open .geo-units select').first().selectOption('L'); await sleep(500);
+  const d = page.locator('.panel.open .geo-rd button').nth(1);
+  if ((await d.getAttribute('aria-pressed')) !== 'true') { await d.click(); await sleep(500); }
+  // the height of the level for pc % (the volume of the lying cylinder and of the two heads, a = r / 2)
+  const r = 0.6, L = 2.4, a = 0.3, f = (pc || 62) / 100;
+  const V = (h) => L * (r * r * Math.acos((r - h) / r) - (r - h) * Math.sqrt(Math.max(0, 2 * r * h - h * h))) + Math.PI * a * h * h * (3 * r - h) / (3 * r);
+  let lo = 0, hi = 2 * r;
+  for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (V(m) < f * V(2 * r)) lo = m; else hi = m; }
+  const vals = [1.2, 2.4, +((lo + hi) / 2).toFixed(3)];
+  for (let i = 0; i < vals.length; i++) await page.locator('.panel.open .geo-sizes input').nth(i).fill(num(vals[i]));
+  await sleep(2500);
+}
 async function manualAbout(page) {
   await menu(page, 0);
   await page.evaluate(() => { const b = document.querySelector('.panel.open .manual-btn'); if (b) b.click(); });
@@ -156,4 +190,4 @@ async function setPrecisionAndReload(page, n) {
   await page.reload(); await ready(page);
 }
 
-module.exports = { sleep, SETS, COMMA, mainExamples, localNotes, start, ready, home, menu, tool, type, eq, body, scrollTo, solid2d, solid3d, graphRect, profile, manualAbout, setPrecisionAndReload };
+module.exports = { sleep, SETS, COMMA, mainExamples, localNotes, start, ready, home, menu, tool, type, eq, body, scrollTo, solid2d, solid3d, graphRect, profile, tank3d, tankSetup, modelDone, manualAbout, setPrecisionAndReload };

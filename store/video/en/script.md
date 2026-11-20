@@ -30,7 +30,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:39–0:44**
 - 00:39–00:43 Math as you write it, from graphs to 3D solids. QCalc.
 
-## YouTube video (16:9, 2:44) — youtube.srt
+## YouTube video (16:9, 2:48) — youtube.srt
 
 **0:00–0:12** 【Introduction】
 - 00:00–00:03 Calculator apps make you fight the keys.
@@ -71,21 +71,22 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 - 01:46–01:51 QCalc Pro takes the positions and diameters you measured,
 - 01:51–01:57 gives the volume, capacity and weight, and saves an STL file.
 
-**1:58–2:06**
-- 01:58–02:05 It also finds the liquid in a tank from its level.
+**1:58–2:10**
+- 01:58–02:03 It also finds the liquid in a tank from its level.
+- 02:03–02:09 With QCalc Pro, drag the level in 3D and watch the amount change.
 
-**2:06–2:22** 【History and calculation notes】
-- 02:06–02:11 Calculation notes work a line at a time, with a total.
-- 02:12–02:16 You can name values, like rent = 1450 USD.
-- 02:16–02:21 The history can be searched, pinned and added up.
+**2:10–2:26** 【History and calculation notes】
+- 02:10–02:15 Calculation notes work a line at a time, with a total.
+- 02:16–02:20 You can name values, like rent = 1450 USD.
+- 02:20–02:25 The history can be searched, pinned and added up.
 
-**2:22–2:34** 【Help and summary】
-- 02:22–02:30 Tap ? on a screen to open its page of the user manual.
-- 02:31–02:33 The manual works offline.
+**2:26–2:38** 【Help and summary】
+- 02:26–02:34 Tap ? on a screen to open its page of the user manual.
+- 02:35–02:37 The manual works offline.
 
-**2:34–2:44**
-- 02:34–02:38 Everything is calculated on your phone, and no personal data is collected.
-- 02:38–02:43 Math as you write it, from graphs to 3D solids. This is QCalc.
+**2:38–2:48**
+- 02:38–02:42 Everything is calculated on your phone, and no personal data is collected.
+- 02:42–02:47 Math as you write it, from graphs to 3D solids. This is QCalc.
 
 ## Short 1 (9:16, 20 s) — short-1-solid.srt
 
@@ -110,3 +111,10 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:11–0:22**
 - 00:11–00:15 A monthly loan payment,
 - 00:15–00:21 and the whole table at once.
+
+## Short 4 (9:16, 16 s) — short-4-tank.srt
+
+**0:00–0:16**
+- 00:00–00:05 A lying tank with heads: tap ⟳ 3D.
+- 00:05–00:11 The liquid, with its amount and % at the level.
+- 00:11–00:15 Drag the level, and the amount follows.

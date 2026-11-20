@@ -177,6 +177,35 @@ const SCENES = {
       await sleep(1500); await smoothScroll(page, '.geo-out', 200, 900); await sleep(2500);
     }
   },
+  // (1.12.0, D6) the lying tank with 2:1 heads at 30 % in the tool: ⟳ 3D (the tank grows, the liquid rises), then
+  // a finger drags the level up to about 85 % (the amount and % at the level follow), then turns the graph (QCalc Pro)
+  tank3d: {
+    prep: async (page, lang) => { await Q.tankSetup(page, SET[lang], 30); await Q.scrollTo(page, '.geo-main', 4); },
+    run: async (page) => {
+      await sleep(1200);
+      await tap(page, page.locator('.panel.open .geo-3d').last());
+      await Q.modelDone(page); await sleep(900);
+      const m = await page.evaluate(() => { const c = Array.from(document.querySelectorAll('.panel.open .plot-mode')).filter((q) => !q.hidden).pop(); const cv = c.querySelector('.plot-wrap canvas[aria-label]'); const r = cv.getBoundingClientRect(); return { x: r.left, y: r.top, box: JSON.parse(cv.dataset.model).level.box }; });
+      const x0 = m.x + m.box[0] + m.box[2] / 2, y0 = m.y + m.box[1] + m.box[3] / 2;
+      await page.evaluate(([x, y]) => {
+        const d = document.createElement('div'); d.id = 'finger';
+        d.style.cssText = 'position:fixed;left:' + (x - 22) + 'px;top:' + (y - 22) + 'px;width:44px;height:44px;border-radius:50%;background:rgba(58,96,238,.35);border:3px solid rgba(58,96,238,.9);z-index:99999;pointer-events:none;transition:opacity .4s';
+        document.body.appendChild(d);
+      }, [x0, y0]);
+      await sleep(350);
+      await page.mouse.move(x0, y0); await page.mouse.down();
+      const steps = 40, dy = 40;
+      for (let i = 1; i <= steps; i++) {
+        const y = y0 - dy * (1 - Math.pow(1 - i / steps, 2));
+        await page.mouse.move(x0, y);
+        await page.evaluate(([x, y]) => { const d = document.getElementById('finger'); if (d) { d.style.left = (x - 22) + 'px'; d.style.top = (y - 22) + 'px'; } }, [x0, y]);
+        await sleep(15);
+      }
+      await page.mouse.up();
+      await page.evaluate(() => { const d = document.getElementById('finger'); if (d) { d.style.opacity = '0'; setTimeout(() => d.remove(), 500); } });
+      await sleep(1600); await turn3d(page, 1500); await sleep(900);
+    }
+  },
   notes: {
     prep: async () => {},
     run: async (page, lang) => { await sleep(300); await openTool(page, 'memo'); await tap(page, chip(page, 0)); await sleep(300); await Q.localNotes(page, lang); await sleep(1000); await smoothScroll(page, '.panel-body > *:nth-child(3)', 40, 900); await sleep(2000); }

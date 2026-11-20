@@ -11,8 +11,9 @@ the same texts are in store/play-import/<locale>/ (1.12.0, stage M).
 The other translations: listing-ja.md (ja-JP), listing-es.md (es-ES, es-419), listing-de.md (de-DE),
 listing-fr.md (fr-FR, fr-CA), listing-ko.md (ko-KR), listing-zh-TW.md (zh-TW, zh-HK).
 
-- Screenshots: store/screenshots-1.12/en/ (8 phone pictures 1080 × 1920, one 1920 × 1080, 4 each for
-  7-inch tablets 1200 × 1920 and 10-inch tablets 1600 × 2560). en-GB and en-AU use store/screenshots-1.12/en-GB/.
+- Screenshots: store/screenshots-1.12/en/ (8 phone pictures 1080 × 1920, one 1920 × 1080, 5 each for
+  7-inch tablets 1200 × 1920 and 10-inch tablets 1600 × 2560; alt/ holds an alternative fifth phone picture, a solid
+  from a profile, not to upload with the others). en-GB and en-AU use store/screenshots-1.12/en-GB/.
 - Feature graphic: store/feature-graphic-1.12-en.png (1024 × 500).
 - App icon: store/icon-512.png (the same for every language).
 - How the words were chosen: store/research-1.12.md.
@@ -43,7 +44,7 @@ Try "60 mph to km/h", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can st
 ■ For work on site and in design
 • Areas and volumes of 22 shapes, liquid in tanks (level ⇄ volume), volume from measured cross sections, weight from density
 • Calculate with the units attached (12 ft × 9.5 ft to m², 3/4 in to mm) and with error propagation
-• QCalc Pro: tank heads (hemispherical, semi-elliptical, dished) with quick-reference tables; volume, capacity and weight of a solid from a measured profile; STL files for 3D printing; tables saved as CSV
+• QCalc Pro: shapes and tanks in 3D (drag the level); tank heads (hemispherical, semi-elliptical, dished) with quick-reference tables; volume, capacity and weight of a solid from a measured profile; STL files for 3D printing; tables saved as CSV
 
 ■ For shopping and the household budget
 • Price with a discount and sales tax, percentages, unit price comparison, splitting a bill, monthly loan payments with an amortization table, savings, dates (days from now, age), hours worked and pay
@@ -58,7 +59,7 @@ Try "60 mph to km/h", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can st
 • Seven languages: English, Japanese, Spanish, German, French, Korean and Traditional Chinese. The user manual is inside the app and works offline: tap "?" on a screen to open its page
 
 ■ QCalc Pro (one in-app purchase)
-The 3D graph (volume and area of surfaces, solids of revolution in 3D, moving GIFs), more than 1,000 digits, tank heads, solids from a profile, STL, CSV of tables and of the history, color themes, and more than one calculation note. It is not a subscription. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
+The 3D graph (volume and area of surfaces, solids of revolution, shapes and tanks in 3D, moving GIFs), more than 1,000 digits, tank heads, solids from a profile, STL, CSV of tables and of the history, color themes, and more than one calculation note. It is not a subscription. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
 
 ■ Privacy and openness
 • There are no ads and no subscriptions.
@@ -102,7 +103,7 @@ Try "70 mph to km/h", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can st
 ■ For work on site and in design
 • Areas and volumes of 22 shapes, liquid in tanks (level ⇄ volume), volume from measured cross-sections, weight from density
 • Calculate with the units attached (4.2 m × 3.6 m to ft², 2.4 m × 1.8 m × 0.15 m to L) and with error propagation
-• QCalc Pro: tank heads (hemispherical, semi-elliptical, dished) with quick-reference tables; volume, capacity and weight of a solid from a measured profile; STL files for 3D printing; tables saved as CSV
+• QCalc Pro: shapes and tanks in 3D (drag the level); tank heads (hemispherical, semi-elliptical, dished) with quick-reference tables; volume, capacity and weight of a solid from a measured profile; STL files for 3D printing; tables saved as CSV
 
 ■ For shopping and the household budget
 • Price with a discount and 20 % VAT, percentages, unit price comparison, splitting a bill, monthly loan or mortgage repayments with a repayment table, savings, dates (days from today, age), hours worked and pay
@@ -117,7 +118,7 @@ Try "70 mph to km/h", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can st
 • Seven languages: English, Japanese, Spanish, German, French, Korean and Traditional Chinese. The user manual is inside the app and works offline: tap "?" on a screen to open its page
 
 ■ QCalc Pro (one in-app purchase)
-The 3D graph (volume and area of surfaces, solids of revolution in 3D, moving GIFs), more than 1,000 digits, tank heads, solids from a profile, STL, CSV of tables and of the history, colour themes, and more than one calculation note. It is not a subscription. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
+The 3D graph (volume and area of surfaces, solids of revolution, shapes and tanks in 3D, moving GIFs), more than 1,000 digits, tank heads, solids from a profile, STL, CSV of tables and of the history, colour themes, and more than one calculation note. It is not a subscription. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
 
 ■ Privacy and openness
 • There are no ads and no subscriptions.
@@ -161,7 +162,7 @@ Try "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can s
 ■ For work on site and in design
 • Areas and volumes of 22 shapes, liquid in tanks (level ⇄ volume), volume from measured cross-sections, weight from density
 • Calculate with the units attached (4.2 m × 3.6 m to m², 2.4 m × 1.8 m × 0.15 m to L) and with error propagation
-• QCalc Pro: tank heads (hemispherical, semi-elliptical, dished) with quick-reference tables; volume, capacity and weight of a solid from a measured profile; STL files for 3D printing; tables saved as CSV
+• QCalc Pro: shapes and tanks in 3D (drag the level); tank heads (hemispherical, semi-elliptical, dished) with quick-reference tables; volume, capacity and weight of a solid from a measured profile; STL files for 3D printing; tables saved as CSV
 
 ■ For shopping and the household budget
 • Price with a discount and 10 % GST, percentages, unit price comparison, splitting a bill, monthly home loan repayments with a repayment table, savings, dates (days from today, age), hours worked and pay
@@ -176,7 +177,7 @@ Try "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can s
 • Seven languages: English, Japanese, Spanish, German, French, Korean and Traditional Chinese. The user manual is inside the app and works offline: tap "?" on a screen to open its page
 
 ■ QCalc Pro (one in-app purchase)
-The 3D graph (volume and area of surfaces, solids of revolution in 3D, moving GIFs), more than 1,000 digits, tank heads, solids from a profile, STL, CSV of tables and of the history, colour themes, and more than one calculation note. It is not a subscription. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
+The 3D graph (volume and area of surfaces, solids of revolution, shapes and tanks in 3D, moving GIFs), more than 1,000 digits, tank heads, solids from a profile, STL, CSV of tables and of the history, colour themes, and more than one calculation note. It is not a subscription. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
 
 ■ Privacy and openness
 • There are no ads and no subscriptions.
@@ -206,14 +207,14 @@ have not been checked by native speakers.
 1.12.0 (when 1.11.0 was already released):
 
 <en-US>
-• Easier: Tools with search, examples, 3 actions on a result
-• Everyday: price and tax, loan, savings, dates, times, split bill
-• Converter for units and currencies; statistics; calculation notes
-• 2D graph: ⟳ 3D turns a region into a solid with one tap; cross sections
-• Share a graph as a picture; widget, tile and shortcuts
-• History: search, pin, sum of rows
-• Decimal comma by region (1.234,5)
-• Pro: tank heads, solid from a profile, STL, GIF
+• Tools with search, examples, 3 actions on a result
+• Everyday: price, tax, loan, savings, dates, times, split bill
+• Unit and currency converter; statistics; notes
+• 2D graph: ⟳ 3D makes a solid with one tap; cross sections
+• Share graphs as pictures; widget, tile, shortcuts
+• History: search, pin, sum rows
+• Decimal comma by region; choose the digits of results
+• Pro: solids and tanks in 3D, drag the level; tank heads, profiles, STL, GIF
 • Fixes: 3D shadows while turning, jagged rims
 </en-US>
 <ja-JP>
@@ -224,40 +225,42 @@ have not been checked by native speakers.
 ・グラフを画像で共有。ウィジェット・タイル・ショートカット
 ・履歴：検索、上に固定、行を選んで合計
 ・地域に合わせた数の書き方（1.234,5 など）
+・結果の桁：小数点以下・有効数字・丸め方を選べる
+・立体と容器を 3D で（Pro）：寸法つきで回し、液面をドラッグ
 ・Pro：タンクの鏡板と早見表、輪郭から回転体、STL、GIF
 ・修正：3D を回すと影が消える、回転体の縁のぎざぎざ
 </ja-JP>
 <es-419>
-• Más fácil: herramientas con búsqueda, ejemplos, 3 acciones
-• Diario: precio e IVA, préstamo, ahorro, fechas, horas, dividir la cuenta
-• Conversor de unidades y monedas; estadística; notas de cálculo
+• Herramientas con búsqueda y ejemplos
+• Diario: precio e IVA, préstamo, ahorro, fechas, horas, dividir cuentas
+• Conversor de unidades y monedas; estadística; notas
 • Gráfico 2D: ⟳ 3D hace un sólido con un toque; secciones
-• Compartir un gráfico como imagen; widget, mosaico, accesos
+• Gráficos como imagen; widget, mosaico, accesos
 • Historial: buscar, fijar, sumar filas
-• Coma decimal por región
-• Pro: fondos de depósitos, sólido de un perfil, STL, GIF
+• Coma decimal por región; cifras de resultados a elegir
+• Pro: sólidos y depósitos en 3D, arrastrar el nivel; fondos, perfiles, STL, GIF
 • Arreglos: sombras 3D al girar, bordes dentados
 </es-419>
 <de-DE>
-• Einfacher: Werkzeuge mit Suche, Beispiele, 3 Aktionen pro Ergebnis
-• Alltag: Preis, Steuer, Kredit, Sparen, Datum, Zeiten, Rechnung teilen
-• Einheiten- und Währungsrechner; Statistik; Rechennotizen
-• 2D-Graph: ⟳ 3D macht mit einem Tipp einen Körper; Querschnitte
+• Werkzeuge mit Suche und Beispielen
+• Alltag: Preis, Steuer, Kredit, Sparen, Datum, Zeit, Rechnung teilen
+• Einheiten- und Währungsrechner; Statistik; Notizen
+• 2D-Graph: ⟳ 3D macht per Tipp einen Körper; Querschnitte
 • Graph als Bild teilen; Widget, Kachel, Verknüpfungen
-• Verlauf: suchen, anheften, Zeilen summieren
-• Dezimalkomma nach Region
-• Pro: Behälterböden, Körper aus Profil, STL, GIF
+• Verlauf: suchen, anheften, summieren
+• Dezimalkomma nach Region; Ergebnisstellen wählbar
+• Pro: Körper und Tanks in 3D, Füllstand ziehen; Tankböden, Profile, STL, GIF
 • Behoben: 3D-Schatten beim Drehen, gezackte Ränder
 </de-DE>
 <fr-FR>
-• Plus simple : outils avec recherche, exemples, 3 actions
+• Outils avec recherche et exemples
 • Quotidien : prix et TVA, prêt, épargne, dates, heures, addition
-• Conversion d’unités et de devises ; statistiques ; notes de calcul
+• Conversion d’unités et de devises ; statistiques ; notes
 • Graphique 2D : ⟳ 3D fait un solide en un geste ; sections
-• Graphique partagé en image ; widget, tuile, raccourcis
+• Partage en image ; widget, tuile, raccourcis
 • Historique : chercher, épingler, additionner
-• Virgule décimale selon la région
-• Pro : fonds de cuves, solide d’un profil, STL, GIF
+• Virgule décimale par région ; décimales au choix
+• Pro : solides et cuves en 3D, niveau à glisser ; fonds, profils, STL, GIF
 • Corrigé : ombres 3D en rotation, bords dentelés
 </fr-FR>
 <ko-KR>
@@ -268,6 +271,8 @@ have not been checked by native speakers.
 • 그래프를 이미지로 공유, 위젯·타일·바로가기
 • 기록: 검색, 고정, 줄을 골라 합계
 • 지역에 맞는 숫자 표기(1.234,5 등)
+• 결과의 자릿수: 소수점 아래, 유효숫자, 반올림 방법
+• 입체와 용기를 3D로(Pro): 치수 표시, 액면을 끌어서 확인
 • Pro: 탱크 경판과 조견표, 윤곽에서 회전체, STL, GIF
 • 수정: 3D를 돌리면 그림자가 사라짐, 회전체 가장자리의 톱니
 </ko-KR>
@@ -279,6 +284,8 @@ have not been checked by native speakers.
 • 把圖形分享成圖片；小工具、快捷設定方塊、捷徑
 • 記錄：搜尋、置頂、選幾列加總
 • 依地區的數字寫法（1.234,5 等）
+• 結果的位數：小數點後位數、有效數字、捨入方式
+• 以 3D 觀看立體與容器（Pro）：標示尺寸，拖曳液面
 • Pro：儲槽封頭與速查表、由輪廓做旋轉體、STL、GIF
 • 修正：旋轉 3D 時陰影消失、旋轉體邊緣鋸齒
 </zh-TW>

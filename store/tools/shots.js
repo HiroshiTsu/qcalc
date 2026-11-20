@@ -1,13 +1,14 @@
 // Makes the pictures of the Google Play listing from the real app (QCalc 1.12.0, stage M2):
 //   store/screenshots-1.12/<set>/phone-1-…png … phone-8-…png   1080 × 1920 (8 phone pictures)
 //   store/screenshots-1.12/<set>/landscape-1-2d-to-3d.png      1920 × 1080
-//   store/screenshots-1.12/<set>/tablet7-1-…png … (4)          1200 × 1920
-//   store/screenshots-1.12/<set>/tablet10-1-…png … (4)         1600 × 2560
+//   store/screenshots-1.12/<set>/tablet7-1-…png … (5)          1200 × 1920
+//   store/screenshots-1.12/<set>/tablet10-1-…png … (5)         1600 × 2560
+//   store/screenshots-1.12/<set>/alt/phone-5-profile.png       1080 × 1920 (the earlier fifth phone picture, kind alt)
 //   store/feature-graphic-1.12-<set>.png                       1024 × 500 (for ja, en, de, es, fr, ko, zh-TW)
 // Each picture is a screen of the app (Chromium showing app/assets with the real engine through the test
 // server) under a short headline (store/tools/captions.json). The pictures are put together in Chromium
 // too (an HTML page made here), so nothing but Node.js, Playwright and the test server is needed.
-// Usage: node store/tools/shots.js <base url of the test server> [sets: ja,en,…] [kinds: phone,land,tab,fg] [phone pictures: calc,exact,…]
+// Usage: node store/tools/shots.js <base url of the test server> [sets: ja,en,…] [kinds: phone,land,tab,fg,alt] [phone pictures: calc,exact,…]
 // e.g.   node store/tools/shots.js http://127.0.0.1:8790/ ja phone
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -18,7 +19,7 @@ const { sleep } = Q;
 const BASE = process.argv[2] || 'http://127.0.0.1:8790/';
 const SETS = (process.argv[3] || Object.keys(Q.SETS).join(',')).split(',');
 const KINDS = (process.argv[4] || 'phone,land,tab,fg').split(',');
-const ONLY = process.argv[5] ? process.argv[5].split(',') : null; // only these phone pictures (e.g. calc,exact)
+const ONLY = process.argv[5] ? process.argv[5].split(',') : null; // only these phone or tablet pictures (e.g. calc,exact,tank-3d)
 const STORE = path.join(__dirname, '..');
 const CAP = JSON.parse(fs.readFileSync(path.join(__dirname, 'captions.json'), 'utf8'));
 const ICON = 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(STORE, '..', 'icon', 'qcalc-icon.svg')).toString('base64');
@@ -58,6 +59,7 @@ const SCENES = {
   solid2d: { dark: true, run: Q.solid2d },
   solid3d: { dark: true, run: async (page) => { await Q.solid2d(page); await Q.solid3d(page); } },
   profile: { dark: false, run: Q.profile },
+  'tank-3d': { dark: false, run: async (page, set) => { await Q.tank3d(page, set, 62); } },
   notes: { dark: true, run: async (page, set) => { await Q.tool(page, 'memo', 0); await sleep(1500); await Q.localNotes(page, set); } },
   exact: {
     // exact answers, then π with 100 digits (the precision setting goes up to 200,000)
@@ -118,7 +120,7 @@ const cap = (set, key) => (CAP[set] || CAP[Q.SETS[set].lang])[key];
     const dir = path.join(STORE, 'screenshots-1.12', set);
     // ---- 8 phone pictures, 1080 × 1920
     if (KINDS.indexOf('phone') >= 0) {
-      const order = [['calc', 'p1', null], ['everyday', 'p2', null], ['convert', 'p3', null], ['2d-to-3d', 'p4', 'tag_3d'], ['profile', 'p5', 'tag_pro'], ['notes', 'p6', null], ['exact', 'p7', 'tag_digits'], ['offline', 'p8', null]];
+      const order = [['calc', 'p1', null], ['everyday', 'p2', null], ['convert', 'p3', null], ['2d-to-3d', 'p4', 'tag_3d'], ['tank-3d', 'p5', 'tag_pro'], ['notes', 'p6', null], ['exact', 'p7', 'tag_digits'], ['offline', 'p8', null]];
       for (let i = 0; i < order.length; i++) {
         const [name, key, tagKey] = order[i];
         if (ONLY && ONLY.indexOf(name) < 0) continue;
@@ -137,6 +139,13 @@ const cap = (set, key) => (CAP[set] || CAP[Q.SETS[set].lang])[key];
         await compose(browser, set, k, path.join(dir, `phone-${i + 1}-${name}.png`));
       }
     }
+    // ---- the earlier fifth phone picture (a solid from a profile), kept as an alternative to the tank in 3D
+    if (KINDS.indexOf('alt') >= 0) {
+      const sc = SCENES.profile;
+      const buf = await screen(browser, set, { viewport: { width: 393, height: 873 }, dpr: 1600 / 873, dark: sc.dark }, (p) => sc.run(p, set));
+      const k = { W: 1080, H: 1920, hx: 60, hy: 48, hw: 960, fs: 66, dark: sc.dark, lines: cap(set, 'p5_profile'), tag: cap(set, 'tag_pro'), imgs: [{ src: png(buf), x: 180, y: 290, w: 720, h: 1600, r: 48 }] };
+      await compose(browser, set, k, path.join(dir, 'alt', 'phone-5-profile.png'));
+    }
     // ---- 16:9, 1920 × 1080: the headline at the left, the 2D graph and the solid in 3D at the right
     if (KINDS.indexOf('land') >= 0) {
       const o = Object.assign({ dpr: 833 / 640, dark: true }, PH);
@@ -148,10 +157,11 @@ const cap = (set, key) => (CAP[set] || CAP[Q.SETS[set].lang])[key];
     }
     // ---- tablets: 7 inch 1200 × 1920 (the app at 600 × 800) and 10 inch 1600 × 2560 (the app at 800 × 1080)
     if (KINDS.indexOf('tab') >= 0) {
-      const T = [['calc', 'p1', null, 'calc'], ['tools', 't2', null, 'tools'], ['solid2d', 'p4', null, '2d-graph'], ['solid3d', 't4', 'tag_pro', '3d']];
+      const T = [['calc', 'p1', null, 'calc'], ['tools', 't2', null, 'tools'], ['solid2d', 'p4', null, '2d-graph'], ['solid3d', 't4', 'tag_pro', '3d'], ['tank-3d', 't5', 'tag_pro', 'tank-3d']];
       for (const [W, H, vw, vh, dpr, x, y, fs, nm] of [[1200, 1920, 600, 800, 1.8, 60, 420, 80, 'tablet7'], [1600, 2560, 800, 1080, 1.8, 80, 540, 104, 'tablet10']]) {
         for (let i = 0; i < T.length; i++) {
           const [scene, key, tagKey, file] = T[i];
+          if (ONLY && ONLY.indexOf(file) < 0) continue;
           const sc = SCENES[scene];
           const buf = await screen(browser, set, { viewport: { width: vw, height: vh }, dpr, dark: sc.dark }, (p) => sc.run(p, set));
           const k = { W, H, hx: x, hy: Math.round(y * 0.2), hw: W - 2 * x, fs, dark: sc.dark, lines: cap(set, key), tag: tagKey ? cap(set, tagKey) : null,
