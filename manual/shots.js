@@ -93,6 +93,27 @@ const SHOTS = {
     await outInView(page);
   },
   async profile(page) { await tool(page, 'profile', 0); await sleep(1500); await outInView(page); },
+  // (1.12.0, D6) a lying tank with semi-elliptical 2:1 heads in 3D, about 62 % full (D 1.2 m, L 2.4 m, in litres)
+  async shapes3d(page) {
+    await tool(page, 'tanks');
+    await page.evaluate(async () => {
+      const b = Array.from(document.querySelectorAll('.panel.open .panel-body')).pop(), wait = (ms) => new Promise((x) => setTimeout(x, ms));
+      const head = Array.from(b.querySelectorAll('.head-row button')).find((x) => /2:1/.test(x.textContent)); if (head) { head.click(); await wait(800); }
+      const d = Array.from(b.querySelectorAll('button')).find((x) => /^(直径|Diameter|Durchmesser|Diámetro|Diamètre|지름|直徑)$/.test(x.textContent.trim()));
+      if (d) { d.click(); await wait(300); }
+      const u = Array.from(b.querySelectorAll('select')).find((s) => Array.from(s.options).some((o) => o.value === 'm'));
+      if (u) { u.value = 'm'; u.dispatchEvent(new Event('change', { bubbles: true })); await wait(400); }
+      const v = Array.from(b.querySelectorAll('select')).find((s) => Array.from(s.options).some((o) => o.value === 'L'));
+      if (v) { v.value = 'L'; v.dispatchEvent(new Event('change', { bubbles: true })); await wait(400); }
+      const ins = Array.from(b.querySelectorAll('.geo-size input')).slice(0, 3);
+      ['1.2', '2.4', '0.711'].forEach((x, i) => { if (ins[i]) { ins[i].value = x; ins[i].dispatchEvent(new Event('input', { bubbles: true })); } });
+    });
+    await sleep(2500);
+    await page.evaluate(() => { const b = document.querySelector('.panel.open .geo-3d'); if (b) b.click(); });
+    await sleep(4500);
+    await page.evaluate(() => { const b = Array.from(document.querySelectorAll('.panel.open .panel-body')).pop(); b.scrollTop = 0; });
+    await sleep(300);
+  },
   async area(page) {
     await menu(page, 2);
     const m2 = page.locator('.panel.open .plot-mode').nth(0);

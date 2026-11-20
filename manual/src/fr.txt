@@ -33,6 +33,8 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 - **De la 2D à la 3D** : [[!⟳ 3D]] transforme aussitôt une région du graphique en solide de révolution et le montre en 3D (3D : QCalc Pro) ; aussi des solides à sections connues, les lignes de la méthode et le théorème de Guldin ([Créer un solide](#solid)).
 - **Ouvrir vite** : un widget, une vignette des réglages rapides et des raccourcis sur l'icône ([Widget, vignette et raccourcis](#widget)).
 - **Partager** : images des graphiques et GIF animés des graphiques 3D ([Partager](#share)).
+- **Solides et cuves en 3D** : [[!⟳ 3D]], en haut à gauche du dessin dans [[Solids]] et [[Tanks]], montre la forme en 3D avec les dimensions saisies ; dans une cuve, le niveau se fait glisser pour voir la quantité ([Solides et cuves en 3D](#shapes-3d) ; la 3D est QCalc Pro).
+- **Chiffres des résultats** : les chiffres des résultats de Formes, Cuves, etc., en décimales ou en chiffres significatifs, par type de grandeur, avec l’arrondi ; tout % a d’abord une décimale ([Chiffres des résultats](#digits)).
 - **QCalc Pro** : CSV des tableaux, fonds de cuves avec barèmes de jaugeage, solides à partir d'un profil, fichiers STL, plus de notes de calcul et plus encore ([QCalc Pro](#pro)).
 - **Ce manuel** : il est dans l'app. Le « ? » en haut à droite d'un outil ou d'un panneau ouvre sa section.
 
@@ -262,6 +264,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Les résultats changent pendant la saisie ; un toucher utilise ou copie leur calcul.
 :example: Une sphère de rayon 2 → volume 32π/3 ≈ 33,51032164, surface 16π
 :tip: Choisissez un matériau pour obtenir le poids.
+:tip: [[!⟳ 3D]], en haut à gauche du dessin, montre le solide en 3D pour le faire tourner ([Solides et cuves en 3D](#shapes-3d)).
 
 ## tanks | Cuves : liquide et niveau
 :what: La quantité de liquide dans une cuve horizontale ou verticale, ou dans un récipient rond, à partir de la hauteur du liquide, et la hauteur pour une quantité.
@@ -282,6 +285,33 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: L est la longueur du corps (sans les fonds).
 :step: Dans [[Quick-reference table ▾]], tapez le pas : un tableau des hauteurs et des quantités, à copier ou à enregistrer en CSV.
 :tip: Les fonds plats (un simple cylindre, comme avant) sont gratuits.
+
+## shapes-3d | Solides et cuves en 3D
+:pro:
+:what: La forme de [[Solids]] ou de [[Tanks]], avec les dimensions saisies, en 3D à faire tourner. Au-dessus, en grand, le volume et l’aire de la surface de l’outil (pour une cuve, la quantité de liquide et la capacité).
+:step: Dans [[Solids]] ou [[Tanks]] des outils, choisissez une forme et saisissez ses dimensions.
+:step: Appuyez sur [[!⟳ 3D]] en haut à gauche du dessin (lu comme [[View in 3D]]). La forme grandit en 3D.
+:step: Faites-la tourner d’un doigt, zoomez à deux doigts. Un solide de révolution montre sa coupe avec [[Cut in half]].
+:step: [[← Back to the shape]] revient à l’outil avec la même forme et les mêmes dimensions.
+:shot: shapes3d | Une cuve horizontale avec fonds en 3D
+:example: Un cylindre de 30 cm de diamètre et de 50 cm de hauteur → volume 11250π ≈ 35342,91735 cm³
+:tip: La cuve est dessinée transparente, le liquide comme un solide de sa propre couleur. Faites glisser vers le haut ou le bas depuis le niveau (la case de la quantité) pour le déplacer : [[Height of the liquid]] dans l’outil change aussi. Un glissement ailleurs fait tourner le graphique. Le curseur [[Level]] en dessous le déplace aussi.
+:tip: Les traits sur la paroi sont des quantités rondes : dans une cuve horizontale ou sphérique, leurs écarts sont visiblement inégaux.
+:tip: Les nombres au niveau sont arrondis pour la lecture (3 chiffres significatifs, % avec une décimale) ; les valeurs exactes sont au-dessus du graphique et dans l’outil ([Chiffres des résultats](#digits)).
+:note: Sans QCalc Pro, la ligne [[Turn it in 3D (QCalc Pro)]] apparaît juste au-dessus des résultats.
+
+## digits | Chiffres des résultats
+:what: Combien de chiffres les résultats de Formes, Cuves, Solide à partir d’un profil et Faire un solide montrent après « ≈ ». Les valeurs exactes (11250π) restent. Ce réglage est indépendant de [[Precision (significant digits)]] de la calculatrice.
+:step: Au-dessus des résultats, choisissez dans [[Digits: auto]], par exemple [[Digits: 2 decimal places]].
+:step: Pour davantage, ouvrez [[Digits in detail ▾]].
+:step: Choisissez [[Decimal places]] ou [[Significant digits]] et saisissez le nombre de chiffres (0 à 15).
+:step: [[Each kind of quantity on its own]] règle séparément volume, aire, longueur, poids et %.
+:example: Le volume d’un cylindre 11250π ≈ 35342,91735 cm³ → avec 2 décimales 11250π ≈ 35342,92 cm³ ; avec 4 chiffres significatifs 11250π ≈ 35340 cm³
+:tip: Les nombres [[In the 3D picture]] (au niveau, sur l’échelle, les dimensions) ont leur propre réglage : en auto, 3 chiffres significatifs et % avec une décimale.
+:tip: L’arrondi est [[Round half up]], [[Round down]] ou [[Round up]] ; les zéros finaux, [[Keep (2.50)]] ou [[Drop (2.5)]].
+:tip: Un tableau enregistré en CSV a d’abord tous les chiffres ; avec [[As shown]], il a ceux de l’écran.
+:tip: Les mêmes réglages sont dans [[Settings]], sous [[Digits of the tools]] ; [[Back to the first settings]] remet l’auto.
+:note: Pas plus de 15 chiffres : les nombres sont calculés en double précision. Avec les réglages initiaux, tout % a une décimale.
 
 ## measured | Volume à partir de mesures
 :what: Le volume d'un terrassement ou d'un bassin à partir d'un tableau de sections (sections moyennes, méthode de Simpson) ou d'une grille de hauteurs.
@@ -386,6 +416,9 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Ouvrez [[Volume and surface ▾]] : le volume et la surface s'affichent aussitôt.
 :step: Choisissez la région : un rectangle, un disque, la partie fermée ou une région donnée par des formules.
 :example: La sphère de l'exemple (rayon 2) → volume 32π/3, surface 16π
+:tip: Sous [[Example]], en bas, chaque solide peut être choisi : [[Draw]] le dessine en 3D avec les valeurs de Formes, et [[Change the numbers]] ouvre Formes.
+:tip: Pour un solide fait dans le graphique 2D ([[!⟳ 3D]]) ou dans [[Solid from a profile]], [[Volume and surface ▾]] dans sa vue 3D affiche les valeurs trouvées là ([[Values of the solid of revolution]]). Les outils de la région reviennent quand d'autres formules sont tracées.
+:tip: Là où les surfaces n'ont pas de valeurs réelles dans une partie de la région, [[Measure the enclosed part]] ne mesure que là où elles sont réelles.
 
 ## share | Partager des images et des GIF
 :what: Envoie une image d'un graphique à une autre app ; un graphique 3D aussi en GIF animé.
@@ -427,6 +460,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 | [[Number format]] | Le séparateur décimal et les groupes de chiffres ([Format des nombres](#number-format)) |
 | [[Fractions]] | Automatique, décimal, fraction, fraction mixte |
 | [[Precision (significant digits)]] | La précision des calculs (10 par défaut) |
+| [[Digits of the tools]] | Les chiffres des résultats de Formes, Cuves, etc. ([Chiffres des résultats](#digits)) |
 | [[Light or dark]] | Les couleurs de l'écran |
 | [[Text size]] | Le texte de l'historique, du champ de saisie et du résultat |
 | [[Color theme]] | La couleur des touches (sauf le bleu : QCalc Pro) |
@@ -473,6 +507,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 | Tableaux en CSV (prêt, épargne) | [Prêt](#loan) |
 | Fonds de cuves et barèmes de jaugeage | [Fonds de cuves](#tank-heads) |
 | Solide à partir d'un profil | [Solide à partir d'un profil](#profile) |
+| Solides et cuves en 3D | [Solides et cuves en 3D](#shapes-3d) |
 | Fichiers STL | [Fichiers STL](#stl) |
 | GIF et images sans la marque | [Partager](#share) |
 | Plus de notes de calcul, enregistrées en fichier | [Notes de calcul](#notes) |

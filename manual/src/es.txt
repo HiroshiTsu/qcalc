@@ -33,6 +33,8 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 - **De 2D a 3D**: [[!⟳ 3D]] convierte al momento una región de la gráfica en un sólido de revolución y lo muestra en 3D (3D: QCalc Pro); también sólidos de sección conocida, las líneas del método y el teorema de Pappus ([Crear un sólido](#solid)).
 - **Abrir rápido**: un widget, un mosaico de ajustes rápidos y accesos directos en el icono ([Widget, mosaico y accesos directos](#widget)).
 - **Compartir**: imágenes de gráficas y GIF animados de las gráficas 3D ([Compartir](#share)).
+- **Sólidos y depósitos en 3D**: [[!⟳ 3D]], arriba a la izquierda del dibujo en [[Solids]] y [[Tanks]], muestra la figura en 3D con las medidas escritas; en un depósito se puede arrastrar el nivel para ver la cantidad ([Sólidos y depósitos en 3D](#shapes-3d); 3D es QCalc Pro).
+- **Cifras de los resultados**: las cifras de los resultados de Figuras, Depósitos y similares, como decimales o cifras significativas, por tipo de magnitud, con el redondeo; todo % tiene un decimal al principio ([Cifras de los resultados](#digits)).
 - **QCalc Pro**: CSV de tablas, fondos de tanques con tablas de consulta, sólidos a partir de un perfil, archivos STL, más notas de cálculo y más ([QCalc Pro](#pro)).
 - **Este manual**: está dentro de la app. El «?» arriba a la derecha de una herramienta o panel abre su sección.
 
@@ -262,6 +264,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :step: Los resultados cambian mientras escribes; un toque usa o copia su expresión.
 :example: Una esfera de radio 2 → volumen 32π/3 ≈ 33.51032164, superficie 16π
 :tip: Elige un material para obtener el peso.
+:tip: [[!⟳ 3D]], arriba a la izquierda del dibujo, muestra el sólido en 3D para girarlo ([Sólidos y depósitos en 3D](#shapes-3d)).
 
 ## tanks | Tanques: líquido y nivel
 :what: La cantidad de líquido en un tanque horizontal o vertical, o en un recipiente redondo, a partir de la altura del líquido, y la altura para una cantidad.
@@ -282,6 +285,33 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :step: L es la longitud del cuerpo (sin los fondos).
 :step: En [[Quick-reference table ▾]], escribe el paso: una tabla de alturas y cantidades, para copiar o guardar como CSV.
 :tip: Los fondos planos (un cilindro simple, como antes) son gratis.
+
+## shapes-3d | Sólidos y depósitos en 3D
+:pro:
+:what: La figura de [[Solids]] o [[Tanks]], con las medidas escritas, en 3D para girarla. Encima, en grande, el volumen y el área superficial de la herramienta (en un depósito, la cantidad de líquido y la capacidad).
+:step: En [[Solids]] o [[Tanks]] de las herramientas, elija una figura y escriba sus medidas.
+:step: Pulse [[!⟳ 3D]] arriba a la izquierda del dibujo (se lee como [[View in 3D]]). La figura crece en 3D.
+:step: Gírela con un dedo y amplíe con dos. Un sólido de revolución muestra su corte con [[Cut in half]].
+:step: [[← Back to the shape]] vuelve a la herramienta con la misma figura y las mismas medidas.
+:shot: shapes3d | Un depósito horizontal con fondos en 3D
+:example: Un cilindro de 30 cm de diámetro y 50 cm de altura → volumen 11250π ≈ 35342,91735 cm³
+:tip: El depósito se dibuja transparente y el líquido como un sólido de su propio color. Arrastre hacia arriba o abajo desde el nivel (el recuadro con la cantidad) para moverlo: [[Height of the liquid]] de la herramienta cambia también. Arrastrar en otro sitio gira el gráfico. El control [[Level]] de abajo también lo mueve.
+:tip: Las marcas de la pared son cantidades redondas: en un depósito horizontal o esférico sus distancias son visiblemente desiguales.
+:tip: Los números del nivel están redondeados para leerlos (3 cifras significativas, % con un decimal); los valores exactos están encima del gráfico y en la herramienta ([Cifras de los resultados](#digits)).
+:note: Sin QCalc Pro, la fila [[Turn it in 3D (QCalc Pro)]] aparece justo encima de los resultados.
+
+## digits | Cifras de los resultados
+:what: Cuántas cifras muestran tras "≈" los resultados de Figuras, Depósitos, Sólido a partir de un perfil y Hacer un sólido. Los valores exactos (11250π) se mantienen. Es independiente de [[Precision (significant digits)]] de la calculadora.
+:step: Encima de los resultados, elija en [[Digits: auto]], por ejemplo, [[Digits: 2 decimal places]].
+:step: Para más, abra [[Digits in detail ▾]].
+:step: Elija [[Decimal places]] o [[Significant digits]] y escriba el número de cifras (0 a 15).
+:step: [[Each kind of quantity on its own]] fija por separado volumen, área, longitud, peso y %.
+:example: El volumen de un cilindro 11250π ≈ 35342,91735 cm³ → con 2 decimales 11250π ≈ 35342,92 cm³; con 4 cifras significativas 11250π ≈ 35340 cm³
+:tip: Los números [[In the 3D picture]] (en el nivel, en la escala, las medidas) tienen su propio ajuste: en auto, 3 cifras significativas y % con un decimal.
+:tip: El redondeo es [[Round half up]], [[Round down]] o [[Round up]]; los ceros finales, [[Keep (2.50)]] o [[Drop (2.5)]].
+:tip: Una tabla guardada como CSV tiene al principio todas las cifras; con [[As shown]] tiene las de la pantalla.
+:tip: Los mismos ajustes están en [[Settings]], en [[Digits of the tools]]; [[Back to the first settings]] vuelve a auto.
+:note: No más de 15 cifras: los números se calculan en doble precisión. Con los ajustes iniciales todo % tiene un decimal.
 
 ## measured | Volumen a partir de medidas
 :what: El volumen de un movimiento de tierras o de un estanque a partir de una tabla de secciones (áreas medias, regla de Simpson) o de una cuadrícula de alturas.
@@ -386,6 +416,9 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :step: Abre [[Volume and surface ▾]]: el volumen y la superficie aparecen al momento.
 :step: Elige la región: un rectángulo, un disco, la parte encerrada o una dada por fórmulas.
 :example: La esfera de ejemplo (radio 2) → volumen 32π/3, superficie 16π
+:tip: En [[Example]], abajo, se puede elegir cualquier sólido: [[Draw]] lo dibuja en 3D con los valores de Figuras, y [[Change the numbers]] abre Figuras.
+:tip: Para un sólido hecho en la gráfica 2D ([[!⟳ 3D]]) o en [[Solid from a profile]], [[Volume and surface ▾]] en su vista 3D muestra los valores hallados allí ([[Values of the solid of revolution]]). Las herramientas de la región vuelven cuando se dibujan otras fórmulas.
+:tip: Donde las superficies no tienen valores reales en parte de la región, [[Measure the enclosed part]] mide solo donde son reales.
 
 ## share | Compartir imágenes y GIF
 :what: Envía una imagen de una gráfica a otra app; una gráfica 3D también como GIF animado.
@@ -427,6 +460,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 | [[Number format]] | El separador decimal y los grupos de cifras ([Formato de números](#number-format)) |
 | [[Fractions]] | Automático, decimal, fracción, fracción mixta |
 | [[Precision (significant digits)]] | La precisión de los cálculos (10 por defecto) |
+| [[Digits of the tools]] | Las cifras de los resultados de Figuras, Depósitos y similares ([Cifras de los resultados](#digits)) |
 | [[Light or dark]] | Los colores de la pantalla |
 | [[Text size]] | El texto del historial, el campo de entrada y el resultado |
 | [[Color theme]] | El color de las teclas (salvo el azul: QCalc Pro) |
@@ -473,6 +507,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 | Tablas como CSV (préstamo, ahorro) | [Préstamo](#loan) |
 | Fondos de tanques y tablas de consulta | [Fondos de tanques](#tank-heads) |
 | Sólido a partir de un perfil | [Sólido a partir de un perfil](#profile) |
+| Sólidos y depósitos en 3D | [Sólidos y depósitos en 3D](#shapes-3d) |
 | Archivos STL | [Archivos STL](#stl) |
 | GIF e imágenes sin la marca | [Compartir](#share) |
 | Más notas de cálculo, guardadas como archivo | [Notas de cálculo](#notes) |

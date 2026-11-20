@@ -264,7 +264,7 @@
   };
   const FORM_HELP = { int: 'calculus', diff: 'calculus', lim: 'calculus', sum: 'calculus', prod: 'calculus', dsolve: 'calculus', subst: 'calculus', solve: 'equations', mat: 'matrices' };
   // every id the app links to (for the test of the links; '' is the top of the manual)
-  const MANUAL_IDS = Array.from(new Set(['', 'forms', 'pro-features', 'new-1-12', 'graph-3d', 'volume-3d', 'area-length', 'solid', 'tanks', 'stl']
+  const MANUAL_IDS = Array.from(new Set(['', 'forms', 'pro-features', 'new-1-12', 'graph-3d', 'volume-3d', 'area-length', 'solid', 'tanks', 'stl', 'shapes-3d', 'digits']
     .concat(Object.values(HELP), Object.values(PRO_HELP), Object.values(FORM_HELP))));
   window.QalcManual = { url: manualUrl, ids: MANUAL_IDS, langs: MANUAL_LANGS };
 
@@ -3503,7 +3503,7 @@
     tr('⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis and shows the solid in 3D at once, with its volume (QCalc Pro; without it, the solid and its volume in the 2D graph). Back in 2D (← Back to 2D), tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.', '2D グラフの右の丸いボタン「⟳ 3D」で、色の付いた部分を x 軸のまわりに回した立体が 3D ですぐに出て、体積も出ます（QCalc Pro。無料では 2D のグラフに立体の形と体積が出ます）。「← 2D に戻る」で 2D に戻り、y 軸（または x 軸）の線をタップすると、その軸のまわりに回します。y = k・x = k は線をドラッグして動かせます。軸の反対側に薄く映った形が、立体を軸で切った形です。変えたあとのメッセージの「↶ 元に戻す」で戻せます。'),
     tr('"Make a solid ▾" → "Cross sections": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under "More shapes ▾"); the volume V = ∫ A(s(x)) dx, s being the width of the region.', '「立体にする ▾」→「断面の立体」では、色の付いた部分の上に、x 軸に垂直に正方形 □・正三角形 △・半円 ◠ を立てた立体の体積 V = ∫ A(s(x)) dx を出します（s は底面の幅。ほかの形は「詳しく：ほかの形 ▾」）。'),
     tr('In "Make a solid", "Show the method with lines" draws the thin disks or rings (across the axis) or the shells (along the axis) that the volume adds up, n of them. When the region is on one side of the axis, the theorem of Pappus and Guldinus is shown too: V = 2π d A (A the area, d the distance of its centre from the axis). In the 3D view the slider "Angle" turns the solid from 0° to 360° (180°: cut in half); ▶ turns it again.', '「立体にする」の「方法を線で見せる」では、体積を足し合わせる薄い円板・穴のあいた円板（軸に垂直）か、殻（軸に平行）を n 本の線で描きます。領域が軸の片側にあるときは、パップス・ギュルダンの定理 V = 2π d A（A は面積、d は重心から軸までの距離）も出します。3D で見るときは「角度」のスライダーで 0° から 360° まで回せます（180° で半分に切った形）。▶ でもう一度回ります。'),
-    tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks like a pale gelatin in a skin of a deeper shade in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで濃い色の皮に包まれた薄い色のゼラチンのように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
+    tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in "Solid from a profile" or in "Shapes" (⟳ 3D), it shows the values found there. Under "Example" at the bottom, every solid of "Shapes" can be drawn in 3D with its values ("Change the numbers" opens "Shapes").', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。2D グラフ（⟳ 3D）や「輪郭から回転体」、「図形」（⟳ 3D）で作った立体では、そこで出した値が出ます。下の「図形の例」では、「図形」のすべての立体を、その値のまま 3D で描けます（「数を変える」で「図形」が開きます）。'),
     tr('Its region "Enclosed" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.',
       '範囲の「囲まれた部分」は、一方の曲面がもう一方より上にある部分（または z = 0 より上の部分）を、交線から自動で見つけます。例：z = x² + y² と z = 4 なら 8π。範囲を式（x² + y² ≤ 4）で示して床に輪郭を描き、部分が複数あれば部分ごとに出します。'),
     tr('Its region "Custom" takes a region you type: a rectangle a ≤ x ≤ b, c ≤ y ≤ d, a disk with a centre, a ring, a sector (in degrees or radians), the region between two curves (g₁(x) ≤ y ≤ g₂(x) or h₁(y) ≤ x ≤ h₂(y)), or inequalities joined by "and" (x²/4 + y² ≤ 1 and y ≥ 0). The iterated integral is shown and can be put into the input field. "Volume" counts the parts below as positive, "Integral" as negative (sin x over [0, 2π] × [0, 1]: 4 and 0).', '範囲の「指定」では、範囲を式で入れられます：長方形 a ≤ x ≤ b・c ≤ y ≤ d、中心のある円、環、扇形（度でもラジアンでも）、2 本の曲線ではさむ範囲（g₁(x) ≤ y ≤ g₂(x) または h₁(y) ≤ x ≤ h₂(y)）、「かつ」でつないだ不等式（x²/4 + y² ≤ 1 かつ y ≥ 0）。累次積分の式を示し、入力欄に入れることもできます。「体積」は下の部分もプラス、「積分の値」はマイナスとして数えます（sin x、[0, 2π] × [0, 1] なら 4 と 0）。'),
@@ -4056,14 +4056,18 @@
   const COLORS = ['#2563eb', '#e11d48', '#059669', '#d97706', '#7c3aed', '#0891b2'];
   const P = { series: [], view: null, dataX: null, exprs: [] };
   function openPlot() {
+    // (D6: a solid of "Shapes" in the 3D graph ends when the graph is opened for something else)
+    if (Q3.model && !Q3.opening3d) endModel3d(false);
     const p = panel('plot', tr('Graph', 'グラフ'), (p) => {
+      // (D6: and when the graph is closed: "← Back to the shape" and Back)
+      p.onClose = () => { if (Q3.model) endModel3d(false); };
       // 2D (y = f(x)) and 3D (z = f(x, y)); the last one used is shown
       const b2 = el('button', { text: tr('2D  y = f(x)', '2D　y = f(x)') }), b3 = el('button', { text: tr('3D  z = f(x, y)', '3D　z = f(x, y)') });
       const f2 = el('div', { class: 'plot-mode' }), f3 = build3d();
       let started2d = false;
       // "?" of the graph: the section of what is open (the solid, the area, "Volume and surface")
       p.help = () => {
-        if (!f3.hidden) return f3.querySelector('.vol-toggle.on') ? 'volume-3d' : 'graph-3d';
+        if (!f3.hidden) return Q3.model ? 'shapes-3d' : f3.querySelector('.vol-toggle.on') ? 'volume-3d' : 'graph-3d';
         const U = P.areaUI;
         if (U && U.rev && !U.rev.box.hidden) return 'solid';
         if (U && U.areaOpen) return 'area-length';
@@ -5353,7 +5357,8 @@
   // shapes to draw and measure: a circle (radius r), an ellipse (half axes a and b)
   const PARAM_NAMES = { r: tr('radius r', '半径 r'), a: tr('half axis a (x)', 'x 方向の半径 a'), b: tr('half axis b (y)', 'y 方向の半径 b') };
   const SHAPES2D = [['circle', tr('Circle', '円'), ['r'], ['2']], ['ellipse', tr('Ellipse', '楕円'), ['a', 'b'], ['3', '2']]];
-  function buildShapes(defs, run) {
+  // (defs: [key, name, sizes, first values, names read out of the sizes]; more: a second button { text, fn }, D6)
+  function buildShapes(defs, run, more) {
     const sel = el('select', { 'aria-label': tr('Shape', '図形') });
     for (const [k, t] of defs) sel.append(el('option', { value: k, text: t }));
     const params = el('span', { class: 'shape-params' });
@@ -5362,21 +5367,23 @@
       params.textContent = '';
       const d = defs.find((x) => x[0] === sel.value);
       d[2].forEach((n, i) => {
-        inputs[n] = inputs[n] || el('input', { inputmode: 'text', autocapitalize: 'off', value: d[3][i] });
-        inputs[n].setAttribute('aria-label', d[1] + ' ' + (PARAM_NAMES[n] || n));
-        params.append(el('span', { text: n + ' =' }), inputs[n]);
+        const key = d[0] + ':' + n;
+        inputs[key] = inputs[key] || el('input', { inputmode: 'text', autocapitalize: 'off', value: toDisplay(d[3][i]) });
+        inputs[key].setAttribute('aria-label', d[1] + ' ' + (d[4] ? d[4][i] : PARAM_NAMES[n] || n));
+        params.append(el('span', { text: n + ' =' }), inputs[key]);
       });
     };
     sel.addEventListener('change', build);
     build();
-    const go = tapButton({ class: 'btn', text: tr('Draw', '描く') }, () => {
-      const d = defs.find((x) => x[0] === sel.value);
-      const v = {};
-      for (const n of d[2]) v[n] = normalizeExpr(inputs[n].value);
-      if (d[2].some((n) => !v[n])) { toast(tr('Enter the sizes', '大きさを入れてください'), 1800); return; }
-      run(sel.value, v);
-    });
-    return el('div', { class: 'plot-range shapes' }, el('span', { text: tr('Example', '図形の例') }), sel, params, go);
+    const sizes = () => {
+      const d = defs.find((x) => x[0] === sel.value), v = {};
+      for (const n of d[2]) v[n] = normalizeExpr(inputs[d[0] + ':' + n].value);
+      if (d[2].some((n) => !v[n])) { toast(tr('Enter the sizes', '大きさを入れてください'), 1800); return null; }
+      return v;
+    };
+    const go = tapButton({ class: 'btn', text: tr('Draw', '描く') }, () => { const v = sizes(); if (v) run(sel.value, v); });
+    const second = more ? tapButton({ class: 'btn shape-more', text: more.text }, () => { const v = sizes(); if (v) more.fn(sel.value, v); }) : null;
+    return el('div', { class: 'plot-range shapes' }, el('span', { text: tr('Example', '図形の例') }), sel, params, go, ...(second ? [second] : []));
   }
   function buildShapes2d() { return buildShapes(SHAPES2D, drawShape2d); }
   // a circle (v.r) or an ellipse (v.a, v.b) in the 2D graph, with its area and perimeter:
@@ -6190,6 +6197,7 @@
     if (rp && !rp.parts.length) return fail(noRealText());
     const parts = rp ? rp.parts : [rn];
     const vrow = revRow(R, tr('Volume', '体積'), 'V = ∫ A(s(x)) dx');
+    R.rows = [{ row: vrow, name: tr('Volume', '体積'), small: 'V = ∫ A(s(x)) dx' }]; // (BG21: for the 3D view)
     const vals = [], vexpr = [];
     for (const p of parts) {
       const v = await revIntegral(F, p, []);
@@ -6270,8 +6278,14 @@
     const stlBtn = tapButton({ class: 'btn stl-btn', text: tr('Save as STL', 'STL で保存'), hidden: true }, () => { if (R.stlSpec) openStlSheet(R.stlSpec, R.kind === 'sec' ? 'sections' : 'revolution', null); });
     // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion"); (BG20)
     // the volume is shown large above the 3D graph, with "← Back to 2D"
+    // (BG21: "Volume and surface" in the 3D view shows the values found here, the rows of this solid as they fill)
     const show3d = () => {
-      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis, rims: R.three.rims, back: { vol: P.revVolText || '' } });
+      if (!R.three) return;
+      const rows = R.rows || [];
+      openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis, rims: R.three.rims, back: { vol: P.revVolText || '' },
+        solid: { src: R, title: R.kind === 'sec' ? tr('Values of the solid with cross sections', '断面の立体の値') : tr('Values of the solid of revolution', '回転体の値'),
+          hint: tr('The values found in "Make a solid" of the 2D graph. Other formulas drawn here are measured as an ordinary 3D graph.', '2D グラフの「立体にする」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測れます。'),
+          values: () => rows.map((q) => ({ name: q.name, small: q.small, result: q.row.result, expr: q.row.expr, text: q.row.result ? '' : q.row.val.textContent })) } });
     };
     const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, show3d);
     // (BG20, without Pro: after "⟳ 3D", above the results)
@@ -6331,8 +6345,11 @@
       if (!quiet) { computeRevolution(); }
     };
     const slicesRow = el('div', { class: 'rev-slices-row' }, slicesBtn, nRow);
+    // (1.12.0, D7) the digits of the results
+    const dig = digitsControl();
+    digRuns.add(() => { if (!box.hidden) { if (R.kind === 'sec') computeSections(); else computeRevolution(); } });
     const box = el('div', { class: 'rev-box' }, kinds, axisRow, secRow,
-      kErr, proRow, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
+      kErr, el('div', { class: 'geo-units' }, dig.sel), dig.more, proRow, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
       el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
     box.hidden = true;
     const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Make a solid ▾', '立体にする ▾'), 'aria-expanded': 'false' }, () => {
@@ -6396,7 +6413,13 @@
     R.outs.append(row.node);
     return row;
   }
-  const revShow = (row, val, expr) => { row.result = val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text; row.val.textContent = ''; showResult(row.val, valueShown(row.result)); row.expr = expr; };
+  // (1.12.0, D7: the number after ≈ with the digits set: a volume, or a surface area for the rows of the surfaces)
+  const revShow = (row, val, expr) => {
+    row.result = val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text;
+    const sp = digSpec(row.kind || 'vol');
+    if (sp && isFinite(val.v) && row.result.indexOf('≈') >= 0) row.result = withApprox(row.result, digRound(val.v, sp));
+    row.val.textContent = ''; showResult(row.val, valueShown(row.result)); row.expr = expr;
+  };
   // the volume and the surface of the solid, for the functions and the range of the area tools.
   // auto: opened or drawn (not a tap on the axis): the same, it only tells how long it took
   async function computeRevolution(auto) {
@@ -6442,9 +6465,15 @@
     if (!solid || solid.error) return fail(solid && solid.error);
     const vrow = revRow(R, tr('Volume', '体積'), ax.kind === 'h' ? 'π∫(R² − r²) dx' : '2π∫ρ h dρ');
     const srow = revRow(R, tr('Surface area (curved surfaces)', '表面積（曲面だけ）'), '2π∫ρ ds');
+    srow.kind = 'area';
     R.moreOuts.append(srow.node); // (1.12.0, B0: the surfaces under "More ▾")
     const erow = revRow(R, tr('Surface area (with the end faces)', '表面積（端の面も含む）'), ax.kind === 'h' ? tr('+ the flat faces at x = a and b', '＋ x = a、b の平らな面') : tr('+ the faces the sides at x = a and b make', '＋ x = a、b の辺が作る面'));
     R.moreOuts.append(erow.node);
+    erow.kind = 'area';
+    // (BG21: the rows of this solid, for "Volume and surface" in its 3D view)
+    R.rows = [{ row: vrow, name: tr('Volume', '体積'), small: ax.kind === 'h' ? 'π∫(R² − r²) dx' : '2π∫ρ h dρ' },
+      { row: srow, name: tr('Surface area (curved surfaces)', '表面積（曲面だけ）'), small: '2π∫ρ ds' },
+      { row: erow, name: tr('Surface area (with the end faces)', '表面積（端の面も含む）'), small: '' }];
     R.msg.textContent = '';
     R.method.textContent = solid.method + '\n' + solid.detail + (rp && rp.clipped ? '\n' + realNote(!!g, parts) : '');
     // the volume
@@ -6483,7 +6512,7 @@
       }
       if (bad) break;
     }
-    if (bad) { srow.val.textContent = bad; erow.val.textContent = bad; return; }
+    if (bad) { srow.val.textContent = bad; erow.val.textContent = bad; solidRefresh(R); return; }
     const S1 = curved.length ? await sumValues(curved) : { text: '0', exact: '0', v: 0 };
     if (stale()) return;
     revShow(srow, S1, sexpr.join(' + ') || '0');
@@ -6496,6 +6525,7 @@
     const S2 = ends.length ? await sumValues(curved.concat(ends)) : S1;
     if (stale()) return;
     revShow(erow, S2, sexpr.concat(eexpr).join(' + ') || '0');
+    solidRefresh(R);
   }
   // the axis of a solid of revolution in the graph: a dash-dot line, y = k or x = k, with "↻ axis"
   // (in the color of the text, so it is not taken for the dashed edges of the area)
@@ -6579,7 +6609,17 @@
   // area are calculated at once (volumeAuto). The example (a sphere) at the bottom of the box is
   // the only thing that draws another graph.
   const VOL_N = 101;
-  const SHAPES3D = [['sphere', tr('Sphere', '球'), ['r'], ['2']]];
+  // (1.12.0, D6: every solid of "Shapes", drawn there and shown in 3D with the same values; until then the sphere
+  // only, drawn with formulas)
+  const SHAPES3D = () => GEO.filter((g) => g.d === 3).map((g) => [g.k, g.name, g.p.map((q) => q[0]), g.def.slice(), g.p.map((q) => q[1])]);
+  // a solid of the examples: into "Shapes" (its sizes typed there) and, draw: in 3D at once
+  function shapeTo3d(k, v, draw) {
+    const p = openShapes(3);
+    if (!p.setShape) return;
+    const sh = GEO.find((g) => g.k === k);
+    p.setShape(k, sh.p.map(([n]) => v[n] || ''));
+    if (draw) p.view3d();
+  }
   function buildVolume3d() {
     const s1 = el('select', { 'aria-label': tr('Surface', '曲面') }), s2 = el('select', { 'aria-label': tr('and', 'と') });
     const out = el('div', { class: 'area-out', 'aria-live': 'polite' });
@@ -6687,18 +6727,23 @@
       out.textContent = ''; ins.hidden = true;
       if (!quiet) volumeAuto();
     };
-    // the color of the solid that is measured, as it is shown in the graph (1.8.4; draw3d sets it)
-    const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('In the graph, the solid that is measured looks like a pale gelatin of this color in a clear, glossy skin of a deeper shade', 'グラフでは、計測している立体を、この色の薄いゼラチンを、濃い色のつやのある透明な皮で包んだように示しています') }));
+    // the color of the solid that is measured, as it is shown in the graph (1.8.4; draw3d sets it). 1.12.0
+    // (BG21, the author's decision): a square of the color and a short name; the long sentence about a pale
+    // gelatin in a skin of a deeper shade is gone
+    const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('The solid measured', '測っている立体') }));
     const hint = el('div', { class: 'form-hint', text: tr('The values are those of the graph that is drawn. Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.', 'いま描いているグラフの値です。平面（またはもう一方の曲面）より下の部分もプラスとして数えます。表面積は 2 つの曲面（または曲面と z = 0 の底面）の面積の和で、側面は含みません。') });
     const hintEnc = el('div', { class: 'form-hint', hidden: true, text: tr('The values are those of the graph that is drawn: the solid between the two surfaces (or between the surface and z = 0) over the part found, and its whole surface, the upper and the lower surface over that part.', 'いま描いているグラフの値です。見つけた部分での 2 つの曲面（または曲面と z = 0）の間の立体の体積と、その表面全体（その部分の上と下の曲面）の面積です。') });
-    const box = el('div', { class: 'area-box' },
+    // 1.12.0 (BG21): the tools for z = f(x, y) in one part, hidden while the graph is a solid made elsewhere
+    // (⟳ 3D, "View in 3D", "Solid from a profile"), whose values are shown instead (solidBox, showSolidValues)
+    const tools = el('div', { class: 'vol-tools' },
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk, bEnc, bCus), rangeText, diskRow, encText),
       cusBox, signRow,
       legend, out, ins,
       hint, hintEnc,
-      buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
-      tapButton({ class: 'btn geo-link', text: tr('More shapes: cylinder, cone, box… ›', 'ほかの図形（円柱・円錐・直方体など）›') }, () => openShapes()));
+      buildShapes(SHAPES3D(), (k, v) => shapeTo3d(k, v, true), { text: tr('Change the numbers', '数を変える'), fn: (k, v) => shapeTo3d(k, v, false) }));
+    const solidBox = el('div', { class: 'solid-vals', hidden: true, 'aria-live': 'polite' });
+    const box = el('div', { class: 'area-box' }, solidBox, tools);
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle vol-toggle', text: tr('Volume and surface ▾', '体積・表面積 ▾') });
     // opened: the volume and the surface area of the drawn surface are shown at once
@@ -6709,7 +6754,7 @@
     R.addEventListener('change', () => volumeAuto());
     R.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); R.blur(); } });
     ins.addEventListener('click', () => { if (Q3.volExpr) useExample(Q3.volExpr); });
-    Q3.volUI = { s1, s2, out, ins, box, rangeText, encText, R, toggle, setRegion, legend, seq: 0, timer: 0, cus: C, signed: false, setSigned };
+    Q3.volUI = { s1, s2, out, ins, box, rangeText, encText, R, toggle, setRegion, legend, seq: 0, timer: 0, cus: C, signed: false, setSigned, tools, solidBox };
     setRegion('rect', true);
     setSigned(store.get('qalc.vol.signed', false) === true, true);
     setUnit(C.unit);
@@ -6719,15 +6764,20 @@
   // after the last change; a newer change or calculation stops the older one from writing its result
   function volumeAuto() {
     const U = Q3.volUI;
-    if (!U || U.box.hidden) return;
+    if (!U || U.box.hidden || solidNow()) return;
     U.seq++;
     clearTimeout(U.timer);
     U.timer = setTimeout(async () => {
       if (U.box.hidden) return;
-      const seq = U.seq;
-      await computeVolume(seq);
-      if (seq === U.seq && !U.box.hidden) await computeSurface(true, seq);
+      await volumeAndSurface(U.seq);
     }, 80);
+  }
+  // 1.12.0 (BG21): the surface area is not looked for when the volume could not be measured for a reason
+  // that holds for it too (the region: no real values in part of a disk), so the reason is said once
+  async function volumeAndSurface(seq) {
+    const U = Q3.volUI;
+    const v = await computeVolume(seq);
+    if (seq === U.seq && !U.box.hidden && !(v && v.reason)) await computeSurface(true, seq, v);
   }
   // a sphere of radius r: the upper and the lower half over the disk of radius r, round (the same
   // scale on all axes), with its volume and surface area
@@ -6751,9 +6801,7 @@
       U.s1.value = '0'; U.s2.value = '1';
       U.setRegion('disk', true); U.R.value = r;
       clearTimeout(U.timer);
-      const seq = ++U.seq;
-      await computeVolume(seq);
-      if (seq === U.seq) await computeSurface(true, seq);
+      await volumeAndSurface(++U.seq);
     };
     Q3.go.click();
   }
@@ -6782,10 +6830,57 @@
     }
     requestDraw3d();
   }
+  // ---- a solid made elsewhere (1.12.0, BG21)
+  // The 3D view of a solid of revolution (⟳ 3D and "View in 3D" of "Make a solid", "Solid from a profile")
+  // or of a solid with cross sections is drawn with formulas that have no real value outside the solid
+  // (√(min(0, …))), and the tools for z = f(x, y) cannot measure it over a rectangle or a disk: on the
+  // author's phone, "Could not calculate the volume" and "… the surface area" on the rectangle, and on the
+  // disk a message about missing real values twice, which sent one to the rectangle. Q3.solid (set by
+  // openPlot3dWith) holds the values found where the solid was made: "Volume and surface" shows them, and
+  // the tools come back only when other formulas are drawn. (exprs: the formulas as first read; fresh until then)
+  function solidNow() {
+    const so = Q3.solid;
+    // (D6: a solid of "Shapes" has no formulas: its values stay while it is shown)
+    if (so && so.model) { if (!Q3.model) Q3.solid = null; return Q3.solid; }
+    if (so && !so.fresh && (!Q3.exprs || so.exprs !== Q3.exprs.join('\n'))) Q3.solid = null;
+    return Q3.solid;
+  }
+  function showSolidValues() {
+    const U = Q3.volUI, so = solidNow();
+    if (!U) return;
+    U.tools.hidden = !!so; U.solidBox.hidden = !so;
+    if (!so) return;
+    clearVolume(); Q3.liqBuf = null; requestDraw3d(); // (the ordinary shading: not the measured solid)
+    U.solidBox.textContent = '';
+    U.solidBox.append(el('div', { class: 'solid-title', text: so.title }));
+    for (const v of so.values()) {
+      const val = el('span', { class: 'geo-val' });
+      if (v.result) showResult(val, valueShown(v.result)); else val.textContent = v.text || '…';
+      const node = tapButton({ class: 'geo-row' }, () => { if (v.expr) resultSheet(v.name, v.expr, v.result ? valueShown(v.result) : v.text); });
+      node.append(el('span', { class: 'geo-name' }, v.name, v.small ? el('small', { text: v.small }) : ''), val);
+      U.solidBox.append(node);
+    }
+    U.solidBox.append(el('div', { class: 'form-hint', text: so.hint }));
+  }
+  // a value of that solid found later (the surface areas come after the volume): shown while it is the solid
+  function solidRefresh(src) {
+    const U = Q3.volUI;
+    if (U && !U.box.hidden && Q3.solid && Q3.solid.src === src) showSolidValues();
+  }
+  // "Volume and surface" closed (a solid made elsewhere opens with it closed: its state is not the graph's before)
+  function closeVolumeBox() {
+    const U = Q3.volUI;
+    if (!U) return;
+    U.box.hidden = true; U.toggle.classList.remove('on'); U.toggle.setAttribute('aria-expanded', 'false');
+    clearVolume(); Q3.liqBuf = null;
+  }
   // the lists of surfaces follow the graph; quiet: without calculating (the caller does)
   function volumeSurfacesChanged(quiet) {
     const U = Q3.volUI;
     if (!U) return;
+    // (1.12.0, BG21: the values of a solid made elsewhere; the tools again for other formulas)
+    if (solidNow() || U.tools.hidden) showSolidValues();
+    if (Q3.solid) return;
     const k1 = U.s1.value, k2 = U.s2.value, D = Q3.data;
     U.s1.textContent = ''; U.s2.textContent = '';
     const series = D ? D.series : [];
@@ -6860,7 +6955,9 @@
     const ringsText = (rings) => rings.map((p) => (p.lo === 0 ? 'r ≤ ' + p.b : p.a + ' ≤ r ≤ ' + p.b)).join(tr(' and ', '、'));
     const fit = (rings) => ({ rings, note: (one ? trf('Only where the surface has real values: {0} (r = √(x² + y²))', '曲面に実数の値がある {0} の部分だけで計算しました（r = √(x² + y²)）', ringsText(rings))
       : trf('Only where both surfaces have real values: {0} (r = √(x² + y²))', '2 つの曲面に実数の値がある {0} の部分だけで計算しました（r = √(x² + y²)）', ringsText(rings))) });
-    const notRound = () => (S.disk ? { error: tr('The surfaces have no real values in part of this disk: choose a smaller radius R, or the rectangle', '曲面に実数の値がない部分がこの円の中にあります。半径 R を小さくするか、長方形を選んでください') } : { mask: true });
+    // (1.12.0, BG21: the volume and the surface area both, said once, and the way out offered by computeVolume:
+    // the enclosed part, or a smaller disk; until then it sent one to the rectangle, which may not measure them either)
+    const notRound = () => (S.disk ? { error: tr('The surfaces have no real values in part of this disk, so the volume and the surface area cannot be measured over it.', '曲面に実数の値がない部分がこの円の中にあるので、この円では体積と表面積を測れません。'), offer: true } : { mask: true });
     // 16 rays: r from 0 to the edge of the disk or to the farthest corner of the rectangle
     const K = 16, exprs = [];
     for (let k = 0; k < K; k++) {
@@ -6963,23 +7060,40 @@
     U.ins.hidden = true;
     S.real = await realRegion(S);
     if (seq !== U.seq) return;
-    if (S.real && S.real.error) { U.out.textContent = S.real.error; return; }
+    if (S.real && S.real.error) {
+      U.out.textContent = S.real.error;
+      if (S.real.offer) await encOffer(S, seq, tr('Choose a smaller radius R.', '半径 R を小さくしてください。'));
+      return { reason: true }; // (the region: the surface area is not looked for, BG21)
+    }
     const d = g ? `(${f.expr}) − (${g.expr})` : f.expr;
     // 1.11.0: or the integral, where the parts below count as negative
     const signed = U.signed;
     const r = await regionIntegral(S, signed ? d : `abs(${d})`, signed ? null : d, (v) => { if (v && seq === U.seq) U.out.textContent = aboutValue(signed ? tr('Integral', '積分の値') : tr('Volume', '体積'), v); });
     if (seq !== U.seq) return;
-    if (!r.val) { U.out.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
+    if (!r.val) { U.out.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return { fail: true, signed }; }
     U.out.textContent = '';
     showResult(U.out, (signed ? tr('Integral ', '積分の値 ') : tr('Volume ', '体積 ')) + valueShown(shownValue(r.val)));
     if (S.real && S.real.note) U.out.append(el('div', { class: 'form-hint', text: S.real.note }));
     if (r.missing) U.out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', r.missing) }));
     Q3.volExpr = r.expr;
     U.ins.hidden = false;
+    return { ok: true };
+  }
+  // 1.12.0 (BG21): where the surfaces have no real values in part of the region, the enclosed part, which
+  // counts only the points where they are real, is offered with one button when it is found there (not
+  // the rectangle or the disk, which cannot measure such surfaces); else the other way out (other)
+  async function encOffer(S, seq, other, box) {
+    const U = S.U, E = await encRegion(S);
+    if (seq !== U.seq) return;
+    box = box || U.out;
+    if (E && !E.error && E.parts && E.parts.length) {
+      box.append(el('div', { class: 'form-hint vol-offer' }, el('span', { text: tr('"Enclosed" measures only where the surfaces have real values. ', '「囲まれた部分」なら、実数の値がある部分だけで測れます。') }),
+        tapButton({ class: 'btn vol-out-btn', text: tr('Measure the enclosed part', '囲まれた部分で測る') }, () => U.setRegion('enc'))));
+    } else if (other) box.append(el('div', { class: 'form-hint', text: other }));
   }
   // the area of the surfaces: ∬ √(1 + f_x² + f_y²), for each surface (the floor z = 0: the area of the region)
   // append: below the volume that is shown (else in its place)
-  async function computeSurface(append, seq) {
+  async function computeSurface(append, seq, prior) {
     if (Q3.volUI && (Q3.volUI.region === 'enc' || Q3.volUI.region === 'custom')) return; // (computeEnclosed and computeCustom give both)
     const S = volumeSetup();
     if (!S) return;
@@ -6988,7 +7102,12 @@
     const out = append ? el('div', { class: 'area-out' }) : U.out;
     if (append) U.out.append(out); else { U.out.textContent = ''; U.ins.hidden = true; }
     out.textContent = tr('Calculating the surface area…', '表面積を計算中…');
-    const fail = (text) => { if (seq === U.seq) out.textContent = text || tr('Could not calculate the surface area', '表面積を計算できませんでした'); };
+    // (1.12.0, BG21: when the volume could not be calculated either, one line says both)
+    const fail = (text) => {
+      if (seq !== U.seq) return;
+      if (!text && append && prior && prior.fail && !prior.signed) { U.out.textContent = tr('Could not calculate the volume or the surface area', '体積と表面積を計算できませんでした'); return; }
+      out.textContent = text || tr('Could not calculate the surface area', '表面積を計算できませんでした');
+    };
     const parts = [], names = [], items = [];
     let missing = 0;
     S.real = await realRegion(S);
@@ -6998,9 +7117,11 @@
     const rings = S.real && S.real.rings, mask = S.real && S.real.mask;
     // a surface usually stands upright where its real values end (√(1 − x²) at x = ±1), and the points
     // of a grid cannot follow that: √(1 − x²) on [−2, 2]² gave 19 for 4π + 8 ≈ 20.57. Not measured.
+    // (1.12.0, BG21: the enclosed part offered with one button when it is found; else a rectangle inside them)
     if (mask) {
-      fail(tr('The surface area cannot be measured here: the surfaces end inside the rectangle, where their real values end. Choose a rectangle inside them (or the disk, when they are round)',
-        '表面積はここでは測れません。曲面が長方形の中で終わっています（実数の値がなくなる所）。曲面の内側の長方形（丸い形なら円）を選んでください'));
+      fail(tr('The surface area cannot be measured over this rectangle: the surfaces end inside it, where their real values end.',
+        '表面積はこの長方形では測れません。曲面が長方形の中で終わっています（実数の値がなくなる所）。'));
+      await encOffer(S, seq, tr('Choose a rectangle inside the surfaces.', '曲面の内側の長方形を選んでください。'), out);
       return;
     }
     const floor = g ? null : rings ? await exactIntegral(rings.map((p) => `π × ((${p.b})^2 − (${p.a})^2)`).join(' + '), 3000)
@@ -7274,7 +7395,11 @@
       n = await tsAnnulus(Fs, radii.length === 1 ? '0' : radii[0].text, radii[radii.length - 1].text);
     } else if (shape.rect) {
       const [x0, x1, y0, y1] = shape.rect.sides;
-      n = await simpsonRect(F, x0.text, x1.text, y0.text, y1.text, null, true);
+      // (1.12.0, BG21: the 2D tanh-sinh rule of "Custom", which copes with a surface that stands upright at a
+      // side where its real values end; Simpson's rule gave about 12 for 4π for √(1 − x²) over −1 ≤ x ≤ 1,
+      // −2 ≤ y ≤ 2, now that the enclosed part is offered where the surfaces have no real values in part of a region)
+      n = await tsGrid(pieceGrid({ t: 'rect', x0: x0.text, x1: x1.text, y0: y0.text, y1: y1.text }, F));
+      if (!n) n = await simpsonRect(F, x0.text, x1.text, y0.text, y1.text, null, true);
     } else n = encNumeric(G, lab, id, d, Fgrid);
     const expr = encExpr(shape, F);
     if (!n || !isFinite(n.v)) return { val: null, expr };
@@ -8090,19 +8215,32 @@
     // 1.12.0 (BG20): a solid made in the 2D graph ("⟳ 3D", "View in 3D"): its volume, large, and the way back
     const backVol = el('div', { class: 'rev3d-vol', 'aria-live': 'polite' });
     const backBtn = tapButton({ class: 'btn rev3d-back-btn', text: tr('← Back to 2D', '← 2D に戻る') }, () => {
+      // (D6: a solid of "Shapes": back to the tool)
+      if (Q3.from2d && Q3.from2d.onBack) { Q3.from2d.onBack(); return; }
       if (!P.setMode) return;
       P.setMode('2d');
       const U = P.areaUI;
       if (U && U.rev && !U.rev.box.hidden) revHint();
     });
     const backRow = el('div', { class: 'rev3d-back', hidden: true }, backBtn, backVol);
-    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow, backRow, backVol });
+    // 1.12.0 (D6): the height of the liquid of a tank of "Shapes" (also for the keyboard and a screen reader;
+    // the level can be dragged in the graph too)
+    const levelRange = el('input', { type: 'range', min: '0', max: '100', step: '1', value: '0', 'aria-label': tr('Height of the liquid', '液面の高さ') });
+    const levelVal = el('span', { class: 'rev-angle-v' });
+    levelRange.addEventListener('input', () => { const T = Q3.model && Q3.model.tank; if (T) setLevel3d(Number(levelRange.value) * levelStep(T), false); });
+    levelRange.addEventListener('change', () => { const T = Q3.model && Q3.model.tank; if (T) setLevel3d(Number(levelRange.value) * levelStep(T), true); });
+    const levelRow = el('div', { class: 'plot-range rev-angle tank-level', hidden: true }, el('span', { text: tr('Level', '液面') }), levelRange, levelVal);
+    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow, backRow, backVol, backBtn, levelRow, levelRange, levelVal });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
       Q3.res = Number(res.value) || 41;
+      // (1.12.0, BG21: the formulas of a solid made elsewhere, as read the first time; others drawn later end it)
+      if (Q3.solid && Q3.solid.fresh) { Q3.solid.fresh = false; Q3.solid.exprs = Q3.exprs.join('\n'); }
     };
+    Q3.read = read;
     go.addEventListener('click', () => {
+      endModel3d(false); // (a solid of "Shapes", D6: other formulas are drawn now)
       if (!Q3.keep) {
         Q3.points = null; Q3.pending = null; // they belong to the graph they were made for
         // the round shape of a sample or a sphere (1:1) and the marked sample stay while the same
@@ -8120,19 +8258,21 @@
     });
     setup3dGestures(wrap);
     Q3.start = () => {
-      if (Q3.started) { draw3d(); return; }
+      // (D6: after a solid of "Shapes", the formulas of the form are drawn again)
+      if (Q3.started) { if (!Q3.data && store.get('qalc.plot3d.ok', true)) { read(); compute3d(); } else draw3d(); return; }
       Q3.started = true;
       read();
       if (store.get('qalc.plot3d.ok', true)) setTimeout(compute3d, 260);
       else msg.textContent = tr('Press "Draw" to draw the graph', '「描画」を押すとグラフを描きます');
     };
+    Q3.partialEl = buildPartial3d();
     return el('div', { class: 'plot-mode' },
-      el('div', { class: 'plot-form' }, ta,
+      Q3.form = el('div', { class: 'plot-form' }, ta,
         el('div', { class: 'ranges3d' },
           el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax),
           el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr(' to ', ' 〜 ').trim() }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
-      backRow, wrap, angleRow, legend, msg, el('div', { class: 'tools' }, buildPartial3d(), buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
+      backRow, wrap, angleRow, levelRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
@@ -8152,6 +8292,7 @@
   function openPlot3dWith(exprs, opts) {
     if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
     opts = opts || {};
+    endModel3d(false); // (D6)
     if (Q3.samples) Q3.samples.clearChoice(); // (another graph than a sample, 1.8.2)
     const list = exprs.filter(Boolean).slice(0, 4);
     store.set('qalc.plot3d.exprs', toDisplay(list.join('\n')));
@@ -8168,6 +8309,9 @@
     // (a solid made in the 2D graph, BG20: its volume large above the graph, and "← Back to 2D")
     Q3.from2d = opts.back || null;
     showBack3d();
+    // (1.12.0, BG21: the values of a solid made elsewhere for "Volume and surface", which opens closed)
+    Q3.solid = opts.solid ? Object.assign({ fresh: true }, opts.solid) : null;
+    if (opts.solid) closeVolumeBox();
     Q3.pending = null;
     // (1.11.0: a finer grid when asked for, as for a solid of revolution with its round rims)
     if (opts.res && (Number(store.get('qalc.plot3d.res', '41')) || 41) < opts.res) store.set('qalc.plot3d.res', String(opts.res));
@@ -8184,11 +8328,366 @@
     }
   }
   // the row above the 3D graph for a solid made in the 2D graph (BG20)
+  // (D6: a solid of "Shapes": its values as the tool shows them, a line each, and "← Back to the shape")
   function showBack3d() {
     if (!Q3.backRow) return;
     const F = Q3.from2d;
     Q3.backRow.hidden = !F;
-    Q3.backVol.textContent = F && F.vol ? tr('Volume ', '体積 ') + F.vol : '';
+    if (Q3.backBtn) Q3.backBtn.textContent = F && F.back ? F.back : tr('← Back to 2D', '← 2D に戻る');
+    Q3.backVol.textContent = '';
+    if (F && F.lines) { for (const t of F.lines()) if (t) Q3.backVol.append(el('div', { text: t })); }
+    else Q3.backVol.textContent = F && F.vol ? tr('Volume ', '体積 ') + F.vol : '';
+  }
+  // ---- a solid or a tank of "Shapes" in the 3D graph (1.12.0, D6; QCalc Pro)
+  // link, from the shapes tool: model (shapeModel), title (the name of the shape), lines() (the values shown
+  // large above the graph, as the tool shows them: the volume and the surface area, or the amount of liquid
+  // and the capacity), rows() (the rows of the tool, for "Volume and surface", as with BG21), levelText()
+  // (a tank: the amount and how full at the level, the same numbers as in lines()), setLevel(h, final) (a tank:
+  // the height of the liquid into the tool). "← Back to the shape" closes the graph: the tool is under it,
+  // with the same shape and sizes.
+  function openSolid3d(link) {
+    if (!hasPro()) { proPrompt(tr('Turning the solid in 3D is a QCalc Pro feature', '3D で回して見るのは QCalc Pro の機能です'), '3d'); return; }
+    const Md = link.model;
+    Md.levelText = link.levelText;
+    if (Md.tank) { Md.tank.hShow = Md.tank.h; Md.scale = link.scale || null; }
+    if (Q3.samples) Q3.samples.clearChoice();
+    Q3.model = Md; Q3.link = link; Q3.fill = null;
+    Q3.points = null; Q3.pending = null; Q3.rimSpec = null; Q3.grow = null;
+    Q3.equalOnce = true;
+    Q3.revInfo = Md.grow === 'rev' ? 'mesh' : null;
+    if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
+    showAngle3d(360);
+    Q3.from2d = { lines: link.lines, back: tr('← Back to the shape', '← 図形に戻る'), onBack: () => closePanel() };
+    // (the values of the tool for "Volume and surface", which opens closed; they stay while no other
+    // formulas are drawn, BG21)
+    Q3.solid = { fresh: false, exprs: (Q3.exprs || []).join('\n'), src: link, model: true,
+      title: tr('Values from "Shapes": ', '「図形」の値：') + link.title,
+      hint: tr('The values found in "Shapes". Other formulas drawn here are measured as an ordinary 3D graph.', '「図形」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測ります。'),
+      values: link.rows };
+    closeVolumeBox();
+    Object.assign(Q3, VIEW3D);
+    clearMark3d();
+    Q3.data = null;
+    store.set('qalc.plot.mode', '3d');
+    const built = !!panels.plot;
+    Q3.opening3d = true;
+    try { openPlot(); } finally { Q3.opening3d = false; }
+    showBack3d(); showModel3d();
+    if (built && P.setMode) P.setMode('3d');
+    requestAnimationFrame(() => { if (Q3.model === Md) compute3d(); });
+  }
+  // the parts of the 3D view that belong to formulas (the form, the samples, partial derivatives) hidden while
+  // a model is shown, and the row of the level for a tank
+  function showModel3d() {
+    const Md = Q3.model;
+    if (Q3.form) Q3.form.hidden = !!Md;
+    if (Q3.samples) Q3.samples.hidden = !!Md;
+    if (Q3.partialEl) Q3.partialEl.hidden = !!Md;
+    if (Q3.levelRow) Q3.levelRow.hidden = !(Md && Md.tank);
+    syncLevelRow();
+  }
+  // a size written on a model ({ sym, val, unit } → "r = 15 cm"; D7: the digits of the 3D picture)
+  const labText = (o) => (!o ? '' : typeof o === 'string' ? o : o.sym + ' = ' + digPic(o.val, 'dim') + (o.unit ? ' ' + o.unit : ''));
+  // the slider of the level (for the keyboard and a screen reader): steps of about a hundredth of the tank's
+  // height, rounded (the same rounding as a drag)
+  function levelStep(T) { return Math.pow(10, Math.floor(Math.log10(T.top)) - 2); }
+  function syncLevelRow() {
+    const Md = Q3.model, T = Md && Md.tank, r = Q3.levelRange;
+    if (!T || !r) return;
+    const st = levelStep(T);
+    r.max = String(Math.round(T.top / st)); r.value = String(Math.round(T.h / st));
+    const lh = labText(Md.lab.h) || 'h = ' + digPic(T.h, 'dim'), txt = lh + (Md.levelText ? tr(', ', '、') + Md.levelText() : '');
+    r.setAttribute('aria-valuetext', txt);
+    Q3.levelVal.textContent = lh;
+  }
+  // the level of the liquid moved here (a drag, the slider): drawn at once, and into the tool (final: when
+  // the finger is lifted, or the slider let go)
+  function setLevel3d(h, final) {
+    const Md = Q3.model, T = Md && Md.tank;
+    if (!T) return;
+    const st = levelStep(T);
+    h = Math.max(0, Math.min(T.top, Math.round(h / st) * st));
+    if (h > T.top) h = T.top;
+    const was = T.h;
+    T.h = T.hShow = +h.toPrecision(12); Q3.fill = null;
+    if (Q3.link && Q3.link.setLevel && (was !== T.h || final)) Q3.link.setLevel(T.h, final);
+    syncLevelRow();
+    if (Q3.canvas) Q3.canvas.dataset.level = String(T.h);
+    requestDraw3d();
+  }
+  // the tool's values changed (the level, after the engine): the values above the graph, in "Volume and
+  // surface", and the amount at the level
+  function modelValuesChanged(link) {
+    if (!Q3.model || Q3.link !== link) return;
+    showBack3d(); solidRefresh(link); syncLevelRow(); requestDraw3d();
+  }
+  // the liquid rises to its level when the tank is first shown (not with "reduce motion")
+  function startFill(Md) {
+    const T = Md.tank;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { T.hShow = T.h; if (Q3.canvas) Q3.canvas.dataset.fill = 'still'; return; }
+    const F = Q3.fill = { t0: 0 };
+    T.hShow = 0;
+    const step = (now) => {
+      if (Q3.fill !== F || Q3.model !== Md) return;
+      if (!F.t0) F.t0 = now;
+      const f = Math.min(1, (now - F.t0) / 1400), e = 1 - Math.pow(1 - f, 3);
+      T.hShow = T.h * e;
+      if (Q3.canvas) Q3.canvas.dataset.fill = String(Math.round(f * 100));
+      if (f >= 1) { Q3.fill = null; T.hShow = T.h; }
+      draw3d();
+      if (Q3.fill === F) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  // the end of a model in the 3D graph (other formulas are drawn, or the graph is closed); redraw: draw the
+  // formulas of the form again at once
+  function endModel3d(redraw) {
+    if (!Q3.model) return false;
+    Q3.model = null; Q3.link = null; Q3.levelHit = null; Q3.fill = null;
+    if (Q3.solid && Q3.solid.model) Q3.solid = null;
+    Q3.from2d = null; Q3.revInfo = null; Q3.grow = null; Q3.equalOnce = false;
+    if (Q3.angleRow) Q3.angleRow.hidden = true;
+    Q3.data = null;
+    if (Q3.canvas) { delete Q3.canvas.dataset.model; delete Q3.canvas.dataset.level; delete Q3.canvas.dataset.fill; }
+    closeVolumeBox();
+    showBack3d(); showModel3d();
+    if (redraw && Q3.read) { Q3.read(); compute3d(); }
+    return true;
+  }
+  // is the point (clientX, clientY) near the level of the liquid (its box with the amount, its outline on the
+  // screen, or inside it)? Only a drag that starts there moves the level; the others turn the graph.
+  function nearLevel3d(cx, cy) {
+    const H = Q3.levelHit, c = Q3.canvas;
+    if (!H || !c || !Q3.model || !Q3.model.tank) return false;
+    const r = c.getBoundingClientRect(), x = cx - r.left, y = cy - r.top, b = H.box;
+    if (b && x >= b.x - 10 && x <= b.x + b.w + 10 && y >= b.y - 10 && y <= b.y + b.h + 10) return true;
+    const R = H.ring;
+    if (R.length < 3) return Math.abs(y - H.wallY) < 16;
+    let inside = false, best = Infinity;
+    for (let i = 0, j = R.length - 1; i < R.length; j = i++) {
+      const [xi, yi] = R[i], [xj, yj] = R[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+      const dx = xj - xi, dy = yj - yi, L2 = dx * dx + dy * dy, t = L2 ? Math.max(0, Math.min(1, ((x - xi) * dx + (y - yi) * dy) / L2)) : 0;
+      best = Math.min(best, Math.hypot(xi + t * dx - x, yi + t * dy - y));
+    }
+    return inside || best < 18;
+  }
+  // ---- the digits of the results of the tools (1.12.0, D7)
+  // How many digits the tools for shapes, tanks and solids (Shapes, Tanks, Solid from a profile, Make a solid)
+  // show after "≈": automatic (as the calculator shows its results; % with one decimal), or a number of
+  // decimal places or of significant digits (0 to 15: the page works with numbers of double precision), the
+  // same for every result or for each kind of quantity (volume, area, length, weight, %), and on its own for
+  // the numbers in the 3D picture (automatic: 3 significant digits, % with one decimal). The exact part of a
+  // result (11250π) stays as the engine gives it. Rounding half up, down or up; trailing zeros kept or not;
+  // tables saved as CSV with all the digits or as shown. Kept in the settings (S.digits), separate from the
+  // calculator's precision.
+  const DIG_KINDS = () => [['vol', tr('Volume, liquid', '体積・液量')], ['area', tr('Area', '面積')], ['len', tr('Length, height', '長さ・高さ')], ['mass', tr('Weight', '重さ')], ['pct', '%']];
+  const DIG_MAX = 15;
+  const DIG_DEF = () => ({ mode: 'auto', n: 2, per: false, kinds: {}, pic: { mode: 'auto', n: 3 }, round: 'half', zeros: true, csv: 'full' });
+  function digits() {
+    const d = S.digits, D = DIG_DEF();
+    if (!d || typeof d !== 'object') return D;
+    const ok = (m) => m === 'auto' || m === 'dec' || m === 'sig', num = (n, sig) => (Number.isInteger(n) && n >= (sig ? 1 : 0) && n <= DIG_MAX ? n : null);
+    const one = (o, def) => { o = o && typeof o === 'object' ? o : {}; const m = ok(o.mode) ? o.mode : def.mode; const n = num(o.n, m === 'sig'); return { mode: m, n: n === null ? (m === 'sig' ? Math.max(1, def.n) : def.n) : n }; };
+    const top = one(d, D), kinds = {};
+    for (const [k] of DIG_KINDS()) if (d.kinds && d.kinds[k]) kinds[k] = one(d.kinds[k], { mode: 'auto', n: 2 });
+    return Object.assign(D, top, { per: !!d.per, kinds, pic: one(d.pic, D.pic), round: ['half', 'down', 'up'].indexOf(d.round) >= 0 ? d.round : 'half', zeros: d.zeros !== false, csv: d.csv === 'shown' ? 'shown' : 'full' });
+  }
+  // the rule for a kind of result: null (as the engine shows it) or { mode: 'dec' | 'sig', n }
+  function digSpec(kind) {
+    const d = digits(), k = d.per && d.kinds[kind] ? d.kinds[kind] : d;
+    if (k.mode === 'dec' || k.mode === 'sig') return { mode: k.mode, n: k.n };
+    return kind === 'pct' ? { mode: 'dec', n: 1 } : null;
+  }
+  // the rule for a number in the 3D picture: what 'amount' (at the level), 'pct', 'scale' (the marks of the
+  // scale) or 'dim' (the sizes written on the solid); automatic: up to 3 significant digits (the amount with
+  // trailing zeros as set, 9.60; the marks and the sizes without them, 15 cm), % with one decimal
+  function digSpecPic(what) {
+    const p = digits().pic;
+    if (p.mode === 'dec' || p.mode === 'sig') return { mode: p.mode, n: p.n };
+    return what === 'pct' ? { mode: 'dec', n: 1 } : { mode: 'sig', n: 3, trim: what !== 'amount' };
+  }
+  // x rounded by a rule as plain digits ("35342.92", "-0.050"): from its 15 significant digits, as a whole
+  // number q times 10^sc, so that no binary fraction moves the rounding (2.675 to 2 places is 2.68)
+  function digRound(x, spec) {
+    if (!isFinite(x)) return String(x);
+    const d = digits(), how = d.round, zeros = d.zeros && !spec.trim;
+    const m = /^(\d)(?:\.(\d+))?e([+-]\d+)$/.exec(Math.abs(x).toExponential(14));
+    let q = BigInt(m[1] + (m[2] || '')), sc = Number(m[3]) - (m[2] || '').length;
+    while (q > 0n && q % 10n === 0n) { q /= 10n; sc++; }
+    if (q === 0n) sc = 0;
+    const len = (v) => (v === 0n ? 1 : v.toString().length);
+    // (dropping the last digits: rounded half up, down or up, away from zero)
+    const cut = (drop) => {
+      if (drop <= 0) return;
+      const p = 10n ** BigInt(drop), r = q % p;
+      q /= p; sc += drop;
+      if ((how === 'half' && r * 2n >= p) || (how === 'up' && r > 0n)) q += 1n;
+    };
+    if (spec.mode === 'dec') {
+      cut(-spec.n - sc);
+      if (zeros && sc > -spec.n) { q *= 10n ** BigInt(sc + spec.n); sc = -spec.n; }
+    } else {
+      cut(len(q) - spec.n);
+      if (len(q) > spec.n && q % 10n === 0n) { q /= 10n; sc++; }
+      if (zeros && len(q) < spec.n) { const k = spec.n - len(q); q *= 10n ** BigInt(k); sc -= k; }
+    }
+    let s = q.toString();
+    if (sc >= 0) s += '0'.repeat(q === 0n ? 0 : sc);
+    else { const f = -sc; s = s.padStart(f + 1, '0'); s = s.slice(0, s.length - f) + '.' + s.slice(s.length - f); }
+    if (!zeros && s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+    return (x < 0 && /[1-9]/.test(s) ? '-' : '') + s;
+  }
+  // the text of a rounded number: the decimal sign of the number format, groups of three digits when asked
+  function digText(x, spec, group) {
+    let s = digRound(x, spec);
+    const neg = s[0] === '-';
+    if (neg) s = s.slice(1);
+    let [i, f] = s.split('.');
+    if (group) i = i.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group);
+    return (neg ? '−' : '') + i + (f !== undefined ? NF.dec + f : '');
+  }
+  // a number of a tool worked out by the page: rounded for its kind, or as before (statNum with its digits)
+  function digNum(x, kind, auto) {
+    const sp = digSpec(kind);
+    return sp ? digText(x, sp, true) : statNum(x, auto);
+  }
+  // a number in the 3D picture
+  const digPic = (x, what) => digText(x, digSpecPic(what), true);
+  // the text of a result with the number after its last "≈" written anew (its unit stays)
+  function withApprox(shown, num) {
+    const s = String(shown || ''), i = s.lastIndexOf('≈');
+    if (i < 0) return s;
+    const tail = s.slice(i + 1), m = /^(\s*)([−-]?[\d    .,'’]*\d(?:\s*E[−+-]?\d+|\s*×\s*10\^[−+-]?\d+)?)/.exec(tail);
+    return m ? s.slice(0, i + 1) + m[1] + num + tail.slice(m[0].length) : s;
+  }
+  // the number of a result worked out again with 16 significant digits (for rounding it here), or NaN
+  async function digValue(expr) {
+    const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { approx: 'approx', precision: 16, grouping: false, base: 10, fraction: 'decimal', max_decimals: -1 }), timeout: 4000 });
+    if (!r.ok || !r.result || r.timeout) return NaN;
+    const t = r.result.split('≈').pop().replace(/^\s*=\s*/, '').trim().replace(/−/g, '-'), m = /^-?\d+(?:\.\d+)?(?:E[+-]?\d+)?/.exec(t);
+    return m ? Number(m[0].replace('E', 'e')) : NaN;
+  }
+  // a row of a tool after the engine (row.result, row.shown): its number after "≈" rounded for its kind (x: the
+  // number when the page has it, or expr to work it out); row.num keeps the number
+  async function digRow(row, kind, x, expr) {
+    const sp = digSpec(kind);
+    if (!sp || String(row.shown || '').indexOf('≈') < 0) return;
+    if (!isFinite(x)) x = await digValue(expr);
+    if (!isFinite(x)) return;
+    row.num = x;
+    row.shown = withApprox(row.shown, digText(x, sp, !!S.grouping));
+    row.result = withApprox(row.result, digRound(x, sp));
+  }
+  // the kind of a row of the shapes tool (its power of the length, or a %)
+  const geoKind = (def) => (def[5] === '%' || def[0] === tr('Full', '満杯に対して') ? 'pct' : def[3] === 3 ? 'vol' : def[3] === 2 ? 'area' : 'len');
+  // a number of a table saved as CSV: all its digits (15 significant, the decimal sign of the file), or as shown
+  const csvNum = (x) => (isFinite(x) ? String(+x.toPrecision(15)).replace('.', commaMode ? ',' : '.') : '');
+  // what to work out again when the digits change: the tools that are open (their run), and the 3D picture
+  const digRuns = new Set();
+  function digitsChanged() {
+    saveSettings();
+    for (const c of digUIs) c.sync();
+    for (const f of digRuns) { try { f(); } catch (e) { /* a tool closed meanwhile */ } }
+    if (Q3.model) { syncLevelRow(); requestDraw3d(); }
+  }
+  // The control of the digits: "Digits: auto ▾" with the usual choices (auto, 0 to 3 decimal places), and
+  // "Digits in detail ▾" with the rest. Every control shows the same settings.
+  const digUIs = new Set();
+  function digitsControl() {
+    const set = (f) => { const d = digits(); f(d); S.digits = d; digitsChanged(); };
+    const QUICK = [['auto', tr('Digits: auto', '桁：自動')], ['d0', tr('Digits: 0 decimal places', '桁：小数点以下 0 桁')], ['d1', tr('Digits: 1 decimal place', '桁：小数点以下 1 桁')], ['d2', tr('Digits: 2 decimal places', '桁：小数点以下 2 桁')], ['d3', tr('Digits: 3 decimal places', '桁：小数点以下 3 桁')]];
+    const sel = el('select', { class: 'dig-sel', 'aria-label': tr('Digits of the results', '結果の桁') });
+    for (const [v, t] of QUICK) sel.append(el('option', { value: v, text: t }));
+    const custom = el('option', { value: 'custom', text: tr('Digits: as set in detail', '桁：詳しく設定') });
+    sel.append(custom);
+    sel.addEventListener('change', () => { const v = sel.value; if (v === 'custom') return; set((d) => { d.per = false; if (v === 'auto') d.mode = 'auto'; else { d.mode = 'dec'; d.n = Number(v.slice(1)); } }); });
+    // a number of digits typed: only digits (no minus sign), at most 15 (at least 1 for significant digits)
+    const numIn = (label, get, put, sigOf) => {
+      const i = el('input', { class: 'dig-n', inputmode: 'numeric', maxlength: '2', 'aria-label': label, autocomplete: 'off' });
+      i.addEventListener('input', () => {
+        let t = i.value.replace(/[^0-9]/g, '');
+        if (t.length > 2) t = t.slice(0, 2);
+        let n = t === '' ? null : Number(t), clipped = false;
+        if (n !== null && n > DIG_MAX) { n = DIG_MAX; clipped = true; }
+        if (n !== null && n < 1 && sigOf()) { n = 1; clipped = true; }
+        if (n !== null) t = String(n);
+        if (i.value !== t) i.value = t;
+        warn.hidden = !clipped;
+        if (n !== null) set((d) => put(d, n));
+      });
+      i.addEventListener('blur', () => { i.value = String(get(digits())); });
+      const w = el('span', { class: 'dig-nw' }, i, el('span', { class: 'dig-unit', text: tr('digits', '桁') }));
+      w.input = i;
+      return w;
+    };
+    const warn = el('div', { class: 'form-hint dig-warn', role: 'status', hidden: true, text: tr('From 0 to 15 digits (1 to 15 significant digits).', '0〜15 桁です（有効数字は 1〜15 桁）。') });
+    // how: decimal places or significant digits, and how many (for every result)
+    const modeSeg = (get, put, withAuto) => {
+      const s = el('span', { class: 'seg mini', role: 'group' });
+      const items = (withAuto ? [['auto', tr('Auto', '自動')]] : []).concat([['dec', tr('Decimal places', '小数点以下の桁数')], ['sig', tr('Significant digits', '有効数字の桁数')]]);
+      const bs = items.map(([m, t]) => { const b = tapButton({ text: t }, () => set((d) => put(d, m))); b.dataset.m = m; return b; });
+      s.append(...bs);
+      s.sync = () => { const m = get(digits()); for (const b of bs) { b.classList.toggle('on', b.dataset.m === m); b.setAttribute('aria-pressed', String(b.dataset.m === m)); } };
+      return s;
+    };
+    const allMode = modeSeg((d) => d.mode, (d, m) => { d.mode = m; if (m === 'sig' && d.n < 1) d.n = 1; }, true);
+    allMode.setAttribute('aria-label', tr('How the digits are counted', '桁の決め方'));
+    const allN = numIn(tr('Number of digits', '桁数'), (d) => d.n, (d, n) => { d.n = n; if (d.mode === 'auto') d.mode = 'dec'; }, () => digits().mode === 'sig');
+    const rowOf = (label, ...kids) => el('div', { class: 'dig-row' }, el('span', { class: 'dig-lbl', text: label }), ...kids);
+    const note = el('div', { class: 'form-hint', text: tr('Up to 15 digits: the numbers are worked out with double precision. Exact values (11250π) stay; only the decimals after "≈" change.', '15 桁までです（中の計算が倍精度のため）。厳密な値（11250π など）はそのままで、変わるのは「≈」の後ろの小数だけです。') });
+    // each kind of quantity on its own
+    const perBox = el('input', { type: 'checkbox' });
+    perBox.addEventListener('change', () => set((d) => { d.per = perBox.checked; if (d.per) for (const [k] of DIG_KINDS()) if (!d.kinds[k]) d.kinds[k] = { mode: d.mode, n: d.n }; }));
+    const perList = el('div', { class: 'dig-kinds' });
+    const kindRows = DIG_KINDS().map(([k, label]) => {
+      const seg = modeSeg((d) => (d.kinds[k] || { mode: 'auto' }).mode, (d, m) => { const o = d.kinds[k] || { mode: 'auto', n: 2 }; o.mode = m; if (m === 'sig' && o.n < 1) o.n = 1; d.kinds[k] = o; }, true);
+      seg.setAttribute('aria-label', label);
+      const n = numIn(label + tr(': number of digits', '：桁数'), (d) => (d.kinds[k] || { n: 2 }).n, (d, v) => { const o = d.kinds[k] || { mode: 'dec', n: 2 }; o.n = v; if (o.mode === 'auto') o.mode = 'dec'; d.kinds[k] = o; }, () => ((digits().kinds[k] || {}).mode === 'sig'));
+      perList.append(rowOf(label, seg, n));
+      return { k, seg, n };
+    });
+    const same = tapButton({ class: 'btn', text: tr('The same for all', 'すべて同じにする') }, () => set((d) => { d.per = false; }));
+    perList.append(same);
+    // the 3D picture
+    const picSeg = modeSeg((d) => d.pic.mode, (d, m) => { d.pic.mode = m; if (m === 'sig' && d.pic.n < 1) d.pic.n = 1; }, true);
+    picSeg.setAttribute('aria-label', tr('Numbers in the 3D picture', '3D の絵の中の数'));
+    const picN = numIn(tr('Numbers in the 3D picture: number of digits', '3D の絵の中の数：桁数'), (d) => d.pic.n, (d, n) => { d.pic.n = n; if (d.pic.mode === 'auto') d.pic.mode = 'sig'; }, () => digits().pic.mode === 'sig');
+    const picNote = el('div', { class: 'form-hint', text: tr('Auto: 3 significant digits, % with 1 decimal place (the amount at the level, the scale, the sizes).', '自動：有効数字 3 桁、% は小数点以下 1 桁（液面のそばの量、目盛り、寸法）。') });
+    const choice = (label, opts, get, put) => {
+      const s = el('span', { class: 'seg mini', role: 'group', 'aria-label': label });
+      const bs = opts.map(([v, t]) => { const b = tapButton({ text: t }, () => set((d) => put(d, v))); b.dataset.v = v; return b; });
+      s.append(...bs);
+      s.sync = () => { const v = String(get(digits())); for (const b of bs) { b.classList.toggle('on', b.dataset.v === v); b.setAttribute('aria-pressed', String(b.dataset.v === v)); } };
+      return s;
+    };
+    const roundSeg = choice(tr('Rounding', '丸め方'), [['half', tr('Round half up', '四捨五入')], ['down', tr('Round down', '切り捨て')], ['up', tr('Round up', '切り上げ')]], (d) => d.round, (d, v) => { d.round = v; });
+    const zeroSeg = choice(tr('Trailing zeros', '末尾の 0'), [['true', decSign(tr('Keep (2.50)', '残す（2.50）'))], ['false', decSign(tr('Drop (2.5)', '残さない（2.5）'))]], (d) => d.zeros, (d, v) => { d.zeros = v === 'true'; });
+    const csvSeg = choice(tr('Tables saved as CSV', 'CSV で保存する表'), [['full', tr('All the digits', '全部の桁')], ['shown', tr('As shown', '表示どおり')]], (d) => d.csv, (d, v) => { d.csv = v; });
+    const reset = tapButton({ class: 'btn', text: tr('Back to the first settings', '最初の設定に戻す') }, () => { S.digits = DIG_DEF(); digitsChanged(); });
+    const body = el('div', { class: 'dig-body' },
+      rowOf(tr('Digits', '桁'), allMode, allN), warn, note,
+      el('label', { class: 'dig-row dig-per' }, perBox, el('span', { text: tr('Each kind of quantity on its own', '量の種類ごとに決める') })), perList,
+      rowOf(tr('In the 3D picture', '3D の絵の中'), picSeg, picN), picNote,
+      rowOf(tr('Rounding', '丸め方'), roundSeg), rowOf(tr('Trailing zeros', '末尾の 0'), zeroSeg), rowOf(tr('CSV files', 'CSV ファイル'), csvSeg), reset);
+    const more = el('details', { class: 'sec-more dig-more' }, el('summary', { text: tr('Digits in detail ▾', '桁を詳しく ▾') }), body);
+    const ui = {
+      sel, more,
+      sync() {
+        const d = digits(), q = d.per ? 'custom' : d.mode === 'auto' ? 'auto' : d.mode === 'dec' && d.n <= 3 ? 'd' + d.n : 'custom';
+        custom.hidden = q !== 'custom'; sel.value = q;
+        allMode.sync();
+        if (document.activeElement !== allN.input) allN.input.value = String(d.n);
+        allN.hidden = d.mode === 'auto';
+        perBox.checked = d.per; perList.hidden = !d.per;
+        for (const r of kindRows) { const o = d.kinds[r.k] || { mode: 'auto', n: d.n }; r.seg.sync(); if (document.activeElement !== r.n.input) r.n.input.value = String(o.n); r.n.hidden = o.mode === 'auto'; }
+        picSeg.sync(); if (document.activeElement !== picN.input) picN.input.value = String(d.pic.n); picN.hidden = d.pic.mode === 'auto';
+        roundSeg.sync(); zeroSeg.sync(); csvSeg.sync();
+      }
+    };
+    ui.sync();
+    digUIs.add(ui);
+    return ui;
   }
   // the box of the graph around points only (no surface)
   function points3dData() {
@@ -8199,6 +8698,25 @@
     return { xs: [x0, x1], ys: [y0, y1], nx: 2, ny: 2, series: [], z0, z1 };
   }
   async function compute3d() {
+    // (D6) a solid or a tank of "Shapes": drawn from its own triangles, no engine
+    if (Q3.model) {
+      const Md = Q3.model;
+      Q3.data = modelData(Md);
+      Q3.legend.textContent = '';
+      if (Md.tank) {
+        Q3.legend.append(el('span', { class: 'msw', style: '--c:' + rgbCss(Md.colors.liquid), text: tr('Liquid', '液体') }), el('span', { class: 'msw glass', text: tr('Container (clear)', '容器（透明）') }));
+      } else Q3.legend.append(el('span', { class: 'msw', style: '--c:' + rgbCss(Md.colors.solid), text: Q3.link ? Q3.link.title : '' }));
+      if (Md.k === 'prism') Q3.legend.append(el('span', { class: 'note', text: tr('(drawn with a square base of that area)', '（底面は、その面積の正方形で描いています）') }));
+      Q3.msg.textContent = '';
+      clearMark3d();
+      if (!Md.started) {
+        Md.started = true;
+        if (Md.grow) { startGrow('mesh'); if (Md.grow !== 'rev' && Q3.angleRow) Q3.angleRow.hidden = true; }
+        if (Md.tank) startFill(Md);
+      }
+      draw3d();
+      return;
+    }
     if (!Q3.exprs.length && Q3.points && Q3.points.length) {
       Q3.data = points3dData();
       Q3.legend.textContent = '';
@@ -9080,7 +9598,7 @@
     g.imageSmoothingEnabled = true;
     g.drawImage(off, lx0 / q, ly0 / q, LW / q, LH / q);
     g.restore();
-    return { shown, q, SM, shadow: LK && o.shadow ? { px: inShadow, edge, map: LK.map, lock: true } : SM ? { px: inShadow, edge, map: [SM.MW, SM.MH], ms: Math.round(tMap * 10) / 10 } : null };
+    return { shown, q, SM, zbuf: { zb, x0: lx0, y0: ly0, w: LW, h: LH, q }, shadow: LK && o.shadow ? { px: inShadow, edge, map: LK.map, lock: true } : SM ? { px: inShadow, edge, map: [SM.MW, SM.MH], ms: Math.round(tMap * 10) / 10 } : null };
   }
   // the slope at p0 (value w0) from the points on its two sides, [place, value] (a: before, b: after;
   // null if none): the parabola through the three, or the line to the one there is
@@ -9711,6 +10229,807 @@
     Q3.lastTurn = now;
     return 1;
   }
+  // ---- solids and tanks of "Shapes" in 3D (1.12.0, D6; QCalc Pro)
+  // A solid of the shapes tool, or a tank with its liquid, is drawn in the 3D graph from triangles made
+  // here from its sizes (not from formulas z = f(x, y)). They go into the same buffer as the cells of the
+  // surfaces (surfacePaint), so that the solid is shaded, casts shadows and keeps them while it is turned
+  // (BG19), and its edges are as smooth as the screen allows (no steps of a grid, BG09). A solid of
+  // revolution is its profile turned around its axis (while it grows, by the angle so far, with the faces
+  // of the cut); a box or a prism is its base pulled up. A tank: its container of glass, drawn by the
+  // canvas with a little color (its back before the liquid, its front after it, with its outline and its
+  // seams), and the liquid as a solid of its own color up to the level, with the volume scale on the wall,
+  // the amount at the level and the level that can be dragged.
+  // A mesh: v the vertices, MV numbers each (x, y, z, the normal, r, g, b, and gi, gj for the lines that
+  // surfacePaint draws where one of them is a whole number: 0.5 for none in that direction, NaN for no
+  // lines at all), t the triangles (three indices each), lines the seams and edges to draw on glass
+  // (rings: lists of vertex indices)
+  const MV = 11;
+  const newMesh = () => ({ v: [], t: [], lines: [] });
+  // a point of a profile: t along the axis, r from it, the normal (nt, nr) in the plane of the axis, gj
+  const pp = (t, r, nt, nr, gj) => ({ t, r, nt, nr, gj });
+  // a straight piece of a profile from (t0, r0) to (t1, r1) in m parts, gj from g0 to g1; flat: no lines
+  // along it from the turning (a disk)
+  function lineSeg(t0, r0, t1, r1, g0, g1, m, flat) {
+    const dt = t1 - t0, dr = r1 - r0, L = Math.hypot(dt, dr) || 1, n = m || 1, pts = [];
+    for (let k = 0; k <= n; k++) { const f = k / n; pts.push(pp(t0 + dt * f, r0 + dr * f, -dr / L, dt / L, g0 + (g1 - g0) * f)); }
+    return { pts, flat: !!flat };
+  }
+  // a curved piece from the points [t, r] (fine enough to look smooth): the normals from the neighbours,
+  // gj from g0 to g1 along it (or gjOf(t, r))
+  function curveSeg(P, g0, g1, gjOf) {
+    const n = P.length, pts = [];
+    for (let k = 0; k < n; k++) {
+      const a = P[Math.max(0, k - 1)], b = P[Math.min(n - 1, k + 1)], dt = b[0] - a[0], dr = b[1] - a[1], L = Math.hypot(dt, dr) || 1;
+      pts.push(pp(P[k][0], P[k][1], -dr / L, dt / L, gjOf ? gjOf(P[k][0], P[k][1]) : g0 + (g1 - g0) * k / Math.max(1, n - 1)));
+    }
+    return { pts, flat: false };
+  }
+  // an arc of a circle in the plane of the profile: centre (tc, rc), radius q, from the angle a0 to a1
+  // (a point is (tc + q cos α, rc + q sin α); its normal points away from the centre)
+  function arcSeg(tc, rc, q, a0, a1, m, gjOf) {
+    const pts = [];
+    for (let k = 0; k <= m; k++) { const a = a0 + (a1 - a0) * k / m, c = Math.cos(a), s = Math.sin(a); pts.push(pp(tc + q * c, Math.max(0, rc + q * s), c, s, gjOf(a, k))); }
+    return { pts, flat: false };
+  }
+  // the triangles of a simple polygon [[x, y], …] by cutting off ears: indices into it (points in a straight
+  // line with their neighbours are left out first; a polygon that cannot be cut is left as far as it got)
+  function earClip(P0) {
+    const map = [], P = [];
+    const cr = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    let span = 0;
+    for (const p of P0) span = Math.max(span, Math.abs(p[0]), Math.abs(p[1]));
+    const eps = (span || 1) * (span || 1) * 1e-12;
+    for (let i = 0; i < P0.length; i++) {
+      const a = P0[(i + P0.length - 1) % P0.length], b = P0[i], c = P0[(i + 1) % P0.length];
+      if (Math.abs(cr(a, b, c)) > eps) { map.push(i); P.push(b); }
+    }
+    const n = P.length, out = [];
+    if (n < 3) return out;
+    let area = 0;
+    for (let i = 0; i < n; i++) { const a = P[i], b = P[(i + 1) % n]; area += a[0] * b[1] - b[0] * a[1]; }
+    const idx = [];
+    for (let i = 0; i < n; i++) idx.push(area > 0 ? i : n - 1 - i); // (counterclockwise)
+    const inTri = (p, a, b, c) => cr(a, b, p) > eps && cr(b, c, p) > eps && cr(c, a, p) > eps;
+    for (let guard = 0; idx.length > 3 && guard < n * n; guard++) {
+      let cut = false;
+      for (let i = 0; i < idx.length; i++) {
+        const ia = idx[(i + idx.length - 1) % idx.length], ib = idx[i], ic = idx[(i + 1) % idx.length], a = P[ia], b = P[ib], c = P[ic];
+        if (cr(a, b, c) <= eps) continue;
+        let ok = true;
+        for (const j of idx) if (j !== ia && j !== ib && j !== ic && inTri(P[j], a, b, c)) { ok = false; break; }
+        if (!ok) continue;
+        out.push(map[ia], map[ib], map[ic]); idx.splice(i, 1); cut = true; break;
+      }
+      if (!cut) break;
+    }
+    if (idx.length === 3) out.push(map[idx[0]], map[idx[1]], map[idx[2]]);
+    return out;
+  }
+  // a profile turned around an axis into M. segs: the smooth pieces (an edge between two of them); o: axis
+  // 'z' (standing: (x, y, z) = (r cos φ, r sin φ, t) + c) or 'x' (lying: (t, r cos φ, r sin φ) + c), theta the
+  // angle turned (2π: whole), n the pieces of a whole turn, rgb, mer the angle between two lines along the
+  // solid (0: none), cut the color of the two faces of the cut (a solid turned less than a whole turn),
+  // poly and tri the outline of the profile and its triangles (kept by the caller), rings: the indices of
+  // the points of the profile whose circles are drawn as lines (glass)
+  function revolve(M, segs, o) {
+    const th = o.theta === undefined ? 2 * Math.PI : Math.max(0, o.theta), full = th >= 2 * Math.PI - 1e-9;
+    const NS = Math.max(2, Math.ceil(o.n * Math.max(th, 1e-3) / (2 * Math.PI)));
+    const c0 = o.c || [0, 0, 0], col = o.rgb, lying = o.axis === 'x', V = M.v;
+    const put = (t, r, ph, nt, nr, gi, gj) => {
+      const c = Math.cos(ph), s = Math.sin(ph);
+      if (lying) V.push(c0[0] + t, c0[1] + r * c, c0[2] + r * s, nt, nr * c, nr * s, col[0], col[1], col[2], gi, gj);
+      else V.push(c0[0] + r * c, c0[1] + r * s, c0[2] + t, nr * c, nr * s, nt, col[0], col[1], col[2], gi, gj);
+    };
+    let pk = 0;
+    for (const seg of segs) {
+      const b0 = V.length / MV, P = seg.pts;
+      for (let j = 0; j < P.length; j++, pk++) {
+        const p = P[j];
+        for (let i = 0; i <= NS; i++) { const ph = th * i / NS; put(p.t, p.r, ph, p.nt, p.nr, seg.noLines ? NaN : seg.flat || !o.mer ? 0.5 : ph / o.mer, p.gj); }
+        if (o.rings && o.rings.indexOf(pk) >= 0) { const ring = []; for (let i = 0; i <= NS; i++) ring.push(b0 + j * (NS + 1) + i); M.lines.push(ring); }
+      }
+      for (let j = 0; j + 1 < P.length; j++) {
+        const axA = P[j].r < 1e-12, axB = P[j + 1].r < 1e-12;
+        for (let i = 0; i < NS; i++) {
+          const a = b0 + j * (NS + 1) + i, b = a + 1, c = a + NS + 1, d = c + 1;
+          if (!axA) M.t.push(a, b, d);
+          if (!axB) M.t.push(a, d, c);
+        }
+      }
+    }
+    if (full || !o.cut || !o.poly) return M;
+    // the faces of the cut: the outline of the profile (closed along the axis) at 0 and at the angle turned
+    const cc = o.cut;
+    for (const ph of [0, th]) {
+      const b0 = V.length / MV, c = Math.cos(ph), s = Math.sin(ph);
+      for (const [r, t] of o.poly) {
+        if (lying) V.push(c0[0] + t, c0[1] + r * c, c0[2] + r * s, 0, -s, c, cc[0], cc[1], cc[2], NaN, NaN);
+        else V.push(c0[0] + r * c, c0[1] + r * s, c0[2] + t, -s, c, 0, cc[0], cc[1], cc[2], NaN, NaN);
+      }
+      for (const k of o.tri) M.t.push(b0 + k);
+    }
+    return M;
+  }
+  // the outline of a profile in (r, t) without the points that are there twice, and its triangles
+  function profileOutline(segs) {
+    const poly = [];
+    for (const seg of segs) for (const p of seg.pts) { const q = poly[poly.length - 1]; if (!q || Math.abs(q[0] - p.r) + Math.abs(q[1] - p.t) > 1e-12) poly.push([p.r, p.t]); }
+    const a = poly[0], b = poly[poly.length - 1];
+    if (poly.length > 2 && Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) < 1e-12) poly.pop();
+    return { poly, tri: earClip(poly) };
+  }
+  // a mesh moved and scaled (x·a, y·b, z·c; the normals with 1/a, 1/b, 1/c): an ellipsoid from a sphere
+  function scaleMesh(M, a, b, c) {
+    const V = M.v;
+    for (let k = 0; k < V.length; k += MV) { V[k] *= a; V[k + 1] *= b; V[k + 2] *= c; V[k + 3] /= a; V[k + 4] /= b; V[k + 5] /= c; }
+    return M;
+  }
+  // a polygon (the base, [[x, y], …] counterclockwise) pulled up from z = 0 to z = h into M, or to a point
+  // (apex [x, y, h]): a box, a prism, a pyramid. Lines along the edges (gi, gj whole numbers there)
+  function extrude(M, base, h, rgb, apex) {
+    const V = M.v, n = base.length, col = rgb;
+    const push = (x, y, z, nx, ny, nz, gi, gj) => V.push(x, y, z, nx, ny, nz, col[0], col[1], col[2], gi, gj);
+    // the bottom (and the top): a fan from the centre, the lines at the edge
+    const cx = base.reduce((s, p) => s + p[0], 0) / n, cy = base.reduce((s, p) => s + p[1], 0) / n;
+    for (const [z, nz] of apex ? [[0, -1]] : [[0, -1], [h, 1]]) {
+      const b0 = V.length / MV;
+      push(cx, cy, z, 0, 0, nz, 0.5, 0.5);
+      for (const [x, y] of base) push(x, y, z, 0, 0, nz, 0.5, 0);
+      for (let i = 0; i < n; i++) M.t.push(b0, b0 + 1 + i, b0 + 1 + (i + 1) % n);
+    }
+    // the sides: one face for each edge of the base, lines at its edges
+    for (let i = 0; i < n; i++) {
+      const [x1, y1] = base[i], [x2, y2] = base[(i + 1) % n], ex = x2 - x1, ey = y2 - y1, b0 = V.length / MV;
+      if (apex) {
+        const [ax, ay, az] = apex, ux = ax - x1, uy = ay - y1, uz = az;
+        let nx = ey * uz, ny = -ex * uz, nz = ex * uy - ey * ux; const L = Math.hypot(nx, ny, nz) || 1; nx /= L; ny /= L; nz /= L;
+        // (two triangles, from the middle of the base edge, so that gi is 0 along one slanted edge and 1 along
+        // the other: lines along all three edges)
+        push(x1, y1, 0, nx, ny, nz, 0, 0); push((x1 + x2) / 2, (y1 + y2) / 2, 0, nx, ny, nz, 0.5, 0); push(x2, y2, 0, nx, ny, nz, 1, 0);
+        push(ax, ay, az, nx, ny, nz, 0, 0.5); push(ax, ay, az, nx, ny, nz, 1, 0.5);
+        M.t.push(b0, b0 + 1, b0 + 3, b0 + 1, b0 + 2, b0 + 4);
+        continue;
+      }
+      const L = Math.hypot(ex, ey) || 1, nx = ey / L, ny = -ex / L;
+      push(x1, y1, 0, nx, ny, 0, 0, 0); push(x2, y2, 0, nx, ny, 0, 1, 0); push(x2, y2, h, nx, ny, 0, 1, 1); push(x1, y1, h, nx, ny, 0, 0, 1);
+      M.t.push(b0, b0 + 1, b0 + 2, b0, b0 + 2, b0 + 3);
+    }
+    return M;
+  }
+  const rgbCss = (c) => 'rgb(' + c.map((x) => Math.round(x)).join(',') + ')';
+  // the colors: a solid (from the accent of the theme, a little lighter), the faces of its cut, the liquid
+  function modelColors() {
+    const css = getComputedStyle(document.documentElement), dark = document.documentElement.classList.contains('dark');
+    const acc = cssRgb(css.getPropertyValue('--accent').trim()) || [37, 99, 235];
+    return { solid: mixRgb(acc, [255, 255, 255], dark ? 0.1 : 0.3), cut: mixRgb(acc, [255, 255, 255], dark ? 0.45 : 0.62), liquid: dark ? [64, 156, 255] : [22, 132, 240] };
+  }
+  // the profile of a head of a tank (headGeo) from its base (z = 0, r) to its tip (z = a, 0): denser near
+  // the tip, where the radius changes fastest
+  function headPts(g, m) {
+    const out = [];
+    for (let k = 0; k <= m; k++) { const z = g.a * Math.sin(k / m * Math.PI / 2); out.push([z, k === m ? 0 : g.prof(z)]); }
+    return out;
+  }
+  // The model of a shape of "Shapes" for the 3D graph. k: the shape, s: its sizes as numbers in one unit
+  // (a diameter already halved), lab: the texts of the labels of its sizes ({ r: 'r = 15 cm', … }).
+  // Returns null for a shape that cannot be drawn. The solid is centred on the z axis and stands on the
+  // floor (z = 0); a lying tank lies along the x axis. Its parts:
+  //   box [x0, x1, y0, y1, z0, z1]: the box of the graph (the solid with room around it)
+  //   grow: 'rev' (turned from 0 to 360°) or 'up' (pulled up), mesh(f): its triangles (f: how far it has grown,
+  //   0 to 1), made again only when f changes
+  //   tank: the container and the liquid (below)
+  function shapeModel(k, s, lab) {
+    // (no lines along the solid: its sides are smooth, and only its edges have lines (D6, 11:05))
+    const C = modelColors(), N = 72, MER = 0;
+    const ok = (...xs) => xs.every((x) => x > 0 && isFinite(x));
+    const M = { k, s, lab: lab || {}, colors: C };
+    const roomR = (R, top) => { const m = Math.max(R * 0.28, top * 0.06); return [-R - m, R + m, -R - m, R + m, 0, top * 1.08 + m * 0.3]; };
+    // a solid of revolution (standing on the floor, around the z axis), grown by turning
+    const rev = (segs, R, top) => {
+      const out = profileOutline(segs);
+      M.grow = 'rev'; M.box = roomR(R, top); M.R = R; M.top = top;
+      M.mesh = (f) => {
+        if (M.meshF === f && M.meshC) return M.meshC;
+        M.meshF = f;
+        return (M.meshC = revolve(newMesh(), segs, { axis: 'z', theta: 2 * Math.PI * f, n: N, rgb: C.solid, mer: MER, cut: C.cut, poly: out.poly, tri: out.tri }));
+      };
+      return M;
+    };
+    // (no latitude lines on a sphere either; the edge of a hemisphere, 0)
+    const lat = (a) => (Math.abs(a - Math.PI / 2) < 1e-9 ? 0 : 0.5);
+    if (k === 'sphere') {
+      const R = s.r; if (!ok(R)) return null;
+      return rev([arcSeg(R, 0, R, Math.PI, 0, 48, () => 0.5)], R, 2 * R);
+    }
+    if (k === 'cyl') {
+      const R = s.r, H = s.h; if (!ok(R, H)) return null;
+      return rev([lineSeg(0, 0, 0, R, -0.5, 0, 1, true), lineSeg(0, R, H, R, 0, 1, 1), lineSeg(H, R, H, 0, 1, 1.5, 1, true)], R, H);
+    }
+    if (k === 'cone') {
+      const R = s.r, H = s.h; if (!ok(R, H)) return null;
+      return rev([lineSeg(0, 0, 0, R, -0.5, 0, 1, true), lineSeg(0, R, H, 0, 0, 0.75, 1)], R, H);
+    }
+    if (k === 'frustum') {
+      const R = s.R, r = s.r, H = s.h; if (!ok(R, r, H)) return null;
+      return rev([lineSeg(0, 0, 0, R, -0.5, 0, 1, true), lineSeg(0, R, H, r, 0, 1, 1), lineSeg(H, r, H, 0, 1, 1.5, 1, true)], Math.max(R, r), H);
+    }
+    if (k === 'hemi') {
+      const R = s.r; if (!ok(R)) return null;
+      return rev([lineSeg(0, 0, 0, R, -0.5, 0, 1, true), arcSeg(0, 0, R, Math.PI / 2, 0, 28, (a) => lat(a))], R, R);
+    }
+    if (k === 'cap') {
+      const Rs = s.r, h = s.h; if (!ok(Rs, h) || h > 2 * Rs * (1 + 1e-12)) return null;
+      const hh = Math.min(h, 2 * Rs), a = Math.sqrt(Math.max(0, hh * (2 * Rs - hh))), a0 = Math.atan2(a, Rs - hh);
+      return rev([lineSeg(0, 0, 0, a, -0.5, 0, 1, true), arcSeg(hh - Rs, 0, Rs, a0, 0, 36, (al, i) => (i === 0 ? 0 : 0.5))], Math.max(a, hh > Rs ? Rs : a), hh);
+    }
+    if (k === 'torus') {
+      const R = s.R, r = s.r; if (!ok(R, r) || r > R) return null;
+      return rev([arcSeg(r, R, r, -Math.PI, Math.PI, 48, () => 0.5)], R + r, 2 * r);
+    }
+    if (k === 'ellipsoid') {
+      const a = s.a, b = s.b, c = s.c; if (!ok(a, b, c)) return null;
+      const segs = [arcSeg(1, 0, 1, Math.PI, 0, 48, () => 0.5)], out = profileOutline(segs);
+      M.grow = 'rev'; M.R = Math.max(a, b); M.top = 2 * c;
+      const m = Math.max(Math.max(a, b) * 0.28, 2 * c * 0.06);
+      M.box = [-a - m, a + m, -b - m, b + m, 0, 2 * c * 1.08 + m * 0.3];
+      M.mesh = (f) => {
+        if (M.meshF === f && M.meshC) return M.meshC;
+        M.meshF = f;
+        return (M.meshC = scaleMesh(revolve(newMesh(), segs, { axis: 'z', theta: 2 * Math.PI * f, n: N, rgb: C.solid, mer: MER, cut: C.cut, poly: out.poly, tri: out.tri }), a, b, c));
+      };
+      return M;
+    }
+    if (k === 'pipe') {
+      // (lying along the x axis, as a pipe usually is; the inside can be seen through its ends)
+      const Ro = s.R, ri = s.r, L = s.L; if (!ok(Ro, ri, L) || ri >= Ro) return null;
+      const segs = [lineSeg(-L / 2, ri, -L / 2, Ro, 0, 1, 1, true), lineSeg(-L / 2, Ro, L / 2, Ro, 1, 2, 1), lineSeg(L / 2, Ro, L / 2, ri, 2, 3, 1, true), lineSeg(L / 2, ri, -L / 2, ri, 3, 4, 1)];
+      const out = profileOutline(segs), m = Math.max(Ro * 0.3, L * 0.05);
+      M.grow = 'rev'; M.lying = true; M.R = Ro; M.L = L; M.top = 2 * Ro;
+      M.box = [-L / 2 - m, L / 2 + m, -Ro - m, Ro + m, 0, 2 * Ro * 1.08 + m * 0.3];
+      M.mesh = (f) => {
+        if (M.meshF === f && M.meshC) return M.meshC;
+        M.meshF = f;
+        return (M.meshC = revolve(newMesh(), segs, { axis: 'x', c: [0, 0, Ro], theta: 2 * Math.PI * f, n: N, rgb: C.solid, mer: MER, cut: C.cut, poly: out.poly, tri: out.tri }));
+      };
+      return M;
+    }
+    // solids pulled up from their base
+    const up = (base, h, apex, R) => {
+      M.grow = 'up'; M.R = R; M.top = h; M.box = roomR(R, h); M.base = base;
+      M.mesh = (f) => {
+        if (M.meshF === f && M.meshC) return M.meshC;
+        M.meshF = f;
+        const hf = Math.max(h * f, h * 1e-4);
+        return (M.meshC = extrude(newMesh(), base, hf, C.solid, apex ? [apex[0], apex[1], hf] : null));
+      };
+      return M;
+    };
+    if (k === 'box') {
+      const a = s.a, b = s.b, c = s.c; if (!ok(a, b, c)) return null;
+      const B = [[-a / 2, -b / 2], [a / 2, -b / 2], [a / 2, b / 2], [-a / 2, b / 2]];
+      up(B, c, null, Math.max(a, b) / 2);
+      const m = Math.max(Math.max(a, b) * 0.14, c * 0.06);
+      M.box = [-a / 2 - m, a / 2 + m, -b / 2 - m, b / 2 + m, 0, c * 1.08 + m * 0.3];
+      return M;
+    }
+    if (k === 'pyr') {
+      const a = s.a, h = s.h; if (!ok(a, h)) return null;
+      return up([[-a / 2, -a / 2], [a / 2, -a / 2], [a / 2, a / 2], [-a / 2, a / 2]], h, [0, 0], a / 2);
+    }
+    if (k === 'nprism' || k === 'prism') {
+      // (a prism given by the area of its base: drawn with a square base of that area)
+      const n = k === 'prism' ? 4 : Math.round(s.n), side = k === 'prism' ? Math.sqrt(s.A) : s.a, h = s.h;
+      if (!ok(side, h) || !(n >= 3 && n <= 200)) return null;
+      const Rc = side / (2 * Math.sin(Math.PI / n)), B = [];
+      for (let i = 0; i < n; i++) { const t = -Math.PI / 2 + Math.PI / n + i * 2 * Math.PI / n; B.push([Rc * Math.cos(t), Rc * Math.sin(t)]); }
+      if (k === 'prism') { const q = side / 2; B.length = 0; B.push([-q, -q], [q, -q], [q, q], [-q, q]); }
+      return up(B, h, null, k === 'prism' ? side / 2 : Rc);
+    }
+    if (/tank/.test(k)) return tankModel(M, k, s);
+    return null;
+  }
+  // The tank of a model: its container (a profile turned around its axis: lying along x, or standing), the
+  // liquid at the height h above its lowest point (s.h), and the amount for a height (TANK_V, in the unit
+  // of the sizes cubed). M.tank: { lying, top (the highest level), R, V(h), full, glass (the mesh of the
+  // container), liquid(h) (the mesh of the liquid, made again
+  // when h changes), wall(z) (the point of the volume scale on the wall at the height z) }
+  function tankModel(M, k, s) {
+    const C = M.colors, N = 72, ht = headTank(k), base = ht ? (ht.lying ? 'htank' : 'vtank') : k;
+    const R = base === 'ctank' ? s.R : s.r;
+    if (!(R > 0) || !isFinite(R)) return null;
+    const top = tankTop(k, s), V = (h) => TANK_V[k](s, Math.max(0, Math.min(top, h))), full = V(top);
+    if (!(top > 0) || !(full > 0) || !isFinite(full)) return null;
+    const T = M.tank = { k, base, lying: base === 'htank', R, top, V, full, h: Math.max(0, Math.min(top, s.h || 0)) };
+    // the profile of the container: [t, r] pieces (smooth inside), the points where a seam is drawn
+    const g = ht && ht.type !== 'flat' ? headGeo(ht.type, R, s.a) : null, a = g ? g.a : 0;
+    let segs;
+    if (T.lying) {
+      const L = s.L; if (!(L > 0)) return null;
+      T.L = L; T.a = a;
+      const hp = g ? headPts(g, 40) : null;
+      segs = g ? [curveSeg(hp.slice().reverse().map(([z, r]) => [-L / 2 - z, r])), lineSeg(-L / 2, R, L / 2, R, 0, 0, 1), curveSeg(hp.map(([z, r]) => [L / 2 + z, r]))]
+        : [lineSeg(-L / 2, 0, -L / 2, R, 0, 0, 1, true), lineSeg(-L / 2, R, L / 2, R, 0, 0, 1), lineSeg(L / 2, R, L / 2, 0, 0, 0, 1, true)];
+      T.stations = segs.filter((q) => !q.flat).reduce((all, q) => all.concat(q.pts), []);
+      T.flatEnds = !g;
+      M.box = (() => { const m = Math.max(R * 0.3, (L + 2 * a) * 0.05); return [-L / 2 - a - m, L / 2 + a + m, -R - m, R + m, 0, 2 * R * 1.08 + m * 0.3]; })();
+    } else {
+      let H;
+      if (base === 'vtank') {
+        H = s.H; if (!(H > 0)) return null;
+        const hp = g ? headPts(g, 40) : null;
+        segs = g ? [curveSeg(hp.slice().reverse().map(([z, r]) => [a - z, r])), lineSeg(a, R, a + H, R, 0, 0, 1), curveSeg(hp.map(([z, r]) => [a + H + z, r]))]
+          : [lineSeg(0, 0, 0, R, 0, 0, 1, true), lineSeg(0, R, H, R, 0, 0, 1), lineSeg(H, R, H, 0, 0, 0, 1, true)];
+      } else if (base === 'stank') {
+        H = 2 * R;
+        segs = [arcSeg(R, 0, R, Math.PI, 0, 48, () => 0)];
+      } else {
+        H = s.H; if (!(H > 0)) return null;
+        // (the cone with its point down, open at the top: drawn closed by a lid of glass)
+        segs = [lineSeg(0, 0, H, R, 0, 0, 1), lineSeg(H, R, H, 0, 0, 0, 1, true)];
+      }
+      T.H = H; T.a = a;
+      M.box = (() => { const m = Math.max(R * 0.3, top * 0.05); return [-R - m, R + m, -R - m, R + m, 0, top * 1.08 + m * 0.3]; })();
+    }
+    T.segs = segs;
+    // the radius of the container at the height z (standing) or at the place t along the axis (lying), from
+    // the profile
+    const prof = segs.reduce((all, q) => all.concat(q.pts), []);
+    T.rAt = (t) => {
+      let best = 0;
+      for (let i = 0; i + 1 < prof.length; i++) {
+        const p = prof[i], q = prof[i + 1];
+        if ((p.t - t) * (q.t - t) > 0 || p.t === q.t) continue;
+        best = Math.max(best, p.r + (q.r - p.r) * (t - p.t) / (q.t - p.t));
+      }
+      return best;
+    };
+    // the seams (where a head meets the shell, and the edges of flat ends): the points of the profile
+    const rings = [];
+    let pk = 0;
+    segs.forEach((q, i) => { pk += q.pts.length; if (i + 1 < segs.length) rings.push(pk - 1); });
+    T.glass = revolve(newMesh(), segs, T.lying ? { axis: 'x', c: [0, 0, R], n: N, rgb: [0, 0, 0], rings } : { axis: 'z', n: N, rgb: [0, 0, 0], rings });
+    T.liquid = (h) => {
+      if (T.liqH === h && T.liqC) return T.liqC;
+      T.liqH = h;
+      return (T.liqC = T.lying ? lyingLiquid(T, h, C.liquid) : standingLiquid(T, h, C.liquid));
+    };
+    // the point on the wall at the height z, on the side toward the camera (sv: [sx, sy], the direction of
+    // that side in the floor's plane, standing; lying: x of the scale and the side in y)
+    T.wall = (z, sv) => {
+      if (T.lying) { const dz = z - R, w = Math.sqrt(Math.max(0, R * R - dz * dz)); return [sv[0], sv[1] * w, z]; }
+      const r = T.rAt(z);
+      return [sv[0] * r, sv[1] * r, z];
+    };
+    return M;
+  }
+  // the liquid of a standing tank up to the height h: the profile cut at h, turned, and the level as a disk
+  function standingLiquid(T, h, rgb) {
+    const M = newMesh();
+    if (!(h > T.top * 1e-6)) return M;
+    const segs = [];
+    let rTop = 0, afterFlat = false;
+    for (const q of T.segs) {
+      const pts = [];
+      for (let i = 0; i < q.pts.length; i++) {
+        const p = q.pts[i];
+        // (the edge of a flat bottom: a line, gj 0 on both sides of it)
+        if (p.t <= h) { pts.push(Object.assign({}, p, { gj: q.flat ? (p.r < 1e-12 ? -0.5 : 0) : i === 0 && afterFlat ? 0 : 0.5 })); continue; }
+        const o = q.pts[i - 1];
+        if (o && o.t < h) { const f = (h - o.t) / (p.t - o.t), r = o.r + (p.r - o.r) * f; pts.push(pp(h, r, o.nt + (p.nt - o.nt) * f, o.nr + (p.nr - o.nr) * f, 1)); rTop = r; }
+        break;
+      }
+      if (pts.length > 1) segs.push({ pts, flat: q.flat });
+      afterFlat = q.flat;
+      if (pts.length && pts[pts.length - 1].gj === 1) break;
+    }
+    // (a level at a point of the profile: that ring is the edge of the level; full to a flat lid: no level)
+    if (!segs.length) return M;
+    const ls = segs[segs.length - 1], last = ls.pts, lp = last[last.length - 1];
+    if (lp.gj !== 1 && !ls.flat) { rTop = lp.r; lp.gj = 1; }
+    if (rTop > 1e-12) segs.push(lineSeg(h, rTop, h, 0, 1, 1.5, 1, true));
+    return revolve(M, segs, { axis: 'z', n: 72, rgb, mer: 0 });
+  }
+  // the liquid of a lying tank up to the height h: for each station along the axis (from the profile; and
+  // where the level meets the wall of a head, added), the part of its circle below the level; the level (a
+  // flat surface between the places where it meets the wall); with flat ends, the parts of the ends below it
+  function lyingLiquid(T, h, rgb) {
+    const M = newMesh(), V = M.v, R = T.R, q0 = h - R, NA = 48, col = rgb;
+    if (!(h > T.top * 1e-6)) return M;
+    const push = (x, y, z, nx, ny, nz, gi, gj) => V.push(x, y, z, nx, ny, nz, col[0], col[1], col[2], gi, gj);
+    // the stations, with those where the radius is |q0| (the level meets the wall there)
+    const st = [], aq = Math.abs(q0);
+    T.stations.forEach((p, i) => {
+      const o = T.stations[i - 1];
+      if (o && (o.r - aq) * (p.r - aq) < 0) { const f = (aq - o.r) / (p.r - o.r); st.push(pp(o.t + (p.t - o.t) * f, aq, o.nt + (p.nt - o.nt) * f, o.nr + (p.nr - o.nr) * f, 0)); }
+      st.push(p);
+    });
+    // the wetted wall: angles from φa to φb (through the bottom, 3π/2) where r sin φ ≤ q0
+    const arc = (r) => { const q = r > 1e-12 ? Math.max(-1, Math.min(1, q0 / r)) : (q0 >= 0 ? 1 : -1), s = Math.asin(q); return { a: Math.PI - s, b: 2 * Math.PI + s, part: Math.abs(q) < 1 - 1e-12 || Math.abs(r - aq) < 1e-12 * R }; };
+    const b0 = V.length / MV;
+    for (const p of st) {
+      const A = arc(p.r);
+      for (let i = 0; i <= NA; i++) {
+        const ph = A.a + (A.b - A.a) * i / NA, c = Math.cos(ph), s = Math.sin(ph);
+        push(p.t, p.r * c, R + p.r * s, p.nt, p.nr * c, p.nr * s, 0.5, A.part ? 0.5 + Math.abs(i / NA - 0.5) : 0.5);
+      }
+    }
+    for (let j = 0; j + 1 < st.length; j++) {
+      if (st[j].t === st[j + 1].t) continue;
+      for (let i = 0; i < NA; i++) { const a = b0 + j * (NA + 1) + i, b = a + 1, c = a + NA + 1, d = c + 1; M.t.push(a, b, d, a, d, c); }
+    }
+    // the level: between the stations where the circle reaches above it
+    let prev = -1;
+    for (const p of st) {
+      const w = p.r > aq ? Math.sqrt(p.r * p.r - q0 * q0) : 0, on = p.r >= aq * (1 - 1e-12) && p.r > 1e-12;
+      const k = V.length / MV;
+      if (on) {
+        push(p.t, -w, h, 0, 0, 1, 0.5, 1); push(p.t, 0, h, 0, 0, 1, 0.5, 0.5); push(p.t, w, h, 0, 0, 1, 0.5, 1);
+        if (prev >= 0) M.t.push(prev, k, prev + 1, prev + 1, k, k + 1, prev + 1, k + 1, prev + 2, prev + 2, k + 1, k + 2);
+        prev = k;
+      } else prev = -1;
+    }
+    // flat ends: the part of each end below the level (rows of two points of its circle at the same height,
+    // and the point between them)
+    if (T.flatEnds) {
+      for (const [t, nx] of [[-T.L / 2, -1], [T.L / 2, 1]]) {
+        const A = arc(R), e0 = V.length / MV;
+        for (let i = 0; i <= NA / 2; i++) {
+          const p1 = A.a + (A.b - A.a) * i / NA, y = R * Math.cos(p1), z = R + R * Math.sin(p1);
+          push(t, y, z, nx, 0, 0, NaN, NaN); push(t, 0, z, nx, 0, 0, NaN, NaN); push(t, -y, z, nx, 0, 0, NaN, NaN);
+        }
+        for (let i = 0; i < NA / 2; i++) { const a = e0 + 3 * i, c = a + 3; M.t.push(a, a + 1, c, a + 1, c + 1, c, a + 1, a + 2, c + 1, a + 2, c + 2, c + 1); }
+      }
+    }
+    return M;
+  }
+  // the triangles of a mesh into the buffer of the surfaces (draw3d's projection X): the place on the screen
+  // and the depth of each corner, its normal in the camera's axes, its color and lines, and the lamp's light
+  // while the graph is turned (kept for the turn)
+  function meshToTris(M, tb, X) {
+    const V = M.v, n = V.length / MV;
+    if (!M.pv || M.pv.length !== n) { M.pv = []; for (let i = 0; i < n; i++) M.pv.push(new Float32Array(CV)); }
+    // (the lamp's light at each corner while the graph is turned: looked up once for the turn, BG19)
+    let lock = null;
+    if (X.LKS) {
+      if (M.lockId !== X.LKS.id || !M.lockL || M.lockL.length !== n) { M.lockL = new Float32Array(n).fill(NaN); M.lockId = X.LKS.id; }
+      lock = M.lockL;
+    }
+    for (let i = 0; i < n; i++) {
+      const o = i * MV, u = X.U(V[o]), v = X.V(V[o + 1]), w = X.Wz(V[o + 2]);
+      X.proj(u, v, w);
+      const N = X.camN(V[o + 3] * X.nx, V[o + 4] * X.ny, V[o + 5] * X.nz), P = M.pv[i];
+      P[0] = X.T[0]; P[1] = X.T[1]; P[2] = X.T[2]; P[3] = N[0]; P[4] = N[1]; P[5] = N[2];
+      P[6] = V[o + 6]; P[7] = V[o + 7]; P[8] = V[o + 8]; P[9] = V[o + 9]; P[10] = V[o + 10];
+      if (lock) { let r = lock[i]; if (r !== r) r = lock[i] = X.lockLitN(u, v, w, N); P[11] = r; } else P[11] = 1;
+    }
+    for (let t = 0; t < M.t.length; t += 3) tb.add(M.pv[M.t[t]], M.pv[M.t[t + 1]], M.pv[M.t[t + 2]]);
+    return M.t.length / 3;
+  }
+  // the glass of a tank (X: draw3d's projection). The containers are convex, so on the screen the glass is the
+  // convex hull of its corners, with one wall in front of the liquid and one behind it everywhere inside: side
+  // 'back' fills it with a little color before the liquid (and draws the seams at the back, faint); 'front'
+  // fills it again after the liquid, with a little shine where the lamp is mirrored toward the eye, and draws
+  // its outline and the seams in front.
+  function glassPaint(g, Md, X, side, dark) {
+    const T = Md.tank, G = T.glass, V = G.v, n = V.length / MV, I = G.t;
+    if (side === 'back') {
+      if (!T.gp || T.gp.length !== n * 2) { T.gp = new Float32Array(n * 2); T.gn = new Float32Array(n); T.gs = new Float32Array(n); }
+      const P = T.gp, Hh = (() => { const l = LAMP; const x = l[0], y = l[1], z = l[2] - 1, m = Math.hypot(x, y, z); return [x / m, y / m, z / m]; })();
+      for (let i = 0; i < n; i++) {
+        const o = i * MV;
+        X.proj(X.U(V[o]), X.V(V[o + 1]), X.Wz(V[o + 2]));
+        P[2 * i] = X.T[0]; P[2 * i + 1] = X.T[1];
+        // (how much the normal faces the eye, < 0 toward it; and how much it mirrors the lamp toward the eye)
+        const N = X.camN(V[o + 3] * X.nx, V[o + 4] * X.ny, V[o + 5] * X.nz), L = Math.hypot(N[0], N[1], N[2]) || 1;
+        T.gn[i] = N[2] / L;
+        T.gs[i] = (N[0] * Hh[0] + N[1] * Hh[1] + N[2] * Hh[2]) / L;
+      }
+      // the convex hull on the screen (monotone chain)
+      const idx = Array.from({ length: n }, (_, i) => i).sort((a, b) => P[2 * a] - P[2 * b] || P[2 * a + 1] - P[2 * b + 1]);
+      const cr = (o, a, b) => (P[2 * a] - P[2 * o]) * (P[2 * b + 1] - P[2 * o + 1]) - (P[2 * a + 1] - P[2 * o + 1]) * (P[2 * b] - P[2 * o]);
+      const lo = [], hi = [];
+      for (const i of idx) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], i) <= 0) lo.pop(); lo.push(i); }
+      for (let k = idx.length - 1; k >= 0; k--) { const i = idx[k]; while (hi.length > 1 && cr(hi[hi.length - 2], hi[hi.length - 1], i) <= 0) hi.pop(); hi.push(i); }
+      T.hull = lo.slice(0, -1).concat(hi.slice(0, -1));
+    }
+    const P = T.gp, hull = T.hull;
+    const hullPath = () => { g.beginPath(); hull.forEach((i, k) => (k ? g.lineTo(P[2 * i], P[2 * i + 1]) : g.moveTo(P[2 * i], P[2 * i + 1]))); g.closePath(); };
+    g.save();
+    hullPath();
+    g.fillStyle = dark ? (side === 'front' ? 'rgba(190,215,255,0.07)' : 'rgba(190,215,255,0.06)') : (side === 'front' ? 'rgba(120,160,205,0.10)' : 'rgba(120,160,205,0.13)');
+    g.fill();
+    if (side === 'back') {
+      g.strokeStyle = dark ? 'rgba(210,225,250,0.22)' : 'rgba(50,70,100,0.22)'; g.lineWidth = 1;
+      g.beginPath(); seamPath(g, G, P, T.gn, false); g.stroke();
+      g.restore();
+      return;
+    }
+    // a little shine: the triangles in front whose corners all mirror the lamp toward the eye (few)
+    for (const [lim, al] of [[0.86, 0.1], [0.95, 0.14]]) {
+      g.beginPath();
+      let any = false;
+      for (let t = 0; t < I.length; t += 3) {
+        const a = I[t], b = I[t + 1], c = I[t + 2];
+        if (T.gn[a] >= 0 || -T.gs[a] < lim || -T.gs[b] < lim || -T.gs[c] < lim) continue;
+        g.moveTo(P[2 * a], P[2 * a + 1]); g.lineTo(P[2 * b], P[2 * b + 1]); g.lineTo(P[2 * c], P[2 * c + 1]); g.closePath(); any = true;
+      }
+      if (any) { g.fillStyle = `rgba(255,255,255,${al})`; g.fill('nonzero'); }
+    }
+    // the outline, and the seams in front
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    hullPath();
+    g.strokeStyle = dark ? 'rgba(215,228,250,0.72)' : 'rgba(45,62,90,0.72)'; g.lineWidth = 1.4;
+    g.stroke();
+    g.beginPath(); seamPath(g, G, P, T.gn, true);
+    g.strokeStyle = dark ? 'rgba(215,228,250,0.55)' : 'rgba(45,62,90,0.5)'; g.lineWidth = 1.1;
+    g.stroke();
+    g.restore();
+  }
+  // the parts of the seams (rings of the glass) toward the eye (front) or away from it
+  function seamPath(g, G, P, gn, front) {
+    for (const ring of G.lines) {
+      for (let i = 0; i + 1 < ring.length; i++) {
+        const a = ring[i], b = ring[i + 1], f = gn[a] + gn[b] < 0;
+        if (f !== front) continue;
+        g.moveTo(P[2 * a], P[2 * a + 1]); g.lineTo(P[2 * b], P[2 * b + 1]);
+      }
+    }
+  }
+  // what is drawn over the model after the surfaces (X: the projection; zb: the depth buffer of surfacePaint):
+  // the glass in front, the volume scale on the wall and the amount at the level (tanks), and the sizes (lines
+  // with their labels, parts behind the solid dashed). Returns what was drawn (for the tests).
+  function modelOverlay(g, Md, X, zb, o) {
+    const out = { dims: [] }, css = o.css, dark = o.dark;
+    const ink = css.getPropertyValue('--text').trim() || (dark ? '#e5e7eb' : '#111827'), bg = css.getPropertyValue('--plot-bg').trim() || (dark ? '#111' : '#fff');
+    const P3 = (p) => { X.proj(X.U(p[0]), X.V(p[1]), X.Wz(p[2])); return [X.T[0], X.T[1], X.T[2]]; };
+    // directions on the floor: to the right on the screen, and toward the eye
+    const rgt = [X.ca, -X.sa], twd = [-X.sa, -X.ca];
+    const T = Md.tank, growing = o.growing;
+    if (T) glassPaint(g, Md, X, 'front', dark);
+    // a label in a little box: an italic letter, then the rest (" = 15 cm")
+    const pill = (txt, x, y, al) => {
+      const m = /^(\S+)( = .*)$/.exec(txt), a = m ? m[1] : '', b = m ? m[2] : txt;
+      g.font = 'italic 600 14px Georgia, "Times New Roman", serif'; const wa = a ? g.measureText(a).width : 0;
+      g.font = '600 13px system-ui, sans-serif'; const wb = g.measureText(b).width;
+      const w = wa + wb + 12, h = 22;
+      let x0 = al === 'left' ? x - w : al === 'center' ? x - w / 2 : x;
+      x0 = Math.max(2, Math.min(o.W - w - 2, x0));
+      const y0 = Math.max(2, Math.min(o.H - h - 2, y - h / 2));
+      // (not under the round buttons at the right of the graph)
+      const A = o.avoid;
+      if (A && x0 + w > A.x && x0 < A.x + A.w && y0 + h > A.y && y0 < A.y + A.h) x0 = Math.max(2, A.x - w - 4);
+      g.fillStyle = bg; g.globalAlpha = 0.86;
+      g.beginPath(); if (g.roundRect) g.roundRect(x0, y0, w, h, 6); else g.rect(x0, y0, w, h); g.fill();
+      g.globalAlpha = 1; g.fillStyle = ink; g.textBaseline = 'middle'; g.textAlign = 'left';
+      if (a) { g.font = 'italic 600 14px Georgia, "Times New Roman", serif'; g.fillText(a, x0 + 6, y0 + h / 2 + 0.5); }
+      g.font = '600 13px system-ui, sans-serif'; g.fillText(b, x0 + 6 + wa, y0 + h / 2 + 0.5);
+      return { x: x0, y: y0, w, h };
+    };
+    // is the point (x, y, depth) in front of the surfaces drawn?
+    const seen = (x, y, d) => {
+      if (!zb || T) return true;
+      const px = Math.round(x * zb.q - zb.x0), py = Math.round(y * zb.q - zb.y0);
+      if (px < 0 || py < 0 || px >= zb.w || py >= zb.h) return true;
+      return d <= zb.zb[py * zb.w + px] + 0.012;
+    };
+    // a size: the line from a to b (3D), small marks across its ends, its label beside its middle (side: the
+    // direction on the screen, [dx, dy], or the side of the line)
+    const dim = (a, b, txt, side) => {
+      if (!txt) return;
+      const A = P3(a), B = P3(b), len = Math.hypot(B[0] - A[0], B[1] - A[1]);
+      if (!(len > 6)) return;
+      const ux = (B[0] - A[0]) / len, uy = (B[1] - A[1]) / len, nx = -uy, ny = ux;
+      // (the parts in front solid, those behind the solid dashed)
+      const K = Math.max(2, Math.ceil(len / 4)), runs = [];
+      for (let k = 0; k <= K; k++) {
+        const f = k / K, p = P3([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f]), v = seen(p[0], p[1], p[2]);
+        const r = runs[runs.length - 1];
+        if (r && r.v === v) r.pts.push(p); else runs.push({ v, pts: r ? [r.pts[r.pts.length - 1], p] : [p] });
+      }
+      g.save(); g.lineCap = 'round';
+      for (const pass of [0, 1]) {
+        for (const r of runs) {
+          g.beginPath(); r.pts.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])));
+          if (pass === 0) { g.setLineDash([]); g.strokeStyle = bg; g.globalAlpha = 0.75; g.lineWidth = 3.6; }
+          else { g.setLineDash(r.v ? [] : [4, 3]); g.strokeStyle = ink; g.globalAlpha = r.v ? 0.92 : 0.6; g.lineWidth = 1.4; }
+          g.stroke();
+        }
+        g.setLineDash([]);
+        g.beginPath();
+        for (const p of [A, B]) { g.moveTo(p[0] - nx * 5, p[1] - ny * 5); g.lineTo(p[0] + nx * 5, p[1] + ny * 5); }
+        if (pass === 0) { g.strokeStyle = bg; g.globalAlpha = 0.75; g.lineWidth = 3.6; } else { g.strokeStyle = ink; g.globalAlpha = 0.92; g.lineWidth = 1.4; }
+        g.stroke();
+      }
+      g.restore();
+      // the label: beside the middle, on the side asked for (away from the solid)
+      let sx = side ? side[0] : nx, sy = side ? side[1] : ny;
+      const sl = Math.hypot(sx, sy) || 1; sx /= sl; sy /= sl;
+      const mx = (A[0] + B[0]) / 2 + sx * 16, my = (A[1] + B[1]) / 2 + sy * 14;
+      const box = pill(txt, mx, my, sx < -0.35 ? 'left' : sx > 0.35 ? 'right' : 'center');
+      out.dims.push({ txt, a: [Math.round(A[0]), Math.round(A[1])], b: [Math.round(B[0]), Math.round(B[1])], box: [Math.round(box.x), Math.round(box.y), Math.round(box.w), Math.round(box.h)], hidden: runs.filter((r) => !r.v).length });
+    };
+    const L = { dia: Md.lab.dia }, k = Md.k, sR = Md.R;
+    for (const n in Md.lab) if (n !== 'dia') L[n] = labText(Md.lab[n]);
+    const at = (d, q, z) => [d[0] * q, d[1] * q, z];
+    const sgn = (x) => (x < 0 ? -1 : 1);
+    // the screen's right as an arrow for a label
+    const RIGHT = [1, 0], LEFT = [-1, 0], UP = [0, -1], DOWN = [0, 1];
+    if (!T && !growing) {
+      const rad = L.r || L.R, dd = L.dia;
+      if (k === 'sphere') {
+        const c = [0, 0, sR];
+        if (dd) dim([-rgt[0] * sR, -rgt[1] * sR, sR], [rgt[0] * sR, rgt[1] * sR, sR], rad, UP);
+        else dim(c, [rgt[0] * sR, rgt[1] * sR, sR], rad, UP);
+        const C2 = P3(c); g.fillStyle = ink; g.globalAlpha = seen(C2[0], C2[1], C2[2]) ? 0.9 : 0.5; g.beginPath(); g.arc(C2[0], C2[1], 2.6, 0, 2 * Math.PI); g.fill(); g.globalAlpha = 1;
+      } else if (k === 'cyl' || k === 'cone' || k === 'frustum') {
+        const H = Md.top, out2 = sR * 1.22;
+        // the radius on the face toward the eye (the top seen from above, the bottom from below); a cone: its base
+        const zc = k === 'cone' ? 0 : X.se >= 0 ? H : 0, rr = k === 'frustum' && zc === H ? Md.s.r : k === 'frustum' ? Md.s.R : sR;
+        const d30 = [rgt[0] * 0.866 + twd[0] * 0.5, rgt[1] * 0.866 + twd[1] * 0.5];
+        const tr2 = k === 'frustum' ? (zc === H ? L.r : L.R) : rad;
+        if (dd) dim(at(d30, -rr, zc), at(d30, rr, zc), tr2, k === 'cone' || zc === 0 ? DOWN : UP);
+        else dim([0, 0, zc], at(d30, rr, zc), tr2, k === 'cone' || zc === 0 ? DOWN : UP);
+        if (k === 'frustum') { const z2 = zc === H ? 0 : H, r2 = zc === H ? Md.s.R : Md.s.r; if (dd) dim(at(d30, -r2, z2), at(d30, r2, z2), zc === H ? L.R : L.r, z2 === 0 ? DOWN : UP); else dim([0, 0, z2], at(d30, r2, z2), zc === H ? L.R : L.r, z2 === 0 ? DOWN : UP); }
+        const ro = Math.max(out2, k === 'frustum' ? Math.max(Md.s.R, Md.s.r) * 1.22 : 0);
+        dim(at(rgt, -ro, 0), at(rgt, -ro, H), L.h, LEFT);
+      } else if (k === 'hemi' || k === 'cap') {
+        const H = Md.top;
+        dim([0, 0, 0], [0, 0, H], L.h, LEFT);
+        const rb = k === 'hemi' ? sR : Math.sqrt(Math.max(0, Md.s.h * (2 * Md.s.r - Md.s.h)));
+        if (k === 'hemi') { if (dd) dim(at(rgt, -rb, 0), at(rgt, rb, 0), rad, DOWN); else dim([0, 0, 0], at(rgt, rb, 0), rad, DOWN); }
+      } else if (k === 'torus') {
+        const R = Md.s.R, r = Md.s.r;
+        dim([0, 0, r], at(rgt, R, r), L.R, UP);
+        dim(at(rgt, R, r), at(rgt, R + r, r), L.r, DOWN);
+      } else if (k === 'ellipsoid') {
+        const s = Md.s;
+        dim([0, 0, s.c], [s.a, 0, s.c], L.a, DOWN); dim([0, 0, s.c], [0, s.b, s.c], L.b, DOWN); dim([0, 0, s.c], [0, 0, 2 * s.c], L.c, LEFT);
+      } else if (k === 'pipe') {
+        const s = Md.s, ex = sgn(X.ca) * s.L / 2;
+        dim([ex, 0, s.R], [ex, 0, 2 * s.R], L.R, sgn(X.ca) > 0 ? RIGHT : LEFT);
+        dim([ex, 0, s.R], [ex, 0, s.R - s.r], L.r, sgn(X.ca) > 0 ? RIGHT : LEFT);
+        const fy = -sgn(X.ca * X.ce) * s.R * 1.15;
+        dim([-s.L / 2, fy, 0], [s.L / 2, fy, 0], L.L, DOWN);
+      } else if (Md.grow === 'up') {
+        const s = Md.s, H = Md.top, out2 = sR * 1.35;
+        dim(at(rgt, -out2, 0), at(rgt, -out2, H), L.h || L.c, LEFT);
+        if (k === 'box') {
+          const fx = sgn(twd[0]) * s.a / 2, fy = sgn(twd[1]) * s.b / 2;
+          dim([-s.a / 2, fy, 0], [s.a / 2, fy, 0], L.a, DOWN); dim([fx, -s.b / 2, 0], [fx, s.b / 2, 0], L.b, DOWN);
+        } else if (k === 'pyr') {
+          const fy = sgn(twd[1]) * s.a / 2;
+          dim([-s.a / 2, fy, 0], [s.a / 2, fy, 0], L.a, DOWN);
+        } else if (k === 'nprism' && Md.base) {
+          // (the side: the edge of the base nearest the eye)
+          const B = Md.base;
+          let best = 0, bi = 0;
+          for (let i = 0; i < B.length; i++) { const a = B[i], b = B[(i + 1) % B.length], d = (a[0] + b[0]) * twd[0] + (a[1] + b[1]) * twd[1]; if (i === 0 || d > best) { best = d; bi = i; } }
+          const a = B[bi], b = B[(bi + 1) % B.length];
+          dim([a[0], a[1], 0], [b[0], b[1], 0], L.a, DOWN);
+        } else if (k === 'prism' && L.A) {
+          // (the area of the base, written on the top)
+          const c = P3([0, 0, H]);
+          const box = pill(L.A, c[0], c[1], 'center');
+          out.dims.push({ txt: L.A, a: [Math.round(c[0]), Math.round(c[1])], b: [Math.round(c[0]), Math.round(c[1])], box: [Math.round(box.x), Math.round(box.y), Math.round(box.w), Math.round(box.h)], hidden: 0 });
+        }
+      }
+    }
+    if (T) {
+      const R = T.R, top = T.top, h = T.hShow;
+      // where the scale is: lying, on the front of the shell toward the left end; standing, on the wall toward the
+      // eye and a little to the left (the amount at the level goes to its right, away from the round buttons)
+      let sv;
+      if (T.lying) sv = [-sgn(X.ca) * T.L * 0.22, -sgn(X.ca * X.ce || 1)];
+      else { const c = Math.cos(0.6), s = Math.sin(0.6); sv = [twd[0] * c - rgt[0] * s, twd[1] * c - rgt[1] * s]; }
+      const W3 = (z) => P3(T.wall(z, sv));
+      // the line of the scale
+      g.save(); g.lineCap = 'round';
+      g.strokeStyle = ink; g.globalAlpha = 0.55; g.lineWidth = 1.1;
+      g.beginPath(); for (let i = 0; i <= 48; i++) { const p = W3(top * i / 48); if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); } g.stroke();
+      // the marks: round amounts (about 10), about 3 of them with their numbers, on the left of the line
+      const sc = Md.scale, ticks = [];
+      if (sc && sc.step > 0) {
+        for (let i = 1; i * sc.step < T.full * sc.f * (1 - 1e-9); i++) {
+          const v = i * sc.step / sc.f;
+          let lo = 0, hi = top;
+          for (let it = 0; it < 64; it++) { const m = (lo + hi) / 2; if (T.V(m) < v) lo = m; else hi = m; }
+          const z = (lo + hi) / 2, major = i % sc.every === 0, p = W3(z);
+          // (a mark along the wall: lying, along the axis; standing, around it)
+          const dl = (major ? 0.09 : 0.05) * R, w = T.wall(z, sv);
+          let a1, a2;
+          if (T.lying) { a1 = P3([sv[0] - dl, w[1], z]); a2 = P3([sv[0] + dl, w[1], z]); }
+          else { const tx = -sv[1], ty = sv[0]; a1 = P3([w[0] - tx * dl, w[1] - ty * dl, z]); a2 = P3([w[0] + tx * dl, w[1] + ty * dl, z]); }
+          g.globalAlpha = 0.8; g.lineWidth = major ? 1.5 : 1.1;
+          g.beginPath(); g.moveTo(a1[0], a1[1]); g.lineTo(a2[0], a2[1]); g.stroke();
+          const t0 = { v: +(i * sc.step).toPrecision(12), z: +z.toPrecision(12), y: Math.round(p[1] * 10) / 10, major };
+          if (major) {
+            const lx = Math.min(a1[0], a2[0], p[0]) - 6;
+            g.globalAlpha = 1; g.font = '11px system-ui, sans-serif'; g.textAlign = 'right'; g.textBaseline = 'middle';
+            const txt = digPic(i * sc.step, 'scale') + (sc.unit ? ' ' + sc.unit : '');
+            g.strokeStyle = bg; g.lineWidth = 3; g.globalAlpha = 0.8; g.strokeText(txt, lx, p[1]);
+            g.globalAlpha = 1; g.fillStyle = ink; g.fillText(txt, lx, p[1]);
+            g.strokeStyle = ink;
+            t0.text = txt;
+          }
+          ticks.push(t0);
+        }
+      }
+      g.restore();
+      out.scale = ticks;
+      // the sizes of the container: outside its ends or sides
+      if (!growing) {
+        const lab = L, lr = lab.dia ? lab.r : lab.r || lab.R;
+        if (T.lying) {
+          const ex = T.L / 2 + T.a + R * 0.25, sx = sgn(X.ca);
+          if (lab.dia) dim([-sx * ex, 0, 0], [-sx * ex, 0, 2 * R], lr, sx > 0 ? LEFT : RIGHT); else dim([-sx * ex, 0, R], [-sx * ex, 0, 2 * R], lr, sx > 0 ? LEFT : RIGHT);
+          if (h > 0) dim([sx * ex, 0, 0], [sx * ex, 0, h], lab.h, sx > 0 ? RIGHT : LEFT);
+          const fy = sv[1] * R * 1.12;
+          dim([-T.L / 2, fy, 0], [T.L / 2, fy, 0], lab.L, DOWN);
+          if (lab.a) dim([T.L / 2, fy, 0], [T.L / 2 + T.a, fy, 0], lab.a, DOWN);
+        } else {
+          const ro = R * 1.3, zt = T.base === 'vtank' ? T.a + T.H : top;
+          const zr = T.base === 'stank' ? R : zt;
+          const dR = [rgt[0] * 0.866 - twd[0] * 0.5, rgt[1] * 0.866 - twd[1] * 0.5];
+          if (lab.dia) dim(at(dR, -R, zr), at(dR, R, zr), lr, UP); else dim([0, 0, zr], at(dR, R, zr), lr, UP);
+          if (T.base !== 'stank') dim(at(rgt, -ro, T.base === 'vtank' ? T.a : 0), at(rgt, -ro, zt), lab.H, LEFT);
+          if (h > 0) dim(at(rgt, ro, 0), at(rgt, ro, h), lab.h, RIGHT);
+          if (lab.a && T.base === 'vtank') dim(at(rgt, -ro, 0), at(rgt, -ro, T.a), lab.a, LEFT);
+        }
+      }
+      // the amount at the level, beside the scale: a box that can be dragged up and down (⇕)
+      const lv = W3(h), txt = Md.levelText ? Md.levelText() : '';
+      let hit = null;
+      if (txt && !growing) {
+        g.save();
+        g.font = '600 13px system-ui, sans-serif';
+        // (one line, or the amount and how full on two lines when one would be too wide)
+        const m2 = /^(.*?)\s*[（(]\s*(.*?)\s*[）)]$/.exec(txt);
+        let lines = ['⇕ ' + txt];
+        if (g.measureText(lines[0]).width + 16 > o.W * 0.5 && m2) lines = ['⇕ ' + m2[1], m2[2]];
+        const ind = g.measureText('⇕ ').width, w = Math.max(...lines.map((s, i) => g.measureText(s).width + (i ? ind : 0))) + 16, hh = 8 + 17 * lines.length;
+        const A = o.avoid, clash = (x) => A && x + w > A.x && x < A.x + A.w && y0 + hh > A.y && y0 < A.y + A.h;
+        const y0 = Math.max(2, Math.min(o.H - hh - 2, lv[1] - hh / 2));
+        // (on the right of the level on the wall; on its left when there is no room; not over the labels of the sizes)
+        let x0 = lv[0] + 14;
+        if (x0 + w > o.W - 2 || clash(x0)) x0 = lv[0] - 14 - w;
+        if (x0 < 2) { x0 = 2; if (clash(x0)) x0 = Math.max(2, A.x - w - 4); }
+        const over = (x, y) => out.dims.some((d) => x < d.box[0] + d.box[2] && x + w > d.box[0] && y < d.box[1] + d.box[3] && y + hh > d.box[1]);
+        if (over(x0, y0)) { const alt = [lv[0] - 14 - w, lv[0] + 14].filter((x) => x >= 2 && x + w <= o.W - 2 && !clash(x) && !over(x, y0)); if (alt.length) x0 = alt[0]; }
+        // (a little pointer from the box to the level on the wall, under the box)
+        g.strokeStyle = ink; g.lineWidth = 1.2; g.globalAlpha = 0.85;
+        g.beginPath(); g.moveTo(lv[0], lv[1]); g.lineTo(x0 + w / 2, y0 + hh / 2); g.stroke();
+        g.beginPath(); g.arc(lv[0], lv[1], 2.5, 0, 2 * Math.PI); g.fillStyle = ink; g.fill();
+        g.fillStyle = bg; g.globalAlpha = 0.92; g.lineWidth = 1;
+        g.beginPath(); if (g.roundRect) g.roundRect(x0, y0, w, hh, 8); else g.rect(x0, y0, w, hh); g.fill(); g.globalAlpha = 0.5; g.stroke();
+        g.globalAlpha = 1; g.fillStyle = ink; g.textAlign = 'left'; g.textBaseline = 'middle';
+        lines.forEach((s, i) => g.fillText(s, x0 + 8 + (i ? ind : 0), y0 + 4 + 17 * i + 8.5));
+        g.restore();
+        hit = { x: x0, y: y0, w, h: hh, text: txt };
+      }
+      // the outline of the level on the screen (for dragging it: a drag that starts near it moves it)
+      const ring = [];
+      if (h > 0 && h < top) {
+        if (T.lying) {
+          const q0 = h - R, st = T.stations.filter((p) => p.r > Math.abs(q0));
+          for (const p of st) ring.push(P3([p.t, Math.sqrt(p.r * p.r - q0 * q0), h]));
+          for (let i = st.length - 1; i >= 0; i--) { const p = st[i]; ring.push(P3([p.t, -Math.sqrt(p.r * p.r - q0 * q0), h])); }
+        } else {
+          const r = T.rAt(h);
+          for (let i = 0; i < 48; i++) { const a = i / 48 * 2 * Math.PI; ring.push(P3([r * Math.cos(a), r * Math.sin(a), h])); }
+        }
+      }
+      // (how far the level moves on the screen for one unit of height: for the drag)
+      const p0 = P3([0, 0, 0]), p1 = P3([0, 0, top]);
+      Q3.levelHit = { box: hit, ring: ring.map((p) => [p[0], p[1]]), perH: (p1[1] - p0[1]) / top, wallY: lv[1] };
+      out.level = { h: +h.toPrecision(12), text: txt, box: hit ? [Math.round(hit.x), Math.round(hit.y), Math.round(hit.w), Math.round(hit.h)] : null, y: Math.round(lv[1] * 10) / 10 };
+    } else Q3.levelHit = null;
+    return out;
+  }
+  // the box of the 3D graph for a model (its data, as from the engine for surfaces)
+  function modelData(Md) {
+    const [x0, x1, y0, y1, z0, z1] = Md.box;
+    return { xs: [x0, x1], ys: [y0, y1], nx: 2, ny: 2, series: [], z0, z1, model: true };
+  }
   function draw3d() {
     const c = Q3.canvas;
     if (!c || !c.clientWidth) return;
@@ -10228,6 +11547,12 @@
       }
       for (let m = 1; m + 1 < vs.length; m++) tb.add(vs[0], vs[m], vs[m + 1]);
     }
+    // a solid or the liquid of a tank of "Shapes" (1.12.0, D6): its triangles with the surfaces' (so it is shaded
+    // and has shadows as they do); while it grows, as far as it has grown
+    const MD = D.model ? Q3.model : null;
+    const MX = MD ? { proj, T, U, V, Wz, camN, LKS, lockLitN, ca, sa, ce, se, nx: (x1 - x0) / (2 * EX), ny: (y1 - y0) / (2 * EY), nz: (z1 - z0) / (2 * EZ) } : null;
+    const mGrow = MD && GR && GR.ax === 'mesh' ? Math.max(0, Math.min(1, GR.theta / (2 * Math.PI))) : 1;
+    const mt0 = performance.now(), mTris = MD ? meshToTris(MD.tank ? MD.tank.liquid(MD.tank.hShow) : MD.mesh(mGrow), tb, MX) : 0, mMs = { tris: performance.now() - mt0 };
     // shadows from the lamp of the highlight (1.11.0): on the floor of the box (while it is at the
     // back, seen from above) and of the surfaces on themselves and on each other. Not while "Volume and
     // surface" shows the measured solid, which keeps its own look (the liquid casts no shadow from the
@@ -10258,6 +11583,8 @@
     }
     const floorLayerNow = floor ? floor.layer : null;
     if (floor) { delete floor.layer; floor.ms = Math.round((performance.now() - tf) * 10) / 10; }
+    // (the back of the glass of a tank, behind the liquid)
+    if (MD && MD.tank) { const t0 = performance.now(); glassPaint(g, MD, MX, 'back', dark); mMs.back = performance.now() - t0; }
     const surf = surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite: !!Q3.turning, k: shK } : null,
       lock: LKS && shadows ? { L: camN(LKS.lamp[0], LKS.lamp[1], LKS.lamp[2]), map: LKS.SM ? [LKS.SM.MW, LKS.SM.MH] : null } : null });
     // (what the next turn keeps: the lamp's map and the floor's layer of this drawing, with its camera, BG19)
@@ -10279,7 +11606,8 @@
     if (lg) { lg.hidden = !vc; if (vc) { lg.firstChild.style.background = vc.swatch; lg.firstChild.style.borderColor = vc.line; } }
     if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: lmesh.walls, floor: lmesh.floor, tris: lmesh.tris, jelly, liquid: liquid.shown, thick: liquid.thick, odd: liquid.odd, q: liquid.q, faded, shadow: shadowFaces, shadowArea: Number(shadowArea.toFixed(4)), shadowFade: Math.round(volFade * 1000) / 1000 });
     else delete c.dataset.vol;
-    // axes on the front edges of the floor and the leftmost vertical edge, with labels
+    // axes on the front edges of the floor and the leftmost vertical edge, with labels (not the numbers and
+    // letters for a model of "Shapes": its sizes are written on it)
     const un = -ub, vn = -vb;
     let ze = null;
     for (const [eu, ev] of [[-EX, -EY], [-EX, EY], [EX, -EY], [EX, EY]]) { proj(eu, ev, 0); if (!ze || T[0] < ze.x) ze = { u: eu, v: ev, x: T[0] }; }
@@ -10288,17 +11616,19 @@
     g.stroke();
     g.fillStyle = axisColor; g.font = '11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     const out = (e, d) => e + Math.sign(e) * d; // a little outside the edge of the box
-    for (const x of gx) { proj(U(x), out(vn, 0.17), wb); g.fillText(fmt(x, stx), T[0], T[1]); }
-    for (const y of gy) { proj(out(un, 0.17), V(y), wb); g.fillText(fmt(y, sty), T[0], T[1]); }
+    if (!MD) for (const x of gx) { proj(U(x), out(vn, 0.17), wb); g.fillText(fmt(x, stx), T[0], T[1]); }
+    if (!MD) for (const y of gy) { proj(out(un, 0.17), V(y), wb); g.fillText(fmt(y, sty), T[0], T[1]); }
     g.textAlign = 'right';
-    for (const z of gz) {
+    if (!MD) for (const z of gz) {
       if (Math.abs(Wz(z) - wb) < 0.1) continue;  // at the floor the x or y labels are there
       proj(ze.u, ze.v, Wz(z)); g.fillText(fmt(z, stz), T[0] - 7, T[1]);
     }
     g.font = 'bold 13px system-ui, sans-serif'; g.textAlign = 'center';
-    proj(0, out(vn, 0.4), wb); g.fillText('x', T[0], T[1]);
-    proj(out(un, 0.4), 0, wb); g.fillText('y', T[0], T[1]);
-    proj(ze.u, ze.v, EZ); g.fillText('z', T[0], T[1] - 14);
+    if (!MD) {
+      proj(0, out(vn, 0.4), wb); g.fillText('x', T[0], T[1]);
+      proj(out(un, 0.4), 0, wb); g.fillText('y', T[0], T[1]);
+      proj(ze.u, ze.v, EZ); g.fillText('z', T[0], T[1] - 14);
+    }
     // points (the rows of a matrix, the solution of a linear system), in front of the surfaces
     for (const p of Q3.points || []) {
       if (p.x < x0 || p.x > x1 || p.y < y0 || p.y > y1) continue;
@@ -10317,6 +11647,17 @@
       const pr = Q3.mark.s.proj;
       g.fillStyle = '#e11d48'; g.strokeStyle = '#fff'; g.lineWidth = 2;
       g.beginPath(); g.arc(pr.px[Q3.mark.k], pr.py[Q3.mark.k], 5, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+    // (D6) over a solid or a tank of "Shapes": the glass in front, the scale, the amount at the level, the sizes
+    if (MD) {
+      const cr = c.getBoundingClientRect(), ctl = c.parentElement && c.parentElement.querySelector('.plot-ctl'), kr = ctl ? ctl.getBoundingClientRect() : null;
+      const avoid = kr && kr.width ? { x: kr.left - cr.left - 4, y: kr.top - cr.top - 4, w: kr.width + 8, h: kr.height + 8 } : null;
+      const t0 = performance.now(), mo = modelOverlay(g, MD, MX, surf.zbuf, { css, dark, W, H, avoid, growing: mGrow < 1 || !!Q3.fill });
+      mMs.over = performance.now() - t0;
+      for (const k in mMs) mMs[k] = Math.round(mMs[k] * 10) / 10;
+      mo.ms = mMs;
+      c.dataset.model = JSON.stringify(Object.assign({ k: MD.k, tris: mTris, grow: Math.round(mGrow * 1000) / 1000, fill: !!Q3.fill, box: MD.box.map((x) => +x.toPrecision(6)) }, mo,
+        MD.tank ? { h: MD.tank.hShow, top: MD.tank.top, glass: MD.tank.glass.t.length / 3, liquid: MD.tank.liquid(MD.tank.hShow).t.length / 3 } : {}));
     }
     // (1.12.0, BG08: the time of this drawing, also in data-ms for the tests, and the layer of the last frame
     // fading out over the full drawing)
@@ -10354,17 +11695,25 @@
   }
   function setup3dGestures(wrap) {
     const pts = new Map();
-    let start = null, moved = false;
+    let start = null, moved = false, lv = null;
     const snapshot = () => ({ az: Q3.az, el: Q3.el, zoom: Q3.zoom, pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) });
     wrap.addEventListener('pointerdown', (e) => {
       if (e.target.tagName === 'BUTTON' || !Q3.data) return;
       try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* the pointer is already gone */ }
+      // (D6) a tank of "Shapes": a drag that starts at the level of the liquid moves it (up and down), not the graph
+      if (!pts.size && !lv && Q3.model && Q3.model.tank && nearLevel3d(e.clientX, e.clientY) && Q3.levelHit && Q3.levelHit.perH) {
+        if (Q3.fill) { Q3.fill = null; Q3.model.tank.hShow = Q3.model.tank.h; }
+        lv = { id: e.pointerId, y: e.clientY, h: Q3.model.tank.h, per: Q3.levelHit.perH };
+        if (Q3.canvas) Q3.canvas.dataset.drag = 'level';
+        return;
+      }
       if (Q3.grow && !Q3.grow.still) { Q3.grow = null; showAngle3d(360); if (Q3.canvas) Q3.canvas.dataset.grow = 'stopped'; draw3d(); } // a touch shows the whole solid at once
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       start = snapshot();
       if (pts.size > 1) moved = true; else moved = false;
     });
     wrap.addEventListener('pointermove', (e) => {
+      if (lv && e.pointerId === lv.id) { setLevel3d(lv.h + (e.clientY - lv.y) / lv.per, false); return; }
       if (!pts.has(e.pointerId) || !start) return;
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const ids = Array.from(pts.keys());
@@ -10390,6 +11739,12 @@
       requestDraw3d();
     });
     const end = (e) => {
+      if (lv && e.pointerId === lv.id) {
+        const L = lv; lv = null;
+        if (Q3.canvas) delete Q3.canvas.dataset.drag;
+        setLevel3d(e.type === 'pointerup' ? L.h + (e.clientY - L.y) / L.per : Q3.model && Q3.model.tank ? Q3.model.tank.h : L.h, true);
+        return;
+      }
       if (!pts.has(e.pointerId)) return;
       pts.delete(e.pointerId);
       if (!moved && pts.size === 0 && e.type === 'pointerup') pick3d(e.clientX, e.clientY);
@@ -10611,7 +11966,7 @@
     if (headCache.has(key)) return headCache.get(key);
     const s = {};
     for (const n of Object.keys(v)) {
-      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) to ${ctx.base}` : geoValue(v[n], '', '');
+      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) / (1 ${ctx.base})` : geoValue(v[n], '', ''); // (BG22: a number without a unit)
       s[n] = await numValue(e);
     }
     if (headCache.size > 40) headCache.clear();
@@ -10629,11 +11984,11 @@
     let val = x, unit = '';
     if (dim === 3 && ctx.base) {
       unit = ' ' + ctx.base + '³';
-      if (ctx.vu) { const f = await numValue(`(1 ${ctx.base}^3) to ${ctx.vu}`); if (f > 0) { val = x * f; unit = ' ' + (VOL_UNITS.find((u) => u[0] === ctx.vu) || [0, ctx.vu])[1]; } }
+      if (ctx.vu) { const f = await numValue(`(1 ${ctx.base}^3) / (1 ${ctx.vu})`); if (f > 0) { val = x * f; unit = ' ' + (VOL_UNITS.find((u) => u[0] === ctx.vu) || [0, ctx.vu])[1]; } }
     } else if (dim === 1 && ctx.base) unit = ' ' + ctx.base;
     if (pct) unit = ' %';
     const t = String(+val.toPrecision(10)), text = '≈ ' + t + unit;
-    return { result: text, shown: valueShown(text), expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
+    return { result: text, shown: valueShown(text), num: val, expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
       vol: what === 'liq' && ctx.base ? `(${+x.toPrecision(12)} ${ctx.base}^3)` : '' };
   }
   // the picture of a tank with heads, filled to the level typed
@@ -10723,7 +12078,7 @@
   async function ellipsoidArea(v, ctx) {
     const nums = [];
     for (const n of ['a', 'b', 'c']) {
-      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) to ${ctx.base}` : geoValue(v[n], '', '');
+      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) / (1 ${ctx.base})` : geoValue(v[n], '', ''); // (BG22: a number without a unit)
       const x = await numValue(e);
       if (!(x > 0)) return null;
       nums.push(x);
@@ -10731,7 +12086,7 @@
     const r = ellipsoidAreaNum(nums[0], nums[1], nums[2]);
     if (!isFinite(r.v)) return null;
     const t = String(+r.v.toPrecision(Math.min(10, r.digits))), unit = ctx.base ? ' ' + ctx.base + '²' : '', text = '≈ ' + t + unit;
-    return { result: text, shown: valueShown(text), expr: t + (ctx.base ? ' ' + ctx.base + '^2' : '') };
+    return { result: text, shown: valueShown(text), num: r.v, expr: t + (ctx.base ? ' ' + ctx.base + '^2' : '') };
   }
   // the volume of the liquid in a tank at height h (numbers in one unit), for the height from an amount
   const TANK_V = {
@@ -10844,7 +12199,9 @@
       aUnit.append(el('option', { value: '', text: tr('Area: auto', '面積：自動') }));
       for (const [u, s] of AREA_UNITS) aUnit.append(el('option', { value: u, text: s }));
       vUnit.value = G.vu; aUnit.value = G.au;
-      const outUnits = el('div', { class: 'geo-units' }, vUnit, aUnit);
+      // (1.12.0, D7) the digits of the results, beside the units
+      const dig = digitsControl();
+      const outUnits = el('div', { class: 'geo-units' }, vUnit, aUnit, dig.sel);
       const dens = el('select', { 'aria-label': tr('Material (density)', '材料（密度）') });
       dens.append(el('option', { value: '', text: tr('Weight: choose a material', '重さ：材料を選ぶ') }));
       for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: decSign(s) })); // (BG13: 1.000 g/cm³ with a decimal comma)
@@ -10858,6 +12215,14 @@
       const amtRow = el('label', { class: 'geo-amt' }, el('span', { class: 'geo-lbl', text: tr('Height for the amount', '液量から高さ') }), amtIn, amtVal);
       const chips = el('div', { class: 'geo-chips', role: 'group', 'aria-label': tr('Shape', '図形') });
       const pic = el('div', { class: 'geo-pic' }), sizes = el('div', { class: 'geo-sizes' });
+      // 1.12.0 (D6): "⟳ 3D" beside the picture of a solid or a tank: the shape in the 3D graph with these sizes,
+      // growing (a solid turned from 0° to 360°, the liquid rising), with its values large above it (QCalc Pro;
+      // without it, the row "Turn it in 3D (QCalc Pro)" above the results)
+      const view3d = el('button', { class: 'rev3d geo-3d', type: 'button', 'aria-label': tr('View in 3D', '3D で見る') },
+        el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' }));
+      const picBox = el('div', { class: 'geo-pic-box' }, pic, view3d);
+      const proRow3d = tapButton({ class: 'rev-pro-row', hidden: true, 'aria-label': tr('Turn it in 3D (QCalc Pro)', '3D で回して見る（QCalc Pro）') }, () => proPrompt(tr('Turning the solid in 3D is a QCalc Pro feature', '3D で回して見るのは QCalc Pro の機能です'), '3d'));
+      proRow3d.append(el('span', { class: 'rev-pro-i', 'aria-hidden': 'true', text: '🧊' }), el('span', { class: 'rev-pro-t', text: tr('Turn it in 3D (QCalc Pro)', '3D で回して見る（QCalc Pro）') }), el('span', { class: 'rev-pro-go', 'aria-hidden': 'true', text: '›' }));
       // the note under the results (A7): tanks (the shape is the ideal one), and the weight (a typical density)
       const cautionTank = cautionLine(tr('Assumes the ideal shape of the picture (no tilt, dents or fittings).', '前提：図のとおりの理想的な形（傾き・へこみ・付属物は含みません）。'));
       // (1.12.0, D1; QCalc Pro) the heads of a lying or a standing cylinder, and the quick-reference
@@ -10913,24 +12278,26 @@
         if (!Object.values(s).every((x) => x > 0)) return;
         const top = tankTop(sh.k, s), full = TANK_V[sh.k](s, top);
         let f = 1, vName = base ? base + '³' : '';
-        if (base && G.vu) { const x = await numValue(`(1 ${base}^3) to ${G.vu}`); if (seq !== G.seq) return; if (x > 0) { f = x; vName = (VOL_UNITS.find((u) => u[0] === G.vu) || [0, G.vu])[1]; } }
-        const n6 = (x) => statNum(x, 6), pct = (x) => statNum(x / full * 100, 4);
+        if (base && G.vu) { const x = await numValue(`(1 ${base}^3) / (1 ${G.vu})`); if (seq !== G.seq) return; if (x > 0) { f = x; vName = (VOL_UNITS.find((u) => u[0] === G.vu) || [0, G.vu])[1]; } }
+        const n6 = (x) => statNum(x, 6), pct = (x) => digNum(x / full * 100, 'pct', 4), nh = (x) => digNum(x, 'len', 6), nv = (x) => digNum(x, 'vol', 6);
         const nice = (span) => { const raw = span / 10, p = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * p >= raw * 0.999) return m * p; return 10 * p; };
         const heightOf = (want) => { let lo = 0, hi = top; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; } return (lo + hi) / 2; };
         const span = G.q === 'h' ? top : full * f;
         let step = boxNum(G.qs), note = '';
         if (!(step > 0)) step = nice(span);
         if (span / step > 200) { step = nice(span / 20); note = trf('Up to 200 rows: the step is {0}', '200 行までにするため、刻みを {0} にしました', n6(step)); }
-        const rows = [];
+        // (D7: the heights, the amounts and the % with the digits set; raw: all their digits, for CSV)
+        const rows = [], raw = [];
         for (let i = 0; i * step < span * (1 - 1e-9); i++) {
           const q = i * step;
-          if (G.q === 'h') { const vol = TANK_V[sh.k](s, q); rows.push([n6(q), n6(vol * f), pct(vol)]); } else { rows.push([n6(q), n6(heightOf(q / f)), pct(q / f)]); }
+          if (G.q === 'h') { const vol = TANK_V[sh.k](s, q); rows.push([n6(q), nv(vol * f), pct(vol)]); raw.push([q, vol * f, vol / full * 100]); } else { const hq = heightOf(q / f); rows.push([n6(q), nh(hq), pct(q / f)]); raw.push([q, hq, q / f / full * 100]); }
         }
         // the last row: the full tank
-        rows.push(G.q === 'h' ? [n6(top), n6(full * f), '100'] : [n6(full * f), n6(top), '100']);
+        rows.push(G.q === 'h' ? [n6(top), nv(full * f), pct(full)] : [n6(full * f), nh(top), pct(full)]);
+        raw.push(G.q === 'h' ? [top, full * f, 100] : [full * f, top, 100]);
         qUnit.textContent = G.q === 'h' ? base : vName;
         const hName = tr('Height h', '液面の高さ h') + (base ? ' (' + base + ')' : ''), vCol = tr('Liquid', '液量') + (vName ? ' (' + vName + ')' : '');
-        showTable(quickBox, { title: G.q === 'h' ? tr('The amount for each height', '高さごとの液量') : tr('The height for each amount', '液量ごとの高さ'), head: G.q === 'h' ? [hName, vCol, '%'] : [vCol, hName, '%'], rows, name: 'tank' });
+        showTable(quickBox, { title: G.q === 'h' ? tr('The amount for each height', '高さごとの液量') : tr('The height for each amount', '液量ごとの高さ'), head: G.q === 'h' ? [hName, vCol, '%'] : [vCol, hName, '%'], rows, raw, name: 'tank' });
         if (note) quickBox.append(el('div', { class: 'form-hint', text: note }));
       };
       const cautionWeight = cautionLine(tr('The densities of the list are typical values.', '前提：一覧の密度は代表的な値です。'));
@@ -10969,7 +12336,7 @@
         let lo = 0, hi = top;
         for (let i = 0; i < 200 && hi - lo > top * 1e-15; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; }
         const h = (lo + hi) / 2;
-        amtVal.textContent = 'h ≈ ' + statNum(h, 6) + (base ? ' ' + base : '') + tr(' (', '（') + statNum(want / full * 100, 4) + ' %' + tr(' full)', '）');
+        amtVal.textContent = 'h ≈ ' + digNum(h, 'len', 6) + (base ? ' ' + base : '') + tr(' (', '（') + digNum(want / full * 100, 'pct', 4) + ' %' + tr(' full)', '）');
       };
       // the weight of the first volume of the list (the liquid of a tank) with the density chosen
       const weight = async (rows, seq) => {
@@ -10983,7 +12350,11 @@
         const ok = r.ok && r.result && !r.timeout && !(r.messages || []).some((m) => m.type === 'error') && / kg$/.test(r.result);
         if (!ok) { weightVal.textContent = decSign(tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')); return; }
         const kg = Number(numberPart(r.result.replace(/ kg$/, '')));
-        weightVal.textContent = tr('Weight ', '重さ ') + resultText(r) + (kg >= 1000 ? tr(' = ', ' = ') + statNum(kg / 1000, 8) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
+        // (D7: the weight with the digits set for weights)
+        const wsp = digSpec('mass'), kgx = wsp ? await digValue(`(${row.vol}) × (${d}) to kg`) : kg;
+        if (seq !== G.seq) return;
+        const wtxt = wsp && isFinite(kgx) ? (/≈/.test(resultText(r)) ? withApprox(resultText(r), digText(kgx, wsp, !!S.grouping)) : resultText(r)) : resultText(r);
+        weightVal.textContent = tr('Weight ', '重さ ') + wtxt + (kg >= 1000 ? tr(' = ', ' = ') + digNum((isFinite(kgx) ? kgx : kg) / 1000, 'mass', 8) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
       };
       const svg = (sh, v, small) => {
         let t = typeof sh.pic === 'function' ? sh.pic(v || {}) : sh.pic;
@@ -10991,8 +12362,10 @@
         return `<svg viewBox="0 0 160 110" ${small ? 'aria-hidden="true"' : 'role="img" aria-label="' + sh.name + '"'}>${t}</svg>`;
       };
       // the results: one request for each, in the order of the list; an older run is given up
-      const run = debounce(async () => {
+      // (D6: runNow at once, for the level dragged in the 3D graph; G.done: the sizes of the results shown)
+      const runNow = async () => {
         const sh = cur(), v = values(), seq = ++G.seq;
+        G.done = null;
         G.vals[sh.k] = sh.p.map(([n]) => inputs[n].value);
         exNote.hidden = !sh.p.some(([n]) => !inputs[n].value.trim());
         save();
@@ -11026,7 +12399,8 @@
             const rr = await row.def[2](G.dia ? Object.keys(v).reduce((o, n) => { o[n] = (sh.p.find((q) => q[0] === n) || [])[4] ? `(${v[n]}) / 2` : v[n]; return o; }, {}) : v, { unit: G.unit, base, vu: G.vu });
             if (seq !== G.seq) return;
             if (!rr) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
-            row.expr = rr.expr; row.result = rr.result; row.shown = rr.shown; row.vol = rr.vol || '';
+            row.expr = rr.expr; row.result = rr.result; row.shown = rr.shown; row.vol = rr.vol || ''; row.num = rr.num;
+            await digRow(row, geoKind(row.def), rr.num); // (D7: the digits set)
             row.node.dataset.value = row.shown; showResult(row.val, row.shown);
             continue;
           }
@@ -11041,7 +12415,9 @@
           if (seq !== G.seq) return;
           const bad = !r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error') || /(^|[^\p{L}])i($|[^\p{L}])|undefined/u.test(r.result);
           if (bad) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
-          row.expr = full; row.vol = pow === 3 && (G.unit || own.length) ? `(${sub(G.unit || target)})` : ''; row.result = r.result + suffix; row.shown = resultText(r) + suffix;
+          row.expr = full; row.vol = pow === 3 && (G.unit || own.length) ? `(${sub(G.unit || target)})` : ''; row.result = r.result + suffix; row.shown = resultText(r) + suffix; row.num = NaN;
+          await digRow(row, geoKind(row.def), NaN, expr); // (D7: the digits set, from the number worked out again)
+          if (seq !== G.seq) return;
           row.node.dataset.value = row.shown;
           showResult(row.val, row.shown);
         }
@@ -11050,7 +12426,11 @@
         if (seq !== G.seq) return;
         if (sh.d === 4) await tankHeight(sh, v, base, seq);
         if (sh.d === 4 && quick.open) await quickTable(sh, v, base, seq);
-      }, 220);
+        if (seq !== G.seq) return;
+        G.done = { k: sh.k, key: JSON.stringify(v) };
+        if (G.link3d) modelValuesChanged(G.link3d);
+      };
+      const run = debounce(runNow, 220);
       const choose = (k) => {
         G.k = k;
         const sh = cur();
@@ -11060,7 +12440,7 @@
         const round = sh.p.some((q) => q[4]);
         rdSeg.hidden = !round; bRad.classList.toggle('on', !G.dia); bDia.classList.toggle('on', G.dia);
         bRad.setAttribute('aria-pressed', String(!G.dia)); bDia.setAttribute('aria-pressed', String(G.dia));
-        outUnits.hidden = sh.d === 2 && !sh.out.some((o) => o[3] === 2); weightRow.hidden = sh.d === 2; amtRow.hidden = sh.d !== 4;
+        vUnit.hidden = aUnit.hidden = sh.d === 2 && !sh.out.some((o) => o[3] === 2); weightRow.hidden = sh.d === 2; amtRow.hidden = sh.d !== 4;
         densIn.hidden = G.dens !== 'own'; amtIn.value = G.amt[k] || '';
         showCaution();
         chips.textContent = '';
@@ -11104,8 +12484,111 @@
         for (const row of rows) outs.append(row.node);
         graph.hidden = !sh.graph;
         if (sh.k === 'sphere') graph.dataset.pro = ''; else delete graph.dataset.pro;
+        // (D6) "⟳ 3D" for solids and tanks
+        view3d.hidden = sh.d < 3; proRow3d.hidden = true; picBox.classList.toggle('has3d', sh.d >= 3);
+        if (hasPro()) delete view3d.dataset.pro; else view3d.dataset.pro = '';
         run();
       };
+      // ---- (D6) the shape in the 3D graph
+      // the unit the sizes are turned into (as for the results: run), and the sizes as numbers in it (a diameter
+      // halved where a radius goes)
+      const baseOf = (sh, v) => {
+        const own = Array.from(new Set([].concat(...sh.p.map(([n, , kind]) => (kind && kind !== 'a2' ? [] : v[n].replace(/π/g, '').match(/\p{L}+/gu) || [])))));
+        const target = own.length === 1 ? own[0] : G.unit;
+        return { own, base: G.unit || (own.length ? target || 'm' : '') };
+      };
+      const sizesNum = async (sh, v, base) => {
+        const s = {};
+        for (const [n, , kind, , dl] of sh.p) {
+          const e = geoValue(v[n], kind, G.unit), pw = kind === 'a2' ? 2 : 1;
+          const x = await numValue(base && kind !== 'n' && kind !== 'deg' ? `(${e}) / (1 ${base}${pw > 1 ? '^' + pw : ''})` : e);
+          s[n] = x / (G.dia && dl ? 2 : 1);
+        }
+        return s;
+      };
+      // the labels of the sizes on the solid ("r = 15 cm", "d = 30 cm" for a diameter): the letter, the number in
+      // the unit of the sizes (written with the digits of the 3D picture, D7) and the unit
+      const labelsOf = (sh, s, base) => {
+        const lab = { dia: G.dia };
+        for (const [n, , kind, sym0, dl] of sh.p) {
+          if (kind === 'n' || kind === 'deg') continue;
+          const d2 = G.dia && dl, sym = d2 ? ((sym0 || n) === 'R' ? 'D' : 'd') : (sym0 || n);
+          lab[n] = { sym, val: d2 ? 2 * s[n] : s[n], unit: base ? base + (kind === 'a2' ? '²' : '') : '' };
+        }
+        return lab;
+      };
+      // the number of a result as the tool shows it (the part after ≈, without "≈")
+      const approxOf = (t) => { const s = String(t || ''), i = s.lastIndexOf('≈'); return (i >= 0 ? s.slice(i + 1) : s).replace(/^\s*=\s*/, '').trim(); };
+      const rowOf = (pred) => rows.find(pred);
+      const FULL = () => tr('Full', '満杯に対して'), CAP = () => tr('Capacity (full)', '満杯の量');
+      let liveT = 0, liveAt = 0;
+      const show3d = async () => {
+        const sh = cur();
+        if (sh.d < 3) return;
+        if (!hasPro()) {
+          proRow3d.hidden = false;
+          if (!store.get('qalc.shape3dfree', false)) { store.set('qalc.shape3dfree', true); toast(tr('Turning the solid in 3D is a QCalc Pro feature.', '3D で回して見るのは QCalc Pro の機能です'), 4000); }
+          return;
+        }
+        const v = values();
+        if (msg.textContent) { toast(msg.textContent, 2600); return; }
+        const { own, base } = baseOf(sh, v), s = await sizesNum(sh, v, base);
+        if (G.k !== sh.k) return;
+        const model = Object.values(s).every((x) => isFinite(x)) ? shapeModel(sh.k, s, labelsOf(sh, s, base)) : null;
+        if (!model) { toast(tr('These sizes cannot be drawn in 3D', 'この大きさでは 3D で描けません'), 2600); return; }
+        // a tank: the volume scale (round amounts in the unit of the results; about 3 with their numbers)
+        let scale = null;
+        if (model.tank) {
+          let f = 1, unit = base ? base + '³' : '';
+          if (base && G.vu) { const x = await numValue(`(1 ${base}^3) / (1 ${G.vu})`); if (x > 0) { f = x; unit = (VOL_UNITS.find((u) => u[0] === G.vu) || [0, G.vu])[1]; } }
+          const span = model.tank.full * f, raw = span / 10, p10 = Math.pow(10, Math.floor(Math.log10(raw)));
+          let step = 10 * p10;
+          for (const m of [1, 2, 2.5, 5]) if (m * p10 >= raw * 0.999) { step = m * p10; break; }
+          const n = Math.ceil(span / step - 1e-9) - 1, nice = (x) => { const q = x / Math.pow(10, Math.floor(Math.log10(x) + 1e-9)); return [1, 2, 2.5, 5, 10].some((m) => Math.abs(q - m) < 1e-6); };
+          let every = 1, best = Infinity;
+          for (const m of [1, 2, 4, 5, 10]) { const sc = Math.abs(Math.floor(n / m) - 3) + (nice(step * m) ? 0 : 0.5); if (Math.floor(n / m) >= 1 && sc < best) { best = sc; every = m; } }
+          scale = { step, every, f, unit };
+          model.vf = f; model.vunit = unit;
+        }
+        // the amount at the level and how full, from the tool's rows when they are for these sizes; while the
+        // engine works (the level being dragged), from the page's own formulas (TANK_V)
+        const fresh = () => G.done && G.done.k === sh.k && G.done.key === JSON.stringify(values());
+        const tankNow = () => {
+          const T = model.tank, liq = rowOf((r) => r.def[3] === 3), pc = rowOf((r) => r.def[0] === FULL()), cap = rowOf((r) => r.def[0] === CAP());
+          if (fresh() && liq && liq.result && pc && pc.result) return { amount: approxOf(liq.shown), pct: approxOf(pc.shown), liq: liq.shown, cap: cap && cap.result ? cap.shown : '' };
+          const x = T.V(T.h) * model.vf, u = model.vunit ? ' ' + model.vunit : '', pq = digNum(T.V(T.h) / T.full * 100, 'pct', 4) + ' %';
+          return { amount: digNum(x, 'vol', 10) + u, pct: pq, liq: '≈ ' + digNum(x, 'vol', 10) + u, cap: '≈ ' + digNum(T.full * model.vf, 'vol', 10) + u };
+        };
+        const link = G.link3d = {
+          model, title: sh.name, scale,
+          lines: () => {
+            if (model.tank) { const q = tankNow(); return [tr('Liquid ', '液量 ') + q.liq + tr(' (', '（') + q.pct + tr(')', '）'), q.cap ? tr('Capacity ', '満杯の量 ') + q.cap : '']; }
+            const vol = rowOf((r) => r.def[3] === 3), ar = rowOf((r) => r.def[3] === 2);
+            return [vol && vol.result ? vol.def[0] + ' ' + vol.shown : '', ar && ar.result ? ar.def[0] + ' ' + ar.shown : ''];
+          },
+          rows: () => rows.map((q) => ({ name: q.def[0], small: typeof q.def[1] === 'string' ? q.def[1] : '', result: q.result, expr: q.expr, text: q.result ? '' : q.val.textContent })),
+          // (the amount at the level in the 3D picture: rounded for reading, with the digits of the picture (D7: auto, 3
+          // significant digits, % with one decimal); the exact values stay above the graph and in the tool)
+          levelText: () => { const T = model.tank, u = model.vunit ? ' ' + model.vunit : ''; return digPic(T.V(T.h) * model.vf, 'amount') + u + tr(' (', '（') + digPic(T.V(T.h) / T.full * 100, 'pct') + ' %' + tr(')', '）'); },
+          // the height dragged into the tool's field (in the unit of the sizes, rounded as the slider is)
+          setLevel: (h, final) => {
+            const inp = inputs.h;
+            if (!inp || G.k !== sh.k) return;
+            const st = levelStep(model.tank), dec = Math.max(0, -Math.floor(Math.log10(st) + 1e-9)), num = String(+h.toFixed(dec));
+            const ownU = own.length && !G.unit ? ' ' + base : '';
+            inp.value = toDisplay(num) + ownU;
+            model.lab.h = { sym: 'h', val: +num, unit: base };
+            G.vals[sh.k] = sh.p.map(([n]) => inputs[n].value);
+            G.done = null;
+            clearTimeout(liveT);
+            if (final) { run(); return; }
+            const now = Date.now();
+            if (now - liveAt > 160) { liveAt = now; runNow(); } else liveT = setTimeout(() => { liveAt = Date.now(); runNow(); }, 160 - (now - liveAt));
+          }
+        };
+        openSolid3d(link);
+      };
+      view3d.addEventListener('click', show3d);
       const msg = el('div', { class: 'geo-msg', role: 'status' });
       const exNote = el('div', { class: 'form-hint geo-ex-note', text: tr('Gray numbers are examples: the results use them until you type your own sizes.', '薄い字は例です。大きさを入れるまでは、例の値で計算しています。'), hidden: true });
       const typed = () => { G.vals[G.k] = cur().p.map(([n]) => inputs[n].value); };
@@ -11122,13 +12605,18 @@
       densIn.addEventListener('input', () => { G.dv = densIn.value; save(); run(); });
       amtIn.addEventListener('input', () => { G.amt[G.k] = amtIn.value; save(); run(); });
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips, headRow,
-        el('div', { class: 'geo-main' }, pic, el('div', { class: 'geo-side' }, rdSeg, sizes,
+        el('div', { class: 'geo-main' }, picBox, el('div', { class: 'geo-side' }, rdSeg, sizes,
           el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
-        outUnits, msg, exNote, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
+        outUnits, dig.more, msg, exNote, proRow3d, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
         // 1.11.0: the volume from measured values (a table of cross sections, a grid of heights)
         tapButton({ class: 'btn geo-link', text: tr('Volume from measured values (cross sections, grid of heights) ›', '測った値から体積（断面積の表・点高法）›') }, () => openSections()),
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
       p.run = run;
+      digRuns.add(() => run());
+      // (D6: a solid of the examples of the 3D graph: its sizes typed here (as radii), and shown in 3D once its
+      // values are there)
+      p.setShape = (k, vals) => { typed(); G.dia = false; G.vals[k] = vals.map((x) => toDisplay(x)); choose(k); };
+      p.view3d = async () => { await runNow(); show3d(); };
       choose(G.k);
     });
     // opened again: the precision or the angle unit of the settings may have changed
@@ -11307,7 +12795,13 @@
       const pic = el('div', { class: 'pf-pic' });
       const msg = el('div', { class: 'geo-msg', role: 'alert' });
       const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
-      const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る') }, () => { if (D.three) openPlot3dWith(D.three.exprs, { range: D.three.range, equal: true, res: 61, grow: 'h', rims: D.three.rims }); });
+      // (BG21: "Volume and surface" in the 3D view shows the values of the tool, as they are here)
+      const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る') }, () => {
+        if (!D.three) return;
+        const vals = (D.vals || []).slice();
+        openPlot3dWith(D.three.exprs, { range: D.three.range, equal: true, res: 61, grow: 'h', rims: D.three.rims,
+          solid: { src: D, title: tr('Values of the solid of revolution', '回転体の値'), hint: tr('The values found in "Solid from a profile". Other formulas drawn here are measured as an ordinary 3D graph.', '「輪郭から回転体」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測れます。'), values: () => vals } });
+      });
       // (D3: the solid as an STL file, one unit of the profile in millimetres)
       const stlBtn = tapButton({ class: 'btn stl-btn', text: tr('Save as STL', 'STL で保存') }, () => { if (D.stl) openStlSheet(D.stl, 'profile', { mm: 1, cm: 10, m: 1000, in: 25.4 }[D.unit]); });
       const quickBox = el('div', { class: 'quick-box' });
@@ -11350,17 +12844,20 @@
           btn(tr('Clear', 'すべて消す'), tr('Clear the table', '表をすべて消す'), () => { L.length = 0; if (!inner) L.push(['', ''], ['', '']); }));
       };
       const build = () => { fillTable(table, tools, () => D.rows, false); fillTable(itable, itools, () => D.inner, true); };
+      const dig = digitsControl(); // (1.12.0, D7)
       const row = (name, small, shown, expr) => {
         const node = tapButton({ class: 'geo-row' }, () => { if (expr) resultSheet(name, expr, shown); });
         node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), el('span', { class: 'geo-val', text: shown }));
         outs.append(node);
+        D.vals.push({ name, small, text: shown, expr }); // (BG21: for the 3D view)
         return node;
       };
       const mark = (box, r, c) => { const ins = box.querySelectorAll('input'); if (ins[r * 2 + c]) ins[r * 2 + c].setAttribute('aria-invalid', 'true'); };
       // the cm³ of a volume in the unit, shown as cm³ (mL) or L
-      const inCm3 = (v) => { const c = v * PF_CM3[D.unit]; return c >= 1000 ? '≈ ' + statNum(c / 1000) + ' L' : D.unit === 'cm' ? '' : '≈ ' + statNum(c) + ' cm³'; };
+      // (1.12.0, D7: the numbers after ≈ with the digits set for their kind)
+      const inCm3 = (v) => { const c = v * PF_CM3[D.unit]; return c >= 1000 ? '≈ ' + digNum(c / 1000, 'vol', 10) + ' L' : D.unit === 'cm' ? '' : '≈ ' + digNum(c, 'vol', 10) + ' cm³'; };
       // an amount in mL as mL or L
-      const mlText = (ml) => (ml >= 1000 ? '≈ ' + statNum(ml / 1000) + ' L' : '≈ ' + statNum(ml) + ' mL');
+      const mlText = (ml) => (ml >= 1000 ? '≈ ' + digNum(ml / 1000, 'vol', 10) + ' L' : '≈ ' + digNum(ml, 'vol', 10) + ' mL');
       const drawPic = (o, i, so, si) => {
         const top = Math.max(o[o.length - 1].z, i ? i[i.length - 1].z : -Infinity), bot = Math.min(o[0].z, i ? i[0].z : Infinity), rmax = Math.max(so.rmax, si ? si.rmax : 0) || 1;
         const s = Math.min(120 / ((top - bot) || 1), 80 / rmax), X = (r) => +(100 + r * s).toFixed(1), Y = (z) => +(138 - (z - bot) * s).toFixed(1);
@@ -11373,7 +12870,7 @@
       };
       const run = async () => {
         const seq = ++D.seq;
-        msg.textContent = ''; outs.textContent = ''; quickBox.textContent = ''; view.hidden = true; D.three = null; stlBtn.hidden = true; D.stl = null;
+        msg.textContent = ''; outs.textContent = ''; quickBox.textContent = ''; view.hidden = true; D.three = null; stlBtn.hidden = true; D.stl = null; D.vals = [];
         const o = pfPoints(D.rows, D.dia);
         if (o.error) { if (o.row !== undefined) mark(table, o.row, o.col); msg.textContent = o.error; pic.textContent = ''; return; }
         const hasInner = D.inner.some((r) => String(r[0] || '').trim() || String(r[1] || '').trim());
@@ -11383,33 +12880,33 @@
         drawPic(o, i, so, si);
         const u = D.unit, u3 = ' ' + u + '³';
         // the exact outer volume (straight pieces) from the engine
-        let outerText = '≈ ' + statNum(so.volume) + u3, outerExpr = exprNum(so.volume) + ' ' + u + '^3';
+        let outerText = '≈ ' + digNum(so.volume, 'vol', 10) + u3, outerExpr = exprNum(so.volume) + ' ' + u + '^3';
         if (!D.smooth) {
           const r = await Bridge.send('calc', { expr: pfExact(o), opts: engineOpts(), timeout: 4000 });
           if (seq !== D.seq) return;
-          if (r.ok && r.result && !r.timeout) { const ex = r.result.split(' ≈ ')[0].split(' = ')[0].trim(); outerText = '= ' + ex + u3 + (/π|√/.test(ex) ? ' ≈ ' + statNum(so.volume) + u3 : ''); outerExpr = '(' + pfExact(o) + ') ' + u + '^3'; }
+          if (r.ok && r.result && !r.timeout) { const ex = r.result.split(' ≈ ')[0].split(' = ')[0].trim(); outerText = '= ' + ex + u3 + (/π|√/.test(ex) ? ' ≈ ' + digNum(so.volume, 'vol', 10) + u3 : ''); outerExpr = '(' + pfExact(o) + ') ' + u + '^3'; }
         }
         row(tr('Outer volume', '外側の体積'), inCm3(so.volume), outerText, outerExpr).classList.add('tool-main');
         let cap = 0;
         if (si) {
           cap = si.volume;
           const ml = cap * PF_CM3[u];
-          row(tr('Inner capacity', '内側の容量'), mlText(ml), '≈ ' + statNum(cap) + u3, exprNum(cap) + ' ' + u + '^3');
+          row(tr('Inner capacity', '内側の容量'), mlText(ml), '≈ ' + digNum(cap, 'vol', 10) + u3, exprNum(cap) + ' ' + u + '^3');
           const f = statVal(D.shrink);
           if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = decSign(tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）')); }
           else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの容量', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), mlText(ml * k), exprNum(cap * k) + ' ' + u + '^3'); }
         } else {
           const f = statVal(D.shrink);
           if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = decSign(tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）')); }
-          else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの体積', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), '≈ ' + statNum(so.volume * k) + u3, exprNum(so.volume * k) + ' ' + u + '^3'); }
+          else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの体積', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), '≈ ' + digNum(so.volume * k, 'vol', 10) + u3, exprNum(so.volume * k) + ' ' + u + '^3'); }
         }
         const mat = so.volume - cap;
         if (si && mat < 0) msg.textContent = tr('The inner profile is larger than the outer one somewhere: check the sizes', '内側の輪郭が外側より大きいところがあります。大きさを確かめてください');
-        if (si) row(tr('Material', '材料の体積'), tr('outer − inner', '外側 − 内側'), '≈ ' + statNum(mat) + u3, exprNum(mat) + ' ' + u + '^3');
+        if (si) row(tr('Material', '材料の体積'), tr('outer − inner', '外側 − 内側'), '≈ ' + digNum(mat, 'vol', 10) + u3, exprNum(mat) + ' ' + u + '^3');
         const rho = pfDensity(D.dens, D.dv);
         if (D.dens && !isFinite(rho)) { densIn.setAttribute('aria-invalid', 'true'); row(tr('Weight', '重さ'), '', decSign(tr('check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')), ''); }
-        else if (isFinite(rho)) { densIn.removeAttribute('aria-invalid'); const g = mat * PF_CM3[u] * rho; row(tr('Weight', '重さ'), trf('{0} g/cm³', '{0} g/cm³', statNum(rho)) + (D.dens !== 'own' && D.dens !== 'water' ? tr(' (typical)', '（目安）') : ''), g >= 1000 ? '≈ ' + statNum(g / 1000) + ' kg' : '≈ ' + statNum(g) + ' g', exprNum(g) + ' g'); }
-        row(tr('Surface area', '表面積'), tr('outside: the side, the steps and the two ends', '外側：側面・段・両端の面'), '≈ ' + statNum(so.surface) + ' ' + u + '²', exprNum(so.surface) + ' ' + u + '^2');
+        else if (isFinite(rho)) { densIn.removeAttribute('aria-invalid'); const g = mat * PF_CM3[u] * rho; row(tr('Weight', '重さ'), trf('{0} g/cm³', '{0} g/cm³', statNum(rho)) + (D.dens !== 'own' && D.dens !== 'water' ? tr(' (typical)', '（目安）') : ''), g >= 1000 ? '≈ ' + digNum(g / 1000, 'mass', 10) + ' kg' : '≈ ' + digNum(g, 'mass', 10) + ' g', exprNum(g) + ' g'); }
+        row(tr('Surface area', '表面積'), tr('outside: the side, the steps and the two ends', '外側：側面・段・両端の面'), '≈ ' + digNum(so.surface, 'area', 10) + ' ' + u + '²', exprNum(so.surface) + ' ' + u + '^2');
         row(tr('Height', '高さ'), '', statNum(so.height) + ' ' + u, exprNum(so.height) + ' ' + u);
         // 3D (the 3D graph: Pro)
         const w = +((Math.max(so.rmax, si ? si.rmax : 0) || 1) * 1.08).toPrecision(6);
@@ -11424,15 +12921,16 @@
         if (quick.open) {
           const sh = si || so, total = sh.volume, top = sh.height, inMl = (v) => v * PF_CM3[u];
           const nice = (span) => { const raw = span / 10, q = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * q >= raw * 0.999) return m * q; return 10 * q; };
-          const step = nice(top), rows = [];
-          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([statNum(k * step, 6), statNum(inMl(v), 6), statNum(v / total * 100, 4)]); }
-          rows.push([statNum(top, 6), statNum(inMl(total), 6), '100']);
-          showTable(quickBox, { title: si ? tr('The amount inside for each height', '高さごとの内側の量') : tr('The volume up to each height', '高さごとの体積'), head: [tr('Height', '高さ') + ' (' + u + ')', (si ? tr('Amount', '量') + ' (mL)' : tr('Volume', '体積') + ' (cm³)'), '%'], rows, name: 'profile' });
+          const step = nice(top), rows = [], raw = [];
+          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([statNum(k * step, 6), digNum(inMl(v), 'vol', 6), digNum(v / total * 100, 'pct', 4)]); raw.push([k * step, inMl(v), v / total * 100]); }
+          rows.push([statNum(top, 6), digNum(inMl(total), 'vol', 6), digNum(100, 'pct', 4)]); raw.push([top, inMl(total), 100]);
+          showTable(quickBox, { title: si ? tr('The amount inside for each height', '高さごとの内側の量') : tr('The volume up to each height', '高さごとの体積'), head: [tr('Height', '高さ') + ' (' + u + ')', (si ? tr('Amount', '量') + ' (mL)' : tr('Volume', '体積') + ' (cm³)'), '%'], rows, raw, name: 'profile' });
         }
       };
       p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Sizes as', '大きさ') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Sizes as', '大きさ') }, bD, bR)),
         el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unitSel), table, tools, more,
-        el('div', { class: 'geo-weight' }, dens, densIn), pic, msg, outs, el('div', { class: 'tool-tbl-btns' }, view, stlBtn), quick, caution, hint);
+        el('div', { class: 'geo-weight' }, dens, densIn), pic, el('div', { class: 'geo-units' }, dig.sel), dig.more, msg, outs, el('div', { class: 'tool-tbl-btns' }, view, stlBtn), quick, caution, hint);
+      digRuns.add(() => run());
       sync(); build(); run();
     });
     return p;
@@ -12589,7 +14087,9 @@
     if (!proGate('tables')) return;
     const sep = commaMode ? ';' : ',', cell = (v) => '"' + String(v).replace(/"/g, '""') + '"';
     const plain = (c) => String(c).replace(new RegExp('\\' + NF.group.replace(/[ ]/, ' '), 'g'), '').replace(/−/g, '-');
-    const csv = '﻿' + [t.head.map(cell).join(sep)].concat(t.rows.map((r) => r.map((c, i) => (i === 0 ? cell(c) : cell(plain(c)))).join(sep))).join('\r\n') + '\r\n';
+    // (1.12.0, D7: the tables of the tools with all the digits of their numbers, unless "as shown" is chosen)
+    const full = t.raw && digits().csv === 'full';
+    const csv = '﻿' + [t.head.map(cell).join(sep)].concat(t.rows.map((r, j) => r.map((c, i) => (full ? cell(csvNum(t.raw[j][i])) : i === 0 ? cell(c) : cell(plain(c)))).join(sep))).join('\r\n') + '\r\n';
     const d = new Date(), z = (n) => String(n).padStart(2, '0');
     const name = 'QCalc-' + t.name + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.csv';
     savingWhat = 'table';
@@ -13760,6 +15260,12 @@
       ['text_size', tr('Text size', '文字の大きさ'), [['normal', tr('Normal', '標準')], ['large', tr('Large', '大きめ')], ['xlarge', tr('Extra large', '特大')]], tr('Text in the history, the input field and the result', '履歴・入力欄・結果の文字の大きさ')],
       ['theme', tr('Color theme', '配色テーマ'), THEMES, tr('The color of the keys and the highlights, in the light and the dark theme', 'キーや強調表示の色（ライト・ダークの両方）')]
     ]],
+    // 1.12.0 (D7): the digits of the results of the tools for shapes, tanks and solids (the same control as above
+    // their results)
+    [tr('Digits of the tools', '道具の結果の桁'), [
+      ['digits', tr('Shapes, tanks, solid from a profile, make a solid', '図形・容器・輪郭から回転体・立体にする'), 'digits',
+        tr('Separate from the precision of the calculator. Exact values stay; only the decimals after "≈" change', '計算機の「有効桁数」とは別です。厳密な値はそのままで、変わるのは「≈」の後ろの小数だけです')]
+    ]],
     [tr('Input', '操作'), [
       ['preview', tr('Show the result while typing', '入力中に結果を表示'), 'bool'],
       ['auto_ans', tr('An operator in an empty field continues from ans', '空欄で演算子を押すと ans から続ける'), 'bool'],
@@ -13795,6 +15301,11 @@
             p.ratesWhen();
             part.append(tapButton({ class: 'setting setting-link' }, () => openRates()).appendChild(el('div', { class: 'lbl' }, el('div', { text: label }), when)).parentNode
               .appendChild(el('span', { class: 'chev', text: '›', 'aria-hidden': 'true' })).parentNode);
+            continue;
+          }
+          if (type === 'digits') {
+            const c = digitsControl();
+            part.append(el('div', { class: 'setting dig-setting' }, el('div', { class: 'lbl' }, el('div', { text: label }), sub ? el('div', { class: 's', text: sub }) : null), c.sel), c.more);
             continue;
           }
           if (type === 'bool') {
@@ -13841,6 +15352,7 @@
         el('button', { class: 'btn', text: tr('Reset all settings', '設定を初期値に戻す'), onclick: async () => {
           if (!(await confirmSheet(tr('Reset all settings to their defaults?', '設定を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
           S = Object.assign({}, DEFAULTS, { lang: LANG_AUTO ? 'auto' : LANG }); settingsChanged(); // the language stays
+          digitsChanged(); // (D7: the digits of the tools too)
           for (const k of Object.keys(p.inputs)) { const i = p.inputs[k]; if (i.type === 'checkbox') i.checked = !!S[k]; else i.value = String(S[k]); }
         } }));
     });
