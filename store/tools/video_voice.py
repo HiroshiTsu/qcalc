@@ -34,9 +34,14 @@ and asked for again next time), so that no narration out of place is made.
                   <work>/voice-gemini-<date>.zip with the cache, the samples and a manifest; unpacked into the
                   work folder here, the usual run with --engine gemini puts it into the videos with no request
                   and no key (store/tools/TTS-GEMINI-ja.md)
-Usage: python3 store/tools/video_voice.py <work folder> [langs] [videos] [--engine local|gemini]
+With --engine chatterbox the audio made by store/tools/chatterbox_tts.py on the owner's computer (its zips unpacked
+into <work>, so that <work>/voice-chatterbox/manifest.json is there) is put into the videos: each paragraph found by
+video and segment, its text checked against the plan (a different text stops the run, naming the paragraphs), put at
+its start and read faster when it is longer than its room, as above; a video with paragraphs missing is not made.
+Usage: python3 store/tools/video_voice.py <work folder> [langs] [videos] [--engine local|gemini|chatterbox]
        [--model M] [--voice V] [--style S] [--sample [N] | --synth-only]
 """
+import array
 import datetime
 import json
 import os
@@ -81,8 +86,8 @@ def options(argv):
         else:
             pos.append(a)
         i += 1
-    if opt['engine'] not in ('local', 'gemini'):
-        raise SystemExit('--engine is local or gemini')
+    if opt['engine'] not in ('local', 'gemini', 'chatterbox'):
+        raise SystemExit('--engine is local, gemini or chatterbox')
     if opt['sample'] is not None or opt['synth-only']:
         opt['engine'] = 'gemini'
     if opt['sample'] is not None:
@@ -132,6 +137,27 @@ def wav_dur(path):
         return w.getnframes() / float(w.getframerate())
 
 
+def wav_peak(path):
+    """The largest sample of a 16-bit WAV, from 0 to 1 (1 for other kinds: no gain then)."""
+    with wave.open(path) as w:
+        if w.getsampwidth() != 2:
+            return 1.0
+        a = array.array('h', w.readframes(w.getnframes()))
+    if sys.byteorder == 'big':
+        a.byteswap()
+    return max(max(a, default=0), -min(a, default=0)) / 32768.0
+
+
+GAIN, HEADROOM = 1.3, 0.89  # the quiet voices a little louder; the loud ones kept near -1 dBFS (resampling adds a little)
+
+
+def track_gain(files):
+    """The gain of a narration track: 1.3 (the voices made here are quiet), less when the loudest sample would go
+    above HEADROOM (the voices of Chatterbox are already near full scale: 1.3 clipped them)."""
+    peak = max((wav_peak(w) for w in files), default=0.0)
+    return min(GAIN, HEADROOM / peak) if peak > 0 else GAIN
+
+
 def synth(lang, text, out, speed):
     if lang == 'ja':
         src = out + '.txt'
@@ -167,12 +193,24 @@ def voice(lang, name, segs):
     for k, (a, w, dur, slot) in enumerate(parts):
         ins += ['-i', w]
         fl.append('[%d:a]aresample=48000,aformat=channel_layouts=mono,adelay=%d:all=1[a%d]' % (k, int(a * 1000), k))
-    mix = ';'.join(fl) + ';' + ''.join('[a%d]' % k for k in range(len(parts))) + 'amix=inputs=%d:normalize=0:dropout_transition=0,apad,atrim=duration=%.3f,volume=1.3[out]' % (len(parts), total)
+    mix = ';'.join(fl) + ';' + mix_tail(len(parts), total, track_gain([p[1] for p in parts]))
     track = os.path.join(d, 'voice.wav')
-    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y'] + ins + ['-filter_complex', mix, '-map', '[out]', track], check=True)
+    make_track(ins, mix, total, track)
     mux(lang, name, src, track)
     long_ = sum(1 for p in parts if p[2] > p[3])
     print('%s %s: %d lines, %d still longer than the subtitle' % (lang, name, len(parts), long_))
+
+
+def mix_tail(n, total, gain=GAIN):
+    """The end of the filter of a narration track: the n paragraphs mixed, then exactly total seconds. asetpts
+    comes first because after atempo the timestamps no longer count the samples, and apad,atrim alone then never
+    ended (a sped-up paragraph made the track grow until the disk was full)."""
+    return ''.join('[a%d]' % k for k in range(n)) + 'amix=inputs=%d:normalize=0:dropout_transition=0,asetpts=N/SR/TB,apad=whole_dur=%.3f,atrim=duration=%.3f,volume=%.4f[out]' % (n, total, total, gain)
+
+
+def make_track(ins, mix, total, track):
+    # -t as well: whatever the filter does, the track is never longer than the video
+    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y'] + ins + ['-filter_complex', mix, '-map', '[out]', '-t', '%.3f' % total, track], check=True)
 
 
 def mux(lang, name, src, track):
@@ -198,19 +236,55 @@ def all_videos(lang):
     return [('promo', L['promo']), ('youtube', L['youtube'])] + [(s['name'], s['segments']) for s in L['shorts']]
 
 
+def paragraphs_seg(lang):
+    """Every segment with narration of every video of the language, in the order of the plan: (video, number of
+    the segment in its video, start of its narration, its room, text)."""
+    out = []
+    for name, segs in all_videos(lang):
+        t0 = 0.0
+        for k, s in enumerate(segs):
+            d = float(s['dur'])
+            if s['lines']:
+                out.append((name, k, t0 + 0.15, d - 0.3, gemini_text(lang, s['lines'])))
+            t0 += d
+    return out
+
+
 def paragraphs_of(lang):
     """Every segment with narration of every video of the language, in the order of the plan: (video, start of its
     narration, its room, text). Always all of them, made or not, so that a run with the videos and a run of
     --synth-only (without them) send the same requests and find the same answers in the cache."""
-    out = []
-    for name, segs in all_videos(lang):
-        t0 = 0.0
-        for s in segs:
-            d = float(s['dur'])
-            if s['lines']:
-                out.append((name, t0 + 0.15, d - 0.3, gemini_text(lang, s['lines'])))
-            t0 += d
-    return out
+    return [(name, start, room, text) for name, _k, start, room, text in paragraphs_seg(lang)]
+
+
+SPEED_TOP = {'ja': 1.35}  # how much faster a paragraph may be read to fit its room (the others: 1.5)
+
+
+def place_and_mux(lang, name, segs, parts, d):
+    """The narration track of a video from its paragraphs, parts = [(wav file, start, room)]: each at its start,
+    faster (up to 1.35 times in Japanese, 1.5 in the others) when it is longer than its room, mixed (track_gain)
+    and put into the video (out-voice/). Returns [(index, seconds, speed, still too long)] (the Gemini and Chatterbox runs)."""
+    total = sum(float(s['dur']) for s in segs)
+    ins, mix, info = track_filter(lang, parts, total)
+    os.makedirs(d, exist_ok=True)
+    track = os.path.join(d, 'voice.wav')
+    make_track(ins, mix, total, track)
+    mux(lang, name, os.path.join(WORK, 'out', lang, name + '.mp4'), track)
+    return info
+
+
+def track_filter(lang, parts, total):
+    """The inputs and the filter of the track of place_and_mux, with [(index, seconds, speed, still too long)]."""
+    top = SPEED_TOP.get(lang, 1.5)
+    ins, fl, info = [], [], []
+    for j, (w, start, room) in enumerate(parts):
+        dur = wav_dur(w)
+        speed = min(top, dur / room) if dur > room else 1.0
+        info.append((j, dur, speed, dur / speed > room + 0.05))
+        tempo = ',atempo=%.4f' % speed if speed > 1.0 else ''
+        ins += ['-i', w]
+        fl.append('[%d:a]aresample=48000,aformat=channel_layouts=mono%s,adelay=%d:all=1[a%d]' % (j, tempo, int(start * 1000), j))
+    return ins, ';'.join(fl) + ';' + mix_tail(len(parts), total, track_gain([p[0] for p in parts])), info
 
 
 def gemini_settings(opt, one_voice=True):
@@ -280,24 +354,14 @@ def gemini_voices(lang, vids, opt, tts=None, cut=None):
         mine = [(k, it) for k, it in enumerate(items) if it[0] == name]
         d = os.path.join(base, lang, name)
         os.makedirs(d, exist_ok=True)
-        ins, fl, long_ = [], [], 0
+        parts = []
         for j, (k, (_, start, room, _t)) in enumerate(mine):
             w = os.path.join(d, '%02d.wav' % j)
             p, sr = pieces[k]
             G.write_wav(w, p, sr)
-            dur = len(p) / float(sr)
-            top = 1.35 if lang == 'ja' else 1.5
-            speed = min(top, dur / room) if dur > room else 1.0
-            if dur / speed > room + 0.05:
-                long_ += 1
-            tempo = ',atempo=%.4f' % speed if speed > 1.0 else ''
-            ins += ['-i', w]
-            fl.append('[%d:a]aresample=48000,aformat=channel_layouts=mono%s,adelay=%d:all=1[a%d]' % (j, tempo, int(start * 1000), j))
-        total = sum(float(s['dur']) for s in segs)
-        mix = ';'.join(fl) + ';' + ''.join('[a%d]' % j for j in range(len(mine))) + 'amix=inputs=%d:normalize=0:dropout_transition=0,apad,atrim=duration=%.3f,volume=1.3[out]' % (len(mine), total)
-        track = os.path.join(d, 'voice.wav')
-        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y'] + ins + ['-filter_complex', mix, '-map', '[out]', track], check=True)
-        mux(lang, name, os.path.join(WORK, 'out', lang, name + '.mp4'), track)
+            parts.append((w, start, room))
+        info = place_and_mux(lang, name, segs, parts, d)
+        long_ = sum(1 for x in info if x[3])
         print('%s %s: %d paragraphs (Gemini %s, %s), %d still longer than the segment' % (lang, name, len(mine), model, voice_name, long_))
         made.append(name)
     return made
@@ -366,7 +430,84 @@ def gemini_synth_only(langs, opt, tts=None, today=None):
     return zpath, done, err
 
 
+# ---- Chatterbox (--engine chatterbox): the audio made on the owner's computer (store/tools/chatterbox_tts.py)
+
+class NarrationError(Exception):
+    pass
+
+
+def chatterbox_manifest():
+    path = os.path.join(WORK, 'voice-chatterbox', 'manifest.json')
+    if not os.path.exists(path):
+        raise NarrationError('No %s: unpack the zips of chatterbox_tts.py into the work folder.' % path)
+    with open(path, encoding='utf-8') as f:
+        return json.load(f)
+
+
+def chatterbox_voices(lang, vids, man=None, report=None):
+    """The narration of the given videos of a language from the audio of Chatterbox (voice-chatterbox/): every
+    paragraph found by (video, segment) in the manifest, its text the same as the plan's now (otherwise it stops
+    with the paragraphs named: no old audio is used), each put at its start and faster when longer than its room
+    (place_and_mux). A video whose paragraphs are not all there is not made, and is told. Returns the videos made;
+    report (a list) gets a row for every paragraph read faster: (lang, video, n, seg, seconds, room, speed, too long)."""
+    man = man if man is not None else chatterbox_manifest()
+    base = os.path.join(WORK, 'voice-chatterbox')
+    rows = (man.get('langs') or {}).get(lang)
+    want = [(n, s) for n, s in vids if os.path.exists(os.path.join(WORK, 'out', lang, n + '.mp4'))]
+    if not want:
+        return []
+    if not rows:
+        print('%s: no audio of this language in voice-chatterbox/manifest.json: %s not made' % (lang, ', '.join(n for n, _ in want)))
+        return []
+    by = {(r.get('video'), r.get('seg')): r for r in rows}
+    plan = paragraphs_seg(lang)
+    # the texts first: one that differs from the plan stops the language (the audio is of an older text)
+    wrong = []
+    for name, k, start, room, text in plan:
+        r = by.get((name, k))
+        if r is not None and r.get('text') != text:
+            wrong.append('%s %s segment %d (paragraph %s): the audio says "%s", the plan now "%s"' % (lang, name, k, r.get('n'), (r.get('text') or '')[:40], text[:40]))
+    if wrong:
+        raise NarrationError('The text of the audio is not the text of the plan (make these paragraphs again):\n  ' + '\n  '.join(wrong))
+    made = []
+    for name, segs in want:
+        mine = [(k, start, room, text) for v, k, start, room, text in plan if v == name]
+        missing, parts, ns = [], [], []
+        for k, start, room, text in mine:
+            r = by.get((name, k))
+            w = os.path.join(base, r['file']) if r and r.get('file') else None
+            if not w or not os.path.exists(w):
+                missing.append('segment %d%s' % (k, '' if r else ' (not in the manifest)'))
+                continue
+            parts.append((w, start, room))
+            ns.append((r.get('n'), k))
+        if missing:
+            print('%s %s: not made, the audio of %s is missing' % (lang, name, ', '.join(missing)))
+            continue
+        info = place_and_mux(lang, name, segs, parts, os.path.join(base, 'mix', lang, name))
+        for (j, dur, speed, too_long), (n, k), (_w, _s, room) in zip(info, ns, parts):
+            if speed > 1.0 and report is not None:
+                report.append((lang, name, n, k, round(dur, 2), round(room, 2), round(speed, 3), too_long))
+        fast = [x for x in info if x[2] > 1.0]
+        print('%s %s: %d paragraphs (Chatterbox), %d read faster, %d still longer than the segment' % (lang, name, len(parts), len(fast), sum(1 for x in info if x[3])))
+        made.append(name)
+    return made
+
+
 def main():
+    if OPT['engine'] == 'chatterbox':
+        report, made = [], 0
+        try:
+            man = chatterbox_manifest()
+            for lang in LANGS:
+                made += len(chatterbox_voices(lang, [(n, s) for n, s in all_videos(lang) if not ONLY or n in ONLY], man, report))
+        except NarrationError as e:
+            print(str(e))
+            return 1
+        print('%d videos made; %d paragraphs read faster%s' % (made, len(report), ':' if report else ''))
+        for lang, name, n, k, dur, room, speed, too_long in report:
+            print('  %s %s paragraph %s (segment %d): %.2f s in %.2f s, %.2f times%s' % (lang, name, n, k, dur, room, speed, ', still too long' if too_long else ''))
+        return 0
     if OPT['engine'] == 'gemini':
         import gemini_tts as G
         try:

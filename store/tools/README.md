@@ -19,11 +19,12 @@ added to the app.
 | `video.js` | Records the scenes of the app (the taps shown as circles) as frames with their times, and makes a portrait clip of each with ffmpeg. |
 | `video_cards.js` | Draws the backgrounds of the segments (headline, label, the frame of the phone, the closing card) and the YouTube thumbnails (`store/video/<lang>/thumbnail.png`). |
 | `video_render.py` | Puts each video together (one file per segment, joined without encoding again), with the subtitles burnt in. Silent; a narration can be added later without encoding the picture again. |
-| `video_voice.py` | Adds a narration to the videos at the times of the subtitles: a placeholder by speech synthesis on the work machine (Open JTalk, eSpeak NG), or with `--engine gemini` by the Gemini API (`gemini_tts.py`). |
+| `video_voice.py` | Adds a narration to the videos at the times of the subtitles: a placeholder by speech synthesis on the work machine (Open JTalk, eSpeak NG), with `--engine gemini` by the Gemini API (`gemini_tts.py`), or with `--engine chatterbox` from the audio of `chatterbox_tts.py` (`<work>/voice-chatterbox/manifest.json`: each paragraph matched by video and segment, its text checked against the plan — a changed text stops the run and names the paragraph —, put at its start, read faster when longer than its room, up to 1.35 times in Japanese and 1.5 in the others; a video with a paragraph or a file missing is not made, and the run says so). The two engines share the mixing (the gain kept under full scale) and the mux. |
 | `gemini_tts.py` | Speech synthesis with the Gemini API (gemini-3.8-flash-tts; the spare gemini-3.8-flash-lite-tts with `--model`): the Interactions API, the text read word for word with how to read in `speech_metadata`, WAV as it comes (a header only for headerless PCM), the free tier's limits kept here (3 a minute, 10 a day, 10,000 input tokens a minute; at most 8,192 a request, longer narrations split between paragraphs), the time the daily count starts again (midnight Pacific time, 17:00 in Japan in winter), answers kept so a video made again uses no request (named by model, voice, style and text, the same on any computer), the cut at the pauses checked by the seconds per character. `video_voice.py --sample` (voices to compare) and `--synth-only` (all the audio without videos, then a zip) need Python only; the steps for the owner are in `TTS-GEMINI-ja.md`. The key from `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). |
 | `test_gemini_tts.py` | Tests of the two with made-up answers of the server (a local HTTP server; no key, no network). |
 | `chatterbox_tts.py` | The narration by Chatterbox Multilingual V3 (Resemble AI, MIT) on the owner's own computer: free, no daily limit, one synthesis per paragraph (the same paragraphs and texts as `video_voice.py`), so nothing is cut afterwards. Writes `<work>/voice-chatterbox/<lang>/<video>-<NN>-<hash>.wav`, a `manifest.json` (video, segment, start, room, text, file, seconds, seed) and a zip per language; goes on where it stopped; `--sample tricky` (the paragraphs with numbers and signs), `--redo lang:n` (another seed), readings from `tts-readings.json`. Runs in a Python 3.11 environment with chatterbox-tts; the steps for the owner are in `TTS-CHATTERBOX-ja.md`. |
 | `test_chatterbox_tts.py` | Its tests with a made-up engine (no model, no network, no torch). |
+| `test_voice_chatterbox.py` | Tests of `video_voice.py --engine chatterbox` with a small made-up manifest and WAV files (the ones that make videos are skipped without ffmpeg). |
 
 ## Making everything again
 
@@ -50,6 +51,8 @@ python3 store/tools/video_voice.py $W --synth-only --voice Achird   # all the au
 python3 store/tools/test_gemini_tts.py                      # its tests (no key, no network)
 python store/tools/chatterbox_tts.py $W                      # the narration by Chatterbox, on the owner's computer (TTS-CHATTERBOX-ja.md)
 python3 store/tools/test_chatterbox_tts.py                  # its tests (no model)
+python3 store/tools/video_voice.py $W --engine chatterbox   # its audio (the zips unpacked into $W/voice-chatterbox/) into the videos → $W/out-voice/
+python3 store/tools/test_voice_chatterbox.py                # its tests
 python3 store/tools/listing_check.py                        # the words on pictures and in subtitles
 ```
 
