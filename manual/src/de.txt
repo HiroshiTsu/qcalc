@@ -447,7 +447,8 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :what: Jedes Werkzeug kann seine Ergebnisse mit eigener Stellenzahl zeigen. Öffnen Sie [[Digits shown…]] über ⋯ rechts neben dem Titel des Werkzeugs.
 :step: Drücken Sie in einem Werkzeug ⋯ und wählen Sie [[Digits shown…]].
 :step: Wählen Sie [[Recommended (automatic)]], [[Significant digits]] oder [[Decimals]] und stellen Sie die Zahl mit + und − ein. Jedes Werkzeug merkt sich seine Wahl.
-:step: Zurück geht es mit [[Back to the recommended]]. [[Digits shown by each tool]] in den Einstellungen listet alle Werkzeuge auf und hat [[All back to the recommended]].
+:step: Ein Werkzeug, das nicht seine Standardstellen verwendet, trägt in der Liste der Einstellungen und in [[Digits shown…]] unter ⋯ die Markierung „[[changed]]“.
+Es gibt drei Wege zurück. Für ein Werkzeug drücken Sie [[Back to the default (recommended)]] unter ⋯ → [[Digits shown…]]. Für alle Werkzeuge drücken Sie [[All back to the default (recommended)]] unter [[Digits shown by each tool]] in den Einstellungen (auch [[Precision (significant digits)]] des Rechners wird 10 und [[Maximum decimal places]] wieder ohne Grenze). Für alles drücken Sie [[Reset all settings]] in den Einstellungen (Einstellungen und Stellen je Werkzeug auf den Standard; die Sprache bleibt).
 Die empfohlenen Stellen sind ein bis zwei mehr, als meist nötig ist (genauen Werten werden keine Stellen angehängt).
 
 Gerechnet wird mit 4 Stellen mehr als angezeigt; zum Anzeigen wird kaufmännisch gerundet.

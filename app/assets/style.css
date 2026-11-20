@@ -736,6 +736,13 @@ html.big-keys #expr::placeholder { font-size: .8em; }
 /* (its own class, not .icon-btn: the bar's icon buttons are the way back and the help) */
 .panel-bar .digits-btn { width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 24px; background: transparent; color: inherit; font-size: 22px; line-height: 1; padding: 0; }
 .panel-bar .digits-btn:active { background: var(--surface-2); }
+/* "changed": a screen that does not use its default digits (the settings' list, the ⋯ of the screen) */
+.digits-changed { display: inline-block; margin-left: 8px; padding: 1px 7px; border: 1px solid currentColor; border-radius: 9px; color: var(--accent); font-size: 11px; font-weight: 600; line-height: 1.5; vertical-align: 1px; white-space: nowrap; }
+/* the precision with "Back to the default (10)" by it (under the field, so that the label keeps its width), while it is not 10 */
+.setting .precision-box { display: flex; flex-direction: column; align-items: stretch; gap: 6px; flex: 0 0 auto; width: 10em; max-width: 48%; }
+.setting .precision-box input[type=number] { max-width: none; width: 100%; box-sizing: border-box; }
+.setting .precision-back { min-height: 40px; padding: 4px 8px; font-size: 13px; line-height: 1.25; white-space: normal; }
+.setting .precision-back[hidden] { display: none; }
 .sheet button.danger { color: var(--danger); }
 .toast {
   position: fixed; left: 50%; bottom: 40%;

@@ -12731,8 +12731,9 @@
     }
     return (neg && /[1-9]/.test(out.replace(/E.*/, '')) ? '-' : '') + out;
   }
-  // a JavaScript number as the digits it has (17 significant digits, then rounded as a string)
-  const jsDigits = (v) => (Object.is(v, -0) ? '0' : Number(v).toPrecision(16));
+  // a JavaScript number as the digits it has (16 significant digits, without the zeros at their end that
+  // toPrecision adds: 1 is "1", not "1.000000000000000"; then rounded as a string)
+  const jsDigits = (v) => (Object.is(v, -0) ? '0' : Number(v).toPrecision(16).replace(/(\.\d*?)0+(e|$)/, '$1$2').replace(/\.(e|$)/, '$1'));
   // a plain number (engine form) grouped in the number format: 1,234.5 / 1.234,5 / 1 234,5
   function groupedNum(s) {
     if (s === null || s === undefined) return '';
@@ -12750,10 +12751,14 @@
     return c ? { m: c.m, n: c.n, zeros: true, chosen: true } : Object.assign({ zeros: false }, auto);
   }
   // a JavaScript value shown with the digits of a screen (tools that calculate in JavaScript)
+  // (with digits chosen, zeros are added at the end only where the recommended digits keep them too: money, the
+  // price per unit, statistics; elsewhere, as in the texts of the engine, a value is not made longer than it is:
+  // the height 1 of a tank stays 1, not 1.000000000)
   function fmtDigits(key, v, auto) {
     if (!isFinite(v)) return '';
     const r = digitsRule(key, auto || digitsAuto(key));
-    return groupedNum(roundDigits(jsDigits(v), r.m, r.n, r.zeros, r.minDec));
+    const pad = !r.chosen || !!(auto || digitsAuto(key)).zeros;
+    return groupedNum(roundDigits(jsDigits(v), r.m, r.n, r.zeros, r.minDec, !pad));
   }
   // the decimals of the numbers typed (the statistics: 12.3 and 14.1 have 1)
   const decimalsOf = (t) => { const s = String(t).replace(/[eE].*$/, ''); const i = Math.max(s.lastIndexOf('.'), commaMode ? s.lastIndexOf(',') : -1); return i < 0 ? 0 : s.length - i - 1; };
@@ -12810,6 +12815,10 @@
   }
   const digitsDesc = (c) => (c.m === 'dec' ? trf('{0} decimals', '小数点以下 {0} 桁', c.n) : trf('{0} significant digits', '有効数字 {0} 桁', c.n));
   const digitsNow = (key) => { const c = digitsChosen(key); return c ? digitsDesc(c) : tr('Recommended', 'おすすめ'); };
+  // every choice of digits cleared (the screens back to their defaults), and the screens calculated again
+  function digitsClearAll() {
+    for (const [key] of DIGIT_SCREENS()) { if (store.get('qalc.digits.' + key, null) !== null) { store.del('qalc.digits.' + key); digitsChanged(key); } }
+  }
   // the screens to calculate again when their digits change
   const digitsRefresh = {};
   function digitsChanged(key) {
@@ -12820,8 +12829,11 @@
   function digitsButton(p, key) {
     const b = el('button', { class: 'digits-btn', type: 'button', 'aria-label': tr('More: digits shown', 'その他（表示桁数）'), title: tr('More: digits shown', 'その他（表示桁数）'), text: '⋯' });
     b.addEventListener('click', async () => {
-      const a = await sheet(digitScreen(key)[1], [['digits', tr('Digits shown…', '表示桁数…')]]);
-      if (a === 'digits') digitsSheet(key);
+      const pr = sheet(digitScreen(key)[1], [['digits', tr('Digits shown…', '表示桁数…'), 'digits-item']]);
+      // (a small mark when the screen does not use its default: "changed")
+      const it = $('#sheet .digits-item');
+      if (it && digitsChosen(key)) it.append(el('span', { class: 'digits-changed', text: tr('changed', '変更あり') }));
+      if ((await pr) === 'digits') digitsSheet(key);
     });
     p.bar.append(b);
   }
@@ -12851,7 +12863,7 @@
     const num = el('span', { class: 'digits-n', 'aria-live': 'polite' });
     const row = el('div', { class: 'digits-row' }, minus, num, plus);
     const line = el('div', { class: 'digits-why' });
-    const back = el('button', { class: 'digits-back', text: tr('Back to the recommended', 'おすすめに戻す'), onclick: () => set(null) });
+    const back = el('button', { class: 'digits-back', text: tr('Back to the default (recommended)', '初期値（おすすめ）に戻す'), onclick: () => set(null) });
     const step = (d) => {
       const c = cur();
       if (!c) return;
@@ -14259,6 +14271,7 @@
               const locked = key === 'precision' && n > maxPrecision();
               if (locked) n = maxPrecision();
               S[key] = n; input.value = n; settingsChanged();
+              if (p.precisionBack) p.precisionBack();
               if (locked) proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'), 'precision');
             });
           } else {
@@ -14278,8 +14291,20 @@
           }
           const name = el('div', { text: label });
           if (key === 'theme' || key === 'precision') name.dataset.pro = '';
+          // the precision: "Back to the default (10)" beside it, only while it is not 10 (feature/screen-digits)
+          let back = null;
+          if (key === 'precision') {
+            back = el('button', { class: 'btn precision-back', type: 'button', text: trf('Back to the default ({0})', '初期値（{0}）に戻す', DEFAULTS.precision) });
+            back.addEventListener('click', (e) => {
+              e.preventDefault();
+              S.precision = DEFAULTS.precision; input.value = String(S.precision); settingsChanged();
+              p.precisionBack();
+            });
+            p.precisionBack = () => { back.hidden = Number(S.precision) === DEFAULTS.precision; if (p.digitsList) p.digitsList(); };
+            p.precisionBack();
+          }
           part.append(el('label', { class: 'setting' },
-            el('div', { class: 'lbl' }, name, sub ? el('div', { class: 's', text: sub }) : null), input));
+            el('div', { class: 'lbl' }, name, sub ? el('div', { class: 's', text: sub }) : null), back ? el('div', { class: 'precision-box' }, input, back) : input));
           (p.inputs = p.inputs || {})[key] = input;
         }
         }
@@ -14293,22 +14318,33 @@
         digitsList.append(el('div', { class: 'setting digits-main' }, el('div', { class: 'lbl' }, tr('Calculator, forms and notes', '計算の画面・式の画面・計算メモ'),
           el('div', { class: 's', text: trf('"Precision (significant digits)" above: {0}', '上の「有効桁数」：{0} 桁', Math.min(Number(S.precision) || 10, maxPrecision())) }))));
         for (const [key, name] of DIGIT_SCREENS()) {
-          digitsList.append(tapButton({ class: 'setting setting-link', 'data-digits': key }, () => digitsSheet(key)).appendChild(el('div', { class: 'lbl' }, el('div', { text: name }), el('div', { class: 's', text: digitsNow(key) }))).parentNode
+          // (a small mark when the screen does not use its default: "changed")
+          const nm = el('div', { text: name });
+          if (digitsChosen(key)) nm.append(el('span', { class: 'digits-changed', text: tr('changed', '変更あり') }));
+          digitsList.append(tapButton({ class: 'setting setting-link', 'data-digits': key }, () => digitsSheet(key)).appendChild(el('div', { class: 'lbl' }, nm, el('div', { class: 's', text: digitsNow(key) }))).parentNode
             .appendChild(el('span', { class: 'chev', text: '›', 'aria-hidden': 'true' })).parentNode);
         }
       };
       p.digitsList();
       p.body.append(el('div', { class: 'section-title', text: tr('Digits shown by each tool', '画面ごとの表示桁数') }), digitsList,
-        el('button', { class: 'btn digits-all', text: tr('All back to the recommended', 'すべておすすめに戻す'), onclick: () => {
-          for (const [key] of DIGIT_SCREENS()) { if (digitsChosen(key)) { store.del('qalc.digits.' + key); digitsChanged(key); } }
+        el('button', { class: 'btn digits-all', text: tr('All back to the default (recommended)', 'すべて初期値（おすすめ）に戻す'), onclick: async () => {
+          // every tool, and the calculator's "Precision" (10) and "Maximum decimal places" (no limit)
+          if (!(await confirmSheet(tr('Put the digits of every tool, the precision and the maximum decimal places back to their defaults?', 'すべての画面の表示桁数と、有効桁数・小数点以下の最大桁数を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
+          digitsClearAll();
+          S.precision = DEFAULTS.precision; S.max_decimals = DEFAULTS.max_decimals; settingsChanged();
+          for (const k of ['precision', 'max_decimals']) if (p.inputs && p.inputs[k]) p.inputs[k].value = String(S[k]);
+          if (p.precisionBack) p.precisionBack();
           p.digitsList();
-          toast(tr('Every tool shows the recommended digits', 'すべての画面をおすすめの桁に戻しました'), 1800);
+          toast(trf('Every tool shows its default digits; precision {0}, no limit on decimal places', 'すべての画面を初期値の桁に戻しました（有効桁数 {0}、小数点以下は制限なし）', DEFAULTS.precision), 2200);
         } }));
       p.body.append(el('div', { class: 'section-title', text: '' }),
         el('button', { class: 'btn', text: tr('Reset all settings', '設定を初期値に戻す'), onclick: async () => {
-          if (!(await confirmSheet(tr('Reset all settings to their defaults?', '設定を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
+          if (!(await confirmSheet(tr('Reset the settings and the digits shown by each tool to their defaults?', '設定と画面ごとの表示桁数を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
           S = Object.assign({}, DEFAULTS, { lang: LANG_AUTO ? 'auto' : LANG }); settingsChanged(); // the language stays
+          digitsClearAll(); // (feature/screen-digits: the digits of each tool too)
           for (const k of Object.keys(p.inputs)) { const i = p.inputs[k]; if (i.type === 'checkbox') i.checked = !!S[k]; else i.value = String(S[k]); }
+          if (p.precisionBack) p.precisionBack();
+          if (p.digitsList) p.digitsList();
         } }));
     });
     return p;

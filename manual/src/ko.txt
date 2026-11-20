@@ -446,7 +446,8 @@ QCalc는 식을 종이에 쓰듯 입력하면 바로 결과가 나오는 계산�
 :what: 도구 화면마다 결과를 몇 자리로 표시할지 바꿀 수 있습니다. 화면 제목 오른쪽의 ⋯에서 [[Digits shown…]]을 엽니다.
 :step: 도구 화면에서 ⋯를 누르고 [[Digits shown…]]을 고릅니다.
 :step: [[Recommended (automatic)]]·[[Significant digits]]·[[Decimals]] 중에서 고르고, +와 −로 자릿수를 정합니다. 고른 자릿수는 화면마다 기억합니다.
-:step: 되돌릴 때는 [[Back to the recommended]]를 누릅니다. 설정의 [[Digits shown by each tool]]에는 목록과 [[All back to the recommended]]가 있습니다.
+:step: 기본 자릿수에서 바꾼 화면에는 설정의 목록과 ⋯의 [[Digits shown…]]에 ‘[[changed]]’ 표시가 붙습니다.
+되돌리는 방법은 세 가지입니다. 그 화면만 되돌릴 때는 ⋯ → [[Digits shown…]]의 [[Back to the default (recommended)]]를 누릅니다. 모든 화면을 되돌릴 때는 설정의 [[Digits shown by each tool]]에서 [[All back to the default (recommended)]]를 누릅니다(계산 화면의 [[Precision (significant digits)]]도 10으로, [[Maximum decimal places]]도 제한 없음으로 돌아갑니다). 설정째 되돌릴 때는 설정의 [[Reset all settings]]를 누릅니다(설정과 화면별 표시 자릿수를 기본값으로 되돌립니다. 언어는 그대로입니다).
 권장 자릿수는 보통 필요한 자릿수보다 1~2자리 많습니다(원래 정확한 값에는 자릿수를 붙이지 않습니다).
 
 계산은 표시하는 자릿수보다 4자리 더 많이 하고, 표시할 때 반올림합니다.

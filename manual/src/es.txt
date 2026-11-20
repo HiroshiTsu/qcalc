@@ -447,7 +447,8 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :what: Cada herramienta puede mostrar sus resultados con su propio número de cifras. Abre [[Digits shown…]] desde ⋯ a la derecha del título de la herramienta.
 :step: En una herramienta, pulsa ⋯ y elige [[Digits shown…]].
 :step: Elige [[Recommended (automatic)]], [[Significant digits]] o [[Decimals]], y ajusta el número con + y −. Cada herramienta recuerda su elección.
-:step: Para volver, pulsa [[Back to the recommended]]. [[Digits shown by each tool]] en los ajustes muestra todas las herramientas y tiene [[All back to the recommended]].
+:step: Una herramienta que no usa sus cifras predeterminadas lleva la marca «[[changed]]» en la lista de los ajustes y en [[Digits shown…]] de su ⋯.
+Hay tres formas de volver. Para una herramienta, pulsa [[Back to the default (recommended)]] en ⋯ → [[Digits shown…]]. Para todas, pulsa [[All back to the default (recommended)]] en [[Digits shown by each tool]] de los ajustes ([[Precision (significant digits)]] de la calculadora vuelve también a 10 y [[Maximum decimal places]] a sin límite). Para todo, pulsa [[Reset all settings]] en los ajustes (los ajustes y las cifras de cada herramienta vuelven a sus valores predeterminados; el idioma se queda).
 Las cifras recomendadas son una o dos más de las que suelen hacer falta (a los valores exactos no se les añaden cifras).
 
 El cálculo se hace con 4 cifras más de las que se muestran, y el resultado se redondea para mostrarlo.

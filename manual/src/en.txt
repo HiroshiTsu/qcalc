@@ -447,7 +447,8 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :what: Each tool can show its results with its own number of digits. Open [[Digits shown…]] from ⋯ at the right of the tool's title.
 :step: In a tool, press ⋯ and choose [[Digits shown…]].
 :step: Choose [[Recommended (automatic)]], [[Significant digits]] or [[Decimals]], and set the number with + and −. Each tool keeps its own choice.
-:step: To go back, press [[Back to the recommended]]. [[Digits shown by each tool]] in the settings lists every tool and has [[All back to the recommended]].
+:step: A tool that does not use its default digits has the mark "[[changed]]" in the settings' list and in [[Digits shown…]] of its ⋯.
+There are three ways back. For one tool, press [[Back to the default (recommended)]] in ⋯ → [[Digits shown…]]. For every tool, press [[All back to the default (recommended)]] under [[Digits shown by each tool]] in the settings (the calculator's [[Precision (significant digits)]] goes back to 10 and [[Maximum decimal places]] to no limit as well). For everything, press [[Reset all settings]] in the settings (the settings and the digits of each tool go back to their defaults; the language stays).
 The recommended digits are a digit or two more than are usually needed (no digits are added to values that are exact).
 
 The calculation is made with 4 digits more than are shown; the result is rounded half up for showing.

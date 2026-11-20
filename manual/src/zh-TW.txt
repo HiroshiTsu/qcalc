@@ -446,7 +446,8 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :what: 每個工具畫面都能改變結果的顯示位數。從畫面標題右邊的 ⋯ 打開 [[Digits shown…]]。
 :step: 在工具畫面按 ⋯，選擇 [[Digits shown…]]。
 :step: 從 [[Recommended (automatic)]]、[[Significant digits]]、[[Decimals]] 中選擇，再用 + 和 − 決定位數。選好的位數每個畫面各自記住。
-:step: 要恢復時按 [[Back to the recommended]]。設定中的 [[Digits shown by each tool]] 有一覽和 [[All back to the recommended]]。
+:step: 改過預設位數的畫面，會在設定的一覽和 ⋯ 的 [[Digits shown…]] 加上「[[changed]]」標記。
+恢復的方法有三種。只恢復該畫面時，按 ⋯ → [[Digits shown…]] 中的 [[Back to the default (recommended)]]。恢復所有畫面時，按設定中 [[Digits shown by each tool]] 的 [[All back to the default (recommended)]]（計算畫面的 [[Precision (significant digits)]] 也恢復為 10，[[Maximum decimal places]] 恢復為不限制）。連設定一起恢復時，按設定中的 [[Reset all settings]]（設定和各畫面的顯示位數恢復為預設值，語言保持不變）。
 建議的位數比通常需要的多 1～2 位（原本就精確的值不會加位數）。
 
 計算比顯示的位數多 4 位，顯示時再四捨五入。
