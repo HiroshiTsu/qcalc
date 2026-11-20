@@ -34,7 +34,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - **Open quickly**: a widget, a quick settings tile and shortcuts on the icon ([Widget, tile and shortcuts](#widget)).
 - **Sharing**: pictures of graphs, and moving GIFs of 3D graphs ([Sharing](#share)).
 - **Solids and tanks in 3D**: [[!⟳ 3D]] at the top left of the picture in [[Solids]] and [[Tanks]] shows the shape in 3D with the sizes typed; in a tank the level can be dragged to see the amount ([Solids and tanks in 3D](#shapes-3d); 3D is QCalc Pro).
-- **Digits of the results**: the digits of the results of Shapes, Tanks and the like, as decimal places or significant digits, for each kind of quantity, with the rounding; every % has one decimal at first ([Digits of the results](#digits)).
+- **Digits of the results**: the digits of the results of Shapes, Tanks and the like, as decimal places or significant digits, for each kind of quantity, with the rounding; every % has one decimal at first ([Digits shown by each tool](#digits)).
 - **QCalc Pro**: the CSV of tables, tank heads with quick-reference tables, solids from a profile, STL files, more calculation notes and more ([QCalc Pro](#pro)).
 - **This manual**: it is inside the app. The "?" at the top right of a tool or a panel opens its section.
 
@@ -303,21 +303,8 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :example: A cylinder of diameter 30 cm and height 50 cm → volume 11250π ≈ 35342.91735 cm³
 :tip: A tank is drawn clear, its liquid as a solid of its own color. Drag up or down from the level (the box with the amount) to move it: [[Height of the liquid]] in the tool changes too. A drag elsewhere turns the graph. The slider [[Level]] below moves it as well.
 :tip: The marks on the wall are round amounts: in a lying or a spherical tank their gaps are visibly uneven.
-:tip: The numbers at the level are rounded for reading (3 significant digits, % with one decimal); the exact values are above the graph and in the tool ([Digits of the results](#digits)).
+:tip: The numbers at the level are rounded for reading (3 significant digits, % with one decimal); the exact values are above the graph and in the tool ([Digits shown by each tool](#digits)).
 :note: Without QCalc Pro, the row [[Turn it in 3D (QCalc Pro)]] appears just above the results.
-
-## digits | Digits of the results
-:what: How many digits the results of Shapes, Tanks, Solid from a profile and Make a solid show after "≈". Exact values (11250π) stay. This is separate from the calculator's [[Precision (significant digits)]].
-:step: Above the results, choose in [[Digits: auto]], for example [[Digits: 2 decimal places]].
-:step: For more, open [[Digits in detail ▾]].
-:step: Choose [[Decimal places]] or [[Significant digits]] and type the number of digits (0 to 15).
-:step: [[Each kind of quantity on its own]] sets volume, area, length, weight and % separately.
-:example: The volume of a cylinder 11250π ≈ 35342.91735 cm³ → with 2 decimal places 11250π ≈ 35342.92 cm³; with 4 significant digits 11250π ≈ 35340 cm³
-:tip: The numbers [[In the 3D picture]] (at the level, on the scale, the sizes) have their own setting: auto is 3 significant digits, % with one decimal.
-:tip: The rounding is [[Round half up]], [[Round down]] or [[Round up]]; trailing zeros [[Keep (2.50)]] or [[Drop (2.5)]].
-:tip: A quick-reference table saved as CSV has all the digits at first; with [[As shown]] it has the digits of the screen.
-:tip: The same items are in [[Settings]], under [[Digits of the tools]]; [[Back to the first settings]] brings back auto.
-:note: No more than 15 digits: the numbers are worked out with double precision. With the first settings every % has one decimal.
 
 ## measured | Volume from measured values
 :what: The volume of earthwork or a pond from a table of cross sections (average end area, Simpson's rule) or from a grid of point heights.
@@ -396,7 +383,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: For another axis, go back with [[← Back to 2D]] and tap its line; drag the line y = k with a finger. [[View in 3D]] shows it in 3D again.
 :step: [[↶ Undo]] goes back to the axis before.
 :shot: solid | The region between y = x and y = x² turned around the x axis
-:example: Between y = x and y = x², around the x axis → volume 2π/15 ≈ 0.41887902
+:example: Between y = x and y = x², around the x axis → volume 2π/15 ≈ 0.418879
 :tip: [[Show the method with lines]] draws the disks (washers) or shells. The line [[Pappus–Guldinus theorem: ]] compares the volume from the centroid with the integral.
 :pro: Turning the solid with a finger in 3D is a QCalc Pro feature, like the 3D graph. Without Pro, the row [[Turn it in 3D (QCalc Pro)]] appears instead.
 
@@ -467,7 +454,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 | [[Number format]] | The decimal sign and the digit groups ([Number format](#number-format)) |
 | [[Fractions]] | Automatic, decimal, fraction, mixed fraction |
 | [[Precision (significant digits)]] | The precision of calculations (10 by default) |
-| [[Digits of the tools]] | The digits of the results of Shapes, Tanks and the like ([Digits of the results](#digits)) |
+| [[Digits shown by each tool]] | The digits of each tool, and those shared by Shapes, Tanks, solids and the graph ([Digits shown by each tool](#digits)) |
 | [[Light or dark]] | The colors of the screen |
 | [[Text size]] | The text of the history, the input field and the result |
 | [[Color theme]] | The color of the keys (other than blue: QCalc Pro) |
@@ -475,19 +462,20 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 | [[Update exchange rates now]] | Downloads the rates at once |
 :tip: [[Reset all settings]] sets everything back to the defaults (the language stays).
 
-## screen-digits | Digits shown by each tool
-:what: Each tool can show its results with its own number of digits. Open [[Digits shown…]] from ⋯ at the right of the tool's title.
+## digits | Digits shown by each tool
+:what: Each tool can show its results with its own number of digits. Open [[Digits shown…]] from ⋯ at the right of the tool's title. Shapes (with Tanks), Solid from a profile and the graph (area, length, Make a solid, 3D) share one setting.
 :step: In a tool, press ⋯ and choose [[Digits shown…]].
 :step: Choose [[Recommended (automatic)]], [[Significant digits]] or [[Decimals]], and set the number with + and −. Each tool keeps its own choice.
+:step: With digits chosen, [[Trailing zeros]] are [[Keep (2.50)]] (at first: exactly as many digits as chosen, 1.000000000) or [[Drop (2.5)]] (1).
 :step: A tool that does not use its default digits has the mark "[[changed]]" in the settings' list and in [[Digits shown…]] of its ⋯.
+:example: The volume of a cylinder 11250π ≈ 35342.91735 cm³ → recommended 11250π ≈ 35342.9 cm³; with 2 decimal places 11250π ≈ 35342.92 cm³; with 4 significant digits 11250π ≈ 35340 cm³
+:tip: For Shapes, Tanks, Solid from a profile and the graph, [[More: each kind, the 3D picture, rounding, CSV ▾]] also sets [[Each kind of quantity on its own]] (volume, area, length, weight and %), the numbers [[In the 3D picture]] (recommended: 3 significant digits, % with one decimal), the rounding ([[Round half up]], [[Round down]] or [[Round up]]) and the quick-reference tables saved as CSV ([[All the digits]] or [[As shown]]). Exact values (11250π) stay; only the numbers after "≈" change.
 There are three ways back. For one tool, press [[Back to the default (recommended)]] in ⋯ → [[Digits shown…]]. For every tool, press [[All back to the default (recommended)]] under [[Digits shown by each tool]] in the settings (the calculator's [[Precision (significant digits)]] goes back to 10 and [[Maximum decimal places]] to no limit as well). For everything, press [[Reset all settings]] in the settings (the settings and the digits of each tool go back to their defaults; the language stays).
-The recommended digits are a digit or two more than are usually needed (no digits are added to values that are exact).
+The recommended digits are a digit or two more than are usually needed (no digits are added to values that are exact). Money is shown to the smallest unit of the currency of your region (1 yen, 0.01 dollar), with its zeros (19.90); Shapes, Tanks, Solid from a profile and Make a solid have 6 significant digits after "≈", the area, the length and the 3D values of the graph 8, and % one decimal. Recommended digits have no zeros at the end, but for money, unit prices and statistics.
 
-The calculation is made with 4 digits more than are shown; the result is rounded half up for showing.
+The calculation is made with 12 digits more than are shown (at least 4 near the limit of the precision; numeric integration 4 more, 24 digits at most); the result is rounded for showing.
 
-Numeric integration (areas, lengths and volumes of the graph) is certain to about 20 digits: more than 20 are not shown. The tools that calculate in JavaScript (price, percentages, unit price, statistics and others) show 12 digits at most.
-
-Amounts of money are shown to the smallest unit of the currency of your region (1 yen, 0.01 dollar); the calculation is exact in it.
+Numeric integration (areas, lengths and volumes of the graph) is certain to about 20 digits: more than 20 are not shown. The numbers worked out with double precision (the tools that calculate in JavaScript: price, percentages, unit price, statistics and others; the height of a liquid, the tables of the tanks, Solid from a profile, the 3D picture) show 12 digits at most.
 :tip: The calculator, the forms and the notes use [[Precision (significant digits)]] in the [[Settings]].
 
 ## language | Language

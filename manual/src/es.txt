@@ -34,7 +34,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 - **Abrir rápido**: un widget, un mosaico de ajustes rápidos y accesos directos en el icono ([Widget, mosaico y accesos directos](#widget)).
 - **Compartir**: imágenes de gráficas y GIF animados de las gráficas 3D ([Compartir](#share)).
 - **Sólidos y depósitos en 3D**: [[!⟳ 3D]], arriba a la izquierda del dibujo en [[Solids]] y [[Tanks]], muestra la figura en 3D con las medidas escritas; en un depósito se puede arrastrar el nivel para ver la cantidad ([Sólidos y depósitos en 3D](#shapes-3d); 3D es QCalc Pro).
-- **Cifras de los resultados**: las cifras de los resultados de Figuras, Depósitos y similares, como decimales o cifras significativas, por tipo de magnitud, con el redondeo; todo % tiene un decimal al principio ([Cifras de los resultados](#digits)).
+- **Cifras de los resultados**: las cifras de los resultados de Figuras, Depósitos y similares, como decimales o cifras significativas, por tipo de magnitud, con el redondeo; todo % tiene un decimal al principio ([Cifras mostradas en cada herramienta](#digits)).
 - **QCalc Pro**: CSV de tablas, fondos de tanques con tablas de consulta, sólidos a partir de un perfil, archivos STL, más notas de cálculo y más ([QCalc Pro](#pro)).
 - **Este manual**: está dentro de la app. El «?» arriba a la derecha de una herramienta o panel abre su sección.
 
@@ -303,21 +303,8 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :example: Un cilindro de 30 cm de diámetro y 50 cm de altura → volumen 11250π ≈ 35342,91735 cm³
 :tip: El depósito se dibuja transparente y el líquido como un sólido de su propio color. Arrastre hacia arriba o abajo desde el nivel (el recuadro con la cantidad) para moverlo: [[Height of the liquid]] de la herramienta cambia también. Arrastrar en otro sitio gira el gráfico. El control [[Level]] de abajo también lo mueve.
 :tip: Las marcas de la pared son cantidades redondas: en un depósito horizontal o esférico sus distancias son visiblemente desiguales.
-:tip: Los números del nivel están redondeados para leerlos (3 cifras significativas, % con un decimal); los valores exactos están encima del gráfico y en la herramienta ([Cifras de los resultados](#digits)).
+:tip: Los números del nivel están redondeados para leerlos (3 cifras significativas, % con un decimal); los valores exactos están encima del gráfico y en la herramienta ([Cifras mostradas en cada herramienta](#digits)).
 :note: Sin QCalc Pro, la fila [[Turn it in 3D (QCalc Pro)]] aparece justo encima de los resultados.
-
-## digits | Cifras de los resultados
-:what: Cuántas cifras muestran tras "≈" los resultados de Figuras, Depósitos, Sólido a partir de un perfil y Hacer un sólido. Los valores exactos (11250π) se mantienen. Es independiente de [[Precision (significant digits)]] de la calculadora.
-:step: Encima de los resultados, elija en [[Digits: auto]], por ejemplo, [[Digits: 2 decimal places]].
-:step: Para más, abra [[Digits in detail ▾]].
-:step: Elija [[Decimal places]] o [[Significant digits]] y escriba el número de cifras (0 a 15).
-:step: [[Each kind of quantity on its own]] fija por separado volumen, área, longitud, peso y %.
-:example: El volumen de un cilindro 11250π ≈ 35342,91735 cm³ → con 2 decimales 11250π ≈ 35342,92 cm³; con 4 cifras significativas 11250π ≈ 35340 cm³
-:tip: Los números [[In the 3D picture]] (en el nivel, en la escala, las medidas) tienen su propio ajuste: en auto, 3 cifras significativas y % con un decimal.
-:tip: El redondeo es [[Round half up]], [[Round down]] o [[Round up]]; los ceros finales, [[Keep (2.50)]] o [[Drop (2.5)]].
-:tip: Una tabla guardada como CSV tiene al principio todas las cifras; con [[As shown]] tiene las de la pantalla.
-:tip: Los mismos ajustes están en [[Settings]], en [[Digits of the tools]]; [[Back to the first settings]] vuelve a auto.
-:note: No más de 15 cifras: los números se calculan en doble precisión. Con los ajustes iniciales todo % tiene un decimal.
 
 ## measured | Volumen a partir de medidas
 :what: El volumen de un movimiento de tierras o de un estanque a partir de una tabla de secciones (áreas medias, regla de Simpson) o de una cuadrícula de alturas.
@@ -396,7 +383,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Para otro eje, vuelve con [[← Back to 2D]] y toca su línea; la línea y = k se arrastra con el dedo. [[View in 3D]] lo muestra de nuevo en 3D.
 :step: [[↶ Undo]] vuelve al eje anterior.
 :shot: solid | La región entre y = x e y = x² girada alrededor del eje x
-:example: Entre y = x e y = x², alrededor del eje x → volumen 2π/15 ≈ 0.41887902
+:example: Entre y = x e y = x², alrededor del eje x → volumen 2π/15 ≈ 0.418879
 :tip: [[Show the method with lines]] dibuja los discos (arandelas) o las capas. La línea [[Pappus–Guldinus theorem: ]] compara el volumen a partir del centroide con la integral.
 :pro: Girar el sólido con el dedo en 3D es una función de QCalc Pro, como la gráfica 3D. Sin Pro aparece en su lugar la fila [[Turn it in 3D (QCalc Pro)]].
 
@@ -466,7 +453,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 | [[Number format]] | El separador decimal y los grupos de cifras ([Formato de números](#number-format)) |
 | [[Fractions]] | Automático, decimal, fracción, fracción mixta |
 | [[Precision (significant digits)]] | La precisión de los cálculos (10 por defecto) |
-| [[Digits of the tools]] | Las cifras de los resultados de Figuras, Depósitos y similares ([Cifras de los resultados](#digits)) |
+| [[Digits shown by each tool]] | Las cifras de cada herramienta y las comunes de Figuras, Depósitos, sólidos y el gráfico ([Cifras mostradas en cada herramienta](#digits)) |
 | [[Light or dark]] | Los colores de la pantalla |
 | [[Text size]] | El texto del historial, el campo de entrada y el resultado |
 | [[Color theme]] | El color de las teclas (salvo el azul: QCalc Pro) |
@@ -475,19 +462,20 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :shot: settings | Los ajustes
 :tip: [[Reset all settings]] devuelve todo a los valores iniciales (el idioma se mantiene).
 
-## screen-digits | Cifras mostradas en cada herramienta
-:what: Cada herramienta puede mostrar sus resultados con su propio número de cifras. Abre [[Digits shown…]] desde ⋯ a la derecha del título de la herramienta.
+## digits | Cifras mostradas en cada herramienta
+:what: Cada herramienta puede mostrar sus resultados con su propio número de cifras. Abre [[Digits shown…]] desde ⋯ a la derecha del título de la herramienta. Figuras (con los depósitos), Sólido a partir de un perfil y el gráfico (área, longitud, Hacer un sólido, 3D) comparten un ajuste.
 :step: En una herramienta, pulsa ⋯ y elige [[Digits shown…]].
 :step: Elige [[Recommended (automatic)]], [[Significant digits]] o [[Decimals]], y ajusta el número con + y −. Cada herramienta recuerda su elección.
+:step: Con las cifras elegidas, los [[Trailing zeros]] pueden ser [[Keep (2.50)]] (al principio: exactamente tantas cifras como se eligieron, 1,000000000) o [[Drop (2.5)]] (1).
 :step: Una herramienta que no usa sus cifras predeterminadas lleva la marca «[[changed]]» en la lista de los ajustes y en [[Digits shown…]] de su ⋯.
+:example: El volumen de un cilindro 11250π ≈ 35342,91735 cm³ → recomendado 11250π ≈ 35342,9 cm³; con 2 decimales 11250π ≈ 35342,92 cm³; con 4 cifras significativas 11250π ≈ 35340 cm³
+:tip: En Figuras, Depósitos, Sólido a partir de un perfil y el gráfico, [[More: each kind, the 3D picture, rounding, CSV ▾]] ajusta además [[Each kind of quantity on its own]] (volumen, área, longitud, peso y %), los números [[In the 3D picture]] (recomendado: 3 cifras significativas, % con un decimal), el redondeo ([[Round half up]], [[Round down]] o [[Round up]]) y las tablas guardadas como CSV ([[All the digits]] o [[As shown]]). Los valores exactos (11250π) se mantienen; solo cambian los números tras "≈".
 Hay tres formas de volver. Para una herramienta, pulsa [[Back to the default (recommended)]] en ⋯ → [[Digits shown…]]. Para todas, pulsa [[All back to the default (recommended)]] en [[Digits shown by each tool]] de los ajustes ([[Precision (significant digits)]] de la calculadora vuelve también a 10 y [[Maximum decimal places]] a sin límite). Para todo, pulsa [[Reset all settings]] en los ajustes (los ajustes y las cifras de cada herramienta vuelven a sus valores predeterminados; el idioma se queda).
-Las cifras recomendadas son una o dos más de las que suelen hacer falta (a los valores exactos no se les añaden cifras).
+Las cifras recomendadas son una o dos más de las que suelen hacer falta (a los valores exactos no se les añaden cifras). El dinero se muestra hasta la unidad más pequeña de la moneda de tu región (0,01 euros), con sus ceros (19,90); Figuras, Depósitos, Sólido a partir de un perfil y Hacer un sólido tienen 6 cifras significativas tras "≈", el área, la longitud y los valores 3D del gráfico 8, y el % un decimal. Las cifras recomendadas no llevan ceros finales, salvo el dinero, los precios por unidad y la estadística.
 
-El cálculo se hace con 4 cifras más de las que se muestran, y el resultado se redondea para mostrarlo.
+El cálculo se hace con 12 cifras más de las que se muestran (al menos 4 cerca del límite de la precisión; la integración numérica 4 más, como mucho 24 cifras), y el resultado se redondea para mostrarlo.
 
-La integración numérica (áreas, longitudes y volúmenes del gráfico) es segura hasta unas 20 cifras: no se muestran más de 20. Las herramientas que calculan en JavaScript (precio, porcentajes, precio por unidad, estadística y otras) muestran como máximo 12 cifras.
-
-Los importes de dinero se muestran hasta la unidad más pequeña de la moneda de tu región (0,01 euros); el cálculo es exacto en ella.
+La integración numérica (áreas, longitudes y volúmenes del gráfico) es segura hasta unas 20 cifras: no se muestran más de 20. Los números calculados en doble precisión (las herramientas que calculan en JavaScript: precio, porcentajes, precio por unidad, estadística y otras; la altura del líquido, las tablas de los depósitos, Sólido a partir de un perfil, la imagen 3D) muestran como máximo 12 cifras.
 :tip: La calculadora, los formularios y las notas usan [[Precision (significant digits)]] de los [[Settings]].
 
 ## language | Idioma

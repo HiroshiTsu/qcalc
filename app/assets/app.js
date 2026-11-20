@@ -4767,8 +4767,8 @@
   // The angle unit of the settings is kept, as for drawing the graph (sin(x) in degrees has its area
   // and length in degrees too); polar coordinates go round a full turn in that unit (2π, 360° or
   // 400 gradians) and are scaled to radians by 2π / (full turn).
-  // (feature/screen-digits: the values of the graph are calculated with the digits shown + 4, 12 when recommended)
-  const iOpts = (more) => Object.assign(engineOpts(), { grouping: false, precision: digitsPrecision('graph', digitsAuto('graph')) }, more || {});
+  // (feature/screen-digits: the values of the graph are calculated with the digits shown + 4, 12 when recommended, 24 at most)
+  const iOpts = (more) => Object.assign(engineOpts(), { grouping: false, precision: digitsPrecision('graph') }, more || {});
   // (the samples of the curves and surfaces stay with the precision of the settings: they are doubles anyway)
   const sampleOpts = (more) => Object.assign(engineOpts(), { grouping: false }, more || {});
   const fullTurn = () => ({ deg: '360', gra: '400' })[S.angle] || '2π';
@@ -4991,8 +4991,10 @@
   // (decimal point; the decimals made here grouped with commas, fmtV), and showResult takes the form shown:
   // with a decimal comma their decimal point was taken for a group separator and dropped (0.4188790205 was
   // shown as 04188790205)
-  // (feature/screen-digits: rounded for the digits of the screen, the graph's unless another is given)
-  const valueShown = (t, key) => { const d = digitsText(key || 'graph', String(t), digitsAuto(key || 'graph')); return displayText(commaMode ? d.replace(/(\d),(?=\d{3}(?!\d))/g, '$1') : d); };
+  // (feature/screen-digits: rounded for the digits of the screen, the graph's unless another is given, and of a kind
+  // of quantity for the shared digits: 'vol', 'area', 'len', 'mass', 'pct'; noPad: no zeros added, the value has
+  // only the digits that can be trusted)
+  const valueShown = (t, key, kind, noPad) => { const d = digitsText(key || 'graph', String(t), null, kind, noPad); return displayText(commaMode ? d.replace(/(\d),(?=\d{3}(?!\d))/g, '$1') : d); };
   // the exact form of an expression of exact values (calculated with "exact"), or ''
   async function exactForm(expr) {
     const r = await Bridge.send('calc', { expr, opts: iOpts({ approx: 'exact' }), timeout: 3000 });
@@ -5228,13 +5230,13 @@
     if (!live()) return;
     const onGraph = (name, val) => { U.lenShown = true; U.lenKey = key; P.lenExpr = lenExpr; showAreaMode(); if (P.area) { P.area.lenText = shortValue(name, val.text); draw(); } };
     const note = () => { if (clipped) U.len.append(el('div', { class: 'form-hint', text: realNote(!!g, parts) })); };
-    if (!g) { U.lenText = shownValue(lf); U.lenName = tr('Length of the curve', '曲線の長さ'); U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + valueShown(shownValue(lf))); note(); onGraph(tr('Length', '長さ'), lf); return; }
+    if (!g) { U.lenText = shownValue(lf); U.lenName = tr('Length of the curve', '曲線の長さ'); U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + valueShown(shownValue(lf), 'graph', 'len')); note(); onGraph(tr('Length', '長さ'), lf); return; }
     const lg = await sumValues(lgs);
     const total = await sumValues(lfs.concat(lgs, sides));
     if (!live()) return;
     U.len.textContent = '';
     U.lenText = shownValue(total); U.lenName = tr('Perimeter', '周の長さ');
-    showResult(U.len, tr('Perimeter ', '周の長さ ') + valueShown(shownValue(total)));
+    showResult(U.len, tr('Perimeter ', '周の長さ ') + valueShown(shownValue(total), 'graph', 'len'));
     onGraph(tr('Perimeter', '周の長さ'), total);
     U.len.append(el('div', { class: 'form-hint', text: tr('Curves: ', '曲線：') + shownValue(lf).replace(/^= /, '') + ' + ' + shownValue(lg).replace(/^= /, '') +
       (sides.length ? tr(', with the vertical sides at a and b', '、a と b の縦の辺を含む') : '') }));
@@ -5294,7 +5296,7 @@
     ins.addEventListener('click', () => { const e = P.areaUI.mode === 'len' ? P.lenExpr : P.areaExpr; if (e) useExample(e); });
     // a tap on the result offers the three actions of every tool
     out.addEventListener('click', () => { const U = P.areaUI; if (P.areaExpr && U.areaText && U.areaKey) resultSheet(tr('Area', '面積'), P.areaExpr, U.areaText); });
-    len.addEventListener('click', () => { const U = P.areaUI; if (P.lenExpr && U.lenText && U.lenKey) resultSheet(U.lenName || tr('Length', '長さ・周'), P.lenExpr, valueShown(U.lenText)); });
+    len.addEventListener('click', () => { const U = P.areaUI; if (P.lenExpr && U.lenText && U.lenKey) resultSheet(U.lenName || tr('Length', '長さ・周'), P.lenExpr, valueShown(U.lenText, 'graph', 'len')); });
     P.areaUI = { f1, f2, a, b, cross, out, ins, box, areaOnly, areaOpen: false, len, rev, toggle, go, lenBtn, mode: store.get('qalc.area.mode', 'area') === 'len' ? 'len' : 'area' };
     showAreaMode();
     syncAreaBox(); // "Make a solid" open since the last time (qalc.rev, also of 1.11.0)
@@ -5667,7 +5669,7 @@
     }
     const expr = pieces.length <= 8 ? pieces.join(' + ') : real ? real.parts.map((p) => `integrate(abs(${d}), ${p.a}, ${p.b})`).join(' + ') : `integrate(abs(${d}), ${a}, ${b})`;
     // (the engine works with the digits shown + 4: 12 when recommended, 24 at most; feature/screen-digits)
-    const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { precision: digitsPrecision('graph', digitsAuto('graph')) }), timeout: auto ? Math.min(5000, timeLimit() * 1000) : timeLimit() * 1000 });
+    const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { precision: digitsPrecision('graph', null, null, 'area') }), timeout: auto ? Math.min(5000, timeLimit() * 1000) : timeLimit() * 1000 });
     if (areaKey() !== key) return; // (another range or other functions meanwhile: that run writes, 1.12.0)
     const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
     // a result the engine could not integrate exactly still has its approximate value after ≈
@@ -5680,7 +5682,7 @@
       return;
     }
     U.out.textContent = '';
-    U.areaText = r.result.indexOf('≈ ') === 0 ? valueShown(r.result) : resultText(Object.assign({}, r, { result: digitsText('graph', r.result, digitsAuto('graph')) })); // (as shown: BG13)
+    U.areaText = r.result.indexOf('≈ ') === 0 ? valueShown(r.result, 'graph', 'area') : resultText(Object.assign({}, r, { result: digitsText('graph', r.result, null, 'area') })); // (as shown: BG13)
     showResult(U.out, tr('Area ', '面積 ') + U.areaText);
     if (real) U.out.append(el('div', { class: 'form-hint', text: realNote(!!g, real.parts) }));
     P.areaExpr = expr;
@@ -6363,11 +6365,10 @@
       if (!quiet) { computeRevolution(); }
     };
     const slicesRow = el('div', { class: 'rev-slices-row' }, slicesBtn, nRow);
-    // (1.12.0, D7) the digits of the results
-    const dig = digitsControl();
+    // (1.12.0, D7: the digits of the results; feature/screen-digits: set with ⋯ of the graph, the shared digits)
     digRuns.add(() => { if (!box.hidden) { if (R.kind === 'sec') computeSections(); else computeRevolution(); } });
     const box = el('div', { class: 'rev-box' }, kinds, axisRow, secRow,
-      kErr, el('div', { class: 'geo-units' }, dig.sel), dig.more, proRow, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
+      kErr, proRow, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
       el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
     box.hidden = true;
     const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Make a solid ▾', '立体にする ▾'), 'aria-expanded': 'false' }, () => {
@@ -6415,7 +6416,7 @@
     const A = await sumValues(As), M = await sumValues(Ms);
     if (stale() || !(A.v > 0)) return;
     const d = M.v / A.v, Vp = 2 * Math.PI * d * A.v, same = Math.abs(Vp - V) <= 1e-7 * Math.max(1, Math.abs(V));
-    R.pappus.textContent = head + 'A = ' + valueShown(clip(A.text, 30)) + ',  d = ' + valueShown(fmtV(+d.toPrecision(9))) + ',  V = 2π d A ≈ ' + valueShown(fmtV(+Vp.toPrecision(10))) +
+    R.pappus.textContent = head + 'A = ' + valueShown(clip(A.text, 30), 'solid', 'area', true) + ',  d = ' + valueShown(fmtV(+d.toPrecision(9)), 'solid', 'len', true) + ',  V = 2π d A ≈ ' + valueShown(fmtV(+Vp.toPrecision(10)), 'solid', 'vol', true) +
       (same ? tr('  ✓ the same as the integral', '  ✓ 積分の値と一致') : '');
   }
   // a row of the results: its name, the formula in small letters, the value; tapping it offers to put
@@ -6425,18 +6426,17 @@
     const row = { val, expr: '', result: '' };
     row.node = tapButton({ class: 'geo-row' }, async () => {
       if (!row.expr) return;
-      resultSheet(name, row.expr, valueShown(row.result));
+      resultSheet(name, row.expr, valueShown(row.result, 'solid', row.kind || 'vol'));
     });
     row.node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), val);
     R.outs.append(row.node);
     return row;
   }
-  // (1.12.0, D7: the number after ≈ with the digits set: a volume, or a surface area for the rows of the surfaces)
+  // (1.12.0, D7: the number after ≈ with the digits set: a volume, or a surface area for the rows of the surfaces;
+  // feature/screen-digits: the place "solid" of the shared digits, 6 significant digits when recommended)
   const revShow = (row, val, expr) => {
     row.result = val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text;
-    const sp = digSpec(row.kind || 'vol');
-    if (sp && isFinite(val.v) && row.result.indexOf('≈') >= 0) row.result = withApprox(row.result, digRound(val.v, sp));
-    row.val.textContent = ''; showResult(row.val, valueShown(row.result)); row.expr = expr;
+    row.val.textContent = ''; showResult(row.val, valueShown(row.result, 'solid', row.kind || 'vol')); row.expr = expr;
   };
   // the volume and the surface of the solid, for the functions and the range of the area tools.
   // auto: opened or drawn (not a tap on the axis): the same, it only tells how long it took
@@ -7090,7 +7090,7 @@
     if (seq !== U.seq) return;
     if (!r.val) { U.out.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return { fail: true, signed }; }
     U.out.textContent = '';
-    showResult(U.out, (signed ? tr('Integral ', '積分の値 ') : tr('Volume ', '体積 ')) + valueShown(shownValue(r.val)));
+    showResult(U.out, (signed ? tr('Integral ', '積分の値 ') : tr('Volume ', '体積 ')) + valueShown(shownValue(r.val), 'graph', 'vol'));
     if (S.real && S.real.note) U.out.append(el('div', { class: 'form-hint', text: S.real.note }));
     if (r.missing) U.out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', r.missing) }));
     Q3.volExpr = r.expr;
@@ -7170,8 +7170,8 @@
     const total = await sumValues(parts);
     if (seq !== U.seq) return;
     out.textContent = '';
-    showResult(out, tr('Surface area ', '表面積 ') + valueShown(shownValue(total)));
-    out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + digitsText('graph', shownValue(p), digitsAuto('graph')).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+    showResult(out, tr('Surface area ', '表面積 ') + valueShown(shownValue(total), 'graph', 'area'));
+    out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + digitsText('graph', shownValue(p), null, 'area').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
     if (S.real && S.real.note && !append) out.append(el('div', { class: 'form-hint', text: S.real.note }));
     if (missing) out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', missing) }));
   }
@@ -7494,8 +7494,8 @@
     const total = await sumValues(vals);
     if (seq !== U.seq) return;
     vol.textContent = '';
-    showResult(vol, tr('Volume ', '体積 ') + valueShown(shownValue(total)));
-    if (many) vol.append(el('div', { class: 'form-hint', text: vals.map((v, m) => trf('Part {0}', '部分 {0}', m + 1) + tr(': ', '：') + digitsText('graph', shownValue(v), digitsAuto('graph')).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+    showResult(vol, tr('Volume ', '体積 ') + valueShown(shownValue(total), 'graph', 'vol'));
+    if (many) vol.append(el('div', { class: 'form-hint', text: vals.map((v, m) => trf('Part {0}', '部分 {0}', m + 1) + tr(': ', '：') + digitsText('graph', shownValue(v), null, 'vol').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
     Q3.volExpr = exprs.join(' + ');
     U.ins.hidden = false;
     // the surface area: the upper and the lower surface over each part (the floor z = 0: the area of the part)
@@ -7532,8 +7532,8 @@
     const all = await sumValues(sums);
     if (seq !== U.seq) return;
     surf.textContent = '';
-    showResult(surf, tr('Surface area ', '表面積 ') + valueShown(shownValue(all)));
-    surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + digitsText('graph', shownValue(p), digitsAuto('graph')).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+    showResult(surf, tr('Surface area ', '表面積 ') + valueShown(shownValue(all), 'graph', 'area'));
+    surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + digitsText('graph', shownValue(p), null, 'area').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
   }
   // --------------------------------------- regions given by formulas (3D graph, 1.11.0)
   // "Region: Custom" of "Volume and surface": a rectangle typed with numbers, a disk with a centre, a
@@ -7921,7 +7921,7 @@
     }
     if (!val) { vol.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
     vol.textContent = '';
-    showResult(vol, name + valueShown(shownValue(val)));
+    showResult(vol, name + valueShown(shownValue(val), 'graph', 'vol'));
     if (expr) { Q3.volExpr = expr; U.ins.hidden = false; }
     // the surface area of the surfaces over the region (the floor z = 0: the area of the region)
     surf.textContent = tr('Calculating the surface area…', '表面積を計算中…');
@@ -7944,8 +7944,8 @@
     const all = await sumValues(sums);
     if (stale()) return;
     surf.textContent = '';
-    showResult(surf, tr('Surface area ', '表面積 ') + valueShown(shownValue(all)));
-    surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + digitsText('graph', shownValue(p), digitsAuto('graph')).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+    showResult(surf, tr('Surface area ', '表面積 ') + valueShown(shownValue(all), 'graph', 'area'));
+    surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + digitsText('graph', shownValue(p), null, 'area').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
   }
   // whether "Enclosed" is the first choice for the surfaces that are chosen: two surfaces that cross
   // in the drawn range (f − g takes both signs on its grid). One surface with z = 0, or two that only
@@ -8490,39 +8490,41 @@
     }
     return inside || best < 18;
   }
-  // ---- the digits of the results of the tools (1.12.0, D7)
-  // How many digits the tools for shapes, tanks and solids (Shapes, Tanks, Solid from a profile, Make a solid)
-  // show after "≈": automatic (as the calculator shows its results; % with one decimal), or a number of
-  // decimal places or of significant digits (0 to 15: the page works with numbers of double precision), the
-  // same for every result or for each kind of quantity (volume, area, length, weight, %), and on its own for
-  // the numbers in the 3D picture (automatic: 3 significant digits, % with one decimal). The exact part of a
-  // result (11250π) stays as the engine gives it. Rounding half up, down or up; trailing zeros kept or not;
-  // tables saved as CSV with all the digits or as shown. Kept in the settings (S.digits), separate from the
-  // calculator's precision.
+  // ---- the digits of the tools for shapes, tanks, solids and the graph (1.12.0, D7; one setting with the digits
+  // of each screen since feature/screen-digits)
+  // One setting (S.digits) for the shapes tool (with the tanks), "Solid from a profile", the graph (its area,
+  // length, 3D values and "Make a solid") and the numbers in the 3D picture. It is opened from ⋯ "Digits shown…"
+  // of each of them and from the list in the settings (digitsSheet), as the digits of the other tools are:
+  // recommended (each place its own: 6 significant digits after "≈" for the shapes, the tanks, the profiles and
+  // "Make a solid", 8 for the area, the length and the 3D values of the graph, % with one decimal), or a number
+  // of decimal places or of significant digits, the same for every result or for each kind of quantity (volume,
+  // area, length, weight, %), and on its own for the numbers in the 3D picture (recommended: 3 significant
+  // digits, % with one decimal). The exact part of a result (11250π) stays as the engine gives it. Rounding half
+  // up, down or up; trailing zeros kept or not (when digits are chosen); tables saved as CSV with all the digits
+  // or as shown. The numbers the page works out itself (doubles) have 12 digits at most (15 in 1.12.0: a saved
+  // 13 to 15 counts as 12 for them); the engine's answers as many as are chosen (numeric integration: 20).
   const DIG_KINDS = () => [['vol', tr('Volume, liquid', '体積・液量')], ['area', tr('Area', '面積')], ['len', tr('Length, height', '長さ・高さ')], ['mass', tr('Weight', '重さ')], ['pct', '%']];
-  const DIG_MAX = 15;
+  const DIG_MAX = 12;
   const DIG_DEF = () => ({ mode: 'auto', n: 2, per: false, kinds: {}, pic: { mode: 'auto', n: 3 }, round: 'half', zeros: true, csv: 'full' });
+  // the most digits that can be chosen for the answers of the engine: the precision it can work with − 4
+  const digEngineMax = () => Math.max(DIG_MAX, maxPrecision() - 4);
   function digits() {
     const d = S.digits, D = DIG_DEF();
     if (!d || typeof d !== 'object') return D;
-    const ok = (m) => m === 'auto' || m === 'dec' || m === 'sig', num = (n, sig) => (Number.isInteger(n) && n >= (sig ? 1 : 0) && n <= DIG_MAX ? n : null);
+    const ok = (m) => m === 'auto' || m === 'dec' || m === 'sig', num = (n, sig) => (Number.isInteger(n) && n >= (sig ? 1 : 0) && n <= MAX_PRECISION ? n : null);
     const one = (o, def) => { o = o && typeof o === 'object' ? o : {}; const m = ok(o.mode) ? o.mode : def.mode; const n = num(o.n, m === 'sig'); return { mode: m, n: n === null ? (m === 'sig' ? Math.max(1, def.n) : def.n) : n }; };
     const top = one(d, D), kinds = {};
     for (const [k] of DIG_KINDS()) if (d.kinds && d.kinds[k]) kinds[k] = one(d.kinds[k], { mode: 'auto', n: 2 });
     return Object.assign(D, top, { per: !!d.per, kinds, pic: one(d.pic, D.pic), round: ['half', 'down', 'up'].indexOf(d.round) >= 0 ? d.round : 'half', zeros: d.zeros !== false, csv: d.csv === 'shown' ? 'shown' : 'full' });
   }
-  // the rule for a kind of result: null (as the engine shows it) or { mode: 'dec' | 'sig', n }
-  function digSpec(kind) {
-    const d = digits(), k = d.per && d.kinds[kind] ? d.kinds[kind] : d;
-    if (k.mode === 'dec' || k.mode === 'sig') return { mode: k.mode, n: k.n };
-    return kind === 'pct' ? { mode: 'dec', n: 1 } : null;
-  }
+  // true when anything of the shared digits is not as at first
+  const digitsGroupChanged = () => { const d = digits(); return d.mode !== 'auto' || d.per || d.pic.mode !== 'auto' || d.round !== 'half' || !d.zeros || d.csv !== 'full'; };
   // the rule for a number in the 3D picture: what 'amount' (at the level), 'pct', 'scale' (the marks of the
-  // scale) or 'dim' (the sizes written on the solid); automatic: up to 3 significant digits (the amount with
+  // scale) or 'dim' (the sizes written on the solid); recommended: up to 3 significant digits (the amount with
   // trailing zeros as set, 9.60; the marks and the sizes without them, 15 cm), % with one decimal
   function digSpecPic(what) {
     const p = digits().pic;
-    if (p.mode === 'dec' || p.mode === 'sig') return { mode: p.mode, n: p.n };
+    if (p.mode === 'dec' || p.mode === 'sig') return { mode: p.mode, n: Math.min(p.n, DIG_MAX) };
     return what === 'pct' ? { mode: 'dec', n: 1 } : { mode: 'sig', n: 3, trim: what !== 'amount' };
   }
   // x rounded by a rule as plain digits ("35342.92", "-0.050"): from its 15 significant digits, as a whole
@@ -8565,69 +8567,38 @@
     if (group) i = i.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group);
     return (neg ? '−' : '') + i + (f !== undefined ? NF.dec + f : '');
   }
-  // a number of a tool worked out by the page: rounded for its kind, or as before (statNum with its digits)
-  function digNum(x, kind, auto) {
-    const sp = digSpec(kind);
-    return sp ? digText(x, sp, true) : statNum(x, auto);
-  }
   // a number in the 3D picture
   const digPic = (x, what) => digText(x, digSpecPic(what), true);
-  // the text of a result with the number after its last "≈" written anew (its unit stays)
-  function withApprox(shown, num) {
-    const s = String(shown || ''), i = s.lastIndexOf('≈');
-    if (i < 0) return s;
-    const tail = s.slice(i + 1), m = /^(\s*)([−-]?[\d    .,'’]*\d(?:\s*E[−+-]?\d+|\s*×\s*10\^[−+-]?\d+)?)/.exec(tail);
-    return m ? s.slice(0, i + 1) + m[1] + num + tail.slice(m[0].length) : s;
-  }
-  // the number of a result worked out again with 16 significant digits (for rounding it here), or NaN
-  async function digValue(expr) {
-    const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { approx: 'approx', precision: 16, grouping: false, base: 10, fraction: 'decimal', max_decimals: -1 }), timeout: 4000 });
-    if (!r.ok || !r.result || r.timeout) return NaN;
-    const t = r.result.split('≈').pop().replace(/^\s*=\s*/, '').trim().replace(/−/g, '-'), m = /^-?\d+(?:\.\d+)?(?:E[+-]?\d+)?/.exec(t);
-    return m ? Number(m[0].replace('E', 'e')) : NaN;
-  }
-  // a row of a tool after the engine (row.result, row.shown): its number after "≈" rounded for its kind (x: the
-  // number when the page has it, or expr to work it out); row.num keeps the number
-  async function digRow(row, kind, x, expr) {
-    const sp = digSpec(kind);
-    if (!sp || String(row.shown || '').indexOf('≈') < 0) return;
-    if (!isFinite(x)) x = await digValue(expr);
-    if (!isFinite(x)) return;
-    row.num = x;
-    row.shown = withApprox(row.shown, digText(x, sp, !!S.grouping));
-    row.result = withApprox(row.result, digRound(x, sp));
-  }
   // the kind of a row of the shapes tool (its power of the length, or a %)
   const geoKind = (def) => (def[5] === '%' || def[0] === tr('Full', '満杯に対して') ? 'pct' : def[3] === 3 ? 'vol' : def[3] === 2 ? 'area' : 'len');
   // a number of a table saved as CSV: all its digits (15 significant, the decimal sign of the file), or as shown
   const csvNum = (x) => (isFinite(x) ? String(+x.toPrecision(15)).replace('.', commaMode ? ',' : '.') : '');
-  // what to work out again when the digits change: the tools that are open (their run), and the 3D picture
+  // what to work out again when the shared digits change: the tools that are open (their run), the graph's
+  // values, the 3D picture, and the list in the settings
   const digRuns = new Set();
   function digitsChanged() {
     saveSettings();
     for (const c of digUIs) c.sync();
     for (const f of digRuns) { try { f(); } catch (e) { /* a tool closed meanwhile */ } }
+    try { if (digitsRefresh.graph) digitsRefresh.graph(); } catch (e) { /* the graph not open */ }
     if (Q3.model) { syncLevelRow(); requestDraw3d(); }
+    try { if (panels.settings && panels.settings.digitsList) panels.settings.digitsList(); } catch (e) { /* no settings yet */ }
   }
-  // The control of the digits: "Digits: auto ▾" with the usual choices (auto, 0 to 3 decimal places), and
-  // "Digits in detail ▾" with the rest. Every control shows the same settings.
+  // The rows of the shared digits under "More ▾" of their sheet: each kind of quantity on its own, the 3D
+  // picture, the rounding and the tables saved as CSV (the digits themselves and the trailing zeros are at
+  // the top of the sheet, as for every tool). { body, sync }
   const digUIs = new Set();
-  function digitsControl() {
+  function digitsGroupRows() {
     const set = (f) => { const d = digits(); f(d); S.digits = d; digitsChanged(); };
-    const QUICK = [['auto', tr('Digits: auto', '桁：自動')], ['d0', tr('Digits: 0 decimal places', '桁：小数点以下 0 桁')], ['d1', tr('Digits: 1 decimal place', '桁：小数点以下 1 桁')], ['d2', tr('Digits: 2 decimal places', '桁：小数点以下 2 桁')], ['d3', tr('Digits: 3 decimal places', '桁：小数点以下 3 桁')]];
-    const sel = el('select', { class: 'dig-sel', 'aria-label': tr('Digits of the results', '結果の桁') });
-    for (const [v, t] of QUICK) sel.append(el('option', { value: v, text: t }));
-    const custom = el('option', { value: 'custom', text: tr('Digits: as set in detail', '桁：詳しく設定') });
-    sel.append(custom);
-    sel.addEventListener('change', () => { const v = sel.value; if (v === 'custom') return; set((d) => { d.per = false; if (v === 'auto') d.mode = 'auto'; else { d.mode = 'dec'; d.n = Number(v.slice(1)); } }); });
-    // a number of digits typed: only digits (no minus sign), at most 15 (at least 1 for significant digits)
-    const numIn = (label, get, put, sigOf) => {
-      const i = el('input', { class: 'dig-n', inputmode: 'numeric', maxlength: '2', 'aria-label': label, autocomplete: 'off' });
+    // a number of digits typed: only digits (no minus sign), at most max (at least 1 for significant digits)
+    const numIn = (label, get, put, sigOf, maxOf, warn) => {
+      const i = el('input', { class: 'dig-n', inputmode: 'numeric', maxlength: String(String(maxOf()).length), 'aria-label': label, autocomplete: 'off' });
       i.addEventListener('input', () => {
+        const max = maxOf();
         let t = i.value.replace(/[^0-9]/g, '');
-        if (t.length > 2) t = t.slice(0, 2);
+        if (t.length > String(max).length) t = t.slice(0, String(max).length);
         let n = t === '' ? null : Number(t), clipped = false;
-        if (n !== null && n > DIG_MAX) { n = DIG_MAX; clipped = true; }
+        if (n !== null && n > max) { n = max; clipped = true; }
         if (n !== null && n < 1 && sigOf()) { n = 1; clipped = true; }
         if (n !== null) t = String(n);
         if (i.value !== t) i.value = t;
@@ -8639,39 +8610,36 @@
       w.input = i;
       return w;
     };
-    const warn = el('div', { class: 'form-hint dig-warn', role: 'status', hidden: true, text: tr('From 0 to 15 digits (1 to 15 significant digits).', '0〜15 桁です（有効数字は 1〜15 桁）。') });
-    // how: decimal places or significant digits, and how many (for every result)
-    const modeSeg = (get, put, withAuto) => {
+    const kindWarn = el('div', { class: 'form-hint dig-warn', role: 'status', hidden: true });
+    const picWarn = el('div', { class: 'form-hint dig-warn', role: 'status', hidden: true, text: trf('From 0 to {0} digits (1 to {0} significant digits).', '0〜{0} 桁です（有効数字は 1〜{0} 桁）。', DIG_MAX) });
+    // how: recommended, decimal places or significant digits
+    const modeSeg = (get, put) => {
       const s = el('span', { class: 'seg mini', role: 'group' });
-      const items = (withAuto ? [['auto', tr('Auto', '自動')]] : []).concat([['dec', tr('Decimal places', '小数点以下の桁数')], ['sig', tr('Significant digits', '有効数字の桁数')]]);
+      const items = [['auto', tr('Recommended', 'おすすめ')], ['dec', tr('Decimal places', '小数点以下の桁数')], ['sig', tr('Significant digits', '有効数字の桁数')]];
       const bs = items.map(([m, t]) => { const b = tapButton({ text: t }, () => set((d) => put(d, m))); b.dataset.m = m; return b; });
       s.append(...bs);
       s.sync = () => { const m = get(digits()); for (const b of bs) { b.classList.toggle('on', b.dataset.m === m); b.setAttribute('aria-pressed', String(b.dataset.m === m)); } };
       return s;
     };
-    const allMode = modeSeg((d) => d.mode, (d, m) => { d.mode = m; if (m === 'sig' && d.n < 1) d.n = 1; }, true);
-    allMode.setAttribute('aria-label', tr('How the digits are counted', '桁の決め方'));
-    const allN = numIn(tr('Number of digits', '桁数'), (d) => d.n, (d, n) => { d.n = n; if (d.mode === 'auto') d.mode = 'dec'; }, () => digits().mode === 'sig');
     const rowOf = (label, ...kids) => el('div', { class: 'dig-row' }, el('span', { class: 'dig-lbl', text: label }), ...kids);
-    const note = el('div', { class: 'form-hint', text: tr('Up to 15 digits: the numbers are worked out with double precision. Exact values (11250π) stay; only the decimals after "≈" change.', '15 桁までです（中の計算が倍精度のため）。厳密な値（11250π など）はそのままで、変わるのは「≈」の後ろの小数だけです。') });
     // each kind of quantity on its own
     const perBox = el('input', { type: 'checkbox' });
     perBox.addEventListener('change', () => set((d) => { d.per = perBox.checked; if (d.per) for (const [k] of DIG_KINDS()) if (!d.kinds[k]) d.kinds[k] = { mode: d.mode, n: d.n }; }));
     const perList = el('div', { class: 'dig-kinds' });
     const kindRows = DIG_KINDS().map(([k, label]) => {
-      const seg = modeSeg((d) => (d.kinds[k] || { mode: 'auto' }).mode, (d, m) => { const o = d.kinds[k] || { mode: 'auto', n: 2 }; o.mode = m; if (m === 'sig' && o.n < 1) o.n = 1; d.kinds[k] = o; }, true);
+      const seg = modeSeg((d) => (d.kinds[k] || { mode: 'auto' }).mode, (d, m) => { const o = d.kinds[k] || { mode: 'auto', n: 2 }; o.mode = m; if (m === 'sig' && o.n < 1) o.n = 1; d.kinds[k] = o; });
       seg.setAttribute('aria-label', label);
-      const n = numIn(label + tr(': number of digits', '：桁数'), (d) => (d.kinds[k] || { n: 2 }).n, (d, v) => { const o = d.kinds[k] || { mode: 'dec', n: 2 }; o.n = v; if (o.mode === 'auto') o.mode = 'dec'; d.kinds[k] = o; }, () => ((digits().kinds[k] || {}).mode === 'sig'));
+      const n = numIn(label + tr(': number of digits', '：桁数'), (d) => (d.kinds[k] || { n: 2 }).n, (d, v) => { const o = d.kinds[k] || { mode: 'dec', n: 2 }; o.n = v; if (o.mode === 'auto') o.mode = 'dec'; d.kinds[k] = o; }, () => ((digits().kinds[k] || {}).mode === 'sig'), digEngineMax, kindWarn);
       perList.append(rowOf(label, seg, n));
       return { k, seg, n };
     });
     const same = tapButton({ class: 'btn', text: tr('The same for all', 'すべて同じにする') }, () => set((d) => { d.per = false; }));
-    perList.append(same);
+    perList.append(kindWarn, same);
     // the 3D picture
-    const picSeg = modeSeg((d) => d.pic.mode, (d, m) => { d.pic.mode = m; if (m === 'sig' && d.pic.n < 1) d.pic.n = 1; }, true);
+    const picSeg = modeSeg((d) => d.pic.mode, (d, m) => { d.pic.mode = m; if (m === 'sig' && d.pic.n < 1) d.pic.n = 1; });
     picSeg.setAttribute('aria-label', tr('Numbers in the 3D picture', '3D の絵の中の数'));
-    const picN = numIn(tr('Numbers in the 3D picture: number of digits', '3D の絵の中の数：桁数'), (d) => d.pic.n, (d, n) => { d.pic.n = n; if (d.pic.mode === 'auto') d.pic.mode = 'sig'; }, () => digits().pic.mode === 'sig');
-    const picNote = el('div', { class: 'form-hint', text: tr('Auto: 3 significant digits, % with 1 decimal place (the amount at the level, the scale, the sizes).', '自動：有効数字 3 桁、% は小数点以下 1 桁（液面のそばの量、目盛り、寸法）。') });
+    const picN = numIn(tr('Numbers in the 3D picture: number of digits', '3D の絵の中の数：桁数'), (d) => Math.min(d.pic.n, DIG_MAX), (d, n) => { d.pic.n = n; if (d.pic.mode === 'auto') d.pic.mode = 'sig'; }, () => digits().pic.mode === 'sig', () => DIG_MAX, picWarn);
+    const picNote = el('div', { class: 'form-hint', text: trf('Recommended: 3 significant digits, % with 1 decimal place (the amount at the level, the scale, the sizes). Up to {0} digits.', 'おすすめ：有効数字 3 桁、% は小数点以下 1 桁（液面のそばの量、目盛り、寸法）。{0} 桁までです。', DIG_MAX) });
     const choice = (label, opts, get, put) => {
       const s = el('span', { class: 'seg mini', role: 'group', 'aria-label': label });
       const bs = opts.map(([v, t]) => { const b = tapButton({ text: t }, () => set((d) => put(d, v))); b.dataset.v = v; return b; });
@@ -8680,31 +8648,23 @@
       return s;
     };
     const roundSeg = choice(tr('Rounding', '丸め方'), [['half', tr('Round half up', '四捨五入')], ['down', tr('Round down', '切り捨て')], ['up', tr('Round up', '切り上げ')]], (d) => d.round, (d, v) => { d.round = v; });
-    const zeroSeg = choice(tr('Trailing zeros', '末尾の 0'), [['true', decSign(tr('Keep (2.50)', '残す（2.50）'))], ['false', decSign(tr('Drop (2.5)', '残さない（2.5）'))]], (d) => d.zeros, (d, v) => { d.zeros = v === 'true'; });
     const csvSeg = choice(tr('Tables saved as CSV', 'CSV で保存する表'), [['full', tr('All the digits', '全部の桁')], ['shown', tr('As shown', '表示どおり')]], (d) => d.csv, (d, v) => { d.csv = v; });
-    const reset = tapButton({ class: 'btn', text: tr('Back to the first settings', '最初の設定に戻す') }, () => { S.digits = DIG_DEF(); digitsChanged(); });
     const body = el('div', { class: 'dig-body' },
-      rowOf(tr('Digits', '桁'), allMode, allN), warn, note,
       el('label', { class: 'dig-row dig-per' }, perBox, el('span', { text: tr('Each kind of quantity on its own', '量の種類ごとに決める') })), perList,
-      rowOf(tr('In the 3D picture', '3D の絵の中'), picSeg, picN), picNote,
-      rowOf(tr('Rounding', '丸め方'), roundSeg), rowOf(tr('Trailing zeros', '末尾の 0'), zeroSeg), rowOf(tr('CSV files', 'CSV ファイル'), csvSeg), reset);
-    const more = el('details', { class: 'sec-more dig-more' }, el('summary', { text: tr('Digits in detail ▾', '桁を詳しく ▾') }), body);
+      rowOf(tr('In the 3D picture', '3D の絵の中'), picSeg, picN), picWarn, picNote,
+      rowOf(tr('Rounding', '丸め方'), roundSeg), rowOf(tr('CSV files', 'CSV ファイル'), csvSeg));
     const ui = {
-      sel, more,
+      body,
       sync() {
-        const d = digits(), q = d.per ? 'custom' : d.mode === 'auto' ? 'auto' : d.mode === 'dec' && d.n <= 3 ? 'd' + d.n : 'custom';
-        custom.hidden = q !== 'custom'; sel.value = q;
-        allMode.sync();
-        if (document.activeElement !== allN.input) allN.input.value = String(d.n);
-        allN.hidden = d.mode === 'auto';
+        const d = digits();
         perBox.checked = d.per; perList.hidden = !d.per;
+        kindWarn.textContent = trf('From 0 to {0} digits (1 to {0} significant digits).', '0〜{0} 桁です（有効数字は 1〜{0} 桁）。', digEngineMax());
         for (const r of kindRows) { const o = d.kinds[r.k] || { mode: 'auto', n: d.n }; r.seg.sync(); if (document.activeElement !== r.n.input) r.n.input.value = String(o.n); r.n.hidden = o.mode === 'auto'; }
-        picSeg.sync(); if (document.activeElement !== picN.input) picN.input.value = String(d.pic.n); picN.hidden = d.pic.mode === 'auto';
-        roundSeg.sync(); zeroSeg.sync(); csvSeg.sync();
+        picSeg.sync(); if (document.activeElement !== picN.input) picN.input.value = String(Math.min(d.pic.n, DIG_MAX)); picN.hidden = d.pic.mode === 'auto';
+        roundSeg.sync(); csvSeg.sync();
       }
     };
     ui.sync();
-    digUIs.add(ui);
     return ui;
   }
   // the box of the graph around points only (no surface)
@@ -12005,8 +11965,9 @@
       if (ctx.vu) { const f = await numValue(`(1 ${ctx.base}^3) / (1 ${ctx.vu})`); if (f > 0) { val = x * f; unit = ' ' + (VOL_UNITS.find((u) => u[0] === ctx.vu) || [0, ctx.vu])[1]; } }
     } else if (dim === 1 && ctx.base) unit = ' ' + ctx.base;
     if (pct) unit = ' %';
-    const t = String(+val.toPrecision(10)), text = '≈ ' + t + unit;
-    return { result: text, shown: valueShown(text, 'shapes'), num: val, expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
+    // (the number worked out here: rounded from all its digits for the shared digits, its kind by its power)
+    const t = String(+val.toPrecision(10)), text = '≈ ' + t + unit, kind = pct ? 'pct' : dim === 3 ? 'vol' : dim === 2 ? 'area' : 'len';
+    return { result: text, shown: '≈ ' + fmtDigits('shapes', val, null, kind) + unit, num: val, expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
       vol: what === 'liq' && ctx.base ? `(${+x.toPrecision(12)} ${ctx.base}^3)` : '' };
   }
   // the picture of a tank with heads, filled to the level typed
@@ -12104,7 +12065,7 @@
     const r = ellipsoidAreaNum(nums[0], nums[1], nums[2]);
     if (!isFinite(r.v)) return null;
     const t = String(+r.v.toPrecision(Math.min(10, r.digits))), unit = ctx.base ? ' ' + ctx.base + '²' : '', text = '≈ ' + t + unit;
-    return { result: text, shown: valueShown(text, 'shapes'), num: r.v, expr: t + (ctx.base ? ' ' + ctx.base + '^2' : '') };
+    return { result: text, shown: valueShown(text, 'shapes', 'area', true), num: r.v, expr: t + (ctx.base ? ' ' + ctx.base + '^2' : '') };
   }
   // the volume of the liquid in a tank at height h (numbers in one unit), for the height from an amount
   const TANK_V = {
@@ -12217,9 +12178,8 @@
       aUnit.append(el('option', { value: '', text: tr('Area: auto', '面積：自動') }));
       for (const [u, s] of AREA_UNITS) aUnit.append(el('option', { value: u, text: s }));
       vUnit.value = G.vu; aUnit.value = G.au;
-      // (1.12.0, D7) the digits of the results, beside the units
-      const dig = digitsControl();
-      const outUnits = el('div', { class: 'geo-units' }, vUnit, aUnit, dig.sel);
+      // (1.12.0, D7: the digits of the results were beside the units; feature/screen-digits: ⋯ of the tool)
+      const outUnits = el('div', { class: 'geo-units' }, vUnit, aUnit);
       const dens = el('select', { 'aria-label': tr('Material (density)', '材料（密度）') });
       dens.append(el('option', { value: '', text: tr('Weight: choose a material', '重さ：材料を選ぶ') }));
       for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: decSign(s) })); // (BG13: 1.000 g/cm³ with a decimal comma)
@@ -12297,7 +12257,8 @@
         const top = tankTop(sh.k, s), full = TANK_V[sh.k](s, top);
         let f = 1, vName = base ? base + '³' : '';
         if (base && G.vu) { const x = await numValue(`(1 ${base}^3) / (1 ${G.vu})`); if (seq !== G.seq) return; if (x > 0) { f = x; vName = (VOL_UNITS.find((u) => u[0] === G.vu) || [0, G.vu])[1]; } }
-        const n6 = (x) => fmtDigits('shapes', x, { m: 'sig', n: 6 }), pct = (x) => digNum(x / full * 100, 'pct', 4), nh = (x) => (digSpec('len') ? digNum(x, 'len', 6) : n6(x)), nv = (x) => (digSpec('vol') ? digNum(x, 'vol', 6) : n6(x));
+        // (the steps as typed or chosen; the heights, the amounts and the % with the shared digits of their kind)
+        const n6 = (x) => statNum(x, 6), pct = (x) => fmtDigits('shapes', x / full * 100, null, 'pct'), nh = (x) => fmtDigits('shapes', x, null, 'len'), nv = (x) => fmtDigits('shapes', x, null, 'vol');
         const nice = (span) => { const raw = span / 10, p = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * p >= raw * 0.999) return m * p; return 10 * p; };
         const heightOf = (want) => { let lo = 0, hi = top; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; } return (lo + hi) / 2; };
         const span = G.q === 'h' ? top : full * f;
@@ -12354,7 +12315,7 @@
         let lo = 0, hi = top;
         for (let i = 0; i < 200 && hi - lo > top * 1e-15; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; }
         const h = (lo + hi) / 2;
-        amtVal.textContent = 'h ≈ ' + (digSpec('len') ? digNum(h, 'len', 6) : fmtDigits('shapes', h, { m: 'sig', n: 6 })) + (base ? ' ' + base : '') + tr(' (', '（') + digNum(want / full * 100, 'pct', 4) + ' %' + tr(' full)', '）');
+        amtVal.textContent = 'h ≈ ' + fmtDigits('shapes', h, null, 'len') + (base ? ' ' + base : '') + tr(' (', '（') + fmtDigits('shapes', want / full * 100, null, 'pct') + ' %' + tr(' full)', '）');
       };
       // the weight of the first volume of the list (the liquid of a tank) with the density chosen
       const weight = async (rows, seq) => {
@@ -12363,17 +12324,14 @@
         if (!d) return;
         const row = rows.find((r) => r.def[3] === 3 && r.vol);
         if (!row) { weightVal.textContent = tr('Give the lengths a unit to get the weight', '重さは、長さに単位を付けると出ます'); return; }
-        const r = await Bridge.send('calc', { expr: `(${row.vol}) × (${d}) to kg`, opts: Object.assign(engineOpts(), { approx: 'approx' }), timeout: 4000 });
+        const r = await Bridge.send('calc', { expr: `(${row.vol}) × (${d}) to kg`, opts: Object.assign(engineOpts(), { approx: 'approx', precision: digitsPrecision('shapes', null, null, 'mass') }), timeout: 4000 });
         if (seq !== G.seq) return;
         const ok = r.ok && r.result && !r.timeout && !(r.messages || []).some((m) => m.type === 'error') && / kg$/.test(r.result);
         if (!ok) { weightVal.textContent = decSign(tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')); return; }
         const kg = Number(numberPart(r.result.replace(/ kg$/, '')));
-        // (D7: the weight with the digits set for weights)
-        const wsp = digSpec('mass'), kgx = wsp ? await digValue(`(${row.vol}) × (${d}) to kg`) : kg;
-        if (seq !== G.seq) return;
-        const rs = resultText(Object.assign({}, r, { result: digitsText('shapes', r.result, digitsAuto('shapes')) }));
-        const wtxt = wsp && isFinite(kgx) ? (/≈/.test(resultText(r)) ? withApprox(resultText(r), digText(kgx, wsp, !!S.grouping)) : resultText(r)) : rs;
-        weightVal.textContent = tr('Weight ', '重さ ') + wtxt + (kg >= 1000 ? tr(' = ', ' = ') + digNum((isFinite(kgx) ? kgx : kg) / 1000, 'mass', 8) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
+        // (D7: the weight with the digits set for weights; feature/screen-digits: the engine's answer rounded as a string)
+        const wtxt = resultText(Object.assign({}, r, { result: digitsText('shapes', r.result, null, 'mass') }));
+        weightVal.textContent = tr('Weight ', '重さ ') + wtxt + (kg >= 1000 ? tr(' = ', ' = ') + fmtDigits('shapes', kg / 1000, null, 'mass') + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
       };
       const svg = (sh, v, small) => {
         let t = typeof sh.pic === 'function' ? sh.pic(v || {}) : sh.pic;
@@ -12419,7 +12377,6 @@
             if (seq !== G.seq) return;
             if (!rr) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
             row.expr = rr.expr; row.result = rr.result; row.shown = rr.shown; row.vol = rr.vol || ''; row.num = rr.num;
-            await digRow(row, geoKind(row.def), rr.num); // (D7: the digits set)
             row.node.dataset.value = row.shown; showResult(row.val, row.shown);
             continue;
           }
@@ -12430,15 +12387,15 @@
           else if (!own.length && G.unit) { if (pow) { full = `(${sub(G.unit)})` + to(G.unit); suffix = ' ' + G.unit + ['', '', '²', '³'][pow]; } }
           else if (own.length && pow) { expr = sub(G.unit || target); if (target) expr = `(${expr})` + to(target); full = expr; } // "2 in" and "4": both in inches
           else if (own.length) { expr = sub(G.unit || target); full = expr; }
-          const r0 = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { precision: digitsPrecision('shapes', digitsAuto('shapes')) }, row.def[4] ? { approx: 'approx' } : {}), timeout: 4000 });
+          const kind = geoKind(row.def);
+          const r0 = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { precision: digitsPrecision('shapes', null, null, kind) }, row.def[4] ? { approx: 'approx' } : {}), timeout: 4000 });
           if (seq !== G.seq) return;
           const bad = !r0.ok || !r0.result || r0.timeout || (r0.messages || []).some((m) => m.type === 'error') || /(^|[^\p{L}])i($|[^\p{L}])|undefined/u.test(r0.result);
           if (bad) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
-          const r = Object.assign({}, r0, { result: digitsText('shapes', r0.result, digitsAuto('shapes')) }); // (the digits of the screen: 6 significant, recommended)
+          // (the shared digits of its kind: 6 significant digits after "≈" when recommended, % with 1 decimal)
+          const r = Object.assign({}, r0, { result: digitsText('shapes', r0.result, null, kind) });
           row.expr = full; row.vol = pow === 3 && (G.unit || own.length) ? `(${sub(G.unit || target)})` : ''; row.result = r.result + suffix; row.shown = resultText(r) + suffix;
           row.num = NaN;
-          await digRow(row, geoKind(row.def), NaN, expr); // (D7: the digits set, from the number worked out again)
-          if (seq !== G.seq) return;
           row.node.dataset.value = row.shown;
           showResult(row.val, row.shown);
         }
@@ -12496,7 +12453,7 @@
           const row = { def, val, expr: '', result: '' };
           row.node = tapButton({ class: 'geo-row' }, async () => {
             if (!row.expr) return;
-            resultSheet(def[0], row.expr, row.shown || valueShown(row.result, 'shapes'));
+            resultSheet(def[0], row.expr, row.shown || valueShown(row.result, 'shapes', geoKind(def)));
           });
           row.node.append(el('span', { class: 'geo-name' }, def[0], el('small', { text: def[1] })), val);
           return row;
@@ -12578,9 +12535,9 @@
           const T = model.tank, liq = rowOf((r) => r.def[3] === 3), pc = rowOf((r) => r.def[0] === FULL()), cap = rowOf((r) => r.def[0] === CAP());
           if (fresh() && liq && liq.result && pc && pc.result) return { amount: approxOf(liq.shown), pct: approxOf(pc.shown), liq: liq.shown, cap: cap && cap.result ? cap.shown : '' };
           // (while the level is dragged, before the tool has worked its rows out: the numbers written as the tool
-          // writes them (the digits of the setting, or the calculator's precision; groups of three only with "Digit
-          // grouping"), and the capacity, which does not change, as the tool has it; D6P)
-          const asRow = (v, kind) => digText(v, digSpec(kind) || { mode: 'sig', n: Math.min(Number(S.precision) || 10, DIG_MAX), trim: true }, !!S.grouping);
+          // writes them (the shared digits of their kind), and the capacity, which does not change, as the tool
+          // has it; D6P)
+          const asRow = (v, kind) => fmtDigits('shapes', v, null, kind);
           const x = T.V(T.h) * model.vf, u = model.vunit ? ' ' + model.vunit : '', pq = asRow(T.V(T.h) / T.full * 100, 'pct') + ' %';
           return { amount: asRow(x, 'vol') + u, pct: pq, liq: '≈ ' + asRow(x, 'vol') + u, cap: cap && cap.result ? cap.shown : '≈ ' + asRow(T.full * model.vf, 'vol') + u };
         };
@@ -12632,12 +12589,13 @@
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips, headRow,
         el('div', { class: 'geo-main' }, picBox, el('div', { class: 'geo-side' }, rdSeg, sizes,
           el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
-        outUnits, dig.more, msg, exNote, proRow3d, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
+        outUnits, msg, exNote, proRow3d, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
         // 1.11.0: the volume from measured values (a table of cross sections, a grid of heights)
         tapButton({ class: 'btn geo-link', text: tr('Volume from measured values (cross sections, grid of heights) ›', '測った値から体積（断面積の表・点高法）›') }, () => openSections()),
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
       p.run = run;
-      digitsButton(p, 'shapes'); digitsRefresh.shapes = () => run();
+      digRuns.add(() => run()); // (D7: worked out again when the digits change)
+      digitsButton(p, 'shapes');
       // (D6: a solid of the examples of the 3D graph: its sizes typed here (as radii), and shown in 3D once its
       // values are there)
       p.setShape = (k, vals) => { typed(); G.dia = false; G.vals[k] = vals.map((x) => toDisplay(x)); choose(k); };
@@ -12869,7 +12827,6 @@
           btn(tr('Clear', 'すべて消す'), tr('Clear the table', '表をすべて消す'), () => { L.length = 0; if (!inner) L.push(['', ''], ['', '']); }));
       };
       const build = () => { fillTable(table, tools, () => D.rows, false); fillTable(itable, itools, () => D.inner, true); };
-      const dig = digitsControl(); // (1.12.0, D7)
       const row = (name, small, shown, expr) => {
         const node = tapButton({ class: 'geo-row' }, () => { if (expr) resultSheet(name, expr, shown); });
         node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), el('span', { class: 'geo-val', text: shown }));
@@ -12880,7 +12837,7 @@
       const mark = (box, r, c) => { const ins = box.querySelectorAll('input'); if (ins[r * 2 + c]) ins[r * 2 + c].setAttribute('aria-invalid', 'true'); };
       // the cm³ of a volume in the unit, shown as cm³ (mL) or L
       // (1.12.0, D7: the numbers after ≈ with the digits set for their kind; else the digits of the screen, 6 significant when recommended)
-      const pv = (x) => fmtDigits('profile', x, { m: 'sig', n: 6 }), pk = (x, kind) => (digSpec(kind) ? digNum(x, kind, 10) : pv(x));
+      const pv = (x) => fmtDigits('profile', x, null, 'len'), pk = (x, kind) => fmtDigits('profile', x, null, kind);
       const inCm3 = (v) => { const c = v * PF_CM3[D.unit]; return c >= 1000 ? '≈ ' + pk(c / 1000, 'vol') + ' L' : D.unit === 'cm' ? '' : '≈ ' + pk(c, 'vol') + ' cm³'; };
       // an amount in mL as mL or L
       const mlText = (ml) => (ml >= 1000 ? '≈ ' + pk(ml / 1000, 'vol') + ' L' : '≈ ' + pk(ml, 'vol') + ' mL');
@@ -12924,7 +12881,7 @@
         } else {
           const f = statVal(D.shrink);
           if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = decSign(tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）')); }
-          else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの体積', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), '≈ ' + digNum(so.volume * k, 'vol', 10) + u3, exprNum(so.volume * k) + ' ' + u + '^3'); }
+          else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの体積', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), '≈ ' + pk(so.volume * k, 'vol') + u3, exprNum(so.volume * k) + ' ' + u + '^3'); }
         }
         const mat = so.volume - cap;
         if (si && mat < 0) msg.textContent = tr('The inner profile is larger than the outer one somewhere: check the sizes', '内側の輪郭が外側より大きいところがあります。大きさを確かめてください');
@@ -12948,16 +12905,16 @@
           const sh = si || so, total = sh.volume, top = sh.height, inMl = (v) => v * PF_CM3[u];
           const nice = (span) => { const raw = span / 10, q = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * q >= raw * 0.999) return m * q; return 10 * q; };
           const step = nice(top), rows = [], raw = [];
-          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([pv(k * step), pk(inMl(v), 'vol'), digNum(v / total * 100, 'pct', 4)]); raw.push([k * step, inMl(v), v / total * 100]); }
-          rows.push([pv(top), pk(inMl(total), 'vol'), digNum(100, 'pct', 4)]); raw.push([top, inMl(total), 100]);
+          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([statNum(k * step, 6), pk(inMl(v), 'vol'), pk(v / total * 100, 'pct')]); raw.push([k * step, inMl(v), v / total * 100]); }
+          rows.push([statNum(top, 6), pk(inMl(total), 'vol'), pk(100, 'pct')]); raw.push([top, inMl(total), 100]);
           showTable(quickBox, { title: si ? tr('The amount inside for each height', '高さごとの内側の量') : tr('The volume up to each height', '高さごとの体積'), head: [tr('Height', '高さ') + ' (' + u + ')', (si ? tr('Amount', '量') + ' (mL)' : tr('Volume', '体積') + ' (cm³)'), '%'], rows, raw, name: 'profile' });
         }
       };
       p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Sizes as', '大きさ') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Sizes as', '大きさ') }, bD, bR)),
         el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unitSel), table, tools, more,
-        el('div', { class: 'geo-weight' }, dens, densIn), pic, el('div', { class: 'geo-units' }, dig.sel), dig.more, msg, outs, el('div', { class: 'tool-tbl-btns' }, view, stlBtn), quick, caution, hint);
+        el('div', { class: 'geo-weight' }, dens, densIn), pic, msg, outs, el('div', { class: 'tool-tbl-btns' }, view, stlBtn), quick, caution, hint);
       digRuns.add(() => run());
-      digitsButton(p, 'profile'); digitsRefresh.profile = () => run();
+      digitsButton(p, 'profile');
       sync(); build(); run();
     });
     return p;
@@ -14001,14 +13958,18 @@
   // ------------------------------------------------- display digits per screen (feature/screen-digits)
   // Each tool keeps its own number of digits (qalc.digits.<screen>): "Recommended" (automatic: a digit or
   // two more than is usually needed, nothing added to values that are exact), n significant digits, or n
-  // decimals. The calculator, the forms and the notes keep the setting "Precision". The engine works with
-  // 4 digits more than are shown, and the result is rounded half up on its digits as a string (never
-  // through a JavaScript number). Limits: the shown digits are at most the precision of the engine − 4
-  // (996 without QCalc Pro); 20 for the values found by numeric integration (the graph: the engine works
-  // with 24 at most, 30 digits and more take much longer and are no more certain); 12 for the tools that
-  // calculate in JavaScript (a double has about 16 digits: 4 are kept in reserve).
-  const DIGITS_GUARD = 4, JS_DIGITS = 12, INT_DIGITS = 20, INT_PRECISION = 24;
-  // [key, title, kind]: kind 'js' (calculated in JavaScript), 'engine', 'integral' (the graph's values)
+  // decimals, with the trailing zeros kept (2.50, the default when digits are chosen) or dropped (2.5). The
+  // shapes tool (with the tanks), "Solid from a profile" and the graph share one setting instead, that of 1.12.0
+  // (D7, S.digits: digitsGroupRows), with its kinds of quantity, the 3D picture, the rounding and the tables
+  // saved as CSV; it is opened in the same way (⋯ "Digits shown…", and the list in the settings). The
+  // calculator, the forms and the notes keep the setting "Precision".
+  // The engine works with 12 digits more than are shown (4 near the limit of its precision; numeric integration
+  // 4, 24 at most), and the result is rounded on its digits as a string (never through a JavaScript number).
+  // Limits: the shown digits are at most the precision of the engine − 4 (996 without QCalc Pro); 20 for the
+  // values found by numeric integration (30 digits and more take much longer and are no more certain); 12 for
+  // the values worked out in JavaScript (a double has about 16 digits: 4 are kept in reserve).
+  const DIGITS_GUARD = 4, ENGINE_GUARD = 12, JS_DIGITS = 12, INT_DIGITS = 20, INT_PRECISION = 24;
+  // [key, title, kind] of the list: kind 'js' (calculated in JavaScript), 'engine', or 'group' (the shared digits)
   const DIGIT_SCREENS = () => [
     ['price', tr('Price: discount and tax', '値段：割引と税'), 'js'],
     ['percent', tr('Percentages', '割合'), 'js'],
@@ -14018,33 +13979,43 @@
     ['savings', tr('Savings and compound interest', '積立と複利'), 'js'],
     ['stats', tr('Statistics', '統計'), 'js'],
     ['convert', tr('Convert units and currencies', '単位・通貨の換算'), 'engine'],
-    ['graph', tr('Graph: area, length, volume', 'グラフ：面積・長さ・体積'), 'integral'],
-    ['shapes', tr('Shapes: area, length, volume', '図形：面積・長さ・体積'), 'engine'],
     ['sections', tr('Volume from measured values', '測った値から体積'), 'engine'],
-    ['profile', tr('Solid from a profile', '輪郭から回転体'), 'js']
+    ['solids', tr('Shapes, tanks, solids and the graph (shared)', '図形・容器・立体・グラフ（共通）'), 'group']
   ];
-  const digitScreen = (key) => DIGIT_SCREENS().find((s) => s[0] === key) || [key, key, 'engine'];
-  // what is chosen: null (recommended) or { m: 'sig' | 'dec', n }
-  function digitsChosen(key) {
+  // the places that use the shared digits, and what their numbers are: 'integral' (the graph: numeric
+  // integration, and its exact values), 'engine' (the answers of the engine), 'js' (worked out in JavaScript);
+  // "solid" is "Make a solid" of the graph
+  const DIGIT_GROUP = { solids: 'engine', graph: 'integral', solid: 'integral', shapes: 'engine', profile: 'js' };
+  const inGroup = (key) => Object.prototype.hasOwnProperty.call(DIGIT_GROUP, key);
+  const digitScreen = (key) => (inGroup(key) ? ['solids', DIGIT_SCREENS().find((s) => s[0] === 'solids')[1], DIGIT_GROUP[key]] : DIGIT_SCREENS().find((s) => s[0] === key) || [key, key, 'engine']);
+  // what is chosen: null (recommended) or { m: 'sig' | 'dec', n, zeros, round } (for the shared digits, of a kind
+  // of quantity when each has its own)
+  function digitsChosen(key, kind) {
+    if (inGroup(key)) {
+      const d = digits(), k = d.per && kind && d.kinds[kind] ? d.kinds[kind] : d;
+      if (k.mode !== 'dec' && k.mode !== 'sig') return null;
+      return { m: k.mode, n: k.n, zeros: d.zeros, round: d.round };
+    }
     const d = store.get('qalc.digits.' + key, null);
     if (!d || (d.m !== 'sig' && d.m !== 'dec') || !(d.n >= 0)) return null;
-    return { m: d.m, n: Math.min(Math.round(d.n), digitsMax(key, d.m)) };
+    return { m: d.m, n: Math.min(Math.round(d.n), digitsMax(key, d.m)), zeros: d.zeros !== false, round: 'half' };
   }
+  // true when a screen does not use its default (the mark "changed")
+  const digitsIsChanged = (key) => (inGroup(key) ? digitsGroupChanged() : !!digitsChosen(key));
   // the most digits that can be chosen (significant digits; decimals for 'dec')
   function digitsMax(key, m) {
-    const kind = digitScreen(key)[2];
-    if (kind === 'js') return JS_DIGITS;
+    if (digitScreen(key)[2] === 'js' && !inGroup(key)) return JS_DIGITS;
     return Math.max(2, maxPrecision() - DIGITS_GUARD);
   }
   const DIGITS_MIN = { sig: 1, dec: 0 };
   // The money of the device's region (not of the language: a Japanese text on a phone in Germany counts in
   // euros), and its decimals as Intl gives them (0 for the yen, 2 for the dollar, 3 for the Kuwaiti dinar;
   // the Taiwan dollar is written without decimals in practice). Until this the decimals came from the
-  // language (MONEY_DEC: 0 for Japanese, Korean, Chinese, otherwise 2).
+  // language (MONEY_DEC: 0 for Japanese, Korean, Chinese, otherwise 2). (Bulgaria: the euro since January 2026.)
   const REGION_CURRENCY = (() => {
     const m = {};
     ('AD:EUR AE:AED AF:AFN AG:XCD AI:XCD AL:ALL AM:AMD AO:AOA AR:ARS AS:USD AT:EUR AU:AUD AW:AWG AX:EUR AZ:AZN BA:BAM BB:BBD BD:BDT ' +
-     'BE:EUR BF:XOF BG:BGN BH:BHD BI:BIF BJ:XOF BL:EUR BM:BMD BN:BND BO:BOB BQ:USD BR:BRL BS:BSD BT:BTN BW:BWP BY:BYN BZ:BZD CA:CAD ' +
+     'BE:EUR BF:XOF BG:EUR BH:BHD BI:BIF BJ:XOF BL:EUR BM:BMD BN:BND BO:BOB BQ:USD BR:BRL BS:BSD BT:BTN BW:BWP BY:BYN BZ:BZD CA:CAD ' +
      'CC:AUD CD:CDF CF:XAF CG:XAF CH:CHF CI:XOF CK:NZD CL:CLP CM:XAF CN:CNY CO:COP CR:CRC CU:CUP CV:CVE CW:ANG CX:AUD CY:EUR CZ:CZK ' +
      'DE:EUR DJ:DJF DK:DKK DM:XCD DO:DOP DZ:DZD EC:USD EE:EUR EG:EGP ER:ERN ES:EUR ET:ETB FI:EUR FJ:FJD FK:FKP FM:USD FO:DKK FR:EUR ' +
      'GA:XAF GB:GBP GD:XCD GE:GEL GF:EUR GG:GBP GH:GHS GI:GIP GL:DKK GM:GMD GN:GNF GP:EUR GQ:XAF GR:EUR GT:GTQ GU:USD GW:XOF GY:GYD ' +
@@ -14078,34 +14049,41 @@
   const MONEY = () => { if (!moneyCur) { const c = regionCurrency(); moneyCur = { cur: c, dec: currencyDecimals(c) }; } return moneyCur; };
   // ---- rounding on the digits of a number written in decimal
   // s: "−1234.5678", "1.25E−7", "1.2345e+21", "12,345.6" (groups with ","); m 'sig' (n significant digits) or
-  // 'dec' (n decimals); minDec: at least this many decimals (when the digits are there); zeros: keep the
-  // zeros at the end. Half up, on the digits themselves. Returns a plain number in the engine's form
-  // ("-" sign, "." point, no groups), with "E" only when it is very large or very small, or null.
-  // noPad: the zeros that rounding leaves are kept, but none are added (a value whose digits are not all known)
-  function roundDigits(s, m, n, zeros, minDec, noPad) {
+  // 'dec' (n decimals); minDec: at least this many decimals (when the digits are there); zeros: the zeros at
+  // the end kept and added up to n (2.50, 1.000000000), else none (2.5, 1: also those that rounding leaves);
+  // noPad: none added (a value whose digits are not all known: the graph's sums), those of rounding kept;
+  // how: 'half' (half up), 'down' (towards 0) or 'up' (away from 0), on the digits themselves. Returns a plain
+  // number in the engine's form ("-" sign, "." point, no groups), with "E" only when it is very large or very
+  // small, or null.
+  function roundDigits(s, m, n, zeros, minDec, noPad, how) {
     const t = String(s).trim().replace(/−/g, '-').replace(/,/g, '').replace(/×\s*10\^/, 'E');
     const x = t.match(/^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/);
     if (!x || (!x[2] && !x[3])) return null;
     const neg = x[1] === '-';
     let digits = (x[2] || '') + (x[3] || ''), point = (x[2] || '').length + (x[4] ? Number(x[4]) : 0);
+    const zero = () => (zeros && !noPad && m === 'dec' && n > 0 ? '0.' + '0'.repeat(n) : '0');
     // without the zeros in front (the point moves with them)
     const lead = digits.match(/^0*/)[0].length;
-    if (lead === digits.length) return zeros && m === 'dec' && n > 0 ? '0.' + '0'.repeat(n) : '0';
+    if (lead === digits.length) return zero();
     digits = digits.slice(lead); point -= lead;
     // how many digits are kept
     let keep = m === 'sig' ? n : point + n;
     if (m === 'sig' && minDec > 0) keep = Math.max(keep, point + minDec);
-    if (keep < 0) return zeros && m === 'dec' && n > 0 ? '0.' + '0'.repeat(n) : '0';
-    if (keep < digits.length) {
-      const up = digits.charCodeAt(keep) >= 53; // "5" to "9": up
-      let d = digits.slice(0, keep).split('');
+    if (keep < 0) {
+      // (nothing left but a 1 at the last place kept, when rounded up)
+      if (how !== 'up' || m !== 'dec') return zero();
+      digits = '1'; point = 1 - n;
+    } else if (keep < digits.length) {
+      const rest = digits.slice(keep);
+      const up = how === 'down' ? false : how === 'up' ? /[1-9]/.test(rest) : rest.charCodeAt(0) >= 53; // "5" to "9": up
+      const d = digits.slice(0, keep).split('');
       if (up) {
         let i = d.length - 1;
         while (i >= 0 && d[i] === '9') { d[i] = '0'; i--; }
-        if (i < 0) { d.unshift('1'); point++; if (m === 'sig') d.pop(); } else d[i] = String(Number(d[i]) + 1);
+        if (i < 0) { d.unshift('1'); point++; if (m === 'sig' && d.length > n) d.pop(); } else d[i] = String(Number(d[i]) + 1);
       }
       digits = d.join('');
-      if (!digits.replace(/0/g, '')) return zeros && m === 'dec' && n > 0 ? '0.' + '0'.repeat(n) : '0';
+      if (!digits.replace(/0/g, '')) return zero();
     } else if (zeros && !noPad) {
       // the zeros asked for (only for values not known to be exact: the caller decides)
       const want = m === 'sig' ? Math.max(n, minDec > 0 ? point + minDec : 0) : point + n;
@@ -14139,44 +14117,52 @@
     i = i.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group);
     return (neg ? '−' : '') + i + (f ? NF.dec + f : '') + exp;
   }
-  // what is used for a value: the choice of the screen, or the recommended rule (auto: { m, n, zeros, minDec })
-  function digitsRule(key, auto) {
-    const c = digitsChosen(key);
-    return c ? { m: c.m, n: c.n, zeros: true, chosen: true } : Object.assign({ zeros: false }, auto);
+  // What is used for a value: the choice of the screen (with its kind of quantity, for the shared digits), or
+  // the recommended rule (auto: { m, n, zeros, minDec }; recommended: no trailing zeros, but for money, the
+  // price per unit and statistics). type: what the value is ('js', 'engine', 'integral'; else the screen's):
+  // the digits worked out in JavaScript are 12 at most.
+  function digitsRule(key, auto, kind, type) {
+    const c = digitsChosen(key, kind);
+    if (!c) return Object.assign({ zeros: false, round: 'half' }, auto || digitsAuto(key, kind));
+    const t = type || digitScreen(key)[2], cap = t === 'js' ? JS_DIGITS : Math.max(2, maxPrecision() - DIGITS_GUARD);
+    return { m: c.m, n: Math.min(c.n, cap), zeros: c.zeros, round: c.round, chosen: true, capped: c.n > cap };
   }
-  // a JavaScript value shown with the digits of a screen (tools that calculate in JavaScript)
-  // (with digits chosen, zeros are added at the end only where the recommended digits keep them too: money, the
-  // price per unit, statistics; elsewhere, as in the texts of the engine, a value is not made longer than it is:
-  // the height 1 of a tank stays 1, not 1.000000000)
-  function fmtDigits(key, v, auto) {
+  // a JavaScript value shown with the digits of a screen (tools that calculate in JavaScript): with digits
+  // chosen, the trailing zeros as set (2.50 or 2.5); recommended, as the screen's rule says
+  function fmtDigits(key, v, auto, kind) {
     if (!isFinite(v)) return '';
-    const r = digitsRule(key, auto || digitsAuto(key));
-    const pad = !r.chosen || !!(auto || digitsAuto(key)).zeros;
-    return groupedNum(roundDigits(jsDigits(v), r.m, r.n, r.zeros, r.minDec, !pad));
+    const r = digitsRule(key, auto, kind, 'js');
+    return groupedNum(roundDigits(jsDigits(v), r.m, r.n, r.zeros, r.minDec, false, r.round));
   }
   // the decimals of the numbers typed (the statistics: 12.3 and 14.1 have 1)
   const decimalsOf = (t) => { const s = String(t).replace(/[eE].*$/, ''); const i = Math.max(s.lastIndexOf('.'), commaMode ? s.lastIndexOf(',') : -1); return i < 0 ? 0 : s.length - i - 1; };
-  // The precision the engine works with for a screen: 4 more than are shown (with n decimals: the size of
-  // the value, when it is known, + n + 4); the graph's values at most 24.
-  function digitsPrecision(key, auto, size) {
-    const r = digitsRule(key, auto), kind = digitScreen(key)[2];
+  // The precision the engine works with for a screen: 12 more than are shown (with n decimals: the size of
+  // the value, when it is known, + n + 12), as much as the engine can near its limit (at least 4 more); the
+  // graph's values 4 more, 24 at most. For the shared digits with each kind on its own and no kind given:
+  // what the kind that needs the most needs.
+  function digitsPrecision(key, auto, size, kind) {
+    const type = digitScreen(key)[2];
     const mag = size > 0 && isFinite(size) ? Math.max(1, Math.floor(Math.log10(size)) + 1) : 8;
-    let p = (r.m === 'dec' ? mag + r.n : Math.max(r.n, r.minDec ? r.minDec + 1 : 0)) + DIGITS_GUARD;
-    if (kind === 'integral') p = Math.min(p, INT_PRECISION);
+    const need = (r) => (r.m === 'dec' ? mag + r.n : Math.max(r.n, r.minDec ? r.minDec + 1 : 0));
+    let n = need(digitsRule(key, auto, kind));
+    if (inGroup(key) && !kind && digits().per) for (const [k] of DIG_KINDS()) n = Math.max(n, need(digitsRule(key, null, k)));
+    const p = type === 'integral' ? Math.min(n + DIGITS_GUARD, INT_PRECISION) : n + ENGINE_GUARD;
     return Math.max(6, Math.min(p, maxPrecision()));
   }
   // the digits shown for a screen (the graph: 20 at most)
-  function shownRule(key, auto) {
-    const r = digitsRule(key, auto);
+  function shownRule(key, auto, kind) {
+    const r = digitsRule(key, auto, kind);
     if (digitScreen(key)[2] === 'integral' && r.m === 'sig' && r.n > INT_DIGITS) return Object.assign({}, r, { n: INT_DIGITS, capped: true });
     return r;
   }
   // A text of the engine (or made here) with its approximate numbers rounded for a screen: "8π ≈ 25.13274123",
-  // "≈ 0.3333333333", "12.566370614 m²". The numbers after the first "≈" are rounded; a text without "≈" keeps the
-  // numbers that are not longer than the digits shown (an exact 0.25 stays as it is; zeros are not added).
-  function digitsText(key, text, auto) {
+  // "≈ 0.3333333333", "12.566370614 m²". The numbers after the first "≈" are rounded (with digits chosen and the
+  // zeros kept, the engine's approximations get them up to the digits chosen; the graph's sums made here keep
+  // only the digits that can be trusted); a text without "≈" keeps the numbers that are not longer than the
+  // digits shown (an exact 0.25 stays as it is; zeros are not added).
+  function digitsText(key, text, auto, kind, noPad) {
     if (!text) return text;
-    const r = shownRule(key, auto);
+    const r = shownRule(key, auto, kind), integral = digitScreen(key)[2] === 'integral';
     const s = String(text), at = s.indexOf('≈');
     const head = at >= 0 ? s.slice(0, at + 1) : '', tail = at >= 0 ? s.slice(at + 1) : s;
     const re = /(\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:E[−+-]?\d+)?/g;
@@ -14184,7 +14170,7 @@
       if (at < 0 && num.indexOf('.') < 0 && num.indexOf('E') < 0) return num; // an integer of an exact text
       if (/[\p{L}_^]/u.test(all[off - 1] || '') && !/[×·]/.test(all[off - 1])) return num; // a power or a name (x^2.5, a2)
       const sign = /[−-]$/.test(all.slice(0, off)) ? '-' : '';
-      const rounded = roundDigits(sign + num, r.m, r.n, at >= 0 && r.zeros, r.minDec, true);
+      const rounded = roundDigits(sign + num, r.m, r.n, at >= 0 && r.zeros, r.minDec, at < 0 || integral || !!noPad, r.round);
       if (rounded === null) return num;
       const plain = rounded.replace(/^-/, '');
       if (at < 0 && plain.replace(/\D/g, '').replace(/^0+/, '').length >= num.replace(/\D/g, '').replace(/^0+/, '').length) return num;
@@ -14193,29 +14179,49 @@
     });
     return head + out;
   }
-  // the recommended rule of a screen, and the line that says what it is now and why
-  function digitsAuto(key) {
+  // the recommended rule of a screen (of a kind of quantity, for the shared digits), and the line that says what
+  // it is now and why
+  function digitsAuto(key, kind) {
     const M = MONEY();
+    if (inGroup(key)) {
+      if (kind === 'pct') return { m: 'dec', n: 1, why: tr('% with 1 decimal', '% は小数点以下 1 桁') };
+      if (key === 'graph') return { m: 'sig', n: 8, minDec: 5, why: tr('the area, the length and the 3D values of the graph: 8 significant digits (at least 5 decimals, never more than the estimated error allows)', 'グラフの面積・長さ・3D の値は有効 8 桁（小数は 5 桁以上。誤差の見積もりで確かな桁まで）') };
+      if (key === 'solids') return { m: 'sig', n: 6, why: tr('6 significant digits after "≈" (shapes, tanks, solids from a profile, "Make a solid"); the area, the length and the 3D values of the graph: 8 (at least 5 decimals, never more than the estimated error allows); % with 1 decimal; the 3D picture: 3', '「≈」の後ろは有効 6 桁（図形・容器・輪郭から回転体・立体にする）、グラフの面積・長さ・3D の値は有効 8 桁（小数は 5 桁以上。誤差の見積もりで確かな桁まで）、% は小数点以下 1 桁、3D の絵の中は有効 3 桁') };
+      return { m: 'sig', n: 6, why: tr('6 significant digits after "≈"', '「≈」の後ろは有効 6 桁') };
+    }
     switch (key) {
       case 'price': case 'split': case 'loan': case 'savings':
         return { m: 'dec', n: M.dec, zeros: true, why: trf('{0} decimals: the smallest unit of {1} (the calculation is exact in it)', '小数 {0} 桁：{1} の最小の単位（計算はこの単位で正確）', M.dec, M.cur) };
       case 'unitprice': return { m: 'dec', n: M.dec + 1, zeros: true, why: trf('{0} decimals: one more than the smallest unit of {1} (two more below 1)', '小数 {0} 桁：{1} の最小の単位より 1 桁多め（1 より小さい単価は 2 桁）', M.dec + 1, M.cur) };
-      case 'percent': return { m: 'dec', n: 3, why: tr('3 decimals', '小数 3 桁') };
+      case 'percent': return { m: 'dec', n: 3, why: tr('3 decimals (without the zeros at the end)', '小数 3 桁（末尾の 0 は出さない）') };
       case 'stats': return { m: 'dec', n: 2, zeros: true, why: tr('The decimals of the data + 2 (the smallest, the largest and the sum: as the data; r and R²: 4)', 'データの小数の桁 ＋ 2 桁（最小・最大・合計はデータと同じ、r と R² は 4 桁）') };
       case 'convert': return { m: 'sig', n: 8, why: tr('8 significant digits (all of an exact answer); currencies: the smallest unit + 2 decimals; fuel economy: 2 decimals', '有効 8 桁（ぴったりの答えは全部）、通貨は最小の単位 ＋ 2 桁、燃費は小数 2 桁') };
-      case 'graph': return { m: 'sig', n: 8, minDec: 5, why: tr('8 significant digits, at least 5 decimals, never more than the estimated error allows', '有効 8 桁（小数は 5 桁以上。誤差の見積もりで確かな桁まで）') };
       default: return { m: 'sig', n: 6, why: tr('6 significant digits', '有効 6 桁') };
     }
   }
   const digitsDesc = (c) => (c.m === 'dec' ? trf('{0} decimals', '小数点以下 {0} 桁', c.n) : trf('{0} significant digits', '有効数字 {0} 桁', c.n));
-  const digitsNow = (key) => { const c = digitsChosen(key); return c ? digitsDesc(c) : tr('Recommended', 'おすすめ'); };
+  function digitsNow(key) {
+    if (inGroup(key)) {
+      const d = digits(), parts = [d.mode === 'auto' ? tr('Recommended', 'おすすめ') : digitsDesc({ m: d.mode, n: d.n })];
+      if (d.per) parts.push(tr('each kind on its own', '量の種類ごと'));
+      if (d.pic.mode !== 'auto') parts.push(tr('3D picture: ', '3D の絵：') + digitsDesc({ m: d.pic.mode, n: Math.min(d.pic.n, DIG_MAX) }));
+      if (d.round !== 'half') parts.push(d.round === 'down' ? tr('rounded down', '切り捨て') : tr('rounded up', '切り上げ'));
+      if (!d.zeros) parts.push(tr('no trailing zeros', '末尾の 0 なし'));
+      if (d.csv !== 'full') parts.push(tr('CSV as shown', 'CSV は表示どおり'));
+      return parts.join(tr(', ', '、'));
+    }
+    const c = digitsChosen(key);
+    return c ? digitsDesc(c) + (c.zeros ? '' : tr(', no trailing zeros', '、末尾の 0 なし')) : tr('Recommended', 'おすすめ');
+  }
   // every choice of digits cleared (the screens back to their defaults), and the screens calculated again
   function digitsClearAll() {
-    for (const [key] of DIGIT_SCREENS()) { if (store.get('qalc.digits.' + key, null) !== null) { store.del('qalc.digits.' + key); screenDigitsChanged(key); } }
+    for (const [key] of DIGIT_SCREENS()) { if (!inGroup(key) && store.get('qalc.digits.' + key, null) !== null) { store.del('qalc.digits.' + key); screenDigitsChanged(key); } }
+    if (digitsGroupChanged() || S.digits) { S.digits = DIG_DEF(); digitsChanged(); }
   }
   // the screens to calculate again when their digits change
   const digitsRefresh = {};
   function screenDigitsChanged(key) {
+    if (inGroup(key)) { digitsChanged(); return; }
     try { if (digitsRefresh[key]) digitsRefresh[key](); } catch (e) { }
     try { if (panels.settings && panels.settings.digitsList) panels.settings.digitsList(); } catch (e) { }
   }
@@ -14226,20 +14232,35 @@
       const pr = sheet(digitScreen(key)[1], [['digits', tr('Digits shown…', '表示桁数…'), 'digits-item']]);
       // (a small mark when the screen does not use its default: "changed")
       const it = $('#sheet .digits-item');
-      if (it && digitsChosen(key)) it.append(el('span', { class: 'digits-changed', text: tr('changed', '変更あり') }));
+      if (it && digitsIsChanged(key)) it.append(el('span', { class: 'digits-changed', text: tr('changed', '変更あり') }));
       if ((await pr) === 'digits') digitsSheet(key);
     });
     p.bar.append(b);
   }
-  // the sheet of the digits of a screen: Recommended / n significant digits / n decimals, − n +, "Back to
-  // the recommended", and one line on what is used now (and why), or on a limit
+  // The sheet of the digits of a screen: Recommended / n significant digits / n decimals, − n +, the trailing
+  // zeros (kept or dropped, when digits are chosen), one line on what is used now (and why) or on a limit,
+  // "Back to the default (recommended)". For the shared digits also, under "More ▾", each kind of quantity, the
+  // 3D picture, the rounding and the tables saved as CSV (digitsGroupRows).
   function digitsSheet(key) {
     if (sheetResolve) closeSheet(null);
     const sh = $('#sheet');
     sh.textContent = '';
-    const kind = digitScreen(key)[2];
-    const cur = () => digitsChosen(key);
-    const set = (c) => { if (c) store.set('qalc.digits.' + key, { m: c.m, n: c.n }); else store.del('qalc.digits.' + key); show(); screenDigitsChanged(key); };
+    const group = inGroup(key), kind = group ? 'group' : digitScreen(key)[2];
+    const cur = () => (group ? digitsChosen('solids') : digitsChosen(key));
+    const saved = () => (group ? null : store.get('qalc.digits.' + key, null));
+    // c: { m, n, zeros } or null (recommended)
+    const set = (c) => {
+      if (group) {
+        const d = digits();
+        if (c) { d.mode = c.m; d.n = c.n; if (c.zeros !== undefined) d.zeros = c.zeros; } else d.mode = 'auto';
+        S.digits = d; digitsChanged();
+      } else {
+        if (c) store.set('qalc.digits.' + key, { m: c.m, n: c.n, zeros: c.zeros !== false }); else store.del('qalc.digits.' + key);
+        screenDigitsChanged(key);
+      }
+      show();
+    };
+    const zerosNow = () => (group ? digits().zeros : (saved() || {}).zeros !== false);
     const seg = el('div', { class: 'seg digits-seg', role: 'group', 'aria-label': tr('Digits shown', '表示桁数') });
     const modes = [['auto', tr('Recommended (automatic)', 'おすすめ（自動）')], ['sig', tr('Significant digits', '有効数字')], ['dec', tr('Decimals', '小数点以下')]];
     const btns = modes.map(([m, label]) => tapButton({ text: label, 'data-m': m }, () => {
@@ -14249,15 +14270,23 @@
       const a = digitsAuto(key);
       // from the recommended rule (or the other choice), the same count of digits where it makes sense
       const n = c ? c.n : (a.m === m ? a.n : m === 'sig' ? 8 : 2);
-      set({ m, n: Math.max(DIGITS_MIN[m], Math.min(n, digitsMax(key, m))) });
+      set({ m, n: Math.max(DIGITS_MIN[m], Math.min(n, digitsMax(key, m))), zeros: zerosNow() });
     }));
     seg.append(...btns);
     const minus = tapButton({ class: 'btn digits-minus', text: '−', 'aria-label': tr('One digit fewer', '1 桁減らす') }, () => step(-1));
     const plus = tapButton({ class: 'btn digits-plus', text: '+', 'aria-label': tr('One digit more', '1 桁増やす') }, () => step(1));
     const num = el('span', { class: 'digits-n', 'aria-live': 'polite' });
     const row = el('div', { class: 'digits-row' }, minus, num, plus);
+    // the trailing zeros (2.50 / 2.5), when digits are chosen
+    const zBtns = [[true, decSign(tr('Keep (2.50)', '残す（2.50）'))], [false, decSign(tr('Drop (2.5)', '残さない（2.5）'))]].map(([v, label]) => tapButton({ text: label, 'data-z': String(v) }, () => {
+      if (group) { const d = digits(); d.zeros = v; S.digits = d; digitsChanged(); show(); return; }
+      const c = cur(); if (c) set({ m: c.m, n: c.n, zeros: v });
+    }));
+    const zeroRow = el('div', { class: 'digits-zeros dig-row' }, el('span', { class: 'dig-lbl', text: tr('Trailing zeros', '末尾の 0') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Trailing zeros', '末尾の 0') }, ...zBtns));
     const line = el('div', { class: 'digits-why' });
-    const back = el('button', { class: 'digits-back', text: tr('Back to the default (recommended)', '初期値（おすすめ）に戻す'), onclick: () => set(null) });
+    const back = el('button', { class: 'digits-back', text: tr('Back to the default (recommended)', '初期値（おすすめ）に戻す'), onclick: () => {
+      if (group) { S.digits = DIG_DEF(); digitsChanged(); show(); } else set(null);
+    } });
     const step = (d) => {
       const c = cur();
       if (!c) return;
@@ -14267,13 +14296,20 @@
         if (kind !== 'js' && !hasPro()) { closeSheet(null); proPrompt(trf('More than {0} digits is a QCalc Pro feature', '{0} 桁を超える表示は QCalc Pro の機能です', max), 'precision'); }
         return;
       }
-      set({ m: c.m, n });
+      set({ m: c.m, n, zeros: zerosNow() });
     };
+    // the rows of the shared digits
+    const rows = group ? digitsGroupRows() : null;
+    const more = rows ? el('details', { class: 'sec-more dig-more' }, el('summary', { text: tr('More: each kind, the 3D picture, rounding, CSV ▾', '詳しく：量の種類ごと・3D の絵・丸め方・CSV ▾') }), rows.body) : null;
+    const where = group ? el('div', { class: 'form-hint digits-where', text: tr('The same digits for the shapes (with the tanks), the solids from a profile and the graph (area, length, "Make a solid", 3D). Exact values (11250π) stay; only the numbers after "≈" change.', '図形（容器を含む）・輪郭から回転体・グラフ（面積・長さ・立体にする・3D）で共通です。厳密な値（11250π など）はそのままで、変わるのは「≈」の後ろの数だけです。') }) : null;
     function show() {
-      const c = cur(), a = digitsAuto(key);
+      const c = cur(), a = digitsAuto(key === 'graph' || key === 'solid' || key === 'shapes' || key === 'profile' ? 'solids' : key);
       btns.forEach((b, i) => { const on = modes[i][0] === (c ? c.m : 'auto'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
       row.hidden = !c;
-      back.hidden = !c;
+      const d = group ? digits() : null;
+      zeroRow.hidden = group ? !(c || d.per || d.pic.mode !== 'auto') : !c;
+      zBtns.forEach((b) => { const on = b.dataset.z === String(zerosNow()); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+      back.hidden = !digitsIsChanged(key);
       if (c) {
         num.textContent = digitsDesc(c);
         const max = digitsMax(key, c.m);
@@ -14282,13 +14318,18 @@
       }
       line.textContent = !c ? tr('Recommended now: ', 'おすすめ（今）：') + a.why
         : kind === 'js' && c.n >= JS_DIGITS ? trf('At most {0} digits: this tool calculates with the about 16 digits of a JavaScript number, and keeps 4 in reserve', '{0} 桁まで：この道具は JavaScript の数（約 16 桁）で計算するため、4 桁の余裕を残しています', JS_DIGITS)
+        : group && c.n > JS_DIGITS ? trf('The numbers worked out with double precision (the height of a liquid, the tables of the tanks, the solids from a profile, the 3D picture) show {0} digits at most; numeric integration {1}. The engine works with {2} digits more than are shown.', '倍精度で計算する値（液面の高さ、容器の早見表、輪郭から回転体、3D の絵の中の数）は {0} 桁まで、数値積分の値は {1} 桁までです。計算は表示より {2} 桁多く行います。', JS_DIGITS, INT_DIGITS, ENGINE_GUARD)
         : kind === 'integral' && c.m === 'sig' && c.n > INT_DIGITS ? trf('Numeric integration is certain to about {0} digits: {0} are shown (the engine works with {1})', '数値積分で確かなのは約 {0} 桁までです（{0} 桁で表示し、計算は {1} 桁）', INT_DIGITS, INT_PRECISION)
-        : trf('The engine works with {0} digits more than are shown', '計算は表示より {0} 桁多く行います', DIGITS_GUARD);
+        : kind === 'js' ? trf('Worked out with the about 16 digits of a JavaScript number ({0} at most)', 'JavaScript の数（約 16 桁）で計算します（{0} 桁まで）', JS_DIGITS)
+        : group ? trf('The engine works with {0} digits more than are shown (numeric integration: {1} more, {2} at most); the numbers worked out with double precision show {3} digits at most.', '計算は表示より {0} 桁多く行います（数値積分は {1} 桁多く、{2} 桁まで）。倍精度で計算する値は {3} 桁までです。', ENGINE_GUARD, DIGITS_GUARD, INT_PRECISION, JS_DIGITS)
+        : trf('The engine works with {0} digits more than are shown (at least {1} near its limit)', '計算は表示より {0} 桁多く行います（計算の上限の近くでは {1} 桁以上）', ENGINE_GUARD, DIGITS_GUARD);
     }
-    sh.append(el('div', { class: 'stitle', text: tr('Digits shown: ', '表示桁数：') + digitScreen(key)[1] }), el('div', { class: 'digits-box' }, seg, row, line), back,
+    const ui = { sync: () => { show(); if (rows) rows.sync(); } };
+    sh.append(el('div', { class: 'stitle', text: tr('Digits shown: ', '表示桁数：') + digitScreen(key)[1] }), el('div', { class: 'digits-box' }, seg, row, zeroRow, line, where || ''), more || '', back,
       el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
     show();
-    sheetResolve = () => sh.classList.remove('digits-sheet');
+    if (group) digUIs.add(ui);
+    sheetResolve = () => { sh.classList.remove('digits-sheet'); digUIs.delete(ui); };
     $('#scrim').classList.add('show', 'over-panels');
     sh.classList.add('open', 'digits-sheet');
     sh.inert = false;
@@ -14782,7 +14823,8 @@
   const FUEL = [['km/L', 'km/L', 1], ['L/100km', 'L/100 km', 0], ['mpgUS', 'mpg (US)', 0.425143707], ['mpgUK', 'mpg (UK)', 0.354006189]];
   const fuelTo = (x, u) => (u === 'L/100km' ? 100 / x : x * FUEL.find((f) => f[0] === u)[2]); // to km/L
   const fuelFrom = (k, u) => (u === 'L/100km' ? 100 / k : k / FUEL.find((f) => f[0] === u)[2]);
-  const MY_CURRENCY = { ja: 'JPY', de: 'EUR', fr: 'EUR', es: 'EUR', ko: 'KRW', 'zh-TW': 'TWD' }[LANG] || 'USD';
+  // (feature/screen-digits: the currency of the device's region, as for the money tools; until this, of the language)
+  const MY_CURRENCY = regionCurrency();
   const CONV_KINDS = () => [
     ['Length', tr('Length', '長さ'), ['km'], ['mi']], ['Mass', tr('Weight', '重さ'), ['kg'], ['lb']], ['Volume', tr('Volume', '体積'), ['L'], ['gal']],
     ['Area', tr('Area', '面積'), ['m^2', 'm²'], JA ? ['坪'] : ['ft^2', 'ft²']], ['Temperature', tr('Temperature', '温度'), ['oC', '°C'], ['oF', '°F']],
@@ -15295,9 +15337,9 @@
           const x = boxNum(raw);
           if (!(x > 0)) { msg.textContent = tr('Enter a number above 0, such as 15', '15 のように、0 より大きい数を入れてください'); dst.value = ''; return; }
           const y = fuelFrom(fuelTo(x, su), du);
-          // (fuel economy: 2 decimals, recommended; calculated in JavaScript, so 12 digits at most)
-          const fr = digitsRule('convert', { m: 'dec', n: 2 });
-          const t = roundDigits(jsDigits(y), fr.m, Math.min(fr.n, JS_DIGITS), fr.zeros);
+          // (fuel economy: 2 decimals, recommended, without zeros at the end; calculated in JavaScript, so 12 digits at most)
+          const fr = digitsRule('convert', { m: 'dec', n: 2 }, null, 'js');
+          const t = roundDigits(jsDigits(y), fr.m, fr.n, fr.zeros);
           dst.value = fmtOut(t);
           showRow(fmtOut(String(+x.toPrecision(10))) + ' ' + FUEL.find((f) => f[0] === su)[1], fmtOut(t) + ' ' + FUEL.find((f) => f[0] === du)[1], '');
           return;
@@ -15311,10 +15353,11 @@
         const q = temp ? `(${v} (${A.abbr})) to ${B.name}` : `(${v} (${A.abbr})) / (1 (${B.abbr}))`;
         const expr = `${v} ${A.abbr} to ${B.abbr}`;
         // the digits (feature/screen-digits): currencies with 2 decimals more than the smallest unit of the
-        // currency converted to, the other kinds 8 significant digits (an exact answer in full); the engine
-        // works with 4 digits more (with decimals: also as many as the size of the answer, found the first time)
+        // currency converted to (the zeros at the end shown up to that unit, as money: 0.60 USD, 155.2 JPY), the
+        // other kinds 8 significant digits (an exact answer in full); the engine works with 12 digits more (with
+        // decimals: also as many as the size of the answer, found the first time)
         const cur = C.kind === 'Currency' && /^[A-Z]{3}$/.test(B.abbr);
-        const auto = cur ? { m: 'dec', n: currencyDecimals(B.abbr) + 2, zeros: true } : { m: 'sig', n: 8 };
+        const auto = cur ? { m: 'dec', n: currencyDecimals(B.abbr) + 2 } : { m: 'sig', n: 8 };
         const ask = (prec) => Bridge.send('calc', { expr: q, opts: Object.assign(engineOpts(), { approx: 'approx', grouping: false, base: 10, notation: 'auto', fraction: 'decimal', mixed_units: false, units: 'none', precision: prec }), timeout: 3000 });
         const answer = (r) => { const res = r.ok && r.result ? r.result.split(' ≈ ').pop().replace(/^[≈=]\s*/, '') : ''; return res.match(/^([−-]?[\d.]+(?:E[−+-]?\d+)?)\s*(°?[A-Za-zµ°]*)$/); };
         const p1 = digitsPrecision('convert', auto, Math.abs(boxNum(raw)) || 0);
@@ -15328,7 +15371,8 @@
         if (!r.ok || r.timeout || !m || (!temp && m[2]) || (r.messages || []).some((x) => x.type === 'error')) { msg.textContent = localMessage(r.error) || tr('This cannot be converted: check the value', '換算できません。値を確かめてください'); dst.value = ''; return; }
         const rule = digitsRule('convert', auto);
         // (an exact answer is shown in full when the digits are the recommended ones: 1 acre = 4046.8564224 m²)
-        const num = !rule.chosen && !cur && !r.approx ? m[1] : (roundDigits(m[1], rule.m, rule.n, rule.zeros, rule.minDec) || m[1]).replace(/^-/, '−');
+        let num = !rule.chosen && !cur && !r.approx ? m[1] : (roundDigits(m[1], rule.m, rule.n, rule.zeros, rule.minDec) || m[1]).replace(/^-/, '−');
+        if (cur && !rule.chosen) { const k = currencyDecimals(B.abbr), f = (num.split('.')[1] || '').length; if (k > f && !/E/.test(num)) num += (f ? '' : '.') + '0'.repeat(k - f); }
         dst.value = fmtOut(num);
         showRow(toDisplay(v) + ' ' + A.abbr, fmtOut(num) + ' ' + B.abbr, expr);
       }, 150);
@@ -15616,12 +15660,7 @@
       ['text_size', tr('Text size', '文字の大きさ'), [['normal', tr('Normal', '標準')], ['large', tr('Large', '大きめ')], ['xlarge', tr('Extra large', '特大')]], tr('Text in the history, the input field and the result', '履歴・入力欄・結果の文字の大きさ')],
       ['theme', tr('Color theme', '配色テーマ'), THEMES, tr('The color of the keys and the highlights, in the light and the dark theme', 'キーや強調表示の色（ライト・ダークの両方）')]
     ]],
-    // 1.12.0 (D7): the digits of the results of the tools for shapes, tanks and solids (the same control as above
-    // their results)
-    [tr('Digits of the tools', '道具の結果の桁'), [
-      ['digits', tr('Shapes, tanks, solid from a profile, make a solid', '図形・容器・輪郭から回転体・立体にする'), 'digits',
-        tr('Separate from the precision of the calculator. Exact values stay; only the decimals after "≈" change', '計算機の「有効桁数」とは別です。厳密な値はそのままで、変わるのは「≈」の後ろの小数だけです')]
-    ]],
+    // (1.12.0, D7: "Digits of the tools" was here; feature/screen-digits: a row of "Digits shown by each tool")
     [tr('Input', '操作'), [
       ['preview', tr('Show the result while typing', '入力中に結果を表示'), 'bool'],
       ['auto_ans', tr('An operator in an empty field continues from ans', '空欄で演算子を押すと ans から続ける'), 'bool'],
@@ -15657,11 +15696,6 @@
             p.ratesWhen();
             part.append(tapButton({ class: 'setting setting-link' }, () => openRates()).appendChild(el('div', { class: 'lbl' }, el('div', { text: label }), when)).parentNode
               .appendChild(el('span', { class: 'chev', text: '›', 'aria-hidden': 'true' })).parentNode);
-            continue;
-          }
-          if (type === 'digits') {
-            const c = digitsControl();
-            part.append(el('div', { class: 'setting dig-setting' }, el('div', { class: 'lbl' }, el('div', { text: label }), sub ? el('div', { class: 's', text: sub }) : null), c.sel), c.more);
             continue;
           }
           if (type === 'bool') {
@@ -15727,7 +15761,7 @@
         for (const [key, name] of DIGIT_SCREENS()) {
           // (a small mark when the screen does not use its default: "changed")
           const nm = el('div', { text: name });
-          if (digitsChosen(key)) nm.append(el('span', { class: 'digits-changed', text: tr('changed', '変更あり') }));
+          if (digitsIsChanged(key)) nm.append(el('span', { class: 'digits-changed', text: tr('changed', '変更あり') }));
           digitsList.append(tapButton({ class: 'setting setting-link', 'data-digits': key }, () => digitsSheet(key)).appendChild(el('div', { class: 'lbl' }, nm, el('div', { class: 's', text: digitsNow(key) }))).parentNode
             .appendChild(el('span', { class: 'chev', text: '›', 'aria-hidden': 'true' })).parentNode);
         }
@@ -15748,8 +15782,7 @@
         el('button', { class: 'btn', text: tr('Reset all settings', '設定を初期値に戻す'), onclick: async () => {
           if (!(await confirmSheet(tr('Reset the settings and the digits shown by each tool to their defaults?', '設定と画面ごとの表示桁数を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
           S = Object.assign({}, DEFAULTS, { lang: LANG_AUTO ? 'auto' : LANG }); settingsChanged(); // the language stays
-          digitsClearAll(); // (feature/screen-digits: the digits of each tool too)
-          digitsChanged(); // (D7: the digits of the tools too)
+          digitsClearAll(); // (feature/screen-digits: the digits of each tool too, and the shared digits of D7)
           for (const k of Object.keys(p.inputs)) { const i = p.inputs[k]; if (i.type === 'checkbox') i.checked = !!S[k]; else i.value = String(S[k]); }
           if (p.precisionBack) p.precisionBack();
           if (p.digitsList) p.digitsList();
