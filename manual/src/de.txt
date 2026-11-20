@@ -386,6 +386,8 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Öffnen Sie [[Volume and surface ▾]]: Volumen und Oberfläche erscheinen sofort.
 :step: Wählen Sie den Bereich: ein Rechteck, eine Kreisscheibe, den eingeschlossenen Teil oder einen per Formel gegebenen.
 :example: Die Beispielkugel (Radius 2) → Volumen 32π/3, Oberfläche 16π
+:tip: Für einen im 2D-Graphen ([[!⟳ 3D]]) oder in [[Solid from a profile]] gebildeten Körper zeigt [[Volume and surface ▾]] in seiner 3D-Ansicht die dort gefundenen Werte ([[Values of the solid of revolution]]). Die Werkzeuge für den Bereich erscheinen wieder, wenn andere Formeln gezeichnet werden.
+:tip: Wo die Flächen in einem Teil des Bereichs keine reellen Werte haben, misst [[Measure the enclosed part]] nur dort, wo sie reell sind.
 
 ## share | Bilder und GIFs teilen
 :what: Sendet ein Bild eines Graphen an eine andere App; einen 3D-Graphen auch als bewegtes GIF.

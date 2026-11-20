@@ -3503,7 +3503,7 @@
     tr('⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis and shows the solid in 3D at once, with its volume (QCalc Pro; without it, the solid and its volume in the 2D graph). Back in 2D (← Back to 2D), tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.', '2D グラフの右の丸いボタン「⟳ 3D」で、色の付いた部分を x 軸のまわりに回した立体が 3D ですぐに出て、体積も出ます（QCalc Pro。無料では 2D のグラフに立体の形と体積が出ます）。「← 2D に戻る」で 2D に戻り、y 軸（または x 軸）の線をタップすると、その軸のまわりに回します。y = k・x = k は線をドラッグして動かせます。軸の反対側に薄く映った形が、立体を軸で切った形です。変えたあとのメッセージの「↶ 元に戻す」で戻せます。'),
     tr('"Make a solid ▾" → "Cross sections": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under "More shapes ▾"); the volume V = ∫ A(s(x)) dx, s being the width of the region.', '「立体にする ▾」→「断面の立体」では、色の付いた部分の上に、x 軸に垂直に正方形 □・正三角形 △・半円 ◠ を立てた立体の体積 V = ∫ A(s(x)) dx を出します（s は底面の幅。ほかの形は「詳しく：ほかの形 ▾」）。'),
     tr('In "Make a solid", "Show the method with lines" draws the thin disks or rings (across the axis) or the shells (along the axis) that the volume adds up, n of them. When the region is on one side of the axis, the theorem of Pappus and Guldinus is shown too: V = 2π d A (A the area, d the distance of its centre from the axis). In the 3D view the slider "Angle" turns the solid from 0° to 360° (180°: cut in half); ▶ turns it again.', '「立体にする」の「方法を線で見せる」では、体積を足し合わせる薄い円板・穴のあいた円板（軸に垂直）か、殻（軸に平行）を n 本の線で描きます。領域が軸の片側にあるときは、パップス・ギュルダンの定理 V = 2π d A（A は面積、d は重心から軸までの距離）も出します。3D で見るときは「角度」のスライダーで 0° から 360° まで回せます（180° で半分に切った形）。▶ でもう一度回ります。'),
-    tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks like a pale gelatin in a skin of a deeper shade in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで濃い色の皮に包まれた薄い色のゼラチンのように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
+    tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D) or in "Solid from a profile", it shows the values found there. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。2D グラフ（⟳ 3D）や「輪郭から回転体」で作った立体では、そこで出した値が出ます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
     tr('Its region "Enclosed" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.',
       '範囲の「囲まれた部分」は、一方の曲面がもう一方より上にある部分（または z = 0 より上の部分）を、交線から自動で見つけます。例：z = x² + y² と z = 4 なら 8π。範囲を式（x² + y² ≤ 4）で示して床に輪郭を描き、部分が複数あれば部分ごとに出します。'),
     tr('Its region "Custom" takes a region you type: a rectangle a ≤ x ≤ b, c ≤ y ≤ d, a disk with a centre, a ring, a sector (in degrees or radians), the region between two curves (g₁(x) ≤ y ≤ g₂(x) or h₁(y) ≤ x ≤ h₂(y)), or inequalities joined by "and" (x²/4 + y² ≤ 1 and y ≥ 0). The iterated integral is shown and can be put into the input field. "Volume" counts the parts below as positive, "Integral" as negative (sin x over [0, 2π] × [0, 1]: 4 and 0).', '範囲の「指定」では、範囲を式で入れられます：長方形 a ≤ x ≤ b・c ≤ y ≤ d、中心のある円、環、扇形（度でもラジアンでも）、2 本の曲線ではさむ範囲（g₁(x) ≤ y ≤ g₂(x) または h₁(y) ≤ x ≤ h₂(y)）、「かつ」でつないだ不等式（x²/4 + y² ≤ 1 かつ y ≥ 0）。累次積分の式を示し、入力欄に入れることもできます。「体積」は下の部分もプラス、「積分の値」はマイナスとして数えます（sin x、[0, 2π] × [0, 1] なら 4 と 0）。'),
@@ -6190,6 +6190,7 @@
     if (rp && !rp.parts.length) return fail(noRealText());
     const parts = rp ? rp.parts : [rn];
     const vrow = revRow(R, tr('Volume', '体積'), 'V = ∫ A(s(x)) dx');
+    R.rows = [{ row: vrow, name: tr('Volume', '体積'), small: 'V = ∫ A(s(x)) dx' }]; // (BG21: for the 3D view)
     const vals = [], vexpr = [];
     for (const p of parts) {
       const v = await revIntegral(F, p, []);
@@ -6270,8 +6271,14 @@
     const stlBtn = tapButton({ class: 'btn stl-btn', text: tr('Save as STL', 'STL で保存'), hidden: true }, () => { if (R.stlSpec) openStlSheet(R.stlSpec, R.kind === 'sec' ? 'sections' : 'revolution', null); });
     // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion"); (BG20)
     // the volume is shown large above the 3D graph, with "← Back to 2D"
+    // (BG21: "Volume and surface" in the 3D view shows the values found here, the rows of this solid as they fill)
     const show3d = () => {
-      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis, rims: R.three.rims, back: { vol: P.revVolText || '' } });
+      if (!R.three) return;
+      const rows = R.rows || [];
+      openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis, rims: R.three.rims, back: { vol: P.revVolText || '' },
+        solid: { src: R, title: R.kind === 'sec' ? tr('Values of the solid with cross sections', '断面の立体の値') : tr('Values of the solid of revolution', '回転体の値'),
+          hint: tr('The values found in "Make a solid" of the 2D graph. Other formulas drawn here are measured as an ordinary 3D graph.', '2D グラフの「立体にする」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測れます。'),
+          values: () => rows.map((q) => ({ name: q.name, small: q.small, result: q.row.result, expr: q.row.expr, text: q.row.result ? '' : q.row.val.textContent })) } });
     };
     const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, show3d);
     // (BG20, without Pro: after "⟳ 3D", above the results)
@@ -6445,6 +6452,10 @@
     R.moreOuts.append(srow.node); // (1.12.0, B0: the surfaces under "More ▾")
     const erow = revRow(R, tr('Surface area (with the end faces)', '表面積（端の面も含む）'), ax.kind === 'h' ? tr('+ the flat faces at x = a and b', '＋ x = a、b の平らな面') : tr('+ the faces the sides at x = a and b make', '＋ x = a、b の辺が作る面'));
     R.moreOuts.append(erow.node);
+    // (BG21: the rows of this solid, for "Volume and surface" in its 3D view)
+    R.rows = [{ row: vrow, name: tr('Volume', '体積'), small: ax.kind === 'h' ? 'π∫(R² − r²) dx' : '2π∫ρ h dρ' },
+      { row: srow, name: tr('Surface area (curved surfaces)', '表面積（曲面だけ）'), small: '2π∫ρ ds' },
+      { row: erow, name: tr('Surface area (with the end faces)', '表面積（端の面も含む）'), small: '' }];
     R.msg.textContent = '';
     R.method.textContent = solid.method + '\n' + solid.detail + (rp && rp.clipped ? '\n' + realNote(!!g, parts) : '');
     // the volume
@@ -6483,7 +6494,7 @@
       }
       if (bad) break;
     }
-    if (bad) { srow.val.textContent = bad; erow.val.textContent = bad; return; }
+    if (bad) { srow.val.textContent = bad; erow.val.textContent = bad; solidRefresh(R); return; }
     const S1 = curved.length ? await sumValues(curved) : { text: '0', exact: '0', v: 0 };
     if (stale()) return;
     revShow(srow, S1, sexpr.join(' + ') || '0');
@@ -6496,6 +6507,7 @@
     const S2 = ends.length ? await sumValues(curved.concat(ends)) : S1;
     if (stale()) return;
     revShow(erow, S2, sexpr.concat(eexpr).join(' + ') || '0');
+    solidRefresh(R);
   }
   // the axis of a solid of revolution in the graph: a dash-dot line, y = k or x = k, with "↻ axis"
   // (in the color of the text, so it is not taken for the dashed edges of the area)
@@ -6687,11 +6699,15 @@
       out.textContent = ''; ins.hidden = true;
       if (!quiet) volumeAuto();
     };
-    // the color of the solid that is measured, as it is shown in the graph (1.8.4; draw3d sets it)
-    const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('In the graph, the solid that is measured looks like a pale gelatin of this color in a clear, glossy skin of a deeper shade', 'グラフでは、計測している立体を、この色の薄いゼラチンを、濃い色のつやのある透明な皮で包んだように示しています') }));
+    // the color of the solid that is measured, as it is shown in the graph (1.8.4; draw3d sets it). 1.12.0
+    // (BG21, the author's decision): a square of the color and a short name; the long sentence about a pale
+    // gelatin in a skin of a deeper shade is gone
+    const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('The solid measured', '測っている立体') }));
     const hint = el('div', { class: 'form-hint', text: tr('The values are those of the graph that is drawn. Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.', 'いま描いているグラフの値です。平面（またはもう一方の曲面）より下の部分もプラスとして数えます。表面積は 2 つの曲面（または曲面と z = 0 の底面）の面積の和で、側面は含みません。') });
     const hintEnc = el('div', { class: 'form-hint', hidden: true, text: tr('The values are those of the graph that is drawn: the solid between the two surfaces (or between the surface and z = 0) over the part found, and its whole surface, the upper and the lower surface over that part.', 'いま描いているグラフの値です。見つけた部分での 2 つの曲面（または曲面と z = 0）の間の立体の体積と、その表面全体（その部分の上と下の曲面）の面積です。') });
-    const box = el('div', { class: 'area-box' },
+    // 1.12.0 (BG21): the tools for z = f(x, y) in one part, hidden while the graph is a solid made elsewhere
+    // (⟳ 3D, "View in 3D", "Solid from a profile"), whose values are shown instead (solidBox, showSolidValues)
+    const tools = el('div', { class: 'vol-tools' },
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk, bEnc, bCus), rangeText, diskRow, encText),
       cusBox, signRow,
@@ -6699,6 +6715,8 @@
       hint, hintEnc,
       buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
       tapButton({ class: 'btn geo-link', text: tr('More shapes: cylinder, cone, box… ›', 'ほかの図形（円柱・円錐・直方体など）›') }, () => openShapes()));
+    const solidBox = el('div', { class: 'solid-vals', hidden: true, 'aria-live': 'polite' });
+    const box = el('div', { class: 'area-box' }, solidBox, tools);
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle vol-toggle', text: tr('Volume and surface ▾', '体積・表面積 ▾') });
     // opened: the volume and the surface area of the drawn surface are shown at once
@@ -6709,7 +6727,7 @@
     R.addEventListener('change', () => volumeAuto());
     R.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); R.blur(); } });
     ins.addEventListener('click', () => { if (Q3.volExpr) useExample(Q3.volExpr); });
-    Q3.volUI = { s1, s2, out, ins, box, rangeText, encText, R, toggle, setRegion, legend, seq: 0, timer: 0, cus: C, signed: false, setSigned };
+    Q3.volUI = { s1, s2, out, ins, box, rangeText, encText, R, toggle, setRegion, legend, seq: 0, timer: 0, cus: C, signed: false, setSigned, tools, solidBox };
     setRegion('rect', true);
     setSigned(store.get('qalc.vol.signed', false) === true, true);
     setUnit(C.unit);
@@ -6719,15 +6737,20 @@
   // after the last change; a newer change or calculation stops the older one from writing its result
   function volumeAuto() {
     const U = Q3.volUI;
-    if (!U || U.box.hidden) return;
+    if (!U || U.box.hidden || solidNow()) return;
     U.seq++;
     clearTimeout(U.timer);
     U.timer = setTimeout(async () => {
       if (U.box.hidden) return;
-      const seq = U.seq;
-      await computeVolume(seq);
-      if (seq === U.seq && !U.box.hidden) await computeSurface(true, seq);
+      await volumeAndSurface(U.seq);
     }, 80);
+  }
+  // 1.12.0 (BG21): the surface area is not looked for when the volume could not be measured for a reason
+  // that holds for it too (the region: no real values in part of a disk), so the reason is said once
+  async function volumeAndSurface(seq) {
+    const U = Q3.volUI;
+    const v = await computeVolume(seq);
+    if (seq === U.seq && !U.box.hidden && !(v && v.reason)) await computeSurface(true, seq, v);
   }
   // a sphere of radius r: the upper and the lower half over the disk of radius r, round (the same
   // scale on all axes), with its volume and surface area
@@ -6751,9 +6774,7 @@
       U.s1.value = '0'; U.s2.value = '1';
       U.setRegion('disk', true); U.R.value = r;
       clearTimeout(U.timer);
-      const seq = ++U.seq;
-      await computeVolume(seq);
-      if (seq === U.seq) await computeSurface(true, seq);
+      await volumeAndSurface(++U.seq);
     };
     Q3.go.click();
   }
@@ -6782,10 +6803,55 @@
     }
     requestDraw3d();
   }
+  // ---- a solid made elsewhere (1.12.0, BG21)
+  // The 3D view of a solid of revolution (⟳ 3D and "View in 3D" of "Make a solid", "Solid from a profile")
+  // or of a solid with cross sections is drawn with formulas that have no real value outside the solid
+  // (√(min(0, …))), and the tools for z = f(x, y) cannot measure it over a rectangle or a disk: on the
+  // author's phone, "Could not calculate the volume" and "… the surface area" on the rectangle, and on the
+  // disk a message about missing real values twice, which sent one to the rectangle. Q3.solid (set by
+  // openPlot3dWith) holds the values found where the solid was made: "Volume and surface" shows them, and
+  // the tools come back only when other formulas are drawn. (exprs: the formulas as first read; fresh until then)
+  function solidNow() {
+    const so = Q3.solid;
+    if (so && !so.fresh && (!Q3.exprs || so.exprs !== Q3.exprs.join('\n'))) Q3.solid = null;
+    return Q3.solid;
+  }
+  function showSolidValues() {
+    const U = Q3.volUI, so = solidNow();
+    if (!U) return;
+    U.tools.hidden = !!so; U.solidBox.hidden = !so;
+    if (!so) return;
+    clearVolume(); Q3.liqBuf = null; requestDraw3d(); // (the ordinary shading: not the measured solid)
+    U.solidBox.textContent = '';
+    U.solidBox.append(el('div', { class: 'solid-title', text: so.title }));
+    for (const v of so.values()) {
+      const val = el('span', { class: 'geo-val' });
+      if (v.result) showResult(val, valueShown(v.result)); else val.textContent = v.text || '…';
+      const node = tapButton({ class: 'geo-row' }, () => { if (v.expr) resultSheet(v.name, v.expr, v.result ? valueShown(v.result) : v.text); });
+      node.append(el('span', { class: 'geo-name' }, v.name, v.small ? el('small', { text: v.small }) : ''), val);
+      U.solidBox.append(node);
+    }
+    U.solidBox.append(el('div', { class: 'form-hint', text: so.hint }));
+  }
+  // a value of that solid found later (the surface areas come after the volume): shown while it is the solid
+  function solidRefresh(src) {
+    const U = Q3.volUI;
+    if (U && !U.box.hidden && Q3.solid && Q3.solid.src === src) showSolidValues();
+  }
+  // "Volume and surface" closed (a solid made elsewhere opens with it closed: its state is not the graph's before)
+  function closeVolumeBox() {
+    const U = Q3.volUI;
+    if (!U) return;
+    U.box.hidden = true; U.toggle.classList.remove('on'); U.toggle.setAttribute('aria-expanded', 'false');
+    clearVolume(); Q3.liqBuf = null;
+  }
   // the lists of surfaces follow the graph; quiet: without calculating (the caller does)
   function volumeSurfacesChanged(quiet) {
     const U = Q3.volUI;
     if (!U) return;
+    // (1.12.0, BG21: the values of a solid made elsewhere; the tools again for other formulas)
+    if (solidNow() || U.tools.hidden) showSolidValues();
+    if (Q3.solid) return;
     const k1 = U.s1.value, k2 = U.s2.value, D = Q3.data;
     U.s1.textContent = ''; U.s2.textContent = '';
     const series = D ? D.series : [];
@@ -6860,7 +6926,9 @@
     const ringsText = (rings) => rings.map((p) => (p.lo === 0 ? 'r ≤ ' + p.b : p.a + ' ≤ r ≤ ' + p.b)).join(tr(' and ', '、'));
     const fit = (rings) => ({ rings, note: (one ? trf('Only where the surface has real values: {0} (r = √(x² + y²))', '曲面に実数の値がある {0} の部分だけで計算しました（r = √(x² + y²)）', ringsText(rings))
       : trf('Only where both surfaces have real values: {0} (r = √(x² + y²))', '2 つの曲面に実数の値がある {0} の部分だけで計算しました（r = √(x² + y²)）', ringsText(rings))) });
-    const notRound = () => (S.disk ? { error: tr('The surfaces have no real values in part of this disk: choose a smaller radius R, or the rectangle', '曲面に実数の値がない部分がこの円の中にあります。半径 R を小さくするか、長方形を選んでください') } : { mask: true });
+    // (1.12.0, BG21: the volume and the surface area both, said once, and the way out offered by computeVolume:
+    // the enclosed part, or a smaller disk; until then it sent one to the rectangle, which may not measure them either)
+    const notRound = () => (S.disk ? { error: tr('The surfaces have no real values in part of this disk, so the volume and the surface area cannot be measured over it.', '曲面に実数の値がない部分がこの円の中にあるので、この円では体積と表面積を測れません。'), offer: true } : { mask: true });
     // 16 rays: r from 0 to the edge of the disk or to the farthest corner of the rectangle
     const K = 16, exprs = [];
     for (let k = 0; k < K; k++) {
@@ -6963,23 +7031,40 @@
     U.ins.hidden = true;
     S.real = await realRegion(S);
     if (seq !== U.seq) return;
-    if (S.real && S.real.error) { U.out.textContent = S.real.error; return; }
+    if (S.real && S.real.error) {
+      U.out.textContent = S.real.error;
+      if (S.real.offer) await encOffer(S, seq, tr('Choose a smaller radius R.', '半径 R を小さくしてください。'));
+      return { reason: true }; // (the region: the surface area is not looked for, BG21)
+    }
     const d = g ? `(${f.expr}) − (${g.expr})` : f.expr;
     // 1.11.0: or the integral, where the parts below count as negative
     const signed = U.signed;
     const r = await regionIntegral(S, signed ? d : `abs(${d})`, signed ? null : d, (v) => { if (v && seq === U.seq) U.out.textContent = aboutValue(signed ? tr('Integral', '積分の値') : tr('Volume', '体積'), v); });
     if (seq !== U.seq) return;
-    if (!r.val) { U.out.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
+    if (!r.val) { U.out.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return { fail: true, signed }; }
     U.out.textContent = '';
     showResult(U.out, (signed ? tr('Integral ', '積分の値 ') : tr('Volume ', '体積 ')) + valueShown(shownValue(r.val)));
     if (S.real && S.real.note) U.out.append(el('div', { class: 'form-hint', text: S.real.note }));
     if (r.missing) U.out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', r.missing) }));
     Q3.volExpr = r.expr;
     U.ins.hidden = false;
+    return { ok: true };
+  }
+  // 1.12.0 (BG21): where the surfaces have no real values in part of the region, the enclosed part, which
+  // counts only the points where they are real, is offered with one button when it is found there (not
+  // the rectangle or the disk, which cannot measure such surfaces); else the other way out (other)
+  async function encOffer(S, seq, other, box) {
+    const U = S.U, E = await encRegion(S);
+    if (seq !== U.seq) return;
+    box = box || U.out;
+    if (E && !E.error && E.parts && E.parts.length) {
+      box.append(el('div', { class: 'form-hint vol-offer' }, el('span', { text: tr('"Enclosed" measures only where the surfaces have real values. ', '「囲まれた部分」なら、実数の値がある部分だけで測れます。') }),
+        tapButton({ class: 'btn vol-out-btn', text: tr('Measure the enclosed part', '囲まれた部分で測る') }, () => U.setRegion('enc'))));
+    } else if (other) box.append(el('div', { class: 'form-hint', text: other }));
   }
   // the area of the surfaces: ∬ √(1 + f_x² + f_y²), for each surface (the floor z = 0: the area of the region)
   // append: below the volume that is shown (else in its place)
-  async function computeSurface(append, seq) {
+  async function computeSurface(append, seq, prior) {
     if (Q3.volUI && (Q3.volUI.region === 'enc' || Q3.volUI.region === 'custom')) return; // (computeEnclosed and computeCustom give both)
     const S = volumeSetup();
     if (!S) return;
@@ -6988,7 +7073,12 @@
     const out = append ? el('div', { class: 'area-out' }) : U.out;
     if (append) U.out.append(out); else { U.out.textContent = ''; U.ins.hidden = true; }
     out.textContent = tr('Calculating the surface area…', '表面積を計算中…');
-    const fail = (text) => { if (seq === U.seq) out.textContent = text || tr('Could not calculate the surface area', '表面積を計算できませんでした'); };
+    // (1.12.0, BG21: when the volume could not be calculated either, one line says both)
+    const fail = (text) => {
+      if (seq !== U.seq) return;
+      if (!text && append && prior && prior.fail && !prior.signed) { U.out.textContent = tr('Could not calculate the volume or the surface area', '体積と表面積を計算できませんでした'); return; }
+      out.textContent = text || tr('Could not calculate the surface area', '表面積を計算できませんでした');
+    };
     const parts = [], names = [], items = [];
     let missing = 0;
     S.real = await realRegion(S);
@@ -6998,9 +7088,11 @@
     const rings = S.real && S.real.rings, mask = S.real && S.real.mask;
     // a surface usually stands upright where its real values end (√(1 − x²) at x = ±1), and the points
     // of a grid cannot follow that: √(1 − x²) on [−2, 2]² gave 19 for 4π + 8 ≈ 20.57. Not measured.
+    // (1.12.0, BG21: the enclosed part offered with one button when it is found; else a rectangle inside them)
     if (mask) {
-      fail(tr('The surface area cannot be measured here: the surfaces end inside the rectangle, where their real values end. Choose a rectangle inside them (or the disk, when they are round)',
-        '表面積はここでは測れません。曲面が長方形の中で終わっています（実数の値がなくなる所）。曲面の内側の長方形（丸い形なら円）を選んでください'));
+      fail(tr('The surface area cannot be measured over this rectangle: the surfaces end inside it, where their real values end.',
+        '表面積はこの長方形では測れません。曲面が長方形の中で終わっています（実数の値がなくなる所）。'));
+      await encOffer(S, seq, tr('Choose a rectangle inside the surfaces.', '曲面の内側の長方形を選んでください。'), out);
       return;
     }
     const floor = g ? null : rings ? await exactIntegral(rings.map((p) => `π × ((${p.b})^2 − (${p.a})^2)`).join(' + '), 3000)
@@ -7274,7 +7366,11 @@
       n = await tsAnnulus(Fs, radii.length === 1 ? '0' : radii[0].text, radii[radii.length - 1].text);
     } else if (shape.rect) {
       const [x0, x1, y0, y1] = shape.rect.sides;
-      n = await simpsonRect(F, x0.text, x1.text, y0.text, y1.text, null, true);
+      // (1.12.0, BG21: the 2D tanh-sinh rule of "Custom", which copes with a surface that stands upright at a
+      // side where its real values end; Simpson's rule gave about 12 for 4π for √(1 − x²) over −1 ≤ x ≤ 1,
+      // −2 ≤ y ≤ 2, now that the enclosed part is offered where the surfaces have no real values in part of a region)
+      n = await tsGrid(pieceGrid({ t: 'rect', x0: x0.text, x1: x1.text, y0: y0.text, y1: y1.text }, F));
+      if (!n) n = await simpsonRect(F, x0.text, x1.text, y0.text, y1.text, null, true);
     } else n = encNumeric(G, lab, id, d, Fgrid);
     const expr = encExpr(shape, F);
     if (!n || !isFinite(n.v)) return { val: null, expr };
@@ -8101,6 +8197,8 @@
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
       Q3.res = Number(res.value) || 41;
+      // (1.12.0, BG21: the formulas of a solid made elsewhere, as read the first time; others drawn later end it)
+      if (Q3.solid && Q3.solid.fresh) { Q3.solid.fresh = false; Q3.solid.exprs = Q3.exprs.join('\n'); }
     };
     go.addEventListener('click', () => {
       if (!Q3.keep) {
@@ -8168,6 +8266,9 @@
     // (a solid made in the 2D graph, BG20: its volume large above the graph, and "← Back to 2D")
     Q3.from2d = opts.back || null;
     showBack3d();
+    // (1.12.0, BG21: the values of a solid made elsewhere for "Volume and surface", which opens closed)
+    Q3.solid = opts.solid ? Object.assign({ fresh: true }, opts.solid) : null;
+    if (opts.solid) closeVolumeBox();
     Q3.pending = null;
     // (1.11.0: a finer grid when asked for, as for a solid of revolution with its round rims)
     if (opts.res && (Number(store.get('qalc.plot3d.res', '41')) || 41) < opts.res) store.set('qalc.plot3d.res', String(opts.res));
@@ -11307,7 +11408,13 @@
       const pic = el('div', { class: 'pf-pic' });
       const msg = el('div', { class: 'geo-msg', role: 'alert' });
       const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
-      const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る') }, () => { if (D.three) openPlot3dWith(D.three.exprs, { range: D.three.range, equal: true, res: 61, grow: 'h', rims: D.three.rims }); });
+      // (BG21: "Volume and surface" in the 3D view shows the values of the tool, as they are here)
+      const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る') }, () => {
+        if (!D.three) return;
+        const vals = (D.vals || []).slice();
+        openPlot3dWith(D.three.exprs, { range: D.three.range, equal: true, res: 61, grow: 'h', rims: D.three.rims,
+          solid: { src: D, title: tr('Values of the solid of revolution', '回転体の値'), hint: tr('The values found in "Solid from a profile". Other formulas drawn here are measured as an ordinary 3D graph.', '「輪郭から回転体」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測れます。'), values: () => vals } });
+      });
       // (D3: the solid as an STL file, one unit of the profile in millimetres)
       const stlBtn = tapButton({ class: 'btn stl-btn', text: tr('Save as STL', 'STL で保存') }, () => { if (D.stl) openStlSheet(D.stl, 'profile', { mm: 1, cm: 10, m: 1000, in: 25.4 }[D.unit]); });
       const quickBox = el('div', { class: 'quick-box' });
@@ -11354,6 +11461,7 @@
         const node = tapButton({ class: 'geo-row' }, () => { if (expr) resultSheet(name, expr, shown); });
         node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), el('span', { class: 'geo-val', text: shown }));
         outs.append(node);
+        D.vals.push({ name, small, text: shown, expr }); // (BG21: for the 3D view)
         return node;
       };
       const mark = (box, r, c) => { const ins = box.querySelectorAll('input'); if (ins[r * 2 + c]) ins[r * 2 + c].setAttribute('aria-invalid', 'true'); };
@@ -11373,7 +11481,7 @@
       };
       const run = async () => {
         const seq = ++D.seq;
-        msg.textContent = ''; outs.textContent = ''; quickBox.textContent = ''; view.hidden = true; D.three = null; stlBtn.hidden = true; D.stl = null;
+        msg.textContent = ''; outs.textContent = ''; quickBox.textContent = ''; view.hidden = true; D.three = null; stlBtn.hidden = true; D.stl = null; D.vals = [];
         const o = pfPoints(D.rows, D.dia);
         if (o.error) { if (o.row !== undefined) mark(table, o.row, o.col); msg.textContent = o.error; pic.textContent = ''; return; }
         const hasInner = D.inner.some((r) => String(r[0] || '').trim() || String(r[1] || '').trim());

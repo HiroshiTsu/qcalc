@@ -385,6 +385,8 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :step: 打開 [[Volume and surface ▾]]，體積和表面積立刻顯示。
 :step: 選擇區域：矩形、圓盤、圍起來的部分，或用式子決定的區域。
 :example: 範例的球（半徑 2）→ 體積 32π/3，表面積 16π
+:tip: 在 2D 圖形（[[!⟳ 3D]]）或 [[Solid from a profile]] 做成的立體的 3D 中，[[Volume and surface ▾]] 會顯示在那裡求出的值（[[Values of the solid of revolution]]）。畫別的式子時，區域的工具就會回來。
+:tip: 曲面在區域的一部分沒有實數值時，[[Measure the enclosed part]] 只在有實數值的部分測量。
 
 ## share | 分享圖片和 GIF
 :what: 把圖形的圖片傳到其他 App；3D 圖形也能傳動態 GIF。

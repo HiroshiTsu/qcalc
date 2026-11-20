@@ -529,6 +529,15 @@ html.big-keys #expr::placeholder { font-size: .8em; }
 .vol-legend { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); margin: 6px 0 2px; line-height: 1.4; }
 .vol-legend[hidden] { display: none; }
 .vol-legend i { flex: none; width: 16px; height: 16px; border-radius: 5px; border: 2px solid transparent; }
+/* 1.12.0 (BG21): the values of a solid made elsewhere in "Volume and surface" of the 3D graph, as the rows of "Make a solid" */
+.solid-vals { margin: 8px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.solid-vals[hidden], .vol-tools[hidden] { display: none; }
+.solid-title { font-weight: 700; padding: 10px 12px 2px; }
+.solid-vals .geo-row { flex-wrap: wrap; row-gap: 2px; }
+.solid-vals .geo-val { flex: 1 1 auto; overflow-wrap: break-word; overflow-x: auto; overflow-y: hidden; text-align: right; }
+.solid-vals .geo-row:first-of-type .geo-val { font-size: 1.3em; font-weight: 700; }
+.solid-vals .form-hint { padding: 4px 12px 10px; }
+.vol-offer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 6px; }
 .section-title { font-weight: 700; font-size: 14px; margin: 18px 2px 6px; color: var(--muted); }
 .setting {
   display: flex; align-items: center; gap: 10px;

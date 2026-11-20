@@ -386,6 +386,8 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Open [[Volume and surface ▾]]: the volume and the surface area appear at once.
 :step: Choose the region: a rectangle, a disk, the enclosed part, or one given by formulas.
 :example: The sample sphere (radius 2) → volume 32π/3, surface 16π
+:tip: For a solid made in the 2D graph ([[!⟳ 3D]]) or in [[Solid from a profile]], [[Volume and surface ▾]] in its 3D view shows the values found there ([[Values of the solid of revolution]]). The tools for the region come back when other formulas are drawn.
+:tip: Where the surfaces have no real values in part of the region, [[Measure the enclosed part]] measures only where they are real.
 
 ## share | Sharing pictures and GIFs
 :what: Sends a picture of a graph to another app; a 3D graph also as a moving GIF.

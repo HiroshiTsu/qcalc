@@ -386,6 +386,8 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :step: Abre [[Volume and surface ▾]]: el volumen y la superficie aparecen al momento.
 :step: Elige la región: un rectángulo, un disco, la parte encerrada o una dada por fórmulas.
 :example: La esfera de ejemplo (radio 2) → volumen 32π/3, superficie 16π
+:tip: Para un sólido hecho en la gráfica 2D ([[!⟳ 3D]]) o en [[Solid from a profile]], [[Volume and surface ▾]] en su vista 3D muestra los valores hallados allí ([[Values of the solid of revolution]]). Las herramientas de la región vuelven cuando se dibujan otras fórmulas.
+:tip: Donde las superficies no tienen valores reales en parte de la región, [[Measure the enclosed part]] mide solo donde son reales.
 
 ## share | Compartir imágenes y GIF
 :what: Envía una imagen de una gráfica a otra app; una gráfica 3D también como GIF animado.

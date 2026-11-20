@@ -385,6 +385,8 @@ QCalc는 식을 종이에 쓰듯 입력하면 바로 결과가 나오는 계산�
 :step: [[Volume and surface ▾]]를 열면 부피와 겉넓이가 바로 나옵니다.
 :step: 영역을 고릅니다: 직사각형, 원판, 둘러싸인 부분, 식으로 정한 영역.
 :example: 예의 구(반지름 2) → 부피 32π/3, 겉넓이 16π
+:tip: 2D 그래프([[!⟳ 3D]])나 [[Solid from a profile]]에서 만든 입체의 3D에서는 [[Volume and surface ▾]]에 거기서 구한 값([[Values of the solid of revolution]])이 나옵니다. 영역 도구는 다른 식을 그리면 다시 나옵니다.
+:tip: 곡면에 실수 값이 없는 부분이 있을 때는 [[Measure the enclosed part]]로 실수 값이 있는 부분만 잴 수 있습니다.
 
 ## share | 그림과 GIF 공유
 :what: 그래프의 그림을 다른 앱으로 보냅니다. 3D 그래프는 움직이는 GIF로도 보냅니다.
