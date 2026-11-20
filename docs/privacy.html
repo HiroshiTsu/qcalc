@@ -40,7 +40,7 @@
 </ul>
 
 <h2>2. Internet use (exchange rates)</h2>
-<p>The app connects to the internet only to download exchange-rate files for currency conversion: when you use "Update exchange rates" in the menu, or, if the setting "Update exchange rates automatically (every 7 days)" is on, when the rates are more than 7 days old. It connects to these servers:</p>
+<p>The app connects to the internet only to download exchange-rate files for currency conversion: when you use "Update exchange rates" in the menu, or, if the setting "Update exchange rates automatically (at start; not while roaming or in Data Saver)" is on, when the app starts (if the rates are more than an hour old; not while the device is roaming abroad or in Data Saver). It connects to these servers:</p>
 <ul>
   <li>European Central Bank (<code>www.ecb.europa.eu</code>): rates of the major currencies</li>
   <li>Coinbase (<code>api.coinbase.com</code>): the price of Bitcoin</li>
@@ -67,6 +67,7 @@
 <h2>5. Permissions</h2>
 <ul>
   <li>Internet (<code>INTERNET</code>): to download exchange rates.</li>
+  <li>View network connections (<code>ACCESS_NETWORK_STATE</code>): to check whether the device is roaming or in Data Saver (then the exchange rates are not downloaded by themselves).</li>
   <li>Vibration (<code>VIBRATE</code>): for key-press feedback (can be turned off in the settings).</li>
   <li>Google Play billing (<code>com.android.vending.BILLING</code>), in versions where QCalc Pro can be bought: to buy QCalc Pro through Google Play.</li>
 </ul>
@@ -101,7 +102,7 @@
 </ul>
 
 <h2>2. インターネットの使用（為替レートの取得）</h2>
-<p>本アプリがインターネットに接続するのは、通貨換算に使う為替レートのファイルをダウンロードするときだけです。ダウンロードは、メニューの「為替レートの更新」を使ったとき、または設定「為替レートを自動更新」が有効な場合に（前回の更新から7日以上たったとき）行います（英語の画面では "Update exchange rates"、"Update exchange rates automatically (every 7 days)"）。接続先は次のサーバーです。</p>
+<p>本アプリがインターネットに接続するのは、通貨換算に使う為替レートのファイルをダウンロードするときだけです。ダウンロードは、メニューの「為替レートの更新」を使ったとき、または設定「為替レートを自動更新」が有効な場合にアプリを起動したとき（前回の更新から1時間以上たっていれば。海外ローミング中とデータセーバー中は除く）行います（英語の画面では "Update exchange rates"、"Update exchange rates automatically (at start; not while roaming or in Data Saver)"）。接続先は次のサーバーです。</p>
 <ul>
   <li>欧州中央銀行（<code>www.ecb.europa.eu</code>）：主要通貨の為替レート</li>
   <li>Coinbase（<code>api.coinbase.com</code>）：ビットコインの価格</li>
@@ -128,6 +129,7 @@
 <h2>5. 権限</h2>
 <ul>
   <li>インターネット（<code>INTERNET</code>）：為替レートのダウンロードに使います。</li>
+  <li>ネットワーク接続の表示（<code>ACCESS_NETWORK_STATE</code>）：ローミング中かどうかとデータセーバーを確かめるために使います（そのあいだは為替レートを自動では取りません）。</li>
   <li>バイブレーション（<code>VIBRATE</code>）：キーを押したときの振動に使います（設定で止められます）。</li>
   <li>Google Play の課金（<code>com.android.vending.BILLING</code>。QCalc Pro を購入できる版だけ）：Google Play で QCalc Pro を購入するために使います。</li>
 </ul>

@@ -171,10 +171,16 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :tip: Im Reiter der eigenen Definitionen speichern Sie Variablen (r = 5 cm) und Funktionen; sie bleiben für das nächste Mal erhalten.
 
 ## currencies | Währungen und Wechselkurse
-:what: Währungen werden wie `100 USD to EUR` umgerechnet. Die Wechselkurse werden alle 7 Tage von selbst aktualisiert (mit Internet).
+:what: Währungen werden wie `100 USD to EUR` umgerechnet. Die Wechselkurse werden beim Start der App von selbst aktualisiert (eine Internetverbindung ist nötig). Beim Roaming im Ausland und im Datensparmodus geschieht das nicht von selbst; drücken Sie bei Bedarf [[Update now]].
 :step: Zum sofortigen Aktualisieren drücken Sie [[Update exchange rates now]] in den [[Settings]].
 :step: Der Zeitpunkt der letzten Aktualisierung steht in derselben Zeile.
 :mistake: Ohne Internet lassen sich die Kurse nicht aktualisieren; es gelten die zuletzt geladenen.
+
+Die Preise von Bitcoin (BTC) und von Gold (XAU), Silber (XAG), Platin (XPT) und Palladium (XPD) werden zusammen mit den Wechselkursen aktualisiert.
+
+Die Kurse werden auf dem Gerät gespeichert, sodass Sie auch ohne Internet mit den zuletzt geladenen Kursen umrechnen können. Öffnen Sie die App am besten einmal vor einer Reise.
+
+Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern enthalten sind; sie werden nicht aus dem Internet geholt. Neue empfohlene Werte kommen mit Updates der App.
 
 # tools | Werkzeuge
 

@@ -579,7 +579,7 @@
     "Up to {0} equations: the rest was left out": "方程式最多 {0} 個（其餘未放入）",
     "Up to {0} functions are drawn: {1} more left out": "最多畫出 {0} 個函數（其餘 {1} 個未畫出）",
     "Update exchange rates": "更新匯率",
-    "Update exchange rates automatically (every 7 days)": "自動更新匯率（每 7 天）",
+    "Update exchange rates automatically (at start; not while roaming or in Data Saver)": "自動更新匯率（啟動時；國際漫遊和數據節省模式時除外）",
     "Update now": "立即更新",
     "Updated from {0} of {1} sources.": "已從 {1} 個來源中的 {0} 個更新。",
     "User-defined variables and functions": "自訂變數與函數",

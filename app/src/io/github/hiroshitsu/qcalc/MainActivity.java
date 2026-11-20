@@ -13,6 +13,9 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.graphics.drawable.Icon;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -21,6 +24,7 @@ import android.os.LocaleList;
 import android.os.Looper;
 import android.os.StrictMode;
 import android.os.SystemClock;
+import android.telephony.TelephonyManager;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
@@ -704,6 +708,54 @@ public class MainActivity extends Activity {
     }
 
     /**
+     * 1.12.1: the state of the network for AutoRates, read with the permission ACCESS_NETWORK_STATE. Each
+     * method may throw; AutoRates takes that part as unknown.
+     */
+    static final class DeviceNet implements AutoRates.Net {
+        private final Context context;
+
+        DeviceNet(Context context) {
+            this.context = context;
+        }
+
+        private ConnectivityManager cm() {
+            return (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        }
+
+        @Override
+        public int sdk() {
+            return Build.VERSION.SDK_INT;
+        }
+
+        @Override
+        public Boolean notRoaming() {
+            if (Build.VERSION.SDK_INT < 28) return null;
+            ConnectivityManager cm = cm();
+            Network net = cm == null ? null : cm.getActiveNetwork();
+            NetworkCapabilities caps = net == null ? null : cm.getNetworkCapabilities(net);
+            return caps == null ? null : caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING);
+        }
+
+        @Override
+        public boolean telephonyRoaming() {
+            TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            return tm != null && tm.isNetworkRoaming();
+        }
+
+        @Override
+        public boolean metered() {
+            ConnectivityManager cm = cm();
+            return cm != null && cm.isActiveNetworkMetered();
+        }
+
+        @Override
+        public int restrictBackground() {
+            ConnectivityManager cm = cm();
+            return cm == null ? ConnectivityManager.RESTRICT_BACKGROUND_STATUS_DISABLED : cm.getRestrictBackgroundStatus();
+        }
+    }
+
+    /**
      * Methods callable from the page as window.QalcNative.* (run on a background thread of the
      * WebView). 1.12.0: each one catches what it throws, so that a wrong value from the page or a
      * failure of the system never closes the app; the page gets an empty or "failed" answer.
@@ -742,6 +794,20 @@ public class MainActivity extends Activity {
             } catch (RuntimeException e) {
                 Log.e(TAG, "updateRates", e);
                 deliver("{\"id\":" + id + ",\"ok\":false,\"error\":\"Could not update the exchange rates\"}");
+            }
+        }
+
+        /**
+         * 1.12.1: whether the exchange rates may be updated by themselves now (at start): false while roaming
+         * abroad or in Data Saver, true otherwise and whenever that cannot be known (AutoRates).
+         */
+        @JavascriptInterface
+        public boolean autoRatesAllowed() {
+            try {
+                return AutoRates.allowed(new DeviceNet(MainActivity.this));
+            } catch (RuntimeException e) {
+                Log.e(TAG, "autoRatesAllowed", e);
+                return true;
             }
         }
 

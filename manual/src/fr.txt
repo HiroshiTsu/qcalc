@@ -171,10 +171,16 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :tip: Dans l'onglet de vos définitions, vous pouvez garder des variables (r = 5 cm) et des fonctions ; elles restent pour la prochaine fois.
 
 ## currencies | Devises et taux de change
-:what: Les devises se convertissent comme `100 USD to EUR`. Les taux de change se mettent à jour seuls tous les 7 jours (avec internet).
+:what: Les devises se convertissent comme `100 USD to EUR`. Les taux de change se mettent à jour seuls au démarrage de l'app (une connexion internet est nécessaire). En itinérance à l'étranger et avec l'Économiseur de données, ils ne se mettent pas à jour seuls ; appuyez sur [[Update now]] si besoin.
 :step: Pour les mettre à jour tout de suite, appuyez sur [[Update exchange rates now]] dans [[Settings]].
 :step: L'heure de la dernière mise à jour est sur la même ligne.
 :mistake: Sans internet, ils ne se mettent pas à jour ; les derniers téléchargés sont utilisés.
+
+Les prix du bitcoin (BTC) et de l'or (XAU), de l'argent (XAG), du platine (XPT) et du palladium (XPD) sont aussi mis à jour avec les taux de change.
+
+Les taux sont gardés sur l'appareil : là où il n'y a pas d'internet, vous convertissez avec les derniers téléchargés. Ouvrez l'app une fois avant un voyage, par précaution.
+
+Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur de calcul ; elles ne sont pas prises sur internet. Les nouvelles valeurs recommandées arrivent avec les mises à jour de l'app.
 
 # tools | Outils
 

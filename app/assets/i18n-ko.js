@@ -578,7 +578,7 @@
     "Up to {0} equations: the rest was left out": "식은 {0}개까지입니다(나머지는 넣지 않았습니다)",
     "Up to {0} functions are drawn: {1} more left out": "{0}개까지 그릴 수 있습니다(나머지 {1}개는 그리지 않았습니다)",
     "Update exchange rates": "환율 업데이트",
-    "Update exchange rates automatically (every 7 days)": "환율 자동 업데이트(7일마다)",
+    "Update exchange rates automatically (at start; not while roaming or in Data Saver)": "환율 자동 업데이트(시작할 때. 해외 로밍 중과 데이터 세이버 사용 중에는 제외)",
     "Update now": "지금 업데이트",
     "Updated from {0} of {1} sources.": "{1}곳 중 {0}곳에서 업데이트했습니다.",
     "User-defined variables and functions": "사용자 정의 변수와 함수",

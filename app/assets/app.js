@@ -301,6 +301,13 @@
         else receive({ id, ok: false, error: tr('Cannot update the exchange rates', '為替レートを更新できません') });
       });
     }
+    // whether the app may update the exchange rates by itself now (1.12.1): the app's Java says no while
+    // roaming abroad or in Data Saver (AutoRates.java); yes when it does not say (QalcDev, an app without
+    // the method) or the call fails, as until 1.12.0
+    function autoRatesAllowed() {
+      const n = window.QalcNative || window.QalcDev;
+      try { return !n || typeof n.autoRatesAllowed !== 'function' || n.autoRatesAllowed() !== false; } catch (e) { return true; }
+    }
     function receive(r) {
       if (!r) return;
       const f = pending.get(r.id);
@@ -321,7 +328,7 @@
       try { ev = JSON.parse(t); } catch (e) { return; }
       if (ev && onEvent) onEvent(ev);
     }
-    return { send, updateRates, receive, receiveText, receiveEvent, setEventHandler: (f) => { onEvent = f; } };
+    return { send, updateRates, autoRatesAllowed, receive, receiveText, receiveEvent, setEventHandler: (f) => { onEvent = f; } };
   })();
   window.QalcBridge = {
     receive: (r) => Bridge.receive(r), receiveText: (t) => Bridge.receiveText(t), receiveEvent: (t) => Bridge.receiveEvent(t)
@@ -13876,7 +13883,7 @@
     ]],
     // 1.12.0: updating the rates was an item of the menu until 1.11.0
     [tr('Exchange rates', '為替レート'), [
-      ['auto_rates', tr('Update exchange rates automatically (every 7 days)', '為替レートを自動更新（7日ごと）'), 'bool'],
+      ['auto_rates', tr('Update exchange rates automatically (at start; not while roaming or in Data Saver)', '為替レートを自動更新（起動時。海外ローミング中とデータセーバー中は除く）'), 'bool'],
       ['rates_now', tr('Update exchange rates now', '為替レートを今すぐ更新'), 'link']
     ]]
   ];
@@ -14496,19 +14503,28 @@
     if (theme) root.dataset.theme = theme; else delete root.dataset.theme;
     root.classList.toggle('pro-locked', !hasPro()); // "PRO" marks on the locked features
   }
-  // update exchange rates in the background when they are older than 7 days (at most every 6 hours)
+  // Update the exchange rates in the background when the app starts (1.12.1): when they are more than an
+  // hour old, at most one try an hour (also after a failed try), and not while roaming abroad or in Data
+  // Saver (Bridge.autoRatesAllowed; then no try is counted either). Until 1.12.0 only when they were 7 days
+  // old, at most every 6 hours. "Update now" (the settings, the converter) asks nothing of this: the person
+  // chose it. The message only when the rates were 7 days old or more, or had never been updated (an update
+  // at each start says nothing); the catalogs and the expression in the field are calculated again after
+  // every update.
+  const RATES_AGE = 3600, RATES_RETRY = 3600, RATES_TELL = 7 * 86400;
   async function autoUpdateRates() {
     if (!S.auto_rates) return;
     const now = Date.now() / 1000;
-    if (ratesTime && now - ratesTime < 7 * 86400) return;
+    if (ratesTime && now - ratesTime < RATES_AGE) return;
     const lastTry = store.get('qalc.rates.try', 0);
-    if (now - lastTry < 6 * 3600) return;
+    if (now - lastTry < RATES_RETRY) return;
+    if (!Bridge.autoRatesAllowed()) return;
     store.set('qalc.rates.try', now);
+    const before = ratesTime;
     const r = await Bridge.updateRates();
     if (r && r.ok) {
       if (r.time) ratesTime = r.time;
       invalidateCatalogs();
-      toast(tr('Exchange rates updated', '為替レートを最新に更新しました'), 1800);
+      if (!before || now - before >= RATES_TELL) toast(tr('Exchange rates updated', '為替レートを最新に更新しました'), 1800);
       if (exprEl.value.trim()) exprChanged();
     }
   }

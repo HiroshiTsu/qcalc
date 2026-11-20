@@ -4,6 +4,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 1.12.1: whether the device is roaming or in Data Saver, before the exchange rates are updated by
+         themselves at start (AutoRates.java); a normal permission, with no question to the person -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- 1.11.0: the languages of the app are listed for the system settings (android:localeConfig,

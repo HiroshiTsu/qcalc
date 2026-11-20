@@ -575,7 +575,7 @@
     "Up to {0} equations: the rest was left out": "Jusqu’à {0} équations : le reste a été omis",
     "Up to {0} functions are drawn: {1} more left out": "Jusqu’à {0} fonctions sont tracées : {1} de plus omises",
     "Update exchange rates": "Mettre à jour les taux de change",
-    "Update exchange rates automatically (every 7 days)": "Mettre à jour les taux de change automatiquement (tous les 7 jours)",
+    "Update exchange rates automatically (at start; not while roaming or in Data Saver)": "Mettre à jour les taux de change automatiquement (au démarrage ; pas en itinérance ni avec l'Économiseur de données)",
     "Update now": "Mettre à jour maintenant",
     "Updated from {0} of {1} sources.": "Mis à jour depuis {0} sources sur {1}.",
     "User-defined variables and functions": "Variables et fonctions personnalisées",

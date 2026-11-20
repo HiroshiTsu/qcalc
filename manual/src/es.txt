@@ -171,10 +171,16 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :tip: En la pestaña de tus definiciones puedes guardar variables (r = 5 cm) y funciones; se conservan para la próxima vez.
 
 ## currencies | Monedas y tipos de cambio
-:what: Las monedas se convierten como `100 USD to EUR`. Los tipos de cambio se actualizan solos cada 7 días (con internet).
+:what: Las monedas se convierten como `100 USD to EUR`. Los tipos de cambio se actualizan solos al iniciar la app (hace falta conexión a internet). En itinerancia (roaming) en el extranjero y con Ahorro de datos no se actualizan solos; si hace falta, pulsa [[Update now]].
 :step: Para actualizarlos ya, pulsa [[Update exchange rates now]] en [[Settings]].
 :step: La hora de la última actualización está en la misma fila.
 :mistake: Sin internet no se pueden actualizar; se usan los últimos descargados.
+
+Los precios del bitcoin (BTC) y del oro (XAU), la plata (XAG), el platino (XPT) y el paladio (XPD) también se actualizan junto con los tipos de cambio.
+
+Los tipos se guardan en el dispositivo, así que donde no hay internet puedes convertir con los últimos descargados. Conviene abrir la app una vez antes de un viaje.
+
+Las constantes físicas son los valores de CODATA 2022 que trae el motor de cálculo; no se toman de internet. Los nuevos valores recomendados llegan con las actualizaciones de la app.
 
 # tools | Herramientas
 

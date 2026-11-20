@@ -171,10 +171,16 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :tip: In the tab of your own definitions you can save variables (r = 5 cm) and functions; they are kept for the next time.
 
 ## currencies | Currencies and exchange rates
-:what: Currencies convert like `100 USD to EUR`. The exchange rates are updated every 7 days by themselves (with the internet).
+:what: Currencies convert like `100 USD to EUR`. The exchange rates are updated by themselves when the app starts (an internet connection is needed). While roaming abroad or in Data Saver they are not updated by themselves; press [[Update now]] when you need new rates.
 :step: To update them now, press [[Update exchange rates now]] in [[Settings]].
 :step: The time of the last update is on the same row.
 :mistake: Without the internet the rates cannot be updated; the last ones are used.
+
+The prices of Bitcoin (BTC) and of gold (XAU), silver (XAG), platinum (XPT) and palladium (XPD) are updated with the exchange rates, too.
+
+The rates are kept on the device, so where there is no internet you can still convert with the last rates. Opening the app once before a trip is a good idea.
+
+The physical constants are the CODATA 2022 values built into the calculation engine; they are not taken from the internet. New recommended values come with updates of the app.
 
 # tools | Tools
 
