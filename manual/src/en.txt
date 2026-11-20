@@ -33,6 +33,8 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - **From 2D to 3D**: [[!⟳ 3D]] turns a region of the graph into a solid of revolution and shows it in 3D at once (3D: QCalc Pro); also solids with known cross sections, the lines of the method and the theorem of Pappus ([Make a solid](#solid)).
 - **Open quickly**: a widget, a quick settings tile and shortcuts on the icon ([Widget, tile and shortcuts](#widget)).
 - **Sharing**: pictures of graphs, and moving GIFs of 3D graphs ([Sharing](#share)).
+- **Solids and tanks in 3D**: [[!⟳ 3D]] at the top left of the picture in [[Solids]] and [[Tanks]] shows the shape in 3D with the sizes typed; in a tank the level can be dragged to see the amount ([Solids and tanks in 3D](#shapes-3d); 3D is QCalc Pro).
+- **Digits of the results**: the digits of the results of Shapes, Tanks and the like, as decimal places or significant digits, for each kind of quantity, with the rounding; every % has one decimal at first ([Digits of the results](#digits)).
 - **QCalc Pro**: the CSV of tables, tank heads with quick-reference tables, solids from a profile, STL files, more calculation notes and more ([QCalc Pro](#pro)).
 - **This manual**: it is inside the app. The "?" at the top right of a tool or a panel opens its section.
 
@@ -268,6 +270,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: The results change while you type; tap one to use or copy its expression.
 :example: A sphere of radius 2 → volume 32π/3 ≈ 33.51032164, surface 16π
 :tip: Choose a material to get the weight.
+:tip: [[!⟳ 3D]] at the top left of the picture shows the solid in 3D, to turn it ([Solids and tanks in 3D](#shapes-3d)).
 
 ## tanks | Tanks: liquid and level
 :what: The amount of liquid in a lying or standing tank or a round container from the height of the liquid, and the height for an amount.
@@ -288,6 +291,33 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: L is the length of the shell (without the heads).
 :step: In [[Quick-reference table ▾]], type the step: a table of heights and amounts, to copy or save as CSV.
 :tip: Flat heads (a plain cylinder, as before) are free.
+
+## shapes-3d | Solids and tanks in 3D
+:pro:
+:what: The shape of [[Solids]] or [[Tanks]], with the sizes typed, in 3D to turn. Above it, the volume and the surface area of the tool (for a tank, the amount of liquid and the capacity), large.
+:step: In [[Solids]] or [[Tanks]] of the tools, choose a shape and type its sizes.
+:step: Press [[!⟳ 3D]] at the top left of the picture (read out as [[View in 3D]]). The shape grows into 3D.
+:step: Turn it with one finger, zoom with two. A solid of revolution shows its cut with [[Cut in half]].
+:step: [[← Back to the shape]] goes back to the tool with the same shape and sizes.
+:shot: shapes3d | A lying tank with heads in 3D
+:example: A cylinder of diameter 30 cm and height 50 cm → volume 11250π ≈ 35342.91735 cm³
+:tip: A tank is drawn clear, its liquid as a solid of its own color. Drag up or down from the level (the box with the amount) to move it: [[Height of the liquid]] in the tool changes too. A drag elsewhere turns the graph. The slider [[Level]] below moves it as well.
+:tip: The marks on the wall are round amounts: in a lying or a spherical tank their gaps are visibly uneven.
+:tip: The numbers at the level are rounded for reading (3 significant digits, % with one decimal); the exact values are above the graph and in the tool ([Digits of the results](#digits)).
+:note: Without QCalc Pro, the row [[Turn it in 3D (QCalc Pro)]] appears just above the results.
+
+## digits | Digits of the results
+:what: How many digits the results of Shapes, Tanks, Solid from a profile and Make a solid show after "≈". Exact values (11250π) stay. This is separate from the calculator's [[Precision (significant digits)]].
+:step: Above the results, choose in [[Digits: auto]], for example [[Digits: 2 decimal places]].
+:step: For more, open [[Digits in detail ▾]].
+:step: Choose [[Decimal places]] or [[Significant digits]] and type the number of digits (0 to 15).
+:step: [[Each kind of quantity on its own]] sets volume, area, length, weight and % separately.
+:example: The volume of a cylinder 11250π ≈ 35342.91735 cm³ → with 2 decimal places 11250π ≈ 35342.92 cm³; with 4 significant digits 11250π ≈ 35340 cm³
+:tip: The numbers [[In the 3D picture]] (at the level, on the scale, the sizes) have their own setting: auto is 3 significant digits, % with one decimal.
+:tip: The rounding is [[Round half up]], [[Round down]] or [[Round up]]; trailing zeros [[Keep (2.50)]] or [[Drop (2.5)]].
+:tip: A quick-reference table saved as CSV has all the digits at first; with [[As shown]] it has the digits of the screen.
+:tip: The same items are in [[Settings]], under [[Digits of the tools]]; [[Back to the first settings]] brings back auto.
+:note: No more than 15 digits: the numbers are worked out with double precision. With the first settings every % has one decimal.
 
 ## measured | Volume from measured values
 :what: The volume of earthwork or a pond from a table of cross sections (average end area, Simpson's rule) or from a grid of point heights.
@@ -392,6 +422,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Open [[Volume and surface ▾]]: the volume and the surface area appear at once.
 :step: Choose the region: a rectangle, a disk, the enclosed part, or one given by formulas.
 :example: The sample sphere (radius 2) → volume 32π/3, surface 16π
+:tip: Under [[Example]] at the bottom, every solid can be chosen: [[Draw]] draws it in 3D with the values of Shapes, and [[Change the numbers]] opens Shapes.
 :tip: For a solid made in the 2D graph ([[!⟳ 3D]]) or in [[Solid from a profile]], [[Volume and surface ▾]] in its 3D view shows the values found there ([[Values of the solid of revolution]]). The tools for the region come back when other formulas are drawn.
 :tip: Where the surfaces have no real values in part of the region, [[Measure the enclosed part]] measures only where they are real.
 
@@ -436,6 +467,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 | [[Number format]] | The decimal sign and the digit groups ([Number format](#number-format)) |
 | [[Fractions]] | Automatic, decimal, fraction, mixed fraction |
 | [[Precision (significant digits)]] | The precision of calculations (10 by default) |
+| [[Digits of the tools]] | The digits of the results of Shapes, Tanks and the like ([Digits of the results](#digits)) |
 | [[Light or dark]] | The colors of the screen |
 | [[Text size]] | The text of the history, the input field and the result |
 | [[Color theme]] | The color of the keys (other than blue: QCalc Pro) |
@@ -481,6 +513,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 | Tables as CSV files (loan, savings) | [Loan](#loan) |
 | Tank heads and quick-reference tables | [Tank heads](#tank-heads) |
 | Solid from a profile | [Solid from a profile](#profile) |
+| Solids and tanks in 3D | [Solids and tanks in 3D](#shapes-3d) |
 | STL files | [STL files](#stl) |
 | GIF and pictures without the mark | [Sharing](#share) |
 | More calculation notes, saved as files | [Calculation notes](#notes) |

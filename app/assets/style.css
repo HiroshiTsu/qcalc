@@ -1101,12 +1101,12 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .geo-rd { margin: 0 0 4px; flex-wrap: wrap; max-width: 100%; } /* (BG18: "Radius | Durchmesser" with large text at 320 px) */
 .geo-rd button { flex: 1 0 auto; }
 .geo-units, .geo-weight { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
-.geo-units select, .geo-weight select, .geo-weight input, .geo-amt input { flex: 1 1 140px; min-width: 0; min-height: 40px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 15px; }
+.geo-units select, .geo-units .dig-sel, .geo-weight select, .geo-weight input, .geo-amt input { flex: 1 1 140px; min-width: 0; min-height: 40px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 15px; }
 .geo-weight .geo-val, .geo-amt .geo-val { flex: 1 1 100%; font-size: 15px; }
 .geo-weight .geo-val:empty, .geo-amt .geo-val:empty { display: none; }
 .geo-amt { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 14px; }
 .geo-pic svg .liq, .geo-chip svg .liq { fill: #3b82f6; fill-opacity: .45; stroke: none; }
-.geo-rd[hidden], .geo-units[hidden], .geo-weight[hidden], .geo-amt[hidden], .geo-weight input[hidden] { display: none; }
+.geo-rd[hidden], .geo-units[hidden], .geo-units select[hidden], .geo-weight[hidden], .geo-amt[hidden], .geo-weight input[hidden] { display: none; }
 .geo-msg:empty { display: none; }
 .geo-out { margin: 10px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
 .geo-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 12px; text-align: left; background: none; border: 0; color: var(--text); }
@@ -1422,6 +1422,19 @@ body.hselect #history { padding-bottom: 150px; }
 .rev-pro-row .rev-pro-t { flex: 1 1 auto; overflow-wrap: anywhere; }
 .rev-pro-row .rev-pro-go { flex: 0 0 auto; font-size: 20px; }
 .rev3d-back[hidden], .rev-pro-row[hidden] { display: none; }
+/* 1.12.0 (D6): "⟳ 3D" beside the picture of a solid or a tank of "Shapes", and the shape in the 3D graph */
+.geo-pic-box { flex: 0 0 42%; max-width: 190px; position: relative; min-width: 0; }
+.geo-pic-box.has3d { align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding-top: 52px; }
+.geo-3d { position: absolute; left: 0; top: 0; width: 48px; height: 48px; border-radius: 24px; border: 1px solid var(--line); background: var(--surface); color: var(--text); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; gap: 0; padding: 0; opacity: .96; box-shadow: 0 1px 3px rgba(0, 0, 0, .14); }
+.geo-3d .rev3d-i { font-size: 18px; }
+.geo-3d small { font-size: 10px; font-weight: 700; }
+.geo-3d[hidden] { display: none; }
+.legend .msw::before { width: 12px; height: 12px; border-radius: 3px; }
+.legend .msw.glass::before { background: rgba(120, 160, 205, .16); border: 1.5px solid rgba(45, 62, 90, .7); box-sizing: border-box; }
+.dark .legend .msw.glass::before { background: rgba(190, 215, 255, .1); border-color: rgba(215, 228, 250, .7); }
+.legend .note::before { display: none; }
+.plot-form[hidden], .smp-wrap[hidden], .area-wrap[hidden], .tank-level[hidden] { display: none; }
+.rev3d-vol > div + div { font-size: 16px; font-weight: 600; }
 /* the solid: the volume first and large, the method small below it, the surfaces under "More ▾" */
 .rev-out .geo-row .geo-val { font-size: 1.45em; font-weight: 700; }
 .rev-more { margin: 6px 0; }
@@ -1615,3 +1628,20 @@ body.hselect #history { padding-bottom: 150px; }
 .manual-doc .m-fig figcaption { color: var(--muted); font-size: .9em; }
 .manual-doc .m-svg svg { width: 100%; max-width: 280px; height: auto; color: var(--text); display: block; }
 .manual-doc .m-idx { padding-left: 1.1em; font-size: .92em; }
+/* 1.12.0 (D7): the digits of the results of the tools */
+/* (touch areas of at least 48 × 48 dp, as every control: A4; UX01 of the suite found 40) */
+.dig-sel, .geo-units .dig-sel { min-height: 48px; }
+.dig-more { margin: 6px 0 2px; }
+.dig-body { display: flex; flex-direction: column; gap: 8px; padding: 6px 0 4px; }
+.dig-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.dig-row .dig-lbl { flex: 0 0 auto; min-width: 7em; font-size: 14px; color: var(--muted); }
+.dig-row .seg.mini { flex: 0 1 auto; flex-wrap: wrap; }
+.dig-n { width: 4.2em; min-height: 48px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 15px; text-align: center; }
+.dig-per { gap: 8px; font-size: 14px; }
+.dig-per input { width: 22px; height: 22px; }
+.dig-kinds { display: flex; flex-direction: column; gap: 6px; padding-left: 8px; border-left: 2px solid var(--line); }
+.dig-nw { display: inline-flex; align-items: center; gap: 6px; }
+.dig-unit { font-size: 14px; color: var(--muted); }
+.dig-kinds[hidden], .dig-warn[hidden], .dig-sel option[hidden], .dig-nw[hidden] { display: none; }
+.dig-setting + .dig-more { padding: 0 12px 8px; }
+.dig-body .btn { align-self: flex-start; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: start; height: auto; }
