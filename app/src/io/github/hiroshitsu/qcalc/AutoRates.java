@@ -23,7 +23,13 @@ final class AutoRates {
          */
         Boolean notRoaming();
 
-        /** API 24 to 27: TelephonyManager.isNetworkRoaming(). */
+        /**
+         * API 24 to 27: whether the active network is Wi-Fi or Ethernet (NetworkCapabilities.TRANSPORT_WIFI or
+         * TRANSPORT_ETHERNET); null when there is no active network or its capabilities cannot be read.
+         */
+        Boolean wifiOrEthernet();
+
+        /** API 24 to 27: TelephonyManager.isNetworkRoaming() (the mobile network, even while on Wi-Fi). */
         boolean telephonyRoaming();
 
         /** ConnectivityManager.isActiveNetworkMetered(). */
@@ -41,15 +47,29 @@ final class AutoRates {
         return !roaming(n) && !dataSaver(n);
     }
 
+    /**
+     * API 28 and later: the active network without NET_CAPABILITY_NOT_ROAMING. API 24 to 27: not on Wi-Fi or
+     * Ethernet (abroad on the Wi-Fi of a hotel the phone is not roaming, though its mobile network is), and
+     * TelephonyManager.isNetworkRoaming(); when the kind of network cannot be read, TelephonyManager alone.
+     */
     static boolean roaming(Net n) {
         try {
             if (n.sdk() >= 28) {
                 Boolean notRoaming = n.notRoaming();
                 return notRoaming != null && !notRoaming;
             }
+            if (Boolean.TRUE.equals(wifiOrEthernet(n))) return false;
             return n.telephonyRoaming();
         } catch (RuntimeException e) {
             return false; // not known: the rates are updated as before
+        }
+    }
+
+    private static Boolean wifiOrEthernet(Net n) {
+        try {
+            return n.wifiOrEthernet();
+        } catch (RuntimeException e) {
+            return null; // not known
         }
     }
 

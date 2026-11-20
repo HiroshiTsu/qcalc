@@ -14503,7 +14503,7 @@
     if (theme) root.dataset.theme = theme; else delete root.dataset.theme;
     root.classList.toggle('pro-locked', !hasPro()); // "PRO" marks on the locked features
   }
-  // Update the exchange rates in the background when the app starts (1.12.1): when they are more than an
+  // Update the exchange rates in the background when the app starts or is shown again (1.12.1): when they are more than an
   // hour old, at most one try an hour (also after a failed try), and not while roaming abroad or in Data
   // Saver (Bridge.autoRatesAllowed; then no try is counted either). Until 1.12.0 only when they were 7 days
   // old, at most every 6 hours. "Update now" (the settings, the converter) asks nothing of this: the person
@@ -14528,6 +14528,12 @@
       if (exprEl.value.trim()) exprChanged();
     }
   }
+  // Back in the app (1.12.1): the app can stay alive in the background for days and the engine starts only
+  // once, so the rates are looked at again whenever the page is shown, with the same conditions (an hour, the
+  // tries, autoRatesAllowed). Nothing else of the start is done again.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && engineReady) autoUpdateRates();
+  });
   // the texts of index.html are in English; in the other languages they are replaced at start
   function localizeStatic() {
     if (LANG === 'en') return;

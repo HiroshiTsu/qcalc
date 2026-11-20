@@ -727,13 +727,25 @@ public class MainActivity extends Activity {
             return Build.VERSION.SDK_INT;
         }
 
+        /** The capabilities of the active network; null when there is none or they cannot be read. */
+        private NetworkCapabilities caps() {
+            ConnectivityManager cm = cm();
+            Network net = cm == null ? null : cm.getActiveNetwork();
+            return net == null ? null : cm.getNetworkCapabilities(net);
+        }
+
         @Override
         public Boolean notRoaming() {
             if (Build.VERSION.SDK_INT < 28) return null;
-            ConnectivityManager cm = cm();
-            Network net = cm == null ? null : cm.getActiveNetwork();
-            NetworkCapabilities caps = net == null ? null : cm.getNetworkCapabilities(net);
+            NetworkCapabilities caps = caps();
             return caps == null ? null : caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING);
+        }
+
+        @Override
+        public Boolean wifiOrEthernet() {
+            NetworkCapabilities caps = caps();
+            if (caps == null) return null;
+            return caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET);
         }
 
         @Override
