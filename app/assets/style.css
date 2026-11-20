@@ -725,7 +725,7 @@ html.big-keys #expr::placeholder { font-size: .8em; }
 /* the digits shown by a screen (feature/screen-digits): its sheet and the ⋯ of the screen */
 .sheet .digits-box { padding: 0 6px 6px; }
 .sheet .digits-seg { display: flex; margin-bottom: 12px; }
-.sheet .digits-seg button { flex: 1 1 0; width: auto; text-align: center; padding: 10px 6px; font-size: 14px; border-radius: 0; white-space: normal; }
+.sheet .digits-seg button { flex: 1 1 0; min-width: 0; width: auto; text-align: center; padding: 10px 6px; font-size: 14px; border-radius: 0; white-space: normal; overflow-wrap: anywhere; } /* (a long word, German "Nachkommastellen" with large text, breaks inside its button) */
 .sheet .digits-row { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 4px 0 10px; }
 .sheet .digits-row[hidden] { display: none; }
 .sheet .digits-row .btn { width: 48px; min-height: 48px; text-align: center; padding: 0; font-size: 22px; border: 1px solid var(--line); border-radius: 12px; }
@@ -736,7 +736,7 @@ html.big-keys #expr::placeholder { font-size: .8em; }
 /* the trailing zeros, and the rows of the shared digits (D7) under "More ▾": switches side by side, as in the tools */
 .sheet .digits-zeros { margin: 0 0 8px; justify-content: center; }
 .sheet .digits-zeros[hidden], .sheet .dig-kinds[hidden], .sheet .dig-nw[hidden], .sheet .dig-warn[hidden] { display: none; }
-.sheet .dig-row .seg.mini button, .sheet .digits-zeros .seg.mini button { display: inline-block; width: auto; text-align: center; padding: 8px 12px; font-size: 14px; border-radius: 0; min-height: 44px; }
+.sheet .dig-row .seg.mini button, .sheet .digits-zeros .seg.mini button { display: inline-block; width: auto; max-width: 100%; text-align: center; padding: 8px 12px; font-size: 14px; border-radius: 0; min-height: 44px; overflow-wrap: anywhere; }
 .sheet .dig-more { padding: 0 6px; }
 .sheet .dig-more > summary { min-height: 48px; display: flex; align-items: center; color: var(--accent); font-weight: 600; cursor: pointer; }
 .sheet .dig-body .btn { width: auto; display: inline-block; border: 1px solid var(--line); text-align: center; padding: 10px 14px; }

@@ -12330,7 +12330,7 @@
         if (!ok) { weightVal.textContent = decSign(tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')); return; }
         const kg = Number(numberPart(r.result.replace(/ kg$/, '')));
         // (D7: the weight with the digits set for weights; feature/screen-digits: the engine's answer rounded as a string)
-        const wtxt = resultText(Object.assign({}, r, { result: digitsText('shapes', r.result, null, 'mass') }));
+        const wtxt = resultText(Object.assign({}, r, { result: digitsText('shapes', r.result, null, 'mass', false, !!r.approx) }));
         weightVal.textContent = tr('Weight ', '重さ ') + wtxt + (kg >= 1000 ? tr(' = ', ' = ') + fmtDigits('shapes', kg / 1000, null, 'mass') + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
       };
       const svg = (sh, v, small) => {
@@ -12393,7 +12393,7 @@
           const bad = !r0.ok || !r0.result || r0.timeout || (r0.messages || []).some((m) => m.type === 'error') || /(^|[^\p{L}])i($|[^\p{L}])|undefined/u.test(r0.result);
           if (bad) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
           // (the shared digits of its kind: 6 significant digits after "≈" when recommended, % with 1 decimal)
-          const r = Object.assign({}, r0, { result: digitsText('shapes', r0.result, null, kind) });
+          const r = Object.assign({}, r0, { result: digitsText('shapes', r0.result, null, kind, false, !!r0.approx) });
           row.expr = full; row.vol = pow === 3 && (G.unit || own.length) ? `(${sub(G.unit || target)})` : ''; row.result = r.result + suffix; row.shown = resultText(r) + suffix;
           row.num = NaN;
           row.node.dataset.value = row.shown;
@@ -14159,12 +14159,15 @@
   // "≈ 0.3333333333", "12.566370614 m²". The numbers after the first "≈" are rounded (with digits chosen and the
   // zeros kept, the engine's approximations get them up to the digits chosen; the graph's sums made here keep
   // only the digits that can be trusted); a text without "≈" keeps the numbers that are not longer than the
-  // digits shown (an exact 0.25 stays as it is; zeros are not added).
-  function digitsText(key, text, auto, kind, noPad) {
+  // digits shown (an exact 0.25 stays as it is; zeros are not added). approx: the engine marked the answer as
+  // approximate without writing "≈" (it is added when shown): the whole text is rounded as after "≈".
+  function digitsText(key, text, auto, kind, noPad, approx) {
     if (!text) return text;
     const r = shownRule(key, auto, kind), integral = digitScreen(key)[2] === 'integral';
-    const s = String(text), at = s.indexOf('≈');
+    const s = String(text);
+    let at = s.indexOf('≈');
     const head = at >= 0 ? s.slice(0, at + 1) : '', tail = at >= 0 ? s.slice(at + 1) : s;
+    if (at < 0 && approx) at = 0;
     const re = /(\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:E[−+-]?\d+)?/g;
     const out = tail.replace(re, (num, intPart, off, all) => {
       if (at < 0 && num.indexOf('.') < 0 && num.indexOf('E') < 0) return num; // an integer of an exact text
@@ -14216,7 +14219,7 @@
   // every choice of digits cleared (the screens back to their defaults), and the screens calculated again
   function digitsClearAll() {
     for (const [key] of DIGIT_SCREENS()) { if (!inGroup(key) && store.get('qalc.digits.' + key, null) !== null) { store.del('qalc.digits.' + key); screenDigitsChanged(key); } }
-    if (digitsGroupChanged() || S.digits) { S.digits = DIG_DEF(); digitsChanged(); }
+    S.digits = DIG_DEF(); digitsChanged(); // (also after "Reset all settings", whose S has no digits: the tools that are open are worked out again)
   }
   // the screens to calculate again when their digits change
   const digitsRefresh = {};
