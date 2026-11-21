@@ -1,60 +1,70 @@
 <en-US>
-• Choose how many digits each tool shows: tap ⋯ next to the tool's title, then "Digits shown…"
-• Pick "Recommended (automatic)", "Significant digits" or "Decimals" and set the number with + and −. Trailing zeros can be kept (2.50) or dropped (2.5)
-• Tools you changed are marked "changed". "Back to the default (recommended)" undoes it; Settings → "Digits shown by each tool" resets them all
-• Money uses the decimals of your region's currency (none for yen, two for dollars)
+• Choose the digits each tool shows: ⋯ next to its title → "Digits shown…"
+• "Recommended (automatic)", "Significant digits" or "Decimals", set with + and −. Keep trailing zeros (2.50) or drop them (2.5)
+• Changed tools are marked "changed"; "Back to the default (recommended)" undoes it. Settings → "Digits shown by each tool" resets all
+• Money uses your region's currency decimals
+• "Solid from a profile": "View in 3D" now shows steps and flat ends without gaps
 </en-US>
 <en-GB>
-• Choose how many digits each tool shows: tap ⋯ next to the tool's title, then "Digits shown…"
-• Pick "Recommended (automatic)", "Significant digits" or "Decimals" and set the number with + and −. Trailing zeros can be kept (2.50) or dropped (2.5)
-• Tools you changed are marked "changed". "Back to the default (recommended)" undoes it; Settings → "Digits shown by each tool" resets them all
-• Money uses the decimals of your region's currency (none for yen, two for dollars)
+• Choose the digits each tool shows: ⋯ next to its title → "Digits shown…"
+• "Recommended (automatic)", "Significant digits" or "Decimals", set with + and −. Keep trailing zeros (2.50) or drop them (2.5)
+• Changed tools are marked "changed"; "Back to the default (recommended)" undoes it. Settings → "Digits shown by each tool" resets all
+• Money uses your region's currency decimals
+• "Solid from a profile": "View in 3D" now shows steps and flat ends without gaps
 </en-GB>
 <ja-JP>
 ・道具の画面ごとに、結果を何桁で表示するかを選べるようになりました（画面のタイトルの右の ⋯ →「表示桁数…」）
 ・「おすすめ（自動）」「有効数字」「小数点以下」から選び、＋ と − で桁数を決めます。末尾の 0 は、残す（2.50）か残さない（2.5）かを選べます
 ・変えた画面には「変更あり」の印が付きます。「初期値（おすすめ）に戻す」で元に戻せます。設定の「画面ごとの表示桁数」で、全部まとめて戻すこともできます
 ・お金は、端末の地域の通貨の桁で表示します（円は 1 円まで、ドルは 0.01 ドルまで）
+・「輪郭から回転体」の「3D で見る」で、段や平らな端の面が欠けて見えていたのを直しました
 </ja-JP>
 <de-DE>
-• Für jedes Werkzeug wählbar, wie viele Stellen es zeigt: ⋯ neben dem Titel → „Angezeigte Stellen…“
-• „Empfohlen (automatisch)“, „Gültige Ziffern“ oder „Nachkommastellen“ wählen, die Zahl mit + und −. Nullen am Ende behalten (2,50) oder weglassen (2,5)
-• Geänderte Werkzeuge sind mit „geändert“ markiert. „Zurück zum Standard (empfohlen)“ macht es rückgängig; Einstellungen → „Angezeigte Stellen je Werkzeug“ setzt alle zurück
-• Geldbeträge mit den Nachkommastellen der Währung Ihrer Region
+• Stellen je Werkzeug wählbar: ⋯ neben dem Titel → „Angezeigte Stellen…“
+• „Empfohlen (automatisch)“, „Signifikante Stellen“ oder „Nachkommastellen“, Zahl mit + und −. Endnullen behalten (2,50) oder nicht (2,5)
+• Geänderte Werkzeuge: „geändert“; „Zurück zum Standard (empfohlen)“ macht es rückgängig. Einstellungen → „Angezeigte Stellen je Werkzeug“ setzt alle zurück
+• Geld mit den Nachkommastellen Ihrer Währung
+• „Körper aus einem Profil“: „In 3D ansehen“ zeigt Stufen und flache Enden lückenlos
 </de-DE>
 <es-ES>
-• Elige cuántas cifras muestra cada herramienta: ⋯ junto al título → «Cifras mostradas…»
-• Elige «Recomendado (automático)», «Cifras significativas» o «Decimales» y ajusta el número con + y −. Los ceros finales se pueden mantener (2,50) o quitar (2,5)
-• Las herramientas cambiadas llevan la marca «cambiado». «Volver al valor predeterminado (recomendado)» lo deshace; Ajustes → «Cifras mostradas en cada herramienta» las restablece todas
-• El dinero usa los decimales de la moneda de tu región
+• Cifras de cada herramienta: ⋯ junto al título → «Cifras mostradas…»
+• «Recomendado (automático)», «Cifras significativas» o «Decimales», número con + y −. Ceros finales: sí (2,50) o no (2,5)
+• Herramientas cambiadas: «cambiado»; «Volver al valor predeterminado (recomendado)» lo deshace. Ajustes → «Cifras mostradas en cada herramienta» las restablece
+• El dinero usa los decimales de tu moneda
+• «Sólido a partir de un perfil»: «Ver en 3D» muestra escalones y extremos planos sin huecos
 </es-ES>
 <es-419>
-• Elige cuántas cifras muestra cada herramienta: ⋯ junto al título → «Cifras mostradas…»
-• Elige «Recomendado (automático)», «Cifras significativas» o «Decimales» y ajusta el número con + y −. Los ceros finales se pueden mantener (2,50) o quitar (2,5)
-• Las herramientas cambiadas llevan la marca «cambiado». «Volver al valor predeterminado (recomendado)» lo deshace; Ajustes → «Cifras mostradas en cada herramienta» las restablece todas
-• El dinero usa los decimales de la moneda de tu región
+• Cifras de cada herramienta: ⋯ junto al título → «Cifras mostradas…»
+• «Recomendado (automático)», «Cifras significativas» o «Decimales», número con + y −. Ceros finales: sí (2,50) o no (2,5)
+• Herramientas cambiadas: «cambiado»; «Volver al valor predeterminado (recomendado)» lo deshace. Ajustes → «Cifras mostradas en cada herramienta» las restablece
+• El dinero usa los decimales de tu moneda
+• «Sólido a partir de un perfil»: «Ver en 3D» muestra escalones y extremos planos sin huecos
 </es-419>
 <fr-FR>
-• Choisissez combien de chiffres affiche chaque outil : ⋯ à côté du titre → « Chiffres affichés… »
-• « Recommandé (automatique) », « Chiffres significatifs » ou « Décimales », puis le nombre avec + et −. Zéros finaux gardés (2,50) ou supprimés (2,5)
-• Les outils changés sont marqués « modifié ». « Revenir au réglage par défaut (recommandé) » annule ; Paramètres → « Chiffres affichés par outil » les remet tous
-• L’argent suit les décimales de la devise de votre région
+• Chiffres de chaque outil : ⋯ à côté du titre → « Chiffres affichés… »
+• « Recommandé (automatique) », « Chiffres significatifs » ou « Décimales », nombre avec + et −. Zéros finaux : oui (2,50) ou non (2,5)
+• Outils changés : « modifié » ; « Revenir au réglage par défaut (recommandé) » annule. Paramètres → « Chiffres affichés par outil » les remet tous
+• L’argent suit les décimales de votre devise
+• « Solide à partir d’un profil » : « Voir en 3D » montre marches et bouts plats sans trou
 </fr-FR>
 <fr-CA>
-• Choisissez combien de chiffres affiche chaque outil : ⋯ à côté du titre → « Chiffres affichés… »
-• « Recommandé (automatique) », « Chiffres significatifs » ou « Décimales », puis le nombre avec + et −. Zéros finaux gardés (2,50) ou supprimés (2,5)
-• Les outils changés sont marqués « modifié ». « Revenir au réglage par défaut (recommandé) » annule ; Paramètres → « Chiffres affichés par outil » les remet tous
-• L’argent suit les décimales de la devise de votre région
+• Chiffres de chaque outil : ⋯ à côté du titre → « Chiffres affichés… »
+• « Recommandé (automatique) », « Chiffres significatifs » ou « Décimales », nombre avec + et −. Zéros finaux : oui (2,50) ou non (2,5)
+• Outils changés : « modifié » ; « Revenir au réglage par défaut (recommandé) » annule. Paramètres → « Chiffres affichés par outil » les remet tous
+• L’argent suit les décimales de votre devise
+• « Solide à partir d’un profil » : « Voir en 3D » montre marches et bouts plats sans trou
 </fr-CA>
 <ko-KR>
 • 도구 화면마다 결과를 몇 자리로 표시할지 고를 수 있습니다(화면 제목 오른쪽의 ⋯ → ‘표시 자릿수…’)
-• ‘권장(자동)’·‘유효숫자 자릿수’·‘소수점 아래’ 중에서 고르고 +와 −로 자릿수를 정합니다. 끝자리의 0은 남기기(2.50)나 없애기(2.5)를 고를 수 있습니다
+• ‘권장(자동)’·‘유효 숫자’·‘소수점 아래’ 중에서 고르고 +와 −로 자릿수를 정합니다. 끝자리의 0은 남기기(2.50)나 없애기(2.5)를 고를 수 있습니다
 • 바꾼 화면에는 ‘변경됨’ 표시가 붙습니다. ‘기본값(권장)으로 되돌리기’로 되돌릴 수 있고, 설정의 ‘화면별 표시 자릿수’에서 모두 한꺼번에 되돌릴 수도 있습니다
 • 금액은 기기 지역의 통화 자릿수로 표시합니다(원은 1원까지, 달러는 0.01달러까지)
+• ‘윤곽에서 회전체’의 ‘3D로 보기’에서 단과 평평한 끝면이 빠져 보이던 것을 고쳤습니다
 </ko-KR>
 <zh-TW>
 • 每個工具畫面都能選擇結果要顯示幾位數（畫面標題右邊的 ⋯ →「顯示位數…」）
-• 從「建議（自動）」「有效數字位數」「小數點後」中選擇，再用 + 和 − 決定位數。末尾的 0 可選保留（2.50）或去掉（2.5）
+• 從「建議（自動）」「有效位數」「小數點後」中選擇，再用 + 和 − 決定位數。末尾的 0 可選保留（2.50）或去掉（2.5）
 • 變更過的畫面會標上「已變更」。按「恢復為預設值（建議）」即可還原；在設定的「各畫面的顯示位數」也能一次全部還原
 • 金額依裝置地區的貨幣位數顯示（新台幣到 1 元，美元到 0.01 元）
+• 修正「由輪廓求旋轉體」的「以 3D 檢視」中，台階和平的端面看起來缺了一塊的問題
 </zh-TW>
