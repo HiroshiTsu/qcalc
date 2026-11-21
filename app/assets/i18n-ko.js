@@ -1547,6 +1547,7 @@
     "Detailed version with photos (web)": "사진이 있는 자세한 판(웹)",
     "Tell someone about QCalc": "QCalc 알려 주기",
     "Send a bug report or an idea": "버그·요청 보내기",
+    "Rate on Google Play": "Google Play에서 평가하기",
     "The mail goes to {0} with only the version, the phone and the language. You decide whether to send it.": "메일은 {0}(으)로 가며 버전, 기기, 언어만 들어갑니다. 보낼지는 직접 정합니다.",
     "QCalc, a scientific calculator for Android: ": "QCalc, Android 공학용 계산기: ",
     "QCalc {0}: bug report or idea": "QCalc {0}: 버그·요청",

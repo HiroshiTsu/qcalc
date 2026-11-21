@@ -15842,7 +15842,15 @@
   const PRIVACY_URL = 'https://hiroshitsu.github.io/qcalc/privacy.html' + (JA ? '#ja' : ''); // English first, then Japanese (English for the other languages)
   const SOURCE_URL = 'https://github.com/HiroshiTsu/qcalc';
   const PLAY_URL = 'https://play.google.com/store/apps/details?id=io.github.hiroshitsu.qcalc';
+  const PLAY_APP_URL = 'market://details?id=io.github.hiroshitsu.qcalc'; // the same page in the Play Store app (Links.STORE_APP)
   const FEEDBACK_TO = 'hiroshitsu.apps@gmail.com';
+  // "Rate on Google Play" (feature/ratings): the page of QCalc in the Play Store app, where the stars and a review are
+  // given; MainActivity opens the same page in the browser when no app can open it (Links.fallback). Without the app
+  // (the browser, the test page), the page on the web. No library: the Play Store's own page, not the in-app review.
+  function rateApp() {
+    if (window.QalcNative && QalcNative.openUrl) QalcNative.openUrl(PLAY_APP_URL);
+    else window.open(PLAY_URL, '_blank');
+  }
   // "Tell someone about QCalc": the share sheet with one line and the address of QCalc on Google Play
   function shareApp() {
     const t = tr('QCalc, a scientific calculator for Android: ', 'QCalc（Android の関数電卓）：') + PLAY_URL;
@@ -15872,7 +15880,9 @@
         // 1.12.0 (M4, decisions 65 and 66): telling someone about QCalc, and a bug report or an idea
         // sent by mail directly (not as a one-star review). The mail has only the version, the phone
         // and the language; nothing of the history or the settings. The person sends it or not.
+        // (feature/ratings) "Rate on Google Play" first: the page of QCalc in the Play Store app
         el('div', { class: 'card' },
+          el('div', {}, el('a', { href: '#', class: 'rate-app', text: tr('Rate on Google Play', 'Google Play で評価'), onclick: (e) => { e.preventDefault(); rateApp(); } })),
           el('div', {}, el('a', { href: '#', class: 'share-app', text: tr('Tell someone about QCalc', 'QCalc を人に教える'), onclick: (e) => { e.preventDefault(); shareApp(); } })),
           el('div', {}, el('a', { href: '#', class: 'send-feedback', text: tr('Send a bug report or an idea', '不具合・要望を送る'), onclick: (e) => { e.preventDefault(); sendFeedback(app); } })),
           el('div', { class: 'muted', style: 'font-size:13px;margin-top:4px', text: trf('The mail goes to {0} with only the version, the phone and the language. You decide whether to send it.', 'メールの宛先は {0} で、版・端末・言語だけが入ります。送るかどうかはあなたが決めます。', FEEDBACK_TO) })),

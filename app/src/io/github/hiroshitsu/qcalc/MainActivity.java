@@ -585,16 +585,27 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Opens web links in the browser and mailto: links in the mail app; other kinds of links are ignored. */
+    /** Opens web links in the browser, mailto: links in the mail app and the page of QCalc in the Play Store app; other kinds of links are ignored. */
     private void openExternal(String url) {
-        // a web page in the browser, or (1.12.0, "Send a bug report or an idea") a mail draft in the
-        // mail app; nothing else (Links)
+        // a web page in the browser, (1.12.0, "Send a bug report or an idea") a mail draft in the mail
+        // app, or (feature/ratings, "Rate on Google Play") the page of QCalc in the Play Store app, and
+        // the same page in the browser when no app opens it (a phone without the Play Store); nothing
+        // else (Links)
         String kind = Links.kind(url);
         if (kind == null) return;
         Uri u = Uri.parse(url);
         try {
-            startActivity(new Intent(Links.MAIL.equals(kind) ? Intent.ACTION_SENDTO : Intent.ACTION_VIEW, u));
-        } catch (Exception ignored) {
+            Intent i = new Intent(Links.MAIL.equals(kind) ? Intent.ACTION_SENDTO : Intent.ACTION_VIEW, u);
+            // the Play Store in a task of its own, so that Back comes back to QCalc
+            if (Links.STORE.equals(kind)) i.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_NEW_DOCUMENT | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+            startActivity(i);
+        } catch (Exception e) {
+            String other = Links.fallback(url);
+            if (other == null) return;
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(other)));
+            } catch (Exception ignored) {
+            }
         }
     }
 

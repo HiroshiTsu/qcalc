@@ -1556,6 +1556,7 @@
     "Detailed version with photos (web)": "Versión detallada con fotos (web)",
     "Tell someone about QCalc": "Recomendar QCalc a alguien",
     "Send a bug report or an idea": "Enviar un error o una idea",
+    "Rate on Google Play": "Valorar en Google Play",
     "The mail goes to {0} with only the version, the phone and the language. You decide whether to send it.": "El correo va a {0} y solo lleva la versión, el móvil y el idioma. Tú decides si lo envías.",
     "QCalc, a scientific calculator for Android: ": "QCalc, una calculadora científica para Android: ",
     "QCalc {0}: bug report or idea": "QCalc {0}: error o idea",

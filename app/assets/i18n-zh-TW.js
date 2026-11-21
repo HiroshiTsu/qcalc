@@ -1548,6 +1548,7 @@
     "Detailed version with photos (web)": "附照片的詳細版（網頁）",
     "Tell someone about QCalc": "把 QCalc 告訴別人",
     "Send a bug report or an idea": "回報問題或建議",
+    "Rate on Google Play": "到 Google Play 評分",
     "The mail goes to {0} with only the version, the phone and the language. You decide whether to send it.": "郵件寄到 {0}，只包含版本、裝置和語言。要不要寄出由您決定。",
     "QCalc, a scientific calculator for Android: ": "QCalc，Android 的工程計算機：",
     "QCalc {0}: bug report or idea": "QCalc {0}：問題或建議",

@@ -502,6 +502,7 @@ L'intégration numérique (aires, longueurs et volumes du graphique) est sûre �
 
 ## about | À propos de cette app et confidentialité
 :what: [[About this app]] montre la version, la confidentialité, les licences et des liens vers le code source.
+- [[Rate on Google Play]] ouvre la page de QCalc sur Google Play, où vous pouvez donner des étoiles et écrire un avis.
 - [[Tell someone about QCalc]] partage l'adresse de QCalc sur Google Play.
 - [[Send a bug report or an idea]] ouvre un brouillon dans l'appli de courriel avec seulement la version, l'appareil et la langue ; vous décidez de l'envoyer ou non.
 - QCalc ne collecte aucune donnée personnelle et n'envoie rien.

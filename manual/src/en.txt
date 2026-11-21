@@ -502,6 +502,7 @@ Numeric integration (areas, lengths and volumes of the graph) is certain to abou
 
 ## about | About this app and privacy
 :what: [[About this app]] shows the version, the privacy notes, the licenses and links to the source code.
+- [[Rate on Google Play]] opens the page of QCalc on Google Play, where you can give stars and write a review.
 - [[Tell someone about QCalc]] shares the address of QCalc on Google Play.
 - [[Send a bug report or an idea]] opens a draft in your mail app with only the version, the phone and the language; you decide whether to send it.
 - QCalc collects no personal data and sends nothing anywhere.

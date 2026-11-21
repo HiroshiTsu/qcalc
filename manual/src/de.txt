@@ -502,6 +502,7 @@ Numerische Integration (Flächen, Längen und Volumen im Graphen) ist auf etwa 2
 
 ## about | Über diese App und Datenschutz
 :what: [[About this app]] zeigt die Version, den Datenschutz, die Lizenzen und Links zum Quellcode.
+- [[Rate on Google Play]] öffnet die Seite von QCalc bei Google Play; dort kannst du Sterne vergeben und eine Rezension schreiben.
 - [[Tell someone about QCalc]] teilt die Adresse von QCalc bei Google Play.
 - [[Send a bug report or an idea]] öffnet einen Entwurf in der Mail-App, nur mit Version, Gerät und Sprache; ob du ihn sendest, entscheidest du.
 - QCalc sammelt keine persönlichen Daten und sendet nichts.
