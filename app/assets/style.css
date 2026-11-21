@@ -725,6 +725,14 @@ html.big-keys #expr::placeholder { font-size: .8em; }
 /* the digits shown by a screen (feature/screen-digits): its sheet and the ⋯ of the screen */
 .sheet .digits-box { padding: 0 6px 6px; }
 .sheet .digits-seg { display: flex; margin-bottom: 12px; }
+/* (1.13.0) "Recommended (automatic)" on a row of its own, "Significant digits" and "Decimals" side by side under it: three
+   in a row were cut inside a word at 360 px (English "Recommende|d", German "Nachkommas|tellen"); half the width
+   holds the longest word of each language. The title of the sheet wraps between words (not break-all as the
+   expressions of the other sheets) */
+.sheet .digits-seg { flex-wrap: wrap; }
+.sheet .digits-seg button[data-m="auto"] { flex-basis: 100%; border-bottom: 1px solid var(--line); }
+.sheet .digits-seg button[data-m="auto"] + button { border-left: 0; }
+.sheet .stitle.digits-title { word-break: normal; overflow-wrap: anywhere; }
 .sheet .digits-seg button { flex: 1 1 0; min-width: 0; width: auto; text-align: center; padding: 10px 6px; font-size: 14px; border-radius: 0; white-space: normal; overflow-wrap: anywhere; } /* (a long word, German "Nachkommastellen" with large text, breaks inside its button) */
 .sheet .digits-row { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 4px 0 10px; }
 .sheet .digits-row[hidden] { display: none; }

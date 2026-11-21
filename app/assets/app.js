@@ -14333,7 +14333,7 @@
         : trf('The engine works with {0} digits more than are shown (at least {1} near its limit)', '計算は表示より {0} 桁多く行います（計算の上限の近くでは {1} 桁以上）', ENGINE_GUARD, DIGITS_GUARD);
     }
     const ui = { sync: () => { show(); if (rows) rows.sync(); } };
-    sh.append(el('div', { class: 'stitle', text: tr('Digits shown: ', '表示桁数：') + digitScreen(key)[1] }), el('div', { class: 'digits-box' }, seg, row, zeroRow, line, where || ''), more || '', back,
+    sh.append(el('div', { class: 'stitle digits-title', text: tr('Digits shown: ', '表示桁数：') + digitScreen(key)[1] }), el('div', { class: 'digits-box' }, seg, row, zeroRow, line, where || ''), more || '', back,
       el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
     show();
     if (group) digUIs.add(ui);
