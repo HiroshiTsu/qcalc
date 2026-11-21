@@ -1,0 +1,72 @@
+<en-US>
+• Exchange rates now update by themselves whenever you open the app (when they are more than an hour old; until now every 7 days)
+• Not while roaming abroad or in Data Saver; "Update now" always works
+• No new permissions: "View network connections", already in the app, is now also used to check roaming and Data Saver
+• Manual: now explains that Bitcoin, gold, silver, platinum and palladium are updated with the rates, and that you can convert offline with the last rates downloaded
+</en-US>
+<en-GB>
+• Exchange rates now update by themselves whenever you open the app (when they are more than an hour old; until now every 7 days)
+• Not while roaming abroad or in Data Saver; "Update now" always works
+• No new permissions: "View network connections", already in the app, is now also used to check roaming and Data Saver
+• Manual: now explains that Bitcoin, gold, silver, platinum and palladium are updated with the rates, and that you can convert offline with the last rates downloaded
+</en-GB>
+<en-AU>
+• Exchange rates now update by themselves whenever you open the app (when they are more than an hour old; until now every 7 days)
+• Not while roaming abroad or in Data Saver; "Update now" always works
+• No new permissions: "View network connections", already in the app, is now also used to check roaming and Data Saver
+• Manual: now explains that Bitcoin, gold, silver, platinum and palladium are updated with the rates, and that you can convert offline with the last rates downloaded
+</en-AU>
+<ja-JP>
+・為替レートを、アプリを開くたびに自動で更新（前回から 1 時間以上たっているとき。これまでは 7 日ごと）
+・海外ローミング中とデータセーバー中は自動では取りません。「今すぐ更新」はいつでも使えます
+・権限は増えていません。これまでもあった「ネットワーク接続の表示」を、ローミングとデータセーバーの確認にも使います
+・取扱説明書に追記：ビットコインと金・銀・プラチナ・パラジウムの値段も為替レートと一緒に更新されること、最後に取ったレートでネットがなくても換算できること
+</ja-JP>
+<de-DE>
+• Wechselkurse werden jetzt bei jedem Öffnen der App aktualisiert (wenn sie älter als eine Stunde sind; bisher alle 7 Tage)
+• Nicht beim Roaming im Ausland oder im Datensparmodus; „Jetzt aktualisieren“ geht immer
+• Keine neuen Berechtigungen: „Netzwerkverbindungen abrufen“, das die App schon hatte, prüft jetzt auch Roaming und Datensparmodus
+• Anleitung ergänzt: Bitcoin, Gold, Silber, Platin und Palladium werden mit den Kursen aktualisiert; offline umrechnen mit den zuletzt geladenen Kursen
+</de-DE>
+<es-ES>
+• Los tipos de cambio se actualizan solos cada vez que abres la app (si tienen más de una hora; antes, cada 7 días)
+• No en itinerancia en el extranjero ni con Ahorro de datos; «Actualizar ahora» siempre funciona
+• Sin permisos nuevos: «Ver conexiones de red», que la app ya tenía, ahora también comprueba la itinerancia y el Ahorro de datos
+• Manual, añadido: bitcóin, oro, plata, platino y paladio se actualizan con los tipos de cambio; conversión sin conexión con los últimos tipos descargados
+</es-ES>
+<es-419>
+• Los tipos de cambio se actualizan solos cada vez que abres la app (si tienen más de una hora; antes, cada 7 días)
+• No en roaming en el extranjero ni con Ahorro de datos; «Actualizar ahora» siempre funciona
+• Sin permisos nuevos: «Ver conexiones de red», que la app ya tenía, ahora también comprueba el roaming y el Ahorro de datos
+• Manual, añadido: bitcóin, oro, plata, platino y paladio se actualizan con los tipos de cambio; conversión sin conexión con los últimos tipos descargados
+</es-419>
+<fr-FR>
+• Taux de change mis à jour à chaque ouverture de l’app (s’ils ont plus d’une heure ; avant : tous les 7 jours)
+• Pas en itinérance à l’étranger ni avec l’Économiseur de données ; « Mettre à jour maintenant » marche toujours
+• Aucune nouvelle autorisation : « Afficher les connexions réseau », déjà présente, vérifie aussi l’itinérance et l’Économiseur de données
+• Mode d’emploi : bitcoin, or, argent, platine et palladium mis à jour avec les taux ; conversion hors ligne avec les derniers taux
+</fr-FR>
+<fr-CA>
+• Taux de change mis à jour à chaque ouverture de l’app (s’ils ont plus d’une heure ; avant : tous les 7 jours)
+• Pas en itinérance à l’étranger ni avec l’Économiseur de données ; « Mettre à jour maintenant » marche toujours
+• Aucune nouvelle autorisation : « Afficher les connexions réseau », déjà présente, vérifie aussi l’itinérance et l’Économiseur de données
+• Guide : bitcoin, or, argent, platine et palladium mis à jour avec les taux ; conversion hors ligne avec les derniers taux
+</fr-CA>
+<ko-KR>
+• 앱을 열 때마다 환율을 자동으로 업데이트합니다(마지막 업데이트 후 1시간이 지났을 때. 지금까지는 7일마다)
+• 해외 로밍 중과 데이터 세이버 사용 중에는 자동으로 받지 않습니다. ‘지금 업데이트’는 언제든 쓸 수 있습니다
+• 새 권한은 없습니다. 앱에 이미 있던 ‘네트워크 연결 보기’를 로밍과 데이터 세이버 확인에도 씁니다
+• 설명서에 추가: 비트코인과 금·은·백금·팔라듐 가격도 환율과 함께 업데이트된다는 점, 마지막으로 받은 환율로 인터넷 없이도 변환할 수 있다는 점
+</ko-KR>
+<zh-TW>
+• 每次開啟 App 都會自動更新匯率（距上次更新超過 1 小時時；之前是每 7 天）
+• 國際漫遊和數據節省模式時不會自動更新；「立即更新」隨時可用
+• 沒有新增權限：App 原本就有的「查看網路連線」，現在也用來確認漫遊和數據節省模式
+• 說明書：補充說明比特幣與金、銀、鉑、鈀的價格會和匯率一起更新，以及沒有網路時也能用上次取得的匯率換算
+</zh-TW>
+<zh-HK>
+• 每次開啟 App 都會自動更新匯率（距上次更新超過 1 小時時；之前是每 7 天）
+• 在外地漫遊和數據節省模式時不會自動更新；「立即更新」隨時可用
+• 沒有新增權限：App 原本就有的「查看網絡連線」，現在也用來確認漫遊和數據節省模式
+• 說明書：補充說明比特幣與金、銀、鉑、鈀的價格會和匯率一同更新，以及沒有網絡時也能用上次取得的匯率換算
+</zh-HK>
