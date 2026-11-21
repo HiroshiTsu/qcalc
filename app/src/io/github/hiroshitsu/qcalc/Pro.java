@@ -57,7 +57,7 @@ final class Pro {
         /** The result of a query of the purchases or of a purchase: owned, or pending (paid later). */
         void owned(boolean owned, boolean pending);
 
-        /** The price in the user's currency, as Google Play shows it ("¥300"). */
+        /** The price in the user's currency, as Google Play shows it ("¥600"). */
         void price(String formatted);
 
         /** A message for the user, in English (the page translates the known ones). */

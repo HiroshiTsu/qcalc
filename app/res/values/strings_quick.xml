@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget, the tile and the shortcuts of the icon (1.12.0). The page sets the texts in the app's
+     language once it has started (Quick.setLabels); these are shown until then and in the widget picker. -->
+<resources>
+    <string name="tile_label">@string/app_name</string>
+    <string name="widget_desc">The last result, with buttons for Calculate, Tools and Convert</string>
+    <string name="widget_calc">Calculate</string>
+    <string name="widget_tools">Tools</string>
+    <string name="widget_convert">Convert</string>
+    <string name="widget_empty">No calculation yet</string>
+    <string name="sc_new">New calculation</string>
+    <string name="sc_convert_long">Convert units and currencies</string>
+</resources>

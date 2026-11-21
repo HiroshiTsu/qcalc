@@ -22,41 +22,33 @@ Mathe tippen wie auf Papier: Einheiten, Währungen, Gleichungen und Graphen.
 
 ## Vollständige Beschreibung
 
-QCalc ist ein Rechner für Android auf der Grundlage von libqalculate, dem Rechenkern des Open-Source-Rechners Qalculate!. Gib Ausdrücke so ein, wie du sie auf Papier schreiben würdest, zum Beispiel „60 mph to km/h“ oder „solve(x^2 − 5x + 6 = 0)“.
+QCalc ist ein Rechner für Android auf der Grundlage von libqalculate, dem Rechenkern des Open-Source-Rechners Qalculate!. Gib Ausdrücke so ein, wie du sie schreiben würdest, zum Beispiel „60 mph to km/h“ oder „solve(x^2 − 5x + 6 = 0)“.
 
 ■ Funktionen
-• Einheitenumrechnung: Länge, Masse, Temperatur, Energie und viele weitere (5 km to mi, 20 °C to °F)
-• Währungsumrechnung mit Kursen der Europäischen Zentralbank und anderer Quellen (100 USD to EUR)
-• Gleichungen und Gleichungssysteme (solve, multisolve)
-• Ableitungen, Integrale, Grenzwerte, Summen und Differentialgleichungen (diff, integrate, limit, sum, dsolve) in Formularen wie auf Papier, mit sofortigem Ergebnis
-• Der Ausdruck wird beim Tippen in mathematischer Schreibweise angezeigt
-• Matrizen bis 30 × 30 in einem Raster mit Determinante, Inverse, Rang, Eigenwerten und linearen Systemen
-• Figuren: Fläche, Volumen und Oberfläche von 22 Figuren (Kreis, Kugel, Kegelstumpf, Rohr …); Füllmenge in Behältern; Volumen aus Querschnitten
-• Komplexe Zahlen; Binär-, Oktal- und Hexadezimalzahlen
-• Datumsrechnung (today + 100 days) und Fehlerfortpflanzung
-• Exakte Ergebnisse mit Brüchen und Wurzeln und hohe Genauigkeit mit bis zu 200 000 signifikanten Stellen (über 1000 Stellen mit QCalc Pro). Lange Ergebnisse werden vollständig angezeigt und kopiert
-• Schnelle spezielle Funktionen mit vielen Stellen (zeta, gamma, erf, Bessel …)
-• 2D-Graphen von y = f(x): mehrere Funktionen auf einmal; ziehen zum Verschieben, spreizen zum Zoomen. Ableitungen, Stammfunktionen, Tangenten, Nullstellen und Extrema; Flächen (sofort; die Ränder lassen sich ziehen), Kurvenlängen und Umfänge; Rotationskörper; 17 Beispiele
-• 3D-Graphen von z = f(x, y) mit Schatten, mit dem Finger drehbar: partielle Ableitungen, Volumen und Oberfläche über Rechteck, Kreis, dem Teil zwischen zwei Flächen oder eigenem Bereich, 14 Beispiele (QCalc Pro)
-• 📈 zeichnet, was du eingibst: Ausdrücke in x und y, Gleichungen und Matrizen, auch aus dem Verlauf und den Formularen
+• Einheiten und Währungen: Länge, Masse, Geschwindigkeit, Temperatur, Energie … (5 km to mi, 100 USD to EUR), eingetippt oder in einem Umrechner; Kurse der EZB und anderer Quellen
+• Werkzeuge mit Beispielen und sofortigem Ergebnis: Preis mit Rabatt und Steuer, Prozente, Grundpreise, Rechnung teilen, Kredit mit Tilgungsplan, Sparen mit Zinseszins, Datum, Zeiten und Arbeitszeit, Statistik mit Regression, Rechennotizen (eine Rechnung pro Zeile, mit Namen und Summen)
+• Gleichungen und Systeme; Ableitungen, Integrale, Grenzwerte, Summen und Differentialgleichungen in Formularen wie auf Papier, mit Rückgängig und Wiederholen
+• Der Ausdruck in mathematischer Schreibweise beim Tippen
+• Matrizen bis 30 × 30 in einem Raster: Determinante, Inverse, Rang, Eigenwerte, lineare Systeme
+• Figuren: Fläche, Längen, Volumen und Oberfläche von 22 Figuren mit Bild und Formel; Füllmenge in Behältern; Gewicht aus der Dichte; Volumen aus Querschnitten
+• Komplexe Zahlen; Binär-, Oktal- und Hexadezimalzahlen; Datum (today + 100 days); Fehlerfortpflanzung
+• Exakte Ergebnisse mit Brüchen und Wurzeln, bis zu 200 000 Stellen (über 1000 mit QCalc Pro); schnelle spezielle Funktionen (zeta, gamma, erf, Bessel …)
+• 2D-Graphen: mehrere Funktionen, ziehen und zoomen; Ableitungen, Tangenten, Nullstellen und Extrema; Flächen mit ziehbaren Rändern, Längen; „⟳ 3D“ macht aus einem Bereich sofort einen Rotationskörper, dazu Querschnitte und die Guldinsche Regel; 17 Beispiele
+• 3D-Graphen von z = f(x, y) mit Schatten, mit dem Finger drehbar: partielle Ableitungen, Volumen und Oberfläche über Rechteck, Kreis, dem Teil zwischen zwei Flächen oder eigenem Bereich; 14 Beispiele (QCalc Pro)
+• Graph als Bild teilen; Widget, Kachel in den Schnelleinstellungen, Verknüpfungen
+• Tipp auf ein Ergebnis: in die Eingabe, in den Verlauf oder kopieren. Verlauf mit Suche, Anheften, Notizen und Summen; Speichertasten
+• Zahlen als 1.234,5, 1,234.5 oder 1 234,5, passend zu deiner Region
 • Traditionelle japanische Einheiten (30 tsubo to m²)
-• Beispiele und Tipps in der App: tippe auf eines, um es auszuprobieren
-• Listen von Funktionen, Einheiten und Konstanten mit Suche; eigene Variablen und Funktionen
-• Das Ergebnis erscheint beim Tippen; Ergebnisse aus dem Verlauf wiederverwenden und kopieren
-• Vorschläge beim Tippen: die Einheiten zum Umrechnen nach „to“ und Namen von Funktionen und Einheiten
-• Rückgängig für einen gelöschten Ausdruck oder Verlauf, drei Textgrößen, sieben Farbschemata (QCalc Pro)
-• Verlauf als CSV-Datei für Tabellenkalkulationen exportieren (QCalc Pro)
-• Vier Tastenseiten (123, Funktionen, Analysis, Matrix) oder die Tastatur deines Handys
-• Helle oder dunkle Darstellung
-• Auf Deutsch, Englisch, Japanisch, Spanisch, Französisch, Koreanisch und traditionellem Chinesisch (Menü → Sprache / Language); die App startet in der Sprache des Handys
-
-Hinweis: Das Dezimaltrennzeichen ist der Punkt (1.5, nicht 1,5).
+• Beispiele und Tipps in der App; Listen von Funktionen, Einheiten und Konstanten; eigene Variablen und Funktionen
+• Vorschläge beim Tippen: Einheiten nach „to“, Funktions- und Einheitennamen
+• Vier Tastenseiten (123, Funktionen, Analysis, Matrix) oder die Tastatur des Handys; drei Textgrößen; hell oder dunkel
+• Auf Deutsch, Englisch, Japanisch, Spanisch, Französisch, Koreanisch und traditionellem Chinesisch
 
 ■ QCalc Pro
-Ein einmaliger Kauf in der App schaltet eine Genauigkeit über 1000 Stellen (bis 200 000), die 3D-Graphen, die Farbschemata, den Export des Verlaufs und die Pro-Funktionen künftiger Versionen frei. Es gibt kein Abo, und alles andere ist kostenlos.
+Ein einmaliger Kauf in der App schaltet frei: über 1000 Stellen, 3D-Graphen, Farbschemata, den Export des Verlaufs, Tabellen als CSV, Behälterböden mit Füllstandstabellen, Körper aus einem gemessenen Profil (Volumen, Inhalt, Gewicht), STL-Dateien für 3D-Drucker, bewegte GIF-Bilder der 3D-Graphen und Bilder ohne Zeichen, weitere Rechennotizen und die Pro-Funktionen künftiger Versionen. Es gibt kein Abo, alles andere ist kostenlos.
 
 ■ Datenschutz
-QCalc sammelt keine personenbezogenen Daten und sendet nichts an den Entwickler. Es gibt keine Werbung. Das Internet wird nur zum Herunterladen der Wechselkurse verwendet; den Kauf von QCalc Pro wickelt Google Play ab. Verlauf und Einstellungen bleiben auf deinem Gerät.
+QCalc sammelt keine personenbezogenen Daten und sendet nichts an den Entwickler. Keine Werbung. Das Internet dient nur den Wechselkursen; den Kauf von QCalc Pro wickelt Google Play ab. Verlauf und Einstellungen bleiben auf deinem Gerät.
 
 ■ Open Source
 QCalc ist freie Software unter der GNU GPL Version 2 oder später. Der Quellcode ist auf GitHub:
@@ -66,6 +58,8 @@ libqalculate ist Open-Source-Software von Hanna Knutsson und anderen (https://qa
 
 ■ Voraussetzungen
 Android 7.0 oder neuer auf einem Gerät mit 64-Bit-ARM (arm64).
+
+Ergebnisse sind Richtwerte: nicht für Handel oder Eichung, Planung und Bau oder Steuern verwenden; Wichtiges mit einem offiziellen Verfahren prüfen.
 
 ## Versionshinweise
 

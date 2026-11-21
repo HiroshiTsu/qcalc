@@ -24,6 +24,9 @@ import java.util.Locale;
  * as well, so the two always agree; qalc.langsys keeps the language last set there. When that
  * setting is later put back to the system default, the app follows the device again.
  *
+ * 1.12.0: "Same as device" in the app's list of languages (automatic()) removes the user's own
+ * language on every version of Android; until 1.11.0 only Android 13 and later had a way back.
+ *
  * Until 1.10.1 only the first language of the device was looked at, and Japanese started the app
  * in English. So that the users of those versions do not see another language after the update,
  * the first start of 1.11.0 keeps the language they saw as qalc.lang when they already had history
@@ -105,6 +108,27 @@ final class Lang {
         String sys;
         /** The language to set for QCalc in the system settings now, or null. */
         String system;
+        /** The language set for QCalc in the system settings is to be put back to the system default. */
+        boolean clearSystem;
+    }
+
+    /**
+     * "Same as device" chosen in the app (1.12.0): no language of the user's own (qalc.lang and
+     * qalc.langsys go), and on Android 13 and later the language set for QCalc in the system settings
+     * goes back to the system default, so that choose() finds nothing set and follows the device.
+     * qalc.langinit stays, so the language of an earlier user is not kept again.
+     *
+     * @param perAppSupported Android 13 or later
+     * @param device the device's languages, the first first
+     */
+    static Choice automatic(boolean perAppSupported, List<Locale> device) {
+        Choice c = new Choice();
+        c.saved = null;
+        c.sys = null;
+        c.clearSystem = perAppSupported;
+        String dev = first(device);
+        c.lang = dev != null ? dev : "en";
+        return c;
     }
 
     /**

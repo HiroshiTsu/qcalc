@@ -19,45 +19,37 @@ QCalc - Scientific Calculator
 
 ## Short description
 
-Type math as you write it: units, currencies, equations, calculus and graphs.
+Type math as you write it: units, currencies, equations, everyday tools, graphs.
 
 ## Full description
 
 QCalc is a calculator for Android built on libqalculate, the calculation engine of the open-source calculator Qalculate!. Type expressions as you would write them, such as "60 mph to km/h" or "solve(x^2 − 5x + 6 = 0)".
 
 ■ Features
-• Unit conversion: length, mass, speed, temperature, area, energy and many more units (5 km to mi, 20 °C to °F)
-• Currency conversion with exchange rates from the European Central Bank and other sources (100 USD to EUR)
-• Equations and systems of equations (solve, multisolve)
-• Derivatives, integrals, limits, sums and differential equations (diff, integrate, limit, sum, dsolve) in forms laid out like the math: the result at once, Undo and Redo
-• The expression is shown in math notation (fractions, powers, roots, integrals) while you type
-• Equations and systems in a form (left side = right side); matrices up to 30 × 30 in a grid (paste from a spreadsheet) with determinant, inverse, rank, eigenvalues and linear systems
-• Shapes: area, lengths, volume and surface area of 22 shapes from their sizes, with pictures, formulas and units; liquid in tanks; volume from measured sections
-• Complex numbers; binary, octal and hexadecimal numbers
-• Date calculations (today + 100 days)
-• Uncertainty propagation ((5 ± 0.2) m × (3 ± 0.1) m)
-• Exact results with fractions and square roots, and high precision with up to 200,000 significant digits (above 1000 digits with QCalc Pro). Long results are shown and copied in full
-• Special functions stay fast with many digits (zeta, gamma, erf, Bessel…); calculations of up to one hour
-• 2D graphs of y = f(x): several functions at once; drag to move, pinch to zoom. Derivatives, antiderivatives, tangents, zeros and extrema; areas (shown at once; drag the edges), curve lengths and perimeters; solids of revolution; 17 samples to draw with one tap
-• 3D graphs of z = f(x, y) with shadows, turned with a finger: partial derivatives, volume and surface area over a rectangle, a disk, the part between two surfaces or a typed region, 14 samples (QCalc Pro)
-• From the forms, the graph of the calculation: tangents, areas, the lines or planes of a linear system, the rows of a matrix as points
+• Units and currencies: length, mass, speed, temperature, energy and many more (5 km to mi, 100 USD to EUR), typed or on a conversion screen; exchange rates from the European Central Bank and others
+• Tools with examples that give the result at once: price with discount and tax, percentages, unit prices, splitting a bill, loans with a repayment table, savings with compound interest, dates, times and hours worked, statistics with regression, calculation notes (a calculation on each line, with names and totals)
+• Equations and systems; derivatives, integrals, limits, sums and differential equations in forms laid out like the math, with Undo and Redo
+• The expression in math notation (fractions, powers, roots, integrals) while you type
+• Matrices up to 30 × 30 in a grid (paste from a spreadsheet): determinant, inverse, rank, eigenvalues, linear systems
+• Shapes: area, lengths, volume and surface of 22 shapes with pictures and formulas; liquid in tanks; weight from a density; volume from measured sections
+• Complex numbers; binary, octal and hexadecimal; dates (today + 100 days); uncertainty ((5 ± 0.2) m × (3 ± 0.1) m)
+• Exact results with fractions and roots, up to 200,000 digits (above 1000 with QCalc Pro); fast special functions (zeta, gamma, erf, Bessel…)
+• 2D graphs: several functions, drag and pinch; derivatives, tangents, zeros and extrema; areas with edges you drag, lengths; "⟳ 3D" turns a region into a solid of revolution at once, with cross sections and Pappus's theorem; 17 samples
+• 3D graphs of z = f(x, y) with shadows, turned with a finger: partial derivatives, volume and surface over a rectangle, a disk, the part between two surfaces or a typed region; 14 samples (QCalc Pro)
+• Share a graph as a picture; a widget, a quick settings tile and shortcuts
+• A tap on a result: put it into the input field, keep it in the history or copy it. History search, pins, notes and sums; memory keys
+• Numbers written as 1,234.5, 1.234,5 or 1 234,5, following your region
 • Traditional Japanese units such as tsubo, shaku and kan (30 tsubo to m²)
-• Examples and tips in the app: tap one to try it
-• Lists of functions, units and constants with search
-• Your own variables and functions
-• The result is shown while you type; reuse and copy results from the history
-• Suggestions while you type: the units you can convert to after "to", and the names of functions and units with the phone's keyboard
-• Undo for a cleared expression or history, three text sizes, seven color themes (QCalc Pro)
-• Export the history as a CSV file for spreadsheets (QCalc Pro)
-• Four pages of keys (123, Functions, Calculus, Matrix) or your phone's keyboard
-• Light or dark display: the phone's setting or your own choice
-• In English, Japanese, Spanish, German, French, Korean and Traditional Chinese (menu → Language)
+• Examples and tips in the app; lists of functions, units and constants; your own variables and functions
+• Suggestions while you type: units after "to", names of functions and units
+• Four pages of keys (123, Functions, Calculus, Matrix) or your phone's keyboard; three text sizes; light or dark
+• In English, Japanese, Spanish, German, French, Korean and Traditional Chinese
 
 ■ QCalc Pro
-A one-time purchase in the app unlocks a precision above 1000 digits (up to 200,000), 3D graphs, the color themes, exporting the history, and the Pro features of later versions. There is no subscription, and everything else is free.
+A one-time purchase in the app unlocks a precision above 1000 digits, 3D graphs, color themes, exporting the history, tables as CSV files, the heads of tanks with quick-reference tables, solids from a measured profile (volume, capacity, weight), STL files for 3D printers, moving GIF pictures of 3D graphs and pictures without the mark, more calculation notes, and the Pro features of later versions. There is no subscription, and everything else is free.
 
 ■ Privacy
-QCalc collects no personal data and sends nothing to the developer. There are no ads. The internet is used only to download exchange rates, and Google Play handles the purchase of QCalc Pro. The history and the settings stay on your device and are never sent to the developer.
+QCalc collects no personal data and sends nothing to the developer. There are no ads. The internet is used only for exchange rates; Google Play handles the purchase of QCalc Pro. The history and the settings stay on your device.
 
 ■ Open source
 QCalc is free software under the GNU GPL version 2 or later. The source code is on GitHub:
@@ -68,6 +60,8 @@ libqalculate is open-source software developed by Hanna Knutsson and others (htt
 ■ Requirements
 Android 7.0 or later on a 64-bit ARM (arm64) device.
 
+Results are for reference: do not use them for trade or certification, design and construction, or taxes; check important results by an official method.
+
 ## Release notes
 
 Paste in Play Console under "Release notes" (up to 500 characters per language). Play shows
@@ -76,6 +70,86 @@ es-419, after the Spanish translation of the listing has been added; listing-es.
 de-DE, fr-FR, ko-KR and zh-TW, after those translations have been added; listing-de.md …).
 The notes in German, French, Korean and Traditional Chinese were translated by machine (Claude) and
 have not been checked by native speakers.
+
+1.12.0 (when 1.11.0 was already released):
+
+<en-US>
+• Easier: Tools with search, examples, 3 actions on a result
+• Everyday: price and tax, loan, savings, dates, times, split bill
+• Converter for units and currencies; statistics; calculation notes
+• 2D graph: ⟳ 3D turns a region into a solid with one tap; cross sections
+• Share a graph as a picture; widget, tile and shortcuts
+• History: search, pin, sum of rows
+• Decimal comma by region (1.234,5)
+• Pro: tank heads, solid from a profile, STL, GIF
+• Fixes: 3D shadows while turning, jagged rims
+</en-US>
+<ja-JP>
+・見つけやすく：検索できる「道具」、例のチップ、結果をタップで 3 つの操作
+・日常の計算：値段と税、ローン、積立、日付、時間、割り勘
+・単位・通貨の換算、統計、計算メモ
+・2D グラフ：「⟳ 3D」で領域をすぐ立体に。断面の立体も
+・グラフを画像で共有。ウィジェット・タイル・ショートカット
+・履歴：検索、上に固定、行を選んで合計
+・地域に合わせた数の書き方（1.234,5 など）
+・Pro：タンクの鏡板と早見表、輪郭から回転体、STL、GIF
+・修正：3D を回すと影が消える、回転体の縁のぎざぎざ
+</ja-JP>
+<es-419>
+• Más fácil: herramientas con búsqueda, ejemplos, 3 acciones
+• Diario: precio e IVA, préstamo, ahorro, fechas, horas, dividir la cuenta
+• Conversor de unidades y monedas; estadística; notas de cálculo
+• Gráfico 2D: ⟳ 3D hace un sólido con un toque; secciones
+• Compartir un gráfico como imagen; widget, mosaico, accesos
+• Historial: buscar, fijar, sumar filas
+• Coma decimal por región
+• Pro: fondos de depósitos, sólido de un perfil, STL, GIF
+• Arreglos: sombras 3D al girar, bordes dentados
+</es-419>
+<de-DE>
+• Einfacher: Werkzeuge mit Suche, Beispiele, 3 Aktionen pro Ergebnis
+• Alltag: Preis, Steuer, Kredit, Sparen, Datum, Zeiten, Rechnung teilen
+• Einheiten- und Währungsrechner; Statistik; Rechennotizen
+• 2D-Graph: ⟳ 3D macht mit einem Tipp einen Körper; Querschnitte
+• Graph als Bild teilen; Widget, Kachel, Verknüpfungen
+• Verlauf: suchen, anheften, Zeilen summieren
+• Dezimalkomma nach Region
+• Pro: Behälterböden, Körper aus Profil, STL, GIF
+• Behoben: 3D-Schatten beim Drehen, gezackte Ränder
+</de-DE>
+<fr-FR>
+• Plus simple : outils avec recherche, exemples, 3 actions
+• Quotidien : prix et TVA, prêt, épargne, dates, heures, addition
+• Conversion d’unités et de devises ; statistiques ; notes de calcul
+• Graphique 2D : ⟳ 3D fait un solide en un geste ; sections
+• Graphique partagé en image ; widget, tuile, raccourcis
+• Historique : chercher, épingler, additionner
+• Virgule décimale selon la région
+• Pro : fonds de cuves, solide d’un profil, STL, GIF
+• Corrigé : ombres 3D en rotation, bords dentelés
+</fr-FR>
+<ko-KR>
+• 찾기 쉽게: 검색되는 도구, 예시, 결과를 탭하면 3가지 동작
+• 일상 계산: 가격과 세금, 대출, 적금, 날짜, 시간, 더치페이
+• 단위·통화 변환, 통계, 계산 메모
+• 2D 그래프: ⟳ 3D로 영역을 바로 입체로, 단면 입체도
+• 그래프를 이미지로 공유, 위젯·타일·바로가기
+• 기록: 검색, 고정, 줄을 골라 합계
+• 지역에 맞는 숫자 표기(1.234,5 등)
+• Pro: 탱크 경판과 조견표, 윤곽에서 회전체, STL, GIF
+• 수정: 3D를 돌리면 그림자가 사라짐, 회전체 가장자리의 톱니
+</ko-KR>
+<zh-TW>
+• 更好找：可搜尋的「工具」、範例、點結果有 3 種操作
+• 日常計算：價格與稅、貸款、儲蓄、日期、時間、平分
+• 單位與貨幣換算、統計、計算筆記
+• 2D 圖形：「⟳ 3D」一點就把區域變成立體；截面立體
+• 把圖形分享成圖片；小工具、快捷設定方塊、捷徑
+• 記錄：搜尋、置頂、選幾列加總
+• 依地區的數字寫法（1.234,5 等）
+• Pro：儲槽封頭與速查表、由輪廓做旋轉體、STL、GIF
+• 修正：旋轉 3D 時陰影消失、旋轉體邊緣鋸齒
+</zh-TW>
 
 1.11.0 (when 1.10.1 was already released):
 

@@ -26,21 +26,27 @@ check_inputs() {
   [ -f "$AAPT2_JAR" ] || { echo "android.jar (API 34) not found: $AAPT2_JAR (set AAPT2_JAR)"; exit 1; }
 }
 
-# make_manifest <package> <output file>
-# The source manifest has no package attribute (Gradle takes it from "namespace"); add it.
+# make_manifest <package> <output file> [application id]
+# The source manifest has no package attribute (Gradle takes it from "namespace"); add it. The
+# application id (the package as installed: ….debug for the test build) goes into ${applicationId}, as
+# Gradle does (the authority of ShareProvider, 1.12.0).
 make_manifest() {
-  sed "s|<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">|<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" package=\"$1\">|" \
+  sed -e "s|<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">|<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" package=\"$1\">|" \
+    -e "s|\${applicationId}|${3:-$1}|g" \
     "$A/AndroidManifest.xml" > "$2"
   grep -q "package=\"$1\"" "$2" || { echo "could not add the package attribute to the manifest"; exit 1; }
+  ! grep -q '\${applicationId}' "$2" || { echo "could not put the application id into the manifest"; exit 1; }
 }
 
 # build_dex <work dir>  ->  <work dir>/classes.dex
+# With the class R that "aapt2 link --java <work dir>/gen" wrote (the ids of the resources that the
+# widget uses, 1.12.0), as Gradle makes it.
 # Only app/src: app/src-billing (the purchase of QCalc Pro) needs the Google Play Billing Library and
 # is built by Gradle with qcalc.billing=true (app/build.gradle). Without it Pro cannot be bought, and
 # the app locks nothing (Pro.java).
 build_dex() {
   mkdir -p "$1/classes"
-  find "$A/src" -name '*.java' -print0 | xargs -0 javac -encoding UTF-8 -source 8 -target 8 \
+  find "$A/src" "$1/gen" -name '*.java' -print0 | xargs -0 javac -encoding UTF-8 -source 8 -target 8 \
     -bootclasspath "$ANDROID_JAR" -Xlint:-options -d "$1/classes"
   dalvik-exchange --dex --min-sdk-version=$MIN_SDK --output="$1/classes.dex" "$1/classes"
 }

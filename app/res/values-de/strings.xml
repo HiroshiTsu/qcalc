@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_desc">Das letzte Ergebnis, mit Tasten für Berechnen, Werkzeuge und Umrechnen</string>
+    <string name="widget_calc">Berechnen</string>
+    <string name="widget_tools">Werkzeuge</string>
+    <string name="widget_convert">Umrechnen</string>
+    <string name="widget_empty">Noch keine Rechnung</string>
+    <string name="sc_new">Neue Rechnung</string>
+    <string name="sc_convert_long">Einheiten und Währungen umrechnen</string>
+</resources>

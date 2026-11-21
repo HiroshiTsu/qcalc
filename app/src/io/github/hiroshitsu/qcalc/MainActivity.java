@@ -2,9 +2,9 @@ package io.github.hiroshitsu.qcalc;
 
 import android.app.Activity;
 import android.app.LocaleManager;
-import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -12,13 +12,16 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Insets;
+import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.LocaleList;
 import android.os.Looper;
+import android.os.StrictMode;
 import android.os.SystemClock;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -41,6 +44,8 @@ import android.window.OnBackInvokedDispatcher;
 
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -86,11 +91,30 @@ public class MainActivity extends Activity {
     private volatile String appLang;
     /** The languages of the app's configuration when they were last looked at (onConfigurationChanged). */
     private String configLocales;
+    /** When onCreate began (SystemClock.elapsedRealtime), for the times of the start in the log. */
+    private long createdAt;
+    /** The page has reported that it is ready (reportFullyDrawn is called once). */
+    private boolean fullyDrawn;
+    /**
+     * The place the widget, a shortcut or the tile asked for (QuickText; 1.12.0), until the page is
+     * ready to be told (pageReady).
+     */
+    private String pendingOpen;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        createdAt = SystemClock.elapsedRealtime();
+        if (getPackageName().endsWith(".debug")) strictMode();
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= 24) {
+            Log.i(TAG, "startup: onCreate " + (createdAt - android.os.Process.getStartElapsedRealtime()) + " ms after the process started");
+        }
         appearance = savedAppearance();
+        // opened from the widget, a shortcut of the icon or the tile; not when the system makes the
+        // activity again or it is opened from the list of recent apps (the same intent once more)
+        if (savedInstanceState == null && (getIntent().getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0) {
+            pendingOpen = Quick.targetOf(getIntent());
+        }
         configLocales = getResources().getConfiguration().getLocales().toLanguageTags();
         // first: on its first start a build with billing looks for the data of older versions
         pro = new Pro(this, new Pro.Listener() {
@@ -176,6 +200,17 @@ public class MainActivity extends Activity {
         content.addView(web, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         Engine.get(this).setEventListener(events);
+    }
+
+    /**
+     * Test builds only (the package name ends in .debug, as with build-apk.sh and Gradle's debug
+     * build; 1.12.0): StrictMode writes to the log what the main thread reads from or writes to the
+     * disk or the network, and leaked objects, without stopping anything (adb logcat -s StrictMode).
+     */
+    private static void strictMode() {
+        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build());
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().detectLeakedSqlLiteObjects()
+                .detectLeakedClosableObjects().detectActivityLeaks().penaltyLog().build());
     }
 
     /**
@@ -323,6 +358,17 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Puts the language set for QCalc in the system settings back to the system default (Android 13 and later). */
+    private void clearAppLocale() {
+        if (Build.VERSION.SDK_INT < 33) return;
+        try {
+            LocaleManager m = getSystemService(LocaleManager.class);
+            if (m != null && !m.getApplicationLocales().isEmpty()) m.setApplicationLocales(LocaleList.getEmptyLocaleList());
+        } catch (RuntimeException e) {
+            Log.w(TAG, "clear app locales", e);
+        }
+    }
+
     /**
      * The configuration changed without the activity being made again (configChanges in the
      * manifest; 1.11.0 adds locale and layoutDirection). When the languages changed (in the system
@@ -396,6 +442,23 @@ public class MainActivity extends Activity {
         });
     }
 
+    /** The app was running and is opened again (launchMode singleTask): from the widget, a shortcut or the tile. */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String target = Quick.targetOf(intent);
+        if (target == null) return;
+        if (fullyDrawn && web != null) openPlace(target);
+        else pendingOpen = target;
+    }
+
+    /** Tells the page to show a new calculation, Tools or Convert (window.qalcOpen in app.js). */
+    private void openPlace(String target) {
+        String t = QuickText.target(target);
+        if (t != null) runScript("window.qalcOpen && window.qalcOpen('" + t + "')");
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -446,6 +509,9 @@ public class MainActivity extends Activity {
 
     /** The setting "Light or dark" as the page saved it with its other settings (qalc.settings). */
     private String savedAppearance() {
+        // a small file read on the main thread on purpose: the colours of the window must be right
+        // before its first frame (StrictMode of the test builds is told so)
+        StrictMode.ThreadPolicy policy = StrictMode.allowThreadDiskReads();
         try {
             String s = StateStore.load(this, "qalc.settings");
             if (s != null) {
@@ -453,6 +519,8 @@ public class MainActivity extends Activity {
                 if ("dark".equals(a) || "light".equals(a)) return a;
             }
         } catch (Exception ignored) {
+        } finally {
+            StrictMode.setThreadPolicy(policy);
         }
         return "system";
     }
@@ -513,14 +581,15 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Opens web links in the browser; other kinds of links are ignored. */
+    /** Opens web links in the browser and mailto: links in the mail app; other kinds of links are ignored. */
     private void openExternal(String url) {
-        if (url == null) return;
+        // a web page in the browser, or (1.12.0, "Send a bug report or an idea") a mail draft in the
+        // mail app; nothing else (Links)
+        String kind = Links.kind(url);
+        if (kind == null) return;
         Uri u = Uri.parse(url);
-        String scheme = u.getScheme();
-        if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) return;
         try {
-            startActivity(new Intent(Intent.ACTION_VIEW, u));
+            startActivity(new Intent(Links.MAIL.equals(kind) ? Intent.ACTION_SENDTO : Intent.ACTION_VIEW, u));
         } catch (Exception ignored) {
         }
     }
@@ -576,6 +645,28 @@ public class MainActivity extends Activity {
         }, "qalc-save").start();
     }
 
+    /** Android 13 and later: the system asks the user whether to add QCalc's tile to the quick settings. */
+    private void requestTile() {
+        android.app.StatusBarManager sb = getSystemService(android.app.StatusBarManager.class);
+        if (sb == null) {
+            sendEvent("{\"event\":\"quick\",\"what\":\"tile\",\"result\":1006}");
+            return;
+        }
+        try {
+            sb.requestAddTileService(new ComponentName(this, QuickTile.class), getString(R.string.tile_label),
+                    Icon.createWithResource(this, R.drawable.ic_tile), getMainExecutor(),
+                    new java.util.function.Consumer<Integer>() {
+                        @Override
+                        public void accept(Integer result) {
+                            sendEvent("{\"event\":\"quick\",\"what\":\"tile\",\"result\":" + result + "}");
+                        }
+                    });
+        } catch (RuntimeException e) {
+            Log.w(TAG, "addTile", e);
+            sendEvent("{\"event\":\"quick\",\"what\":\"tile\",\"result\":1000}");
+        }
+    }
+
     /** Hands an event (one JSON object) to the page: engine events, QCalc Pro, saved files. */
     private void sendEvent(String json) {
         runScript("window.QalcBridge && QalcBridge.receiveEvent && QalcBridge.receiveEvent(" + JSONObject.quote(json) + ")");
@@ -595,38 +686,72 @@ public class MainActivity extends Activity {
         });
     }
 
-    /** Methods callable from the page as window.QalcNative.* (run on a background thread). */
+    /**
+     * Runs r on the UI thread. An exception there is written to the log instead of closing the app
+     * (1.12.0: everything the page asks for goes through here or is caught in JsApi).
+     */
+    private void onUi(final String what, final Runnable r) {
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (!destroyed) r.run();
+                } catch (RuntimeException e) {
+                    Log.e(TAG, what, e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Methods callable from the page as window.QalcNative.* (run on a background thread of the
+     * WebView). 1.12.0: each one catches what it throws, so that a wrong value from the page or a
+     * failure of the system never closes the app; the page gets an empty or "failed" answer.
+     */
     final class JsApi {
 
         @JavascriptInterface
         public void send(String request) {
-            Engine.get(MainActivity.this).submit(request, new Engine.Callback() {
-                @Override
-                public void done(String response) {
-                    deliver(response);
-                }
-            });
+            try {
+                Engine.get(MainActivity.this).submit(request, new Engine.Callback() {
+                    @Override
+                    public void done(String response) {
+                        deliver(response);
+                    }
+                });
+            } catch (RuntimeException e) {
+                Log.e(TAG, "send", e);
+            }
         }
 
         @JavascriptInterface
         public void updateRates(final int id) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    String r;
-                    try {
-                        r = RatesUpdater.update(Engine.get(MainActivity.this), id, versionName());
-                    } catch (RuntimeException e) {
-                        r = "{\"id\":" + id + ",\"ok\":false,\"error\":\"Could not update the exchange rates\"}";
+            try {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String r;
+                        try {
+                            r = RatesUpdater.update(Engine.get(MainActivity.this), id, versionName());
+                        } catch (RuntimeException e) {
+                            r = "{\"id\":" + id + ",\"ok\":false,\"error\":\"Could not update the exchange rates\"}";
+                        }
+                        deliver(r);
                     }
-                    deliver(r);
-                }
-            }, "qalc-rates").start();
+                }, "qalc-rates").start();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "updateRates", e);
+                deliver("{\"id\":" + id + ",\"ok\":false,\"error\":\"Could not update the exchange rates\"}");
+            }
         }
 
         @JavascriptInterface
         public void cancel() {
-            Engine.get(MainActivity.this).cancel();
+            try {
+                Engine.get(MainActivity.this).cancel();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "cancel", e);
+            }
         }
 
         /**
@@ -636,38 +761,108 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public String startLang(boolean had) {
-            return chooseLang(had, true).lang;
+            try {
+                return chooseLang(had, true).lang;
+            } catch (RuntimeException e) {
+                Log.e(TAG, "startLang", e);
+                return "en";
+            }
+        }
+
+        /**
+         * The device's first language with its region ("de-DE", "es-MX"), for the number format of
+         * the page (setting "Number format": automatic, 1.12.0). It is the region of the device, not
+         * the language chosen for QCalc.
+         */
+        @JavascriptInterface
+        public String deviceLocale() {
+            try {
+                List<Locale> l = deviceLocales();
+                return l.isEmpty() ? "" : l.get(0).toLanguageTag();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "deviceLocale", e);
+                return "";
+            }
         }
 
         /**
          * The user chose a language in the app ("Language", 1.11.0). It is kept as qalc.lang (the
          * page saves it too) and, on Android 13 and later, set for QCalc in the system settings.
          */
+        /**
+         * "Same as device" chosen in the app (1.12.0; see Lang.automatic): qalc.lang and qalc.langsys
+         * are removed and, on Android 13 and later, the language set for QCalc in the system settings
+         * goes back to the system default. Returns the language the app then has (the page loads
+         * itself again in it).
+         */
+        @JavascriptInterface
+        public String setLangAuto() {
+            try {
+                synchronized (MainActivity.this) {
+                    Lang.Choice c = Lang.automatic(Build.VERSION.SDK_INT >= 33, deviceLocales());
+                    // first, so that the change of the configuration that follows finds nothing new
+                    appLang = c.lang;
+                    StateStore.save(MainActivity.this, "qalc.lang", null);
+                    StateStore.save(MainActivity.this, "qalc.langsys", null);
+                    if (c.clearSystem) clearAppLocale();
+                    return c.lang;
+                }
+            } catch (RuntimeException e) {
+                Log.e(TAG, "setLangAuto", e);
+                return "en";
+            }
+        }
+
+        /** The language "Same as device" gives now: the first of the device's languages that the app has, else English (1.12.0). */
+        @JavascriptInterface
+        public String deviceLang() {
+            try {
+                String f = Lang.first(deviceLocales());
+                return f != null ? f : "en";
+            } catch (RuntimeException e) {
+                Log.e(TAG, "deviceLang", e);
+                return "en";
+            }
+        }
+
         @JavascriptInterface
         public void setLang(String code) {
             if (!Lang.valid(code)) return;
-            synchronized (MainActivity.this) {
-                // first, so that the change of the configuration that follows finds nothing new
-                appLang = code;
-                StateStore.save(MainActivity.this, "qalc.lang", Lang.json(code));
-                if (setAppLocale(code)) StateStore.save(MainActivity.this, "qalc.langsys", Lang.json(code));
+            try {
+                synchronized (MainActivity.this) {
+                    // first, so that the change of the configuration that follows finds nothing new
+                    appLang = code;
+                    StateStore.save(MainActivity.this, "qalc.lang", Lang.json(code));
+                    if (setAppLocale(code)) StateStore.save(MainActivity.this, "qalc.langsys", Lang.json(code));
+                }
+            } catch (RuntimeException e) {
+                Log.e(TAG, "setLang", e);
             }
         }
 
         @JavascriptInterface
         public String loadState(String name) {
-            return StateStore.load(MainActivity.this, name);
+            try {
+                return StateStore.load(MainActivity.this, name);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "loadState", e);
+                return null;
+            }
         }
 
         @JavascriptInterface
         public void saveState(String name, String data) {
-            StateStore.save(MainActivity.this, name, data);
+            try {
+                StateStore.save(MainActivity.this, name, data);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "saveState", e);
+            }
         }
 
         @JavascriptInterface
         public void copy(final String text) {
             if (text == null) return;
-            ui.post(new Runnable() {
+            onUi("copy", new Runnable() {
                 @Override
                 public void run() {
                     ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
@@ -693,6 +888,7 @@ public class MainActivity extends Activity {
                 o.put("android", Build.VERSION.RELEASE);
                 o.put("device", Build.MANUFACTURER + " " + Build.MODEL);
                 o.put("dark", isSystemDark()); // the phone's setting; the page applies its own setting
+                o.put("fontScale", (double) getResources().getConfiguration().fontScale); // the phone's font size (1.12.0)
             } catch (Exception ignored) {
             }
             return o.toString();
@@ -700,7 +896,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void openUrl(final String url) {
-            ui.post(new Runnable() {
+            onUi("openUrl", new Runnable() {
                 @Override
                 public void run() {
                     openExternal(url);
@@ -712,10 +908,31 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void setAppearance(String mode) {
             appearance = "dark".equals(mode) || "light".equals(mode) ? mode : "system";
-            ui.post(new Runnable() {
+            onUi("setAppearance", new Runnable() {
                 @Override
                 public void run() {
-                    if (!destroyed) applyColors();
+                    applyColors();
+                }
+            });
+        }
+
+        /**
+         * The page shows its keypad and the newest history (1.12.0): reported to the system as the
+         * end of the start ("Fully drawn" in `adb logcat`, and in `am start -W` from Android 10).
+         */
+        @JavascriptInterface
+        public void pageReady() {
+            onUi("pageReady", new Runnable() {
+                @Override
+                public void run() {
+                    if (fullyDrawn) return;
+                    fullyDrawn = true;
+                    Log.i(TAG, "startup: page ready " + (SystemClock.elapsedRealtime() - createdAt) + " ms after onCreate");
+                    reportFullyDrawn();
+                    if (pendingOpen != null) {
+                        openPlace(pendingOpen);
+                        pendingOpen = null;
+                    }
                 }
             });
         }
@@ -723,58 +940,224 @@ public class MainActivity extends Activity {
         /** QCalc Pro: {billing, pro, legacy, price, state} (see Pro.info()). */
         @JavascriptInterface
         public String proInfo() {
-            return pro != null ? pro.info() : "{\"billing\":\"none\"}";
+            try {
+                return pro != null ? pro.info() : "{\"billing\":\"none\"}";
+            } catch (RuntimeException e) {
+                Log.e(TAG, "proInfo", e);
+                return "{\"billing\":\"none\"}";
+            }
         }
 
         @JavascriptInterface
         public void buyPro() {
-            ui.post(new Runnable() {
+            onUi("buyPro", new Runnable() {
                 @Override
                 public void run() {
-                    if (pro != null && !destroyed) pro.buy(MainActivity.this);
+                    if (pro != null) pro.buy(MainActivity.this);
                 }
             });
         }
 
         @JavascriptInterface
         public void restorePro() {
-            if (pro != null) pro.restore();
+            try {
+                if (pro != null) pro.restore();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "restorePro", e);
+            }
         }
 
         @JavascriptInterface
         public void refreshPro() {
-            if (pro != null) pro.refresh();
+            try {
+                if (pro != null) pro.refresh();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "refreshPro", e);
+            }
         }
 
         /** Test builds only: see the app with or without Pro. */
         @JavascriptInterface
         public void setTestPro(boolean unlocked) {
-            if (pro != null) pro.setTestUnlocked(unlocked);
+            try {
+                if (pro != null) pro.setTestUnlocked(unlocked);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "setTestPro", e);
+            }
+        }
+
+        /** The last line of the history as shown, for the widget (1.12.0); both "" when the history is empty. */
+        @JavascriptInterface
+        public void setWidget(String expr, String result) {
+            try {
+                Quick.setLast(MainActivity.this, expr, result);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "setWidget", e);
+            }
+        }
+
+        /** The texts of the widget and of the icon's shortcuts in the app's language (JSON, see Quick.setLabels). */
+        @JavascriptInterface
+        public void setQuickLabels(String json) {
+            try {
+                Quick.setLabels(MainActivity.this, json);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "setQuickLabels", e);
+            }
+        }
+
+        /** "Put the widget on the home screen": "asked", "unsupported" or "failed" (Quick.pinWidget). */
+        @JavascriptInterface
+        public String pinWidget() {
+            try {
+                return Quick.pinWidget(MainActivity.this);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "pinWidget", e);
+                return "failed";
+            }
+        }
+
+        /** How many QCalc widgets are on the home screen. */
+        @JavascriptInterface
+        public int widgetCount() {
+            try {
+                return Widget.count(MainActivity.this);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "widgetCount", e);
+                return 0;
+            }
+        }
+
+        /**
+         * "Add the tile to the quick settings" (Android 13 and later): "asked", and the answer comes as
+         * the event {"event":"quick","what":"tile","result":n} (StatusBarManager's codes: 2 added,
+         * 1 already there, 0 not added, 1000 and more a failure); "unsupported" before Android 13.
+         */
+        @JavascriptInterface
+        public String addTile() {
+            try {
+                if (Build.VERSION.SDK_INT < 33) return "unsupported";
+                onUi("addTile", new Runnable() {
+                    @Override
+                    public void run() {
+                        requestTile();
+                    }
+                });
+                return "asked";
+            } catch (RuntimeException e) {
+                Log.e(TAG, "addTile", e);
+                return "failed";
+            }
+        }
+
+        /** Shares a text (a calculation memo, 1.12.0 D5) through the system's share sheet. */
+        @JavascriptInterface
+        public void shareText(final String text) {
+            if (text == null || text.isEmpty() || text.length() > 100000) return;
+            onUi("shareText", new Runnable() {
+                @Override
+                public void run() {
+                    Intent send = new Intent(Intent.ACTION_SEND);
+                    send.setType("text/plain");
+                    send.putExtra(Intent.EXTRA_TEXT, text);
+                    try {
+                        startActivity(Intent.createChooser(send, null));
+                    } catch (RuntimeException e) {
+                        Log.w(TAG, "shareText", e);
+                    }
+                }
+            });
+        }
+
+        /**
+         * Shares an image of a graph (1.12.0, D4): data is the PNG or GIF in base64, mime its type, text
+         * the words that go with it. The image is written to cache/shared/ on a thread (the images shared
+         * before are removed), and the system's share sheet opens with it: the receiving app may read that
+         * one image (ShareProvider, FLAG_GRANT_READ_URI_PERMISSION; no permission is added). The answer
+         * comes as the event {"event":"shared","ok":…}.
+         */
+        @JavascriptInterface
+        public void shareImage(final String data, final String mime, final String text) {
+            if (data == null || ShareFiles.typeOf(mime) == null || data.length() > ShareFiles.MAX_BYTES / 3 * 4 + 8) {
+                sendEvent("{\"event\":\"shared\",\"ok\":false,\"error\":\"Could not share the image\"}");
+                return;
+            }
+            try {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            byte[] bytes = Base64.decode(data, Base64.DEFAULT);
+                            if (bytes.length == 0 || bytes.length > ShareFiles.MAX_BYTES) throw new IllegalArgumentException("size");
+                            File dir = new File(getCacheDir(), ShareFiles.DIR);
+                            if (!dir.isDirectory() && !dir.mkdirs()) throw new IllegalStateException("dir");
+                            File[] old = dir.listFiles();
+                            if (old != null) for (File f : old) if (ShareFiles.isName(f.getName())) f.delete();
+                            final String name = ShareFiles.nameFor(mime, System.currentTimeMillis());
+                            FileOutputStream out = new FileOutputStream(new File(dir, name));
+                            try {
+                                out.write(bytes);
+                            } finally {
+                                out.close();
+                            }
+                            onUi("shareImage", new Runnable() {
+                                @Override
+                                public void run() {
+                                    Uri uri = ShareProvider.uriFor(getPackageName(), name);
+                                    Intent send = new Intent(Intent.ACTION_SEND);
+                                    send.setType(mime);
+                                    send.putExtra(Intent.EXTRA_STREAM, uri);
+                                    if (text != null && !text.isEmpty()) send.putExtra(Intent.EXTRA_TEXT, text);
+                                    send.setClipData(ClipData.newRawUri("", uri));
+                                    send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                    try {
+                                        startActivity(Intent.createChooser(send, null));
+                                        sendEvent("{\"event\":\"shared\",\"ok\":true}");
+                                    } catch (RuntimeException e) {
+                                        // no app to share with (ActivityNotFoundException)
+                                        sendEvent("{\"event\":\"shared\",\"ok\":false,\"error\":\"Could not share the image\"}");
+                                    }
+                                }
+                            });
+                        } catch (Exception e) {
+                            Log.w(TAG, "shareImage", e);
+                            sendEvent("{\"event\":\"shared\",\"ok\":false,\"error\":\"Could not share the image\"}");
+                        }
+                    }
+                }).start();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "shareImage", e);
+                sendEvent("{\"event\":\"shared\",\"ok\":false,\"error\":\"Could not share the image\"}");
+            }
         }
 
         /**
          * Saves a text file where the user chooses (the system's file picker); the result comes
-         * as a "saved" event. Only CSV files with a plain name, as the page makes them.
+         * as a "saved" event. Only CSV files (text/csv, .csv) and, from 1.12.0, ASCII STL files for 3D
+         * printers (model/stl, .stl) and the text of a calculation memo (text/plain, .txt), with a plain
+         * name, as the page makes them.
          */
         @JavascriptInterface
-        public void saveFile(final String name, String mime, final String text) {
-            if (name == null || text == null || !FILE_NAME.matcher(name).matches() || !"text/csv".equals(mime)
+        public void saveFile(final String name, final String mime, final String text) {
+            if (name == null || text == null || !FILE_NAME.matcher(name).matches()
+                    || !(("text/csv".equals(mime) && name.endsWith(".csv")) || ("model/stl".equals(mime) && name.endsWith(".stl"))
+                        || ("text/plain".equals(mime) && name.endsWith(".txt")))
                     || text.length() > MAX_SAVE) {
                 sendEvent("{\"event\":\"saved\",\"ok\":false,\"error\":\"Could not save the file\"}");
                 return;
             }
-            ui.post(new Runnable() {
+            onUi("saveFile", new Runnable() {
                 @Override
                 public void run() {
-                    if (destroyed) return;
                     Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
-                    i.setType("text/csv");
+                    i.setType(mime);
                     i.putExtra(Intent.EXTRA_TITLE, name);
                     pendingSave = text;
                     try {
                         startActivityForResult(i, REQUEST_SAVE);
-                    } catch (ActivityNotFoundException e) {
+                    } catch (RuntimeException e) {
+                        // no file picker (ActivityNotFoundException), or the system refused
                         pendingSave = null;
                         sendEvent("{\"event\":\"saved\",\"ok\":false,\"error\":\"Could not save the file\"}");
                     }
