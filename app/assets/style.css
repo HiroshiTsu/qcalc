@@ -1300,8 +1300,9 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .adv-settings > summary::-webkit-details-marker { display: none; }
 .adv-settings > summary::after { content: " ▾"; }
 .adv-settings[open] > summary::after { content: " ▴"; }
-.setting-link { width: 100%; text-align: left; border: 0; background: transparent; color: var(--text); font: inherit; }
-.setting-link .chev { font-size: 22px; color: var(--muted); padding: 0 6px; }
+/* (.digits-link: the rows of "Digits shown by each tool", links as "Update exchange rates now" but a class of their own) */
+.setting-link, .digits-link { width: 100%; text-align: left; border: 0; background: transparent; color: var(--text); font: inherit; }
+.setting-link .chev, .digits-link .chev { font-size: 22px; color: var(--muted); padding: 0 6px; }
 .geo-chip.geo-more { justify-content: center; color: var(--accent); font-weight: 600; min-height: 44px; }
 /* the switch of the area tool: Area or Length (1.12.0, BG05) */
 .area-mode-row { margin-top: 2px; }

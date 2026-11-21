@@ -15770,7 +15770,7 @@
           // (a small mark when the screen does not use its default: "changed")
           const nm = el('div', { text: name });
           if (digitsIsChanged(key)) nm.append(el('span', { class: 'digits-changed', text: tr('changed', '変更あり') }));
-          digitsList.append(tapButton({ class: 'setting setting-link', 'data-digits': key }, () => digitsSheet(key)).appendChild(el('div', { class: 'lbl' }, nm, el('div', { class: 's', text: digitsNow(key) }))).parentNode
+          digitsList.append(tapButton({ class: 'setting digits-link', 'data-digits': key }, () => digitsSheet(key)).appendChild(el('div', { class: 'lbl' }, nm, el('div', { class: 's', text: digitsNow(key) }))).parentNode
             .appendChild(el('span', { class: 'chev', text: '›', 'aria-hidden': 'true' })).parentNode);
         }
       };
