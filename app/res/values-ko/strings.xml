@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_desc">마지막 결과와 ‘계산’ ‘도구’ ‘변환’ 버튼</string>
+    <string name="widget_calc">계산</string>
+    <string name="widget_tools">도구</string>
+    <string name="widget_convert">변환</string>
+    <string name="widget_empty">아직 계산하지 않았습니다</string>
+    <string name="sc_new">새 계산</string>
+    <string name="sc_convert_long">단위·통화 변환</string>
+</resources>

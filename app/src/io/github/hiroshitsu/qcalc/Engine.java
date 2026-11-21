@@ -75,13 +75,25 @@ final class Engine {
     private LinkedBlockingQueue<String> lines;
     private volatile Process currentProcess;
     private volatile String lastAnswer;
+    /** The saved "ans" has been read (savedAnswer); only the worker thread reads or sets it. */
+    private boolean answerRead;
     private volatile boolean cancelled;
     private volatile EventListener listener;
 
     private Engine(Context context) {
         ctx = context;
+        // the saved "ans" (up to MAX_SAVED_ANSWER characters) is read by the worker thread when the
+        // engine starts (savedAnswer), not here on the main thread while the app starts (1.12.0)
         prefs = ctx.getSharedPreferences("engine", Context.MODE_PRIVATE);
-        lastAnswer = prefs.getString("ans", null);
+    }
+
+    /** The "ans" to give a new engine process: the newest one, or the one saved by an earlier run. */
+    private String savedAnswer() {
+        if (!answerRead) {
+            answerRead = true;
+            if (lastAnswer == null) lastAnswer = prefs.getString("ans", null);
+        }
+        return lastAnswer;
     }
 
     File userDir() {
@@ -304,7 +316,7 @@ final class Engine {
         drain.setDaemon(true);
         drain.start();
         // give "ans" back to the new process
-        String ans = lastAnswer;
+        String ans = savedAnswer();
         if (ans != null && ans.length() > 0) {
             try {
                 JSONObject r = new JSONObject();

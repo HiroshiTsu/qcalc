@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_desc">最後の結果と、「計算」「道具」「換算」のボタン</string>
+    <string name="widget_calc">計算</string>
+    <string name="widget_tools">道具</string>
+    <string name="widget_convert">換算</string>
+    <string name="widget_empty">まだ計算していません</string>
+    <string name="sc_new">新しい計算</string>
+    <string name="sc_convert_long">単位・通貨の換算</string>
+</resources>

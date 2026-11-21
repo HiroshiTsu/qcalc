@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_desc">最後的結果，以及「計算」「工具」「換算」按鈕</string>
+    <string name="widget_calc">計算</string>
+    <string name="widget_tools">工具</string>
+    <string name="widget_convert">換算</string>
+    <string name="widget_empty">還沒有計算</string>
+    <string name="sc_new">新的計算</string>
+    <string name="sc_convert_long">單位與貨幣換算</string>
+</resources>

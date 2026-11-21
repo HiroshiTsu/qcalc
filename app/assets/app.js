@@ -39,6 +39,11 @@
       const text = JSON.stringify(v);
       if (nativeState) { try { nativeState.saveState(stateName(k), text); } catch (e) { } }
       try { localStorage.setItem(k, text); } catch (e) { /* storage full or blocked */ }
+    },
+    // removed (1.12.0): saveState with null deletes the file (StateStore.save)
+    del(k) {
+      if (nativeState) { try { nativeState.saveState(stateName(k), null); } catch (e) { } }
+      try { localStorage.removeItem(k); } catch (e) { }
     }
   };
   // The language of the user interface: English, Japanese, Spanish (1.9.0), German, French, Korean
@@ -99,9 +104,22 @@
     return pickLang(list);
   })();
   const JA = LANG === 'ja';
-  // The texts of a language other than English and Japanese (i18n-es.js, i18n-de.js … , which
-  // index.html loads before this file; each one gives a function, called only for the language in
-  // use): { texts, messages, keys, categories, date }, described in i18n-es.js.
+  // "Same as device" (1.12.0): no language of the user's own is saved (qalc.lang), so the language
+  // follows the device's list (also when it changes). Until 1.11.0 a language chosen once (or kept
+  // for an earlier user at the first start of 1.11.0) could not be undone in the app.
+  const LANG_AUTO = LANGS.indexOf(store.get('qalc.lang', '')) < 0;
+  // the language "Same as device" gives now: the first of the device's list that the app has, else English
+  function deviceLang() {
+    try { if (window.QalcNative && window.QalcNative.deviceLang) { const l = window.QalcNative.deviceLang(); if (LANGS.indexOf(l) >= 0) return l; } } catch (e) { }
+    return pickLang(navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]);
+  }
+  // The rest of the page starts in start(), at the end of this file: at once in English and
+  // Japanese, and after the file of the texts of the language has been loaded in the others (1.12.0;
+  // until 1.11.0 index.html loaded all five files at every start).
+  function start() {
+  // The texts of a language other than English and Japanese (i18n-es.js, i18n-de.js …; each one
+  // gives a function, called only for the language in use): { texts, messages, keys, categories,
+  // date }, described in i18n-es.js.
   const I18N = (() => {
     const f = LANG !== 'en' && !JA && window.QCALC_I18N && window.QCALC_I18N[LANG];
     try { return (typeof f === 'function' && f()) || {}; } catch (e) { return {}; }
@@ -148,6 +166,107 @@
     if (window.QalcNative && QalcNative.openUrl) QalcNative.openUrl(url);
     else window.open(url, '_blank');
   }
+  // The user manual (1.12.0, H). Two forms are made from one source by tools/manual/build.py: the one
+  // inside the app (manual/<language>.js: text and simple SVG pictures; read only when the manual is
+  // opened, so the start is not slower, and readable offline), and the full one with photos on the site
+  // (docs/manual/<language>/, with its PDF), which only the links at the top of the manual open, in the
+  // browser (openUrl; the WebView, which has QalcNative, never loads an outside page). Both are in the
+  // language of the app (English for a language without a manual). The ids of the sections are the same
+  // in every language and must not change: the "?" of the panels and the tools point to them (MANUAL_IDS
+  // lists them all; the tests MN check that each is in the seven manuals, in the app and on the site).
+  const MANUAL_URL = 'https://hiroshitsu.github.io/qcalc/manual/';
+  const MANUAL_LANGS = ['en', 'ja', 'es', 'de', 'fr', 'ko', 'zh-TW'];
+  const manualLang = () => (MANUAL_LANGS.indexOf(LANG) >= 0 ? LANG : 'en');
+  function manualUrl(id) { return MANUAL_URL + manualLang() + '/' + (id ? '#' + id : ''); }
+  const manualPdf = () => MANUAL_URL + manualLang() + '/QCalc-manual-' + manualLang() + '.pdf';
+  function loadManual(lang) {
+    const l = lang || manualLang();
+    return new Promise((resolve, reject) => {
+      if (window.QCALC_MANUAL && window.QCALC_MANUAL[l]) { resolve(window.QCALC_MANUAL[l]); return; }
+      const s = document.createElement('script');
+      s.src = 'manual/' + l + '.js';
+      s.onload = () => (window.QCALC_MANUAL && window.QCALC_MANUAL[l] ? resolve(window.QCALC_MANUAL[l]) : reject(new Error('manual')));
+      s.onerror = () => { s.remove(); reject(new Error('manual')); };
+      document.head.append(s);
+    }).catch((e) => (l !== 'en' ? loadManual('en') : Promise.reject(e))); // (a language without its file: English)
+  }
+  // the web version (with photos) or its PDF, in the browser
+  function openManualWeb(url) {
+    if (navigator.onLine === false) { toast(tr('The detailed version opens when you are connected to the internet.', '詳しい版はインターネットにつながると開けます。'), 4000); return; }
+    openUrl(url);
+  }
+  // opens the manual in the app at the section id ('' or none: the top); Back returns to where it was
+  async function openManual(id) {
+    const p = panel('manual', tr('User manual', '取扱説明書'), (p) => {
+      p.body.classList.add('manual-body');
+      p.body.append(el('div', { class: 'muted', text: '…' }));
+      p.ready = loadManual().then((m) => renderManual(p, m), () => {
+        p.body.textContent = '';
+        p.body.append(el('div', { class: 'form-hint', text: tr('The manual could not be opened.', '説明書を開けませんでした。') }));
+      });
+    });
+    await p.ready;
+    manualGo(p, id);
+    return p;
+  }
+  function renderManual(p, m) {
+    p.body.textContent = '';
+    const search = el('input', { type: 'search', class: 'manual-search', placeholder: tr('Search the manual', '説明書を検索'), 'aria-label': tr('Search the manual', '説明書を検索') });
+    const none = el('div', { class: 'form-hint', hidden: true, text: tr('Nothing found. Try another word.', '見つかりません。ほかの言葉で探してください。') });
+    const doc = el('div', { class: 'manual-doc', lang: m.lang || manualLang(), html: m.html });
+    p.body.append(el('div', { class: 'manual-top' },
+      tapButton({ class: 'linkish', text: tr('Detailed version with photos (web)', '写真つきの詳しい版（Web）') }, () => openManualWeb(manualUrl(''))),
+      tapButton({ class: 'linkish', text: 'PDF' }, () => openManualWeb(manualPdf()))), search, none, doc);
+    // a search shows the sections whose text has every word
+    search.addEventListener('input', () => {
+      const words = search.value.toLowerCase().split(/\s+/).filter(Boolean);
+      let any = false;
+      for (const s of doc.querySelectorAll('section[data-sec]')) {
+        const hit = !words.length || words.every((w) => s.textContent.toLowerCase().indexOf(w) >= 0);
+        s.hidden = !hit;
+        any = any || hit;
+      }
+      const toc = doc.querySelector('.m-toc');
+      if (toc) toc.hidden = words.length > 0;
+      none.hidden = any;
+    });
+    // links: a section of the manual, or an outside page in the browser
+    doc.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href]');
+      if (!a) return;
+      e.preventDefault();
+      const h = a.getAttribute('href');
+      if (h.charAt(0) === '#') manualGo(p, h.slice(1));
+      else if (/^https?:/.test(h)) openManualWeb(h);
+    });
+    p.search = search;
+  }
+  function manualGo(p, id) {
+    if (p.search && p.search.value) { p.search.value = ''; p.search.dispatchEvent(new Event('input')); }
+    const t = id && p.body.querySelector('[data-sec="' + id + '"]');
+    if (t) t.scrollIntoView({ block: 'start' });
+    else p.body.scrollTop = 0;
+  }
+  // the section of the manual for each panel and tool (a panel can give its own with p.help, as the
+  // graph does for its tools); PRO_HELP: for each feature of QCalc Pro; FORM_HELP: for each form
+  const HELP = {
+    examples: 'examples', 'cat-functions': 'lists', 'cat-units': 'lists', 'cat-variables': 'lists', defs: 'lists',
+    rates: 'currencies', plot: 'graph-2d', shapes: 'shapes', profile: 'profile', sections: 'measured', notes: 'notes',
+    stats: 'stats', convert: 'convert', tools: 'find-tools', settings: 'settings', about: 'about', licenses: 'about',
+    pro: 'pro', price: 'price', percent: 'percent', unitprice: 'unit-price', split: 'split', loan: 'loan',
+    savings: 'savings', date: 'dates', time: 'times'
+  };
+  const PRO_HELP = {
+    precision: 'results', '3d': 'graph-3d', themes: 'settings', export: 'history', tables: 'loan', tank_heads: 'tank-heads',
+    profile: 'profile', stl: 'stl', share_pro: 'share', notes: 'notes', enclosed: 'area-length', tanks: 'tanks',
+    revolution: 'solid', regions: 'volume-3d', sections: 'measured', history_tools: 'history', memkeys: 'memory-keys',
+    cross_sections: 'cross-sections', rev_lines: 'solid', everyday: 'price', convert: 'convert', quick: 'widget', stats: 'stats'
+  };
+  const FORM_HELP = { int: 'calculus', diff: 'calculus', lim: 'calculus', sum: 'calculus', prod: 'calculus', dsolve: 'calculus', subst: 'calculus', solve: 'equations', mat: 'matrices' };
+  // every id the app links to (for the test of the links; '' is the top of the manual)
+  const MANUAL_IDS = Array.from(new Set(['', 'forms', 'pro-features', 'new-1-12', 'graph-3d', 'volume-3d', 'area-length', 'solid', 'tanks', 'stl', 'shapes-3d', 'digits']
+    .concat(Object.values(HELP), Object.values(PRO_HELP), Object.values(FORM_HELP))));
+  window.QalcManual = { url: manualUrl, ids: MANUAL_IDS, langs: MANUAL_LANGS };
 
   // ------------------------------------------------------------- bridge
   const Bridge = (() => {
@@ -213,18 +332,139 @@
     angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1, time_limit: 20, math_view: true,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: false, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
-    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system'
+    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
   const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
-  function textScale() { return own(TEXT_SCALE, S.text_size) || 1; }
+  // The phone's font size (1.12.0; Settings → Display → Font size, up to 200 %). The WebView itself
+  // keeps 100 % (MainActivity: setTextZoom), so that the keys keep their size; the page makes the
+  // history, the input field and the result larger by the phone's size up to 1.5 times (with "Text
+  // size" on top, up to 1.8 times), and the panels up to 1.15 times, so that nothing gets wider than
+  // the screen.
+  const SYS_FONT = (() => {
+    let f = 1;
+    try {
+      if (window.QalcNative) f = Number(JSON.parse(QalcNative.appInfo()).fontScale) || 1;
+      else f = Number(localStorage.getItem('qalc.dev.fontscale')) || 1; // (a desktop browser: for testing)
+    } catch (e) { f = 1; }
+    return Math.max(1, Math.min(2, f));
+  })();
+  function textScale() { return Math.min(1.8, (own(TEXT_SCALE, S.text_size) || 1) * Math.min(1.5, SYS_FONT)); }
   function applyTextSize() {
     document.documentElement.dataset.textSize = own(TEXT_SCALE, S.text_size) ? S.text_size : 'normal';
+    document.documentElement.style.setProperty('--fs', String(textScale()));
+    document.documentElement.style.setProperty('--pfs', String(Math.min(1.15, SYS_FONT)));
     autosize();
+    if (typeof applyCompactKeys === 'function') applyCompactKeys();
   }
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
-  S.lang = LANG; // the language in use (qalc.lang), whatever qalc.settings says
+  S.lang = LANG_AUTO ? 'auto' : LANG; // the language in use (qalc.lang, or 'auto'), whatever qalc.settings says
   function saveSettings() { store.set('qalc.settings', S); }
+
+  // ------------------------------------------------------- number format
+  // 1.12.0: how numbers are written, setting "Number format": 1,234.5, 1.234,5 or 1 234,5, or
+  // automatically as in the region of the device (not its language: es-ES writes 1.234,5, es-MX
+  // 1,234.5; the app gives the device's first locale, QalcNative.deviceLocale). The engine always
+  // works with "." as the decimal point and "," between arguments; the page changes only what is
+  // typed and what is shown. With a decimal comma:
+  //   typed  1,5 is 1.5; ";" separates arguments, max(1,5; 2); in [ ] it ends a row of a matrix and
+  //          the elements are separated by spaces, [1,5 2; 3 4]; "1.5" is not taken (formatProblem)
+  //   shown  3,75; 1.234,5 or 1 234,5 with digit grouping; root(8; 3)
+  // The history, the variables, the functions and the expression being typed are kept in the
+  // engine's form, so changing the setting changes nothing that was saved.
+  const NUMFMT_SAMPLE = { dot: '1,234.5', comma: '1.234,5', space: '1 234,5' };
+  const NUMFMTS = { dot: { dec: '.', group: ',' }, comma: { dec: ',', group: '.' }, space: { dec: ',', group: '\u202f' } };
+  function deviceLocale() {
+    try { if (window.QalcNative && QalcNative.deviceLocale) { const t = QalcNative.deviceLocale(); if (t) return t; } } catch (e) { }
+    return (navigator.languages && navigator.languages[0]) || navigator.language || 'en-US';
+  }
+  // the format of a locale ("de-DE" → comma), from the separators Intl gives for it
+  // (F: the first Intl.NumberFormat loads the data of the locale, about 45 ms of the start at a quarter of the
+  // CPU speed, at every start; the answer for the phone's locale is kept in qalc.nfcache)
+  function localeFormat(tag) {
+    try { const c = JSON.parse(localStorage.getItem('qalc.nfcache') || 'null'); if (c && c.tag === tag && own(NUMFMTS, c.k)) return c.k; } catch (e) { }
+    let k = 'dot';
+    try {
+      const parts = new Intl.NumberFormat(tag).formatToParts(1234567.5);
+      const dec = (parts.find((x) => x.type === 'decimal') || {}).value, group = (parts.find((x) => x.type === 'group') || {}).value || '';
+      k = dec !== ',' ? 'dot' : /^[\s\u00a0\u202f\u2009]$/.test(group) ? 'space' : 'comma';
+    } catch (e) { return 'dot'; }
+    try { localStorage.setItem('qalc.nfcache', JSON.stringify({ tag, k })); } catch (e) { }
+    return k;
+  }
+  let NF = NUMFMTS.dot, commaMode = false;
+  function applyNumFmt() {
+    const k = S.numfmt === 'auto' || !own(NUMFMTS, S.numfmt) ? localeFormat(deviceLocale()) : S.numfmt;
+    NF = NUMFMTS[k];
+    commaMode = NF.dec === ',';
+  }
+  applyNumFmt();
+  // Goes through a text, outside quotes, knowing for each place whether it is inside [ ] (the
+  // innermost bracket); fn(char, i, inBracket) gives the replacement of a character.
+  function mapSeps(t, fn) {
+    let out = '', q = '';
+    const stack = [];
+    for (let i = 0; i < t.length; i++) {
+      const c = t[i];
+      if (q) { out += c; if (c === q) q = ''; continue; }
+      if (c === '"' || c === "'") { q = c; out += c; continue; }
+      if (c === '(' || c === '[' || c === '{') stack.push(c);
+      else if ((c === ')' || c === ']' || c === '}') && stack.length) stack.pop();
+      out += fn(c, i, stack.length && stack[stack.length - 1] === '[');
+    }
+    return out;
+  }
+  const isDigit = (c) => c >= '0' && c <= '9';
+  // typed (with a decimal comma) → the engine's form
+  function toInternal(t) {
+    if (!commaMode || !t) return t;
+    return mapSeps(t, (c, i, inB) => {
+      if (c === ',') return (isDigit(t[i + 1] || '') && (isDigit(t[i - 1] || '') || !/[\p{L}\p{N}_)\]]/u.test(t[i - 1] || ''))) ? '.' : ',';
+      if (c === ';') return inB ? ';' : ',';
+      if ((c === '\u202f' || c === '\u00a0') && NF.group === '\u202f' && isDigit(t[i - 1] || '') && isDigit(t[i + 1] || '')) return '';
+      return c;
+    });
+  }
+  // the engine's form → as typed and shown (decimal comma, ";" between arguments, spaces in [ ])
+  function toDisplay(t) {
+    if (!commaMode || !t) return t;
+    return mapSeps(t, (c, i, inB) => {
+      if (c === '.') return isDigit(t[i + 1] || '') ? ',' : '.';
+      if (c === ',') return inB ? (t[i + 1] === ' ' ? ' ' : '  ') : ';';
+      return c;
+    });
+  }
+  // a result as shown → the engine's form, for the math notation (mathview.js reads the engine's syntax)
+  function mathSource(t) {
+    if (!commaMode) return t;
+    if (NF.group === '.') t = t.replace(/(\d)\.(?=\d{3})/g, '$1');
+    return toInternal(t.replace(/(\d)[\u202f\u2009](?=\d)/g, '$1'));
+  }
+  // the numbers drawn by KaTeX with a decimal comma (and ";" between arguments)
+  function commaMath(node) {
+    if (!commaMode || !node) return;
+    // (BG11: the MathML read by TalkBack holds a number as one text node per digit and sign — KaTeX
+    // joins its <mn> parts so — and a "." alone was not changed: one text node per number first)
+    node.normalize();
+    const w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) {
+      const v = n.nodeValue;
+      if (v.indexOf('.') >= 0 || v === ',') n.nodeValue = v === ',' ? ';' : v.replace(/(\d)\.(?=\d)|^\.(?=\d)/g, (m, d) => (d || '') + ',');
+    }
+  }
+  // a number made by the page (a value in a graph, a size): its decimal sign
+  const decSign = (t) => (commaMode ? String(t).replace(/(\d)\.(?=\d)/g, '$1,') : String(t));
+  // input that would mean something else than meant with a decimal comma: "1.5" (or 1.234 grouped)
+  function formatProblem(raw) {
+    if (commaMode && /\d\.\d/.test(raw.replace(/"[^"]*"|'[^']*'/g, ''))) {
+      return tr('The decimal sign is "," in your number format: type 1,5, and no "." between digits (Settings → Number format)', '数の書き方の設定で、小数点は「,」です。1,5 のように入れてください（数字の間に「.」は使えません。設定 →「数の書き方」）');
+    }
+    // "1 234" would be 1 × 234: digit groups are not typed
+    if (NF.group === '\u202f' && /\d[ \u00a0\u202f]\d{3}(?![\d,])/.test(raw)) {
+      return tr('A space between digits would multiply them: type 1234,5 without spaces', '数字の間の空白は掛け算になります。1234,5 のように空白なしで入れてください');
+    }
+    return '';
+  }
 
   // ---------------------------------------------------------------- Pro
   // QCalc Pro is a one-time purchase in Google Play. It unlocks a precision above
@@ -234,7 +474,7 @@
   //            'debug'  a test build: Pro is unlocked (it can be locked for testing in the Pro panel)
   //            'none'   a build without Google Play Billing: Pro cannot be bought, so nothing is locked
   //   pro      true when Pro is unlocked; legacy: unlocked because QCalc was used before Pro began
-  //   price    the price from Google Play ("¥300"); state 'pending' while a payment is processed
+  //   price    the price from Google Play ("¥600"); state 'pending' while a payment is processed
   // The highest precision is the engine's limit (MAX_PRECISION in qalc-engine.cc).
   const MAX_PRECISION = 200000, FREE_MAX_PRECISION = 1000;
   let PRO = readPro();
@@ -248,13 +488,53 @@
   }
   function proOffered() { return PRO.billing === 'play' || PRO.billing === 'debug'; }
   function hasPro() { return !proOffered() || PRO.pro === true; }
-  // 1.11.0: the new volume features and whether they need Pro, in one place. None does now ('free');
-  // 'pro' locks one (proGate asks for Pro where it is used). The 3D graph, where some of them are,
-  // is Pro as before.
-  const PRO_GATES = { enclosed: 'free', tanks: 'free', revolution: 'free', regions: 'free', sections: 'free' };
+  // Which features need QCalc Pro: 'free' or 'pro' (proGate asks for Pro where a 'pro' key is used,
+  // and the Pro panel lists it, PRO_INFO). Decided by the author for 1.12.0 (2026-11-19):
+  // - Free: what is for learning and for everyday calculations. The calculator and its usability
+  //   (Tools, the lists, the number format, the language, touch, reading out, large screens, the
+  //   history's search, pins, notes and sums, the memory keys, the card of what is new), the
+  //   everyday tools with their tables shown, conversion, the widget, tile and shortcuts,
+  //   statistics, the solids of revolution and cross sections with their 2D pictures (mirror, disks
+  //   and shells) and the theorem of Pappus. Sharing a picture with a small "QCalc" in a corner (D4)
+  //   and the first calculation note (D5) will be free too.
+  // - Pro: the features for work. As before the 3D graph (also "View in 3D" and the solid growing in
+  //   3D), more than 1000 digits, the colour themes and exporting the history; now also saving the
+  //   tables as CSV files ('tables': the loan and savings tables of C1, the quick-reference tables of
+  //   D1; showing the C1 tables stays free); the heads of tanks (hemispherical, semi-elliptical,
+  //   dished) and the quick-reference tables of tanks ('tank_heads', D1; the flat-ended tanks of
+  //   1.11.0 stay free); a solid from a profile ('profile', D2). Still to come, each with its own
+  //   key: STL files (D3), GIFs, pictures without the mark and in a higher resolution (D4), the
+  //   second and later notes and exporting them (D5).
+  // - A feature that was once free is never made Pro: the keys of 1.11.0 stay 'free'.
+  // Those who used QCalc before Pro began have Pro for free (Pro.java); this does not change it.
+  const PRO_GATES = {
+    enclosed: 'free',      // the area enclosed by curves (1.10)
+    tanks: 'free',         // the volume of liquid in tanks with flat ends (1.10)
+    revolution: 'free',    // solids of revolution in the 2D graph (1.10; the 3D view is the 3D graph: Pro)
+    regions: 'free',       // volumes of regions (1.10)
+    sections: 'free',      // the volume from measured values (1.11)
+    history_tools: 'free', // the history: search, pin, notes, sum of lines (1.12 A5)
+    memkeys: 'free',       // the memory keys (1.12 A5)
+    cross_sections: 'free', // solids with known cross sections, in 2D with the volume (1.12 B1; the 3D view: Pro)
+    rev_lines: 'free',     // the lines of the method in 2D and the theorem of Pappus (1.12 B2; the angle in 3D: Pro)
+    everyday: 'free',      // the everyday tools with their tables shown (1.12 C1)
+    tables: 'pro',         // saving the tables as CSV files (1.12 C1, D1): Pro, as exporting the history
+    convert: 'free',       // the conversion of units and currencies (1.12 C2)
+    quick: 'free',         // the widget, the tile and the shortcuts of the icon (1.12 C3)
+    stats: 'free',         // statistics: one or two columns, regression, the graph (1.12 C4)
+    tank_heads: 'pro',     // the heads of tanks (hemispherical, semi-elliptical, dished) and the quick-reference tables of tanks (1.12 D1): Pro (work)
+    profile: 'pro',        // a solid from a measured profile: volume, capacity, weight, surface, its table (1.12 D2): Pro (work)
+    stl: 'pro',            // the solids saved as STL files for 3D printers (1.12 D3): Pro (work)
+    share: 'free',         // sharing a picture of a graph, with a small "QCalc" in the corner (1.12 D4)
+    share_pro: 'pro',      // the moving picture (GIF) of the 3D graph, and pictures without the mark at full resolution (1.12 D4): Pro
+    notes: 'pro'           // calculation notes: the second memo and more, and saving them as text or CSV (1.12 D5): Pro; the first memo, copying and sharing it are free
+  };
+  // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
+  try { if (window.QalcDev && !window.QalcNative) Object.assign(PRO_GATES, JSON.parse(localStorage.getItem('qalc.dev.gates') || '{}')); } catch (e) { }
   function proGate(k) {
     if (PRO_GATES[k] !== 'pro' || hasPro()) return true;
-    proPrompt(tr('This is a QCalc Pro feature', 'これは QCalc Pro の機能です'));
+    const info = PRO_INFO()[k];
+    proPrompt(info ? trf('{0} is a QCalc Pro feature', '{0}は QCalc Pro の機能です', info[1]) : tr('This is a QCalc Pro feature', 'これは QCalc Pro の機能です'), k);
     return false;
   }
   function maxPrecision() { return hasPro() ? MAX_PRECISION : FREE_MAX_PRECISION; }
@@ -304,12 +584,32 @@
   let history = store.get('qalc.history', []);
   if (!Array.isArray(history)) history = [];
   fitHistory();
-  const saveHistory = debounce(() => store.set('qalc.history', history.slice(-300)), 300);
+  // the page was used before this start (a history or settings were saved): the notes on what moved
+  // in 1.12.0 are for those users only; a new user is marked as having seen them
+  const usedBefore = history.length > 0 || store.get('qalc.settings', null) !== null;
+  if (!usedBefore && !store.get('qalc.moved112', false)) store.set('qalc.moved112', true);
+  // (1.12.0) and the widget on the home screen shows the newest line (syncWidget)
+  const saveHistory = debounce(() => { store.set('qalc.history', trimHistory(history)); syncWidget(); }, 300);
+  // the history cut to 300 lines: the oldest lines go, but not those pinned with a star (1.12.0)
+  function trimHistory(list) {
+    const extra = list.length - 300;
+    if (extra <= 0) return list;
+    let drop = extra;
+    return list.filter((h) => { if (drop > 0 && !(h && h.star)) { drop--; return false; } return true; }).slice(-300);
+  }
+  // the history's search words, the lines chosen to add up (a Set while choosing), the card of what is new
+  let histQuery = '', histSel = null, selSeq = 0, newsCard = null;
+  // the memory of M+ M− MR MC, in the engine's form ('' when empty)
+  let memory = store.get('qalc.memory', '');
+  if (typeof memory !== 'string') memory = '';
   // the beginning of a long text, for titles and announcements
   function clip(t, n) { t = String(t || ''); return t.length > n ? t.slice(0, n) + '…' : t; }
 
   // ---------------------------------------------------------- elements
   const exprEl = $('#expr');
+  // (1.12.0, 要判断 27 (b) as the author decided: on a screen lower than 600 px the field is drawn lower, and
+  // a tap on the padding of its section, above or below it, goes to the field, so that 48 dp stay to touch)
+  $('.entry').addEventListener('pointerdown', (e) => { if (e.target === e.currentTarget || (e.target.classList && e.target.classList.contains('parsed-row'))) { e.preventDefault(); exprEl.focus(); } });
   const parsedEl = $('#parsed');
   const previewEl = $('#preview');
   const msgEl = $('#msg');
@@ -404,10 +704,14 @@
   };
 
   function makeKey(def, inToolbar) {
-    const [label, o] = [def[0], def[1] || {}];
+    let [label, o] = [def[0], def[1] || {}];
+    // a decimal comma (setting "Number format", 1.12.0): the "." key types ",", and "," between
+    // arguments becomes ";"
+    if (commaMode && label === '.') { label = ','; o = Object.assign({}, o, { ins: ',', title: tr('Decimal comma', '小数点（,）') }); }
+    else if (commaMode && label === ',' && inToolbar) { label = ';'; o = Object.assign({}, o, { ins: '; ', title: tr('Separator of the arguments (;)', '引数の区切り（;）') }); }
     let cls = 'key';
     if (o.cls) cls += ' ' + o.cls;
-    else if (!inToolbar && !/^[0-9.]$/.test(label)) cls += ' fn';
+    else if (!inToolbar && !/^[0-9.,]$/.test(label)) cls += ' fn';
     const b = el('button', { class: cls, id: o.id, title: o.title, 'aria-label': o.title || KEY_NAMES[label] || label });
     if (o.small) b.append(el('small', { text: o.label }));
     else if (o.html) b.innerHTML = '<span>' + o.html + '</span>'; // a fixed label with <sub>/<sup>, from the tables above
@@ -473,6 +777,7 @@
   document.addEventListener('pointerdown', (e) => { if (!varPopEl.hidden && !varPopEl.contains(e.target)) closeVarPop(); }, true);
 
   function buildKeypad() {
+    buildMemRow();
     const tb = $('#toolbar');
     tb.textContent = '';
     for (const d of TOOLBAR) tb.append(makeKey(d, true));
@@ -483,8 +788,36 @@
       bindPress(b, () => { vibrate(); setPage(id); });
       tabs.append(b);
     }
+    // 1.12.0 (F, 要判断 39 (b), the author's decision): the ⌨ at the end of the tabs, which shows the top row of
+    // keys when large text hides it (outside the tab list, for screen readers)
+    if (!$('#tb-toggle')) {
+      const row = el('div', { class: 'pages-row' });
+      tabs.parentNode.insertBefore(row, tabs);
+      row.append(tabs);
+      const t = el('button', { class: 'tb-toggle', id: 'tb-toggle', text: '⌨', 'aria-controls': 'toolbar', 'aria-expanded': 'false', 'aria-label': tr('Show the row of x, ans, the arrows and the keyboard', 'x・ans・矢印・キーボードの段を出す'), hidden: true });
+      bindPress(t, () => { vibrate(); store.set('qalc.tbopen', !$('#keypad').classList.contains('tb-open')); applyCompactKeys(); histEl.scrollTop = histEl.scrollHeight; });
+      row.append(t);
+    }
     renderPage();
     updateToolbar();
+    applyCompactKeys();
+  }
+  // 1.12.0 (F, 要判断 39 (b), the author's decision): with large text (the phone's text at 130 % or more, or
+  // "Extra large") on a phone, the top row of keys (x , a=b → ans ⌨ ◀ ▶) is hidden and shown from the ⌨ at the
+  // end of the tabs, so that the history keeps room for a result or two (320 × 640 at 200 %: one result
+  // before). A phone: the shorter side of the screen under 600 px (the screen, not the window, so that the
+  // phone keyboard opening does not hide the row). Whether the row is shown is remembered (qalc.tbopen).
+  function compactKeys() { return textScale() >= 1.3 && Math.min(screen.width || 9999, screen.height || 9999) < 600; }
+  function applyCompactKeys() {
+    const kp = $('#keypad'), t = $('#tb-toggle');
+    if (!kp || !t) return;
+    const on = compactKeys(), open = on && store.get('qalc.tbopen', false) === true;
+    kp.classList.toggle('kb-compact', on);
+    kp.classList.toggle('tb-open', open);
+    document.documentElement.classList.toggle('big-keys', on);
+    t.hidden = !on;
+    t.setAttribute('aria-expanded', String(open));
+    t.classList.toggle('on', open);
   }
   function setPage(id) {
     if (page === id || !PAGES[id]) return;
@@ -533,7 +866,9 @@
     focusExpr();
   });
   // Replaces the whole expression (a history entry, an example). What was typed can be brought back.
+  // text: in the engine's form (an example, a line of the history, a tool's expression)
   function setExpr(text) {
+    text = toDisplay(text);
     const prev = exprEl.value;
     exprEl.value = text;
     exprEl.setSelectionRange(text.length, text.length);
@@ -657,6 +992,31 @@
   exprEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); commit(); }
   });
+  // A hardware keyboard (1.12.0; Chromebooks, tablets): Enter calculates (above), Esc closes what is
+  // open or clears the field (with "Undo"), Ctrl+Z and Ctrl+Y (or Ctrl+Shift+Z) undo and redo the
+  // changes of the field, Ctrl+C with nothing selected copies the result (of the preview, else the
+  // newest one in the history)
+  document.addEventListener('keydown', (e) => {
+    if (e.isComposing || e.keyCode === 229) return;
+    const inField = e.target === exprEl || e.target === document.body || !e.target.closest || !e.target.closest('input, textarea, select, [contenteditable]');
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (window.qalcBack && window.qalcBack()) return;
+      if (exprEl.value) action('clear');
+      return;
+    }
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || !inField) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) { if (stepField(true)) e.preventDefault(); }
+    else if (k === 'y' || (k === 'z' && e.shiftKey)) { if (stepField(false)) e.preventDefault(); }
+    else if (k === 'c' && exprEl.selectionStart === exprEl.selectionEnd) {
+      const pv = previewEl.textContent.trim(), last = history.length ? displayResult(history[history.length - 1]) : '';
+      const t = /^[=≈]/.test(pv) ? pv : last;
+      if (!t) return;
+      e.preventDefault();
+      copyText(t.replace(/^= /, ''));
+    }
+  });
   // some keyboards send a line break as text instead of an Enter key press
   exprEl.addEventListener('beforeinput', (e) => {
     if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') { e.preventDefault(); commit(); }
@@ -707,7 +1067,7 @@
       .replace(/(^|[\d)\s])ー(?=[\d(\s]|$)/g, '$1−');
   }
   function normalizeExpr(s) {
-    return normalizeJa(s).trim();
+    return toInternal(normalizeJa(s)).trim();
   }
   function normalizeField() {
     const v = exprEl.value, n = normalizeJa(v);
@@ -721,9 +1081,34 @@
   // ======================================================= live preview
   let previewBusy = false, previewAgain = false, previewTimer = null, engineReady = false;
   // the expression being typed survives closing the app or the page being reloaded
-  const saveDraft = debounce(() => store.set('qalc.draft', exprEl.value), 500);
+  const saveDraft = debounce(() => store.set('qalc.draft', toInternal(exprEl.value)), 500); // (in the engine's form, 1.12.0)
   // typed: the change was typed with the phone's keyboard (names are then offered, see updateSuggest)
+  // The steps of the input field, for Ctrl+Z and Ctrl+Y of a hardware keyboard (1.12.0): every
+  // change, typing in a row (within 0.7 s) as one step
+  const fieldSteps = { past: [], future: [], last: '', t: 0, quiet: false };
+  function noteField() {
+    const v = exprEl.value;
+    if (fieldSteps.quiet || v === fieldSteps.last) return;
+    const now = Date.now();
+    if (now - fieldSteps.t > 700 || !fieldSteps.past.length) fieldSteps.past.push(fieldSteps.last);
+    if (fieldSteps.past.length > 100) fieldSteps.past.shift();
+    fieldSteps.future = [];
+    fieldSteps.last = v; fieldSteps.t = now;
+  }
+  function stepField(back) {
+    const from = back ? fieldSteps.past : fieldSteps.future, to = back ? fieldSteps.future : fieldSteps.past;
+    if (!from.length) return false;
+    to.push(exprEl.value);
+    const v = from.pop();
+    fieldSteps.quiet = true;
+    exprEl.value = v; exprEl.setSelectionRange(v.length, v.length);
+    fieldSteps.last = v; fieldSteps.t = 0;
+    exprChanged();
+    fieldSteps.quiet = false;
+    return true;
+  }
   function exprChanged(typed) {
+    noteField();
     saveDraft();
     autosize();
     updateSuggest(typed === true);
@@ -744,6 +1129,7 @@
     const t = exprEl.value;
     let ok = false;
     if (S.math_view && t.trim() && window.QMath) ok = QMath.render(mathEl, normalizeExpr(t), { richOnly: true });
+    if (ok) commaMath(mathEl);
     mathEl.hidden = !ok;
     parsedEl.hidden = ok;
     if (ok) mathEl.scrollLeft = mathEl.scrollWidth;
@@ -757,7 +1143,7 @@
     const notes = [];
     let d = 0, top = false;
     for (const c of expr) { if ('([{'.indexOf(c) >= 0) d++; else if (')]}'.indexOf(c) >= 0) d--; else if (c === ',' && d <= 0) top = true; }
-    if (top) {
+    if (top && !commaMode) {
       const m = /(?:^|[^\d.,])(\d{1,3}(?:,\d{3})+)(?![\d,])/.exec(expr);
       notes.push(m ? trf('The "," in {0} separates values, it does not group digits: type {1}', '「{0}」の「,」は桁区切りではなく、値の区切りとして扱われます。{1} と続けて入れてください',
         m[1], m[1].replace(/,/g, ''))
@@ -795,6 +1181,8 @@
     const raw = exprEl.value.trim();
     const expr = raw && withoutOpenTo(normalizeExpr(raw));
     if (!expr) { showPreview(null); return; }
+    const fp = formatProblem(raw);
+    if (fp) { showPreview(null); msgEl.textContent = fp; msgEl.className = 'msg error'; return; }
     if (expr.indexOf('□') >= 0) { // a template with boxes still to fill in
       showPreview(null);
       msgEl.textContent = tr('Fill in the boxes □ ("Next box ▶" goes to the next one)', '□ の欄を埋めてください（「次の欄 ▶」で次の欄へ）');
@@ -814,12 +1202,14 @@
   // inDecimals: the text continues the decimals of a number (the end of a shortened preview).
   function displayText(t, inDecimals) {
     if (!t) return '';
+    // (1.12.0) the number format: the decimal sign and the separators first, then the digit groups
+    t = toDisplay(t);
     if (t.indexOf('\u202f') >= 0 || t.indexOf('\u2009') >= 0) {
-      t = t.replace(/[\d\u202f\u2009.]+/g, (tok, at) => {
+      t = t.replace(commaMode ? /[\d\u202f\u2009,]+/g : /[\d\u202f\u2009.]+/g, (tok, at) => {
         if (inDecimals && at === 0) return tok;
-        const dot = tok.indexOf('.');
+        const dot = tok.indexOf(NF.dec);
         const int = dot < 0 ? tok : tok.slice(0, dot);
-        return int.replace(/(\d)[\u202f\u2009](?=\d)/g, '$1,') + (dot < 0 ? '' : tok.slice(dot));
+        return int.replace(/(\d)[\u202f\u2009](?=\d)/g, '$1' + NF.group) + (dot < 0 ? '' : tok.slice(dot));
       });
     }
     const d = /^"(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?)"$/.exec(t);
@@ -894,7 +1284,7 @@
     node.classList.remove('math');
     if (parts.every((x) => typeof x === 'string')) {
       // fractions, roots and powers in math notation (setting "math notation"): 1/6 as a stacked fraction
-      if (S.math_view && mathResult(text) && window.QMath && QMath.render(node, text, { richOnly: true, mathml: true })) { node.classList.add('math'); return; }
+      if (S.math_view && mathResult(text) && window.QMath && QMath.render(node, mathSource(text), { richOnly: true, mathml: true })) { node.classList.add('math'); commaMath(node); return; }
       node.textContent = text;
       return;
     }
@@ -920,7 +1310,7 @@
   // of the app's own Java code and engine: [the English message, its Japanese text, the name of its
   // text in the files of the other languages (messages in i18n-es.js …)]
   const MESSAGES = [
-    [/^It has been (\d+) days? since the exchange rates last were updated\.?$/, (m, d) => '為替レートが ' + d + ' 日間更新されていません（メニュー →「為替レートの更新」）', 'rates-old'],
+    [/^It has been (\d+) days? since the exchange rates last were updated\.?$/, (m, d) => '為替レートが ' + d + ' 日間更新されていません（設定 →「為替レートを今すぐ更新」）', 'rates-old'],
     [/^Misplaced operator\(s\) "(.+)" ignored\.?$/, (m, o) => '余分な演算子「' + o + '」を無視しました', 'extra-operator'],
     [/^Misplaced '(.+)' ignored\.?$/, (m, o) => '余分な「' + o + '」を無視しました', 'extra-sign'],
     [/^Division by zero\.?$/, () => 'ゼロで割っています', 'division-by-zero'],
@@ -1015,7 +1405,7 @@
     msgEl.className = 'msg';
     if (!r) { parsedEl.textContent = ''; previewEl.textContent = ''; return; }
     if (!r.ok) { previewEl.textContent = ''; msgEl.textContent = localMessage(r.error) || ''; msgEl.className = 'msg error'; return; }
-    parsedEl.textContent = r.parsed || '';
+    parsedEl.textContent = toDisplay(r.parsed || '');
     const err = (r.messages || []).find((m) => m.type === 'error');
     if (r.deferred) previewEl.textContent = tr('Press = to run it (definitions are not previewed)', '＝ を押すと実行します（定義など）');
     else if (r.timeout) previewEl.textContent = '…';
@@ -1038,13 +1428,17 @@
   }
 
   // ============================================================ commit
-  let committing = false, stopping = false, busyTimer = null;
+  let committing = false, stopping = false, busyTimer = null, commitWaiting = false;
   async function commit() {
     const raw = exprEl.value.trim();
     if (!raw || committing) return;
-    if (!engineReady) { toast(tr('The calculation engine is starting', '計算エンジンを準備中です')); return; }
+    // 1.12.0: "=" while the engine is starting is kept, and the expression in the field then is
+    // calculated as soon as the engine is ready (startEngine); until 1.11.0 it only said so
+    if (!engineReady) { commitWaiting = true; previewEl.textContent = tr('Starting the calculation engine… the result follows', '計算エンジンを準備中です。準備ができたら計算します'); return; }
     const expr = withoutOpenTo(normalizeExpr(raw));
     if (!expr) return;
+    const fp = formatProblem(raw);
+    if (fp) { msgEl.textContent = fp; msgEl.className = 'msg error'; return; }
     if (expr.indexOf('□') >= 0) {
       selectBox(false);
       msgEl.textContent = tr('Fill in the boxes □ first', '先に □ の欄を埋めてください');
@@ -1101,9 +1495,12 @@
       sessionEntries.set(r.id, entry);
       if (sessionEntries.size > 20) sessionEntries.delete(sessionEntries.keys().next().value);
     }
+    closeNews();
     history.push(entry);
     const over = history.length > 300;
-    if (over) history = history.slice(-300);
+    // the line that goes: the oldest one without a star
+    const gone = over ? history.findIndex((x) => !(x && x.star)) : -1;
+    if (over) history = trimHistory(history);
     const shortened = fitHistory();
     saveHistory();
     dropUndo();
@@ -1117,9 +1514,11 @@
       exprChanged(); // something was typed while the calculation ran: keep it
     }
     saveDraft();
-    // only the new line is added, unless the lines on the screen are no longer the history
-    // (the first result, the oldest line dropped, an older long result shortened)
-    if (over || shortened || histEl.children.length !== history.length - 1 || !histEl.querySelector('.h-item')) renderHistory(true);
+    // only the new line is added (and the oldest one taken away when the history is full), unless
+    // the lines on the screen are no longer the history (the first result, an older long result
+    // shortened). The oldest lines may not be drawn yet (olderLeft, renderHistory).
+    if (over) { if (gone >= 0 && gone < olderLeft) olderLeft--; else { const first = histEl.querySelector(':scope > .h-item'); if (first) first.remove(); } }
+    if (shortened || histFiltered() || !histEl.querySelector(':scope > .h-item') || histEl.querySelectorAll(':scope > .h-item').length !== history.filter((x) => !x.star).length - 1 - olderLeft) renderHistory(true);
     else {
       const item = historyItem(entry);
       histEl.append(item);
@@ -1129,6 +1528,7 @@
     }
     announce(entry);
     definitionMade(r, expr);
+    startupMark('first');
   }
   // "x = 5" and "f(x) := x^2" define a variable or a function. From then on every expression uses
   // it (x is 5 in the forms too), which is easy to do by mistake when an equation was meant: a
@@ -1168,6 +1568,8 @@
   Bridge.setEventHandler((ev) => {
     if (ev.event === 'pro') { proChanged(ev); return; }
     if (ev.event === 'saved') { fileSaved(ev); return; }
+    if (ev.event === 'shared') { if (!ev.ok) toast(tr('Could not share the image', '画像を共有できませんでした'), 3500); return; }
+    if (ev.event === 'quick') { quickAnswer(ev); return; }
     if (ev.event !== 'ans') return;
     const h = sessionEntries.get(ev.id);
     if (h) { sessionEntries.delete(ev.id); setInput(h, ev.input); saveHistory(); return; }
@@ -1376,7 +1778,8 @@
       const sc = scanBox(t), cell = CF.boxes[k].classList.contains('cell');
       if (sc.extra) add(k, tr('There is a ")" without its "("', '「)」に対応する「(」がありません'));
       else if (sc.comma && !(F.eqs && k === 'v')) {
-        add(k, cell ? tr('A cell takes one number or expression: "," and ";" cannot be used (the decimal point is ".")', '1 つの欄には数か式を 1 つだけ入れます。「,」や「;」は使えません（小数点は「.」）')
+        // (with a decimal comma, the message says so: 1.12.0, F)
+        add(k, cell ? (commaMode ? tr('A cell takes one number or expression: ";" cannot be used (the decimal sign is ",")', '1 つの欄には数か式を 1 つだけ入れます。「;」は使えません（小数点は「,」）') : tr('A cell takes one number or expression: "," and ";" cannot be used (the decimal point is ".")', '1 つの欄には数か式を 1 つだけ入れます。「,」や「;」は使えません（小数点は「.」）'))
           : tr('"," and ";" cannot be used in this box', 'この欄に「,」や「;」は使えません'));
       } else if (sc.bracket && cell) add(k, tr('A cell takes one number or expression, not a matrix', '欄の中に行列（[ ]）は入れられません'));
     }
@@ -1467,13 +1870,13 @@
     } else {
       // a matrix: from init.matrix, else from a matrix that is selected in the input field, else
       // the matrix that was entered last (kept until "Clear"), else 2 × 2
-      const m = parseMatrix(init.matrix || (selected && selected.trim()));
+      const m = parseMatrix(init.matrix || (selected && toInternal(selected.trim())));
       const size = (n) => Math.max(1, Math.min(Number(n) || 2, MAT_MAX));
       if (!m && D) CF.mat = { rows: size(D.rows), cols: size(D.cols), op: init.op !== undefined ? init.op : D.op || '', vals: Object.assign({}, D.vals) };
       else {
         const rows = m ? m.rows : [['', ''], ['', '']];
         CF.mat = { rows: rows.length, cols: rows[0].length, op: init.op || '', vals: {} };
-        rows.forEach((r, i) => r.forEach((x, j) => { CF.mat.vals['c' + i + '_' + j] = x; }));
+        rows.forEach((r, i) => r.forEach((x, j) => { CF.mat.vals['c' + i + '_' + j] = toDisplay(x); }));
       }
     }
     CF.hist = []; CF.hi = -1; CF.typing = false; CF.navSel = null; CF.base = null;
@@ -1978,7 +2381,7 @@
   // puts the expression into the input field; calc: and calculates it
   function formInsert(calc) {
     if (!CF.id) return;
-    const id = CF.id, text = FORMS[id].build(formValue, CF.dir);
+    const id = CF.id, text = toDisplay(FORMS[id].build(formValue, CF.dir));
     const [s, e] = CF.sel;
     closeForm();
     if (!FORMS[id].matrix) delete formDrafts[id]; else if (formDrafts[id]) formDrafts[id].used = true;
@@ -2104,8 +2507,10 @@
       if (M.cols > 1) items.push(['colDel', trf('Delete column {0}', '{0} 列目を削除', j + 1)]);
       items.push(['copy', tr('Copy as a table (for a spreadsheet)', '表としてコピー（表計算ソフトに貼り付け用）')]);
     }
+    items.push(['help', tr('How to use this form ›', 'このフォームの使い方 ›')]); // (1.12.0, H) its section of the user manual
     const id = CF.id, a = await sheet(F.title, items);
     if (!a || CF.id !== id) { focusExpr(); return; }
+    if (a === 'help') { openManual(FORM_HELP[id] || 'forms'); return; }
     if (a === 'clear') formClear();
     else if (a === 'copy') {
       const c = matrixCells();
@@ -2152,6 +2557,15 @@
   // lines pasted into the equations form are one equation each. Returns false for anything else
   // (the text is then pasted as usual).
   const NUM_RE = /^[−+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][−+-]?\d+)?$/;
+  // A table pasted from a spreadsheet of a region with a decimal comma (3,5 TAB 2,1) while the
+  // number format has a decimal point (1.12.0): when every number with a "," has a decimal part that
+  // is not three digits long (3,5, 12,25, not 1,000), the "," is the decimal sign
+  function pastedDecimals(rows) {
+    if (commaMode) return rows;
+    const cells = [].concat(...rows).filter((x) => /^[−+-]?\d+,\d+$/.test(x));
+    if (!cells.length || cells.some((x) => /,\d{3}$/.test(x))) return rows;
+    return rows.map((r) => r.map((x) => (/^[−+-]?\d+,\d+$/.test(x) ? x.replace(',', '.') : x)));
+  }
   function parseBlock(text) {
     const t = text.replace(/\r\n?/g, '\n').replace(/[\s;]+$/, '');
     const m = parseMatrix(normalizeExpr(t));
@@ -2159,11 +2573,12 @@
     let lines = t.split('\n').filter((l) => l.trim() !== '');
     if (lines.length === 1 && t.indexOf('\t') < 0 && t.indexOf(';') >= 0) lines = t.split(';');
     let cut;
+    const num = (x) => NUM_RE.test(x) || (commaMode && /^[−+-]?(?:\d+,?\d*|,\d+)(?:[eE][−+-]?\d+)?$/.test(x));
     if (t.indexOf('\t') >= 0) cut = (l) => l.split('\t');
-    else if (lines.every((l) => l.indexOf(',') >= 0)) cut = (l) => l.split(',');
-    else if (lines.every((l) => l.trim().split(/\s+/).every((x) => NUM_RE.test(x)))) cut = (l) => l.trim().split(/\s+/);
+    else if (!commaMode && lines.every((l) => l.indexOf(',') >= 0)) cut = (l) => l.split(',');
+    else if (lines.every((l) => l.trim().split(/\s+/).every(num))) cut = (l) => l.trim().split(/\s+/);
     else cut = (l) => [l];
-    const rows = lines.map((l) => cut(l).map((x) => normalizeExpr(x)));
+    const rows = pastedDecimals(lines.map((l) => cut(l).map((x) => x.trim()))).map((r) => r.map((x) => normalizeExpr(x)));
     if (!rows.length || (rows.length === 1 && rows[0].length === 1)) return null;
     const w = Math.max(...rows.map((r) => r.length));
     return rows.map((r) => r.concat(new Array(w - r.length).fill('')));
@@ -2184,7 +2599,7 @@
       block.forEach((r, di) => r.forEach((x, dj) => {
         const i = i0 + di, j = j0 + dj;
         if (i >= rowsN || j > colsN || (j === colsN && !sys)) { if (x) cut = true; return; }
-        if (j === colsN) c.b[i] = x; else c.rows[i][j] = x;
+        if (j === colsN) c.b[i] = toDisplay(x); else c.rows[i][j] = toDisplay(x); // (as typed: 3,5 with a decimal comma)
       }));
       setMatrixCells(c.rows, c.b, b.dataset.k);
       if (cut) toast(tr('The part that did not fit was left out', '入りきらない分は入れていません'), 2600);
@@ -2581,36 +2996,83 @@
   function insertResult(h) {
     const t = insertText(h);
     if (t === null) { toast(tr('This result is too long to insert (use the ans key)', 'この結果はそのまま挿入できません（ans キーで使えます）'), 2600); return; }
-    insert(t, 0, false);
+    insert(toDisplay(t), 0, false);
   }
+  // The history is drawn in chunks (1.12.0): the newest HIST_CHUNK lines at once, then the older
+  // ones a chunk at a time, at the top, when the page is idle, keeping what is on the screen in
+  // place. Drawing all 300 lines (fractions and roots in math notation) took about a second on a
+  // phone at every start, and again after every result once the history was full, as the oldest
+  // line then went and the whole history was drawn again. olderLeft: the oldest lines not drawn yet.
+  const HIST_CHUNK = 40;
+  let olderLeft = 0, olderJob = 0;
   function renderHistory(scroll) {
     histEl.textContent = '';
+    olderLeft = 0;
+    olderJob++;
     if (!history.length) {
       // nothing calculated yet: say what to do and offer a few examples to try
       const chips = el('div', { class: 'ex-chips' });
-      for (const x of STARTERS) chips.append(tapButton({ class: 'ex-chip', text: x }, () => { setExpr(x); focusExpr(); }));
+      for (const x of STARTERS) chips.append(tapButton({ class: 'ex-chip', text: toDisplay(x) }, () => { setExpr(x); focusExpr(); }));
       histEl.append(el('div', { class: 'empty' },
         el('div', { class: 'empty-t', html: tr('Type an expression and press <b>=</b>: the results stay here', '式を入力して <b>=</b> を押すと、ここに結果が残ります') }),
-        el('div', { text: tr('Tap a result to insert it into the expression, or touch and hold it to copy it.', '結果をタップで式に挿入、長押しでコピーできます。') }),
+        el('div', { class: 'empty-sub', text: tr('Tap a result to insert it into the expression, or touch and hold it to copy it.', '結果をタップで式に挿入、長押しでコピーできます。') }),
         el('div', { class: 'empty-try', text: tr('Tap an example to try it', '例をタップして試す') }), chips,
-        tapButton({ class: 'btn', text: tr('Examples and tips', '式の例・使い方を見る') }, () => openExamples())));
+        tapButton({ class: 'btn', text: tr('Examples and tips', '使い方と例を見る') }, () => openExamples())));
       histEl.scrollTop = 0; // read from the top (results are followed at the bottom)
       histPinned = false;
       return;
     }
+    // lines pinned with a star (1.12.0): at the top, in the order they were calculated
+    const pinned = history.filter((h) => h && h.star);
+    if (pinned.length) {
+      const sec = el('div', { class: 'h-pinned', role: 'group', 'aria-label': tr('Pinned', '固定') }, el('div', { class: 'h-pin-t', text: tr('★ Pinned', '★ 固定') }));
+      for (const h of pinned) sec.append(historyItem(h));
+      histEl.append(sec);
+    }
+    const first = Math.max(0, history.length - HIST_CHUNK);
     const frag = document.createDocumentFragment();
-    for (const h of history) frag.append(historyItem(h));
+    for (let i = first; i < history.length; i++) if (!history[i].star) frag.append(historyItem(history[i]));
     histEl.append(frag);
+    if (newsCard) histEl.append(newsCard);
     fitMatrices(histEl);
     if (scroll) { histEl.scrollTop = histEl.scrollHeight; histPinned = true; }
+    olderLeft = first;
+    if (olderLeft) drawOlderLater(olderJob);
   }
+  function drawOlderLater(job) {
+    if (window.requestIdleCallback) window.requestIdleCallback(() => drawOlder(job), { timeout: 400 });
+    else setTimeout(() => drawOlder(job), 30);
+  }
+  function drawOlder(job) {
+    if (job !== olderJob || olderLeft <= 0) return;
+    const to = Math.min(olderLeft, history.length), from = Math.max(0, to - HIST_CHUNK);
+    const items = [];
+    for (let i = from; i < to; i++) if (!history[i].star) items.push(historyItem(history[i]));
+    const fromBottom = histEl.scrollHeight - histEl.scrollTop;
+    const firstItem = histEl.querySelector(':scope > .h-item');
+    for (const it of items) histEl.insertBefore(it, firstItem); // (below the pinned lines)
+    for (const it of items) fitMatrices(it);
+    histEl.scrollTop = histEl.scrollHeight - fromBottom; // the lines on the screen stay where they were
+    olderLeft = from;
+    if (olderLeft) drawOlderLater(job);
+    if (histFiltered()) filterHistory();
+  }
+  // all lines drawn now (to search them)
+  function drawAllOlder() { while (olderLeft > 0) drawOlder(olderJob); }
   // one line of the history: the expression, the result and its warnings
   function historyItem(h) {
     const res = el('div', { class: 'h-res' });
     showResult(res, displayResult(h));
-    const item = el('div', { class: 'h-item' }, el('div', { class: 'h-expr', text: h.expr }), res);
+    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') }, el('div', { class: 'h-expr', text: toDisplay(h.expr) }), res);
+    item._h = h;
+    if (h.note) item.insertBefore(el('div', { class: 'h-note', text: h.note }), item.firstChild);
     for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
-    bindLongPress(item, () => historyMenu(h), (target) => {
+    // ⋯ opens the same menu as touching and holding the line (1.12.0: nothing only by a long touch);
+    // the dots are drawn by style.css, so that the text of the line stays the expression and the result
+    item.append(el('button', { class: 'h-more', type: 'button', 'aria-label': tr('Menu of this result', 'この結果のメニュー') }));
+    bindLongPress(item, () => { if (!histSel) historyMenu(h); }, (target) => {
+      if (histSel) { toggleSelected(item); return; }
+      if (target.closest('.h-more')) { historyMenu(h); return; }
       if (target.closest('.h-expr')) setExpr(h.expr);
       else insertResult(h);
       focusExpr();
@@ -2679,9 +3141,12 @@
     const mcols = mat ? parseMatrix(mat).rows[0].length : 0;
     if (mcols === 2) more.push(['m-plot', tr('Draw the rows as points (2D graph)', '各行を点としてグラフに描く（2D）')]);
     else if (mcols === 3) more.push(['m-plot', tr('Draw the rows as points (3D graph)', '各行を点としてグラフに描く（3D）')]);
-    const a = await sheet((h.t ? fmtTime(h.t / 1000) + '\n' : '') + clip(h.expr, 300) + '\n' + clip(displayText(h.result), 300), more.concat([
+    const a = await sheet((h.t ? fmtTime(h.t / 1000) + '\n' : '') + clip(toDisplay(h.expr), 300) + '\n' + clip(displayText(h.result), 300), more.concat([
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
-      ['ins-ans', tr('Insert result', '結果を式に挿入')], ['del', tr('Delete this line', 'この行を削除'), 'danger']
+      ['ins-ans', tr('Insert result', '結果を式に挿入')],
+      ['star', h.star ? tr('★ Unpin', '★ 固定を外す') : tr('☆ Pin at the top', '☆ 上に固定')],
+      ['note', h.note ? tr('Change the note', 'メモを変える') : tr('Add a short note', 'ひとことメモ')],
+      ['del', tr('Delete this line', 'この行を削除'), 'danger']
     ]));
     if (a === 'm-edit') openForm('mat', { matrix: mat });
     else if (a === 'm-plot') plotMatrixRows(parseMatrix(mat).rows);
@@ -2702,9 +3167,17 @@
       historyChanged();
       toast(tr('Line deleted', '1 行を削除しました'), 5000, [tr('Undo', '元に戻す'), () => {
         history.splice(Math.min(i, history.length), 0, h);
-        if (history.length > 300) history = history.slice(-300);
+        history = trimHistory(history);
         historyChanged();
       }]);
+    }
+    else if ((a === 'star' || a === 'note') && !proGate('history_tools')) return;
+    else if (a === 'star') { h.star = !h.star; if (!h.star) delete h.star; historyChanged(); if (h.star) toast(tr('Pinned at the top of the history', '履歴のいちばん上に固定しました'), 1800); }
+    else if (a === 'note') {
+      const t = await promptSheet(tr('A short note for this line', 'この行のひとことメモ'), h.note || '', tr('e.g. rent of March', '例：3 月の家賃'));
+      if (t === null) return;
+      if (t.trim()) h.note = t.trim().slice(0, 120); else delete h.note;
+      historyChanged();
     }
   }
   // The result of a history line as an expression in x (x³ − 3x, 3x² + C), or null: not for numbers,
@@ -2772,27 +3245,39 @@
     return sheet(title, [['ok', okLabel, 'danger']]).then((k) => k === 'ok');
   }
 
+  // The menu (1.12.0: eight items at most, so that each is easy to find). The shapes and every
+  // later tool are in "Tools", the four lists in "Lists" (with tabs), updating the exchange rates is
+  // in the settings, and exporting and clearing the history are in the history's own menu (the
+  // clock at the top right; see MOVED for the note shown once to those who knew the old menu).
   const MENU = [
-    ['examples', '💡', tr('Examples and tips', '式の例・使い方')],
-    ['functions', 'ƒ', tr('Functions', '関数の一覧')],
-    ['units', '㎏', tr('Units and currencies', '単位・通貨の一覧')],
-    ['variables', 'π', tr('Variables and constants', '変数・定数の一覧')],
+    ['examples', '💡', tr('Examples and tips', '使い方と例')],
+    ['tools', '🧰', tr('Tools', '道具')],
     ['plot', '📈', tr('Graph', 'グラフ')],
-    ['shapes', '📐', tr('Shapes: area, volume, length', '図形（面積・体積・長さ）')],
-    ['defs', '✎', tr('User-defined variables and functions', 'ユーザー定義の変数・関数')],
-    ['rates', tr('$', '¥'), tr('Update exchange rates', '為替レートの更新')],
+    ['lists', '📚', tr('Lists: functions, units, constants', '一覧（関数・単位・定数）')],
     null,
     ['pro', '⭐', 'QCalc Pro', { when: proOffered }],
     ['settings', '⚙', tr('Settings', '設定')],
     ['language', '🌐', LANG_TITLE],
-    ['export', '📤', tr('Export history (CSV)', '履歴を書き出す（CSV）'), { pro: true }],
-    ['clear', '🗑', tr('Clear history', '履歴を消去')],
     ['about', 'ⓘ', tr('About this app', 'このアプリについて')]
+  ];
+  // Shown once at the top of the menu to those who used an earlier version: where the moved items are now.
+  const MOVED = () => [
+    tr('Shapes and tanks → Tools', '図形・容器の液量 → 道具'),
+    tr('Functions, units, constants and your own definitions → Lists', '関数・単位・定数・自分の定義 → 一覧'),
+    tr('Updating the exchange rates → Settings', '為替レートの更新 → 設定'),
+    tr('Exporting and clearing the history → 🕘 at the top right', '履歴の書き出し・消去 → 右上の 🕘')
   ];
   function buildDrawer() {
     const d = $('#drawer');
     d.append(el('div', { class: 'head' }, el('div', { class: 'name', text: 'QCalc' }),
       el('div', { class: 'sub', id: 'drawer-sub', text: tr('Calculation engine libqalculate', '計算エンジン libqalculate') })));
+    if (usedBefore && !store.get('qalc.moved112', false)) {
+      const note = el('div', { class: 'moved-note', role: 'note' },
+        el('div', { class: 'moved-t', text: tr('The menu is shorter now. Moved:', 'メニューを整理しました。移った項目：') }),
+        el('ul', {}, ...MOVED().map((t) => el('li', { text: t }))),
+        el('button', { class: 'btn moved-ok', text: tr('OK', 'わかった'), onclick: () => { note.remove(); store.set('qalc.moved112', true); } }));
+      d.append(note);
+    }
     for (const m of MENU) {
       if (!m) { d.append(el('hr')); continue; }
       const o = m[3] || {};
@@ -2803,7 +3288,11 @@
         el('span', { class: 'ico', text: m[1] }), label));
     }
   }
-  function openDrawer() { $('#drawer').classList.add('open'); $('#drawer').inert = false; $('#scrim').classList.add('show'); }
+  function openDrawer() {
+    $('#drawer').classList.add('open'); $('#drawer').inert = false; $('#scrim').classList.add('show');
+    // the note on the moved items is shown once: seen when the menu is opened with it
+    if ($('#drawer .moved-note')) store.set('qalc.moved112', true);
+  }
   function closeDrawer() {
     const d = $('#drawer');
     if (!d.classList.contains('open')) return;
@@ -2813,10 +3302,24 @@
     if (!panelStack.length) focusExpr();
   }
   $('#btn-menu').addEventListener('click', openDrawer);
+  // the history's own menu (1.12.0; until 1.11.0 exporting and clearing were in the main menu)
+  async function historyActions() {
+    const k = await sheet(tr('History', '履歴'), [
+      ['h-search', tr('Search the history', '履歴を検索')],
+      ['h-select', tr('Select lines: sum, average, copy', '行を選んで合計・平均・コピー')],
+      ['export', tr('Export the history (CSV file)', '履歴を書き出す（CSV ファイル）') + (hasPro() ? '' : '  ⭐ Pro')],
+      ['clear', tr('Clear the whole history', '履歴をすべて消去')]]);
+    if (k === 'h-search') openHistSearch();
+    else if (k === 'h-select') openHistSelect();
+    else if (k) menuAction(k);
+  }
+  $('#btn-hist').addEventListener('click', historyActions);
   $('#scrim').addEventListener('click', () => { if ($('#sheet').classList.contains('open')) closeSheet(null); closeDrawer(); });
 
   async function menuAction(k) {
     if (k === 'functions' || k === 'units' || k === 'variables') openCatalog(k);
+    else if (k === 'lists') openLists();
+    else if (k === 'tools') openTools();
     else if (k === 'plot') openPlot();
     else if (k === 'shapes') openShapes();
     else if (k === 'defs') openDefs();
@@ -2827,6 +3330,7 @@
     else if (k === 'language') chooseLanguage();
     else if (k === 'pro') openPro();
     else if (k === 'export') exportHistory();
+    else if (k === 'history') historyActions();
     else if (k === 'clear') {
       if (!history.length) { toast(tr('The history is empty', '履歴はありません'), 1400); return; }
       if (!(await confirmSheet(tr('Clear the whole history?', '計算履歴をすべて消去しますか？'), tr('Clear', '消去する')))) return;
@@ -2834,7 +3338,7 @@
       history = [];
       historyChanged();
       toast(tr('History cleared', '履歴を消去しました'), 6000, [tr('Undo', '元に戻す'), () => {
-        history = old.concat(history).slice(-300); // with anything calculated in the meantime
+        history = trimHistory(old.concat(history)); // with anything calculated in the meantime
         historyChanged();
         histEl.scrollTop = histEl.scrollHeight;
       }]);
@@ -2855,6 +3359,11 @@
       document.body.append(p.node);
       panels[id] = p;
       build(p);
+      // "?" (1.12.0, H): the section of the user manual about this panel or tool, at the right end
+      if (HELP[id] !== undefined) {
+        bar.append(el('button', { class: 'icon-btn help-btn', 'aria-label': tr('How to use this (opens the user manual)', '使い方（説明書を開く）'),
+          title: tr('How to use this (opens the user manual)', '使い方（説明書を開く）'), text: '?', onclick: () => openManual(p.help ? p.help() : HELP[id]) }));
+      }
     }
     // a panel is on the stack once; opened again from another panel (the graph of a shape, from the
     // graph's own tools), it comes to the top instead of being counted twice for Back
@@ -2991,7 +3500,10 @@
     tr('The solve key opens a form for an equation (left side = right side); "+ Add an equation" makes a system of equations.', 'solve キーで方程式を入力する画面（左辺 = 右辺）が開きます。「＋ 式を追加」で連立方程式になります。'),
     tr('📈 above the input field draws the graph of what is typed: an expression in x (2D) or in x and y (3D), an equation such as y = 2x + 1, x² + y² = 4 or z = x y, or a matrix of numbers with 2 or 3 columns (points). Long-pressing a line of the history offers the same.', '入力欄の上の 📈 で、入力した式のグラフを描けます。x の式は 2D、x と y の式は 3D、y = 2x + 1、x² + y² = 4、z = x y のような方程式、2 列か 3 列の数の行列（点）も描けます。履歴の行を長押ししても同じことができます。'),
     tr('In the graph, "Area" finds the area between a function and the x axis or between two functions (the crossing points are offered as ranges), and "Length" the length of a curve or the perimeter between two functions. "Example" draws a circle or an ellipse.', 'グラフの「面積を求める」で、関数と x 軸の間や 2 つの関数の間の面積（交点の間の範囲を選べます）、「長さ・周」で曲線の長さや 2 つの関数に囲まれた部分の周の長さが求められます。「図形の例」で円や楕円を描けます。'),
-    tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². The solid that is measured looks like a pale gelatin in a skin of a deeper shade in the graph. The example at the bottom draws a sphere: 32π/3 and 16π for r = 2.', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。計測している立体は、グラフで濃い色の皮に包まれた薄い色のゼラチンのように見えます。下の「図形の例：球」は球を描き、r = 2 なら体積 32π/3・表面積 16π が出ます。'),
+    tr('⟳ 3D among the round buttons of a 2D graph turns the shaded region around the x axis and shows the solid in 3D at once, with its volume (QCalc Pro; without it, the solid and its volume in the 2D graph). Back in 2D (← Back to 2D), tap the line of the y axis (or the x axis) to turn around it; with y = k or x = k, drag its line. The region mirrored on the other side shows the cut through the solid. ↶ Undo in the message takes a change back.', '2D グラフの右の丸いボタン「⟳ 3D」で、色の付いた部分を x 軸のまわりに回した立体が 3D ですぐに出て、体積も出ます（QCalc Pro。無料では 2D のグラフに立体の形と体積が出ます）。「← 2D に戻る」で 2D に戻り、y 軸（または x 軸）の線をタップすると、その軸のまわりに回します。y = k・x = k は線をドラッグして動かせます。軸の反対側に薄く映った形が、立体を軸で切った形です。変えたあとのメッセージの「↶ 元に戻す」で戻せます。'),
+    tr('"Make a solid ▾" → "Cross sections": squares □, equilateral triangles △ or half discs ◠ stand across x on the shaded region (more shapes under "More shapes ▾"); the volume V = ∫ A(s(x)) dx, s being the width of the region.', '「立体にする ▾」→「断面の立体」では、色の付いた部分の上に、x 軸に垂直に正方形 □・正三角形 △・半円 ◠ を立てた立体の体積 V = ∫ A(s(x)) dx を出します（s は底面の幅。ほかの形は「詳しく：ほかの形 ▾」）。'),
+    tr('In "Make a solid", "Show the method with lines" draws the thin disks or rings (across the axis) or the shells (along the axis) that the volume adds up, n of them. When the region is on one side of the axis, the theorem of Pappus and Guldinus is shown too: V = 2π d A (A the area, d the distance of its centre from the axis). In the 3D view the slider "Angle" turns the solid from 0° to 360° (180°: cut in half); ▶ turns it again.', '「立体にする」の「方法を線で見せる」では、体積を足し合わせる薄い円板・穴のあいた円板（軸に垂直）か、殻（軸に平行）を n 本の線で描きます。領域が軸の片側にあるときは、パップス・ギュルダンの定理 V = 2π d A（A は面積、d は重心から軸までの距離）も出します。3D で見るときは「角度」のスライダーで 0° から 360° まで回せます（180° で半分に切った形）。▶ でもう一度回ります。'),
+    tr('In the 3D graph, "Volume and surface" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in "Solid from a profile" or in "Shapes" (⟳ 3D), it shows the values found there. Under "Example" at the bottom, every solid of "Shapes" can be drawn in 3D with its values ("Change the numbers" opens "Shapes").', '3D グラフの「体積・表面積」を開くと、いま描いている曲面の下（曲面が 2 つならその間）の体積と表面積がすぐに出ます。範囲は長方形か円 x² + y² ≤ R² です。2D グラフ（⟳ 3D）や「輪郭から回転体」、「図形」（⟳ 3D）で作った立体では、そこで出した値が出ます。下の「図形の例」では、「図形」のすべての立体を、その値のまま 3D で描けます（「数を変える」で「図形」が開きます）。'),
     tr('Its region "Enclosed" finds by itself the part where one surface is above the other (or above z = 0), bounded by where they meet, as for z = x² + y² and z = 4 (8π): the region is described (x² + y² ≤ 4) and outlined on the floor, and several parts are given one by one.',
       '範囲の「囲まれた部分」は、一方の曲面がもう一方より上にある部分（または z = 0 より上の部分）を、交線から自動で見つけます。例：z = x² + y² と z = 4 なら 8π。範囲を式（x² + y² ≤ 4）で示して床に輪郭を描き、部分が複数あれば部分ごとに出します。'),
     tr('Its region "Custom" takes a region you type: a rectangle a ≤ x ≤ b, c ≤ y ≤ d, a disk with a centre, a ring, a sector (in degrees or radians), the region between two curves (g₁(x) ≤ y ≤ g₂(x) or h₁(y) ≤ x ≤ h₂(y)), or inequalities joined by "and" (x²/4 + y² ≤ 1 and y ≥ 0). The iterated integral is shown and can be put into the input field. "Volume" counts the parts below as positive, "Integral" as negative (sin x over [0, 2π] × [0, 1]: 4 and 0).', '範囲の「指定」では、範囲を式で入れられます：長方形 a ≤ x ≤ b・c ≤ y ≤ d、中心のある円、環、扇形（度でもラジアンでも）、2 本の曲線ではさむ範囲（g₁(x) ≤ y ≤ g₂(x) または h₁(y) ≤ x ≤ h₂(y)）、「かつ」でつないだ不等式（x²/4 + y² ≤ 1 かつ y ≥ 0）。累次積分の式を示し、入力欄に入れることもできます。「体積」は下の部分もプラス、「積分の値」はマイナスとして数えます（sin x、[0, 2π] × [0, 1] なら 4 と 0）。'),
@@ -3002,19 +3514,24 @@
     tr('The calculus keys (d/dx, ∫, lim, Σ …) open a form with boxes where the mathematics is written: the limits above and below ∫, the variable under lim. Tap a box (or "Next box ▶") and type with the keys; the result is shown at once. "Insert" puts the expression into the input field.', '解析のキー（d/dx、∫、lim、Σ など）を押すと、数式の形に欄が並んだ入力フォームが開きます（∫ の上下に上端・下端、lim の下に変数など）。欄をタップするか「次の欄 ▶」で選んでキーで入力すると、結果がすぐに表示されます。「式に入れる」で入力欄に入ります。'),
     tr('An empty box of a form becomes □ in the input field: it is selected, so the next key types over it, and "Next box ▶" goes to the next □.', 'フォームで空のままの欄は、入力欄では □ になります。□ は選ばれた状態なので、そのままキーを押すと置き換わります。「次の欄 ▶」で次の □ に移ります。'),
     tr('Above the input field the expression is shown in math notation (fractions, powers, roots, integrals), so you can check what you typed. It can be turned off in the settings.', '入力欄の上に、式が数式の形（分数・べき乗・根号・積分など）で表示されるので、入力した内容を確かめられます。設定で表示しないこともできます。'),
-    tr('Touch and hold a result with x (x³ − 3x) to differentiate or integrate it, draw its graph or put in a value for x.', 'x を含む結果（x³ − 3x など）を長押しすると、微分・積分・グラフ・x への値の代入ができます。'),
+    tr('Touch and hold a result with x (x³ − 3x), or tap its ⋯, to differentiate or integrate it, draw its graph or put in a value for x.', 'x を含む結果（x³ − 3x など）を長押しするか ⋯ をタップすると、微分・積分・グラフ・x への値の代入ができます。'),
     tr('Type the "=" of an equation with the a=b key (the large = key calculates). Example: solve(x^2 = 16)', '方程式の「=」は a=b キーで入力します（大きい = キーは計算の確定です）。例：solve(x^2 = 16)'),
+    tr('Language (in the menu or the settings): "Same as device" follows the language of the phone, also when it is changed; when QCalc does not have that language, it is in English. A language chosen in the list stays when the phone\'s language changes.', '言語（メニューか設定）：「端末の設定に合わせる」にすると、スマホの言語に合わせます（変えたときも）。端末の言語に QCalc がないときは英語になります。一覧から言語を選ぶと、スマホの言語を変えてもその言語のままです。'),
+    tr('Tools → Statistics: values one per row (or pasted from a spreadsheet) give the mean, median, standard deviations and quartiles; with two columns x and y, the regression line, r and R², and the points with the line in a graph.', '道具 →「統計」：値を 1 行に 1 つ入れる（表計算ソフトから貼り付けもできる）と、平均・中央値・標準偏差・四分位数。x と y の 2 列なら、回帰直線・相関係数・決定係数と、点と直線のグラフ。'),
+    tr('In the app: Tools → "Open QCalc quickly" puts a widget with the last result on the home screen or adds a tile to the quick settings. Touch and hold the QCalc icon for New calculation, Tools and Convert.', 'アプリでは「道具」→「QCalc をすぐ開く」で、最後の結果が見えるウィジェットをホーム画面に置いたり、クイック設定にタイルを足したりできます。QCalc のアイコンを長押しすると「新しい計算」「道具」「換算」を選べます。'),
+    tr('With a decimal comma (Settings → Number format: 1.234,5 or 1 234,5, or automatically in such a region) type 1,5 and separate the arguments with ";": max(1,5; 2). In a matrix the elements are separated by spaces: [1,5 2; 3 4]. The history stays as it was when the setting is changed.', '小数点を「,」にした場合（設定 →「数の書き方」で 1.234,5 か 1 234,5、または自動でその地域）は、1,5 のように入れ、引数は「;」で区切ります：max(1,5; 2)。行列の要素は空白で区切ります：[1,5 2; 3 4]。設定を変えても履歴はそのままです。'),
     tr('Type a matrix as [1, 2; 3, 4]: "," between the elements and ";" between the rows. Matrix results are shown as tables in the history.', '行列は [1, 2; 3, 4] のように、要素を「,」、行を「;」で区切って入力します。結果の行列は履歴に表の形で表示されます。'),
     tr('The ▦ key of the Matrix page opens a grid of cells: set the rows and columns with + and −, type the elements and choose what to calculate (determinant, inverse, transpose, rank, eigenvalues, linear system). det, Aᵀ and A⁻¹ open it too when the input field is empty. Touch and hold a matrix result to edit it there.', '「行列」ページの ▦ キーで、行列を表の形で入力する画面が開きます。行と列の数を + と − で決めて要素を入れ、計算（行列式・逆行列・転置・階数・固有値・連立方程式）を選びます。入力欄が空のときは det・Aᵀ・A⁻¹ のキーでも開きます。結果の行列を長押しすると、その画面で編集できます。'),
     tr('Tap RAD, AUTO and DEC at the top to switch the angle unit, exact or approximate results, and the number base of results.', '上の「RAD」「自動」「10進」をタップすると、角度の単位、厳密・近似、結果の進数が切り替わります。'),
-    tr('Find functions, units and constants in the lists in the menu (search by name or description, for example "integral", "mile" or "speed of light").', '関数・単位・定数は、メニューの一覧から日本語でも探せます（例：「積分」「マイル」「光速」）。'),
+    tr('Find functions, units and constants in "Lists" in the menu (search by name or description, for example "integral", "mile" or "speed of light").', '関数・単位・定数は、メニューの「一覧」から日本語でも探せます（例：「積分」「マイル」「光速」）。'),
+    tr('The 🕘 at the top right is the menu of the history (export, clear). The ⋯ at the left of a result is the menu of that result, the same as touching and holding it.', '右上の 🕘 は履歴のメニュー（書き出し・消去）です。結果の左の ⋯ は、その結果のメニューです（長押しと同じ）。'),
     tr('Draw graphs with "Graph" in the menu: 2D graphs of y = f(x) and 3D graphs of z = f(x, y). Expressions with derivatives or integrals such as diff(x^3 − 3x) can be drawn as they are.', 'グラフはメニューの「グラフ」から。y = f(x) の 2D と、z = f(x, y) の 3D が描けます。diff(x^3 − 3x) のように、微分や積分の式もそのまま描けます。'),
     tr('An expression cleared with AC comes back with "Undo", which appears right after.', 'AC で消した式は、すぐ後に出る「元に戻す」で戻せます。'),
-    tr('"Shapes" also has a frustum of a cone, a hemisphere, a spherical cap, an ellipsoid, prisms and a pipe, and "Tanks": the amount of liquid in a tank lying down or standing, a sphere or a cone with its point down from the height of the liquid (with how full it is), and the height for an amount (1000 L). Round sizes can be typed as diameters; volumes can be shown in L, mL, m³, cm³, US gal or ft³, and a material (water, concrete, iron…) gives the weight.',
-      '「図形」には円錐台・半球・球欠・楕円体・角柱・パイプもあります。「容器の液量」では、横置き・縦置きの円筒、球形、下向きの円錐のタンクの液面の高さから液量（満杯に対する割合も）を出し、液量（1000 L など）から高さも出します。丸い形の大きさは直径でも入れられ、体積は L・mL・m³・cm³・US gal・ft³ で表示でき、材料（水・コンクリート・鉄など）を選ぶと重さも出ます。'),
-    tr('Areas, lengths and volumes of shapes: "Shapes" in the menu. Choose a circle, a triangle, a cylinder and so on, type the sizes, and the results appear at once. In a graph, "Area and length" shades the area, and its edges can be dragged.', '図形の面積・長さ・体積は、メニューの「図形」で求められます。円・三角形・円柱などを選んで大きさを入れると、結果がすぐに出ます。グラフでは「面積・長さ」で面積に色が付き、両端をドラッグして範囲を変えられます。'),
-    tr('In "Area and length" of a 2D graph, "Solid of revolution" turns the shaded region once around the x axis, the y axis, y = k or x = k: the volume, the curved surfaces and the surface with the end faces, exact when possible, with the formula used (washers or shells) and a 3D view. Where the region is on both sides of the axis, the overlap counts once. Tap a result to put its integral into the input field or to copy it.', '2D グラフの「面積・長さ」の「回転体」では、色の付いた部分を x 軸・y 軸・y = k・x = k のまわりに 1 回転させた立体の体積、曲面の面積、端の面を含む表面積を出します（できるときは厳密な値）。使った式（ワッシャー法・殻の方法）も示し、3D でも見られます。領域が軸の両側にあるときは、重なる部分を 1 回だけ数えます。結果をタップすると、積分の式を入力欄に入れたり、コピーしたりできます。'),
-    tr('"Shapes" also leads to "Volume from measured values": a table of cross sections (the average end area method and Simpson’s rule, with the reason when Simpson’s rule cannot be used) or the heights at the corners of a grid (the method of point heights, V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)). A table can be pasted from a spreadsheet; the volume is given in m³ and L.', '「図形」からは「測った値から体積」も開けます：断面積の表から平均断面法とシンプソンの公式（使えないときは理由も）、格子の角の高さから点高法（V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)）で体積を出します。表は表計算ソフトから貼り付けられ、結果は m³ と L で出ます。'),
+    tr('The solids in "Tools" include a frustum of a cone, a hemisphere, a spherical cap, an ellipsoid, prisms and a pipe, and "Tanks: liquid and level" gives the amount of liquid in a tank lying down or standing, a sphere or a cone with its point down from the height of the liquid (with how full it is), and the height for an amount (1000 L). Round sizes can be typed as diameters; volumes can be shown in L, mL, m³, cm³, US gal or ft³, and a material (water, concrete, iron…) gives the weight.',
+      '「道具」の「立体の図形」には円錐台・半球・球欠・楕円体・角柱・パイプもあります。「容器の液量」では、横置き・縦置きの円筒、球形、下向きの円錐のタンクの液面の高さから液量（満杯に対する割合も）を出し、液量（1000 L など）から高さも出します。丸い形の大きさは直径でも入れられ、体積は L・mL・m³・cm³・US gal・ft³ で表示でき、材料（水・コンクリート・鉄など）を選ぶと重さも出ます。'),
+    tr('Areas, lengths and volumes of shapes: "Tools" in the menu. Search for what you want to do (for example "tank" or "volume") or choose a tool from its group, type the sizes, and the results appear at once. Tap a result to put its expression into the input field, keep it in the history or copy it. In a graph, "Area and length" shades the area, and its edges can be dragged.', '図形の面積・長さ・体積は、メニューの「道具」で求められます。やりたいこと（例：「タンク」「体積」）で探すか、まとまりから道具を選び、大きさを入れると結果がすぐに出ます。結果をタップすると、式を入力欄に入れる・履歴に残す・コピーができます。グラフでは「面積・長さ」で面積に色が付き、両端をドラッグして範囲を変えられます。'),
+    tr('In "Area and length" of a 2D graph, the switch shows the area or the length (the perimeter between two functions), calculated again whenever the range changes. "Make a solid ▾" turns the shaded region once around the x axis, the y axis, y = k or x = k: the volume, the curved surfaces and the surface with the end faces, exact when possible, with the formula used (thin disks, rings or cylinders) and a 3D view. Where the region is on both sides of the axis, the overlap counts once.', '2D グラフの「面積・長さ」では、切り替えで面積か長さ（2 つの関数の間なら周の長さ）を出し、範囲を変えると計算し直します。「立体にする ▾」では、色の付いた部分を x 軸・y 軸・y = k・x = k のまわりに 1 回転させた立体の体積、曲面の面積、端の面を含む表面積を出します（できるときは厳密な値）。使った式（薄い円板・穴のあいた円板・薄い円筒を重ねる方法）も示し、3D でも見られます。領域が軸の両側にあるときは、重なる部分を 1 回だけ数えます。'),
+    tr('"Volume from measured values" in "Tools": a table of cross sections (the average end area method and Simpson’s rule, with the reason when Simpson’s rule cannot be used) or the heights at the corners of a grid (the method of point heights, V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)). A table can be pasted from a spreadsheet; the volume is given in m³ and L.', '「道具」の「測った値から体積」では、断面積の表から平均断面法とシンプソンの公式（使えないときは理由も）、格子の角の高さから点高法（V = ab/4 (Σh₁ + 2Σh₂ + 3Σh₃ + 4Σh₄)）で体積を出します。表は表計算ソフトから貼り付けられ、結果は m³ と L で出ます。'),
     tr('Below a graph there is a row of samples (a heart, waves, a doughnut, a ripple …): tap one to draw it, then change its functions and ranges as you like.', 'グラフの下にサンプル（ハート、波、ドーナツ、波紋など）が並んでいます。タップすると描けるので、式や範囲を変えて試せます。'),
     tr('In a form, ↶ and ↷ undo and redo, and ⋯ clears all boxes. A form closed without being used keeps its boxes. The matrix form keeps its matrix for the next calculation, takes a table pasted from a spreadsheet, and its ⋯ menu inserts or deletes a row or a column.', 'フォームでは ↶ ↷ で「元に戻す」「やり直す」、⋯ で「すべての欄を消去」ができます。使わずに閉じたフォームは、次に開くと欄がそのまま残っています。行列の画面は入れた行列を次の計算まで覚えていて、表計算ソフトの表を貼り付けでまとめて入れられ、⋯ から行や列の挿入・削除もできます。')
   ];
@@ -3023,21 +3540,28 @@
     setExpr(text);
     focusExpr();
   }
-  function openExamples() {
-    return panel('examples', tr('Examples and tips', '式の例・使い方'), (p) => {
+  function openExamples(at) {
+    const p = panel('examples', tr('Examples and tips', '使い方と例'), (p) => {
+      // (1.12.0, H) the user manual, first
+      p.body.append(el('div', { class: 'card manual-card' },
+        tapButton({ class: 'btn manual-btn', text: '📖 ' + tr('User manual', '取扱説明書') }, () => openManual('')),
+        el('div', { class: 'muted', text: tr('Every feature step by step, on the web and as a PDF', 'すべての機能を手順つきで（Web と PDF）') })));
       p.body.append(el('div', { class: 'section-title', text: tr('Examples (tap one to put it in the input field)', '式の例（タップすると入力欄に入ります）') }));
       for (const [group, rows] of EXAMPLES) {
         const box = el('div', { class: 'card ex-group' }, el('div', { class: 'ex-title', text: group }));
         for (const [text, note] of rows) {
           box.append(el('button', { class: 'ex-row', onclick: () => useExample(text) },
-            el('span', { class: 'mono ex-expr', text }), el('span', { class: 'ex-note', text: note })));
+            el('span', { class: 'mono ex-expr', text: toDisplay(text) }), el('span', { class: 'ex-note', text: note })));
         }
         p.body.append(box);
       }
       p.body.append(el('div', { class: 'section-title', text: tr('Tips', '使い方のヒント') }),
-        el('div', { class: 'card' }, el('ul', { class: 'tips' }, ...TIPS.map((t) => el('li', { text: t })))),
-        el('div', { class: 'form-hint', text: tr('Expressions are written as in Qalculate!. See "Functions" in the menu for the functions, and "Units and currencies" for the units and currencies.', '式の書き方は Qalculate! と同じです。使える関数は「関数の一覧」、単位と通貨は「単位・通貨の一覧」にあります。') }));
+        el('div', { class: 'card tips-card' }, el('ul', { class: 'tips' }, ...TIPS.map((t) => el('li', { text: t })))),
+        el('div', { class: 'form-hint', text: tr('Expressions are written as in Qalculate!. The functions, units and currencies are in "Lists" in the menu.', '式の書き方は Qalculate! と同じです。使える関数・単位・通貨は、メニューの「一覧」にあります。') }));
     });
+    // (the note shown when the manual cannot be opened offline leads here)
+    if (at === 'tips') { const t = p.body.querySelector('.tips-card'); if (t) setTimeout(() => t.scrollIntoView({ block: 'start' }), 250); }
+    return p;
   }
 
   // ---------------------------------------------------------- catalogs
@@ -3199,7 +3723,7 @@
       const cats = el('div', { class: 'cats' });
       const count = el('div', { class: 'count' });
       const list = el('div');
-      p.body.append(search, cats, count, list);
+      p.body.append(listTabs(kind), search, cats, count, list);
       p.state = { cat: kind === 'units' ? 'Currency' : '', q: '' };
       const render = () => {
         const items = catalogs[kind] || [];
@@ -3532,11 +4056,23 @@
   const COLORS = ['#2563eb', '#e11d48', '#059669', '#d97706', '#7c3aed', '#0891b2'];
   const P = { series: [], view: null, dataX: null, exprs: [] };
   function openPlot() {
+    // (D6: a solid of "Shapes" in the 3D graph ends when the graph is opened for something else)
+    if (Q3.model && !Q3.opening3d) endModel3d(false);
     const p = panel('plot', tr('Graph', 'グラフ'), (p) => {
+      // (D6: and when the graph is closed: "← Back to the shape" and Back)
+      p.onClose = () => { if (Q3.model) endModel3d(false); };
       // 2D (y = f(x)) and 3D (z = f(x, y)); the last one used is shown
       const b2 = el('button', { text: tr('2D  y = f(x)', '2D　y = f(x)') }), b3 = el('button', { text: tr('3D  z = f(x, y)', '3D　z = f(x, y)') });
       const f2 = el('div', { class: 'plot-mode' }), f3 = build3d();
       let started2d = false;
+      // "?" of the graph: the section of what is open (the solid, the area, "Volume and surface")
+      p.help = () => {
+        if (!f3.hidden) return Q3.model ? 'shapes-3d' : f3.querySelector('.vol-toggle.on') ? 'volume-3d' : 'graph-3d';
+        const U = P.areaUI;
+        if (U && U.rev && !U.rev.box.hidden) return 'solid';
+        if (U && U.areaOpen) return 'area-length';
+        return 'graph-2d';
+      };
       const setMode = (m) => {
         if (m === '3d' && !hasPro()) m = '2d';
         store.set('qalc.plot.mode', m);
@@ -3552,13 +4088,13 @@
       b2.addEventListener('click', () => setMode('2d'));
       b3.dataset.pro = '';
       b3.addEventListener('click', () => {
-        if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です')); return; }
+        if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
         setMode('3d');
       });
       const ta = el('textarea', { rows: 2, placeholder: tr('Functions (one per line, variable x)', '関数（1行に1つ、変数は x）'), spellcheck: 'false', autocapitalize: 'off' });
       ta.value = store.get('qalc.plot.exprs', 'sin(x)\nx^2/10');
-      const xmin = el('input', { value: store.get('qalc.plot.min', '-10'), inputmode: 'text', autocapitalize: 'off' });
-      const xmax = el('input', { value: store.get('qalc.plot.max', '10'), inputmode: 'text', autocapitalize: 'off' });
+      const xmin = el('input', { value: store.get('qalc.plot.min', '-10'), inputmode: 'text', autocapitalize: 'off', 'aria-label': tr('Graph: x from', 'グラフの x の始め') });
+      const xmax = el('input', { value: store.get('qalc.plot.max', '10'), inputmode: 'text', autocapitalize: 'off', 'aria-label': tr('Graph: x to', 'グラフの x の終わり') });
       const go = el('button', { class: 'btn primary', text: tr('Draw', '描画') });
       const canvas = el('canvas', { role: 'img', 'aria-label': tr('2D graph', '2D グラフ') });
       const tip = el('div', { class: 'plot-tip', 'aria-live': 'polite' });
@@ -3575,7 +4111,14 @@
           store.set('qalc.plot.equal', P.equal);
           P.view = null; P.mark = null; P.tip.style.display = 'none';
           draw();
-        } }));
+        } }),
+        // 1.12.0 (B0): "Make a solid" with one tap: the shaded region turned around the x axis, the
+        // volume at once (in the corner of the graph and below it); (BG20) and the solid in 3D at once (Pro):
+        // revTo3d
+        P.revBtn = el('button', { class: 'rev3d', type: 'button', 'aria-label': tr('Turn into a solid (shown in 3D)', '回して立体にする（3D で表示）'), onclick: () => revTo3d() },
+          el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' })),
+        // 1.12.0 (D4): a picture of the graph to the share sheet
+        el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share a picture of the graph', 'グラフの画像を共有'), onclick: () => shareGraph2d() }));
       P.equal = P.equal || store.get('qalc.plot.equal', false) === true;
       const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
       const legend = el('div', { class: 'legend' });
@@ -3623,8 +4166,9 @@
     // another graph than the sample whose card is marked (an example shape, a form): the mark goes (1.8.2)
     if (!opts.sample && P.samples) P.samples.clearChoice();
     const list = (Array.isArray(exprs) ? exprs : [exprs]).filter(Boolean).slice(0, 6);
-    store.set('qalc.plot.exprs', list.join('\n'));
-    if (opts.range) { store.set('qalc.plot.min', String(opts.range[0])); store.set('qalc.plot.max', String(opts.range[1])); }
+    // (the fields as typed: in the number format, BG14)
+    store.set('qalc.plot.exprs', toDisplay(list.join('\n')));
+    if (opts.range) { store.set('qalc.plot.min', toDisplay(String(opts.range[0]))); store.set('qalc.plot.max', toDisplay(String(opts.range[1]))); }
     store.set('qalc.plot.mode', '2d');
     P.points = opts.points || null;
     P.marks = [];
@@ -3635,8 +4179,8 @@
     if (!built) store.set('qalc.plot.ok', true);
     openPlot();
     if (built && P.ta) {
-      P.ta.value = list.join('\n');
-      if (opts.range) { P.xmin.value = String(opts.range[0]); P.xmax.value = String(opts.range[1]); }
+      P.ta.value = toDisplay(list.join('\n'));
+      if (opts.range) { P.xmin.value = toDisplay(String(opts.range[0])); P.xmax.value = toDisplay(String(opts.range[1])); }
       P.setMode('2d');
       P.keep = true;
       P.go.click();
@@ -3677,18 +4221,18 @@
     }
     if (o.tangentAt !== undefined && o.tangentAt !== null && o.tangentAt !== '' && f) {
       const line = await drawTangent(f, String(o.tangentAt));
-      if (line) { P.ta.value = P.ta.value.trim() + '\n' + line; P.keep = true; P.go.click(); return; }
+      if (line) { P.ta.value = P.ta.value.trim() + '\n' + toDisplay(line); P.keep = true; P.go.click(); return; }
     }
     if (o.area && f && P.areaUI) {
       const U = P.areaUI;
-      U.box.hidden = false; U.box.previousSibling && U.box.previousSibling.classList.add('on');
+      // an example of a solid opens "Make a solid" (alone); the others "Area and length"
+      if (!o.area.rev) { U.areaOpen = true; } else if (U.rev.box.hidden) { U.rev.box.hidden = false; U.rev.toggle.classList.add('on'); U.rev.toggle.setAttribute('aria-expanded', 'true'); }
+      syncAreaBox();
       areaFunctionsChanged();
       U.f1.value = '0'; U.f2.value = o.area.between && P.series.length > 1 ? '1' : 'axis';
       await areaPairChanged();
-      U.a.value = String(o.area.a); U.b.value = String(o.area.b);
-      if (o.area.rev && U.rev) U.rev.open();
-      await computeArea();
-      if (o.area.length) computeLength();
+      U.a.value = toDisplay(String(o.area.a)); U.b.value = toDisplay(String(o.area.b));
+      await computeArea(); // the result the switch shows (the area or the length/perimeter)
     }
     draw();
   }
@@ -3734,7 +4278,9 @@
     P.dataX = isFinite(x0) ? [x0, x1] : null;
     if (!keepView) P.view = null;
     P.legend.textContent = '';
-    for (const s of P.series) P.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.y.some((v) => v !== null) ? '' : tr(' (no values)', '（値なし）')) }));
+    for (const s of P.series) P.legend.append(el('span', { style: '--c:' + s.color, text: toDisplay(s.expr) + (s.y.some((v) => v !== null) ? '' : tr(' (no values)', '（値なし）')) }));
+    // (1.12.0, C4: the points of the statistics with their regression line)
+    if (P.points && P.points.length) P.legend.append(el('span', { class: 'legend-points', style: '--c:' + COLORS[0], text: tr('Points: ', '点：') + P.points.length }));
     if (kept && P.series[kept[0]] && (kept[1] < 0 || P.series[kept[1]])) {
       P.area.f = P.series[kept[0]]; P.area.g = kept[1] < 0 ? null : P.series[kept[1]];
     } else {
@@ -3791,9 +4337,9 @@
   function fmt(v, step) {
     if (Math.abs(v) < step * 1e-9) return '0';
     const a = Math.abs(v);
-    if (a >= 1e-4 && a < 1e6) return v.toFixed(Math.max(0, Math.min(10, Math.ceil(-Math.log10(step) - 1e-9))));
+    if (a >= 1e-4 && a < 1e6) return decSign(v.toFixed(Math.max(0, Math.min(10, Math.ceil(-Math.log10(step) - 1e-9)))));
     const d = Math.max(1, Math.min(15, Math.floor(Math.log10(a)) - Math.floor(Math.log10(step)) + 1));
-    return v.toPrecision(d).replace(/e\+?/, 'E');
+    return decSign(v.toPrecision(d).replace(/e\+?/, 'E'));
   }
   // grid positions between a and b; nothing when the step is too small for the numbers
   // (adding the step would no longer change the value, and a loop would never end)
@@ -3860,6 +4406,7 @@
       const tx = Math.min(Math.max(ax + 4, 2), W - 40);
       g.fillText(fmt(y, stepY), tx, py);
     }
+    c.dataset.view = [P.view.x0, P.view.x1, P.view.y0, P.view.y1].map((t) => +t.toPrecision(10)).join(','); // (what is shown, for the tests and screen readers' tools)
     if (P.area) drawArea(g, sx, sy);
     if (P.revAxis && P.areaUI && !P.areaUI.box.hidden && !P.areaUI.rev.box.hidden) { drawRevAxis(g, sx, sy, W, H); c.dataset.rev = P.revAxis.kind + ':' + P.revAxis.v; } else delete c.dataset.rev;
     g.lineWidth = 2.2;
@@ -3915,7 +4462,8 @@
       g.fillStyle = A.f.color; g.font = '700 11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText('↔', px, H * GRIP_Y + 0.5);
     }
-    const lines = [A.text, A.lenText].filter(Boolean);
+    // the value the switch shows (1.12.0); with only the solid open, its volume (B0)
+    const lines = P.areaUI && !P.areaUI.areaOpen ? [revOpen() ? P.revVolText : ''].filter(Boolean) : [P.areaUI && P.areaUI.mode === 'len' ? A.lenText : A.text].filter(Boolean);
     P.canvas.dataset.area = lines.join(' / '); // what the graph shows, as text
     if (lines.length) {
       g.font = '600 13px system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
@@ -3932,11 +4480,13 @@
   // "6"; approx: a number alone is not exact)
   function shortValue(name, result, approx) {
     const t = String(result).trim(), bare = t.replace(/^[=≈]\s*/, ''), v = Number(numberPart(bare)), ex = bare.split(' ≈ ')[0].split(' = ')[0].trim(); // "32/3 = 10 + 2/3 ≈ …": 32/3
-    if (!isFinite(v)) return name + ' ' + clip(bare, 26);
-    const num = (+v.toPrecision(6)).toLocaleString('en-US', { maximumSignificantDigits: 6 });
-    if (bare.indexOf(' ≈ ') > 0) return name + (ex.length <= 12 ? ' = ' + ex : '') + ' ≈ ' + num;
+    if (!isFinite(v)) return name + ' ' + clip(toDisplay(bare), 26);
+    // (1.12.0: grouped like the results, with commas only when "Digit grouping" is on; until 1.11.0 the
+    // graph showed 1,436.1 beside a result of 1436.1039293776)
+    const num = toDisplay((+v.toPrecision(6)).toLocaleString('en-US', { maximumSignificantDigits: 6, useGrouping: false })).replace(/\d+/, (int) => (S.grouping && int.length > 3 ? int.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group) : int));
+    if (bare.indexOf(' ≈ ') > 0) return name + (ex.length <= 12 ? ' = ' + toDisplay(ex) : '') + ' ≈ ' + num;
     if (approx || t[0] === '≈') return name + ' ≈ ' + num;
-    return name + ' = ' + (ex.length <= 14 ? ex : num);
+    return name + ' = ' + (ex.length <= 14 ? toDisplay(ex) : num);
   }
   function zoom(f, cx, cy) {
     if (!P.view) return;
@@ -3974,10 +4524,34 @@
       const da = Math.abs(cx - px(P.area.a)), db = Math.abs(cx - px(P.area.b));
       return Math.min(da, db) > 22 ? '' : (da <= db ? 'a' : 'b');
     };
+    // 1.12.0 (B0), with "Make a solid" open: a tap on the line of the x axis or the y axis turns
+    // around it; the line of y = k or x = k can be dragged (k follows). Only a tap (no move) on an
+    // axis line, and a drag that starts on the line of k, are taken: anything else moves the graph
+    // as before, and the edges ↔ of the range come first.
+    let kdrag = null, axisTap = '', edgeBefore = null;
+    const revHit = (cx, cy) => {
+      if (!revOpen() || !P.view) return null;
+      const R = P.areaUI.rev, r = P.canvas.getBoundingClientRect(), v = P.view;
+      const px = (x) => r.left + (x - v.x0) / (v.x1 - v.x0) * r.width, py = (y) => r.top + (v.y1 - y) / (v.y1 - v.y0) * r.height;
+      if ((R.axis === 'h' || R.axis === 'v') && P.revAxis) {
+        const d = R.axis === 'h' ? Math.abs(cy - py(P.revAxis.v)) : Math.abs(cx - px(P.revAxis.v));
+        if (d <= 18) return { k: true };
+      }
+      const dx = Math.abs(cy - py(0)), dy = Math.abs(cx - px(0)); // to the line of the x axis, of the y axis
+      if (Math.min(dx, dy) > 14) return null;
+      return { axis: dx <= dy ? 'x' : 'y' };
+    };
     wrap.addEventListener('pointerdown', (e) => {
-      if (e.target.tagName === 'BUTTON' || !P.view) return;
+      if (e.target.closest('button') || !P.view) return;
       try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* the pointer is already gone */ }
-      if (!pts.size) edge = edgeAt(e.clientX);
+      if (!pts.size) {
+        edge = edgeAt(e.clientX);
+        edgeBefore = edge && revOpen() ? revState() : null;
+        // (an edge on an axis line, as a = 0 on the y axis: a drag moves the edge, a tap picks the axis)
+        const h = revHit(e.clientX, e.clientY);
+        kdrag = !edge && h && h.k ? { before: revState() } : null;
+        axisTap = h && h.axis ? h.axis : '';
+      } else { kdrag = null; axisTap = ''; }
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       start = { view: Object.assign({}, P.view), pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) };
       moved = false;
@@ -3987,7 +4561,24 @@
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const r = P.canvas.getBoundingClientRect(), v0 = start.view;
       const ids = Array.from(pts.keys());
+      if (kdrag && ids.length === 1 && P.revAxis) {
+        // the line of k follows the finger, in steps of about 1/40 of the graph
+        const p0 = start.pts.get(ids[0]), p1 = pts.get(ids[0]);
+        if (p0 && Math.abs(p1.x - p0.x) + Math.abs(p1.y - p0.y) > 4) moved = true;
+        if (!moved) return;
+        const R = P.areaUI.rev, d = toData(e.clientX, e.clientY), span = R.axis === 'h' ? v0.y1 - v0.y0 : v0.x1 - v0.x0;
+        const raw = span / 40, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = [1, 2, 5, 10].map((m) => m * mag).find((x) => x >= raw);
+        const val = Math.round((R.axis === 'h' ? d.y : d.x) / step) * step;
+        R.k.value = toDisplay(fmtK(val, step));
+        P.revAxis.v = val; P.revVolText = '';
+        P.mark = null; P.tip.style.display = 'none';
+        draw();
+        return;
+      }
       if (edge && ids.length === 1 && P.area) {
+        // (on an axis line, a tap that shakes a little stays a tap)
+        const q0 = start.pts.get(ids[0]), q1 = pts.get(ids[0]);
+        if (axisTap && !moved && q0 && Math.abs(q1.x - q0.x) + Math.abs(q1.y - q0.y) <= 6) return;
         // the edge follows the finger; the other edge stays, and the two never cross
         const A = P.area, x = toData(e.clientX, e.clientY).x, min = (v0.x1 - v0.x0) / r.width * 4;
         moved = true;
@@ -4023,10 +4614,26 @@
     const end = (e) => {
       if (!pts.has(e.pointerId)) return;
       pts.delete(e.pointerId);
-      if (edge) {
+      if (kdrag) {
+        const before = kdrag.before;
+        kdrag = null;
+        if (moved && P.areaUI) { start = null; revUndoable(before); P.areaUI.rev.setAxis(P.areaUI.rev.axis, true); computeRevolution(); return; }
+      }
+      if (edge && moved) {
         const k = edge;
         if (!pts.size) edge = '';
-        if (moved && P.area) { start = null; areaEdgeMoved(k, true); return; }
+        axisTap = '';
+        if (P.area) { start = null; if (edgeBefore) revUndoable(edgeBefore); edgeBefore = null; areaEdgeMoved(k, true); return; }
+      }
+      if (edge && !pts.size) edge = '';
+      if (axisTap) {
+        const a = axisTap;
+        axisTap = '';
+        if (!moved && !pts.size && e.type === 'pointerup' && P.areaUI) {
+          start = null;
+          if (a !== P.areaUI.rev.axis) { revUndoable(); P.areaUI.rev.setAxis(a); }
+          return;
+        }
       }
       if (!moved && pts.size === 0 && P.view && e.type === 'pointerup') showPoint(toData(e.clientX, e.clientY));
       if (pts.size) start = { view: Object.assign({}, P.view), pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) };
@@ -4065,7 +4672,7 @@
       const lines = P.ta.value.split('\n').map((t) => t.trim()).filter(Boolean);
       if (lines.indexOf(expr) >= 0) return;
       if (lines.length >= 6) { toast(tr('Up to 6 functions', '関数は 6 つまでです'), 1800); return; }
-      P.ta.value = lines.concat(expr).join('\n');
+      P.ta.value = lines.concat(toDisplay(expr)).join('\n');
       P.keep = true;
       P.go.click();
     };
@@ -4080,14 +4687,15 @@
       out);
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Calculus ▾', '微分・接線・極値 ▾') });
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) calcFunctionsChanged(); });
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); if (!box.hidden) calcFunctionsChanged(); });
     P.calcUI = { f, out, box, toggle };
     return el('div', { class: 'area-wrap' }, toggle, box);
   }
   function calcFunctionsChanged() {
     const U = P.calcUI, keep = U.f.value;
     U.f.textContent = '';
-    P.series.forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(s1.expr, 34) })));
+    P.series.forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(toDisplay(s1.expr), 34) })));
     U.f.value = keep !== '' && P.series[Number(keep)] ? keep : '0';
   }
   // the tangent of f at x = a: its line as an expression (to draw), the point marked, the equation shown
@@ -4363,6 +4971,11 @@
     return parts.length === 1 ? parts[0] : { text: '≈ ' + fmtV(+v.toPrecision(digits)), exact: '', v, digits };
   }
   const shownValue = (val) => (val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text);
+  // a value's text as shown (1.12.0, BG10): the values of the area and solid tools are in the engine's form
+  // (decimal point; the decimals made here grouped with commas, fmtV), and showResult takes the form shown:
+  // with a decimal comma their decimal point was taken for a group separator and dropped (0.4188790205 was
+  // shown as 04188790205)
+  const valueShown = (t) => displayText(commaMode ? String(t).replace(/(\d),(?=\d{3}(?!\d))/g, '$1') : String(t));
   // the exact form of an expression of exact values (calculated with "exact"), or ''
   async function exactForm(expr) {
     const r = await Bridge.send('calc', { expr, opts: iOpts({ approx: 'exact' }), timeout: 3000 });
@@ -4555,9 +5168,16 @@
     if (!f) return;
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
     if (!a || !b) { U.len.textContent = tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'); return; }
-    const g = areaG();
+    const g = areaG(), key = areaKey();
+    // (1.12.0: the length follows the range by itself, so an older run that ends later must not
+    // write over the newer one; until 1.11.0 it was calculated only with the button)
+    const gen = U.lenGen = (U.lenGen || 0) + 1, live = () => gen === U.lenGen && areaKey() === key;
     U.len.textContent = tr('Calculating…', '計算中…');
-    const fail = (text) => { U.len.textContent = text || tr('Could not calculate the length', '長さを計算できませんでした'); };
+    U.lenKey = ''; P.lenExpr = ''; showAreaMode();
+    const fail = (text) => { if (!live()) return; U.len.textContent = text || tr('Could not calculate the length', '長さを計算できませんでした'); U.lenKey = key; };
+    // the integral for the input field: the curve, or both curves and the vertical sides
+    const arc = (e) => `integrate(√(1 + (diff(${e}, x))^2), ${a}, ${b})`;
+    const lenExpr = g ? `${arc(f.expr)} + ${arc(g.expr)} + ${subXY(`abs((${f.expr}) − (${g.expr}))`, '(' + a + ')', 'y')} + ${subXY(`abs((${f.expr}) − (${g.expr}))`, '(' + b + ')', 'y')}` : arc(f.expr);
     const rn = await rangeNums(a, b);
     let parts = [{ a, b, lo: NaN, hi: NaN }], clipped = false;
     if (rn) {
@@ -4588,13 +5208,16 @@
       }
     }
     const lf = await sumValues(lfs);
-    const onGraph = (name, val) => { U.lenShown = true; if (P.area) { P.area.lenText = shortValue(name, val.text); draw(); } };
+    if (!live()) return;
+    const onGraph = (name, val) => { U.lenShown = true; U.lenKey = key; P.lenExpr = lenExpr; showAreaMode(); if (P.area) { P.area.lenText = shortValue(name, val.text); draw(); } };
     const note = () => { if (clipped) U.len.append(el('div', { class: 'form-hint', text: realNote(!!g, parts) })); };
-    if (!g) { U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + shownValue(lf)); note(); onGraph(tr('Length', '長さ'), lf); return; }
+    if (!g) { U.lenText = shownValue(lf); U.lenName = tr('Length of the curve', '曲線の長さ'); U.len.textContent = ''; showResult(U.len, tr('Length of the curve ', '曲線の長さ ') + valueShown(shownValue(lf))); note(); onGraph(tr('Length', '長さ'), lf); return; }
     const lg = await sumValues(lgs);
     const total = await sumValues(lfs.concat(lgs, sides));
+    if (!live()) return;
     U.len.textContent = '';
-    showResult(U.len, tr('Perimeter ', '周の長さ ') + shownValue(total));
+    U.lenText = shownValue(total); U.lenName = tr('Perimeter', '周の長さ');
+    showResult(U.len, tr('Perimeter ', '周の長さ ') + valueShown(shownValue(total)));
     onGraph(tr('Perimeter', '周の長さ'), total);
     U.len.append(el('div', { class: 'form-hint', text: tr('Curves: ', '曲線：') + shownValue(lf).replace(/^= /, '') + ' + ' + shownValue(lg).replace(/^= /, '') +
       (sides.length ? tr(', with the vertical sides at a and b', '、a と b の縦の辺を含む') : '') }));
@@ -4613,32 +5236,129 @@
     const cross = el('div', { class: 'area-cross' });
     const out = el('div', { class: 'area-out', 'aria-live': 'polite' });
     const ins = el('button', { class: 'btn', text: tr('Put into the input field', '式を入力欄に入れる'), hidden: true });
-    const go = el('button', { class: 'btn primary', text: tr('Area', '面積') });
-    const lenBtn = tapButton({ class: 'btn', text: tr('Length', '長さ・周') }, () => computeLength());
+    // 1.12.0 (BG05): "Area" and "Length" are one switch. Until 1.11.0 they were two buttons that each
+    // calculated once (and looked like a switch that did not switch); the length was added below the
+    // area, out of sight, and the graph showed both. Now the chosen one is shown, in the results and
+    // in the graph, and calculated again by itself when the range, the functions or an edge change.
+    const go = tapButton({ class: 'area-mode', 'aria-pressed': 'false', text: tr('Area', '面積') }, () => setAreaMode('area'));
+    const lenBtn = tapButton({ class: 'area-mode', 'aria-pressed': 'false', text: tr('Length', '長さ・周') }, () => setAreaMode('len'));
+    const modes = el('span', { class: 'seg mini area-modes', role: 'group', 'aria-label': tr('Result to show', '出す結果') }, go, lenBtn);
     const len = el('div', { class: 'area-out', 'aria-live': 'polite' });
     const rev = buildRevolution(); // 1.11.0: solids of revolution
-    const box = el('div', { class: 'area-box' },
+    // 1.12.0 (B0a): "Area and length ▾" and "Make a solid ▾" are two switches side by side, and
+    // each can be opened alone. The functions and the range (with the crossing points) are shared:
+    // shown when either is open, so a change in one is the other's too; the shading and the edges
+    // (↔) of the range work with either. Until 1.11.0 the solid was inside "Area and length".
+    const common = el('div', { class: 'area-common' },
       el('div', { class: 'plot-range' }, f1, el('span', { text: tr('and', 'と') }), f2, el('span', { text: tr('', 'の間') })),
-      el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), a, el('span', { text: tr(' to ', ' 〜 ').trim() }), b, go, lenBtn),
-      cross, out, ins, len, rev.toggle, rev.box,
+      el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), a, el('span', { text: tr(' to ', ' 〜 ').trim() }), b),
+      cross);
+    const areaOnly = el('div', { class: 'area-only' },
+      el('div', { class: 'plot-range area-mode-row' }, modes),
+      out, len, ins,
       el('div', { class: 'form-hint', text: tr('The area is shaded in the graph. Drag one of its two edges (↔) to change the range, or tap a range between crossing points. Parts below the x axis (or below the other function) count as positive. "Length" gives the length of the curve, or the perimeter of the region between two functions.', '面積を求める部分はグラフに色が付きます。両端の ↔ をドラッグすると範囲を変えられ、交点の間の範囲はタップでも選べます。x 軸（またはもう一方の関数）より下の部分もプラスとして数えます。「長さ・周」は曲線の長さ（2 つの関数の間なら囲まれた部分の周の長さ）です。') }),
       buildShapes2d(),
-      tapButton({ class: 'btn geo-link', text: tr('More shapes: rectangle, triangle, cylinder… ›', 'ほかの図形（長方形・三角形・円柱など）›') }, () => openShapes()));
+      tapButton({ class: 'btn geo-link', text: tr('More shapes: rectangle, triangle, cylinder… ›', 'ほかの図形（長方形・三角形・円柱など）›') }, () => openShapes()))
+    const box = el('div', { class: 'area-box' }, common, areaOnly, rev.box);
+    areaOnly.hidden = true;
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Area and length ▾', '面積・長さ ▾') });
     // opened: the area between the first function and the x axis (or the second function) is shown at once
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) { P.areaUI.auto = true; areaFunctionsChanged(); } else { P.area = null; P.revAxis = null; rev.seq++; draw(); } });
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', () => setAreaOpen(!P.areaUI.areaOpen));
     f1.addEventListener('change', () => { P.areaUI.auto = true; areaPairChanged(); });
     f2.addEventListener('change', () => { P.areaUI.auto = true; areaPairChanged(); });
-    go.addEventListener('click', () => computeArea());
-    ins.addEventListener('click', () => { if (P.areaExpr) useExample(P.areaExpr); });
-    P.areaUI = { f1, f2, a, b, cross, out, ins, box, len, rev };
-    return el('div', { class: 'area-wrap' }, toggle, box);
+    // a typed range is calculated when it is left (or Enter): the chosen result follows by itself
+    for (const inp of [a, b]) {
+      inp.addEventListener('change', () => computeArea());
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
+    }
+    // the expression of the result shown: the integral of the area, or of the length
+    ins.addEventListener('click', () => { const e = P.areaUI.mode === 'len' ? P.lenExpr : P.areaExpr; if (e) useExample(e); });
+    // a tap on the result offers the three actions of every tool
+    out.addEventListener('click', () => { const U = P.areaUI; if (P.areaExpr && U.areaText && U.areaKey) resultSheet(tr('Area', '面積'), P.areaExpr, U.areaText); });
+    len.addEventListener('click', () => { const U = P.areaUI; if (P.lenExpr && U.lenText && U.lenKey) resultSheet(U.lenName || tr('Length', '長さ・周'), P.lenExpr, valueShown(U.lenText)); });
+    P.areaUI = { f1, f2, a, b, cross, out, ins, box, areaOnly, areaOpen: false, len, rev, toggle, go, lenBtn, mode: store.get('qalc.area.mode', 'area') === 'len' ? 'len' : 'area' };
+    showAreaMode();
+    syncAreaBox(); // "Make a solid" open since the last time (qalc.rev, also of 1.11.0)
+    return el('div', { class: 'area-wrap' }, el('div', { class: 'area-toggles' }, toggle, rev.toggle), box);
+  }
+  // the shared part is shown while either switch is open; the area's own part with "Area and length"
+  function syncAreaBox() {
+    const U = P.areaUI;
+    U.box.hidden = !(U.areaOpen || !U.rev.box.hidden);
+    U.areaOnly.hidden = !U.areaOpen;
+    U.toggle.classList.toggle('on', U.areaOpen); U.toggle.setAttribute('aria-expanded', String(U.areaOpen));
+    if (P.revBtn) P.revBtn.classList.toggle('on', !U.rev.box.hidden);
+  }
+  // "Area and length ▾" opened or closed: opened, the area between the first function and the x axis
+  // (or the second function), between crossing points when there are some, is shown at once
+  function setAreaOpen(on) {
+    const U = P.areaUI;
+    if (!U) return;
+    const wasShown = !U.box.hidden;
+    U.areaOpen = on;
+    syncAreaBox();
+    if (on && !wasShown) { U.auto = true; areaFunctionsChanged(); }
+    else if (on) computeArea();
+    else if (U.box.hidden) { P.area = null; P.revAxis = null; U.rev.seq++; draw(); }
+    else draw(); // the solid stays: the graph no longer shows the area's value
+  }
+  // "Make a solid ▾" opened or closed (buildRevolution): opened alone, the region is chosen as for the
+  // area (the first function and the x axis, between crossing points) and shaded, and the solid follows
+  function revToggled(open) {
+    const U = P.areaUI;
+    if (!U) return;
+    const wasShown = !U.box.hidden;
+    syncAreaBox();
+    if (open && !wasShown) { U.auto = true; areaFunctionsChanged(); }
+    else if (open) { if (P.area) computeRevolution(true); else computeArea(true); }
+    else if (U.box.hidden) { P.area = null; P.revAxis = null; draw(); }
+    else draw();
+  }
+  // "⟳ 3D" (1.12.0, BG20: until then it opened "Make a solid" in 2D only, and the 3D view needed "View in 3D"
+  // as well, though the button says 3D). With Pro: the solid of "Make a solid" (the shaded region around the
+  // axis chosen, the x axis at first) is calculated in 2D, and then the 3D view opens at once, where the
+  // solid grows from 0° to 360° and its volume is shown large; "← Back to 2D" goes back to the same region
+  // and axis. Without Pro: the solid in 2D (its mirrored cut and its volume, free), with the row "Turn it in
+  // 3D (QCalc Pro)" above the results, and the first time a line that says what happened.
+  function revTo3d() {
+    const U = P.areaUI, R = U && U.rev;
+    if (!R) return;
+    const pro = hasPro(), first = !pro && !store.get('qalc.rev3dfree', false);
+    // (the hint about the axes, shown the first time "Make a solid" opens, waits for a later time: it is
+    // about the 2D graph, which is left at once with Pro, and the line below says more without it)
+    const hint = store.get('qalc.revhint', false);
+    if (R.box.hidden) { store.set('qalc.revhint', true); R.open(); store.set('qalc.revhint', hint); }
+    if (R.box.hidden) return;
+    if (!pro) {
+      R.proRow.hidden = false; R.view.hidden = true;
+      if (first) { store.set('qalc.rev3dfree', true); setTimeout(() => toast(tr('The solid and its volume are shown in 2D. Turning it in 3D is a QCalc Pro feature.', '2D で立体の形と体積を出しました。3D で回して見るのは QCalc Pro の機能です'), 6000), 300); }
+      return;
+    }
+    if (R.three && !R.view.hidden) R.show3d();
+    else R.go3d = Date.now(); // (as soon as the solid is calculated: revReady)
+  }
+  // the hint about the axes, the first time the solid is seen in the 2D graph (B0; BG20: also on coming back
+  // from the 3D view, when "⟳ 3D" opened it at once)
+  function revHint() {
+    if (store.get('qalc.revhint', false)) return;
+    store.set('qalc.revhint', true);
+    setTimeout(() => toast(tr('Tap an axis to turn around it. Drag an edge ↔ to change the range.', '軸をタップすると、回す軸が変わります。端の ↔ をドラッグすると、範囲が変わります'), 6000), 400);
+  }
+  // the solid of "Make a solid" is calculated (the 3D view can be opened): with Pro, "⟳ 3D" pressed before
+  // opens it now; without Pro, the row "Turn it in 3D (QCalc Pro)" stands for "View in 3D" (BG20)
+  function revReady(R) {
+    if (!hasPro() && !R.proRow.hidden) R.view.hidden = true;
+    const t = R.go3d;
+    R.go3d = 0;
+    if (t && Date.now() - t < 60000 && hasPro()) R.show3d();
   }
   // shapes to draw and measure: a circle (radius r), an ellipse (half axes a and b)
   const PARAM_NAMES = { r: tr('radius r', '半径 r'), a: tr('half axis a (x)', 'x 方向の半径 a'), b: tr('half axis b (y)', 'y 方向の半径 b') };
   const SHAPES2D = [['circle', tr('Circle', '円'), ['r'], ['2']], ['ellipse', tr('Ellipse', '楕円'), ['a', 'b'], ['3', '2']]];
-  function buildShapes(defs, run) {
+  // (defs: [key, name, sizes, first values, names read out of the sizes]; more: a second button { text, fn }, D6)
+  function buildShapes(defs, run, more) {
     const sel = el('select', { 'aria-label': tr('Shape', '図形') });
     for (const [k, t] of defs) sel.append(el('option', { value: k, text: t }));
     const params = el('span', { class: 'shape-params' });
@@ -4647,21 +5367,23 @@
       params.textContent = '';
       const d = defs.find((x) => x[0] === sel.value);
       d[2].forEach((n, i) => {
-        inputs[n] = inputs[n] || el('input', { inputmode: 'text', autocapitalize: 'off', value: d[3][i] });
-        inputs[n].setAttribute('aria-label', d[1] + ' ' + (PARAM_NAMES[n] || n));
-        params.append(el('span', { text: n + ' =' }), inputs[n]);
+        const key = d[0] + ':' + n;
+        inputs[key] = inputs[key] || el('input', { inputmode: 'text', autocapitalize: 'off', value: toDisplay(d[3][i]) });
+        inputs[key].setAttribute('aria-label', d[1] + ' ' + (d[4] ? d[4][i] : PARAM_NAMES[n] || n));
+        params.append(el('span', { text: n + ' =' }), inputs[key]);
       });
     };
     sel.addEventListener('change', build);
     build();
-    const go = tapButton({ class: 'btn', text: tr('Draw', '描く') }, () => {
-      const d = defs.find((x) => x[0] === sel.value);
-      const v = {};
-      for (const n of d[2]) v[n] = normalizeExpr(inputs[n].value);
-      if (d[2].some((n) => !v[n])) { toast(tr('Enter the sizes', '大きさを入れてください'), 1800); return; }
-      run(sel.value, v);
-    });
-    return el('div', { class: 'plot-range shapes' }, el('span', { text: tr('Example', '図形の例') }), sel, params, go);
+    const sizes = () => {
+      const d = defs.find((x) => x[0] === sel.value), v = {};
+      for (const n of d[2]) v[n] = normalizeExpr(inputs[d[0] + ':' + n].value);
+      if (d[2].some((n) => !v[n])) { toast(tr('Enter the sizes', '大きさを入れてください'), 1800); return null; }
+      return v;
+    };
+    const go = tapButton({ class: 'btn', text: tr('Draw', '描く') }, () => { const v = sizes(); if (v) run(sel.value, v); });
+    const second = more ? tapButton({ class: 'btn shape-more', text: more.text }, () => { const v = sizes(); if (v) more.fn(sel.value, v); }) : null;
+    return el('div', { class: 'plot-range shapes' }, el('span', { text: tr('Example', '図形の例') }), sel, params, go, ...(second ? [second] : []));
   }
   function buildShapes2d() { return buildShapes(SHAPES2D, drawShape2d); }
   // a circle (v.r) or an ellipse (v.a, v.b) in the 2D graph, with its area and perimeter:
@@ -4681,8 +5403,8 @@
     const U = P.areaUI, keep1 = U.f1.value, keep2 = U.f2.value;
     U.f1.textContent = ''; U.f2.textContent = '';
     P.series.forEach((s, i) => {
-      U.f1.append(el('option', { value: String(i), text: clip(s.expr, 30) }));
-      U.f2.append(el('option', { value: String(i), text: clip(s.expr, 30) }));
+      U.f1.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) }));
+      U.f2.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) }));
     });
     U.f2.prepend(el('option', { value: 'axis', text: tr('the x axis', 'x 軸') }));
     // the same choice as before while the number of functions stays the same; else the first
@@ -4705,7 +5427,7 @@
     // a newer call (another graph, another pair, an example) makes this one stop before it writes
     // a and b, whatever order the engine answers in (1.8.2)
     const seq = U.pairSeq = (U.pairSeq || 0) + 1;
-    P.area = null; U.out.textContent = ''; U.ins.hidden = true; U.len.textContent = ''; U.lenShown = false;
+    P.area = null; U.out.textContent = ''; U.ins.hidden = true; U.len.textContent = ''; U.lenShown = false; U.areaKey = U.lenKey = '';
     U.cross.textContent = '';
     draw();
     if (!f) return;
@@ -4737,7 +5459,7 @@
     if (pts.length) {
       U.cross.append(el('span', { class: 'area-lbl', text: tr('Crossing points: ', '交点：') + pts.map((p) => short(p.x)).join(', ') }));
       const range = (i, j) => {
-        const c = tapButton({ class: 'area-chip', text: short(pts[i].x) + ' 〜 ' + short(pts[j].x) }, () => { U.a.value = pts[i].text; U.b.value = pts[j].text; computeArea(); });
+        const c = tapButton({ class: 'area-chip', text: short(pts[i].x) + ' 〜 ' + short(pts[j].x) }, () => { U.a.value = toDisplay(pts[i].text); U.b.value = toDisplay(pts[j].text); computeArea(); });
         U.cross.append(c);
       };
       for (let i = 0; i + 1 < pts.length && i < 6; i++) range(i, i + 1);
@@ -4745,9 +5467,9 @@
     }
     // the range to start with: from the first to the last crossing point, else the part of the
     // drawn range where the functions have real values
-    if (pts.length >= 2) { U.a.value = pts[0].text; U.b.value = pts[pts.length - 1].text; }
-    else if (real && real.clipped && real.parts.length) { U.a.value = real.parts[0].a; U.b.value = real.parts[real.parts.length - 1].b; }
-    else if (view) { U.a.value = String(view.lo); U.b.value = String(view.hi); }
+    if (pts.length >= 2) { U.a.value = toDisplay(pts[0].text); U.b.value = toDisplay(pts[pts.length - 1].text); }
+    else if (real && real.clipped && real.parts.length) { U.a.value = toDisplay(String(real.parts[0].a)); U.b.value = toDisplay(String(real.parts[real.parts.length - 1].b)); }
+    else if (view) { U.a.value = toDisplay(String(view.lo)); U.b.value = toDisplay(String(view.hi)); }
     if (auto) await computeArea(true);
     else if (U.rev && !U.rev.box.hidden) computeRevolution(true);
   }
@@ -4767,8 +5489,7 @@
     U[k].value = text;
     if (!done) return;
     A[k] = x;
-    const again = !!U.lenShown;
-    computeArea().then(() => { if (again) computeLength(); });
+    computeArea(); // the result the switch shows (1.12.0; until 1.11.0 the area, and the length only if it had been shown)
   }
   // Where f and g (or the x axis) cross, in the drawn values, made exact with solve() or precise
   // with secantsolve(): [{ x, text }] (text is the exact value when there is one)
@@ -4837,19 +5558,57 @@
   }
   // auto: asked for by opening the tools or drawing a graph, not with the "Area" button (a short time
   // limit). 1.11.0: then the solid of revolution, when its part of the tools is open
+  // the area or the length (whichever the switch shows), then the solid if it is open
   async function computeArea(auto) {
-    await computeAreaOnly(auto);
     const U = P.areaUI;
-    if (U && U.rev && !U.rev.box.hidden) await computeRevolution(auto);
+    if (!U) return;
+    if (!U.areaOpen) await computeAreaOnly(auto, true); // only "Make a solid" open: the shaded region (B0a)
+    else if (U.mode === 'len') { await computeAreaOnly(auto, true); await computeLength(); }
+    else await computeAreaOnly(auto);
+    if (U.rev && !U.rev.box.hidden) await computeRevolution(auto);
+    revealArea();
   }
-  async function computeAreaOnly(auto) {
+  // what the result depends on: when it is the same, a result already calculated is shown at once
+  function areaKey() {
+    const U = P.areaUI, f = P.series[Number(U.f1.value)], g = areaG();
+    return f ? [f.expr, g ? g.expr : '', U.a.value, U.b.value, JSON.stringify(engineOpts())].join('\u0001') : '';
+  }
+  function showAreaMode() {
+    const U = P.areaUI, m = U.mode;
+    U.go.classList.toggle('on', m === 'area'); U.lenBtn.classList.toggle('on', m === 'len');
+    U.go.setAttribute('aria-pressed', String(m === 'area')); U.lenBtn.setAttribute('aria-pressed', String(m === 'len'));
+    U.out.hidden = m !== 'area'; U.len.hidden = m !== 'len';
+    U.ins.hidden = !(m === 'len' ? U.lenKey && P.lenExpr : U.areaKey && P.areaExpr);
+  }
+  function setAreaMode(m) {
+    const U = P.areaUI;
+    if (!U) return;
+    U.mode = m;
+    store.set('qalc.area.mode', m);
+    showAreaMode();
+    if (P.area) draw(); // the graph shows the value chosen
+    const key = areaKey();
+    if (key && (m === 'len' ? U.lenKey : U.areaKey) === key) { revealArea(); return; }
+    computeArea();
+  }
+  // the result in view (the panel scrolls to it when it is below the screen)
+  function revealArea() {
+    const U = P.areaUI, node = U && (U.mode === 'len' ? U.len : U.out);
+    if (!node || node.hidden || !node.textContent) return;
+    const r = node.getBoundingClientRect(), vh = window.innerHeight || document.documentElement.clientHeight;
+    if (r.bottom > vh || r.top < 0) {
+      const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      try { node.scrollIntoView({ block: 'nearest', behavior: still ? 'auto' : 'smooth' }); } catch (e) { node.scrollIntoView(false); }
+    }
+  }
+  // shadeOnly: only the shaded region in the graph (for the length), not the area itself
+  async function computeAreaOnly(auto, shadeOnly) {
     const U = P.areaUI, f = P.series[Number(U.f1.value)];
     if (!f) return;
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
-    if (!a || !b) { U.out.textContent = tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'); return; }
-    const g = areaG();
-    U.out.textContent = tr('Calculating…', '計算中…');
-    U.ins.hidden = true;
+    if (!a || !b) { (shadeOnly ? U.len : U.out).textContent = tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'); return; }
+    const g = areaG(), key = areaKey();
+    if (!shadeOnly) { U.out.textContent = tr('Calculating…', '計算中…'); U.areaKey = ''; U.ins.hidden = true; }
     // the limits as numbers, for the shading and to find the crossing points between them
     const lim = await Bridge.send('calc', { expr: `[${a}, ${b}]`, opts: Object.assign(engineOpts(), { approx: 'approx', precision: 15, grouping: false }), timeout: 1500 });
     const nums = lim.ok && lim.result ? (parseMatrix(numberPartVec(lim.result)) || { rows: [[]] }).rows[0].map((x) => Number(x.replace(/−/g, '-'))) : [];
@@ -4861,8 +5620,17 @@
     if (nums.length === 2 && nums.every(isFinite) && nums[0] !== nums[1]) {
       const lo = Math.min(nums[0], nums[1]), hi = Math.max(nums[0], nums[1]);
       real = await realParts(g ? [f.expr, g.expr] : [f.expr], nums[0] < nums[1] ? a : b, nums[0] < nums[1] ? b : a, lo, hi);
-      if (real && !real.parts.length) { U.out.textContent = noRealText(); P.area = null; draw(); return; }
+      if (areaKey() !== key) return;
+      if (real && !real.parts.length) { if (!shadeOnly) { U.out.textContent = noRealText(); U.areaKey = key; } P.area = null; draw(); return; }
       if (real && !real.clipped) real = null;
+    }
+    if (shadeOnly) {
+      const keep = P.area && P.area.f === f && P.area.g === g ? P.area : null;
+      if (nums.length === 2 && nums.every(isFinite)) {
+        P.area = { f, g, a: Math.min(nums[0], nums[1]), b: Math.max(nums[0], nums[1]), text: keep && keep.a === Math.min(nums[0], nums[1]) && keep.b === Math.max(nums[0], nums[1]) ? keep.text : '', lenText: '' };
+        draw();
+      }
+      return;
     }
     const pieces = [];
     const crossIn = (lo, hi) => { const eps = (hi - lo) * 1e-9; return (P.areaCross || []).filter((p) => p.x > lo + eps && p.x < hi - eps).map((p) => p.text); };
@@ -4882,22 +5650,26 @@
     }
     const expr = pieces.length <= 8 ? pieces.join(' + ') : real ? real.parts.map((p) => `integrate(abs(${d}), ${p.a}, ${p.b})`).join(' + ') : `integrate(abs(${d}), ${a}, ${b})`;
     const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: auto ? Math.min(5000, timeLimit() * 1000) : timeLimit() * 1000 });
+    if (areaKey() !== key) return; // (another range or other functions meanwhile: that run writes, 1.12.0)
     const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
     // a result the engine could not integrate exactly still has its approximate value after ≈
     if (r.ok && r.result && /∫|integrate\(/.test(r.result) && r.result.indexOf('≈') > 0) r.result = '≈ ' + r.result.split('≈').pop().trim();
     if (!r.ok || r.timeout || err || !r.result || /integrate\(|∫/.test(r.result)) {
-      U.out.textContent = r.timeout ? (auto ? tr('Press "Area" to calculate the area', '「面積」を押すと面積を計算します') : tr('It took too long (the time limit can be changed in the settings)', '時間がかかりすぎました（制限時間は設定で変えられます）'))
+      U.out.textContent = r.timeout ? (auto ? tr('It takes long: tap "Area" again to calculate it with the full time limit', '時間がかかります。もう一度「面積」をタップすると、制限時間いっぱいまで計算します') : tr('It took too long (the time limit can be changed in the settings)', '時間がかかりすぎました（制限時間は設定で変えられます）'))
         : localMessage((err && err.text) || r.error) || tr('Could not calculate the area', '面積を計算できませんでした');
+      if (!(r.timeout && auto)) U.areaKey = key; // an automatic try that ran out of time: a tap on "Area" tries again
       P.area = null; draw();
       return;
     }
     U.out.textContent = '';
-    showResult(U.out, tr('Area ', '面積 ') + (r.result.indexOf('≈ ') === 0 ? r.result : resultText(r)));
+    U.areaText = r.result.indexOf('≈ ') === 0 ? valueShown(r.result) : resultText(r); // (as shown: BG13)
+    showResult(U.out, tr('Area ', '面積 ') + U.areaText);
     if (real) U.out.append(el('div', { class: 'form-hint', text: realNote(!!g, real.parts) }));
     P.areaExpr = expr;
-    U.ins.hidden = false;
+    U.areaKey = key;
+    showAreaMode();
     if (nums.length === 2 && nums.every(isFinite)) {
-      P.area = { f, g, a: Math.min(nums[0], nums[1]), b: Math.max(nums[0], nums[1]), text: shortValue(tr('Area', '面積'), r.result, r.approx) };
+      P.area = { f, g, a: Math.min(nums[0], nums[1]), b: Math.max(nums[0], nums[1]), text: shortValue(tr('Area', '面積'), r.result, r.approx), lenText: P.area && P.area.lenText };
       draw();
     }
   }
@@ -4919,23 +5691,122 @@
     const A = P.area, f = A.f, gs = A.g;
     const yAt = seriesY;
     const xs = [A.a].concat(f.x.filter((x) => x > A.a && x < A.b), [A.b]);
+    // the outline of the region, with the point (x, y) put at px(x, y), py(x, y)
+    const path = (px, py) => {
+      g.beginPath();
+      let open = false;
+      const close = (back) => { if (!open) return; for (let i = back.length - 1; i >= 0; i--) { const y = yAt(gs, back[i]); g.lineTo(px(back[i], y), py(back[i], y)); } g.closePath(); open = false; };
+      let seg = [];
+      for (const x of xs) {
+        const y1 = yAt(f, x), y2 = yAt(gs, x);
+        if (!isFinite(y1) || !isFinite(y2)) { close(seg); seg = []; continue; }
+        if (!open) { g.moveTo(px(x, y1), py(x, y1)); open = true; } else g.lineTo(px(x, y1), py(x, y1));
+        seg.push(x);
+      }
+      close(seg);
+    };
     g.save();
     g.fillStyle = f.color;
     g.globalAlpha = 0.22;
-    g.beginPath();
-    let open = false;
-    const close = (back) => { if (!open) return; for (let i = back.length - 1; i >= 0; i--) g.lineTo(sx(back[i]), sy(yAt(gs, back[i]))); g.closePath(); open = false; };
-    let seg = [];
-    for (const x of xs) {
-      const y1 = yAt(f, x), y2 = yAt(gs, x);
-      if (!isFinite(y1) || !isFinite(y2)) { close(seg); seg = []; continue; }
-      if (!open) { g.moveTo(sx(x), sy(y1)); open = true; } else g.lineTo(sx(x), sy(y1));
-      seg.push(x);
-    }
-    close(seg);
+    path((x) => sx(x), (x, y) => sy(y));
     g.fill();
+    // 1.12.0 (B0): what turning makes, seen in 2D: the region mirrored on the other side of the axis,
+    // faint (the solid cut by a plane through the axis)
+    const M = P.revAxis;
+    if (M && revOpen()) {
+      const mx = M.kind === 'v' ? (x) => sx(2 * M.v - x) : (x) => sx(x), my = M.kind === 'h' ? (x, y) => sy(2 * M.v - y) : (x, y) => sy(y);
+      g.globalAlpha = 0.1;
+      path(mx, my);
+      g.fill();
+      g.globalAlpha = 0.45; g.strokeStyle = f.color; g.lineWidth = 1; g.setLineDash([4, 3]);
+      g.stroke();
+      P.canvas.dataset.mirror = M.kind + ':' + M.v;
+      // 1.12.0 (B2): the lines of the method used, n of them over the region and its mirror image:
+      // disks or washers across the axis (axis along x), shells along the axis (axis up)
+      const RV = P.areaUI.rev;
+      if (RV.kind === 'rev' && RV.slices) {
+        const n = RV.nSlices;
+        g.globalAlpha = 0.85; g.lineWidth = 1.4; g.setLineDash([]); g.strokeStyle = f.color;
+        for (let i = 0; i < n; i++) {
+          const x = A.a + (A.b - A.a) * (i + 0.5) / n, y1 = yAt(f, x), y2 = yAt(gs, x);
+          if (!isFinite(y1) || !isFinite(y2)) continue;
+          g.beginPath();
+          g.moveTo(sx(x), sy(y1)); g.lineTo(sx(x), sy(y2));
+          if (M.kind === 'h') { g.moveTo(sx(x), sy(2 * M.v - y1)); g.lineTo(sx(x), sy(2 * M.v - y2)); }
+          else { g.moveTo(sx(2 * M.v - x), sy(y1)); g.lineTo(sx(2 * M.v - x), sy(y2)); }
+          g.stroke();
+        }
+        P.canvas.dataset.slices = (M.kind === 'h' ? 'washer' : 'shell') + ':' + n;
+      } else delete P.canvas.dataset.slices;
+    } else delete P.canvas.dataset.mirror;
+    // 1.12.0 (B1): the cross sections, seen in 2D: at five places a band across the region and a small
+    // picture of the shape standing on it (drawn slanted: up is to the upper right)
+    const RS = P.areaUI && P.areaUI.rev;
+    if (!(M && revOpen())) delete P.canvas.dataset.slices;
+    if (RS && RS.kind === 'sec' && revOpen()) {
+      const n = 5, k = RS.shape, ppy = Math.abs(sy(1) - sy(0)) || 1;
+      const up = (z) => [z * ppy * 0.5, -z * ppy * 0.25]; // a height z on the screen, slanted
+      g.globalAlpha = 0.9; g.strokeStyle = f.color; g.lineWidth = 1.6; g.setLineDash([]);
+      for (let i = 0; i < n; i++) {
+        const x = A.a + (A.b - A.a) * (i + 0.5) / n, y1 = yAt(f, x), y2 = yAt(gs, x);
+        if (!isFinite(y1) || !isFinite(y2)) continue;
+        const lo = Math.min(y1, y2), hi = Math.max(y1, y2), w = hi - lo, X = sx(x);
+        if (w * ppy < 4) continue;
+        g.globalAlpha = 0.9; g.lineWidth = 2.6;
+        g.beginPath(); g.moveTo(X, sy(lo)); g.lineTo(X, sy(hi)); g.stroke();
+        // the outline of the shape, from its points (across, height): across from lo to hi
+        const sc = 0.45; // (small pictures)
+        let pts;
+        if (k === 'sq') pts = [[0, 0], [1, 0], [1, 1], [0, 1]].map(([u, z]) => [u, z * w]);
+        else if (k === 'rect') pts = [[0, 0], [1, 0], [1, 1], [0, 1]].map(([u, z]) => [u, z * w * (Number(String(RS.skIn.value).replace('−', '-')) || 0.5)]);
+        else if (k === 'eq') pts = [[0, 0], [1, 0], [0.5, w * Math.sqrt(3) / 2]];
+        else if (k === 'rl') pts = [[0, 0], [1, 0], [0, w]];
+        else if (k === 'rh') pts = [[0, 0], [1, 0], [0.5, w / 2]];
+        else if (k === 'semi') { pts = []; for (let t = 0; t <= 16; t++) { const a = Math.PI * t / 16; pts.push([0.5 - 0.5 * Math.cos(a), w / 2 * Math.sin(a)]); } }
+        else pts = [[0, 0], [1, 0], [1, 0.5 * w], [0, 0.5 * w]];
+        g.lineWidth = 1.4;
+        g.beginPath();
+        pts.forEach(([u, z], j) => { const [dx, dy] = up(z * sc); const px = X + dx, py = sy(lo + u * w) + dy; if (j) g.lineTo(px, py); else g.moveTo(px, py); });
+        g.closePath();
+        g.globalAlpha = 0.22; g.fillStyle = f.color; g.fill();
+        g.globalAlpha = 0.9; g.stroke();
+      }
+      P.canvas.dataset.sections = k + ':' + n;
+    } else delete P.canvas.dataset.sections;
     g.restore();
   }
+  // k of y = k or x = k as typed back into its box: rounded to the step it was dragged in
+  function fmtK(v, step) {
+    const d = step ? Math.max(0, -Math.floor(Math.log10(step) + 1e-9)) : 2;
+    const t = (+v.toFixed(Math.min(6, d))).toString();
+    return t[0] === '-' ? '−' + t.slice(1) : t;
+  }
+  // the axis, k and the range of the solid, to undo a change (1.12.0, B0: ↶ as for the expression)
+  function revState() {
+    const U = P.areaUI, R = U && U.rev;
+    return R ? { axis: R.axis, k: R.k.value, a: U.a.value, b: U.b.value } : null;
+  }
+  function revUndoable(prev) {
+    const U = P.areaUI, R = U && U.rev;
+    if (!R) return;
+    prev = prev || revState();
+    setTimeout(() => {
+      const now = revState();
+      if (!now || JSON.stringify(now) === JSON.stringify(prev)) return;
+      const axisName = (st) => (st.axis === 'h' ? 'y = ' + st.k : st.axis === 'v' ? 'x = ' + st.k : (REV_AXES.find((x) => x[0] === st.axis) || ['', ''])[1]);
+      const text = now.axis !== prev.axis || now.k !== prev.k ? trf('Axis: {0}', '軸：{0}', axisName(now)) : trf('x from {0} to {1}', 'x：{0} 〜 {1}', now.a, now.b);
+      toast(text, 5000, [tr('↶ Undo', '↶ 元に戻す'), () => revRestore(prev)]);
+    }, 0);
+  }
+  function revRestore(st) {
+    const U = P.areaUI, R = U && U.rev;
+    if (!R || !st) return;
+    R.k.value = st.k; U.a.value = st.a; U.b.value = st.b;
+    R.setAxis(st.axis, true);
+    computeArea();
+  }
+  // "Make a solid" is open (and the tools of the 2D graph shown)
+  function revOpen() { const U = P.areaUI; return !!(U && !U.box.hidden && U.rev && !U.rev.box.hidden); }
 
   // ------------------------------------------ solids of revolution (2D graph, 1.11.0)
   // The region of the area tools (between f and g, or between f and the x axis, x from a to b)
@@ -5111,14 +5982,15 @@
     else { R3 = `max(abs(${u}), abs(${v}))`; r3 = hole ? `max(0, sgn((${u}) × (${v})) × min(abs(${u}), abs(${v})))` : ''; }
     const exprs = [`√((${R3})^2 − y^2)`, `−√((${R3})^2 − y^2)`].concat(hole && r3 ? [`√((${r3})^2 − y^2)`, `−√((${r3})^2 − y^2)`] : []);
     const lo = parts[0].lo, hi = parts[parts.length - 1].hi, w = r6((Rmax || 1) * 1.08);
-    const three = { exprs, range: [parts[0].a, parts[parts.length - 1].b, '−' + w, w] };
+    // (its edges from its shape: specRims, 1.12.0 BG09; all its surfaces one solid)
+    const three = { exprs, range: [parts[0].a, parts[parts.length - 1].b, '−' + w, w], axis: 'h', rims: { kind: 'h', groups: [exprs.map((e, n) => n)] } };
     const one = cases.size === 1 && pieces.length === 1;
-    const method = hole ? tr('Washers: V = π∫(R² − r²) dx (R, r: the distances of the outer and the inner curve from the axis)', 'ワッシャー法：V = π∫(R² − r²) dx（R・r：外側・内側の曲線と軸の距離）')
-      : tr('Disks: V = π∫R² dx (R: the distance of the curve from the axis)', '円板の方法：V = π∫R² dx（R：曲線と軸の距離）');
+    const method = hole ? tr('Washers (thin rings stacked along the axis): V = π∫(R² − r²) dx (R, r: the distances of the outer and the inner curve from the axis)', 'ワッシャー法（穴のあいた薄い円板を軸に沿って重ねる）：V = π∫(R² − r²) dx（R・r：外側・内側の曲線と軸の距離）')
+      : tr('Disks (thin disks stacked along the axis): V = π∫R² dx (R: the distance of the curve from the axis)', '円板の方法（薄い円板を軸に沿って重ねる）：V = π∫R² dx（R：曲線と軸の距離）');
     const simple = async (e) => revPretty(ax.k === '0' ? e : (await exactText(e)) || e);
     const detail = one ? 'R = ' + await simple(pieces[0].R) + (pieces[0].r ? ', r = ' + await simple(pieces[0].r) : '')
       : trf('R and r change at {0}: calculated in {1} pieces', 'R と r は x = {0} で替わるので、{1} 個に分けて計算', pieceCuts(pieces, parts), pieces.length);
-    return { pieces, ends, method, detail, three, span: [lo, hi] };
+    return { pieces, ends, method, detail, three, span: [lo, hi], stl: { kind: 'h', u, v, parts } };
   }
   // the inner ends of the pieces, for a note: "0, 1/2"
   const pieceCuts = (pieces, parts) => pieces.slice(1).map((p) => p.a).filter((t) => !parts.some((q) => q.a === t)).slice(0, 4).join(', ');
@@ -5210,22 +6082,55 @@
       ends.push(subXY(`2π × (${rho}) × (${lenExpr(all)}${inter === '0' ? '' : ` − (${inter})`})`, '(' + text + ')', 'y'));
     }
     // the 3D view: the axis is the z axis, ρ = √(x² + y²); the top and the bottom of each side
-    // between its distances from the axis (√(min(0, …)) is not real outside them)
-    const r3 = '√(x^2 + y^2)', exprs = [];
-    for (const s of sides) {
+    // between its distances from the axis (√(min(0, …)) is not real outside them).
+    // 1.12.0 (BG09): a region on both sides of the axis is drawn as the union of the two solids, as its
+    // volume is: one top (the higher of the two tops where both sides are there) and one bottom (the
+    // lower bottom), instead of the two solids drawn over each other, whose equal surfaces (the same
+    // bottom on both sides) showed through each other in spots. (When the two sides leave a gap between
+    // them at some distance, or their distances from the axis do not meet, each side is drawn alone, as
+    // before: no two surfaces are then at the same place.) The edges, the circles at the ends of the
+    // distances, come with their heights (specRims), and the surfaces are one solid, in one color.
+    const r3 = '√(x^2 + y^2)', exprs = [], N15 = (v) => engineNum(+v.toPrecision(15));
+    const sideF = sides.map((s) => {
       const at = s.name === 'R' ? (k === '0' ? r3 : `${revParen(k)} + ${r3}`) : (k === '0' ? '−' + r3 : `${revParen(k)} − ${r3}`);
       const F = subXY(f, at, 'y'), G = subXY(g, at, 'y');
-      const p0 = s.parts[0].lo - kv, p1 = s.parts[s.parts.length - 1].hi - kv;
-      const cut = `√(min(0, (${r3} − ${engineNum(+p0.toPrecision(15))}) × (${engineNum(+p1.toPrecision(15))} − ${r3})))`;
-      exprs.push(`max(${F}, ${G}) + ${cut}`, `min(${F}, ${G}) + ${cut}`);
+      return { s, T: `max(${F}, ${G})`, B: `min(${F}, ${G})`, a: s.parts[0].lo - kv, b: s.parts[s.parts.length - 1].hi - kv };
+    });
+    const cutOf = (a, b) => `√(min(0, (${r3} − ${N15(a)}) × (${N15(b)} − ${r3})))`;
+    const oneGap = pieces.every((p) => p.surf.length === 2);  // (one interval at every distance)
+    const ivs = [];
+    if (sideF.length === 2 && oneGap && Math.max(sideF[0].a, sideF[1].a) <= Math.min(sideF[0].b, sideF[1].b)) {
+      const [A, B2] = sideF, lo = Math.min(A.a, B2.a), hi = Math.max(A.b, B2.b), cA = Math.max(A.a, B2.a), cB = Math.min(A.b, B2.b);
+      const first = A.a <= B2.a ? A : B2, last = A.b >= B2.b ? A : B2;
+      const merge = (key, fn) => `if(${r3} < ${N15(cA)}, ${first[key]}, if(${r3} < ${N15(cB)}, ${fn}(${A[key]}, ${B2[key]}), ${last[key]}))`;
+      exprs.push(`${merge('T', 'max')} + ${cutOf(lo, hi)}`, `${merge('B', 'min')} + ${cutOf(lo, hi)}`);
+      ivs.push([lo, hi], [lo, hi]);
+    } else {
+      for (const q of sideF) { exprs.push(`${q.T} + ${cutOf(q.a, q.b)}`, `${q.B} + ${cutOf(q.a, q.b)}`); ivs.push([q.a, q.b], [q.a, q.b]); }
+    }
+    // the heights at the edges: the top and the bottom of the sides there
+    const rimSurf = [];
+    for (let n = 0; n < exprs.length; n++) rimSurf.push({ iv: [ivs[n]], z: {} });
+    for (const rho of [...new Set([].concat(...ivs))]) {
+      if (!(rho > 1e-12)) continue;
+      const vals = await revAt(curves, engineNum(kv + rho));
+      if (!vals) continue;
+      for (let n = 0; n < exprs.length; n++) {
+        const [a, b] = ivs[n];
+        if (rho !== a && rho !== b) continue;
+        const top = n % 2 === 0, here = sideF.filter((q, m) => (ivs.length === 2 || m === (n >> 1)) && rho >= q.a - 1e-9 * (Math.abs(q.a) + 1) && rho <= q.b + 1e-9 * (Math.abs(q.b) + 1));
+        const zs = [];
+        for (const q of here) { const m = sides.indexOf(q.s), fv = vals[2 * m], gv = vals[2 * m + 1]; if (isFinite(fv) && isFinite(gv)) zs.push(top ? Math.max(fv, gv) : Math.min(fv, gv)); }
+        if (zs.length) rimSurf[n].z[String(rho)] = top ? Math.max(...zs) : Math.min(...zs);
+      }
     }
     const w = r6((X.hi - kv) * 1.06);
-    const three = { exprs, range: ['−' + w, w, '−' + w, w] };
-    const method = tr('Shells: V = 2π∫ρ h dρ (ρ: the distance from the axis, h: the height of the region there)', '殻の方法（円筒分割）：V = 2π∫ρ h dρ（ρ：軸からの距離、h：その距離での領域の高さ）');
+    const three = { exprs, range: ['−' + w, w, '−' + w, w], axis: 'v', rims: { kind: 'v', groups: [exprs.map((e, n) => n)], surf: rimSurf } };
+    const method = tr('Shells (thin cylinders around the axis): V = 2π∫ρ h dρ (ρ: the distance from the axis, h: the height of the region there)', '殻の方法（薄い円筒を軸のまわりに重ねる）：V = 2π∫ρ h dρ（ρ：軸からの距離、h：その距離での領域の高さ）');
     const one = pieces.length === 1;
     const detail = (one ? 'ρ = ' + revPretty(k === '0' ? rho : (await exactText(rho)) || rho) + ', h = ' + revPretty(pieces[0].h) : trf('h changes at {0}: calculated in {1} pieces', 'h は {0} で替わるので、{1} 個に分けて計算', pieces.slice(1).map((p) => p.a).slice(0, 4).join(', '), pieces.length))
       + (sides.length === 2 ? tr(' (the region is on both sides of the axis: the two sides turned make one solid, the overlap counted once)', '（領域が軸の両側にあるので、両側を回した立体の和として、重なりは 1 回だけ数えています）') : '');
-    return { pieces, ends, method, detail, three, span: [X.lo, X.hi] };
+    return { pieces, ends, method, detail, three, span: [X.lo, X.hi], stl: { kind: 'v', sides: sideF.map((q) => ({ f: q.s.f, g: q.s.g, a: q.a, b: q.b })), kv } };
   }
   // true when the two sides (the right one and the mirrored left one) are the same region
   async function revSymmetric(sides) {
@@ -5242,17 +6147,110 @@
     return true;
   }
 
+  // The shapes of the cross sections (1.12.0, B1): key, name, A(s) for the width s, a picture (□ △ ◠ …),
+  // a short label under it; c × s² for all but one's own (the sign of s, where the functions cross, does not matter)
+  const SEC_SHAPES = [
+    ['sq', tr('Square', '正方形'), 's^2', '<rect x="9" y="5" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4"/>', tr('Square', '正方形')],
+    ['eq', tr('Equilateral triangle', '正三角形'), '√(3)/4 × s^2', '<path d="M6 23 L30 23 L18 3 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>', tr('Triangle', '正三角形')],
+    ['semi', tr('Half disc (the width as its diameter)', '半円（底面の幅が直径）'), 'π/8 × s^2', '<path d="M5 22 A13 13 0 0 1 31 22 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>', tr('Half disc', '半円')],
+    ['rect', tr('Rectangle of height k·s', '長方形（高さ k·s）'), 'k × s^2', '<rect x="5" y="11" width="26" height="12" fill="none" stroke="currentColor" stroke-width="2.4"/>', tr('Rectangle', '長方形')],
+    ['rl', tr('Right isosceles triangle, a leg on the region', '直角二等辺三角形（脚が底面）'), 's^2/2', '<path d="M7 23 L29 23 L7 3 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>', tr('Right, leg', '直角・脚')],
+    ['rh', tr('Right isosceles triangle, the hypotenuse on the region', '直角二等辺三角形（斜辺が底面）'), 's^2/4', '<path d="M5 23 L31 23 L18 10 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>', tr('Right, hyp.', '直角・斜辺')],
+    ['own', tr('Your own A(s)', '自分の式 A(s)'), '', '<text x="18" y="20" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">A(s)</text>', tr('Your own', '自分の式')]
+  ];
+  // the volume of the solid whose cross sections across x stand on the region of the area tools:
+  // V = ∫ A(s(x)) dx, s = f − g (exact when the engine can integrate it); a > b is the same range
+  async function computeSections(auto) {
+    const U = P.areaUI, R = U.rev;
+    const seq = ++R.seq, stale = () => seq !== R.seq;
+    R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.outs.textContent = ''; R.method.textContent = ''; R.moreOuts.textContent = ''; R.more.hidden = true;
+    R.stlBtn.hidden = true; R.stlSpec = null;
+    P.revVolText = ''; P.revAxis = null; draw();
+    const fail = (text) => { if (!stale()) { R.go3d = 0; R.msg.textContent = text || tr('Could not calculate the solid', '立体を計算できませんでした'); R.outs.textContent = ''; } };
+    const f = P.series[Number(U.f1.value)];
+    if (!f) return fail(tr('Draw a function first', '先に関数を描いてください'));
+    const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
+    if (!a || !b) return fail(tr('Enter the range of x (a and b)', 'x の範囲（a と b）を入れてください'));
+    const g = areaG(), ge = g ? g.expr : '0';
+    const d = SEC_SHAPES.find((x) => x[0] === R.shape) || SEC_SHAPES[0];
+    const s = `((${f.expr}) − (${ge}))`;
+    let F;
+    if (d[0] === 'own') {
+      const own = normalizeExpr(R.ownIn.value);
+      if (!own || !/\bs\b/.test(own)) return fail(tr('Enter A(s) in s, for example s^2/2', 'A(s) を s の式で入れてください（例：s^2/2）'));
+      F = own.replace(/\bs\b/g, `abs${s}`);
+    } else if (d[0] === 'rect') {
+      const kk = normalizeExpr(R.skIn.value), kv = kk ? await numValue(kk) : NaN;
+      if (stale()) return;
+      if (!isFinite(kv) || kv <= 0) { R.skIn.setAttribute('aria-invalid', 'true'); return fail(tr('Enter a positive number for k (for example 1/2)', 'k に正の数を入れてください（例：1/2）')); }
+      R.skIn.removeAttribute('aria-invalid');
+      F = `(${kk}) × ${s}^2`;
+    } else F = d[2].replace('s^2', s + '^2');
+    R.msg.textContent = tr('Calculating…', '計算中…');
+    const t0 = Date.now(), limit = Math.max(30, timeLimit() * 2) * 1000, late = () => Date.now() - t0 > limit;
+    const rn = await rangeNums(a, b);
+    if (stale()) return;
+    if (!rn) return fail(tr('a and b must be two different numbers', 'a と b は異なる数にしてください'));
+    // (rangeNums puts the smaller end first: a > b is the same solid)
+    const rp = await realParts(g ? [f.expr, g.expr] : [f.expr], rn.a, rn.b, rn.lo, rn.hi);
+    if (stale()) return;
+    if (rp && !rp.parts.length) return fail(noRealText());
+    const parts = rp ? rp.parts : [rn];
+    const vrow = revRow(R, tr('Volume', '体積'), 'V = ∫ A(s(x)) dx');
+    R.rows = [{ row: vrow, name: tr('Volume', '体積'), small: 'V = ∫ A(s(x)) dx' }]; // (BG21: for the 3D view)
+    const vals = [], vexpr = [];
+    for (const p of parts) {
+      const v = await revIntegral(F, p, []);
+      if (stale()) return;
+      if (late()) return fail(tr('It took too long (the time limit can be changed in the settings)', '時間がかかりすぎました（制限時間は設定で変えられます）'));
+      if (!v) { vrow.val.textContent = tr('could not be calculated', '計算できませんでした'); R.msg.textContent = ''; return; }
+      if (v.inf) { vrow.val.textContent = tr('infinite', '無限大'); R.msg.textContent = ''; return; }
+      vals.push(v); vexpr.push(`integrate(${F}, ${p.a}, ${p.b})`);
+    }
+    const V = await sumValues(vals);
+    if (stale()) return;
+    revShow(vrow, V, vexpr.join(' + '));
+    R.msg.textContent = '';
+    R.method.textContent = 'V = ∫ A(s(x)) dx,  A(s) = ' + (d[0] === 'own' ? normalizeExpr(R.ownIn.value) : d[0] === 'rect' ? toDisplay(normalizeExpr(R.skIn.value)) + ' × s²' : d[2].replace('s^2', 's²').replace(' × ', '·')) +
+      ',  s = ' + revPretty(toDisplay(clip(f.expr, 24))) + (g ? ' − ' + (/^[^+\-−]+$/.test(g.expr.slice(1)) ? revPretty(toDisplay(clip(g.expr, 24))) : '(' + revPretty(toDisplay(clip(g.expr, 24))) + ')') : '') + '\n' + tr('(the volume is the sum of the thin slices of area A and thickness dx)', '（面積 A、厚さ dx の薄い板を重ねた体積）');
+    P.revVolText = shortValue('V', vrow.result); draw();
+    // the STL file (D3): the sections lofted; not for a shape of one's own A(s), which has no form
+    if (d[0] !== 'own' && V && isFinite(V.v)) {
+      const kk = d[0] === 'rect' ? await numValue(normalizeExpr(R.skIn.value)) : 1;
+      if (stale()) return;
+      R.stlSpec = { kind: 'sec', f: f.expr, g: g ? g.expr : null, parts, shape: d[0], k: kk, volume: Math.abs(V.v) }; stlShow(R.stlBtn);
+    }
+    // the 3D view (Pro): the top of the cross sections over the region, z = 0 outside not drawn
+    const hiE = g ? `max(${f.expr}, ${ge})` : `max(${f.expr}, 0)`, loE = g ? `min(${f.expr}, ${ge})` : `min(${f.expr}, 0)`;
+    const cut = `√(min(0, (y − ${loE}) × (${hiE} − y)))`, w = `(${hiE} − ${loE})`;
+    const top = { sq: `${w} + ${cut}`, eq: `√(3) × min(y − ${loE}, ${hiE} − y) + ${cut}`, semi: `√((${w} / 2)^2 − (y − (${hiE} + ${loE}) / 2)^2)`,
+      rect: `(${normalizeExpr(R.skIn.value) || '1'}) × ${w} + ${cut}`, rl: `(${hiE} − y) + ${cut}`, rh: `min(y − ${loE}, ${hiE} − y) + ${cut}` }[d[0]];
+    if (top) {
+      let y0 = Infinity, y1 = -Infinity;
+      for (const ser of [f, g].filter(Boolean)) ser.x.forEach((x, i) => { const y = ser.y[i]; if (x >= rn.lo && x <= rn.hi && y !== null && isFinite(y)) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); } });
+      if (!g) { y0 = Math.min(y0, 0); y1 = Math.max(y1, 0); }
+      if (isFinite(y0) && isFinite(y1) && y1 > y0) {
+        const m = (y1 - y0) * 0.06;
+        R.three = { exprs: [top, `0 + ${cut}`], range: [engineNum(rn.lo), engineNum(rn.hi), engineNum(r6(y0 - m)), engineNum(r6(y1 + m))] };
+        R.view.hidden = false; revReady(R);
+      }
+    }
+  }
   // the part of the area tools for solids of revolution: the axis, the results (tap one to put its
   // integral into the input field or to copy it), the formula used, the 3D view and examples.
   // The axis and k are remembered (qalc.rev)
   function buildRevolution() {
     const saved = store.get('qalc.rev', null) || {};
-    const R = { axis: REV_AXES.some((x) => x[0] === saved.axis) ? saved.axis : 'x', seq: 0, three: null };
+    const R = { axis: REV_AXES.some((x) => x[0] === saved.axis) ? saved.axis : 'x', seq: 0, three: null,
+      // 1.12.0 (B1): the kind of solid ('rev' turned around an axis, 'sec' cross sections standing on
+      // the region) and the shape of the cross sections, with k of the rectangle and A(s) of one's own
+      kind: saved.kind === 'sec' ? 'sec' : 'rev', slices: saved.slices !== false, nSlices: Math.max(1, Math.min(40, Number(saved.n) || 8)), shape: SEC_SHAPES.some((x) => x[0] === saved.shape) ? saved.shape : 'sq',
+      sk: typeof saved.sk === 'string' ? saved.sk : '1/2', own: typeof saved.own === 'string' ? saved.own : 's^2/2' };
     const k = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: 'k', value: typeof saved.k === 'string' ? saved.k : '−1', 'aria-label': tr('k of the axis', '軸の k') });
     const kErr = el('div', { class: 'form-hint warn', role: 'alert' });
     const kRow = el('span', { class: 'rev-k' }, el('span', { class: 'rev-k-lbl', text: 'k =' }), k);
-    const btns = REV_AXES.map(([key, label]) => tapButton({ text: label, 'aria-label': tr('Axis: ', '軸：') + label }, () => setAxis(key)));
-    const save = () => store.set('qalc.rev', { axis: R.axis, k: k.value, open: !box.hidden });
+    const btns = REV_AXES.map(([key, label]) => tapButton({ text: label, 'aria-label': tr('Axis: ', '軸：') + label }, () => { if (key !== R.axis) { revUndoable(); setAxis(key); } }));
+    const save = () => store.set('qalc.rev', { axis: R.axis, k: k.value, open: !box.hidden, kind: R.kind, shape: R.shape, sk: skIn.value, own: ownIn.value, slices: !!R.slices, n: R.nSlices });
     const setAxis = (key, quiet) => {
       R.axis = key;
       btns.forEach((b, i) => { const on = REV_AXES[i][0] === key; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
@@ -5261,13 +6259,38 @@
       save();
       if (!quiet) computeRevolution();
     };
-    k.addEventListener('change', () => { save(); computeRevolution(); });
+    k.addEventListener('focus', () => { R.kBefore = revState(); });
+    k.addEventListener('change', () => { if (R.kBefore) revUndoable(R.kBefore); save(); computeRevolution(); });
     const msg = el('div', { class: 'area-out', 'aria-live': 'polite' });
     const outs = el('div', { class: 'geo-out rev-out' });
     const method = el('div', { class: 'form-hint rev-method' });
-    const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, () => {
-      if (R.three) openPlot3dWith(R.three.exprs, { range: R.three.range, equal: true, res: 61 });
-    });
+    const moreOuts = el('div', { class: 'geo-out rev-more-out' });
+    // B2: the lines of the method in the graph (n slices), and the theorem of Pappus and Guldinus
+    const pappus = el('div', { class: 'rev-pappus', 'aria-live': 'polite' });
+    const nIn = el('input', { type: 'range', min: '1', max: '40', step: '1', value: String(Math.max(1, Math.min(40, Number(saved.n) || 8))), 'aria-label': tr('Number of lines', '線の数') });
+    const nVal = el('span', { class: 'rev-n-v', text: nIn.value });
+    const slicesBtn = tapButton({ class: 'btn rev-slices', 'aria-pressed': 'false', text: tr('Show the method with lines', '方法を線で見せる') }, () => { if (!R.slices && !proGate('rev_lines')) return; R.slices = !R.slices; showSlices(); save(); draw(); });
+    const nRow = el('label', { class: 'plot-range rev-n' }, el('span', { text: tr('Lines n =', '線の数 n =') }), nIn, nVal);
+    nIn.addEventListener('input', () => { R.nSlices = Number(nIn.value); nVal.textContent = nIn.value; save(); draw(); });
+    const showSlices = () => { slicesBtn.classList.toggle('on', !!R.slices); slicesBtn.setAttribute('aria-pressed', String(!!R.slices)); nRow.hidden = !R.slices; };
+    const more = el('details', { class: 'rev-more' }, el('summary', { text: tr('More: surface areas ▾', '詳しく：表面積 ▾') }), moreOuts);
+    // 1.12.0 (D3): the solid saved as an STL file (Pro)
+    const stlBtn = tapButton({ class: 'btn stl-btn', text: tr('Save as STL', 'STL で保存'), hidden: true }, () => { if (R.stlSpec) openStlSheet(R.stlSpec, R.kind === 'sec' ? 'sections' : 'revolution', null); });
+    // 1.12.0 (B0): the region turns from 0° to 360° into the solid first (not with "reduce motion"); (BG20)
+    // the volume is shown large above the 3D graph, with "← Back to 2D"
+    // (BG21: "Volume and surface" in the 3D view shows the values found here, the rows of this solid as they fill)
+    const show3d = () => {
+      if (!R.three) return;
+      const rows = R.rows || [];
+      openPlot3dWith(R.three.exprs, { range: R.three.range, equal: !R.three.notEqual, res: 61, grow: R.three.axis, rims: R.three.rims, back: { vol: P.revVolText || '' },
+        solid: { src: R, title: R.kind === 'sec' ? tr('Values of the solid with cross sections', '断面の立体の値') : tr('Values of the solid of revolution', '回転体の値'),
+          hint: tr('The values found in "Make a solid" of the 2D graph. Other formulas drawn here are measured as an ordinary 3D graph.', '2D グラフの「立体にする」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測れます。'),
+          values: () => rows.map((q) => ({ name: q.name, small: q.small, result: q.row.result, expr: q.row.expr, text: q.row.result ? '' : q.row.val.textContent })) } });
+    };
+    const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る'), hidden: true }, show3d);
+    // (BG20, without Pro: after "⟳ 3D", above the results)
+    const proRow = tapButton({ class: 'rev-pro-row', hidden: true, 'aria-label': tr('Turn it in 3D (QCalc Pro)', '3D で回して見る（QCalc Pro）') }, () => proPrompt(tr('Turning the solid in 3D is a QCalc Pro feature', '3D で回して見るのは QCalc Pro の機能です'), '3d'));
+    proRow.append(el('span', { class: 'rev-pro-i', 'aria-hidden': 'true', text: '🧊' }), el('span', { class: 'rev-pro-t', text: tr('Turn it in 3D (QCalc Pro)', '3D で回して見る（QCalc Pro）') }), el('span', { class: 'rev-pro-go', 'aria-hidden': 'true', text: '›' }));
     // one tap: a graph, its range and the axis
     const EX = [
       [tr('y = √x, x axis', 'y = √x・x 軸'), ['√(x)'], [-0.5, 4.5], '0', '4', false, 'x'],
@@ -5280,20 +6303,102 @@
         setAxis(axis, true);
         openPlotWith(exprs, { range, equal: !!equal, area: { a, b, between, rev: true } });
       })));
-    const box = el('div', { class: 'rev-box' },
-      el('div', { class: 'plot-range' }, el('span', { text: tr('Axis', '軸') }), el('span', { class: 'seg mini rev-axes' }, ...btns), kRow),
-      kErr, msg, outs, method, view, exRow,
+    // 1.12.0: "Make a solid ▾" holds the kinds of solids made from the shaded region (the solid of
+    // revolution now; the solid with known cross sections follows)
+    const kRev = tapButton({ text: tr('Revolution (turned around an axis)', '回転体（軸のまわりに回す）') }, () => setKind('rev'));
+    const kSec = tapButton({ text: tr('Cross sections (shapes standing on the region)', '断面の立体（底面に形を立てる）') }, () => { if (R.kind !== 'sec' && proGate('cross_sections')) setKind('sec'); });
+    const kinds = el('div', { class: 'seg mini solid-kinds', role: 'group', 'aria-label': tr('Kind of solid', '立体の種類') }, kRev, kSec);
+    const axisRow = el('div', { class: 'plot-range' }, el('span', { text: tr('Axis', '軸') }), el('span', { class: 'seg mini rev-axes' }, ...btns), kRow);
+    // the shapes of the cross sections: the three common ones as picture buttons, the others under "More ▾"
+    const shapeBtn = (key) => {
+      const d = SEC_SHAPES.find((x) => x[0] === key);
+      const b = tapButton({ class: 'sec-shape', 'aria-label': d[1], title: d[1] }, () => { if (R.shape !== key) { revUndoable(); setShape(key); } });
+      b.innerHTML = `<svg viewBox="0 0 36 28" aria-hidden="true">${d[3]}</svg>`;
+      b.append(el('span', { text: d[4] }));
+      return b;
+    };
+    const shapeBtns = {};
+    for (const [key] of SEC_SHAPES) shapeBtns[key] = shapeBtn(key);
+    const skIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: R.sk, 'aria-label': tr('k of the rectangle (height k·s)', '長方形の k（高さ k·s）') });
+    const ownIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: R.own, placeholder: 's^2/2', 'aria-label': tr('Area A(s) of one cross section, in s', '断面 1 枚の面積 A(s)（s の式）') });
+    for (const inp of [skIn, ownIn]) inp.addEventListener('change', () => { save(); computeRevolution(); });
+    const secMore = el('details', { class: 'sec-more' }, el('summary', { text: tr('More shapes ▾', '詳しく：ほかの形 ▾') }),
+      el('div', { class: 'sec-shapes' }, shapeBtns.rect, shapeBtns.rl, shapeBtns.rh, shapeBtns.own),
+      el('label', { class: 'plot-range' }, el('span', { text: tr('Rectangle: k =', '長方形：k =') }), skIn),
+      el('label', { class: 'plot-range' }, el('span', { text: 'A(s) =' }), ownIn));
+    const secRow = el('div', { class: 'sec-row' },
+      el('div', { class: 'sec-shapes', role: 'group', 'aria-label': tr('Shape of the cross sections', '断面の形') }, shapeBtns.sq, shapeBtns.eq, shapeBtns.semi), secMore,
+      el('div', { class: 'form-hint', text: tr('Each cross section stands on the region across x (s: its width, the upper function − the lower one).', '断面は x 軸に垂直に、底面（色の付いた部分）の上に立ちます（s：底面の幅 ＝ 上の関数 − 下の関数）。') }));
+    const setShape = (key, quiet) => {
+      R.shape = key;
+      for (const [kk, b] of Object.entries(shapeBtns)) { b.classList.toggle('on', kk === key); b.setAttribute('aria-pressed', String(kk === key)); }
+      if (['rect', 'rl', 'rh', 'own'].indexOf(key) >= 0) secMore.open = true;
+      save();
+      if (!quiet) { computeRevolution(); draw(); }
+    };
+    const setKind = (kind, quiet) => {
+      R.kind = kind;
+      kRev.classList.toggle('on', kind === 'rev'); kSec.classList.toggle('on', kind === 'sec');
+      kRev.setAttribute('aria-pressed', String(kind === 'rev')); kSec.setAttribute('aria-pressed', String(kind === 'sec'));
+      axisRow.hidden = kind !== 'rev'; secRow.hidden = kind !== 'sec'; exRow.hidden = kind !== 'rev'; slicesRow.hidden = kind !== 'rev'; pappus.hidden = kind !== 'rev';
+      save();
+      if (!quiet) { computeRevolution(); }
+    };
+    const slicesRow = el('div', { class: 'rev-slices-row' }, slicesBtn, nRow);
+    // (1.12.0, D7) the digits of the results
+    const dig = digitsControl();
+    digRuns.add(() => { if (!box.hidden) { if (R.kind === 'sec') computeSections(); else computeRevolution(); } });
+    const box = el('div', { class: 'rev-box' }, kinds, axisRow, secRow,
+      kErr, el('div', { class: 'geo-units' }, dig.sel), dig.more, proRow, msg, outs, method, pappus, slicesRow, more, view, stlBtn, exRow,
       el('div', { class: 'form-hint', text: tr('The shaded region (between the two functions chosen above, x from a to b) is turned once around the axis. Where the region is on both sides of the axis, the solid is the one both sides make together: the part where they overlap counts once.', '色の付いた部分（上で選んだ 2 つの関数の間、x = a 〜 b）を軸のまわりに 1 回転させた立体です。領域が軸の両側にあるときは、両側を回した立体を合わせたもの（重なる部分は 1 回だけ）です。') }));
     box.hidden = true;
-    const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Solid of revolution ▾', '回転体 ▾'), 'aria-expanded': 'false' }, () => {
+    const toggle = tapButton({ class: 'btn area-toggle rev-toggle', text: tr('Make a solid ▾', '立体にする ▾'), 'aria-expanded': 'false' }, () => {
       if (box.hidden && !proGate('revolution')) return;
       box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); save();
-      if (!box.hidden) computeRevolution(true); else { R.seq++; P.revAxis = null; draw(); }
+      if (box.hidden) { R.seq++; R.go3d = 0; proRow.hidden = true; }
+      revToggled(!box.hidden);
+      if (!box.hidden) revHint();
     });
-    Object.assign(R, { box, toggle, k, kErr, kRow, msg, outs, method, view, setAxis, open: () => { if (box.hidden) toggle.click(); } });
+    Object.assign(R, { box, toggle, kinds, k, kErr, kRow, msg, outs, moreOuts, more, method, pappus, view, proRow, show3d, stlBtn, setAxis, setKind, setShape, skIn, ownIn, open: () => { if (box.hidden) toggle.click(); } });
+    showSlices();
     setAxis(R.axis, true);
+    setShape(R.shape, true);
+    setKind(R.kind, true);
     if (saved.open) { box.hidden = false; toggle.classList.add('on'); toggle.setAttribute('aria-expanded', 'true'); }
     return R;
+  }
+  // The theorem of Pappus and Guldinus (1.12.0, B2): when the region is on one side of the axis, its
+  // area A and the distance d of its centroid from the axis give V = 2π d A, which is shown with the
+  // integral's value beside it; on both sides it cannot be used, and the line says why.
+  async function revPappus(R, f, g, parts, ax, V, stale) {
+    const fe = f.expr, ge = g ? g.expr : '0', k = ax.k;
+    // the side of the axis: from the drawn values of the region's curves
+    let below = false, above = false;
+    for (const s of [f, g].filter(Boolean)) s.x.forEach((x, i) => {
+      const y = s.y[i];
+      if (y === null || !isFinite(y) || !parts.some((p) => x >= p.lo && x <= p.hi)) return;
+      const t = ax.kind === 'h' ? y - ax.kv : x - ax.kv, eps = 1e-9 * Math.max(1, Math.abs(ax.kv));
+      if (t < -eps) below = true; else if (t > eps) above = true;
+    });
+    if (!g && ax.kind === 'h') { if (ax.kv > 0) below = true; else if (ax.kv < 0) above = true; } // (the x axis is a side of the region)
+    if (ax.kind === 'v') parts.forEach((p) => { if (p.lo < ax.kv - 1e-12) below = true; if (p.hi > ax.kv + 1e-12) above = true; });
+    const head = tr('Pappus–Guldinus theorem: ', 'パップス・ギュルダンの定理：');
+    if (below && above) { R.pappus.textContent = head + tr('cannot be used, because the region is on both sides of the axis (the two sides overlap when turned)', '使えません。領域が軸の両側にあるためです（回すと両側が重なります）'); return; }
+    // A = ∫|f − g| dx; d A = ∫ |(f − k)² − (g − k)²| / 2 dx (axis along x) or ∫ |x − k| |f − g| dx (axis up)
+    const area = `abs((${fe}) − (${ge}))`;
+    const mom = ax.kind === 'h' ? `abs(((${fe}) − ${revParen(k)})^2 − ((${ge}) − ${revParen(k)})^2) / 2` : `abs(x − ${revParen(k)}) × abs((${fe}) − (${ge}))`;
+    const As = [], Ms = [];
+    for (const p of parts) {
+      const a1 = await revIntegral(area, p, []), m1 = await revIntegral(mom, p, []);
+      if (stale()) return;
+      if (!a1 || !m1 || a1.inf || m1.inf) return;
+      As.push(a1); Ms.push(m1);
+    }
+    const A = await sumValues(As), M = await sumValues(Ms);
+    if (stale() || !(A.v > 0)) return;
+    const d = M.v / A.v, Vp = 2 * Math.PI * d * A.v, same = Math.abs(Vp - V) <= 1e-7 * Math.max(1, Math.abs(V));
+    R.pappus.textContent = head + 'A = ' + valueShown(clip(A.text, 30)) + ',  d = ' + valueShown(fmtV(+d.toPrecision(9))) + ',  V = 2π d A ≈ ' + valueShown(fmtV(+Vp.toPrecision(10))) +
+      (same ? tr('  ✓ the same as the integral', '  ✓ 積分の値と一致') : '');
   }
   // a row of the results: its name, the formula in small letters, the value; tapping it offers to put
   // the integral into the input field or to copy the result
@@ -5302,23 +6407,30 @@
     const row = { val, expr: '', result: '' };
     row.node = tapButton({ class: 'geo-row' }, async () => {
       if (!row.expr) return;
-      const key = await sheet(name + '  ' + clip(row.result, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'], ['copy', tr('Copy the result', '結果をコピー')]]);
-      if (key === 'use') useExample(row.expr);
-      else if (key === 'copy') copyText(row.result);
+      resultSheet(name, row.expr, valueShown(row.result));
     });
     row.node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), val);
     R.outs.append(row.node);
     return row;
   }
-  const revShow = (row, val, expr) => { row.result = val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text; row.val.textContent = ''; showResult(row.val, row.result); row.expr = expr; };
+  // (1.12.0, D7: the number after ≈ with the digits set: a volume, or a surface area for the rows of the surfaces)
+  const revShow = (row, val, expr) => {
+    row.result = val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text;
+    const sp = digSpec(row.kind || 'vol');
+    if (sp && isFinite(val.v) && row.result.indexOf('≈') >= 0) row.result = withApprox(row.result, digRound(val.v, sp));
+    row.val.textContent = ''; showResult(row.val, valueShown(row.result)); row.expr = expr;
+  };
   // the volume and the surface of the solid, for the functions and the range of the area tools.
   // auto: opened or drawn (not a tap on the axis): the same, it only tells how long it took
   async function computeRevolution(auto) {
     const U = P.areaUI, R = U && U.rev;
     if (!R || R.box.hidden || U.box.hidden) return;
+    if (R.kind === 'sec') return computeSections(auto);
     const seq = ++R.seq, stale = () => seq !== R.seq;
     R.view.hidden = true; R.three = null; R.kErr.textContent = ''; R.k.removeAttribute('aria-invalid'); R.outs.textContent = ''; R.method.textContent = '';
-    const fail = (text) => { if (!stale()) { R.msg.textContent = text || tr('Could not calculate the solid', '回転体を計算できませんでした'); R.outs.textContent = ''; } };
+    R.stlBtn.hidden = true; R.stlSpec = null;
+    R.moreOuts.textContent = ''; R.more.hidden = false; R.pappus.textContent = ''; P.revVolText = '';
+    const fail = (text) => { if (!stale()) { R.go3d = 0; R.msg.textContent = text || tr('Could not calculate the solid', '回転体を計算できませんでした'); R.outs.textContent = ''; } };
     const f = P.series[Number(U.f1.value)];
     if (!f) return fail(tr('Draw a function first', '先に関数を描いてください'));
     const a = normalizeExpr(U.a.value), b = normalizeExpr(U.b.value);
@@ -5353,7 +6465,15 @@
     if (!solid || solid.error) return fail(solid && solid.error);
     const vrow = revRow(R, tr('Volume', '体積'), ax.kind === 'h' ? 'π∫(R² − r²) dx' : '2π∫ρ h dρ');
     const srow = revRow(R, tr('Surface area (curved surfaces)', '表面積（曲面だけ）'), '2π∫ρ ds');
+    srow.kind = 'area';
+    R.moreOuts.append(srow.node); // (1.12.0, B0: the surfaces under "More ▾")
     const erow = revRow(R, tr('Surface area (with the end faces)', '表面積（端の面も含む）'), ax.kind === 'h' ? tr('+ the flat faces at x = a and b', '＋ x = a、b の平らな面') : tr('+ the faces the sides at x = a and b make', '＋ x = a、b の辺が作る面'));
+    R.moreOuts.append(erow.node);
+    erow.kind = 'area';
+    // (BG21: the rows of this solid, for "Volume and surface" in its 3D view)
+    R.rows = [{ row: vrow, name: tr('Volume', '体積'), small: ax.kind === 'h' ? 'π∫(R² − r²) dx' : '2π∫ρ h dρ' },
+      { row: srow, name: tr('Surface area (curved surfaces)', '表面積（曲面だけ）'), small: '2π∫ρ ds' },
+      { row: erow, name: tr('Surface area (with the end faces)', '表面積（端の面も含む）'), small: '' }];
     R.msg.textContent = '';
     R.method.textContent = solid.method + '\n' + solid.detail + (rp && rp.clipped ? '\n' + realNote(!!g, parts) : '');
     // the volume
@@ -5369,7 +6489,11 @@
     }
     if (vols.length) { const V = await sumValues(vols); if (stale()) return; revShow(vrow, V, vexpr.join(' + ')); }
     else if (!solid.pieces.some((p) => p.vol !== '0')) revShow(vrow, { text: '0', v: 0 }, '0');
-    R.three = solid.three; R.view.hidden = false;
+    if (vrow.result) { P.revVolText = shortValue('V', vrow.result); draw(); } // also in the corner of the graph
+    if (vols.length) revPappus(R, f, g, parts, ax, vols.reduce((t, v) => t + v.v, 0), stale);
+    R.three = solid.three; R.view.hidden = false; revReady(R);
+    // (the STL file: the meridian from the same curves, its volume checked against this one; D3)
+    if (vols.length && solid.stl) { R.stlSpec = Object.assign({}, solid.stl, { volume: vols.reduce((t, v) => t + v.v, 0) }); stlShow(R.stlBtn); }
     // the surfaces: each curve that bounds the solid, turned: 2π ∫ (its distance) √(1 + f′²) dx
     const curved = [], sexpr = [];
     let bad = '';
@@ -5388,7 +6512,7 @@
       }
       if (bad) break;
     }
-    if (bad) { srow.val.textContent = bad; erow.val.textContent = bad; return; }
+    if (bad) { srow.val.textContent = bad; erow.val.textContent = bad; solidRefresh(R); return; }
     const S1 = curved.length ? await sumValues(curved) : { text: '0', exact: '0', v: 0 };
     if (stale()) return;
     revShow(srow, S1, sexpr.join(' + ') || '0');
@@ -5401,19 +6525,23 @@
     const S2 = ends.length ? await sumValues(curved.concat(ends)) : S1;
     if (stale()) return;
     revShow(erow, S2, sexpr.concat(eexpr).join(' + ') || '0');
+    solidRefresh(R);
   }
   // the axis of a solid of revolution in the graph: a dash-dot line, y = k or x = k, with "↻ axis"
   // (in the color of the text, so it is not taken for the dashed edges of the area)
   function drawRevAxis(g, sx, sy, W, H) {
     const A = P.revAxis, css = getComputedStyle(document.documentElement);
     g.save();
-    g.strokeStyle = g.fillStyle = css.getPropertyValue('--text').trim() || '#222';
-    g.globalAlpha = 0.8;
-    g.lineWidth = 1.8;
+    // 1.12.0 (B0): thick and in the accent color (tap an axis line to turn around it; y = k and
+    // x = k can be dragged), with k beside it
+    g.strokeStyle = g.fillStyle = css.getPropertyValue('--accent').trim() || '#2563eb';
+    g.globalAlpha = 0.95;
+    g.lineWidth = 3;
     g.setLineDash([10, 4, 2, 4]);
     g.beginPath();
-    const label = '↻ ' + tr('axis', '回転軸');
-    g.font = '12px system-ui, sans-serif';
+    const R = P.areaUI && P.areaUI.rev, kv = R && (R.axis === 'h' || R.axis === 'v') ? toDisplay(fmtK(A.v)) : '';
+    const label = '↻ ' + (kv ? (A.kind === 'h' ? 'y = ' : 'x = ') + kv : tr('axis', '回転軸'));
+    g.font = '700 12px system-ui, sans-serif';
     if (A.kind === 'h') {
       const y = sy(A.v);
       g.moveTo(0, y); g.lineTo(W, y); g.stroke();
@@ -5445,7 +6573,7 @@
       const lines = Q3.ta.value.split('\n').map((t) => t.trim()).filter(Boolean);
       if (lines.indexOf(expr) >= 0) return;
       if (lines.length >= 4) { toast(tr('Up to 4 surfaces', '曲面は 4 つまでです'), 1800); return; }
-      Q3.ta.value = lines.concat(expr).join('\n');
+      Q3.ta.value = lines.concat(toDisplay(expr)).join('\n');
       Q3.keep = true;
       Q3.go.click();
     };
@@ -5456,7 +6584,8 @@
         tapButton({ class: 'btn', text: tr('Draw ∂f/∂y', '∂f/∂y を描く') }, () => add('y'))));
     box.hidden = true;
     const toggle = el('button', { class: 'btn area-toggle', text: tr('Partial derivatives ▾', '偏微分 ▾') });
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) partialSurfacesChanged(); });
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); if (!box.hidden) partialSurfacesChanged(); });
     Q3.partUI = { f, box };
     return el('div', { class: 'area-wrap' }, toggle, box);
   }
@@ -5465,7 +6594,7 @@
     if (!U) return;
     const keep = U.f.value;
     U.f.textContent = '';
-    (Q3.data ? Q3.data.series : []).forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(s1.expr, 34) })));
+    (Q3.data ? Q3.data.series : []).forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(toDisplay(s1.expr), 34) })));
     U.f.value = keep !== '' && Q3.data && Q3.data.series[Number(keep)] ? keep : '0';
   }
 
@@ -5480,7 +6609,17 @@
   // area are calculated at once (volumeAuto). The example (a sphere) at the bottom of the box is
   // the only thing that draws another graph.
   const VOL_N = 101;
-  const SHAPES3D = [['sphere', tr('Sphere', '球'), ['r'], ['2']]];
+  // (1.12.0, D6: every solid of "Shapes", drawn there and shown in 3D with the same values; until then the sphere
+  // only, drawn with formulas)
+  const SHAPES3D = () => GEO.filter((g) => g.d === 3).map((g) => [g.k, g.name, g.p.map((q) => q[0]), g.def.slice(), g.p.map((q) => q[1])]);
+  // a solid of the examples: into "Shapes" (its sizes typed there) and, draw: in 3D at once
+  function shapeTo3d(k, v, draw) {
+    const p = openShapes(3);
+    if (!p.setShape) return;
+    const sh = GEO.find((g) => g.k === k);
+    p.setShape(k, sh.p.map(([n]) => v[n] || ''));
+    if (draw) p.view3d();
+  }
   function buildVolume3d() {
     const s1 = el('select', { 'aria-label': tr('Surface', '曲面') }), s2 = el('select', { 'aria-label': tr('and', 'と') });
     const out = el('div', { class: 'area-out', 'aria-live': 'polite' });
@@ -5554,8 +6693,8 @@
         C.kind = kind; kindSel.value = kind; C.vals[kind] = Object.assign({}, vals);
         if (kind === 'sector') setUnit('deg');
         saveC(); buildFields(); C.clearErr();
-        Q3.ta.value = exprs;
-        Q3.inputs.forEach((e, i) => { e.value = range[i]; });
+        Q3.ta.value = toDisplay(exprs);
+        Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(range[i])); });
         Q3.equalOnce = false;
         if (Q3.samples) Q3.samples.clearChoice();
         setRegion('custom', true);
@@ -5580,6 +6719,7 @@
     const setRegion = (k, quiet) => {
       Q3.volUI.region = k;
       bEnc.classList.toggle('on', k === 'enc'); bRect.classList.toggle('on', k === 'rect'); bDisk.classList.toggle('on', k === 'disk'); bCus.classList.toggle('on', k === 'custom');
+      for (const [b, kk] of [[bEnc, 'enc'], [bRect, 'rect'], [bDisk, 'disk'], [bCus, 'custom']]) b.setAttribute('aria-pressed', String(k === kk)); // a switch: read out as one (1.12.0)
       rangeText.hidden = k !== 'rect'; diskRow.hidden = k !== 'disk'; encText.hidden = k !== 'enc'; hint.hidden = k === 'enc'; hintEnc.hidden = k !== 'enc';
       cusBox.hidden = k !== 'custom'; signRow.hidden = k === 'enc';
       if (k === 'custom') { kindSel.value = C.kind; buildFields(); C.clearErr(); cusText.textContent = ''; }
@@ -5587,28 +6727,34 @@
       out.textContent = ''; ins.hidden = true;
       if (!quiet) volumeAuto();
     };
-    // the color of the solid that is measured, as it is shown in the graph (1.8.4; draw3d sets it)
-    const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('In the graph, the solid that is measured looks like a pale gelatin of this color in a clear, glossy skin of a deeper shade', 'グラフでは、計測している立体を、この色の薄いゼラチンを、濃い色のつやのある透明な皮で包んだように示しています') }));
+    // the color of the solid that is measured, as it is shown in the graph (1.8.4; draw3d sets it). 1.12.0
+    // (BG21, the author's decision): a square of the color and a short name; the long sentence about a pale
+    // gelatin in a skin of a deeper shade is gone
+    const legend = el('div', { class: 'vol-legend', hidden: true }, el('i'), el('span', { text: tr('The solid measured', '測っている立体') }));
     const hint = el('div', { class: 'form-hint', text: tr('The values are those of the graph that is drawn. Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.', 'いま描いているグラフの値です。平面（またはもう一方の曲面）より下の部分もプラスとして数えます。表面積は 2 つの曲面（または曲面と z = 0 の底面）の面積の和で、側面は含みません。') });
     const hintEnc = el('div', { class: 'form-hint', hidden: true, text: tr('The values are those of the graph that is drawn: the solid between the two surfaces (or between the surface and z = 0) over the part found, and its whole surface, the upper and the lower surface over that part.', 'いま描いているグラフの値です。見つけた部分での 2 つの曲面（または曲面と z = 0）の間の立体の体積と、その表面全体（その部分の上と下の曲面）の面積です。') });
-    const box = el('div', { class: 'area-box' },
+    // 1.12.0 (BG21): the tools for z = f(x, y) in one part, hidden while the graph is a solid made elsewhere
+    // (⟳ 3D, "View in 3D", "Solid from a profile"), whose values are shown instead (solidBox, showSolidValues)
+    const tools = el('div', { class: 'vol-tools' },
       el('div', { class: 'plot-range' }, s1, el('span', { text: tr('and', 'と') }), s2, el('span', { text: tr('', 'の間') })),
       el('div', { class: 'plot-range' }, el('span', { text: tr('Region', '範囲') }), el('span', { class: 'seg mini' }, bRect, bDisk, bEnc, bCus), rangeText, diskRow, encText),
       cusBox, signRow,
       legend, out, ins,
       hint, hintEnc,
-      buildShapes(SHAPES3D, (k, v) => drawSphere(v.r)),
-      tapButton({ class: 'btn geo-link', text: tr('More shapes: cylinder, cone, box… ›', 'ほかの図形（円柱・円錐・直方体など）›') }, () => openShapes()));
+      buildShapes(SHAPES3D(), (k, v) => shapeTo3d(k, v, true), { text: tr('Change the numbers', '数を変える'), fn: (k, v) => shapeTo3d(k, v, false) }));
+    const solidBox = el('div', { class: 'solid-vals', hidden: true, 'aria-live': 'polite' });
+    const box = el('div', { class: 'area-box' }, solidBox, tools);
     box.hidden = true;
-    const toggle = el('button', { class: 'btn area-toggle', text: tr('Volume and surface ▾', '体積・表面積 ▾') });
+    const toggle = el('button', { class: 'btn area-toggle vol-toggle', text: tr('Volume and surface ▾', '体積・表面積 ▾') });
     // opened: the volume and the surface area of the drawn surface are shown at once
-    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); if (!box.hidden) volumeSurfacesChanged(); else { Q3.volUI.seq++; Q3.volShade = null; Q3.liqBuf = null; requestDraw3d(); } });
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', () => { box.hidden = !box.hidden; toggle.classList.toggle('on', !box.hidden); toggle.setAttribute('aria-expanded', String(!box.hidden)); if (!box.hidden) volumeSurfacesChanged(); else { Q3.volUI.seq++; Q3.volShade = null; Q3.liqBuf = null; requestDraw3d(); } });
     s1.addEventListener('change', () => { if (s2.value === s1.value) s2.value = 'plane'; volumeAuto(); });
     s2.addEventListener('change', () => volumeAuto());
     R.addEventListener('change', () => volumeAuto());
     R.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); R.blur(); } });
     ins.addEventListener('click', () => { if (Q3.volExpr) useExample(Q3.volExpr); });
-    Q3.volUI = { s1, s2, out, ins, box, rangeText, encText, R, toggle, setRegion, legend, seq: 0, timer: 0, cus: C, signed: false, setSigned };
+    Q3.volUI = { s1, s2, out, ins, box, rangeText, encText, R, toggle, setRegion, legend, seq: 0, timer: 0, cus: C, signed: false, setSigned, tools, solidBox };
     setRegion('rect', true);
     setSigned(store.get('qalc.vol.signed', false) === true, true);
     setUnit(C.unit);
@@ -5618,15 +6764,20 @@
   // after the last change; a newer change or calculation stops the older one from writing its result
   function volumeAuto() {
     const U = Q3.volUI;
-    if (!U || U.box.hidden) return;
+    if (!U || U.box.hidden || solidNow()) return;
     U.seq++;
     clearTimeout(U.timer);
     U.timer = setTimeout(async () => {
       if (U.box.hidden) return;
-      const seq = U.seq;
-      await computeVolume(seq);
-      if (seq === U.seq && !U.box.hidden) await computeSurface(true, seq);
+      await volumeAndSurface(U.seq);
     }, 80);
+  }
+  // 1.12.0 (BG21): the surface area is not looked for when the volume could not be measured for a reason
+  // that holds for it too (the region: no real values in part of a disk), so the reason is said once
+  async function volumeAndSurface(seq) {
+    const U = Q3.volUI;
+    const v = await computeVolume(seq);
+    if (seq === U.seq && !U.box.hidden && !(v && v.reason)) await computeSurface(true, seq, v);
   }
   // a sphere of radius r: the upper and the lower half over the disk of radius r, round (the same
   // scale on all axes), with its volume and surface area
@@ -5637,8 +6788,8 @@
     const r2 = (await symText(`(${r})^2`)) || `(${r})^2`;
     const top = `√(${r2} − x^2 − y^2)`;
     const w = n * 1.1;
-    Q3.ta.value = top + '\n−' + top;
-    Q3.inputs.forEach((e, i) => { e.value = r6(i % 2 ? w : -w); });
+    Q3.ta.value = toDisplay(top + '\n−' + top);
+    Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(r6(i % 2 ? w : -w))); });
     if (Q3.resEl && Number(Q3.resEl.value) < 61) Q3.resEl.value = '61';
     Q3.equalOnce = true; // round for this drawing; the 1:1 setting itself stays as it was
     if (Q3.samples) Q3.samples.clearChoice(); // (the sphere is not the sample that was marked, 1.8.2)
@@ -5650,9 +6801,7 @@
       U.s1.value = '0'; U.s2.value = '1';
       U.setRegion('disk', true); U.R.value = r;
       clearTimeout(U.timer);
-      const seq = ++U.seq;
-      await computeVolume(seq);
-      if (seq === U.seq) await computeSurface(true, seq);
+      await volumeAndSurface(++U.seq);
     };
     Q3.go.click();
   }
@@ -5681,14 +6830,61 @@
     }
     requestDraw3d();
   }
+  // ---- a solid made elsewhere (1.12.0, BG21)
+  // The 3D view of a solid of revolution (⟳ 3D and "View in 3D" of "Make a solid", "Solid from a profile")
+  // or of a solid with cross sections is drawn with formulas that have no real value outside the solid
+  // (√(min(0, …))), and the tools for z = f(x, y) cannot measure it over a rectangle or a disk: on the
+  // author's phone, "Could not calculate the volume" and "… the surface area" on the rectangle, and on the
+  // disk a message about missing real values twice, which sent one to the rectangle. Q3.solid (set by
+  // openPlot3dWith) holds the values found where the solid was made: "Volume and surface" shows them, and
+  // the tools come back only when other formulas are drawn. (exprs: the formulas as first read; fresh until then)
+  function solidNow() {
+    const so = Q3.solid;
+    // (D6: a solid of "Shapes" has no formulas: its values stay while it is shown)
+    if (so && so.model) { if (!Q3.model) Q3.solid = null; return Q3.solid; }
+    if (so && !so.fresh && (!Q3.exprs || so.exprs !== Q3.exprs.join('\n'))) Q3.solid = null;
+    return Q3.solid;
+  }
+  function showSolidValues() {
+    const U = Q3.volUI, so = solidNow();
+    if (!U) return;
+    U.tools.hidden = !!so; U.solidBox.hidden = !so;
+    if (!so) return;
+    clearVolume(); Q3.liqBuf = null; requestDraw3d(); // (the ordinary shading: not the measured solid)
+    U.solidBox.textContent = '';
+    U.solidBox.append(el('div', { class: 'solid-title', text: so.title }));
+    for (const v of so.values()) {
+      const val = el('span', { class: 'geo-val' });
+      if (v.result) showResult(val, valueShown(v.result)); else val.textContent = v.text || '…';
+      const node = tapButton({ class: 'geo-row' }, () => { if (v.expr) resultSheet(v.name, v.expr, v.result ? valueShown(v.result) : v.text); });
+      node.append(el('span', { class: 'geo-name' }, v.name, v.small ? el('small', { text: v.small }) : ''), val);
+      U.solidBox.append(node);
+    }
+    U.solidBox.append(el('div', { class: 'form-hint', text: so.hint }));
+  }
+  // a value of that solid found later (the surface areas come after the volume): shown while it is the solid
+  function solidRefresh(src) {
+    const U = Q3.volUI;
+    if (U && !U.box.hidden && Q3.solid && Q3.solid.src === src) showSolidValues();
+  }
+  // "Volume and surface" closed (a solid made elsewhere opens with it closed: its state is not the graph's before)
+  function closeVolumeBox() {
+    const U = Q3.volUI;
+    if (!U) return;
+    U.box.hidden = true; U.toggle.classList.remove('on'); U.toggle.setAttribute('aria-expanded', 'false');
+    clearVolume(); Q3.liqBuf = null;
+  }
   // the lists of surfaces follow the graph; quiet: without calculating (the caller does)
   function volumeSurfacesChanged(quiet) {
     const U = Q3.volUI;
     if (!U) return;
+    // (1.12.0, BG21: the values of a solid made elsewhere; the tools again for other formulas)
+    if (solidNow() || U.tools.hidden) showSolidValues();
+    if (Q3.solid) return;
     const k1 = U.s1.value, k2 = U.s2.value, D = Q3.data;
     U.s1.textContent = ''; U.s2.textContent = '';
     const series = D ? D.series : [];
-    series.forEach((s, i) => { U.s1.append(el('option', { value: String(i), text: clip(s.expr, 30) })); U.s2.append(el('option', { value: String(i), text: clip(s.expr, 30) })); });
+    series.forEach((s, i) => { U.s1.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) })); U.s2.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) })); });
     U.s2.prepend(el('option', { value: 'plane', text: tr('the plane z = 0', '平面 z = 0') }));
     const same = U.count === series.length;
     U.count = series.length;
@@ -5759,7 +6955,9 @@
     const ringsText = (rings) => rings.map((p) => (p.lo === 0 ? 'r ≤ ' + p.b : p.a + ' ≤ r ≤ ' + p.b)).join(tr(' and ', '、'));
     const fit = (rings) => ({ rings, note: (one ? trf('Only where the surface has real values: {0} (r = √(x² + y²))', '曲面に実数の値がある {0} の部分だけで計算しました（r = √(x² + y²)）', ringsText(rings))
       : trf('Only where both surfaces have real values: {0} (r = √(x² + y²))', '2 つの曲面に実数の値がある {0} の部分だけで計算しました（r = √(x² + y²)）', ringsText(rings))) });
-    const notRound = () => (S.disk ? { error: tr('The surfaces have no real values in part of this disk: choose a smaller radius R, or the rectangle', '曲面に実数の値がない部分がこの円の中にあります。半径 R を小さくするか、長方形を選んでください') } : { mask: true });
+    // (1.12.0, BG21: the volume and the surface area both, said once, and the way out offered by computeVolume:
+    // the enclosed part, or a smaller disk; until then it sent one to the rectangle, which may not measure them either)
+    const notRound = () => (S.disk ? { error: tr('The surfaces have no real values in part of this disk, so the volume and the surface area cannot be measured over it.', '曲面に実数の値がない部分がこの円の中にあるので、この円では体積と表面積を測れません。'), offer: true } : { mask: true });
     // 16 rays: r from 0 to the edge of the disk or to the farthest corner of the rectangle
     const K = 16, exprs = [];
     for (let k = 0; k < K; k++) {
@@ -5846,7 +7044,7 @@
     return { expr: ix, val: bestValue(ex, n.num, regionDigits(S, n)), missing: n.missing };
   }
   // a value shown before the exact one has been looked for: "about 39.939589 (checking…)"
-  const aboutValue = (name, val) => name + tr(' about ', ' 約 ') + val.text.replace(/^≈ /, '') + tr(' (checking for an exact value…)', '（厳密な値を確かめています…）');
+  const aboutValue = (name, val) => name + tr(' about ', ' 約 ') + valueShown(val.text.replace(/^≈ /, '')) + tr(' (checking for an exact value…)', '（厳密な値を確かめています…）');
   // seq: the number of this calculation (a button press takes a new one); a result is written only
   // while no newer calculation has started
   async function computeVolume(seq) {
@@ -5862,23 +7060,40 @@
     U.ins.hidden = true;
     S.real = await realRegion(S);
     if (seq !== U.seq) return;
-    if (S.real && S.real.error) { U.out.textContent = S.real.error; return; }
+    if (S.real && S.real.error) {
+      U.out.textContent = S.real.error;
+      if (S.real.offer) await encOffer(S, seq, tr('Choose a smaller radius R.', '半径 R を小さくしてください。'));
+      return { reason: true }; // (the region: the surface area is not looked for, BG21)
+    }
     const d = g ? `(${f.expr}) − (${g.expr})` : f.expr;
     // 1.11.0: or the integral, where the parts below count as negative
     const signed = U.signed;
     const r = await regionIntegral(S, signed ? d : `abs(${d})`, signed ? null : d, (v) => { if (v && seq === U.seq) U.out.textContent = aboutValue(signed ? tr('Integral', '積分の値') : tr('Volume', '体積'), v); });
     if (seq !== U.seq) return;
-    if (!r.val) { U.out.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
+    if (!r.val) { U.out.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return { fail: true, signed }; }
     U.out.textContent = '';
-    showResult(U.out, (signed ? tr('Integral ', '積分の値 ') : tr('Volume ', '体積 ')) + shownValue(r.val));
+    showResult(U.out, (signed ? tr('Integral ', '積分の値 ') : tr('Volume ', '体積 ')) + valueShown(shownValue(r.val)));
     if (S.real && S.real.note) U.out.append(el('div', { class: 'form-hint', text: S.real.note }));
     if (r.missing) U.out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', r.missing) }));
     Q3.volExpr = r.expr;
     U.ins.hidden = false;
+    return { ok: true };
+  }
+  // 1.12.0 (BG21): where the surfaces have no real values in part of the region, the enclosed part, which
+  // counts only the points where they are real, is offered with one button when it is found there (not
+  // the rectangle or the disk, which cannot measure such surfaces); else the other way out (other)
+  async function encOffer(S, seq, other, box) {
+    const U = S.U, E = await encRegion(S);
+    if (seq !== U.seq) return;
+    box = box || U.out;
+    if (E && !E.error && E.parts && E.parts.length) {
+      box.append(el('div', { class: 'form-hint vol-offer' }, el('span', { text: tr('"Enclosed" measures only where the surfaces have real values. ', '「囲まれた部分」なら、実数の値がある部分だけで測れます。') }),
+        tapButton({ class: 'btn vol-out-btn', text: tr('Measure the enclosed part', '囲まれた部分で測る') }, () => U.setRegion('enc'))));
+    } else if (other) box.append(el('div', { class: 'form-hint', text: other }));
   }
   // the area of the surfaces: ∬ √(1 + f_x² + f_y²), for each surface (the floor z = 0: the area of the region)
   // append: below the volume that is shown (else in its place)
-  async function computeSurface(append, seq) {
+  async function computeSurface(append, seq, prior) {
     if (Q3.volUI && (Q3.volUI.region === 'enc' || Q3.volUI.region === 'custom')) return; // (computeEnclosed and computeCustom give both)
     const S = volumeSetup();
     if (!S) return;
@@ -5887,7 +7102,12 @@
     const out = append ? el('div', { class: 'area-out' }) : U.out;
     if (append) U.out.append(out); else { U.out.textContent = ''; U.ins.hidden = true; }
     out.textContent = tr('Calculating the surface area…', '表面積を計算中…');
-    const fail = (text) => { if (seq === U.seq) out.textContent = text || tr('Could not calculate the surface area', '表面積を計算できませんでした'); };
+    // (1.12.0, BG21: when the volume could not be calculated either, one line says both)
+    const fail = (text) => {
+      if (seq !== U.seq) return;
+      if (!text && append && prior && prior.fail && !prior.signed) { U.out.textContent = tr('Could not calculate the volume or the surface area', '体積と表面積を計算できませんでした'); return; }
+      out.textContent = text || tr('Could not calculate the surface area', '表面積を計算できませんでした');
+    };
     const parts = [], names = [], items = [];
     let missing = 0;
     S.real = await realRegion(S);
@@ -5897,9 +7117,11 @@
     const rings = S.real && S.real.rings, mask = S.real && S.real.mask;
     // a surface usually stands upright where its real values end (√(1 − x²) at x = ±1), and the points
     // of a grid cannot follow that: √(1 − x²) on [−2, 2]² gave 19 for 4π + 8 ≈ 20.57. Not measured.
+    // (1.12.0, BG21: the enclosed part offered with one button when it is found; else a rectangle inside them)
     if (mask) {
-      fail(tr('The surface area cannot be measured here: the surfaces end inside the rectangle, where their real values end. Choose a rectangle inside them (or the disk, when they are round)',
-        '表面積はここでは測れません。曲面が長方形の中で終わっています（実数の値がなくなる所）。曲面の内側の長方形（丸い形なら円）を選んでください'));
+      fail(tr('The surface area cannot be measured over this rectangle: the surfaces end inside it, where their real values end.',
+        '表面積はこの長方形では測れません。曲面が長方形の中で終わっています（実数の値がなくなる所）。'));
+      await encOffer(S, seq, tr('Choose a rectangle inside the surfaces.', '曲面の内側の長方形を選んでください。'), out);
       return;
     }
     const floor = g ? null : rings ? await exactIntegral(rings.map((p) => `π × ((${p.b})^2 − (${p.a})^2)`).join(' + '), 3000)
@@ -5930,7 +7152,7 @@
     const total = await sumValues(parts);
     if (seq !== U.seq) return;
     out.textContent = '';
-    showResult(out, tr('Surface area ', '表面積 ') + shownValue(total));
+    showResult(out, tr('Surface area ', '表面積 ') + valueShown(shownValue(total)));
     out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
     if (S.real && S.real.note && !append) out.append(el('div', { class: 'form-hint', text: S.real.note }));
     if (missing) out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', missing) }));
@@ -6173,7 +7395,11 @@
       n = await tsAnnulus(Fs, radii.length === 1 ? '0' : radii[0].text, radii[radii.length - 1].text);
     } else if (shape.rect) {
       const [x0, x1, y0, y1] = shape.rect.sides;
-      n = await simpsonRect(F, x0.text, x1.text, y0.text, y1.text, null, true);
+      // (1.12.0, BG21: the 2D tanh-sinh rule of "Custom", which copes with a surface that stands upright at a
+      // side where its real values end; Simpson's rule gave about 12 for 4π for √(1 − x²) over −1 ≤ x ≤ 1,
+      // −2 ≤ y ≤ 2, now that the enclosed part is offered where the surfaces have no real values in part of a region)
+      n = await tsGrid(pieceGrid({ t: 'rect', x0: x0.text, x1: x1.text, y0: y0.text, y1: y1.text }, F));
+      if (!n) n = await simpsonRect(F, x0.text, x1.text, y0.text, y1.text, null, true);
     } else n = encNumeric(G, lab, id, d, Fgrid);
     const expr = encExpr(shape, F);
     if (!n || !isFinite(n.v)) return { val: null, expr };
@@ -6250,7 +7476,7 @@
     const total = await sumValues(vals);
     if (seq !== U.seq) return;
     vol.textContent = '';
-    showResult(vol, tr('Volume ', '体積 ') + shownValue(total));
+    showResult(vol, tr('Volume ', '体積 ') + valueShown(shownValue(total)));
     if (many) vol.append(el('div', { class: 'form-hint', text: vals.map((v, m) => trf('Part {0}', '部分 {0}', m + 1) + tr(': ', '：') + shownValue(v).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
     Q3.volExpr = exprs.join(' + ');
     U.ins.hidden = false;
@@ -6288,7 +7514,7 @@
     const all = await sumValues(sums);
     if (seq !== U.seq) return;
     surf.textContent = '';
-    showResult(surf, tr('Surface area ', '表面積 ') + shownValue(all));
+    showResult(surf, tr('Surface area ', '表面積 ') + valueShown(shownValue(all)));
     surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
   }
   // --------------------------------------- regions given by formulas (3D graph, 1.11.0)
@@ -6677,7 +7903,7 @@
     }
     if (!val) { vol.textContent = signed ? tr('Could not calculate the integral', '積分の値を計算できませんでした') : tr('Could not calculate the volume', '体積を計算できませんでした'); return; }
     vol.textContent = '';
-    showResult(vol, name + shownValue(val));
+    showResult(vol, name + valueShown(shownValue(val)));
     if (expr) { Q3.volExpr = expr; U.ins.hidden = false; }
     // the surface area of the surfaces over the region (the floor z = 0: the area of the region)
     surf.textContent = tr('Calculating the surface area…', '表面積を計算中…');
@@ -6700,7 +7926,7 @@
     const all = await sumValues(sums);
     if (stale()) return;
     surf.textContent = '';
-    showResult(surf, tr('Surface area ', '表面積 ') + shownValue(all));
+    showResult(surf, tr('Surface area ', '表面積 ') + valueShown(shownValue(all)));
     surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + shownValue(p).replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
   }
   // whether "Enclosed" is the first choice for the surfaces that are chosen: two surfaces that cross
@@ -6710,14 +7936,18 @@
   const encFits = (S) => !!S.g && signChanges(S);
 
   // the functions of a graph: one in each line; a line "sin(x), cos(x)" is two (a "," or ";" outside
-  // parentheses). Returns the first `max` of them; .more is how many were left out.
+  // parentheses). Returns the first `max` of them; .more is how many were left out. 1.12.0 (BG14): with
+  // a decimal comma, a "," that is a decimal sign (as toInternal reads it: "0,5x", ",5") does not split
+  // the line; until the fix "0,5x^2" was drawn as the two functions 0 and 5x^2.
   function plotExprs(text, max) {
     const all = [];
     for (const line of text.split('\n')) {
       let d = 0, cur = '';
-      for (const c of line) {
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
         if ('([{'.indexOf(c) >= 0) d++; else if (')]}'.indexOf(c) >= 0) d--;
-        if ((c === ',' || c === ';') && d <= 0) { all.push(cur); cur = ''; } else cur += c;
+        const dec = c === ',' && commaMode && isDigit(line[i + 1] || '') && (isDigit(line[i - 1] || '') || !/[\p{L}\p{N}_)\]]/u.test(line[i - 1] || ''));
+        if ((c === ',' || c === ';') && d <= 0 && !dec) { all.push(cur); cur = ''; } else cur += c;
       }
       all.push(cur);
     }
@@ -6735,8 +7965,8 @@
       JA ? empty.map((e) => '「' + clip(e, 18) + '」').join('、') : empty.map((e) => '"' + clip(e, 18) + '"').join(', '), vars));
     // (a letter that has a value of its own is no longer the variable of the tools below the graph)
     const dv = (three ? ['x', 'y'] : ['x']).find((l) => definedVars.has(l));
-    if (dv) notes.push(trf('{0} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: User-defined variables and functions)',
-      '{0} に値が定義されています（ユーザー定義の変数）。下の微分・面積などの計算は、{0} を削除するまで正しく出ないことがあります（メニュー「ユーザー定義の変数・関数」）', dv));
+    if (dv) notes.push(trf('{0} has a value of its own (a user variable): the derivative, area and other tools below may be wrong until it is deleted (menu: Lists → My own)',
+      '{0} に値が定義されています（ユーザー定義の変数）。下の微分・面積などの計算は、{0} を削除するまで正しく出ないことがあります（メニュー「一覧」→「自分の定義」）', dv));
     return notes.join(' ');
   }
 
@@ -6920,8 +8150,8 @@
     openPlotWith(sampleExprs(d), { range: d.r, equal: !!d.eq, sample: true });
   }
   function drawSample3d(d) {
-    Q3.ta.value = sampleExprs(d).join('\n');
-    Q3.inputs.forEach((e, i) => { e.value = d.r[i]; });
+    Q3.ta.value = toDisplay(sampleExprs(d).join('\n'));
+    Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(d.r[i])); });
     if (Q3.resEl) Q3.resEl.value = d.res || '41';
     Q3.points = null; Q3.pending = null;
     Q3.equalOnce = !!d.eq; // round for this drawing; the 1:1 setting itself stays as it was
@@ -6964,7 +8194,9 @@
       el('button', { text: '+', 'aria-label': tr('Zoom in', '拡大'), onclick: () => zoom3d(1.25) }),
       el('button', { text: '−', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom3d(0.8) }),
       el('button', { text: '⟲', 'aria-label': tr('Reset the view', '向きと大きさを戻す'), onclick: () => { Object.assign(Q3, VIEW3D); clearMark3d(); draw3d(); } }),
-      Q3.eqBtn = el('button', { class: 'eq', text: '1:1', 'aria-label': tr('The same scale on the x, y and z axes', 'x・y・z の目盛りの間隔をそろえる'), onclick: () => { setEqual3d(!Q3.equalNow); clearMark3d(); draw3d(); } }));
+      Q3.eqBtn = el('button', { class: 'eq', text: '1:1', 'aria-label': tr('The same scale on the x, y and z axes', 'x・y・z の目盛りの間隔をそろえる'), onclick: () => { setEqual3d(!Q3.equalNow); clearMark3d(); draw3d(); } }),
+      // 1.12.0 (D4): a picture or a moving picture of the graph to the share sheet
+      el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share the graph', 'グラフを共有'), onclick: () => shareGraph3d() }));
     // (the choice made with 1:1 for the functions it was made for; a value saved before 1.9.3 for all
     // graphs, true or false, counts as no choice)
     const eq = store.get('qalc.plot3d.equal', 'auto');
@@ -6972,19 +8204,50 @@
     const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
     const legend = el('div', { class: 'legend' });
     const msg = el('div', { class: 'form-hint' });
-    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res });
+    // 1.12.0 (B2): for a solid of revolution, how far it is turned (0–360°; 180° is the solid cut in
+    // half along its axis) and ▶ to watch it turn again
+    const angle = el('input', { type: 'range', min: '0', max: '360', step: '5', value: '360', 'aria-label': tr('Angle turned (degrees)', '回した角度（度）') });
+    const angleVal = el('span', { class: 'rev-angle-v', text: '360°' });
+    const play = tapButton({ class: 'btn', 'aria-label': tr('Turn it again from 0°', '0° からもう一度回す'), text: '▶' }, () => { if (Q3.revInfo) startGrow(Q3.revInfo, true); });
+    const half = tapButton({ class: 'btn', text: tr('Cut in half', '半分に切る') }, () => setAngle3d(180));
+    angle.addEventListener('input', () => setAngle3d(Number(angle.value)));
+    const angleRow = el('div', { class: 'plot-range rev-angle', hidden: true }, el('span', { text: tr('Angle', '角度') }), angle, angleVal, play, half);
+    // 1.12.0 (BG20): a solid made in the 2D graph ("⟳ 3D", "View in 3D"): its volume, large, and the way back
+    const backVol = el('div', { class: 'rev3d-vol', 'aria-live': 'polite' });
+    const backBtn = tapButton({ class: 'btn rev3d-back-btn', text: tr('← Back to 2D', '← 2D に戻る') }, () => {
+      // (D6: a solid of "Shapes": back to the tool)
+      if (Q3.from2d && Q3.from2d.onBack) { Q3.from2d.onBack(); return; }
+      if (!P.setMode) return;
+      P.setMode('2d');
+      const U = P.areaUI;
+      if (U && U.rev && !U.rev.box.hidden) revHint();
+    });
+    const backRow = el('div', { class: 'rev3d-back', hidden: true }, backBtn, backVol);
+    // 1.12.0 (D6): the height of the liquid of a tank of "Shapes" (also for the keyboard and a screen reader;
+    // the level can be dragged in the graph too)
+    const levelRange = el('input', { type: 'range', min: '0', max: '100', step: '1', value: '0', 'aria-label': tr('Height of the liquid', '液面の高さ') });
+    const levelVal = el('span', { class: 'rev-angle-v' });
+    levelRange.addEventListener('input', () => { const T = Q3.model && Q3.model.tank; if (T) setLevel3d(Number(levelRange.value) * levelStep(T), false); });
+    levelRange.addEventListener('change', () => { const T = Q3.model && Q3.model.tank; if (T) setLevel3d(Number(levelRange.value) * levelStep(T), true); });
+    const levelRow = el('div', { class: 'plot-range rev-angle tank-level', hidden: true }, el('span', { text: tr('Level', '液面') }), levelRange, levelVal);
+    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow, backRow, backVol, backBtn, levelRow, levelRange, levelVal });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
       Q3.res = Number(res.value) || 41;
+      // (1.12.0, BG21: the formulas of a solid made elsewhere, as read the first time; others drawn later end it)
+      if (Q3.solid && Q3.solid.fresh) { Q3.solid.fresh = false; Q3.solid.exprs = Q3.exprs.join('\n'); }
     };
+    Q3.read = read;
     go.addEventListener('click', () => {
+      endModel3d(false); // (a solid of "Shapes", D6: other formulas are drawn now)
       if (!Q3.keep) {
         Q3.points = null; Q3.pending = null; // they belong to the graph they were made for
         // the round shape of a sample or a sphere (1:1) and the marked sample stay while the same
         // surfaces are drawn again with another grid or range; other surfaces drop them (1.8.3)
         if (plotExprs(ta.value, 4).join('\n') !== Q3.exprs.join('\n')) { Q3.equalOnce = false; if (Q3.samples) Q3.samples.clearChoice(); }
       }
+      if (!Q3.keep) { Q3.revInfo = null; Q3.grow = null; Q3.rimSpec = null; Q3.from2d = null; showBack3d(); if (Q3.angleRow) Q3.angleRow.hidden = true; } // (another graph: not the solid of revolution)
       Q3.keep = false;
       store.set('qalc.plot3d.exprs', ta.value); store.set('qalc.plot3d.res', res.value);
       store.set('qalc.plot3d.xmin', xmin.value); store.set('qalc.plot3d.xmax', xmax.value);
@@ -6995,19 +8258,21 @@
     });
     setup3dGestures(wrap);
     Q3.start = () => {
-      if (Q3.started) { draw3d(); return; }
+      // (D6: after a solid of "Shapes", the formulas of the form are drawn again)
+      if (Q3.started) { if (!Q3.data && store.get('qalc.plot3d.ok', true)) { read(); compute3d(); } else draw3d(); return; }
       Q3.started = true;
       read();
       if (store.get('qalc.plot3d.ok', true)) setTimeout(compute3d, 260);
       else msg.textContent = tr('Press "Draw" to draw the graph', '「描画」を押すとグラフを描きます');
     };
+    Q3.partialEl = buildPartial3d();
     return el('div', { class: 'plot-mode' },
-      el('div', { class: 'plot-form' }, ta,
+      Q3.form = el('div', { class: 'plot-form' }, ta,
         el('div', { class: 'ranges3d' },
           el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax),
           el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr(' to ', ' 〜 ').trim() }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
-      wrap, legend, msg, el('div', { class: 'tools' }, buildPartial3d(), buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
+      backRow, wrap, angleRow, levelRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
@@ -7025,29 +8290,404 @@
   // The 3D graph of surfaces and points from elsewhere (a matrix: planes of a linear system, rows as
   // points). opts: points [{x, y, z, label}], range [x0, x1, y0, y1]. 3D graphs are a QCalc Pro feature.
   function openPlot3dWith(exprs, opts) {
-    if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です')); return; }
+    if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
     opts = opts || {};
+    endModel3d(false); // (D6)
     if (Q3.samples) Q3.samples.clearChoice(); // (another graph than a sample, 1.8.2)
     const list = exprs.filter(Boolean).slice(0, 4);
-    store.set('qalc.plot3d.exprs', list.join('\n'));
-    if (opts.range) ['xmin', 'xmax', 'ymin', 'ymax'].forEach((k, i) => store.set('qalc.plot3d.' + k, String(opts.range[i])));
+    store.set('qalc.plot3d.exprs', toDisplay(list.join('\n')));
+    if (opts.range) ['xmin', 'xmax', 'ymin', 'ymax'].forEach((k, i) => store.set('qalc.plot3d.' + k, toDisplay(String(opts.range[i]))));
     store.set('qalc.plot.mode', '3d');
     store.set('qalc.plot3d.ok', true);
     Q3.points = opts.points || null;
     Q3.equalOnce = !!opts.equal;
+    Q3.growNext = opts.grow || null;
+    // (the edges of a solid of revolution, from its shape: specRims, 1.12.0 BG09)
+    Q3.rimSpec = opts.rims ? Object.assign({ exprs: list.join('\n') }, opts.rims) : null;
+    Q3.revInfo = opts.grow || null; // (the angle row of B2)
+    if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
+    // (a solid made in the 2D graph, BG20: its volume large above the graph, and "← Back to 2D")
+    Q3.from2d = opts.back || null;
+    showBack3d();
+    // (1.12.0, BG21: the values of a solid made elsewhere for "Volume and surface", which opens closed)
+    Q3.solid = opts.solid ? Object.assign({ fresh: true }, opts.solid) : null;
+    if (opts.solid) closeVolumeBox();
     Q3.pending = null;
     // (1.11.0: a finer grid when asked for, as for a solid of revolution with its round rims)
     if (opts.res && (Number(store.get('qalc.plot3d.res', '41')) || 41) < opts.res) store.set('qalc.plot3d.res', String(opts.res));
     if (opts.res && Q3.resEl && Number(Q3.resEl.value) < opts.res) Q3.resEl.value = String(opts.res);
     const built = !!panels.plot;
     openPlot();
+    showBack3d();
     if (built && Q3.ta) {
-      Q3.ta.value = list.join('\n');
-      if (opts.range) Q3.inputs.forEach((e, i) => { e.value = String(opts.range[i]); });
+      Q3.ta.value = toDisplay(list.join('\n'));
+      if (opts.range) Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(opts.range[i])); });
       P.setMode('3d');
       Q3.keep = true;
       Q3.go.click();
     }
+  }
+  // the row above the 3D graph for a solid made in the 2D graph (BG20)
+  // (D6: a solid of "Shapes": its values as the tool shows them, a line each, and "← Back to the shape")
+  function showBack3d() {
+    if (!Q3.backRow) return;
+    const F = Q3.from2d;
+    Q3.backRow.hidden = !F;
+    if (Q3.backBtn) Q3.backBtn.textContent = F && F.back ? F.back : tr('← Back to 2D', '← 2D に戻る');
+    Q3.backVol.textContent = '';
+    if (F && F.lines) { for (const t of F.lines()) if (t) Q3.backVol.append(el('div', { text: t })); }
+    else Q3.backVol.textContent = F && F.vol ? tr('Volume ', '体積 ') + F.vol : '';
+  }
+  // ---- a solid or a tank of "Shapes" in the 3D graph (1.12.0, D6; QCalc Pro)
+  // link, from the shapes tool: model (shapeModel), title (the name of the shape), lines() (the values shown
+  // large above the graph, as the tool shows them: the volume and the surface area, or the amount of liquid
+  // and the capacity), rows() (the rows of the tool, for "Volume and surface", as with BG21), levelText()
+  // (a tank: the amount and how full at the level, the same numbers as in lines()), setLevel(h, final) (a tank:
+  // the height of the liquid into the tool). "← Back to the shape" closes the graph: the tool is under it,
+  // with the same shape and sizes.
+  function openSolid3d(link) {
+    if (!hasPro()) { proPrompt(tr('Turning the solid in 3D is a QCalc Pro feature', '3D で回して見るのは QCalc Pro の機能です'), '3d'); return; }
+    const Md = link.model;
+    Md.levelText = link.levelText;
+    if (Md.tank) { Md.tank.hShow = Md.tank.h; Md.scale = link.scale || null; }
+    if (Q3.samples) Q3.samples.clearChoice();
+    Q3.model = Md; Q3.link = link; Q3.fill = null;
+    Q3.points = null; Q3.pending = null; Q3.rimSpec = null; Q3.grow = null;
+    Q3.equalOnce = true;
+    Q3.revInfo = Md.grow === 'rev' ? 'mesh' : null;
+    if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
+    showAngle3d(360);
+    Q3.from2d = { lines: link.lines, back: tr('← Back to the shape', '← 図形に戻る'), onBack: () => closePanel() };
+    // (the values of the tool for "Volume and surface", which opens closed; they stay while no other
+    // formulas are drawn, BG21)
+    Q3.solid = { fresh: false, exprs: (Q3.exprs || []).join('\n'), src: link, model: true,
+      title: tr('Values from "Shapes": ', '「図形」の値：') + link.title,
+      hint: tr('The values found in "Shapes". Other formulas drawn here are measured as an ordinary 3D graph.', '「図形」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測ります。'),
+      values: link.rows };
+    closeVolumeBox();
+    Object.assign(Q3, VIEW3D);
+    clearMark3d();
+    Q3.data = null;
+    store.set('qalc.plot.mode', '3d');
+    const built = !!panels.plot;
+    Q3.opening3d = true;
+    try { openPlot(); } finally { Q3.opening3d = false; }
+    showBack3d(); showModel3d();
+    if (built && P.setMode) P.setMode('3d');
+    requestAnimationFrame(() => { if (Q3.model === Md) compute3d(); });
+  }
+  // the parts of the 3D view that belong to formulas (the form, the samples, partial derivatives) hidden while
+  // a model is shown, and the row of the level for a tank
+  function showModel3d() {
+    const Md = Q3.model;
+    if (Q3.form) Q3.form.hidden = !!Md;
+    if (Q3.samples) Q3.samples.hidden = !!Md;
+    if (Q3.partialEl) Q3.partialEl.hidden = !!Md;
+    if (Q3.levelRow) Q3.levelRow.hidden = !(Md && Md.tank);
+    syncLevelRow();
+  }
+  // a size written on a model ({ sym, val, unit } → "r = 15 cm"; D7: the digits of the 3D picture)
+  const labText = (o) => (!o ? '' : typeof o === 'string' ? o : o.sym + ' = ' + digPic(o.val, 'dim') + (o.unit ? ' ' + o.unit : ''));
+  // the slider of the level (for the keyboard and a screen reader): steps of about a hundredth of the tank's
+  // height, rounded (the same rounding as a drag)
+  function levelStep(T) { return Math.pow(10, Math.floor(Math.log10(T.top)) - 2); }
+  function syncLevelRow() {
+    const Md = Q3.model, T = Md && Md.tank, r = Q3.levelRange;
+    if (!T || !r) return;
+    const st = levelStep(T);
+    r.max = String(Math.round(T.top / st)); r.value = String(Math.round(T.h / st));
+    const lh = labText(Md.lab.h) || 'h = ' + digPic(T.h, 'dim'), txt = lh + (Md.levelText ? tr(', ', '、') + Md.levelText() : '');
+    r.setAttribute('aria-valuetext', txt);
+    Q3.levelVal.textContent = lh;
+  }
+  // the level of the liquid moved here (a drag, the slider): drawn at once, and into the tool (final: when
+  // the finger is lifted, or the slider let go)
+  function setLevel3d(h, final) {
+    const Md = Q3.model, T = Md && Md.tank;
+    if (!T) return;
+    const st = levelStep(T);
+    h = Math.max(0, Math.min(T.top, Math.round(h / st) * st));
+    if (h > T.top) h = T.top;
+    const was = T.h;
+    T.h = T.hShow = +h.toPrecision(12); Q3.fill = null;
+    if (Q3.link && Q3.link.setLevel && (was !== T.h || final)) Q3.link.setLevel(T.h, final);
+    syncLevelRow();
+    if (Q3.canvas) Q3.canvas.dataset.level = String(T.h);
+    requestDraw3d();
+  }
+  // the tool's values changed (the level, after the engine): the values above the graph, in "Volume and
+  // surface", and the amount at the level
+  function modelValuesChanged(link) {
+    if (!Q3.model || Q3.link !== link) return;
+    showBack3d(); solidRefresh(link); syncLevelRow(); requestDraw3d();
+  }
+  // the liquid rises to its level when the tank is first shown (not with "reduce motion")
+  function startFill(Md) {
+    const T = Md.tank;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { T.hShow = T.h; if (Q3.canvas) Q3.canvas.dataset.fill = 'still'; return; }
+    const F = Q3.fill = { t0: 0 };
+    T.hShow = 0;
+    const step = (now) => {
+      if (Q3.fill !== F || Q3.model !== Md) return;
+      if (!F.t0) F.t0 = now;
+      const f = Math.min(1, (now - F.t0) / 1400), e = 1 - Math.pow(1 - f, 3);
+      T.hShow = T.h * e;
+      if (Q3.canvas) Q3.canvas.dataset.fill = String(Math.round(f * 100));
+      if (f >= 1) { Q3.fill = null; T.hShow = T.h; }
+      draw3d();
+      if (Q3.fill === F) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  // the end of a model in the 3D graph (other formulas are drawn, or the graph is closed); redraw: draw the
+  // formulas of the form again at once
+  function endModel3d(redraw) {
+    if (!Q3.model) return false;
+    Q3.model = null; Q3.link = null; Q3.levelHit = null; Q3.fill = null;
+    if (Q3.solid && Q3.solid.model) Q3.solid = null;
+    Q3.from2d = null; Q3.revInfo = null; Q3.grow = null; Q3.equalOnce = false;
+    if (Q3.angleRow) Q3.angleRow.hidden = true;
+    Q3.data = null;
+    if (Q3.canvas) { delete Q3.canvas.dataset.model; delete Q3.canvas.dataset.level; delete Q3.canvas.dataset.fill; }
+    closeVolumeBox();
+    showBack3d(); showModel3d();
+    if (redraw && Q3.read) { Q3.read(); compute3d(); }
+    return true;
+  }
+  // is the point (clientX, clientY) near the level of the liquid (its box with the amount, its outline on the
+  // screen, or inside it)? Only a drag that starts there moves the level; the others turn the graph.
+  function nearLevel3d(cx, cy) {
+    const H = Q3.levelHit, c = Q3.canvas;
+    if (!H || !c || !Q3.model || !Q3.model.tank) return false;
+    const r = c.getBoundingClientRect(), x = cx - r.left, y = cy - r.top, b = H.box;
+    if (b && x >= b.x - 10 && x <= b.x + b.w + 10 && y >= b.y - 10 && y <= b.y + b.h + 10) return true;
+    const R = H.ring;
+    if (R.length < 3) return Math.abs(y - H.wallY) < 16;
+    let inside = false, best = Infinity;
+    for (let i = 0, j = R.length - 1; i < R.length; j = i++) {
+      const [xi, yi] = R[i], [xj, yj] = R[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+      const dx = xj - xi, dy = yj - yi, L2 = dx * dx + dy * dy, t = L2 ? Math.max(0, Math.min(1, ((x - xi) * dx + (y - yi) * dy) / L2)) : 0;
+      best = Math.min(best, Math.hypot(xi + t * dx - x, yi + t * dy - y));
+    }
+    return inside || best < 18;
+  }
+  // ---- the digits of the results of the tools (1.12.0, D7)
+  // How many digits the tools for shapes, tanks and solids (Shapes, Tanks, Solid from a profile, Make a solid)
+  // show after "≈": automatic (as the calculator shows its results; % with one decimal), or a number of
+  // decimal places or of significant digits (0 to 15: the page works with numbers of double precision), the
+  // same for every result or for each kind of quantity (volume, area, length, weight, %), and on its own for
+  // the numbers in the 3D picture (automatic: 3 significant digits, % with one decimal). The exact part of a
+  // result (11250π) stays as the engine gives it. Rounding half up, down or up; trailing zeros kept or not;
+  // tables saved as CSV with all the digits or as shown. Kept in the settings (S.digits), separate from the
+  // calculator's precision.
+  const DIG_KINDS = () => [['vol', tr('Volume, liquid', '体積・液量')], ['area', tr('Area', '面積')], ['len', tr('Length, height', '長さ・高さ')], ['mass', tr('Weight', '重さ')], ['pct', '%']];
+  const DIG_MAX = 15;
+  const DIG_DEF = () => ({ mode: 'auto', n: 2, per: false, kinds: {}, pic: { mode: 'auto', n: 3 }, round: 'half', zeros: true, csv: 'full' });
+  function digits() {
+    const d = S.digits, D = DIG_DEF();
+    if (!d || typeof d !== 'object') return D;
+    const ok = (m) => m === 'auto' || m === 'dec' || m === 'sig', num = (n, sig) => (Number.isInteger(n) && n >= (sig ? 1 : 0) && n <= DIG_MAX ? n : null);
+    const one = (o, def) => { o = o && typeof o === 'object' ? o : {}; const m = ok(o.mode) ? o.mode : def.mode; const n = num(o.n, m === 'sig'); return { mode: m, n: n === null ? (m === 'sig' ? Math.max(1, def.n) : def.n) : n }; };
+    const top = one(d, D), kinds = {};
+    for (const [k] of DIG_KINDS()) if (d.kinds && d.kinds[k]) kinds[k] = one(d.kinds[k], { mode: 'auto', n: 2 });
+    return Object.assign(D, top, { per: !!d.per, kinds, pic: one(d.pic, D.pic), round: ['half', 'down', 'up'].indexOf(d.round) >= 0 ? d.round : 'half', zeros: d.zeros !== false, csv: d.csv === 'shown' ? 'shown' : 'full' });
+  }
+  // the rule for a kind of result: null (as the engine shows it) or { mode: 'dec' | 'sig', n }
+  function digSpec(kind) {
+    const d = digits(), k = d.per && d.kinds[kind] ? d.kinds[kind] : d;
+    if (k.mode === 'dec' || k.mode === 'sig') return { mode: k.mode, n: k.n };
+    return kind === 'pct' ? { mode: 'dec', n: 1 } : null;
+  }
+  // the rule for a number in the 3D picture: what 'amount' (at the level), 'pct', 'scale' (the marks of the
+  // scale) or 'dim' (the sizes written on the solid); automatic: up to 3 significant digits (the amount with
+  // trailing zeros as set, 9.60; the marks and the sizes without them, 15 cm), % with one decimal
+  function digSpecPic(what) {
+    const p = digits().pic;
+    if (p.mode === 'dec' || p.mode === 'sig') return { mode: p.mode, n: p.n };
+    return what === 'pct' ? { mode: 'dec', n: 1 } : { mode: 'sig', n: 3, trim: what !== 'amount' };
+  }
+  // x rounded by a rule as plain digits ("35342.92", "-0.050"): from its 15 significant digits, as a whole
+  // number q times 10^sc, so that no binary fraction moves the rounding (2.675 to 2 places is 2.68)
+  function digRound(x, spec) {
+    if (!isFinite(x)) return String(x);
+    const d = digits(), how = d.round, zeros = d.zeros && !spec.trim;
+    const m = /^(\d)(?:\.(\d+))?e([+-]\d+)$/.exec(Math.abs(x).toExponential(14));
+    let q = BigInt(m[1] + (m[2] || '')), sc = Number(m[3]) - (m[2] || '').length;
+    while (q > 0n && q % 10n === 0n) { q /= 10n; sc++; }
+    if (q === 0n) sc = 0;
+    const len = (v) => (v === 0n ? 1 : v.toString().length);
+    // (dropping the last digits: rounded half up, down or up, away from zero)
+    const cut = (drop) => {
+      if (drop <= 0) return;
+      const p = 10n ** BigInt(drop), r = q % p;
+      q /= p; sc += drop;
+      if ((how === 'half' && r * 2n >= p) || (how === 'up' && r > 0n)) q += 1n;
+    };
+    if (spec.mode === 'dec') {
+      cut(-spec.n - sc);
+      if (zeros && sc > -spec.n) { q *= 10n ** BigInt(sc + spec.n); sc = -spec.n; }
+    } else {
+      cut(len(q) - spec.n);
+      if (len(q) > spec.n && q % 10n === 0n) { q /= 10n; sc++; }
+      if (zeros && len(q) < spec.n) { const k = spec.n - len(q); q *= 10n ** BigInt(k); sc -= k; }
+    }
+    let s = q.toString();
+    if (sc >= 0) s += '0'.repeat(q === 0n ? 0 : sc);
+    else { const f = -sc; s = s.padStart(f + 1, '0'); s = s.slice(0, s.length - f) + '.' + s.slice(s.length - f); }
+    if (!zeros && s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+    return (x < 0 && /[1-9]/.test(s) ? '-' : '') + s;
+  }
+  // the text of a rounded number: the decimal sign of the number format, groups of three digits when asked
+  function digText(x, spec, group) {
+    let s = digRound(x, spec);
+    const neg = s[0] === '-';
+    if (neg) s = s.slice(1);
+    let [i, f] = s.split('.');
+    if (group) i = i.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group);
+    return (neg ? '−' : '') + i + (f !== undefined ? NF.dec + f : '');
+  }
+  // a number of a tool worked out by the page: rounded for its kind, or as before (statNum with its digits)
+  function digNum(x, kind, auto) {
+    const sp = digSpec(kind);
+    return sp ? digText(x, sp, true) : statNum(x, auto);
+  }
+  // a number in the 3D picture
+  const digPic = (x, what) => digText(x, digSpecPic(what), true);
+  // the text of a result with the number after its last "≈" written anew (its unit stays)
+  function withApprox(shown, num) {
+    const s = String(shown || ''), i = s.lastIndexOf('≈');
+    if (i < 0) return s;
+    const tail = s.slice(i + 1), m = /^(\s*)([−-]?[\d    .,'’]*\d(?:\s*E[−+-]?\d+|\s*×\s*10\^[−+-]?\d+)?)/.exec(tail);
+    return m ? s.slice(0, i + 1) + m[1] + num + tail.slice(m[0].length) : s;
+  }
+  // the number of a result worked out again with 16 significant digits (for rounding it here), or NaN
+  async function digValue(expr) {
+    const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { approx: 'approx', precision: 16, grouping: false, base: 10, fraction: 'decimal', max_decimals: -1 }), timeout: 4000 });
+    if (!r.ok || !r.result || r.timeout) return NaN;
+    const t = r.result.split('≈').pop().replace(/^\s*=\s*/, '').trim().replace(/−/g, '-'), m = /^-?\d+(?:\.\d+)?(?:E[+-]?\d+)?/.exec(t);
+    return m ? Number(m[0].replace('E', 'e')) : NaN;
+  }
+  // a row of a tool after the engine (row.result, row.shown): its number after "≈" rounded for its kind (x: the
+  // number when the page has it, or expr to work it out); row.num keeps the number
+  async function digRow(row, kind, x, expr) {
+    const sp = digSpec(kind);
+    if (!sp || String(row.shown || '').indexOf('≈') < 0) return;
+    if (!isFinite(x)) x = await digValue(expr);
+    if (!isFinite(x)) return;
+    row.num = x;
+    row.shown = withApprox(row.shown, digText(x, sp, !!S.grouping));
+    row.result = withApprox(row.result, digRound(x, sp));
+  }
+  // the kind of a row of the shapes tool (its power of the length, or a %)
+  const geoKind = (def) => (def[5] === '%' || def[0] === tr('Full', '満杯に対して') ? 'pct' : def[3] === 3 ? 'vol' : def[3] === 2 ? 'area' : 'len');
+  // a number of a table saved as CSV: all its digits (15 significant, the decimal sign of the file), or as shown
+  const csvNum = (x) => (isFinite(x) ? String(+x.toPrecision(15)).replace('.', commaMode ? ',' : '.') : '');
+  // what to work out again when the digits change: the tools that are open (their run), and the 3D picture
+  const digRuns = new Set();
+  function digitsChanged() {
+    saveSettings();
+    for (const c of digUIs) c.sync();
+    for (const f of digRuns) { try { f(); } catch (e) { /* a tool closed meanwhile */ } }
+    if (Q3.model) { syncLevelRow(); requestDraw3d(); }
+  }
+  // The control of the digits: "Digits: auto ▾" with the usual choices (auto, 0 to 3 decimal places), and
+  // "Digits in detail ▾" with the rest. Every control shows the same settings.
+  const digUIs = new Set();
+  function digitsControl() {
+    const set = (f) => { const d = digits(); f(d); S.digits = d; digitsChanged(); };
+    const QUICK = [['auto', tr('Digits: auto', '桁：自動')], ['d0', tr('Digits: 0 decimal places', '桁：小数点以下 0 桁')], ['d1', tr('Digits: 1 decimal place', '桁：小数点以下 1 桁')], ['d2', tr('Digits: 2 decimal places', '桁：小数点以下 2 桁')], ['d3', tr('Digits: 3 decimal places', '桁：小数点以下 3 桁')]];
+    const sel = el('select', { class: 'dig-sel', 'aria-label': tr('Digits of the results', '結果の桁') });
+    for (const [v, t] of QUICK) sel.append(el('option', { value: v, text: t }));
+    const custom = el('option', { value: 'custom', text: tr('Digits: as set in detail', '桁：詳しく設定') });
+    sel.append(custom);
+    sel.addEventListener('change', () => { const v = sel.value; if (v === 'custom') return; set((d) => { d.per = false; if (v === 'auto') d.mode = 'auto'; else { d.mode = 'dec'; d.n = Number(v.slice(1)); } }); });
+    // a number of digits typed: only digits (no minus sign), at most 15 (at least 1 for significant digits)
+    const numIn = (label, get, put, sigOf) => {
+      const i = el('input', { class: 'dig-n', inputmode: 'numeric', maxlength: '2', 'aria-label': label, autocomplete: 'off' });
+      i.addEventListener('input', () => {
+        let t = i.value.replace(/[^0-9]/g, '');
+        if (t.length > 2) t = t.slice(0, 2);
+        let n = t === '' ? null : Number(t), clipped = false;
+        if (n !== null && n > DIG_MAX) { n = DIG_MAX; clipped = true; }
+        if (n !== null && n < 1 && sigOf()) { n = 1; clipped = true; }
+        if (n !== null) t = String(n);
+        if (i.value !== t) i.value = t;
+        warn.hidden = !clipped;
+        if (n !== null) set((d) => put(d, n));
+      });
+      i.addEventListener('blur', () => { i.value = String(get(digits())); });
+      const w = el('span', { class: 'dig-nw' }, i, el('span', { class: 'dig-unit', text: tr('digits', '桁') }));
+      w.input = i;
+      return w;
+    };
+    const warn = el('div', { class: 'form-hint dig-warn', role: 'status', hidden: true, text: tr('From 0 to 15 digits (1 to 15 significant digits).', '0〜15 桁です（有効数字は 1〜15 桁）。') });
+    // how: decimal places or significant digits, and how many (for every result)
+    const modeSeg = (get, put, withAuto) => {
+      const s = el('span', { class: 'seg mini', role: 'group' });
+      const items = (withAuto ? [['auto', tr('Auto', '自動')]] : []).concat([['dec', tr('Decimal places', '小数点以下の桁数')], ['sig', tr('Significant digits', '有効数字の桁数')]]);
+      const bs = items.map(([m, t]) => { const b = tapButton({ text: t }, () => set((d) => put(d, m))); b.dataset.m = m; return b; });
+      s.append(...bs);
+      s.sync = () => { const m = get(digits()); for (const b of bs) { b.classList.toggle('on', b.dataset.m === m); b.setAttribute('aria-pressed', String(b.dataset.m === m)); } };
+      return s;
+    };
+    const allMode = modeSeg((d) => d.mode, (d, m) => { d.mode = m; if (m === 'sig' && d.n < 1) d.n = 1; }, true);
+    allMode.setAttribute('aria-label', tr('How the digits are counted', '桁の決め方'));
+    const allN = numIn(tr('Number of digits', '桁数'), (d) => d.n, (d, n) => { d.n = n; if (d.mode === 'auto') d.mode = 'dec'; }, () => digits().mode === 'sig');
+    const rowOf = (label, ...kids) => el('div', { class: 'dig-row' }, el('span', { class: 'dig-lbl', text: label }), ...kids);
+    const note = el('div', { class: 'form-hint', text: tr('Up to 15 digits: the numbers are worked out with double precision. Exact values (11250π) stay; only the decimals after "≈" change.', '15 桁までです（中の計算が倍精度のため）。厳密な値（11250π など）はそのままで、変わるのは「≈」の後ろの小数だけです。') });
+    // each kind of quantity on its own
+    const perBox = el('input', { type: 'checkbox' });
+    perBox.addEventListener('change', () => set((d) => { d.per = perBox.checked; if (d.per) for (const [k] of DIG_KINDS()) if (!d.kinds[k]) d.kinds[k] = { mode: d.mode, n: d.n }; }));
+    const perList = el('div', { class: 'dig-kinds' });
+    const kindRows = DIG_KINDS().map(([k, label]) => {
+      const seg = modeSeg((d) => (d.kinds[k] || { mode: 'auto' }).mode, (d, m) => { const o = d.kinds[k] || { mode: 'auto', n: 2 }; o.mode = m; if (m === 'sig' && o.n < 1) o.n = 1; d.kinds[k] = o; }, true);
+      seg.setAttribute('aria-label', label);
+      const n = numIn(label + tr(': number of digits', '：桁数'), (d) => (d.kinds[k] || { n: 2 }).n, (d, v) => { const o = d.kinds[k] || { mode: 'dec', n: 2 }; o.n = v; if (o.mode === 'auto') o.mode = 'dec'; d.kinds[k] = o; }, () => ((digits().kinds[k] || {}).mode === 'sig'));
+      perList.append(rowOf(label, seg, n));
+      return { k, seg, n };
+    });
+    const same = tapButton({ class: 'btn', text: tr('The same for all', 'すべて同じにする') }, () => set((d) => { d.per = false; }));
+    perList.append(same);
+    // the 3D picture
+    const picSeg = modeSeg((d) => d.pic.mode, (d, m) => { d.pic.mode = m; if (m === 'sig' && d.pic.n < 1) d.pic.n = 1; }, true);
+    picSeg.setAttribute('aria-label', tr('Numbers in the 3D picture', '3D の絵の中の数'));
+    const picN = numIn(tr('Numbers in the 3D picture: number of digits', '3D の絵の中の数：桁数'), (d) => d.pic.n, (d, n) => { d.pic.n = n; if (d.pic.mode === 'auto') d.pic.mode = 'sig'; }, () => digits().pic.mode === 'sig');
+    const picNote = el('div', { class: 'form-hint', text: tr('Auto: 3 significant digits, % with 1 decimal place (the amount at the level, the scale, the sizes).', '自動：有効数字 3 桁、% は小数点以下 1 桁（液面のそばの量、目盛り、寸法）。') });
+    const choice = (label, opts, get, put) => {
+      const s = el('span', { class: 'seg mini', role: 'group', 'aria-label': label });
+      const bs = opts.map(([v, t]) => { const b = tapButton({ text: t }, () => set((d) => put(d, v))); b.dataset.v = v; return b; });
+      s.append(...bs);
+      s.sync = () => { const v = String(get(digits())); for (const b of bs) { b.classList.toggle('on', b.dataset.v === v); b.setAttribute('aria-pressed', String(b.dataset.v === v)); } };
+      return s;
+    };
+    const roundSeg = choice(tr('Rounding', '丸め方'), [['half', tr('Round half up', '四捨五入')], ['down', tr('Round down', '切り捨て')], ['up', tr('Round up', '切り上げ')]], (d) => d.round, (d, v) => { d.round = v; });
+    const zeroSeg = choice(tr('Trailing zeros', '末尾の 0'), [['true', decSign(tr('Keep (2.50)', '残す（2.50）'))], ['false', decSign(tr('Drop (2.5)', '残さない（2.5）'))]], (d) => d.zeros, (d, v) => { d.zeros = v === 'true'; });
+    const csvSeg = choice(tr('Tables saved as CSV', 'CSV で保存する表'), [['full', tr('All the digits', '全部の桁')], ['shown', tr('As shown', '表示どおり')]], (d) => d.csv, (d, v) => { d.csv = v; });
+    const reset = tapButton({ class: 'btn', text: tr('Back to the first settings', '最初の設定に戻す') }, () => { S.digits = DIG_DEF(); digitsChanged(); });
+    const body = el('div', { class: 'dig-body' },
+      rowOf(tr('Digits', '桁'), allMode, allN), warn, note,
+      el('label', { class: 'dig-row dig-per' }, perBox, el('span', { text: tr('Each kind of quantity on its own', '量の種類ごとに決める') })), perList,
+      rowOf(tr('In the 3D picture', '3D の絵の中'), picSeg, picN), picNote,
+      rowOf(tr('Rounding', '丸め方'), roundSeg), rowOf(tr('Trailing zeros', '末尾の 0'), zeroSeg), rowOf(tr('CSV files', 'CSV ファイル'), csvSeg), reset);
+    const more = el('details', { class: 'sec-more dig-more' }, el('summary', { text: tr('Digits in detail ▾', '桁を詳しく ▾') }), body);
+    const ui = {
+      sel, more,
+      sync() {
+        const d = digits(), q = d.per ? 'custom' : d.mode === 'auto' ? 'auto' : d.mode === 'dec' && d.n <= 3 ? 'd' + d.n : 'custom';
+        custom.hidden = q !== 'custom'; sel.value = q;
+        allMode.sync();
+        if (document.activeElement !== allN.input) allN.input.value = String(d.n);
+        allN.hidden = d.mode === 'auto';
+        perBox.checked = d.per; perList.hidden = !d.per;
+        for (const r of kindRows) { const o = d.kinds[r.k] || { mode: 'auto', n: d.n }; r.seg.sync(); if (document.activeElement !== r.n.input) r.n.input.value = String(o.n); r.n.hidden = o.mode === 'auto'; }
+        picSeg.sync(); if (document.activeElement !== picN.input) picN.input.value = String(d.pic.n); picN.hidden = d.pic.mode === 'auto';
+        roundSeg.sync(); zeroSeg.sync(); csvSeg.sync();
+      }
+    };
+    ui.sync();
+    digUIs.add(ui);
+    return ui;
   }
   // the box of the graph around points only (no surface)
   function points3dData() {
@@ -7058,6 +8698,25 @@
     return { xs: [x0, x1], ys: [y0, y1], nx: 2, ny: 2, series: [], z0, z1 };
   }
   async function compute3d() {
+    // (D6) a solid or a tank of "Shapes": drawn from its own triangles, no engine
+    if (Q3.model) {
+      const Md = Q3.model;
+      Q3.data = modelData(Md);
+      Q3.legend.textContent = '';
+      if (Md.tank) {
+        Q3.legend.append(el('span', { class: 'msw', style: '--c:' + rgbCss(Md.colors.liquid), text: tr('Liquid', '液体') }), el('span', { class: 'msw glass', text: tr('Container (clear)', '容器（透明）') }));
+      } else Q3.legend.append(el('span', { class: 'msw', style: '--c:' + rgbCss(Md.colors.solid), text: Q3.link ? Q3.link.title : '' }));
+      if (Md.k === 'prism') Q3.legend.append(el('span', { class: 'note', text: tr('(drawn with a square base of that area)', '（底面は、その面積の正方形で描いています）') }));
+      Q3.msg.textContent = '';
+      clearMark3d();
+      if (!Md.started) {
+        Md.started = true;
+        if (Md.grow) { startGrow('mesh'); if (Md.grow !== 'rev' && Q3.angleRow) Q3.angleRow.hidden = true; }
+        if (Md.tank) startFill(Md);
+      }
+      draw3d();
+      return;
+    }
     if (!Q3.exprs.length && Q3.points && Q3.points.length) {
       Q3.data = points3dData();
       Q3.legend.textContent = '';
@@ -7105,7 +8764,9 @@
     });
     for (const p of Q3.points || []) vals.push(p.z);
     const [z0, z1] = zRange3d(vals);
-    const data = { xs: r.x, ys: r.y, nx, ny, series, z0, z1 };
+    const data = { xs: r.x, ys: r.y, nx, ny, series, z0, z1, seq };
+    // (for the tests, 1.12.0 BG09: the most grid points at which two surfaces have the same value)
+    { const tz = (z1 - z0) * 1e-9 || 1e-12; let most = 0; for (let a = 0; a < series.length; a++) for (let b = a + 1; b < series.length; b++) { let n = 0; const za = series[a].z, zb = series[b].z; for (let k = 0; k < za.length; k++) if (za[k] === za[k] && Math.abs(za[k] - zb[k]) <= tz) n++; most = Math.max(most, n); } data.same = most; }
     solidColors(data);
     const err = (r.messages || []).find((m) => m.type === 'error');
     const note = err ? localMessage(err.text)
@@ -7118,7 +8779,9 @@
       shown = true;
       Q3.data = data;
       clearMark3d();
-      Q3.msg.textContent = note;
+      // (1.12.0, BG09: the solid turns into being once its edges are known; until then "Calculating…")
+      if (Q3.growNext && rimsReady()) { const ax = Q3.growNext; Q3.growNext = null; startGrow(ax); }
+      Q3.msg.textContent = Q3.growNext ? tr('Calculating…', '計算中…') : note;
       legend3d(data, vals.length > 0);
       if (Q3.volUI && !Q3.volUI.box.hidden) volumeSurfacesChanged();
       if (Q3.partUI && !Q3.partUI.box.hidden) partialSurfacesChanged();
@@ -7126,28 +8789,43 @@
       draw3d();
       store.set('qalc.plot3d.ok', true);
     };
-    // A surface with an edge (a sphere) is shown when its edge has been found (refineRims), and one
-    // that leaves the box when the places where it does are found (refineClips, 1.9.5), so that it
-    // does not appear torn first and whole a moment later. If that takes more than 2.5 seconds, the
-    // surface is shown as it is and drawn again afterwards.
-    const late = setTimeout(show, 2500);
-    const refined = await refineRims(series, r.x, r.y, seq);
-    if (seq !== Q3.seq) { clearTimeout(late); return; }
-    // (surfaces that close up into one solid are known when their edges are, 1.9.3)
-    data.groups = refined ? joinedSolid(series, r.x, r.y, z0, z1) : [];
-    solidColors(data);
-    // the range of z reaches the edges that were found (half a sphere alone: its rim at z = 0 lies
-    // below the lowest grid value, and was cut off; 1.9.3), unless that would widen it by more than half
-    if (refined) {
+    // The edges of the surfaces (1.12.0, BG09): known at once from the shape of a solid of revolution
+    // (specRims, nothing left to the engine), or first guessed for other surfaces (guessRims) and then
+    // found with the engine (refineRims), so that the first drawing has no saw teeth. A surface that
+    // leaves the box is shown when the places where it does are found (refineClips, 1.9.5), so that it
+    // does not appear torn first and whole a moment later; if that takes more than 2.5 seconds, it is
+    // shown as it is and drawn again afterwards. (Until 1.11.0 every surface with an edge waited for
+    // refineRims, up to 2.5 seconds, and was then shown with saw teeth, in two colors.)
+    const spec = Q3.rimSpec && Q3.rimSpec.exprs === Q3.exprs.join('\n') ? Q3.rimSpec : null;
+    let refined = !!spec && specRims(series, r.x, r.y, spec);
+    const guessed = refined ? null : guessRims(series, r.x, r.y);
+    function rimsReady() { return refined || !guessed || !guessed.length; }
+    const settle = () => {
+      // (surfaces that close up into one solid are known when their edges are, 1.9.3; those of a solid
+      // of revolution from its shape)
+      data.groups = spec && spec.groups ? spec.groups : joinedSolid(series, r.x, r.y, z0, z1);
+      solidColors(data);
+      // the range of z reaches the edges (half a sphere alone: its rim at z = 0 lies below the lowest
+      // grid value, and was cut off; 1.9.3), unless that would widen it by more than half
       let lo = data.z0, hi = data.z1;
       for (const s of series) for (const key in s.rim || {}) { const v = s.rim[key].z; if (v === v && v !== undefined) { if (v < lo) lo = v; if (v > hi) hi = v; } }
       if ((lo < data.z0 || hi > data.z1) && hi - lo <= 1.5 * (data.z1 - data.z0)) { data.z0 = lo; data.z1 = hi; }
-    }
+    };
+    settle();
+    const tolZ = (data.z1 - data.z0) * 4e-5, leaves = series.some((q) => q.z.some((v) => v === v && (v < data.z0 - tolZ || v > data.z1 + tolZ)));
+    if (!leaves) show();
+    const late = setTimeout(show, 2500);
+    if (!refined) refined = await refineRims(series, r.x, r.y, seq, guessed);
+    if (seq !== Q3.seq) { clearTimeout(late); return; }
+    if (!spec) settle();
     // where the surfaces leave the box at its top or bottom (1.9.5)
     const clipped = await refineClips(series, r.x, r.y, data.z0, data.z1, seq);
     clearTimeout(late);
     if (seq !== Q3.seq) return;
-    if (shown) { if (refined || clipped) { legend3d(data, vals.length > 0); draw3d(); } } else show();
+    if (shown) {
+      if (Q3.growNext && rimsReady()) { const ax = Q3.growNext; Q3.growNext = null; Q3.msg.textContent = note; startGrow(ax); }
+      if (refined || clipped) { legend3d(data, vals.length > 0); draw3d(); }
+    } else show();
     if (Q3.pending) { const run = Q3.pending; Q3.pending = null; run(); }
   }
   // The legend of the 3D graph: for one surface, or surfaces that all close up into one solid (1.9.3),
@@ -7158,7 +8836,7 @@
     Q3.legend.textContent = '';
     if (data.oneSolid && any) {
       const step = niceStep(data.z1 - data.z0, 4);
-      Q3.legend.append(el('span', { class: 'zbar' }, series.map((s) => s.expr).join(tr(', ', '、')) + tr('   z: ', '　z：') + fmt(data.z0, step / 10), el('i'), fmt(data.z1, step / 10)));
+      Q3.legend.append(el('span', { class: 'zbar' }, series.map((s) => toDisplay(s.expr)).join(tr(', ', '、')) + tr('   z: ', '　z：') + fmt(data.z0, step / 10), el('i'), fmt(data.z1, step / 10)));
       return;
     }
     const done = new Set();
@@ -7167,9 +8845,9 @@
       const g = (data.groups || []).find((m) => m.includes(i));
       if (g) {
         g.forEach((m) => done.add(m));
-        Q3.legend.append(el('span', { style: '--c:' + s.color, text: g.map((m) => series[m].expr).join(tr(', ', '、')) }));
+        Q3.legend.append(el('span', { style: '--c:' + s.color, text: g.map((m) => toDisplay(series[m].expr)).join(tr(', ', '、')) }));
       } else {
-        Q3.legend.append(el('span', { style: '--c:' + s.color, text: s.expr + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
+        Q3.legend.append(el('span', { style: '--c:' + s.color, text: toDisplay(s.expr) + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
       }
     });
   }
@@ -7279,12 +8957,10 @@
   // asked for in smaller batches. Until 1.10.x it was always 300: the edge of a long surface (a solid
   // of revolution around a vertical axis) was not found, and the surface was drawn with saw teeth
   const batchOf = (es) => Math.max(8, Math.min(300, Math.floor(9000 / (Math.max(...es.map((e) => subXY(e, '0.1234567890123', '0.1234567890123').length)) + 4))));
-  // The edge of a surface with no real values beyond it (a sphere: √(r² − x² − y²)). On each grid
-  // line from a point with a value to one without, the last point with a real value is found by
-  // halving the step 12 times (all such lines at once, in one calculation per step), so the drawing
-  // reaches the edge, and the two halves of a sphere meet instead of leaving a torn band between them.
-  async function refineRims(series, xs, ys, seq) {
-    const nx = xs.length, ny = ys.length, jobs = [];
+  // The grid lines from a point with a value to one without (the edge of a surface): [{ si, key, p, q }]
+  // (p the point with the value)
+  function rimJobs(series, nx, ny) {
+    const jobs = [];
     series.forEach((s, si) => {
       const z = s.z, ok = (k) => z[k] === z[k];
       for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
@@ -7293,6 +8969,114 @@
         if (j + 1 < ny && ok(k) !== ok(k + nx)) jobs.push({ si, key: 'v' + k, p: ok(k) ? k : k + nx, q: ok(k) ? k + nx : k });
       }
     });
+    return jobs;
+  }
+  // The edges of the surfaces of a solid of revolution, known from its shape (1.12.0, BG09: until then
+  // they were found by halving the step with the engine, 200 to 300 calculations, and the solid was
+  // shown with saw teeth and in two colors until they were found, which took seconds on a phone, the
+  // turning of the solid into being included). spec (openPlot3dWith's rims):
+  // - { kind: 'h' } the axis along x, the surfaces ±√(Q(x)² − y²): Q at a column of the grid is
+  //   √(z² + y²) of any of its points; the edge across a column is y = ±Q, z = 0; along a row, where
+  //   Q(x) = |y| (by halving the step on Q, a function in spec.Q when the shape gives one, as a profile
+  //   does, otherwise on the straight line between the columns)
+  // - { kind: 'v', surf: [{ iv: [[a, b], …], z: { b: height } }] } the axis along z, each surface
+  //   present where ρ = √(x² + y²) is in its intervals: its edges are the circles ρ = a and ρ = b,
+  //   crossed by the grid lines where the circle is, at the heights given (from the engine, at the ends
+  //   of the region)
+  // Sets s.rim as refineRims does; returns false when it could not (another kind of surface).
+  function specRims(series, xs, ys, spec) {
+    const nx = xs.length, ny = ys.length, jobs = rimJobs(series, nx, ny);
+    if (!jobs.length) { series.forEach((s) => { s.rim = {}; }); return true; }
+    const Qs = series.map((s, si) => {
+      if (spec.kind !== 'h') return null;
+      const q = new Float64Array(nx).fill(NaN);
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) { const z = s.z[j * nx + i]; if (z === z) { const v = Math.sqrt(z * z + ys[j] * ys[j]); if (!(v <= q[i])) q[i] = v; } }
+      return q;
+    });
+    series.forEach((s) => { s.rim = {}; });
+    for (const jb of jobs) {
+      const s = series[jb.si], zin = s.z[jb.p], sg = zin < 0 ? -1 : 1;
+      const xa = xs[jb.p % nx], ya = ys[(jb.p / nx) | 0], xb = xs[jb.q % nx], yb = ys[(jb.q / nx) | 0];
+      if (spec.kind === 'h') {
+        const Q = Qs[jb.si], ia = jb.p % nx, ib = jb.q % nx;
+        if (jb.key[0] === 'v') {
+          // (across a column: |y| = Q there)
+          const qv = Q[ia];
+          if (!(qv === qv)) continue;
+          s.rim[jb.key] = { x: xa, y: yb > ya ? Math.max(ya, Math.min(yb, qv)) : Math.min(ya, Math.max(yb, -qv)), z: 0 };
+          continue;
+        }
+        // (along a row: where Q(x) = |y|)
+        // (the height there: 0 where the edge crosses the row, more where the solid ends in a flat face or
+        // a step of a profile)
+        const yy = Math.abs(ya), fn = spec.Q && spec.Q[jb.si];
+        let f, qx;
+        if (fn) {
+          let lo = 0, hi = 1;
+          for (let n = 0; n < 40; n++) { const m = (lo + hi) / 2, v = fn(xa + (xb - xa) * m); if (v === v && v >= yy) lo = m; else hi = m; }
+          f = lo; qx = fn(xa + (xb - xa) * f);
+        } else {
+          const qa = Q[ia];
+          let qb = Q[ib];
+          if (!(qb === qb)) { const ic = 2 * ia - ib; qb = ic >= 0 && ic < nx && Q[ic] === Q[ic] ? 2 * qa - Q[ic] : 0; }
+          f = qa !== qb ? Math.max(0, Math.min(1, (qa - yy) / (qa - qb))) : 0;
+          qx = qa + (qb - qa) * f;
+        }
+        s.rim[jb.key] = { x: xa + (xb - xa) * f, y: ya, z: sg * Math.sqrt(Math.max(0, (qx === qx ? qx * qx : 0) - yy * yy)) };
+        continue;
+      }
+      if (spec.kind === 'v') {
+        const sp = spec.surf && spec.surf[jb.si];
+        if (!sp) continue;
+        const ra = Math.hypot(xa, ya), rb = Math.hypot(xb, yb);
+        // (the end of the interval of the surface that the line leaves)
+        let edge = null;
+        for (const [a, b] of sp.iv) { if (ra >= a - 1e-12 && ra <= b + 1e-12) edge = rb > ra ? b : a; }
+        if (edge === null) continue;
+        // where the line from (xa, ya) to (xb, yb) meets the circle ρ = edge
+        const dx = xb - xa, dy = yb - ya, A = dx * dx + dy * dy, B = 2 * (xa * dx + ya * dy), C = xa * xa + ya * ya - edge * edge, D = B * B - 4 * A * C;
+        let t = 0;
+        if (A > 0 && D >= 0) { const r1 = (-B - Math.sqrt(D)) / (2 * A), r2 = (-B + Math.sqrt(D)) / (2 * A); t = r1 >= -1e-9 && r1 <= 1 + 1e-9 ? r1 : r2; }
+        t = Math.max(0, Math.min(1, t));
+        const zk = sp.z && sp.z[String(edge)];
+        // (slant: the surface ends at a slant, not upright as a sphere at its rim)
+        s.rim[jb.key] = { x: xa + dx * t, y: ya + dy * t, z: zk === undefined || !(zk === zk) ? zin : zk, slant: true };
+      }
+    }
+    return spec.kind === 'h' || spec.kind === 'v';
+  }
+  // First guesses of the edges of other surfaces (1.12.0, BG09), without the engine, so that a surface
+  // with an edge (a sphere) is not shown with saw teeth while refineRims looks for it: near its edge z²
+  // of a surface such as √(r² − x² − y²) is close to a straight line, so the line through z² at the
+  // two points inside is followed out to 0 (and no farther than the point without a value). Sets s.rim;
+  // the guesses are kept in jb.g for refineRims.
+  function guessRims(series, xs, ys) {
+    const nx = xs.length, ny = ys.length, jobs = rimJobs(series, nx, ny);
+    series.forEach((s) => { s.rim = {}; });
+    for (const jb of jobs) {
+      const z = series[jb.si].z, k2 = 2 * jb.p - jb.q;
+      const sameLine = jb.key[0] === 'v' || ((k2 / nx) | 0) === ((jb.p / nx) | 0);
+      const za = z[jb.p], zb = k2 >= 0 && k2 < nx * ny && sameLine ? z[k2] : NaN;
+      let f = 0.5, zr = za;
+      if (zb === zb) {
+        const a2 = za * za, b2 = zb * zb;
+        // (z² falls toward the edge: where the straight line reaches 0, as a share of the step)
+        if (b2 > a2) { f = Math.min(1, a2 / (b2 - a2)); zr = (za < 0 ? -1 : 1) * Math.sqrt(Math.max(0, a2 - (b2 - a2) * f)); } else { f = 0; zr = za; }
+      }
+      const xa = xs[jb.p % nx], ya = ys[(jb.p / nx) | 0], xb = xs[jb.q % nx], yb = ys[(jb.q / nx) | 0];
+      jb.g = f;
+      series[jb.si].rim[jb.key] = { x: xa + (xb - xa) * f, y: ya + (yb - ya) * f, z: zr };
+    }
+    return jobs;
+  }
+  // The edge of a surface with no real values beyond it (a sphere: √(r² − x² − y²)). On each grid
+  // line from a point with a value to one without, the last point with a real value is found by
+  // halving the step 12 times (all such lines at once, in one calculation per step), so the drawing
+  // reaches the edge, and the two halves of a sphere meet instead of leaving a torn band between them.
+  // (1.12.0, BG09: from the first guesses of guessRims, when given: the guess is tried first, and then
+  // the step is halved 8 times; when the engine fails or is too slow, what was found is kept)
+  async function refineRims(series, xs, ys, seq, guessed) {
+    const nx = xs.length, ny = ys.length, jobs = guessed || rimJobs(series, nx, ny);
     if (!jobs.length || jobs.length > 2400) return false;
     for (const jb of jobs) {
       jb.px = xs[jb.p % nx]; jb.py = ys[(jb.p / nx) | 0]; jb.qx = xs[jb.q % nx]; jb.qy = ys[(jb.q / nx) | 0];
@@ -7301,25 +9085,29 @@
     // (plain decimal numbers whatever the settings of the results are: base 16 or 2 decimals, 1.8.3)
     const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect', base: 10, notation: 'auto', max_decimals: -1 });
     const B = batchOf(series.map((s) => s.expr));
-    for (let step = 0; step < 12; step++) {
+    const keep = () => { series.forEach((s) => { s.rim = {}; }); for (const jb of jobs) series[jb.si].rim[jb.key] = { x: jb.px, y: jb.py, z: jb.z }; };
+    // (with guesses: first the guess itself, then 8 halvings of what is left)
+    const steps = guessed ? 9 : 12;
+    let done = 0;
+    for (let step = 0; step < steps; step++) {
       for (let b0 = 0; b0 < jobs.length; b0 += B) {
         const part = jobs.slice(b0, b0 + B);
-        const mids = part.map((jb) => [(jb.px + jb.qx) / 2, (jb.py + jb.qy) / 2]);
+        const mids = part.map((jb) => { const f = guessed && step === 0 && jb.g > 0.02 && jb.g < 0.98 ? jb.g : 0.5; return [jb.px + (jb.qx - jb.px) * f, jb.py + (jb.qy - jb.py) * f]; });
         const expr = '[' + part.map((jb, n) => '(' + subXY(series[jb.si].expr, engineNum(mids[n][0]), engineNum(mids[n][1])) + ')').join(', ') + ']';
         const r = await Bridge.send('calc', { expr, opts, timeout: 5000, max_chars: 200000 });
-        if (seq !== Q3.seq || !r.ok || !r.result || r.timeout) return false;
-        const t = r.result.split(' ≈ ').pop().split(' = ').pop().trim();
-        if (t[0] !== '[' || t[t.length - 1] !== ']') return false;
-        const cells = t.slice(1, -1).trim().split(/\s{2,}/);
-        if (cells.length !== part.length) return false;
+        if (seq !== Q3.seq) return false;
+        const t = r.ok && r.result && !r.timeout ? r.result.split(' ≈ ').pop().split(' = ').pop().trim() : '';
+        const cells = t[0] === '[' && t[t.length - 1] === ']' ? t.slice(1, -1).trim().split(/\s{2,}/) : [];
+        // (the engine failed or was too slow: what was found so far, after a few halvings, is kept)
+        if (cells.length !== part.length) { if (done >= 4) { keep(); return true; } return false; }
         part.forEach((jb, n) => {
           const v = Number(cells[n].replace(/−/g, '-'));
           if (isFinite(v)) { jb.px = mids[n][0]; jb.py = mids[n][1]; jb.z = v; } else { jb.qx = mids[n][0]; jb.qy = mids[n][1]; }
         });
       }
+      done++;
     }
-    series.forEach((s) => { s.rim = {}; });
-    for (const jb of jobs) series[jb.si].rim[jb.key] = { x: jb.px, y: jb.py, z: jb.z };
+    keep();
     return true;
   }
   // 1:1:1 — automatic: on when the three ranges are about as long as each other (a sphere, a cone),
@@ -7399,8 +9187,9 @@
   // The triangles: 11 numbers for each corner (CV), x and y (CSS pixels), depth (larger is farther),
   // the normal in the camera's axes (x right, y up, z away from the eye; any length: it is blended in a
   // straight line across the triangle and then made of length 1), the color (r, g, b) and the grid
-  // coordinates gi and gj (for the lines of the grid; NaN: no lines).
-  const CV = 11, CT = 3 * CV;
+  // coordinates gi and gj (for the lines of the grid; NaN: no lines); and (1.12.0, BG19) while the graph is
+  // turned, how much of the lamp reaches the corner (0 to 1), kept from the drawing before the turn.
+  const CV = 12, CT = 3 * CV;
   function triBuf(holder) {
     let a = holder && holder.triBuf;
     if (!a) { a = { f: new Float32Array(CT * 4096), n: 0 }; if (holder) holder.triBuf = a; }
@@ -7438,8 +9227,9 @@
       if (a < a0) a0 = a; if (a > a1) a1 = a; if (b < b0) b0 = b; if (b > b1) b1 = b;
     }
     if (!(a1 > a0 && b1 > b0)) return null;
-    // (cells of one CSS pixel, at most 900 on a side)
-    const cell = Math.max(1 / cam.S, (a1 - a0) / 900, (b1 - b0) / 900);
+    // (cells of one CSS pixel, at most 900 on a side; while the graph is turned, of three CSS pixels and
+    // at most 300 on a side, 1.12.0 BG08: a ninth of the work, the shadows a little softer)
+    const cell = cam.lite ? Math.max(3 / cam.S, (a1 - a0) / 300, (b1 - b0) / 300) : Math.max(1 / cam.S, (a1 - a0) / 900, (b1 - b0) / 900);
     const MW = Math.ceil((a1 - a0) / cell) + 6, MH = Math.ceil((b1 - b0) / cell) + 6, n = MW * MH;
     if (!C.lampBuf || C.lampBuf.length < n) C.lampBuf = new Float32Array(n);
     const map = C.lampBuf;
@@ -7529,19 +9319,51 @@
   // floor along the light, so the shadow falls to the side away from the lamp and not straight down
   // (from straight above, a surface z = f(x, y) would only darken the whole floor). Where it is cast
   // by a part of a surface near the floor it is dark and sharp, and where by a high part pale and
-  // soft, as a shadow is: on a layer of half the size, every point of the floor keeps the height of
-  // the lowest part of a surface above it along the light; the strength follows that height, and the
+  // soft, as a shadow is: on a layer over the floor, every point of the floor keeps the height of the
+  // lowest part of a surface above it along the light; the strength follows that height, and the
   // softness too, from three blurs of the shadow (about 2, 6 and 14 CSS pixels) blended by the height
   // of the surfaces around the point. tb: the triangles; o: the turn of the camera (ca, sa, ce, se),
-  // the half sizes of the box (EX, EY, EZ), cam ({ cx, cy, S }), W and H of the canvas, dark, cache,
-  // pane0 (a path on the floor). Returns what was drawn, or null when the lamp is not above the floor.
+  // the half sizes of the box (EX, EY, EZ), cam ({ cx, cy, S }), dark, cache, lamp (the lamp in the
+  // box's axes, or null: the one at the upper left of the screen), layer (a layer to draw again, or null),
+  // k (the strength, 0 to 1). Returns what was drawn, or null when the lamp is not above the floor.
+  // (1.12.0, BG08: the shadow fades out as the lamp comes down to the level of the floor and as the floor
+  // is seen more and more edge-on, instead of ending at once; until then it came and went while turning)
+  // (1.12.0, BG19: the layer is the floor itself, in the box's axes, so that it is drawn again with only a
+  // new projection while the graph is turned: the lamp then stays on the box, see draw3d)
   function floorShadow(g, tb, o) {
     const { ca, sa, ce, se, EX, EY, EZ, cam } = o;
-    const lx = LAMP[0], ly = LAMP[1], lz = LAMP[2];
     // the direction of the lamp in the box's axes (u, v, w): the camera's axes turned back (camN)
-    const lu = ca * lx + sa * se * ly + sa * ce * lz, lv = -sa * lx + ca * se * ly + ca * ce * lz, lw = ce * ly - se * lz;
+    const lp = o.lamp || lampInBox(ca, sa, ce, se), lw = lp[2];
     if (!(lw > 0.2)) return null;
-    const T = tb.f, nt = tb.n, K = 0.5, LW = Math.ceil(o.W * K), LH = Math.ceil(o.H * K), n = LW * LH;
+    const fadeIn = smoothStep(0.2, 0.35, lw) * smoothStep(0, 0.15, se);
+    if (!(fadeIn > 0.004)) return null;
+    const Lr = o.layer || floorLayer(tb, o, lp);
+    if (!Lr.px) return { px: 0, layer: Lr };
+    const alpha = fadeIn * (o.k === undefined ? 1 : o.k), S = cam.S, Ru = Lr.Ru, Rv = Lr.Rv;
+    g.save();
+    // (a cell (i, j) of the layer is the point u = i / Ru − EX, v = j / Rv − EY of the floor, w = −EZ: the
+    // projection is parallel, so the layer is laid on the floor by one affine map, and it covers the floor
+    // and nothing else: no clip, which made every frame of a turn slower)
+    g.transform(S * ca / Ru, -S * se * sa / Ru, -S * sa / Rv, -S * se * ca / Rv, cam.cx + S * (sa * EY - ca * EX), cam.cy + S * (EZ * ce + se * (sa * EX + ca * EY)));
+    g.globalAlpha = alpha;
+    g.imageSmoothingEnabled = true;
+    // (only the part of the layer with a shadow, BG19)
+    const b = Lr.box;
+    g.drawImage(Lr.canvas, b[0], b[1], b[2], b[3], b[0], b[1], b[2], b[3]);
+    g.restore();
+    return { px: Lr.px, cells: [Lr.LW, Lr.LH], fade: Math.round(fadeIn * 1000) / 1000, alpha: Math.round(alpha * 1000) / 1000, kept: !!o.layer, layer: Lr };
+  }
+  // the lamp (LAMP, in the camera's axes) in the box's axes for the camera turned by ca, sa, ce, se
+  function lampInBox(ca, sa, ce, se) {
+    const lx = LAMP[0], ly = LAMP[1], lz = LAMP[2];
+    return [ca * lx + sa * se * ly + sa * ce * lz, -sa * lx + ca * se * ly + ca * ce * lz, ce * ly - se * lz];
+  }
+  // the layer of floorShadow: Ru and Rv cells for each unit of the box along u and v (a cell about 2 CSS pixels
+  // wide; a whole number of cells across the floor), lp the lamp in the box's axes; the triangles are in the
+  // camera's axes of o
+  function floorLayer(tb, o, lp) {
+    const { ca, sa, ce, se, EX, EY, EZ, cam } = o, [lu, lv, lw] = lp;
+    const T = tb.f, nt = tb.n, R = Math.max(8, cam.S / 2), LW = Math.ceil(2 * EX * R), LH = Math.ceil(2 * EY * R), n = LW * LH, Ru = LW / (2 * EX), Rv = LH / (2 * EY);
     const C = o.cache;
     if (!C.floorBuf || C.floorBuf.n < n) C.floorBuf = { n, h: new Float32Array(n), a: new Float32Array(n), m: new Float32Array(n), b1: new Float32Array(n), b2: new Float32Array(n), b3: new Float32Array(n), hb: new Float32Array(n), t: new Float32Array(n) };
     const B = C.floorBuf, fh = B.h;
@@ -7554,9 +9376,9 @@
         const k = t * CT + m * CV;
         const xc = (T[k] - cam.cx) * iS, yc = (cam.cy - T[k + 1]) * iS, zc = T[k + 2];
         const u = ca * xc + sa * se * yc + sa * ce * zc, v = -sa * xc + ca * se * yc + ca * ce * zc, w = ce * yc - se * zc;
-        // along the light down to the floor, then on the screen (proj with w = −EZ), on the layer
-        const h = w + EZ > 0 ? w + EZ : 0, f = h / lw, fu = u - lu * f, fv = v - lv * f;
-        fx[m] = (cam.cx + (fu * ca - fv * sa) * cam.S) * K; fy[m] = (cam.cy - (-EZ * ce + (fu * sa + fv * ca) * se) * cam.S) * K; fz[m] = h;
+        // along the light down to the floor, on the layer
+        const h = w + EZ > 0 ? w + EZ : 0, f = h / lw;
+        fx[m] = (u - lu * f + EX) * Ru; fy[m] = (v - lv * f + EY) * Rv; fz[m] = h;
       }
       h0 = fz[0]; h1 = fz[1]; h2 = fz[2];
       rasterTri(fx[0], fy[0], fx[1], fy[1], fx[2], fy[2], LW, LH, px);
@@ -7570,10 +9392,14 @@
       const f = h < H2 ? h / H2 : 1;
       A[i] = 1 - 0.72 * f; M[i] = 1; fh[i] = h; any++;
     }
-    if (!any) return { px: 0 };
-    boxBlur(A, B.b1, B.t, LW, LH, 1); boxBlur(A, B.b2, B.t, LW, LH, 3); boxBlur(A, B.b3, B.t, LW, LH, 7);
-    boxBlur(fh, B.hb, B.t, LW, LH, 7); boxBlur(M, M, B.t, LW, LH, 7);
+    const L = C.floorLayer || (C.floorLayer = document.createElement('canvas'));
+    if (L.width !== LW || L.height !== LH) { L.width = LW; L.height = LH; }
+    const out = { canvas: L, Ru, Rv, LW, LH, px: any, box: [0, 0, LW, LH] };
+    if (!any) return out;
     const img = new ImageData(LW, LH), d = img.data, col = o.dark ? [0, 0, 0] : [28, 38, 66], A0 = (o.dark ? 0.5 : 0.3) * 255;
+    let bx0 = LW, bx1 = -1, by0 = LH, by1 = -1;
+    // (the blurs of about 2, 6 and 14 CSS pixels, in cells of the layer)
+    boxBlur(A, B.b1, B.t, LW, LH, 1); boxBlur(A, B.b2, B.t, LW, LH, 3); boxBlur(A, B.b3, B.t, LW, LH, 7); boxBlur(fh, B.hb, B.t, LW, LH, 7); boxBlur(M, M, B.t, LW, LH, 7);
     for (let i = 0; i < n; i++) {
       const m = M[i];
       if (!(m > 0.002)) continue;
@@ -7583,21 +9409,20 @@
       const s = f < 0.5 ? B.b1[i] + (B.b2[i] - B.b1[i]) * f * 2 : B.b2[i] + (B.b3[i] - B.b2[i]) * (f * 2 - 1);
       const o4 = i * 4;
       d[o4] = col[0]; d[o4 + 1] = col[1]; d[o4 + 2] = col[2]; d[o4 + 3] = s * A0;
+      if (d[o4 + 3]) { const y = (i / LW) | 0, x = i - y * LW; if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; }
     }
-    const L = C.floorLayer || (C.floorLayer = document.createElement('canvas'));
-    if (L.width !== LW || L.height !== LH) { L.width = LW; L.height = LH; }
     L.getContext('2d').putImageData(img, 0, 0);
-    g.save();
-    g.beginPath(); o.pane0([[-EX, -EY], [EX, -EY], [EX, EY], [-EX, EY]]); g.clip();
-    g.imageSmoothingEnabled = true;
-    g.drawImage(L, 0, 0, LW / K, LH / K);
-    g.restore();
-    return { px: any };
+    if (bx1 >= bx0) out.box = [Math.max(0, bx0 - 1), Math.max(0, by0 - 1), Math.min(LW, bx1 + 2) - Math.max(0, bx0 - 1), Math.min(LH, by1 + 2) - Math.max(0, by0 - 1)];
+    return out;
   }
+  // 0 below a, 1 above b, smoothly between them
+  function smoothStep(a, b, x) { const t = x <= a ? 0 : x >= b ? 1 : (x - a) / (b - a); return t * t * (3 - 2 * t); }
   // tb: the triangles (triBuf); o: W and H of the canvas (CSS pixels), q (pixels of the layer for each
   // CSS pixel), dark, mesh (the color of the grid lines [r, g, b, alpha] and their width, or null), fade
   // (a color the surfaces fade halfway to, or null), cache (an object that keeps the buffers), shadow
-  // ({ cx, cy, S }: the surfaces cast shadows from the lamp, 1.11.0; or null)
+  // ({ cx, cy, S }: the surfaces cast shadows from the lamp, 1.11.0; or null), lock (1.12.0, BG19: while the
+  // graph is turned, { L: the lamp in the camera's axes, map }: how much of the lamp reaches each corner is
+  // in the triangles, kept from the drawing before the turn, and is blended across them; or null)
   function surfacePaint(g, tb, o) {
     const T = tb.f, nt = tb.n, q = o.q, none = { shown: 0, q };
     if (!nt) return none;
@@ -7643,9 +9468,10 @@
         }
       }
     }
-    // the light (camera's axes): a lamp at the upper left in front (LAMP), the eye looking along +z
-    const dark = !!o.dark;
-    const Lx = LAMP[0], Ly = LAMP[1], Lz = LAMP[2];
+    // the light (camera's axes): a lamp at the upper left in front (LAMP), the eye looking along +z; while
+    // the graph is turned, the lamp where it was on the box when the turn began (1.12.0, BG19)
+    const dark = !!o.dark, LK = o.lock || null;
+    const Lx = LK ? LK.L[0] : LAMP[0], Ly = LK ? LK.L[1] : LAMP[1], Lz = LK ? LK.L[2] : LAMP[2];
     let Hx = Lx, Hy = Ly, Hz = Lz - 1;
     const hl = Math.hypot(Hx, Hy, Hz); Hx /= hl; Hy /= hl; Hz /= hl;
     const AMB = dark ? 0.3 : 0.34, SKY = 0.08, DIF = dark ? 0.66 : 0.62, KS = dark ? 0.42 : 0.38, SH = 56;
@@ -7662,7 +9488,7 @@
     // the shadows from the lamp (1.11.0): the map of the surfaces as the lamp sees them, and for each
     // pixel its point in the camera's axes (from its place on the screen and its depth)
     const t0 = performance.now();
-    const SM = o.shadow ? lampMap(T, nt, o.shadow, C) : null;
+    const SM = o.shadow && !LK ? lampMap(T, nt, o.shadow, C) : null, shK = o.shadow && o.shadow.k !== undefined ? o.shadow.k : 1;
     const tMap = performance.now() - t0;
     const scx = SM ? SM.cam.cx : 0, scy = SM ? SM.cam.cy : 0, iS = SM ? 1 / SM.cam.S : 0;
     let inShadow = 0, edge = 0;
@@ -7687,10 +9513,15 @@
       // below and what is mirrored stay. Where the lamp only grazes the surface it gives little light
       // anyway, and there the shadow fades out: the map is least sure there, and it saves time)
       let lit = 1;
-      if (SM && dif > 0.04) {
+      if (LK && o.shadow && dif > 0.04) {
+        lit = l0 * T[k + 11] + l1 * T[k + B + 11] + l2 * T[k + C2 + 11];
+        if (lit < 0.5) inShadow++;
+        if (lit > 0.002 && lit < 0.998) edge++;
+      } else if (SM && dif > 0.04) {
         const py = (i / LW) | 0, pxl = i - py * LW;
         lit = lampLit(SM, ((lx0 + pxl + 0.5) / q - scx) * iS, (scy - (ly0 + py + 0.5) / q) * iS, zb[i], nx, ny, nz, dif);
         if (dif < 0.12) lit = 1 - (1 - lit) * (dif - 0.04) / 0.08;
+        if (shK < 1) lit = 1 - (1 - lit) * shK;
         if (lit < 0.5) inShadow++;
         if (lit > 0 && lit < 1) edge++;
       }
@@ -7767,7 +9598,7 @@
     g.imageSmoothingEnabled = true;
     g.drawImage(off, lx0 / q, ly0 / q, LW / q, LH / q);
     g.restore();
-    return { shown, q, shadow: SM ? { px: inShadow, edge, map: [SM.MW, SM.MH], ms: Math.round(tMap * 10) / 10 } : null };
+    return { shown, q, SM, zbuf: { zb, x0: lx0, y0: ly0, w: LW, h: LH, q }, shadow: LK && o.shadow ? { px: inShadow, edge, map: LK.map, lock: true } : SM ? { px: inShadow, edge, map: [SM.MW, SM.MH], ms: Math.round(tMap * 10) / 10 } : null };
   }
   // the slope at p0 (value w0) from the points on its two sides, [place, value] (a: before, b: after;
   // null if none): the parabola through the three, or the line to the one there is
@@ -8324,9 +10155,888 @@
     g.restore();
     return { shown, odd, q, thick: shown ? Math.round(thick / shown * 1000) / 1000 : 0 };
   }
+  // The solid of revolution growing from its region (1.12.0, B0): the parts of the surfaces at an angle
+  // around the axis of up to theta are drawn, theta from 0 to 360° in 2 s; then the graph is turned
+  // with a finger as always. A touch stops it; with "reduce motion" the solid is shown at once.
+  // ax: 'h', the axis along x (the angle of (y, z)), 'v', along z (the angle of (x, y)).
+  // asked: ▶ was pressed (it plays also with "reduce motion"; only the automatic start does not)
+  function startGrow(ax, asked) {
+    Q3.grow = null;
+    if (Q3.angleRow) Q3.angleRow.hidden = false;
+    if (!asked && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { if (Q3.canvas) Q3.canvas.dataset.grow = 'still'; showAngle3d(360); return; }
+    const G = Q3.grow = { ax, theta: 0, t0: 0, last: 0 };
+    const step = (now) => {
+      if (Q3.grow !== G) return;
+      if (!G.t0) G.t0 = now;
+      // (not on the screen, or the app in the background: it waits, and goes on when seen again)
+      const r = Q3.canvas && Q3.canvas.getBoundingClientRect();
+      if (document.hidden || !r || !r.width || r.bottom < 0 || r.top > (window.innerHeight || 0)) { if (G.last) G.t0 += now - G.last; G.last = now; requestAnimationFrame(step); return; }
+      G.last = now;
+      G.theta = Math.min(2 * Math.PI, (now - G.t0) / 2000 * 2 * Math.PI);
+      if (Q3.canvas) Q3.canvas.dataset.grow = String(Math.round(G.theta * 180 / Math.PI));
+      showAngle3d(Math.round(G.theta * 180 / Math.PI));
+      if (G.theta >= 2 * Math.PI) Q3.grow = null;
+      draw3d();
+      if (Q3.grow === G) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  function showAngle3d(deg) { if (Q3.angle) { Q3.angle.value = String(deg); Q3.angleVal.textContent = deg + '°'; } }
+  // the slider: the solid turned by deg degrees (360: whole), drawn at once
+  function setAngle3d(deg) {
+    if (!Q3.revInfo) return;
+    deg = Math.max(0, Math.min(360, deg));
+    showAngle3d(deg);
+    Q3.grow = deg >= 360 ? null : { ax: Q3.revInfo, theta: deg * Math.PI / 180, still: true };
+    if (Q3.canvas) Q3.canvas.dataset.grow = String(deg);
+    draw3d();
+  }
+  // (1.12.0, BG08, BG19) the full drawing after a turn, with the lamp back at the upper left of the screen and
+  // the fine shadows: what is on the screen is copied to a layer over the graph, which fades out over 0.2 s
+  // once the full drawing is underneath, so that the shadows do not change at once
+  function shadowCrossFade(c) {
+    const wrap = c.parentElement;
+    if (!wrap || !c.width) return null;
+    let o = Q3.fadeLayer;
+    if (!o) { o = Q3.fadeLayer = el('canvas', { class: 'plot-fade', 'aria-hidden': 'true' }); }
+    if (o.parentElement !== wrap) wrap.insertBefore(o, c.nextSibling);
+    if (o.width !== c.width || o.height !== c.height) { o.width = c.width; o.height = c.height; }
+    const x = o.getContext('2d');
+    x.clearRect(0, 0, o.width, o.height); x.drawImage(c, 0, 0);
+    clearTimeout(Q3.fadeTimer);
+    o.style.transition = 'none'; o.style.opacity = '1'; o.hidden = false;
+    return o;
+  }
+  // the time of the frames while the graph is turned (1.12.0, BG08; for the tests: the median of three frames of
+  // a turn after the first one, the time between two drawings, or the time of a drawing itself when the finger
+  // moves more slowly than the screen). Returns the strength of the shadows: always 1 (1.12.0, BG19: until
+  // then they faded out over 0.2 s when the frames came more slowly than 30 a second, and on a slow phone
+  // that still looked like the shadows going away; now the lamp stays on the box while the graph is turned,
+  // and the shadows of the drawing before the turn are drawn again with only a new projection, draw3d)
+  function turnShadow(now) {
+    Q3.shK = 1; Q3.shSlow = false;
+    if (!Q3.turning) { Q3.lastTurn = 0; return 1; }
+    if (Q3.lastTurn && now - Q3.lastTurn < 250) {
+      const dt = Math.min(now - Q3.lastTurn, (Q3.lastDrawMs || 0) * 1.3 + 4);
+      Q3.turnN = (Q3.turnN || 0) + 1;
+      if (Q3.turnN > 1) {
+        const L = Q3.turnList || (Q3.turnList = []);
+        L.push(dt); if (L.length > 3) L.shift();
+        const med = L.length < 3 ? 0 : L.slice().sort((x, y) => x - y)[1];
+        Q3.turnMs = med || dt;
+      }
+    }
+    Q3.lastTurn = now;
+    return 1;
+  }
+  // ---- solids and tanks of "Shapes" in 3D (1.12.0, D6; QCalc Pro)
+  // A solid of the shapes tool, or a tank with its liquid, is drawn in the 3D graph from triangles made
+  // here from its sizes (not from formulas z = f(x, y)). They go into the same buffer as the cells of the
+  // surfaces (surfacePaint), so that the solid is shaded, casts shadows and keeps them while it is turned
+  // (BG19), and its edges are as smooth as the screen allows (no steps of a grid, BG09). A solid of
+  // revolution is its profile turned around its axis (while it grows, by the angle so far, with the faces
+  // of the cut); a box or a prism is its base pulled up. A tank: its container of glass, drawn by the
+  // canvas with a little color (its back before the liquid, its front after it, with its outline and its
+  // seams), and the liquid as a solid of its own color up to the level, with the volume scale on the wall,
+  // the amount at the level and the level that can be dragged.
+  // A mesh: v the vertices, MV numbers each (x, y, z, the normal, r, g, b, and gi, gj for the lines that
+  // surfacePaint draws where one of them is a whole number: 0.5 for none in that direction, NaN for no
+  // lines at all), t the triangles (three indices each), lines the seams and edges to draw on glass
+  // (rings: lists of vertex indices)
+  const MV = 11;
+  const newMesh = () => ({ v: [], t: [], lines: [] });
+  // a point of a profile: t along the axis, r from it, the normal (nt, nr) in the plane of the axis, gj
+  const pp = (t, r, nt, nr, gj) => ({ t, r, nt, nr, gj });
+  // a straight piece of a profile from (t0, r0) to (t1, r1) in m parts, gj from g0 to g1; flat: no lines
+  // along it from the turning (a disk)
+  function lineSeg(t0, r0, t1, r1, g0, g1, m, flat) {
+    const dt = t1 - t0, dr = r1 - r0, L = Math.hypot(dt, dr) || 1, n = m || 1, pts = [];
+    for (let k = 0; k <= n; k++) { const f = k / n; pts.push(pp(t0 + dt * f, r0 + dr * f, -dr / L, dt / L, g0 + (g1 - g0) * f)); }
+    return { pts, flat: !!flat };
+  }
+  // a curved piece from the points [t, r] (fine enough to look smooth): the normals from the neighbours,
+  // gj from g0 to g1 along it (or gjOf(t, r))
+  function curveSeg(P, g0, g1, gjOf) {
+    const n = P.length, pts = [];
+    for (let k = 0; k < n; k++) {
+      const a = P[Math.max(0, k - 1)], b = P[Math.min(n - 1, k + 1)], dt = b[0] - a[0], dr = b[1] - a[1], L = Math.hypot(dt, dr) || 1;
+      pts.push(pp(P[k][0], P[k][1], -dr / L, dt / L, gjOf ? gjOf(P[k][0], P[k][1]) : g0 + (g1 - g0) * k / Math.max(1, n - 1)));
+    }
+    return { pts, flat: false };
+  }
+  // an arc of a circle in the plane of the profile: centre (tc, rc), radius q, from the angle a0 to a1
+  // (a point is (tc + q cos α, rc + q sin α); its normal points away from the centre)
+  function arcSeg(tc, rc, q, a0, a1, m, gjOf) {
+    const pts = [];
+    for (let k = 0; k <= m; k++) { const a = a0 + (a1 - a0) * k / m, c = Math.cos(a), s = Math.sin(a); pts.push(pp(tc + q * c, Math.max(0, rc + q * s), c, s, gjOf(a, k))); }
+    return { pts, flat: false };
+  }
+  // the triangles of a simple polygon [[x, y], …] by cutting off ears: indices into it (points in a straight
+  // line with their neighbours are left out first; a polygon that cannot be cut is left as far as it got)
+  function earClip(P0) {
+    const map = [], P = [];
+    const cr = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    let span = 0;
+    for (const p of P0) span = Math.max(span, Math.abs(p[0]), Math.abs(p[1]));
+    const eps = (span || 1) * (span || 1) * 1e-12;
+    for (let i = 0; i < P0.length; i++) {
+      const a = P0[(i + P0.length - 1) % P0.length], b = P0[i], c = P0[(i + 1) % P0.length];
+      if (Math.abs(cr(a, b, c)) > eps) { map.push(i); P.push(b); }
+    }
+    const n = P.length, out = [];
+    if (n < 3) return out;
+    let area = 0;
+    for (let i = 0; i < n; i++) { const a = P[i], b = P[(i + 1) % n]; area += a[0] * b[1] - b[0] * a[1]; }
+    const idx = [];
+    for (let i = 0; i < n; i++) idx.push(area > 0 ? i : n - 1 - i); // (counterclockwise)
+    const inTri = (p, a, b, c) => cr(a, b, p) > eps && cr(b, c, p) > eps && cr(c, a, p) > eps;
+    for (let guard = 0; idx.length > 3 && guard < n * n; guard++) {
+      let cut = false;
+      for (let i = 0; i < idx.length; i++) {
+        const ia = idx[(i + idx.length - 1) % idx.length], ib = idx[i], ic = idx[(i + 1) % idx.length], a = P[ia], b = P[ib], c = P[ic];
+        if (cr(a, b, c) <= eps) continue;
+        let ok = true;
+        for (const j of idx) if (j !== ia && j !== ib && j !== ic && inTri(P[j], a, b, c)) { ok = false; break; }
+        if (!ok) continue;
+        out.push(map[ia], map[ib], map[ic]); idx.splice(i, 1); cut = true; break;
+      }
+      if (!cut) break;
+    }
+    if (idx.length === 3) out.push(map[idx[0]], map[idx[1]], map[idx[2]]);
+    return out;
+  }
+  // a profile turned around an axis into M. segs: the smooth pieces (an edge between two of them); o: axis
+  // 'z' (standing: (x, y, z) = (r cos φ, r sin φ, t) + c) or 'x' (lying: (t, r cos φ, r sin φ) + c), theta the
+  // angle turned (2π: whole), n the pieces of a whole turn, rgb, mer the angle between two lines along the
+  // solid (0: none), cut the color of the two faces of the cut (a solid turned less than a whole turn),
+  // poly and tri the outline of the profile and its triangles (kept by the caller), rings: the indices of
+  // the points of the profile whose circles are drawn as lines (glass)
+  function revolve(M, segs, o) {
+    const th = o.theta === undefined ? 2 * Math.PI : Math.max(0, o.theta), full = th >= 2 * Math.PI - 1e-9;
+    const NS = Math.max(2, Math.ceil(o.n * Math.max(th, 1e-3) / (2 * Math.PI)));
+    const c0 = o.c || [0, 0, 0], col = o.rgb, lying = o.axis === 'x', V = M.v;
+    const put = (t, r, ph, nt, nr, gi, gj) => {
+      const c = Math.cos(ph), s = Math.sin(ph);
+      if (lying) V.push(c0[0] + t, c0[1] + r * c, c0[2] + r * s, nt, nr * c, nr * s, col[0], col[1], col[2], gi, gj);
+      else V.push(c0[0] + r * c, c0[1] + r * s, c0[2] + t, nr * c, nr * s, nt, col[0], col[1], col[2], gi, gj);
+    };
+    let pk = 0;
+    for (const seg of segs) {
+      const b0 = V.length / MV, P = seg.pts;
+      for (let j = 0; j < P.length; j++, pk++) {
+        const p = P[j];
+        for (let i = 0; i <= NS; i++) { const ph = th * i / NS; put(p.t, p.r, ph, p.nt, p.nr, seg.noLines ? NaN : seg.flat || !o.mer ? 0.5 : ph / o.mer, p.gj); }
+        if (o.rings && o.rings.indexOf(pk) >= 0) { const ring = []; for (let i = 0; i <= NS; i++) ring.push(b0 + j * (NS + 1) + i); M.lines.push(ring); }
+      }
+      for (let j = 0; j + 1 < P.length; j++) {
+        const axA = P[j].r < 1e-12, axB = P[j + 1].r < 1e-12;
+        for (let i = 0; i < NS; i++) {
+          const a = b0 + j * (NS + 1) + i, b = a + 1, c = a + NS + 1, d = c + 1;
+          if (!axA) M.t.push(a, b, d);
+          if (!axB) M.t.push(a, d, c);
+        }
+      }
+    }
+    if (full || !o.cut || !o.poly) return M;
+    // the faces of the cut: the outline of the profile (closed along the axis) at 0 and at the angle turned
+    const cc = o.cut;
+    for (const ph of [0, th]) {
+      const b0 = V.length / MV, c = Math.cos(ph), s = Math.sin(ph);
+      for (const [r, t] of o.poly) {
+        if (lying) V.push(c0[0] + t, c0[1] + r * c, c0[2] + r * s, 0, -s, c, cc[0], cc[1], cc[2], NaN, NaN);
+        else V.push(c0[0] + r * c, c0[1] + r * s, c0[2] + t, -s, c, 0, cc[0], cc[1], cc[2], NaN, NaN);
+      }
+      for (const k of o.tri) M.t.push(b0 + k);
+    }
+    return M;
+  }
+  // the outline of a profile in (r, t) without the points that are there twice, and its triangles
+  function profileOutline(segs) {
+    const poly = [];
+    for (const seg of segs) for (const p of seg.pts) { const q = poly[poly.length - 1]; if (!q || Math.abs(q[0] - p.r) + Math.abs(q[1] - p.t) > 1e-12) poly.push([p.r, p.t]); }
+    const a = poly[0], b = poly[poly.length - 1];
+    if (poly.length > 2 && Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) < 1e-12) poly.pop();
+    return { poly, tri: earClip(poly) };
+  }
+  // a mesh moved and scaled (x·a, y·b, z·c; the normals with 1/a, 1/b, 1/c): an ellipsoid from a sphere
+  function scaleMesh(M, a, b, c) {
+    const V = M.v;
+    for (let k = 0; k < V.length; k += MV) { V[k] *= a; V[k + 1] *= b; V[k + 2] *= c; V[k + 3] /= a; V[k + 4] /= b; V[k + 5] /= c; }
+    return M;
+  }
+  // a polygon (the base, [[x, y], …] counterclockwise) pulled up from z = 0 to z = h into M, or to a point
+  // (apex [x, y, h]): a box, a prism, a pyramid. Lines along the edges (gi, gj whole numbers there)
+  function extrude(M, base, h, rgb, apex) {
+    const V = M.v, n = base.length, col = rgb;
+    const push = (x, y, z, nx, ny, nz, gi, gj) => V.push(x, y, z, nx, ny, nz, col[0], col[1], col[2], gi, gj);
+    // the bottom (and the top): a fan from the centre, the lines at the edge
+    const cx = base.reduce((s, p) => s + p[0], 0) / n, cy = base.reduce((s, p) => s + p[1], 0) / n;
+    for (const [z, nz] of apex ? [[0, -1]] : [[0, -1], [h, 1]]) {
+      const b0 = V.length / MV;
+      push(cx, cy, z, 0, 0, nz, 0.5, 0.5);
+      for (const [x, y] of base) push(x, y, z, 0, 0, nz, 0.5, 0);
+      for (let i = 0; i < n; i++) M.t.push(b0, b0 + 1 + i, b0 + 1 + (i + 1) % n);
+    }
+    // the sides: one face for each edge of the base, lines at its edges
+    for (let i = 0; i < n; i++) {
+      const [x1, y1] = base[i], [x2, y2] = base[(i + 1) % n], ex = x2 - x1, ey = y2 - y1, b0 = V.length / MV;
+      if (apex) {
+        const [ax, ay, az] = apex, ux = ax - x1, uy = ay - y1, uz = az;
+        let nx = ey * uz, ny = -ex * uz, nz = ex * uy - ey * ux; const L = Math.hypot(nx, ny, nz) || 1; nx /= L; ny /= L; nz /= L;
+        // (two triangles, from the middle of the base edge, so that gi is 0 along one slanted edge and 1 along
+        // the other: lines along all three edges)
+        push(x1, y1, 0, nx, ny, nz, 0, 0); push((x1 + x2) / 2, (y1 + y2) / 2, 0, nx, ny, nz, 0.5, 0); push(x2, y2, 0, nx, ny, nz, 1, 0);
+        push(ax, ay, az, nx, ny, nz, 0, 0.5); push(ax, ay, az, nx, ny, nz, 1, 0.5);
+        M.t.push(b0, b0 + 1, b0 + 3, b0 + 1, b0 + 2, b0 + 4);
+        continue;
+      }
+      const L = Math.hypot(ex, ey) || 1, nx = ey / L, ny = -ex / L;
+      push(x1, y1, 0, nx, ny, 0, 0, 0); push(x2, y2, 0, nx, ny, 0, 1, 0); push(x2, y2, h, nx, ny, 0, 1, 1); push(x1, y1, h, nx, ny, 0, 0, 1);
+      M.t.push(b0, b0 + 1, b0 + 2, b0, b0 + 2, b0 + 3);
+    }
+    return M;
+  }
+  const rgbCss = (c) => 'rgb(' + c.map((x) => Math.round(x)).join(',') + ')';
+  // the colors: a solid (from the accent of the theme, a little lighter), the faces of its cut, the liquid
+  function modelColors() {
+    const css = getComputedStyle(document.documentElement), dark = document.documentElement.classList.contains('dark');
+    const acc = cssRgb(css.getPropertyValue('--accent').trim()) || [37, 99, 235];
+    return { solid: mixRgb(acc, [255, 255, 255], dark ? 0.1 : 0.3), cut: mixRgb(acc, [255, 255, 255], dark ? 0.45 : 0.62), liquid: dark ? [64, 156, 255] : [22, 132, 240] };
+  }
+  // the profile of a head of a tank (headGeo) from its base (z = 0, r) to its tip (z = a, 0): denser near
+  // the tip, where the radius changes fastest
+  function headPts(g, m) {
+    const out = [];
+    for (let k = 0; k <= m; k++) { const z = g.a * Math.sin(k / m * Math.PI / 2); out.push([z, k === m ? 0 : g.prof(z)]); }
+    return out;
+  }
+  // The model of a shape of "Shapes" for the 3D graph. k: the shape, s: its sizes as numbers in one unit
+  // (a diameter already halved), lab: the texts of the labels of its sizes ({ r: 'r = 15 cm', … }).
+  // Returns null for a shape that cannot be drawn. The solid is centred on the z axis and stands on the
+  // floor (z = 0); a lying tank lies along the x axis. Its parts:
+  //   box [x0, x1, y0, y1, z0, z1]: the box of the graph (the solid with room around it)
+  //   grow: 'rev' (turned from 0 to 360°) or 'up' (pulled up), mesh(f): its triangles (f: how far it has grown,
+  //   0 to 1), made again only when f changes
+  //   tank: the container and the liquid (below)
+  function shapeModel(k, s, lab) {
+    // (no lines along the solid: its sides are smooth, and only its edges have lines (D6, 11:05))
+    const C = modelColors(), N = 72, MER = 0;
+    const ok = (...xs) => xs.every((x) => x > 0 && isFinite(x));
+    const M = { k, s, lab: lab || {}, colors: C };
+    const roomR = (R, top) => { const m = Math.max(R * 0.28, top * 0.06); return [-R - m, R + m, -R - m, R + m, 0, top * 1.08 + m * 0.3]; };
+    // a solid of revolution (standing on the floor, around the z axis), grown by turning
+    const rev = (segs, R, top) => {
+      const out = profileOutline(segs);
+      M.grow = 'rev'; M.box = roomR(R, top); M.R = R; M.top = top;
+      M.mesh = (f) => {
+        if (M.meshF === f && M.meshC) return M.meshC;
+        M.meshF = f;
+        return (M.meshC = revolve(newMesh(), segs, { axis: 'z', theta: 2 * Math.PI * f, n: N, rgb: C.solid, mer: MER, cut: C.cut, poly: out.poly, tri: out.tri }));
+      };
+      return M;
+    };
+    // (no latitude lines on a sphere either; the edge of a hemisphere, 0)
+    const lat = (a) => (Math.abs(a - Math.PI / 2) < 1e-9 ? 0 : 0.5);
+    if (k === 'sphere') {
+      const R = s.r; if (!ok(R)) return null;
+      return rev([arcSeg(R, 0, R, Math.PI, 0, 48, () => 0.5)], R, 2 * R);
+    }
+    if (k === 'cyl') {
+      const R = s.r, H = s.h; if (!ok(R, H)) return null;
+      return rev([lineSeg(0, 0, 0, R, -0.5, 0, 1, true), lineSeg(0, R, H, R, 0, 1, 1), lineSeg(H, R, H, 0, 1, 1.5, 1, true)], R, H);
+    }
+    if (k === 'cone') {
+      const R = s.r, H = s.h; if (!ok(R, H)) return null;
+      return rev([lineSeg(0, 0, 0, R, -0.5, 0, 1, true), lineSeg(0, R, H, 0, 0, 0.75, 1)], R, H);
+    }
+    if (k === 'frustum') {
+      const R = s.R, r = s.r, H = s.h; if (!ok(R, r, H)) return null;
+      return rev([lineSeg(0, 0, 0, R, -0.5, 0, 1, true), lineSeg(0, R, H, r, 0, 1, 1), lineSeg(H, r, H, 0, 1, 1.5, 1, true)], Math.max(R, r), H);
+    }
+    if (k === 'hemi') {
+      const R = s.r; if (!ok(R)) return null;
+      return rev([lineSeg(0, 0, 0, R, -0.5, 0, 1, true), arcSeg(0, 0, R, Math.PI / 2, 0, 28, (a) => lat(a))], R, R);
+    }
+    if (k === 'cap') {
+      const Rs = s.r, h = s.h; if (!ok(Rs, h) || h > 2 * Rs * (1 + 1e-12)) return null;
+      const hh = Math.min(h, 2 * Rs), a = Math.sqrt(Math.max(0, hh * (2 * Rs - hh))), a0 = Math.atan2(a, Rs - hh);
+      return rev([lineSeg(0, 0, 0, a, -0.5, 0, 1, true), arcSeg(hh - Rs, 0, Rs, a0, 0, 36, (al, i) => (i === 0 ? 0 : 0.5))], Math.max(a, hh > Rs ? Rs : a), hh);
+    }
+    if (k === 'torus') {
+      const R = s.R, r = s.r; if (!ok(R, r) || r > R) return null;
+      return rev([arcSeg(r, R, r, -Math.PI, Math.PI, 48, () => 0.5)], R + r, 2 * r);
+    }
+    if (k === 'ellipsoid') {
+      const a = s.a, b = s.b, c = s.c; if (!ok(a, b, c)) return null;
+      const segs = [arcSeg(1, 0, 1, Math.PI, 0, 48, () => 0.5)], out = profileOutline(segs);
+      M.grow = 'rev'; M.R = Math.max(a, b); M.top = 2 * c;
+      const m = Math.max(Math.max(a, b) * 0.28, 2 * c * 0.06);
+      M.box = [-a - m, a + m, -b - m, b + m, 0, 2 * c * 1.08 + m * 0.3];
+      M.mesh = (f) => {
+        if (M.meshF === f && M.meshC) return M.meshC;
+        M.meshF = f;
+        return (M.meshC = scaleMesh(revolve(newMesh(), segs, { axis: 'z', theta: 2 * Math.PI * f, n: N, rgb: C.solid, mer: MER, cut: C.cut, poly: out.poly, tri: out.tri }), a, b, c));
+      };
+      return M;
+    }
+    if (k === 'pipe') {
+      // (lying along the x axis, as a pipe usually is; the inside can be seen through its ends)
+      const Ro = s.R, ri = s.r, L = s.L; if (!ok(Ro, ri, L) || ri >= Ro) return null;
+      const segs = [lineSeg(-L / 2, ri, -L / 2, Ro, 0, 1, 1, true), lineSeg(-L / 2, Ro, L / 2, Ro, 1, 2, 1), lineSeg(L / 2, Ro, L / 2, ri, 2, 3, 1, true), lineSeg(L / 2, ri, -L / 2, ri, 3, 4, 1)];
+      const out = profileOutline(segs), m = Math.max(Ro * 0.3, L * 0.05);
+      M.grow = 'rev'; M.lying = true; M.R = Ro; M.L = L; M.top = 2 * Ro;
+      M.box = [-L / 2 - m, L / 2 + m, -Ro - m, Ro + m, 0, 2 * Ro * 1.08 + m * 0.3];
+      M.mesh = (f) => {
+        if (M.meshF === f && M.meshC) return M.meshC;
+        M.meshF = f;
+        return (M.meshC = revolve(newMesh(), segs, { axis: 'x', c: [0, 0, Ro], theta: 2 * Math.PI * f, n: N, rgb: C.solid, mer: MER, cut: C.cut, poly: out.poly, tri: out.tri }));
+      };
+      return M;
+    }
+    // solids pulled up from their base
+    const up = (base, h, apex, R) => {
+      M.grow = 'up'; M.R = R; M.top = h; M.box = roomR(R, h); M.base = base;
+      M.mesh = (f) => {
+        if (M.meshF === f && M.meshC) return M.meshC;
+        M.meshF = f;
+        const hf = Math.max(h * f, h * 1e-4);
+        return (M.meshC = extrude(newMesh(), base, hf, C.solid, apex ? [apex[0], apex[1], hf] : null));
+      };
+      return M;
+    };
+    if (k === 'box') {
+      const a = s.a, b = s.b, c = s.c; if (!ok(a, b, c)) return null;
+      const B = [[-a / 2, -b / 2], [a / 2, -b / 2], [a / 2, b / 2], [-a / 2, b / 2]];
+      up(B, c, null, Math.max(a, b) / 2);
+      const m = Math.max(Math.max(a, b) * 0.14, c * 0.06);
+      M.box = [-a / 2 - m, a / 2 + m, -b / 2 - m, b / 2 + m, 0, c * 1.08 + m * 0.3];
+      return M;
+    }
+    if (k === 'pyr') {
+      const a = s.a, h = s.h; if (!ok(a, h)) return null;
+      return up([[-a / 2, -a / 2], [a / 2, -a / 2], [a / 2, a / 2], [-a / 2, a / 2]], h, [0, 0], a / 2);
+    }
+    if (k === 'nprism' || k === 'prism') {
+      // (a prism given by the area of its base: drawn with a square base of that area)
+      const n = k === 'prism' ? 4 : Math.round(s.n), side = k === 'prism' ? Math.sqrt(s.A) : s.a, h = s.h;
+      if (!ok(side, h) || !(n >= 3 && n <= 200)) return null;
+      const Rc = side / (2 * Math.sin(Math.PI / n)), B = [];
+      for (let i = 0; i < n; i++) { const t = -Math.PI / 2 + Math.PI / n + i * 2 * Math.PI / n; B.push([Rc * Math.cos(t), Rc * Math.sin(t)]); }
+      if (k === 'prism') { const q = side / 2; B.length = 0; B.push([-q, -q], [q, -q], [q, q], [-q, q]); }
+      return up(B, h, null, k === 'prism' ? side / 2 : Rc);
+    }
+    if (/tank/.test(k)) return tankModel(M, k, s);
+    return null;
+  }
+  // The tank of a model: its container (a profile turned around its axis: lying along x, or standing), the
+  // liquid at the height h above its lowest point (s.h), and the amount for a height (TANK_V, in the unit
+  // of the sizes cubed). M.tank: { lying, top (the highest level), R, V(h), full, glass (the mesh of the
+  // container), liquid(h) (the mesh of the liquid, made again
+  // when h changes), wall(z) (the point of the volume scale on the wall at the height z) }
+  function tankModel(M, k, s) {
+    const C = M.colors, N = 72, ht = headTank(k), base = ht ? (ht.lying ? 'htank' : 'vtank') : k;
+    const R = base === 'ctank' ? s.R : s.r;
+    if (!(R > 0) || !isFinite(R)) return null;
+    const top = tankTop(k, s), V = (h) => TANK_V[k](s, Math.max(0, Math.min(top, h))), full = V(top);
+    if (!(top > 0) || !(full > 0) || !isFinite(full)) return null;
+    const T = M.tank = { k, base, lying: base === 'htank', R, top, V, full, h: Math.max(0, Math.min(top, s.h || 0)) };
+    // the profile of the container: [t, r] pieces (smooth inside), the points where a seam is drawn
+    const g = ht && ht.type !== 'flat' ? headGeo(ht.type, R, s.a) : null, a = g ? g.a : 0;
+    let segs;
+    if (T.lying) {
+      const L = s.L; if (!(L > 0)) return null;
+      T.L = L; T.a = a;
+      const hp = g ? headPts(g, 40) : null;
+      segs = g ? [curveSeg(hp.slice().reverse().map(([z, r]) => [-L / 2 - z, r])), lineSeg(-L / 2, R, L / 2, R, 0, 0, 1), curveSeg(hp.map(([z, r]) => [L / 2 + z, r]))]
+        : [lineSeg(-L / 2, 0, -L / 2, R, 0, 0, 1, true), lineSeg(-L / 2, R, L / 2, R, 0, 0, 1), lineSeg(L / 2, R, L / 2, 0, 0, 0, 1, true)];
+      T.stations = segs.filter((q) => !q.flat).reduce((all, q) => all.concat(q.pts), []);
+      T.flatEnds = !g;
+      M.box = (() => { const m = Math.max(R * 0.3, (L + 2 * a) * 0.05); return [-L / 2 - a - m, L / 2 + a + m, -R - m, R + m, 0, 2 * R * 1.08 + m * 0.3]; })();
+    } else {
+      let H;
+      if (base === 'vtank') {
+        H = s.H; if (!(H > 0)) return null;
+        const hp = g ? headPts(g, 40) : null;
+        segs = g ? [curveSeg(hp.slice().reverse().map(([z, r]) => [a - z, r])), lineSeg(a, R, a + H, R, 0, 0, 1), curveSeg(hp.map(([z, r]) => [a + H + z, r]))]
+          : [lineSeg(0, 0, 0, R, 0, 0, 1, true), lineSeg(0, R, H, R, 0, 0, 1), lineSeg(H, R, H, 0, 0, 0, 1, true)];
+      } else if (base === 'stank') {
+        H = 2 * R;
+        segs = [arcSeg(R, 0, R, Math.PI, 0, 48, () => 0)];
+      } else {
+        H = s.H; if (!(H > 0)) return null;
+        // (the cone with its point down, open at the top: drawn closed by a lid of glass)
+        segs = [lineSeg(0, 0, H, R, 0, 0, 1), lineSeg(H, R, H, 0, 0, 0, 1, true)];
+      }
+      T.H = H; T.a = a;
+      M.box = (() => { const m = Math.max(R * 0.3, top * 0.05); return [-R - m, R + m, -R - m, R + m, 0, top * 1.08 + m * 0.3]; })();
+    }
+    T.segs = segs;
+    // the radius of the container at the height z (standing) or at the place t along the axis (lying), from
+    // the profile
+    const prof = segs.reduce((all, q) => all.concat(q.pts), []);
+    T.rAt = (t) => {
+      let best = 0;
+      for (let i = 0; i + 1 < prof.length; i++) {
+        const p = prof[i], q = prof[i + 1];
+        if ((p.t - t) * (q.t - t) > 0 || p.t === q.t) continue;
+        best = Math.max(best, p.r + (q.r - p.r) * (t - p.t) / (q.t - p.t));
+      }
+      return best;
+    };
+    // the seams (where a head meets the shell, and the edges of flat ends): the points of the profile
+    const rings = [];
+    let pk = 0;
+    segs.forEach((q, i) => { pk += q.pts.length; if (i + 1 < segs.length) rings.push(pk - 1); });
+    T.glass = revolve(newMesh(), segs, T.lying ? { axis: 'x', c: [0, 0, R], n: N, rgb: [0, 0, 0], rings } : { axis: 'z', n: N, rgb: [0, 0, 0], rings });
+    T.liquid = (h) => {
+      if (T.liqH === h && T.liqC) return T.liqC;
+      T.liqH = h;
+      return (T.liqC = T.lying ? lyingLiquid(T, h, C.liquid) : standingLiquid(T, h, C.liquid));
+    };
+    // the point on the wall at the height z, on the side toward the camera (sv: [sx, sy], the direction of
+    // that side in the floor's plane, standing; lying: x of the scale and the side in y)
+    T.wall = (z, sv) => {
+      if (T.lying) { const dz = z - R, w = Math.sqrt(Math.max(0, R * R - dz * dz)); return [sv[0], sv[1] * w, z]; }
+      const r = T.rAt(z);
+      return [sv[0] * r, sv[1] * r, z];
+    };
+    return M;
+  }
+  // the liquid of a standing tank up to the height h: the profile cut at h, turned, and the level as a disk
+  function standingLiquid(T, h, rgb) {
+    const M = newMesh();
+    if (!(h > T.top * 1e-6)) return M;
+    const segs = [];
+    let rTop = 0, afterFlat = false;
+    for (const q of T.segs) {
+      const pts = [];
+      for (let i = 0; i < q.pts.length; i++) {
+        const p = q.pts[i];
+        // (the edge of a flat bottom: a line, gj 0 on both sides of it)
+        if (p.t <= h) { pts.push(Object.assign({}, p, { gj: q.flat ? (p.r < 1e-12 ? -0.5 : 0) : i === 0 && afterFlat ? 0 : 0.5 })); continue; }
+        const o = q.pts[i - 1];
+        if (o && o.t < h) { const f = (h - o.t) / (p.t - o.t), r = o.r + (p.r - o.r) * f; pts.push(pp(h, r, o.nt + (p.nt - o.nt) * f, o.nr + (p.nr - o.nr) * f, 1)); rTop = r; }
+        break;
+      }
+      if (pts.length > 1) segs.push({ pts, flat: q.flat });
+      afterFlat = q.flat;
+      if (pts.length && pts[pts.length - 1].gj === 1) break;
+    }
+    // (a level at a point of the profile: that ring is the edge of the level; full to a flat lid: no level)
+    if (!segs.length) return M;
+    const ls = segs[segs.length - 1], last = ls.pts, lp = last[last.length - 1];
+    if (lp.gj !== 1 && !ls.flat) { rTop = lp.r; lp.gj = 1; }
+    if (rTop > 1e-12) segs.push(lineSeg(h, rTop, h, 0, 1, 1.5, 1, true));
+    return revolve(M, segs, { axis: 'z', n: 72, rgb, mer: 0 });
+  }
+  // the liquid of a lying tank up to the height h: for each station along the axis (from the profile; and
+  // where the level meets the wall of a head, added), the part of its circle below the level; the level (a
+  // flat surface between the places where it meets the wall); with flat ends, the parts of the ends below it
+  function lyingLiquid(T, h, rgb) {
+    const M = newMesh(), V = M.v, R = T.R, q0 = h - R, NA = 48, col = rgb;
+    if (!(h > T.top * 1e-6)) return M;
+    const push = (x, y, z, nx, ny, nz, gi, gj) => V.push(x, y, z, nx, ny, nz, col[0], col[1], col[2], gi, gj);
+    // the stations, with those where the radius is |q0| (the level meets the wall there)
+    const st = [], aq = Math.abs(q0);
+    T.stations.forEach((p, i) => {
+      const o = T.stations[i - 1];
+      if (o && (o.r - aq) * (p.r - aq) < 0) { const f = (aq - o.r) / (p.r - o.r); st.push(pp(o.t + (p.t - o.t) * f, aq, o.nt + (p.nt - o.nt) * f, o.nr + (p.nr - o.nr) * f, 0)); }
+      st.push(p);
+    });
+    // the wetted wall: angles from φa to φb (through the bottom, 3π/2) where r sin φ ≤ q0
+    const arc = (r) => { const q = r > 1e-12 ? Math.max(-1, Math.min(1, q0 / r)) : (q0 >= 0 ? 1 : -1), s = Math.asin(q); return { a: Math.PI - s, b: 2 * Math.PI + s, part: Math.abs(q) < 1 - 1e-12 || Math.abs(r - aq) < 1e-12 * R }; };
+    const b0 = V.length / MV;
+    for (const p of st) {
+      const A = arc(p.r);
+      for (let i = 0; i <= NA; i++) {
+        const ph = A.a + (A.b - A.a) * i / NA, c = Math.cos(ph), s = Math.sin(ph);
+        push(p.t, p.r * c, R + p.r * s, p.nt, p.nr * c, p.nr * s, 0.5, A.part ? 0.5 + Math.abs(i / NA - 0.5) : 0.5);
+      }
+    }
+    for (let j = 0; j + 1 < st.length; j++) {
+      if (st[j].t === st[j + 1].t) continue;
+      for (let i = 0; i < NA; i++) { const a = b0 + j * (NA + 1) + i, b = a + 1, c = a + NA + 1, d = c + 1; M.t.push(a, b, d, a, d, c); }
+    }
+    // the level: between the stations where the circle reaches above it
+    let prev = -1;
+    for (const p of st) {
+      const w = p.r > aq ? Math.sqrt(p.r * p.r - q0 * q0) : 0, on = p.r >= aq * (1 - 1e-12) && p.r > 1e-12;
+      const k = V.length / MV;
+      if (on) {
+        push(p.t, -w, h, 0, 0, 1, 0.5, 1); push(p.t, 0, h, 0, 0, 1, 0.5, 0.5); push(p.t, w, h, 0, 0, 1, 0.5, 1);
+        if (prev >= 0) M.t.push(prev, k, prev + 1, prev + 1, k, k + 1, prev + 1, k + 1, prev + 2, prev + 2, k + 1, k + 2);
+        prev = k;
+      } else prev = -1;
+    }
+    // flat ends: the part of each end below the level (rows of two points of its circle at the same height,
+    // and the point between them)
+    if (T.flatEnds) {
+      for (const [t, nx] of [[-T.L / 2, -1], [T.L / 2, 1]]) {
+        const A = arc(R), e0 = V.length / MV;
+        for (let i = 0; i <= NA / 2; i++) {
+          const p1 = A.a + (A.b - A.a) * i / NA, y = R * Math.cos(p1), z = R + R * Math.sin(p1);
+          push(t, y, z, nx, 0, 0, NaN, NaN); push(t, 0, z, nx, 0, 0, NaN, NaN); push(t, -y, z, nx, 0, 0, NaN, NaN);
+        }
+        for (let i = 0; i < NA / 2; i++) { const a = e0 + 3 * i, c = a + 3; M.t.push(a, a + 1, c, a + 1, c + 1, c, a + 1, a + 2, c + 1, a + 2, c + 2, c + 1); }
+      }
+    }
+    return M;
+  }
+  // the triangles of a mesh into the buffer of the surfaces (draw3d's projection X): the place on the screen
+  // and the depth of each corner, its normal in the camera's axes, its color and lines, and the lamp's light
+  // while the graph is turned (kept for the turn)
+  function meshToTris(M, tb, X) {
+    const V = M.v, n = V.length / MV;
+    if (!M.pv || M.pv.length !== n) { M.pv = []; for (let i = 0; i < n; i++) M.pv.push(new Float32Array(CV)); }
+    // (the lamp's light at each corner while the graph is turned: looked up once for the turn, BG19)
+    let lock = null;
+    if (X.LKS) {
+      if (M.lockId !== X.LKS.id || !M.lockL || M.lockL.length !== n) { M.lockL = new Float32Array(n).fill(NaN); M.lockId = X.LKS.id; }
+      lock = M.lockL;
+    }
+    for (let i = 0; i < n; i++) {
+      const o = i * MV, u = X.U(V[o]), v = X.V(V[o + 1]), w = X.Wz(V[o + 2]);
+      X.proj(u, v, w);
+      const N = X.camN(V[o + 3] * X.nx, V[o + 4] * X.ny, V[o + 5] * X.nz), P = M.pv[i];
+      P[0] = X.T[0]; P[1] = X.T[1]; P[2] = X.T[2]; P[3] = N[0]; P[4] = N[1]; P[5] = N[2];
+      P[6] = V[o + 6]; P[7] = V[o + 7]; P[8] = V[o + 8]; P[9] = V[o + 9]; P[10] = V[o + 10];
+      if (lock) { let r = lock[i]; if (r !== r) r = lock[i] = X.lockLitN(u, v, w, N); P[11] = r; } else P[11] = 1;
+    }
+    for (let t = 0; t < M.t.length; t += 3) tb.add(M.pv[M.t[t]], M.pv[M.t[t + 1]], M.pv[M.t[t + 2]]);
+    return M.t.length / 3;
+  }
+  // the glass of a tank (X: draw3d's projection). The containers are convex, so on the screen the glass is the
+  // convex hull of its corners, with one wall in front of the liquid and one behind it everywhere inside: side
+  // 'back' fills it with a little color before the liquid (and draws the seams at the back, faint); 'front'
+  // fills it again after the liquid, with a little shine where the lamp is mirrored toward the eye, and draws
+  // its outline and the seams in front.
+  function glassPaint(g, Md, X, side, dark) {
+    const T = Md.tank, G = T.glass, V = G.v, n = V.length / MV, I = G.t;
+    if (side === 'back') {
+      if (!T.gp || T.gp.length !== n * 2) { T.gp = new Float32Array(n * 2); T.gn = new Float32Array(n); T.gs = new Float32Array(n); }
+      const P = T.gp, Hh = (() => { const l = LAMP; const x = l[0], y = l[1], z = l[2] - 1, m = Math.hypot(x, y, z); return [x / m, y / m, z / m]; })();
+      for (let i = 0; i < n; i++) {
+        const o = i * MV;
+        X.proj(X.U(V[o]), X.V(V[o + 1]), X.Wz(V[o + 2]));
+        P[2 * i] = X.T[0]; P[2 * i + 1] = X.T[1];
+        // (how much the normal faces the eye, < 0 toward it; and how much it mirrors the lamp toward the eye)
+        const N = X.camN(V[o + 3] * X.nx, V[o + 4] * X.ny, V[o + 5] * X.nz), L = Math.hypot(N[0], N[1], N[2]) || 1;
+        T.gn[i] = N[2] / L;
+        T.gs[i] = (N[0] * Hh[0] + N[1] * Hh[1] + N[2] * Hh[2]) / L;
+      }
+      // the convex hull on the screen (monotone chain)
+      const idx = Array.from({ length: n }, (_, i) => i).sort((a, b) => P[2 * a] - P[2 * b] || P[2 * a + 1] - P[2 * b + 1]);
+      const cr = (o, a, b) => (P[2 * a] - P[2 * o]) * (P[2 * b + 1] - P[2 * o + 1]) - (P[2 * a + 1] - P[2 * o + 1]) * (P[2 * b] - P[2 * o]);
+      const lo = [], hi = [];
+      for (const i of idx) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], i) <= 0) lo.pop(); lo.push(i); }
+      for (let k = idx.length - 1; k >= 0; k--) { const i = idx[k]; while (hi.length > 1 && cr(hi[hi.length - 2], hi[hi.length - 1], i) <= 0) hi.pop(); hi.push(i); }
+      T.hull = lo.slice(0, -1).concat(hi.slice(0, -1));
+    }
+    const P = T.gp, hull = T.hull;
+    const hullPath = () => { g.beginPath(); hull.forEach((i, k) => (k ? g.lineTo(P[2 * i], P[2 * i + 1]) : g.moveTo(P[2 * i], P[2 * i + 1]))); g.closePath(); };
+    g.save();
+    hullPath();
+    g.fillStyle = dark ? (side === 'front' ? 'rgba(190,215,255,0.07)' : 'rgba(190,215,255,0.06)') : (side === 'front' ? 'rgba(120,160,205,0.10)' : 'rgba(120,160,205,0.13)');
+    g.fill();
+    if (side === 'back') {
+      g.strokeStyle = dark ? 'rgba(210,225,250,0.22)' : 'rgba(50,70,100,0.22)'; g.lineWidth = 1;
+      g.beginPath(); seamPath(g, G, P, T.gn, false); g.stroke();
+      g.restore();
+      return;
+    }
+    // a little shine: the triangles in front whose corners all mirror the lamp toward the eye (few)
+    for (const [lim, al] of [[0.86, 0.1], [0.95, 0.14]]) {
+      g.beginPath();
+      let any = false;
+      for (let t = 0; t < I.length; t += 3) {
+        const a = I[t], b = I[t + 1], c = I[t + 2];
+        if (T.gn[a] >= 0 || -T.gs[a] < lim || -T.gs[b] < lim || -T.gs[c] < lim) continue;
+        g.moveTo(P[2 * a], P[2 * a + 1]); g.lineTo(P[2 * b], P[2 * b + 1]); g.lineTo(P[2 * c], P[2 * c + 1]); g.closePath(); any = true;
+      }
+      if (any) { g.fillStyle = `rgba(255,255,255,${al})`; g.fill('nonzero'); }
+    }
+    // the outline, and the seams in front
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    hullPath();
+    g.strokeStyle = dark ? 'rgba(215,228,250,0.72)' : 'rgba(45,62,90,0.72)'; g.lineWidth = 1.4;
+    g.stroke();
+    g.beginPath(); seamPath(g, G, P, T.gn, true);
+    g.strokeStyle = dark ? 'rgba(215,228,250,0.55)' : 'rgba(45,62,90,0.5)'; g.lineWidth = 1.1;
+    g.stroke();
+    g.restore();
+  }
+  // the parts of the seams (rings of the glass) toward the eye (front) or away from it
+  function seamPath(g, G, P, gn, front) {
+    for (const ring of G.lines) {
+      for (let i = 0; i + 1 < ring.length; i++) {
+        const a = ring[i], b = ring[i + 1], f = gn[a] + gn[b] < 0;
+        if (f !== front) continue;
+        g.moveTo(P[2 * a], P[2 * a + 1]); g.lineTo(P[2 * b], P[2 * b + 1]);
+      }
+    }
+  }
+  // what is drawn over the model after the surfaces (X: the projection; zb: the depth buffer of surfacePaint):
+  // the glass in front, the volume scale on the wall and the amount at the level (tanks), and the sizes (lines
+  // with their labels, parts behind the solid dashed). Returns what was drawn (for the tests).
+  function modelOverlay(g, Md, X, zb, o) {
+    const out = { dims: [] }, css = o.css, dark = o.dark;
+    const ink = css.getPropertyValue('--text').trim() || (dark ? '#e5e7eb' : '#111827'), bg = css.getPropertyValue('--plot-bg').trim() || (dark ? '#111' : '#fff');
+    const P3 = (p) => { X.proj(X.U(p[0]), X.V(p[1]), X.Wz(p[2])); return [X.T[0], X.T[1], X.T[2]]; };
+    // directions on the floor: to the right on the screen, and toward the eye
+    const rgt = [X.ca, -X.sa], twd = [-X.sa, -X.ca];
+    const T = Md.tank, growing = o.growing;
+    if (T) glassPaint(g, Md, X, 'front', dark);
+    // a label in a little box: an italic letter, then the rest (" = 15 cm")
+    const pill = (txt, x, y, al) => {
+      const m = /^(\S+)( = .*)$/.exec(txt), a = m ? m[1] : '', b = m ? m[2] : txt;
+      g.font = 'italic 600 14px Georgia, "Times New Roman", serif'; const wa = a ? g.measureText(a).width : 0;
+      g.font = '600 13px system-ui, sans-serif'; const wb = g.measureText(b).width;
+      const w = wa + wb + 12, h = 22;
+      let x0 = al === 'left' ? x - w : al === 'center' ? x - w / 2 : x;
+      x0 = Math.max(2, Math.min(o.W - w - 2, x0));
+      const y0 = Math.max(2, Math.min(o.H - h - 2, y - h / 2));
+      // (not under the round buttons at the right of the graph)
+      const A = o.avoid;
+      if (A && x0 + w > A.x && x0 < A.x + A.w && y0 + h > A.y && y0 < A.y + A.h) x0 = Math.max(2, A.x - w - 4);
+      g.fillStyle = bg; g.globalAlpha = 0.86;
+      g.beginPath(); if (g.roundRect) g.roundRect(x0, y0, w, h, 6); else g.rect(x0, y0, w, h); g.fill();
+      g.globalAlpha = 1; g.fillStyle = ink; g.textBaseline = 'middle'; g.textAlign = 'left';
+      if (a) { g.font = 'italic 600 14px Georgia, "Times New Roman", serif'; g.fillText(a, x0 + 6, y0 + h / 2 + 0.5); }
+      g.font = '600 13px system-ui, sans-serif'; g.fillText(b, x0 + 6 + wa, y0 + h / 2 + 0.5);
+      return { x: x0, y: y0, w, h };
+    };
+    // is the point (x, y, depth) in front of the surfaces drawn?
+    const seen = (x, y, d) => {
+      if (!zb || T) return true;
+      const px = Math.round(x * zb.q - zb.x0), py = Math.round(y * zb.q - zb.y0);
+      if (px < 0 || py < 0 || px >= zb.w || py >= zb.h) return true;
+      return d <= zb.zb[py * zb.w + px] + 0.012;
+    };
+    // a size: the line from a to b (3D), small marks across its ends, its label beside its middle (side: the
+    // direction on the screen, [dx, dy], or the side of the line)
+    const dim = (a, b, txt, side) => {
+      if (!txt) return;
+      const A = P3(a), B = P3(b), len = Math.hypot(B[0] - A[0], B[1] - A[1]);
+      if (!(len > 6)) return;
+      const ux = (B[0] - A[0]) / len, uy = (B[1] - A[1]) / len, nx = -uy, ny = ux;
+      // (the parts in front solid, those behind the solid dashed)
+      const K = Math.max(2, Math.ceil(len / 4)), runs = [];
+      for (let k = 0; k <= K; k++) {
+        const f = k / K, p = P3([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f]), v = seen(p[0], p[1], p[2]);
+        const r = runs[runs.length - 1];
+        if (r && r.v === v) r.pts.push(p); else runs.push({ v, pts: r ? [r.pts[r.pts.length - 1], p] : [p] });
+      }
+      g.save(); g.lineCap = 'round';
+      for (const pass of [0, 1]) {
+        for (const r of runs) {
+          g.beginPath(); r.pts.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])));
+          if (pass === 0) { g.setLineDash([]); g.strokeStyle = bg; g.globalAlpha = 0.75; g.lineWidth = 3.6; }
+          else { g.setLineDash(r.v ? [] : [4, 3]); g.strokeStyle = ink; g.globalAlpha = r.v ? 0.92 : 0.6; g.lineWidth = 1.4; }
+          g.stroke();
+        }
+        g.setLineDash([]);
+        g.beginPath();
+        for (const p of [A, B]) { g.moveTo(p[0] - nx * 5, p[1] - ny * 5); g.lineTo(p[0] + nx * 5, p[1] + ny * 5); }
+        if (pass === 0) { g.strokeStyle = bg; g.globalAlpha = 0.75; g.lineWidth = 3.6; } else { g.strokeStyle = ink; g.globalAlpha = 0.92; g.lineWidth = 1.4; }
+        g.stroke();
+      }
+      g.restore();
+      // the label: beside the middle, on the side asked for (away from the solid)
+      let sx = side ? side[0] : nx, sy = side ? side[1] : ny;
+      const sl = Math.hypot(sx, sy) || 1; sx /= sl; sy /= sl;
+      const mx = (A[0] + B[0]) / 2 + sx * 16, my = (A[1] + B[1]) / 2 + sy * 14;
+      const box = pill(txt, mx, my, sx < -0.35 ? 'left' : sx > 0.35 ? 'right' : 'center');
+      out.dims.push({ txt, a: [Math.round(A[0]), Math.round(A[1])], b: [Math.round(B[0]), Math.round(B[1])], box: [Math.round(box.x), Math.round(box.y), Math.round(box.w), Math.round(box.h)], hidden: runs.filter((r) => !r.v).length });
+    };
+    const L = { dia: Md.lab.dia }, k = Md.k, sR = Md.R;
+    for (const n in Md.lab) if (n !== 'dia') L[n] = labText(Md.lab[n]);
+    const at = (d, q, z) => [d[0] * q, d[1] * q, z];
+    const sgn = (x) => (x < 0 ? -1 : 1);
+    // the screen's right as an arrow for a label
+    const RIGHT = [1, 0], LEFT = [-1, 0], UP = [0, -1], DOWN = [0, 1];
+    if (!T && !growing) {
+      const rad = L.r || L.R, dd = L.dia;
+      if (k === 'sphere') {
+        const c = [0, 0, sR];
+        if (dd) dim([-rgt[0] * sR, -rgt[1] * sR, sR], [rgt[0] * sR, rgt[1] * sR, sR], rad, UP);
+        else dim(c, [rgt[0] * sR, rgt[1] * sR, sR], rad, UP);
+        const C2 = P3(c); g.fillStyle = ink; g.globalAlpha = seen(C2[0], C2[1], C2[2]) ? 0.9 : 0.5; g.beginPath(); g.arc(C2[0], C2[1], 2.6, 0, 2 * Math.PI); g.fill(); g.globalAlpha = 1;
+      } else if (k === 'cyl' || k === 'cone' || k === 'frustum') {
+        const H = Md.top, out2 = sR * 1.22;
+        // the radius on the face toward the eye (the top seen from above, the bottom from below); a cone: its base
+        const zc = k === 'cone' ? 0 : X.se >= 0 ? H : 0, rr = k === 'frustum' && zc === H ? Md.s.r : k === 'frustum' ? Md.s.R : sR;
+        const d30 = [rgt[0] * 0.866 + twd[0] * 0.5, rgt[1] * 0.866 + twd[1] * 0.5];
+        const tr2 = k === 'frustum' ? (zc === H ? L.r : L.R) : rad;
+        if (dd) dim(at(d30, -rr, zc), at(d30, rr, zc), tr2, k === 'cone' || zc === 0 ? DOWN : UP);
+        else dim([0, 0, zc], at(d30, rr, zc), tr2, k === 'cone' || zc === 0 ? DOWN : UP);
+        if (k === 'frustum') { const z2 = zc === H ? 0 : H, r2 = zc === H ? Md.s.R : Md.s.r; if (dd) dim(at(d30, -r2, z2), at(d30, r2, z2), zc === H ? L.R : L.r, z2 === 0 ? DOWN : UP); else dim([0, 0, z2], at(d30, r2, z2), zc === H ? L.R : L.r, z2 === 0 ? DOWN : UP); }
+        const ro = Math.max(out2, k === 'frustum' ? Math.max(Md.s.R, Md.s.r) * 1.22 : 0);
+        dim(at(rgt, -ro, 0), at(rgt, -ro, H), L.h, LEFT);
+      } else if (k === 'hemi' || k === 'cap') {
+        const H = Md.top;
+        dim([0, 0, 0], [0, 0, H], L.h, LEFT);
+        const rb = k === 'hemi' ? sR : Math.sqrt(Math.max(0, Md.s.h * (2 * Md.s.r - Md.s.h)));
+        if (k === 'hemi') { if (dd) dim(at(rgt, -rb, 0), at(rgt, rb, 0), rad, DOWN); else dim([0, 0, 0], at(rgt, rb, 0), rad, DOWN); }
+      } else if (k === 'torus') {
+        const R = Md.s.R, r = Md.s.r;
+        dim([0, 0, r], at(rgt, R, r), L.R, UP);
+        dim(at(rgt, R, r), at(rgt, R + r, r), L.r, DOWN);
+      } else if (k === 'ellipsoid') {
+        const s = Md.s;
+        dim([0, 0, s.c], [s.a, 0, s.c], L.a, DOWN); dim([0, 0, s.c], [0, s.b, s.c], L.b, DOWN); dim([0, 0, s.c], [0, 0, 2 * s.c], L.c, LEFT);
+      } else if (k === 'pipe') {
+        const s = Md.s, ex = sgn(X.ca) * s.L / 2;
+        dim([ex, 0, s.R], [ex, 0, 2 * s.R], L.R, sgn(X.ca) > 0 ? RIGHT : LEFT);
+        dim([ex, 0, s.R], [ex, 0, s.R - s.r], L.r, sgn(X.ca) > 0 ? RIGHT : LEFT);
+        const fy = -sgn(X.ca * X.ce) * s.R * 1.15;
+        dim([-s.L / 2, fy, 0], [s.L / 2, fy, 0], L.L, DOWN);
+      } else if (Md.grow === 'up') {
+        const s = Md.s, H = Md.top, out2 = sR * 1.35;
+        dim(at(rgt, -out2, 0), at(rgt, -out2, H), L.h || L.c, LEFT);
+        if (k === 'box') {
+          const fx = sgn(twd[0]) * s.a / 2, fy = sgn(twd[1]) * s.b / 2;
+          dim([-s.a / 2, fy, 0], [s.a / 2, fy, 0], L.a, DOWN); dim([fx, -s.b / 2, 0], [fx, s.b / 2, 0], L.b, DOWN);
+        } else if (k === 'pyr') {
+          const fy = sgn(twd[1]) * s.a / 2;
+          dim([-s.a / 2, fy, 0], [s.a / 2, fy, 0], L.a, DOWN);
+        } else if (k === 'nprism' && Md.base) {
+          // (the side: the edge of the base nearest the eye)
+          const B = Md.base;
+          let best = 0, bi = 0;
+          for (let i = 0; i < B.length; i++) { const a = B[i], b = B[(i + 1) % B.length], d = (a[0] + b[0]) * twd[0] + (a[1] + b[1]) * twd[1]; if (i === 0 || d > best) { best = d; bi = i; } }
+          const a = B[bi], b = B[(bi + 1) % B.length];
+          dim([a[0], a[1], 0], [b[0], b[1], 0], L.a, DOWN);
+        } else if (k === 'prism' && L.A) {
+          // (the area of the base, written on the top)
+          const c = P3([0, 0, H]);
+          const box = pill(L.A, c[0], c[1], 'center');
+          out.dims.push({ txt: L.A, a: [Math.round(c[0]), Math.round(c[1])], b: [Math.round(c[0]), Math.round(c[1])], box: [Math.round(box.x), Math.round(box.y), Math.round(box.w), Math.round(box.h)], hidden: 0 });
+        }
+      }
+    }
+    if (T) {
+      const R = T.R, top = T.top, h = T.hShow;
+      // where the scale is: lying, on the front of the shell toward the left end; standing, on the wall toward the
+      // eye and a little to the left (the amount at the level goes to its right, away from the round buttons)
+      let sv;
+      if (T.lying) sv = [-sgn(X.ca) * T.L * 0.22, -sgn(X.ca * X.ce || 1)];
+      else { const c = Math.cos(0.6), s = Math.sin(0.6); sv = [twd[0] * c - rgt[0] * s, twd[1] * c - rgt[1] * s]; }
+      const W3 = (z) => P3(T.wall(z, sv));
+      // the line of the scale
+      g.save(); g.lineCap = 'round';
+      g.strokeStyle = ink; g.globalAlpha = 0.55; g.lineWidth = 1.1;
+      g.beginPath(); for (let i = 0; i <= 48; i++) { const p = W3(top * i / 48); if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); } g.stroke();
+      // the marks: round amounts (about 10), about 3 of them with their numbers, on the left of the line
+      const sc = Md.scale, ticks = [];
+      if (sc && sc.step > 0) {
+        for (let i = 1; i * sc.step < T.full * sc.f * (1 - 1e-9); i++) {
+          const v = i * sc.step / sc.f;
+          let lo = 0, hi = top;
+          for (let it = 0; it < 64; it++) { const m = (lo + hi) / 2; if (T.V(m) < v) lo = m; else hi = m; }
+          const z = (lo + hi) / 2, major = i % sc.every === 0, p = W3(z);
+          // (a mark along the wall: lying, along the axis; standing, around it)
+          const dl = (major ? 0.09 : 0.05) * R, w = T.wall(z, sv);
+          let a1, a2;
+          if (T.lying) { a1 = P3([sv[0] - dl, w[1], z]); a2 = P3([sv[0] + dl, w[1], z]); }
+          else { const tx = -sv[1], ty = sv[0]; a1 = P3([w[0] - tx * dl, w[1] - ty * dl, z]); a2 = P3([w[0] + tx * dl, w[1] + ty * dl, z]); }
+          g.globalAlpha = 0.8; g.lineWidth = major ? 1.5 : 1.1;
+          g.beginPath(); g.moveTo(a1[0], a1[1]); g.lineTo(a2[0], a2[1]); g.stroke();
+          const t0 = { v: +(i * sc.step).toPrecision(12), z: +z.toPrecision(12), y: Math.round(p[1] * 10) / 10, major };
+          if (major) {
+            const lx = Math.min(a1[0], a2[0], p[0]) - 6;
+            g.globalAlpha = 1; g.font = '11px system-ui, sans-serif'; g.textAlign = 'right'; g.textBaseline = 'middle';
+            const txt = digPic(i * sc.step, 'scale') + (sc.unit ? ' ' + sc.unit : '');
+            g.strokeStyle = bg; g.lineWidth = 3; g.globalAlpha = 0.8; g.strokeText(txt, lx, p[1]);
+            g.globalAlpha = 1; g.fillStyle = ink; g.fillText(txt, lx, p[1]);
+            g.strokeStyle = ink;
+            t0.text = txt;
+          }
+          ticks.push(t0);
+        }
+      }
+      g.restore();
+      out.scale = ticks;
+      // the sizes of the container: outside its ends or sides
+      if (!growing) {
+        const lab = L, lr = lab.dia ? lab.r : lab.r || lab.R;
+        if (T.lying) {
+          const ex = T.L / 2 + T.a + R * 0.25, sx = sgn(X.ca);
+          if (lab.dia) dim([-sx * ex, 0, 0], [-sx * ex, 0, 2 * R], lr, sx > 0 ? LEFT : RIGHT); else dim([-sx * ex, 0, R], [-sx * ex, 0, 2 * R], lr, sx > 0 ? LEFT : RIGHT);
+          if (h > 0) dim([sx * ex, 0, 0], [sx * ex, 0, h], lab.h, sx > 0 ? RIGHT : LEFT);
+          const fy = sv[1] * R * 1.12;
+          dim([-T.L / 2, fy, 0], [T.L / 2, fy, 0], lab.L, DOWN);
+          if (lab.a) dim([T.L / 2, fy, 0], [T.L / 2 + T.a, fy, 0], lab.a, DOWN);
+        } else {
+          const ro = R * 1.3, zt = T.base === 'vtank' ? T.a + T.H : top;
+          const zr = T.base === 'stank' ? R : zt;
+          const dR = [rgt[0] * 0.866 - twd[0] * 0.5, rgt[1] * 0.866 - twd[1] * 0.5];
+          if (lab.dia) dim(at(dR, -R, zr), at(dR, R, zr), lr, UP); else dim([0, 0, zr], at(dR, R, zr), lr, UP);
+          if (T.base !== 'stank') dim(at(rgt, -ro, T.base === 'vtank' ? T.a : 0), at(rgt, -ro, zt), lab.H, LEFT);
+          if (h > 0) dim(at(rgt, ro, 0), at(rgt, ro, h), lab.h, RIGHT);
+          if (lab.a && T.base === 'vtank') dim(at(rgt, -ro, 0), at(rgt, -ro, T.a), lab.a, LEFT);
+        }
+      }
+      // the amount at the level, beside the scale: a box that can be dragged up and down (⇕)
+      const lv = W3(h), txt = Md.levelText ? Md.levelText() : '';
+      let hit = null;
+      if (txt && !growing) {
+        g.save();
+        g.font = '600 13px system-ui, sans-serif';
+        // (one line, or the amount and how full on two lines when one would be too wide)
+        const m2 = /^(.*?)\s*[（(]\s*(.*?)\s*[）)]$/.exec(txt);
+        let lines = ['⇕ ' + txt];
+        if (g.measureText(lines[0]).width + 16 > o.W * 0.5 && m2) lines = ['⇕ ' + m2[1], m2[2]];
+        const ind = g.measureText('⇕ ').width, w = Math.max(...lines.map((s, i) => g.measureText(s).width + (i ? ind : 0))) + 16, hh = 8 + 17 * lines.length;
+        const A = o.avoid, clash = (x) => A && x + w > A.x && x < A.x + A.w && y0 + hh > A.y && y0 < A.y + A.h;
+        const y0 = Math.max(2, Math.min(o.H - hh - 2, lv[1] - hh / 2));
+        // (on the right of the level on the wall; on its left when there is no room; not over the labels of the sizes)
+        let x0 = lv[0] + 14;
+        if (x0 + w > o.W - 2 || clash(x0)) x0 = lv[0] - 14 - w;
+        if (x0 < 2) { x0 = 2; if (clash(x0)) x0 = Math.max(2, A.x - w - 4); }
+        const over = (x, y) => out.dims.some((d) => x < d.box[0] + d.box[2] && x + w > d.box[0] && y < d.box[1] + d.box[3] && y + hh > d.box[1]);
+        if (over(x0, y0)) { const alt = [lv[0] - 14 - w, lv[0] + 14].filter((x) => x >= 2 && x + w <= o.W - 2 && !clash(x) && !over(x, y0)); if (alt.length) x0 = alt[0]; }
+        // (a little pointer from the box to the level on the wall, under the box)
+        g.strokeStyle = ink; g.lineWidth = 1.2; g.globalAlpha = 0.85;
+        g.beginPath(); g.moveTo(lv[0], lv[1]); g.lineTo(x0 + w / 2, y0 + hh / 2); g.stroke();
+        g.beginPath(); g.arc(lv[0], lv[1], 2.5, 0, 2 * Math.PI); g.fillStyle = ink; g.fill();
+        g.fillStyle = bg; g.globalAlpha = 0.92; g.lineWidth = 1;
+        g.beginPath(); if (g.roundRect) g.roundRect(x0, y0, w, hh, 8); else g.rect(x0, y0, w, hh); g.fill(); g.globalAlpha = 0.5; g.stroke();
+        g.globalAlpha = 1; g.fillStyle = ink; g.textAlign = 'left'; g.textBaseline = 'middle';
+        lines.forEach((s, i) => g.fillText(s, x0 + 8 + (i ? ind : 0), y0 + 4 + 17 * i + 8.5));
+        g.restore();
+        hit = { x: x0, y: y0, w, h: hh, text: txt };
+      }
+      // the outline of the level on the screen (for dragging it: a drag that starts near it moves it)
+      const ring = [];
+      if (h > 0 && h < top) {
+        if (T.lying) {
+          const q0 = h - R, st = T.stations.filter((p) => p.r > Math.abs(q0));
+          for (const p of st) ring.push(P3([p.t, Math.sqrt(p.r * p.r - q0 * q0), h]));
+          for (let i = st.length - 1; i >= 0; i--) { const p = st[i]; ring.push(P3([p.t, -Math.sqrt(p.r * p.r - q0 * q0), h])); }
+        } else {
+          const r = T.rAt(h);
+          for (let i = 0; i < 48; i++) { const a = i / 48 * 2 * Math.PI; ring.push(P3([r * Math.cos(a), r * Math.sin(a), h])); }
+        }
+      }
+      // (how far the level moves on the screen for one unit of height: for the drag)
+      const p0 = P3([0, 0, 0]), p1 = P3([0, 0, top]);
+      Q3.levelHit = { box: hit, ring: ring.map((p) => [p[0], p[1]]), perH: (p1[1] - p0[1]) / top, wallY: lv[1] };
+      out.level = { h: +h.toPrecision(12), text: txt, box: hit ? [Math.round(hit.x), Math.round(hit.y), Math.round(hit.w), Math.round(hit.h)] : null, y: Math.round(lv[1] * 10) / 10 };
+    } else Q3.levelHit = null;
+    return out;
+  }
+  // the box of the 3D graph for a model (its data, as from the engine for surfaces)
+  function modelData(Md) {
+    const [x0, x1, y0, y1, z0, z1] = Md.box;
+    return { xs: [x0, x1], ys: [y0, y1], nx: 2, ny: 2, series: [], z0, z1, model: true };
+  }
   function draw3d() {
     const c = Q3.canvas;
     if (!c || !c.clientWidth) return;
+    const t3 = performance.now();
+    let crossFade = null;
+    if (Q3.fadeInNext && !Q3.turning) { Q3.fadeInNext = false; crossFade = shadowCrossFade(c); }
+    const shK = turnShadow(t3);
     const dpr = window.devicePixelRatio || 1;
     const W = c.clientWidth, H = c.clientHeight;
     const cw = Math.round(W * dpr), ch = Math.round(H * dpr);
@@ -8338,6 +11048,7 @@
     g.fillRect(0, 0, W, H);
     const D = Q3.data;
     if (!D) return;
+    const GR = Q3.grow; // the solid growing (startGrow)
     const dark = document.documentElement.classList.contains('dark');
     const gridColor = css.getPropertyValue('--plot-grid').trim(), axisColor = css.getPropertyValue('--plot-axis').trim();
     const ca = Math.cos(Q3.az), sa = Math.sin(Q3.az), ce = Math.cos(Q3.el), se = Math.sin(Q3.el);
@@ -8385,14 +11096,61 @@
     // the surfaces: project every grid point once, then lay the cells over the pixels with a depth
     // buffer (surfacePaint, 1.9.2)
     const cells = [];
+    let cutLost = 0;  // (cells at the cut of a growing solid left out for want of a cut point, BG09)
     // a normal in the box's axes (u, v, w) in the camera's axes; grid coordinates of u and v
     const camN = (nu, nv, nw) => [nu * ca - nv * sa, nu * sa * se + nv * ca * se + nw * ce, nu * sa * ce + nv * ca * ce - nw * se];
     const giOf = (u) => (u / EX + 1) / 2 * (D.nx - 1), gjOf = (v) => (v / EY + 1) / 2 * (D.ny - 1);
+    // (1.12.0, BG19) while the graph is turned, the lamp stays where it was on the box when the turn began, so
+    // that the shadows stay too: which points are in a shadow (the lamp's map of the drawing before the turn,
+    // looked up once for each grid point and kept) and the shadow on the floor (its layer, laid on the floor
+    // with the new projection) are not made again for every frame, and the light and the highlight follow
+    // the lamp on the box. When the finger is lifted, the lamp is back at the upper left of the screen, the
+    // shadows are made again in full and fade in over 0.2 s (shadowCrossFade). data-no-shadow: no shadows
+    // (for the tests)
+    let LKS = null;
+    const shadeOn = !c.dataset.noShadow;
+    // how much of the lamp reaches a point (u, v, w) of the box with the normal (nu, nv, nw) in the box's axes,
+    // from the lamp's map of the drawing before the turn: the point and the normal in that drawing's axes, the
+    // normal turned to the lamp (the side turned away from it gets none of its light anyway)
+    const lockLit = (u, v, w, nu, nv, nw) => {
+      const K = LKS, M = K.SM;
+      if (!M) return 1;
+      const yr = u * K.sa + v * K.ca, x = u * K.ca - v * K.sa, y = w * K.ce + yr * K.se, z = yr * K.ce - w * K.se;
+      const myr = nu * K.sa + nv * K.ca;
+      let mx = nu * K.ca - nv * K.sa, my = nw * K.ce + myr * K.se, mz = myr * K.ce - nw * K.se;
+      const nl = Math.hypot(mx, my, mz) || 1;
+      mx /= nl; my /= nl; mz /= nl;
+      let dif = mx * LAMP[0] + my * LAMP[1] + mz * LAMP[2];
+      if (dif < 0) { dif = -dif; mx = -mx; my = -my; mz = -mz; }
+      if (!(dif > 0.04)) return 1;
+      let lit = lampLit(M, x, y, z, mx, my, mz, dif);
+      if (dif < 0.12) lit = 1 - (1 - lit) * (dif - 0.04) / 0.08;
+      return lit;
+    };
+    // the same for a normal in the camera's axes (a point of a cut cell), and for a grid point (kept)
+    const lockLitN = (u, v, w, n) => lockLit(u, v, w, ca * n[0] + sa * se * n[1] + sa * ce * n[2], -sa * n[0] + ca * se * n[1] + ca * ce * n[2], ce * n[1] - se * n[2]);
+    const lockLitK = (s, k) => {
+      let A = s.lockLit;
+      if (!A || s.lockId !== LKS.id || A.length !== s.z.length) { A = s.lockLit = new Float32Array(s.z.length).fill(NaN); s.lockId = LKS.id; }
+      let r = A[k];
+      if (r !== r) { const N = s.nrm; r = A[k] = lockLit(U(xs[k % D.nx]), V(ys[(k / D.nx) | 0]), s.proj.pw[k], N[3 * k], N[3 * k + 1], N[3 * k + 2]); }
+      return r;
+    };
     const L = [-0.42, 0.62, -0.66];  // light from the upper left, in front
     // the solid that is measured while "Volume and surface" is open (1.8.4): drawn as a liquid (1.9.1,
     // liquidPaint); the measured parts of the surfaces are not drawn as cells (inR)
     const VS = Q3.volUI && !Q3.volUI.box.hidden && Q3.volShade && Q3.volShade.D === D ? Q3.volShade : null;
     const vf = VS ? D.series[VS.fi] || null : null, vg = vf && VS.gi >= 0 ? D.series[VS.gi] || null : null;
+    // (the lamp kept on the box while turning, BG19: not while "Volume and surface" shows the measured solid,
+    // which casts no shadow from the lamp)
+    if (Q3.turning && shadeOn && !vf) {
+      const F = Q3.lastShade, same = (o) => o && o.D === D && o.dark === dark && o.EX === EX && o.EY === EY && o.EZ === EZ;
+      if (!same(Q3.shLock)) {
+        Q3.lockSeq = (Q3.lockSeq || 0) + 1;
+        Q3.shLock = same(F) ? Object.assign({}, F, { id: Q3.lockSeq }) : { D, dark, EX, EY, EZ, ca, sa, ce, se, SM: null, floor: null, lamp: lampInBox(ca, sa, ce, se), id: Q3.lockSeq, fresh: true };
+      }
+      LKS = Q3.shLock;
+    }
     // a cell counts as inside the region when any part of it is (its point nearest to the centre of a disk)
     const inRegion = (i, j) => {
       // (1.11.0: the enclosed part: a cell whose four corners are inside)
@@ -8415,6 +11173,7 @@
         for (let i = 0; i < D.nx; i++) {
           const k = j * D.nx + i, z = s.z[k];
           if (z === null || z !== z) continue;
+          if (GR) { let ph = GR.ax === 'h' ? Math.atan2(z, ys[j]) : Math.atan2(ys[j], xs[i]); if (ph < 0) ph += 2 * Math.PI; if (ph > GR.theta + 1e-9) { st[k] = 3; continue; } }
           const w = Wz(z);
           if (w > EZ * 1.0001 || w < -EZ * 1.0001) { st[k] = 2; continue; }  // outside the z range
           proj(U(xs[i]), v, w);
@@ -8438,7 +11197,40 @@
           let lu = NM[3 * kin], lv = NM[3 * kin + 1];
           const lh = Math.hypot(lu, lv);
           if (lh > 0.05) { lu /= lh; lv /= lh; } else { lu = U(e.x) - U(xs[kin % D.nx]); lv = V(e.y) - V(ys[(kin / D.nx) | 0]); }
-          s.rimP[key] = { x: T[0], y: T[1], d: T[2], u: U(e.x), v: V(e.y), w, n: camN(lu, lv, 0), gi: giOf(U(e.x)), gj: gjOf(V(e.y)) };
+          // (a surface of a solid around a vertical axis that ends at a slant: the normal of the point
+          // inside, 1.12.0 BG09: a level normal there darkened the edge in saw teeth)
+          const nr = e.slant ? [s.cnrm[3 * kin], s.cnrm[3 * kin + 1], s.cnrm[3 * kin + 2]] : camN(lu, lv, 0);
+          s.rimP[key] = { x: T[0], y: T[1], d: T[2], u: U(e.x), v: V(e.y), w, n: nr, gi: giOf(U(e.x)), gj: gjOf(V(e.y)) };
+        }
+      }
+      // while the solid turns into being (startGrow): where a grid line crosses the plane of the angle
+      // reached (or the plane where it started), a point on that plane, so that the cells are cut along it
+      // instead of left out whole (1.12.0, BG09: the cut was a staircase of cells)
+      s.angP = null;
+      if (GR) {
+        s.angP = {};
+        const TAU = 2 * Math.PI;
+        const phOf = (k) => { const z = s.z[k]; let ph = GR.ax === 'h' ? Math.atan2(z, ys[(k / D.nx) | 0]) : Math.atan2(ys[(k / D.nx) | 0], xs[k % D.nx]); return ph < 0 ? ph + TAU : ph; };
+        const cutAt = (key, ka, kb) => {
+          if (!((st[ka] === 1 && st[kb] === 3) || (st[ka] === 3 && st[kb] === 1))) return;
+          const kin = st[ka] === 1 ? ka : kb, kout = kin === ka ? kb : ka;
+          let p1 = phOf(kin), p2 = phOf(kout), tgt = GR.theta;
+          // (across the start, angle 0 = 2π: the plane where the turning began)
+          if (p2 - p1 > Math.PI) { p2 -= TAU; tgt = 0; }
+          const f = Math.max(0, Math.min(1, (tgt - p1) / ((p2 - p1) || 1)));
+          const xa = xs[kin % D.nx], ya = ys[(kin / D.nx) | 0], xb = xs[kout % D.nx], yb = ys[(kout / D.nx) | 0];
+          let x = xa + (xb - xa) * f, y = ya + (yb - ya) * f, z = s.z[kin] + (s.z[kout] - s.z[kin]) * f;
+          // (laid exactly on the plane, at the distance from the axis of the point between)
+          if (GR.ax === 'h') { const r = Math.hypot(y, z); y = r * Math.cos(tgt); z = r * Math.sin(tgt); } else { const r = Math.hypot(x, y); x = r * Math.cos(tgt); y = r * Math.sin(tgt); }
+          const w = Wz(z);
+          if (!(w <= EZ * 1.0001 && w >= -EZ * 1.0001)) return;
+          proj(U(x), V(y), w);
+          s.angP[key] = { x: T[0], y: T[1], d: T[2], u: U(x), v: V(y), w, n: [s.cnrm[3 * kin], s.cnrm[3 * kin + 1], s.cnrm[3 * kin + 2]], gi: giOf(U(x)), gj: gjOf(V(y)) };
+        };
+        for (let j = 0; j < D.ny; j++) for (let i = 0; i < D.nx; i++) {
+          const k = j * D.nx + i;
+          if (i + 1 < D.nx) cutAt('h' + k, k, k + 1);
+          if (j + 1 < D.ny) cutAt('v' + k, k, k + D.nx);
         }
       }
       // where the surface leaves the box (refineClips, 1.9.5): on its top or bottom, with the normal of
@@ -8463,7 +11255,7 @@
           if (!real || (out && !s.clipP)) continue;
           const du = U(xs[i + 1]) - U(xs[i]);
           let pts, nu, nv, nw;
-          if (real < 4 && (s.rimP || s.clipP)) {
+          if (real < 4 && (s.rimP || s.clipP || s.angP)) {
             // at the edge of the real values: the cell cut along the edge that was found (refineRims);
             // where the surface leaves the box: cut along the top or the bottom of the box (refineClips)
             const cs = [a, b, c2, d], eks = ['h' + a, 'v' + b, 'h' + d, 'v' + a];
@@ -8472,8 +11264,9 @@
               const k = cs[n], k2 = cs[(n + 1) % 4];
               if (st[k] === 1) poly.push({ k, x: px[k], y: py[k], d: pd[k], u: U(xs[k % D.nx]), v: V(ys[(k / D.nx) | 0]), w: pw[k], n: [s.cnrm[3 * k], s.cnrm[3 * k + 1], s.cnrm[3 * k + 2]], gi: k % D.nx, gj: (k / D.nx) | 0 });
               if ((st[k] === 1) !== (st[k2] === 1)) {
-                const rp = (s.rimP && s.rimP[eks[n]]) || (s.clipP && s.clipP[eks[n]]);
-                if (rp) poly.push(rp); else poly = null;
+                const byAngle = st[k] === 3 || st[k2] === 3;
+                const rp = byAngle ? s.angP && s.angP[eks[n]] : (s.rimP && s.rimP[eks[n]]) || (s.clipP && s.clipP[eks[n]]);
+                if (rp) poly.push(rp); else { poly = null; if (byAngle) cutLost++; }
               }
             }
             if (!poly || poly.length < 3) continue;
@@ -8623,10 +11416,14 @@
     // (1.10.1: until 1.10.0 the shadow was the whole region, a square under a sphere drawn over a
     // rectangle, as when the app was opened again with the sphere). Only a mesh with no faces (no
     // solid can be drawn) leaves the region as before.
+    // (1.12.0, BG08: it fades out as the floor is seen more edge-on, from about 17° down to 1°, instead of
+    // ending at once at 3°: turning the graph made it come and go)
     let shadowFaces = 0, shadowArea = 0;
     const outline = [];  // (the closed paths of the shadow, 1.11.0: drawn as a line too for the enclosed part)
-    if (vc && se > 0.05) {
+    const volFade = smoothStep(0.02, 0.3, se);
+    if (vc && volFade > 0.004) {
       g.save();
+      g.globalAlpha = volFade;
       g.filter = 'blur(7px)';
       g.fillStyle = dark ? 'rgba(0,0,0,0.32)' : 'rgba(' + vc.deep.map((v) => Math.round(v * 0.55)).join(',') + ',0.16)';
       g.beginPath();
@@ -8680,6 +11477,7 @@
       // the outline of the enclosed part on the floor (1.11.0), so that what is measured is seen
       if (VS.enc && outline.length) {
         g.save();
+        g.globalAlpha = volFade;
         g.strokeStyle = vc.line; g.lineWidth = 1.3; g.setLineDash([5, 3]);
         g.beginPath(); outline.forEach(pane0); g.stroke();
         g.restore();
@@ -8695,12 +11493,12 @@
     // (a corner, and for rimModel its G, its side of the edge and the level part of its normal)
     const vtxK = (s, k) => {
       const P = s.proj, N = s.cnrm, c3 = colorAt(s, P.pw[k]), rm = s.rm;
-      const v = [P.px[k], P.py[k], P.pd[k], N[3 * k], N[3 * k + 1], N[3 * k + 2], c3[0], c3[1], c3[2], k % D.nx, (k / D.nx) | 0];
+      const v = [P.px[k], P.py[k], P.pd[k], N[3 * k], N[3 * k + 1], N[3 * k + 2], c3[0], c3[1], c3[2], k % D.nx, (k / D.nx) | 0, LKS ? lockLitK(s, k) : 1];
       if (rm && rm.G[k] >= 0) { v.G = rm.G[k]; v.sg = rm.SG[k]; v.L = rm.L(k); v.zr = rm.ZR[k]; v.u = U(xs[k % D.nx]); v.v = V(ys[(k / D.nx) | 0]); }
       return v;
     };
     const vtxP = (s, p) => {
-      const c3 = colorAt(s, p.w), v = [p.x, p.y, p.d, p.n[0], p.n[1], p.n[2], c3[0], c3[1], c3[2], p.gi, p.gj];
+      const c3 = colorAt(s, p.w), v = [p.x, p.y, p.d, p.n[0], p.n[1], p.n[2], c3[0], c3[1], c3[2], p.gi, p.gj, LKS ? (p.k !== undefined ? lockLitK(s, p.k) : lockLitN(p.u, p.v, p.w, p.n)) : 1];
       if (p.G >= 0 && p.L) { v.G = p.G; v.sg = p.sg; v.L = p.L; v.zr = p.zr; v.u = p.u; v.v = p.v; }
       return v;
     };
@@ -8720,7 +11518,7 @@
           const G = a * A.G + b * B.G + c * C.G, w = a * A.zr + b * B.zr + c * C.zr + A.sg * Math.sqrt(G > 0 ? G : 0);
           proj(a * A.u + b * B.u + c * C.u, a * A.v + b * B.v + c * C.v, w);
           const c3 = colorAt(s, w), h = Math.sqrt(G > 0 ? G : 0);
-          rsub[m++] = [T[0], T[1], T[2], a * A.L[0] + b * B.L[0] + c * C.L[0] + h * upN[0], a * A.L[1] + b * B.L[1] + c * C.L[1] + h * upN[1], a * A.L[2] + b * B.L[2] + c * C.L[2] + h * upN[2], c3[0], c3[1], c3[2], L3(9), L3(10)];
+          rsub[m++] = [T[0], T[1], T[2], a * A.L[0] + b * B.L[0] + c * C.L[0] + h * upN[0], a * A.L[1] + b * B.L[1] + c * C.L[1] + h * upN[1], a * A.L[2] + b * B.L[2] + c * C.L[2] + h * upN[2], c3[0], c3[1], c3[2], L3(9), L3(10), L3(11)];
         }
       }
       // (the point (i, j) is number j·(RS + 1) − j·(j − 1)/2 + i)
@@ -8749,30 +11547,67 @@
       }
       for (let m = 1; m + 1 < vs.length; m++) tb.add(vs[0], vs[m], vs[m + 1]);
     }
+    // a solid or the liquid of a tank of "Shapes" (1.12.0, D6): its triangles with the surfaces' (so it is shaded
+    // and has shadows as they do); while it grows, as far as it has grown
+    const MD = D.model ? Q3.model : null;
+    const MX = MD ? { proj, T, U, V, Wz, camN, LKS, lockLitN, ca, sa, ce, se, nx: (x1 - x0) / (2 * EX), ny: (y1 - y0) / (2 * EY), nz: (z1 - z0) / (2 * EZ) } : null;
+    const mGrow = MD && GR && GR.ax === 'mesh' ? Math.max(0, Math.min(1, GR.theta / (2 * Math.PI))) : 1;
+    const mt0 = performance.now(), mTris = MD ? meshToTris(MD.tank ? MD.tank.liquid(MD.tank.hShow) : MD.mesh(mGrow), tb, MX) : 0, mMs = { tris: performance.now() - mt0 };
     // shadows from the lamp of the highlight (1.11.0): on the floor of the box (while it is at the
-    // back, seen from above) and of the surfaces on themselves and on each other. Not while the graph
-    // is turned (they come with the full drawing when the finger is lifted), so that turning is as
-    // smooth as before; and not while "Volume and surface" shows the measured solid, which keeps its
-    // own look (the liquid casts no shadow from the lamp, and the shadows of the other surfaces alone
-    // looked out of place there).
-    const shadows = !Q3.turning && !vc;
+    // back, seen from above) and of the surfaces on themselves and on each other. Not while "Volume and
+    // surface" shows the measured solid, which keeps its own look (the liquid casts no shadow from the
+    // lamp, and the shadows of the other surfaces alone looked out of place there); that solid has its
+    // own soft shadow on the floor, above. While the graph is turned they are drawn too (1.12.0, BG08: until
+    // then they were left out while turning, and came and went with every touch), and the lamp stays on the
+    // box: they are those of the drawing before the turn (1.12.0, BG19, LKS above), and in full again,
+    // with the lamp at the upper left of the screen, when the finger is lifted.
+    const shadows = !vc && shK > 0.004 && shadeOn;
+    // (a turn that began without a drawing to keep the shadows of: the lamp's map of this frame, once, from a
+    // coarser grid; the lamp's light at the corners looked up again)
+    if (LKS && shadows && !LKS.SM && LKS.fresh) {
+      LKS.SM = lampMap(tb.f, tb.n, { cx, cy, S, lite: true }, Q3);
+      LKS.fresh = false; LKS.id = Q3.lockSeq = (Q3.lockSeq || 0) + 1;
+      const F = tb.f, iS = 1 / S;
+      for (let v = 0; v < tb.n * 3; v++) {
+        const o = v * CV, xc = (F[o] - cx) * iS, yc = (cy - F[o + 1]) * iS, zc = F[o + 2];
+        F[o + 11] = lockLitN(ca * xc + sa * se * yc + sa * ce * zc, -sa * xc + ca * se * yc + ca * ce * zc, ce * yc - se * zc, [F[o + 3], F[o + 4], F[o + 5]]);
+      }
+    }
     const tf = performance.now();
-    const floor = shadows && wb === -EZ ? floorShadow(g, tb, { ca, sa, ce, se, EX, EY, EZ, cam: { cx, cy, S }, W, H, dark, cache: Q3, pane0 }) : null;
-    if (floor) floor.ms = Math.round((performance.now() - tf) * 10) / 10;
-    const surf = surfacePaint(g, tb, { W, H, q: Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S } : null });
+    const floorO = { ca, sa, ce, se, EX, EY, EZ, cam: { cx, cy, S }, dark, cache: Q3, k: shK, lamp: LKS ? LKS.lamp : null, layer: LKS && LKS.floor && LKS.floor.lampKey === String(LKS.lamp) ? LKS.floor : null };
+    const floor = shadows && wb === -EZ ? floorShadow(g, tb, floorO) : null;
+    // (the layer of the floor: kept for a turn, BG19)
+    if (floor && floor.layer) {
+      floor.layer.lampKey = String(LKS ? LKS.lamp : lampInBox(ca, sa, ce, se));
+      if (LKS) LKS.floor = floor.layer;
+    }
+    const floorLayerNow = floor ? floor.layer : null;
+    if (floor) { delete floor.layer; floor.ms = Math.round((performance.now() - tf) * 10) / 10; }
+    // (the back of the glass of a tank, behind the liquid)
+    if (MD && MD.tank) { const t0 = performance.now(); glassPaint(g, MD, MX, 'back', dark); mMs.back = performance.now() - t0; }
+    const surf = surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite: !!Q3.turning, k: shK } : null,
+      lock: LKS && shadows ? { L: camN(LKS.lamp[0], LKS.lamp[1], LKS.lamp[2]), map: LKS.SM ? [LKS.SM.MW, LKS.SM.MH] : null } : null });
+    // (what the next turn keeps: the lamp's map and the floor's layer of this drawing, with its camera, BG19)
+    if (!Q3.turning && shadows && !Q3.captureQ) Q3.lastShade = { D, dark, EX, EY, EZ, ca, sa, ce, se, SM: surf.SM || null, floor: floorLayerNow, lamp: lampInBox(ca, sa, ce, se) };
+    else if (!Q3.turning && !shadows) Q3.lastShade = null;
     // (what was drawn, for the tests; shadow: the pixels in a shadow and at the soft edge of one, the
     // size of the lamp's map and the time to make it; floor: the cells of the floor's layer in a shadow)
-    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor,
-      rims: (D.series || []).reduce((n, s) => n + (s.rim ? Object.keys(s.rim).length : 0), 0) });
+    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor, shk: Math.round(shK * 1000) / 1000, turnMs: Q3.turning ? Math.round(Q3.turnMs || 0) : null, turnL: Q3.turning ? (Q3.turnList || []).map(Math.round) : null, shSlow: !!Q3.shSlow, drawMs: Math.round(Q3.lastDrawMs || 0),
+      rims: (D.series || []).reduce((n, s) => n + (s.rim ? Object.keys(s.rim).length : 0), 0),
+      // (1.12.0, BG09: for each surface, the grid lines across its edge without an edge point; and the
+      // most grid points at which two surfaces have the same value)
+      rimMiss: (D.series || []).map((s) => { let m = 0; const z = s.z, nx = D.nx; for (let k = 0; k < z.length; k++) { const a = z[k] === z[k]; if ((k + 1) % nx && a !== (z[k + 1] === z[k + 1]) && !(s.rim && s.rim['h' + k])) m++; if (k + nx < z.length && a !== (z[k + nx] === z[k + nx]) && !(s.rim && s.rim['v' + k])) m++; } return m; }),
+      same: D.same || 0, seq: D.seq || 0, cut: GR ? { points: D.series.reduce((n, s) => n + (s.angP ? Object.keys(s.angP).length : 0), 0), dropped: cutLost } : null });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
     if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
     // the color of the solid in the box, and what was drawn (for the tests)
     const lg = Q3.volUI && Q3.volUI.legend;
     if (lg) { lg.hidden = !vc; if (vc) { lg.firstChild.style.background = vc.swatch; lg.firstChild.style.borderColor = vc.line; } }
-    if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: lmesh.walls, floor: lmesh.floor, tris: lmesh.tris, jelly, liquid: liquid.shown, thick: liquid.thick, odd: liquid.odd, q: liquid.q, faded, shadow: shadowFaces, shadowArea: Number(shadowArea.toFixed(4)) });
+    if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: lmesh.walls, floor: lmesh.floor, tris: lmesh.tris, jelly, liquid: liquid.shown, thick: liquid.thick, odd: liquid.odd, q: liquid.q, faded, shadow: shadowFaces, shadowArea: Number(shadowArea.toFixed(4)), shadowFade: Math.round(volFade * 1000) / 1000 });
     else delete c.dataset.vol;
-    // axes on the front edges of the floor and the leftmost vertical edge, with labels
+    // axes on the front edges of the floor and the leftmost vertical edge, with labels (not the numbers and
+    // letters for a model of "Shapes": its sizes are written on it)
     const un = -ub, vn = -vb;
     let ze = null;
     for (const [eu, ev] of [[-EX, -EY], [-EX, EY], [EX, -EY], [EX, EY]]) { proj(eu, ev, 0); if (!ze || T[0] < ze.x) ze = { u: eu, v: ev, x: T[0] }; }
@@ -8781,17 +11616,19 @@
     g.stroke();
     g.fillStyle = axisColor; g.font = '11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     const out = (e, d) => e + Math.sign(e) * d; // a little outside the edge of the box
-    for (const x of gx) { proj(U(x), out(vn, 0.17), wb); g.fillText(fmt(x, stx), T[0], T[1]); }
-    for (const y of gy) { proj(out(un, 0.17), V(y), wb); g.fillText(fmt(y, sty), T[0], T[1]); }
+    if (!MD) for (const x of gx) { proj(U(x), out(vn, 0.17), wb); g.fillText(fmt(x, stx), T[0], T[1]); }
+    if (!MD) for (const y of gy) { proj(out(un, 0.17), V(y), wb); g.fillText(fmt(y, sty), T[0], T[1]); }
     g.textAlign = 'right';
-    for (const z of gz) {
+    if (!MD) for (const z of gz) {
       if (Math.abs(Wz(z) - wb) < 0.1) continue;  // at the floor the x or y labels are there
       proj(ze.u, ze.v, Wz(z)); g.fillText(fmt(z, stz), T[0] - 7, T[1]);
     }
     g.font = 'bold 13px system-ui, sans-serif'; g.textAlign = 'center';
-    proj(0, out(vn, 0.4), wb); g.fillText('x', T[0], T[1]);
-    proj(out(un, 0.4), 0, wb); g.fillText('y', T[0], T[1]);
-    proj(ze.u, ze.v, EZ); g.fillText('z', T[0], T[1] - 14);
+    if (!MD) {
+      proj(0, out(vn, 0.4), wb); g.fillText('x', T[0], T[1]);
+      proj(out(un, 0.4), 0, wb); g.fillText('y', T[0], T[1]);
+      proj(ze.u, ze.v, EZ); g.fillText('z', T[0], T[1] - 14);
+    }
     // points (the rows of a matrix, the solution of a linear system), in front of the surfaces
     for (const p of Q3.points || []) {
       if (p.x < x0 || p.x > x1 || p.y < y0 || p.y > y1) continue;
@@ -8810,6 +11647,27 @@
       const pr = Q3.mark.s.proj;
       g.fillStyle = '#e11d48'; g.strokeStyle = '#fff'; g.lineWidth = 2;
       g.beginPath(); g.arc(pr.px[Q3.mark.k], pr.py[Q3.mark.k], 5, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+    // (D6) over a solid or a tank of "Shapes": the glass in front, the scale, the amount at the level, the sizes
+    if (MD) {
+      const cr = c.getBoundingClientRect(), ctl = c.parentElement && c.parentElement.querySelector('.plot-ctl'), kr = ctl ? ctl.getBoundingClientRect() : null;
+      const avoid = kr && kr.width ? { x: kr.left - cr.left - 4, y: kr.top - cr.top - 4, w: kr.width + 8, h: kr.height + 8 } : null;
+      const t0 = performance.now(), mo = modelOverlay(g, MD, MX, surf.zbuf, { css, dark, W, H, avoid, growing: mGrow < 1 || !!Q3.fill });
+      mMs.over = performance.now() - t0;
+      for (const k in mMs) mMs[k] = Math.round(mMs[k] * 10) / 10;
+      mo.ms = mMs;
+      c.dataset.model = JSON.stringify(Object.assign({ k: MD.k, tris: mTris, grow: Math.round(mGrow * 1000) / 1000, fill: !!Q3.fill, box: MD.box.map((x) => +x.toPrecision(6)) }, mo,
+        MD.tank ? { h: MD.tank.hShow, top: MD.tank.top, glass: MD.tank.glass.t.length / 3, liquid: MD.tank.liquid(MD.tank.hShow).t.length / 3 } : {}));
+    }
+    // (1.12.0, BG08: the time of this drawing, also in data-ms for the tests, and the layer of the last frame
+    // fading out over the full drawing)
+    Q3.lastDrawMs = performance.now() - t3;
+    c.dataset.ms = String(Math.round(Q3.lastDrawMs));
+    if (crossFade) {
+      c.dataset.fade = 'in';
+      void getComputedStyle(crossFade).opacity;
+      crossFade.style.transition = 'opacity 0.2s linear'; crossFade.style.opacity = '0';
+      Q3.fadeTimer = setTimeout(() => { crossFade.hidden = true; delete c.dataset.fade; }, 260);
     }
   }
   // tap: the grid point nearest to the finger; among close ones, the one in front
@@ -8837,16 +11695,25 @@
   }
   function setup3dGestures(wrap) {
     const pts = new Map();
-    let start = null, moved = false;
+    let start = null, moved = false, lv = null;
     const snapshot = () => ({ az: Q3.az, el: Q3.el, zoom: Q3.zoom, pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) });
     wrap.addEventListener('pointerdown', (e) => {
       if (e.target.tagName === 'BUTTON' || !Q3.data) return;
       try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* the pointer is already gone */ }
+      // (D6) a tank of "Shapes": a drag that starts at the level of the liquid moves it (up and down), not the graph
+      if (!pts.size && !lv && Q3.model && Q3.model.tank && nearLevel3d(e.clientX, e.clientY) && Q3.levelHit && Q3.levelHit.perH) {
+        if (Q3.fill) { Q3.fill = null; Q3.model.tank.hShow = Q3.model.tank.h; }
+        lv = { id: e.pointerId, y: e.clientY, h: Q3.model.tank.h, per: Q3.levelHit.perH };
+        if (Q3.canvas) Q3.canvas.dataset.drag = 'level';
+        return;
+      }
+      if (Q3.grow && !Q3.grow.still) { Q3.grow = null; showAngle3d(360); if (Q3.canvas) Q3.canvas.dataset.grow = 'stopped'; draw3d(); } // a touch shows the whole solid at once
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       start = snapshot();
       if (pts.size > 1) moved = true; else moved = false;
     });
     wrap.addEventListener('pointermove', (e) => {
+      if (lv && e.pointerId === lv.id) { setLevel3d(lv.h + (e.clientY - lv.y) / lv.per, false); return; }
       if (!pts.has(e.pointerId) || !start) return;
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const ids = Array.from(pts.keys());
@@ -8872,11 +11739,23 @@
       requestDraw3d();
     });
     const end = (e) => {
+      if (lv && e.pointerId === lv.id) {
+        const L = lv; lv = null;
+        if (Q3.canvas) delete Q3.canvas.dataset.drag;
+        setLevel3d(e.type === 'pointerup' ? L.h + (e.clientY - L.y) / L.per : Q3.model && Q3.model.tank ? Q3.model.tank.h : L.h, true);
+        return;
+      }
       if (!pts.has(e.pointerId)) return;
       pts.delete(e.pointerId);
       if (!moved && pts.size === 0 && e.type === 'pointerup') pick3d(e.clientX, e.clientY);
       start = pts.size ? snapshot() : null;
-      if (!pts.size && Q3.turning) { Q3.turning = false; requestDraw3d(); }
+      if (!pts.size && Q3.turning) {
+        // (1.12.0, BG08, BG19: the full drawing, with the lamp back at the upper left of the screen, fades in
+        // over 0.2 s)
+        if (Q3.shLock) Q3.fadeInNext = true;
+        Q3.shLock = null;
+        Q3.turning = false; Q3.turnN = 0; Q3.turnMs = 0; Q3.turnList = []; requestDraw3d();
+      }
     };
     wrap.addEventListener('pointerup', end);
     wrap.addEventListener('pointercancel', end);
@@ -8993,6 +11872,145 @@
       out: [[tr('Liquid', '液量'), 'π R² h³ / (3 H²)', 'π × {R}^2 × {h}^3 / (3 × {H}^2)', 3], [tr('Full', '満杯に対して'), tr('liquid ÷ capacity', '液量 ÷ 満杯の量'), '({h} / {H})^3 × 100', 0, true, '%'], [tr('Capacity (full)', '満杯の量'), 'π R² H / 3', 'π × {R}^2 × {H} / 3', 3]],
       pic: (v) => tankPic('c', v) }
   ];
+  // ---- the heads of tanks (1.12.0, D1; QCalc Pro): a lying or standing cylinder with two heads of the
+  // same kind: hemispherical, semi-elliptical 2:1, torispherical (ASME F&D: crown radius = diameter,
+  // knuckle radius = 6 % of the diameter) or semi-elliptical of a depth typed. L or H is the length of
+  // the cylinder itself (between the heads). The lying ones with hemispherical or semi-elliptical heads
+  // are worked out exactly by the engine (the two heads together hold π a h² (3r − h) / (3r)); the
+  // others numerically here (Gauss–Legendre), shown with ≈.
+  const HEAD_TYPES = () => [['flat', tr('Flat', '平板')], ['hemi', tr('Hemispherical', '半球')], ['ell', tr('Semi-elliptical 2:1', '半楕円 2:1')]];
+  const HEAD_MORE = () => [['fd', tr('Dished (ASME F&D)', '皿形（ASME F&D）')], ['eld', tr('Semi-elliptical, depth typed', '半楕円（深さを入れる）')]];
+  // the shape of one head of radius r: depth a and the radius at the height z above its base (0 ≤ z ≤ a)
+  function headGeo(type, r, a) {
+    if (type === 'fd') {
+      const Rc = 2 * r, rk = 0.12 * r, c = Math.sqrt((Rc - rk) * (Rc - rk) - (r - rk) * (r - rk)), depth = Rc - c, zt = -c + Rc * c / (Rc - rk);
+      return { a: depth, breaks: [0, zt, depth], prof: (z) => (z <= zt ? (r - rk) + Math.sqrt(Math.max(0, rk * rk - z * z)) : Math.sqrt(Math.max(0, Rc * Rc - (z + c) * (z + c)))) };
+    }
+    const d = type === 'hemi' ? r : type === 'ell' ? r / 2 : a;
+    return { a: d, breaks: [0, d], prof: (z) => r * Math.sqrt(Math.max(0, 1 - (z / d) * (z / d))) };
+  }
+  // ∫ f over [lo, hi] (and over the pieces between the points pts) with n Gauss–Legendre points each
+  const glPiece = (f, lo, hi, n) => { const { x, w } = gaussLegendre(n || 24); const m = (lo + hi) / 2, hw = (hi - lo) / 2; let s = 0; for (let j = 0; j < x.length; j++) s += w[j] * f(m + hw * x[j]); return s * hw; };
+  const glSum = (f, pts, n) => { let s = 0; for (let i = 1; i < pts.length; i++) if (pts[i] > pts[i - 1]) s += glPiece(f, pts[i - 1], pts[i], n); return s; };
+  // the area of the part of a circle of radius q below a chord at the height d above its bottom
+  const circleSeg = (q, d) => (d <= 0 ? 0 : d >= 2 * q ? Math.PI * q * q : q * q * Math.acos((q - d) / q) - (q - d) * Math.sqrt(Math.max(0, 2 * q * d - d * d)));
+  // the volume of one head, and the liquid in it: standing (the head at the bottom, filled to the height
+  // y above its lowest point) or lying (the liquid at the height h above the bottom of the tank)
+  function headVolume(g) { return glSum((z) => Math.PI * g.prof(z) * g.prof(z), g.breaks, 32); }
+  function headStanding(g, y) {
+    if (y <= 0) return 0;
+    if (y >= g.a) return headVolume(g);
+    const lo = g.a - y;
+    return glSum((z) => Math.PI * g.prof(z) * g.prof(z), [lo].concat(g.breaks.filter((b) => b > lo)), 32);
+  }
+  function headLying(g, r, h) {
+    if (h <= 0) return 0;
+    if (h >= 2 * r) return headVolume(g);
+    // (the depth in each cross section changes its form where the radius there is |r − h|: a break)
+    const t = Math.abs(r - h);
+    let lo = 0, hi = g.a;
+    if (g.prof(0) > t) { for (let i = 0; i < 80; i++) { const m = (lo + hi) / 2; if (g.prof(m) > t) lo = m; else hi = m; } }
+    const pts = Array.from(new Set(g.breaks.concat([(lo + hi) / 2]))).sort((p, q) => p - q);
+    return glSum((z) => { const q = g.prof(z); return circleSeg(q, h - (r - q)); }, pts, 40);
+  }
+  // the volume at the height h for each tank with heads (numbers in one unit): s = { r, L or H, h, a }
+  function headTank(k) { const m = /^(h|v)tank_(\w+)$/.exec(k); return m ? { lying: m[1] === 'h', type: m[2] } : null; }
+  function headTankV(k, s, h) {
+    const t = headTank(k), g = headGeo(t.type, s.r, s.a);
+    if (t.lying) {
+      const cyl = s.L * circleSeg(s.r, h);
+      // (the two heads together: exactly π a h² (3r − h) / (3r) for the hemispherical and semi-elliptical ones)
+      return cyl + (t.type === 'fd' ? 2 * headLying(g, s.r, h) : Math.PI * g.a * h * h * (3 * s.r - h) / (3 * s.r));
+    }
+    const H = s.H, a = g.a;
+    if (h <= a) return headStanding(g, h);
+    const v1 = headVolume(g);
+    if (h <= a + H) return v1 + Math.PI * s.r * s.r * (h - a);
+    return v1 + Math.PI * s.r * s.r * H + (v1 - headStanding(g, Math.max(0, 2 * a + H - h)));
+  }
+  const headTankTop = (k, s) => { const t = headTank(k), g = headGeo(t.type, s.r, s.a); return t.lying ? 2 * s.r : s.H + 2 * g.a; };
+  for (const [base, lying] of [['htank', true], ['vtank', false]]) {
+    for (const [type] of HEAD_TYPES().slice(1).concat(HEAD_MORE())) {
+      const k = base + '_' + type, A = type === 'hemi' ? '{r}' : type === 'ell' ? '({r} / 2)' : '{a}';
+      const p = [['r', tr('Radius', '半径'), '', 'r', tr('Diameter', '直径')], lying ? ['L', tr('Length of the cylinder', '胴の長さ'), '', 'L'] : ['H', tr('Height of the cylinder', '胴の高さ'), '', 'H'], ['h', tr('Height of the liquid', '液面の高さ'), '', 'h']];
+      if (type === 'eld') p.push(['a', tr('Depth of a head', '鏡板の深さ'), '', 'a']);
+      const def = lying ? ['1', '2', '1/2'] : ['1', '3', '1'];
+      if (type === 'eld') def.push('1/3');
+      // the rows: exact (lying, hemispherical or semi-elliptical) or worked out here
+      const seg = '{r}^2 × acos(({r} − {h}) / {r}) × 2π / {turn} − ({r} − {h}) × √(2 × {r} × {h} − {h}^2)';
+      const liq = `{L} × (${seg}) + π × ${A} × {h}^2 × (3 × {r} − {h}) / (3 × {r})`, cap = `π × {r}^2 × {L} + 4/3 × π × {r}^2 × ${A}`;
+      const exact = lying && type !== 'fd';
+      const num = (what, dim, pct) => (v, ctx) => headRow(k, what, v, ctx, dim, pct);
+      const out = exact ? [
+        [tr('Liquid', '液量'), tr('cylinder + π a h² (3r − h) / (3r) for the two heads', '胴 + 鏡板 2 つ π a h² (3r − h) / (3r)'), liq, 3],
+        [tr('Full', '満杯に対して'), tr('liquid ÷ capacity', '液量 ÷ 満杯の量'), `(${liq}) / (${cap}) × 100`, 0, true, '%'],
+        [tr('Capacity (full)', '満杯の量'), 'π r² L + 4/3 π r² a', cap, 3],
+        [tr('One head', '鏡板 1 つの容積'), '2/3 π r² a', `2/3 × π × {r}^2 × ${A}`, 3],
+        [tr('Overall length', '全体の長さ'), 'L + 2a', `{L} + 2 × ${A}`, 1]
+      ] : [
+        [tr('Liquid', '液量'), tr('worked out numerically', '数値積分'), num('liq', 3), 3],
+        [tr('Full', '満杯に対して'), tr('liquid ÷ capacity', '液量 ÷ 満杯の量'), num('pct', 0, true), 0],
+        [tr('Capacity (full)', '満杯の量'), lying ? 'π r² L + 2 V₁' : 'π r² H + 2 V₁', num('cap', 3), 3],
+        [tr('One head', '鏡板 1 つの容積'), 'V₁', num('head', 3), 3],
+        [type === 'fd' ? tr('Depth of a head', '鏡板の深さ') : (lying ? tr('Overall length', '全体の長さ') : tr('Overall height', '全体の高さ')), type === 'fd' ? tr('crown D, knuckle 0.06 D', '皿の半径 D、ナックル 0.06 D') : (lying ? 'L + 2a' : 'H + 2a'), num(type === 'fd' ? 'depth' : 'all', 1), 1]
+      ];
+      if (type === 'fd') out.push([lying ? tr('Overall length', '全体の長さ') : tr('Overall height', '全体の高さ'), lying ? 'L + 2a' : 'H + 2a', num('all', 1), 1]);
+      GEO.push({ k, d: 4, head: type, base, name: GEO.find((x) => x.k === base).name, p, def, out, pic: (v) => tankHeadPic(lying, type, v) });
+    }
+  }
+  // a row of a tank with heads worked out here: the sizes as numbers in the unit of the panel (or the
+  // unit they have), then the volume; ≈ with 10 digits, in the volume unit chosen
+  const headCache = new Map();
+  async function headSizes(k, v, ctx) {
+    const key = JSON.stringify([k, v, ctx.unit, ctx.base]);
+    if (headCache.has(key)) return headCache.get(key);
+    const s = {};
+    for (const n of Object.keys(v)) {
+      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) / (1 ${ctx.base})` : geoValue(v[n], '', ''); // (BG22: a number without a unit)
+      s[n] = await numValue(e);
+    }
+    if (headCache.size > 40) headCache.clear();
+    headCache.set(key, s);
+    return s;
+  }
+  async function headRow(k, what, v, ctx, dim, pct) {
+    const s = await headSizes(k, v, ctx);
+    if (!(s.r > 0) || !((s.L || s.H) > 0) || !(s.h >= 0) || (headTank(k).type === 'eld' && !(s.a > 0))) return null;
+    const top = headTankTop(k, s);
+    if (s.h > top * (1 + 1e-12)) return null;
+    const g = headGeo(headTank(k).type, s.r, s.a), full = headTankV(k, s, top);
+    const x = what === 'liq' ? headTankV(k, s, s.h) : what === 'cap' ? full : what === 'head' ? headVolume(g) : what === 'pct' ? headTankV(k, s, s.h) / full * 100 : what === 'depth' ? g.a : headTank(k).lying ? s.L + 2 * g.a : top;
+    if (!isFinite(x)) return null;
+    let val = x, unit = '';
+    if (dim === 3 && ctx.base) {
+      unit = ' ' + ctx.base + '³';
+      if (ctx.vu) { const f = await numValue(`(1 ${ctx.base}^3) / (1 ${ctx.vu})`); if (f > 0) { val = x * f; unit = ' ' + (VOL_UNITS.find((u) => u[0] === ctx.vu) || [0, ctx.vu])[1]; } }
+    } else if (dim === 1 && ctx.base) unit = ' ' + ctx.base;
+    if (pct) unit = ' %';
+    const t = String(+val.toPrecision(10)), text = '≈ ' + t + unit;
+    return { result: text, shown: valueShown(text), num: val, expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
+      vol: what === 'liq' && ctx.base ? `(${+x.toPrecision(12)} ${ctx.base}^3)` : '' };
+  }
+  // the picture of a tank with heads, filled to the level typed
+  function tankHeadPic(lying, type, v) {
+    const num = (s) => { const m = /^\s*([\d.]+)(?:\s*\/\s*([\d.]+))?\s*$/.exec(String(s || '')); return m ? Number(m[1]) / (m[2] ? Number(m[2]) : 1) : NaN; };
+    const V = v || {}, r = num(V.r), ratio = type === 'hemi' ? 1 : type === 'ell' ? 0.5 : type === 'fd' ? 0.339 : Math.min(1.2, num(V.a) / r) || 0.5;
+    const id = 'qtkh-' + (lying ? 'h' : 'v') + type;
+    if (lying) {
+      const R = 34, d = +(R * ratio).toFixed(1), x0 = 40, x1 = 120, top = 21, bot = 89;
+      let f = num(V.h) / (2 * r); if (!(f >= 0 && f <= 1)) f = 0.5;
+      const y = +(bot - (bot - top) * f).toFixed(1), mid = +((bot + y) / 2 + 4).toFixed(1);
+      const path = `M${x0} ${top}H${x1}A${d} ${R} 0 0 1 ${x1} ${bot}H${x0}A${d} ${R} 0 0 1 ${x0} ${top}Z`;
+      return `<defs><clipPath id="${id}"><path d="${path}"/></clipPath></defs><path class="g" d="${path}"/><rect class="liq" x="0" y="${y}" width="160" height="${+(bot - y).toFixed(1)}" clip-path="url(#${id})"/>`
+        + `<path class="e" d="M${x0} ${top}V${bot}M${x1} ${top}V${bot}"/><path class="d" d="M100 ${bot}V${y}"/><text x="104" y="${mid}">h</text><path class="d r" d="M${x0} 100H${x1}"/><text x="76" y="108">L</text>`;
+    }
+    const R = 26, d = +(R * ratio).toFixed(1), y0 = 22, y1 = 78, cx = 80;
+    const total = num(V.H) + 2 * r * ratio; let f = num(V.h) / total; if (!(f >= 0 && f <= 1)) f = 0.4;
+    const yl = +((y1 + d) - ((y1 + d) - (y0 - d)) * f).toFixed(1), mid = +((y1 + d + yl) / 2 + 4).toFixed(1);
+    const path = `M${cx - R} ${y0}A${R} ${d} 0 0 1 ${cx + R} ${y0}V${y1}A${R} ${d} 0 0 1 ${cx - R} ${y1}Z`;
+    return `<defs><clipPath id="${id}"><path d="${path}"/></clipPath></defs><path class="g" d="${path}"/><rect class="liq" x="0" y="${yl}" width="160" height="${+(y1 + d - yl).toFixed(1)}" clip-path="url(#${id})"/>`
+      + `<path class="e" d="M${cx - R} ${y0}H${cx + R}M${cx - R} ${y1}H${cx + R}"/><path class="d" d="M${cx + R + 10} ${y1 + d}V${yl}"/><text x="${cx + R + 14}" y="${mid}">h</text><path class="d r" d="M${cx - R - 12} ${y1}V${y0}"/><text x="${cx - R - 26}" y="54">H</text>`;
+  }
   // ---- containers and more solids (1.11.0)
   // the picture of a tank with the liquid up to its height (kind h: a cylinder lying down, v: standing,
   // s: a sphere, c: a cone with its point down); v: the sizes typed (the level is shown halfway when
@@ -9060,15 +12078,15 @@
   async function ellipsoidArea(v, ctx) {
     const nums = [];
     for (const n of ['a', 'b', 'c']) {
-      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) to ${ctx.base}` : geoValue(v[n], '', '');
+      const e = ctx.base ? `(${geoValue(v[n], '', ctx.unit)}) / (1 ${ctx.base})` : geoValue(v[n], '', ''); // (BG22: a number without a unit)
       const x = await numValue(e);
       if (!(x > 0)) return null;
       nums.push(x);
     }
     const r = ellipsoidAreaNum(nums[0], nums[1], nums[2]);
     if (!isFinite(r.v)) return null;
-    const unit = ctx.base ? ' ' + ctx.base + '²' : '', text = '≈ ' + fmtV(+r.v.toPrecision(Math.min(10, r.digits))) + unit;
-    return { result: text, shown: text, expr: fmtV(+r.v.toPrecision(Math.min(10, r.digits))) + (ctx.base ? ' ' + ctx.base + '^2' : '') };
+    const t = String(+r.v.toPrecision(Math.min(10, r.digits))), unit = ctx.base ? ' ' + ctx.base + '²' : '', text = '≈ ' + t + unit;
+    return { result: text, shown: valueShown(text), num: r.v, expr: t + (ctx.base ? ' ' + ctx.base + '^2' : '') };
   }
   // the volume of the liquid in a tank at height h (numbers in one unit), for the height from an amount
   const TANK_V = {
@@ -9077,7 +12095,9 @@
     stank: (s, h) => Math.PI * h * h * (3 * s.r - h) / 3,
     ctank: (s, h) => Math.PI * s.R * s.R * h * h * h / (3 * s.H * s.H)
   };
-  const tankTop = (k, s) => (k === 'htank' || k === 'stank' ? 2 * s.r : s.H);
+  const tankTop = (k, s) => (headTank(k) ? headTankTop(k, s) : k === 'htank' || k === 'stank' ? 2 * s.r : s.H);
+  // (1.12.0, D1) the tanks with heads
+  for (const g of GEO) if (g.head) TANK_V[g.k] = (s, h) => headTankV(g.k, s, h);
   // the density of a material: [key, label, value with its unit] (typical values, said so)
   const DENSITIES = [
     ['water', tr('Water 1.000 g/cm³', '水 1.000 g/cm³'), '1.000 g/cm^3'],
@@ -9104,7 +12124,7 @@
   // wrong, or ''. (Without this, a negative radius gave an area, and letters were read as units.)
   async function geoSizeProblem(t, kind) {
     const sc = scanBox(t);
-    if (sc.extra || sc.comma || sc.bracket) return tr('A size is one number or expression (the decimal point is ".")', '大きさは 1 つの数か式で入れてください（小数点は「.」）');
+    if (sc.extra || sc.comma || sc.bracket) return commaMode ? tr('A size is one number or expression (the decimal sign is ",")', '大きさは 1 つの数か式で入れてください（小数点は「,」）') : tr('A size is one number or expression (the decimal point is ".")', '大きさは 1 つの数か式で入れてください（小数点は「.」）');
     if (/^[\d.]+$/.test(t)) return '';
     const txt = t + ')'.repeat(sc.open);
     const val = async (e) => {
@@ -9143,19 +12163,29 @@
     if (sh.k === 'pipe' && num.r >= num.R) return tr('The inner size must be smaller than the outer one', '内側の大きさは外側より小さくしてください');
     if ((sh.k === 'htank' || sh.k === 'stank') && num.h > 2 * num.r) return tr('The liquid cannot be higher than the tank (h ≤ 2r)', '液面はタンクの高さ以下にしてください（h ≤ 2r）');
     if ((sh.k === 'vtank' || sh.k === 'ctank') && num.h > num.H) return tr('The liquid cannot be higher than the tank (h ≤ H)', '液面はタンクの高さ以下にしてください（h ≤ H）');
+    // (1.12.0, D1) tanks with heads
+    if (sh.head && sh.base === 'htank' && num.h > 2 * num.r) return tr('The liquid cannot be higher than the tank (h ≤ 2r)', '液面はタンクの高さ以下にしてください（h ≤ 2r）');
+    if (sh.head && sh.base === 'vtank' && isFinite(num.h) && isFinite(num.H) && isFinite(num.r)) {
+      const a = sh.head === 'eld' ? num.a : headGeo(sh.head, num.r).a;
+      if (isFinite(a) && num.h > num.H + 2 * a * (1 + 1e-12)) return tr('The liquid cannot be higher than the tank (h ≤ H + 2a, with the heads)', '液面はタンクの高さ以下にしてください（h ≤ H + 2a、鏡板を含む）');
+    }
     return '';
   }
-  function openShapes() {
+  // the shapes shown first in each kind (1.12.0); the others are behind "More shapes"
+  const GEO_COMMON = { 2: ['circle', 'rect', 'tri', 'trap', 'ellipse', 'sector'], 3: ['sphere', 'cyl', 'cone', 'box', 'pyr', 'hemi'] };
+  // kind (from "Tools", 1.12.0): 2 flat shapes, 3 solids, 4 tanks; without it the last one used
+  function openShapes(kind) {
     const p = panel('shapes', tr('Shapes: area, length, volume', '図形：面積・長さ・体積'), (p) => {
       const saved = store.get('qalc.shapes', {}) || {};
       // (1.11.0: dia, sizes of round shapes typed as diameters; vu and au, the units of the volumes and
       // areas shown; dens, the material for the weight (dv: its density when typed); amt, an amount
       // of liquid whose height is found)
-      const G = { k: GEO.some((s) => s.k === saved.k) ? saved.k : 'circle', unit: GEO_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : '', vals: saved.v || {}, seq: 0, last: {},
+      const savedShape = GEO.find((s) => s.k === saved.k);
+      const G = { k: savedShape ? (savedShape.head && PRO_GATES.tank_heads === 'pro' && !hasPro() ? savedShape.base : saved.k) : 'circle', unit: GEO_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : '', vals: saved.v || {}, seq: 0, last: {},
         dia: !!saved.dia, vu: VOL_UNITS.some((u) => u[0] === saved.vu) ? saved.vu : '', au: AREA_UNITS.some((u) => u[0] === saved.au) ? saved.au : '',
-        dens: saved.dens === 'own' || DENSITIES.some((d) => d[0] === saved.dens) ? saved.dens : '', dv: saved.dv || '', amt: saved.amt || {} };
+        dens: saved.dens === 'own' || DENSITIES.some((d) => d[0] === saved.dens) ? saved.dens : '', dv: saved.dv || '', amt: saved.amt || {}, more: {} };
       const cur = () => GEO.find((s) => s.k === G.k);
-      const save = () => store.set('qalc.shapes', { k: G.k, unit: G.unit, v: G.vals, dia: G.dia, vu: G.vu, au: G.au, dens: G.dens, dv: G.dv, amt: G.amt });
+      const save = () => store.set('qalc.shapes', { k: G.k, unit: G.unit, v: G.vals, dia: G.dia, vu: G.vu, au: G.au, dens: G.dens, dv: G.dv, amt: G.amt, q: G.q, qs: G.qs });
       const b2 = el('button', { text: tr('Flat shapes', '平面の図形') }), b3 = el('button', { text: tr('Solids', '立体の図形') }), b4 = el('button', { text: tr('Tanks', '容器の液量') });
       // radius or diameter for round shapes (on site a diameter is what is measured)
       const bRad = tapButton({ text: tr('Radius', '半径') }, () => { if (G.dia) { typed(); G.dia = false; choose(G.k); } });
@@ -9169,13 +12199,15 @@
       aUnit.append(el('option', { value: '', text: tr('Area: auto', '面積：自動') }));
       for (const [u, s] of AREA_UNITS) aUnit.append(el('option', { value: u, text: s }));
       vUnit.value = G.vu; aUnit.value = G.au;
-      const outUnits = el('div', { class: 'geo-units' }, vUnit, aUnit);
+      // (1.12.0, D7) the digits of the results, beside the units
+      const dig = digitsControl();
+      const outUnits = el('div', { class: 'geo-units' }, vUnit, aUnit, dig.sel);
       const dens = el('select', { 'aria-label': tr('Material (density)', '材料（密度）') });
       dens.append(el('option', { value: '', text: tr('Weight: choose a material', '重さ：材料を選ぶ') }));
-      for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: s }));
+      for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: decSign(s) })); // (BG13: 1.000 g/cm³ with a decimal comma)
       dens.append(el('option', { value: 'own', text: tr('Another density…', 'ほかの密度…') }));
       dens.value = G.dens;
-      const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³'), value: G.dv, 'aria-label': tr('Density', '密度') });
+      const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³')), value: G.dv, 'aria-label': tr('Density', '密度') });
       const weightVal = el('span', { class: 'geo-val' });
       const weightRow = el('div', { class: 'geo-weight' }, dens, densIn, weightVal);
       const amtIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: tr('e.g. 1000 L', '例：1000 L'), 'aria-label': tr('Amount of liquid', '液量') });
@@ -9183,6 +12215,92 @@
       const amtRow = el('label', { class: 'geo-amt' }, el('span', { class: 'geo-lbl', text: tr('Height for the amount', '液量から高さ') }), amtIn, amtVal);
       const chips = el('div', { class: 'geo-chips', role: 'group', 'aria-label': tr('Shape', '図形') });
       const pic = el('div', { class: 'geo-pic' }), sizes = el('div', { class: 'geo-sizes' });
+      // 1.12.0 (D6): "⟳ 3D" beside the picture of a solid or a tank: the shape in the 3D graph with these sizes,
+      // growing (a solid turned from 0° to 360°, the liquid rising), with its values large above it (QCalc Pro;
+      // without it, the row "Turn it in 3D (QCalc Pro)" above the results)
+      const view3d = el('button', { class: 'rev3d geo-3d', type: 'button', 'aria-label': tr('View in 3D', '3D で見る') },
+        el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' }));
+      const picBox = el('div', { class: 'geo-pic-box' }, pic, view3d);
+      const proRow3d = tapButton({ class: 'rev-pro-row', hidden: true, 'aria-label': tr('Turn it in 3D (QCalc Pro)', '3D で回して見る（QCalc Pro）') }, () => proPrompt(tr('Turning the solid in 3D is a QCalc Pro feature', '3D で回して見るのは QCalc Pro の機能です'), '3d'));
+      proRow3d.append(el('span', { class: 'rev-pro-i', 'aria-hidden': 'true', text: '🧊' }), el('span', { class: 'rev-pro-t', text: tr('Turn it in 3D (QCalc Pro)', '3D で回して見る（QCalc Pro）') }), el('span', { class: 'rev-pro-go', 'aria-hidden': 'true', text: '›' }));
+      // the note under the results (A7): tanks (the shape is the ideal one), and the weight (a typical density)
+      const cautionTank = cautionLine(tr('Assumes the ideal shape of the picture (no tilt, dents or fittings).', '前提：図のとおりの理想的な形（傾き・へこみ・付属物は含みません）。'));
+      // (1.12.0, D1; QCalc Pro) the heads of a lying or a standing cylinder, and the quick-reference
+      // table of every tank (the volume for each height, or the height for each volume)
+      const cautionHead = cautionLine(tr('Inside sizes (the thickness of the plates is not counted). Dished heads: ASME F&D, crown radius = diameter, knuckle radius = 6 % of the diameter.', '内側の寸法です（板の厚さは含みません）。皿形は ASME F&D（皿の半径 = 直径、ナックルの半径 = 直径の 6 %）。'));
+      const headSeg = el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Heads', '鏡板') });
+      const headMoreRow = el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Other heads', 'ほかの鏡板') });
+      const headMore = el('details', { class: 'sec-more head-more' }, el('summary', { text: tr('Other heads ▾', 'ほかの鏡板 ▾') }), headMoreRow);
+      const headRow = el('div', { class: 'head-row' }, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Heads', '鏡板') }), headSeg), headMore);
+      const setHead = (type) => {
+        const sh = cur(), base = sh.base || sh.k, k = type === 'flat' ? base : base + '_' + type;
+        if (k === sh.k) return;
+        if (type !== 'flat' && !proGate('tank_heads')) return;
+        typed();
+        // the sizes they have in common stay (radius, length, level)
+        const to = GEO.find((x) => x.k === k), old = G.vals[sh.k] || [], prev = G.vals[k] || to.def.map(() => '');
+        G.vals[k] = to.p.map(([n], i) => { const j = sh.p.findIndex((q) => q[0] === n); return j >= 0 && old[j] !== undefined ? old[j] : prev[i]; });
+        G.amt[k] = G.amt[k] || G.amt[sh.k] || '';
+        choose(k);
+      };
+      const showHeads = (sh) => {
+        const base = sh.base || sh.k;
+        headRow.hidden = !(base === 'htank' || base === 'vtank');
+        if (headRow.hidden) return;
+        const now = sh.head || 'flat', lock = PRO_GATES.tank_heads === 'pro' && !hasPro();
+        headSeg.textContent = ''; headMoreRow.textContent = '';
+        const add = (box, [t, label]) => box.append(tapButton({ class: now === t ? 'on' : '', 'aria-pressed': String(now === t), text: label + (t !== 'flat' && lock ? '  ⭐' : '') }, () => setHead(t)));
+        HEAD_TYPES().forEach((x) => add(headSeg, x));
+        HEAD_MORE().forEach((x) => add(headMoreRow, x));
+        if (HEAD_MORE().some(([t]) => t === now)) headMore.open = true;
+      };
+      const quickBox = el('div', { class: 'quick-box' });
+      const qStep = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: saved.qs || '', placeholder: tr('auto', '自動'), 'aria-label': tr('Step of the table', '早見表の刻み') });
+      const qUnit = el('span', { class: 'geo-unit' });
+      const qByH = tapButton({ text: tr('Height → amount', '高さ → 液量') }, () => setQ('h')), qByV = tapButton({ text: tr('Amount → height', '液量 → 高さ') }, () => setQ('v'));
+      const quick = el('details', { class: 'sec-more quick-tank' }, el('summary', { text: tr('Quick-reference table ▾', '早見表 ▾') + (PRO_GATES.tank_heads === 'pro' && !hasPro() ? '  ⭐ Pro' : '') }),
+        el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Table', '表') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Table', '表') }, qByH, qByV)),
+        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Step', '刻み') }), qStep, qUnit), quickBox);
+      G.q = saved.q === 'v' ? 'v' : 'h'; G.qs = saved.qs || '';
+      const setQ = (m, init) => { G.q = m; for (const [b, x] of [[qByH, 'h'], [qByV, 'v']]) { b.classList.toggle('on', m === x); b.setAttribute('aria-pressed', String(m === x)); } if (init) return; qStep.value = ''; G.qs = ''; save(); run(); };
+      setQ(G.q, true);
+      quick.addEventListener('toggle', () => { if (quick.open && !proGate('tank_heads')) { quick.open = false; return; } if (quick.open) run(); });
+      qStep.addEventListener('input', () => { G.qs = qStep.value; save(); run(); });
+      const quickTable = async (sh, v, base, seq) => {
+        const s = {};
+        for (const [n, , kind, , dl] of sh.p) {
+          if (n === 'h') continue;
+          const e = geoValue(v[n], kind, G.unit), x = await numValue(base ? `(${e}) / (1 ${base})` : e);
+          if (seq !== G.seq) return;
+          s[n] = x / (G.dia && dl ? 2 : 1);
+        }
+        quickBox.textContent = '';
+        if (!Object.values(s).every((x) => x > 0)) return;
+        const top = tankTop(sh.k, s), full = TANK_V[sh.k](s, top);
+        let f = 1, vName = base ? base + '³' : '';
+        if (base && G.vu) { const x = await numValue(`(1 ${base}^3) / (1 ${G.vu})`); if (seq !== G.seq) return; if (x > 0) { f = x; vName = (VOL_UNITS.find((u) => u[0] === G.vu) || [0, G.vu])[1]; } }
+        const n6 = (x) => statNum(x, 6), pct = (x) => digNum(x / full * 100, 'pct', 4), nh = (x) => digNum(x, 'len', 6), nv = (x) => digNum(x, 'vol', 6);
+        const nice = (span) => { const raw = span / 10, p = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * p >= raw * 0.999) return m * p; return 10 * p; };
+        const heightOf = (want) => { let lo = 0, hi = top; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; } return (lo + hi) / 2; };
+        const span = G.q === 'h' ? top : full * f;
+        let step = boxNum(G.qs), note = '';
+        if (!(step > 0)) step = nice(span);
+        if (span / step > 200) { step = nice(span / 20); note = trf('Up to 200 rows: the step is {0}', '200 行までにするため、刻みを {0} にしました', n6(step)); }
+        // (D7: the heights, the amounts and the % with the digits set; raw: all their digits, for CSV)
+        const rows = [], raw = [];
+        for (let i = 0; i * step < span * (1 - 1e-9); i++) {
+          const q = i * step;
+          if (G.q === 'h') { const vol = TANK_V[sh.k](s, q); rows.push([n6(q), nv(vol * f), pct(vol)]); raw.push([q, vol * f, vol / full * 100]); } else { const hq = heightOf(q / f); rows.push([n6(q), nh(hq), pct(q / f)]); raw.push([q, hq, q / f / full * 100]); }
+        }
+        // the last row: the full tank
+        rows.push(G.q === 'h' ? [n6(top), nv(full * f), pct(full)] : [n6(full * f), nh(top), pct(full)]);
+        raw.push(G.q === 'h' ? [top, full * f, 100] : [full * f, top, 100]);
+        qUnit.textContent = G.q === 'h' ? base : vName;
+        const hName = tr('Height h', '液面の高さ h') + (base ? ' (' + base + ')' : ''), vCol = tr('Liquid', '液量') + (vName ? ' (' + vName + ')' : '');
+        showTable(quickBox, { title: G.q === 'h' ? tr('The amount for each height', '高さごとの液量') : tr('The height for each amount', '液量ごとの高さ'), head: G.q === 'h' ? [hName, vCol, '%'] : [vCol, hName, '%'], rows, raw, name: 'tank' });
+        if (note) quickBox.append(el('div', { class: 'form-hint', text: note }));
+      };
+      const cautionWeight = cautionLine(tr('The densities of the list are typical values.', '前提：一覧の密度は代表的な値です。'));
       const outs = el('div', { class: 'geo-out', 'aria-live': 'polite' });
       const unit = el('select', { 'aria-label': tr('Unit of the lengths', '長さの単位') });
       for (const u of GEO_UNITS) unit.append(el('option', { value: u, text: u || tr('no unit', '単位なし') }));
@@ -9193,7 +12311,9 @@
         if (sh.k === 'sphere') showSphere(v.r); else drawShape2d(sh.k, v);
       });
       let inputs = {}, rows = [];
-      const values = () => { const v = {}; for (const [n] of cur().p) v[n] = normalizeExpr(inputs[n].value); return v; };
+      // 1.12.0 (F, task 3): a size not typed yet is its example, shown in gray in the field (the placeholder),
+      // and the results use it: nothing to delete before typing, and still a result at once
+      const values = () => { const v = {}; for (const [n] of cur().p) v[n] = normalizeExpr(inputs[n].value || inputs[n].placeholder); return v; };
       // the height of the liquid for the amount typed (tanks): the sizes as numbers in one unit, the
       // amount in that unit cubed, and the height found by halving the range (the amount grows with the height)
       const tankHeight = async (sh, v, base, seq) => {
@@ -9216,7 +12336,7 @@
         let lo = 0, hi = top;
         for (let i = 0; i < 200 && hi - lo > top * 1e-15; i++) { const m = (lo + hi) / 2; if (TANK_V[sh.k](s, m) < want) lo = m; else hi = m; }
         const h = (lo + hi) / 2;
-        amtVal.textContent = 'h ≈ ' + fmtV(+h.toPrecision(6)) + (base ? ' ' + base : '') + tr(' (', '（') + fmtV(+(want / full * 100).toPrecision(4)) + ' %' + tr(' full)', '）');
+        amtVal.textContent = 'h ≈ ' + digNum(h, 'len', 6) + (base ? ' ' + base : '') + tr(' (', '（') + digNum(want / full * 100, 'pct', 4) + ' %' + tr(' full)', '）');
       };
       // the weight of the first volume of the list (the liquid of a tank) with the density chosen
       const weight = async (rows, seq) => {
@@ -9228,9 +12348,13 @@
         const r = await Bridge.send('calc', { expr: `(${row.vol}) × (${d}) to kg`, opts: Object.assign(engineOpts(), { approx: 'approx' }), timeout: 4000 });
         if (seq !== G.seq) return;
         const ok = r.ok && r.result && !r.timeout && !(r.messages || []).some((m) => m.type === 'error') && / kg$/.test(r.result);
-        if (!ok) { weightVal.textContent = tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）'); return; }
+        if (!ok) { weightVal.textContent = decSign(tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')); return; }
         const kg = Number(numberPart(r.result.replace(/ kg$/, '')));
-        weightVal.textContent = tr('Weight ', '重さ ') + resultText(r) + (kg >= 1000 ? tr(' = ', ' = ') + fmtV(+(kg / 1000).toPrecision(8)) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
+        // (D7: the weight with the digits set for weights)
+        const wsp = digSpec('mass'), kgx = wsp ? await digValue(`(${row.vol}) × (${d}) to kg`) : kg;
+        if (seq !== G.seq) return;
+        const wtxt = wsp && isFinite(kgx) ? (/≈/.test(resultText(r)) ? withApprox(resultText(r), digText(kgx, wsp, !!S.grouping)) : resultText(r)) : resultText(r);
+        weightVal.textContent = tr('Weight ', '重さ ') + wtxt + (kg >= 1000 ? tr(' = ', ' = ') + digNum((isFinite(kgx) ? kgx : kg) / 1000, 'mass', 8) + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
       };
       const svg = (sh, v, small) => {
         let t = typeof sh.pic === 'function' ? sh.pic(v || {}) : sh.pic;
@@ -9238,9 +12362,12 @@
         return `<svg viewBox="0 0 160 110" ${small ? 'aria-hidden="true"' : 'role="img" aria-label="' + sh.name + '"'}>${t}</svg>`;
       };
       // the results: one request for each, in the order of the list; an older run is given up
-      const run = debounce(async () => {
+      // (D6: runNow at once, for the level dragged in the 3D graph; G.done: the sizes of the results shown)
+      const runNow = async () => {
         const sh = cur(), v = values(), seq = ++G.seq;
+        G.done = null;
         G.vals[sh.k] = sh.p.map(([n]) => inputs[n].value);
+        exNote.hidden = !sh.p.some(([n]) => !inputs[n].value.trim());
         save();
         if (typeof sh.pic === 'function') pic.innerHTML = svg(sh, v);
         let problem = sh.p.some(([n]) => !v[n]) ? tr('Enter the sizes', '大きさを入れてください') : geoProblem(sh, v, G.dia);
@@ -9269,10 +12396,11 @@
           const sub = (unit) => row.def[2].replace(/\{(\w+)\}/g, (m, n) => { if (n === 'turn') return fullTurn(); const q = sh.p.find((x) => x[0] === n) || [], g = geoValue(v[n], q[2], unit); return G.dia && q[4] ? `(${g} / 2)` : g; });
           // a row worked out by the page itself (the surface of an ellipsoid, 1.11.0)
           if (typeof row.def[2] === 'function') {
-            const rr = await row.def[2](G.dia ? Object.fromEntries(Object.entries(v).map(([n, x]) => [n, (sh.p.find((q) => q[0] === n) || [])[4] ? `(${x}) / 2` : x])) : v, { unit: G.unit, base });
+            const rr = await row.def[2](G.dia ? Object.keys(v).reduce((o, n) => { o[n] = (sh.p.find((q) => q[0] === n) || [])[4] ? `(${v[n]}) / 2` : v[n]; return o; }, {}) : v, { unit: G.unit, base, vu: G.vu });
             if (seq !== G.seq) return;
             if (!rr) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
-            row.expr = rr.expr; row.result = rr.result; row.shown = rr.shown;
+            row.expr = rr.expr; row.result = rr.result; row.shown = rr.shown; row.vol = rr.vol || ''; row.num = rr.num;
+            await digRow(row, geoKind(row.def), rr.num); // (D7: the digits set)
             row.node.dataset.value = row.shown; showResult(row.val, row.shown);
             continue;
           }
@@ -9287,7 +12415,9 @@
           if (seq !== G.seq) return;
           const bad = !r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error') || /(^|[^\p{L}])i($|[^\p{L}])|undefined/u.test(r.result);
           if (bad) { row.val.textContent = '—'; row.val.classList.remove('math'); continue; }
-          row.expr = full; row.vol = pow === 3 && (G.unit || own.length) ? `(${sub(G.unit || target)})` : ''; row.result = r.result + suffix; row.shown = resultText(r) + suffix;
+          row.expr = full; row.vol = pow === 3 && (G.unit || own.length) ? `(${sub(G.unit || target)})` : ''; row.result = r.result + suffix; row.shown = resultText(r) + suffix; row.num = NaN;
+          await digRow(row, geoKind(row.def), NaN, expr); // (D7: the digits set, from the number worked out again)
+          if (seq !== G.seq) return;
           row.node.dataset.value = row.shown;
           showResult(row.val, row.shown);
         }
@@ -9295,7 +12425,12 @@
         await weight(rows, seq);
         if (seq !== G.seq) return;
         if (sh.d === 4) await tankHeight(sh, v, base, seq);
-      }, 220);
+        if (sh.d === 4 && quick.open) await quickTable(sh, v, base, seq);
+        if (seq !== G.seq) return;
+        G.done = { k: sh.k, key: JSON.stringify(v) };
+        if (G.link3d) modelValuesChanged(G.link3d);
+      };
+      const run = debounce(runNow, 220);
       const choose = (k) => {
         G.k = k;
         const sh = cur();
@@ -9304,19 +12439,31 @@
         b2.setAttribute('aria-pressed', String(sh.d === 2)); b3.setAttribute('aria-pressed', String(sh.d === 3)); b4.setAttribute('aria-pressed', String(sh.d === 4));
         const round = sh.p.some((q) => q[4]);
         rdSeg.hidden = !round; bRad.classList.toggle('on', !G.dia); bDia.classList.toggle('on', G.dia);
-        outUnits.hidden = sh.d === 2 && !sh.out.some((o) => o[3] === 2); weightRow.hidden = sh.d === 2; amtRow.hidden = sh.d !== 4;
+        bRad.setAttribute('aria-pressed', String(!G.dia)); bDia.setAttribute('aria-pressed', String(G.dia));
+        vUnit.hidden = aUnit.hidden = sh.d === 2 && !sh.out.some((o) => o[3] === 2); weightRow.hidden = sh.d === 2; amtRow.hidden = sh.d !== 4;
         densIn.hidden = G.dens !== 'own'; amtIn.value = G.amt[k] || '';
+        showCaution();
         chips.textContent = '';
-        for (const s of GEO.filter((x) => x.d === sh.d)) {
-          chips.append(tapButton({ class: 'geo-chip' + (s.k === k ? ' on' : ''), 'aria-pressed': String(s.k === k), html: svg(s, null, true) + '<span></span>' }, () => { if (s.k !== G.k) { typed(); choose(s.k); } }));
+        // 1.12.0: the six most used shapes of a kind first, the others behind "More shapes" (and the
+        // one chosen, wherever it is), so that no more than about seven are offered at once
+        const all = GEO.filter((x) => x.d === sh.d && !x.head), common = GEO_COMMON[sh.d], bk = sh.base || k;
+        const shown = common && !G.more[sh.d] ? all.filter((x) => common.indexOf(x.k) >= 0 || x.k === bk) : all;
+        for (const s of shown) {
+          chips.append(tapButton({ class: 'geo-chip' + (s.k === bk ? ' on' : ''), 'aria-pressed': String(s.k === bk), html: svg(s, null, true) + '<span></span>' }, () => { if (s.k !== bk) { typed(); choose(s.k); } }));
           chips.lastChild.lastChild.textContent = s.name;
         }
+        if (shown.length < all.length) {
+          chips.append(tapButton({ class: 'geo-chip geo-more', 'aria-expanded': 'false', text: trf('More shapes ({0}) ▾', 'ほかの形（{0}）▾', all.length - shown.length) }, () => { G.more[sh.d] = true; choose(G.k); }));
+        } else if (common && G.more[sh.d]) {
+          chips.append(tapButton({ class: 'geo-chip geo-more', 'aria-expanded': 'true', text: tr('Fewer ▴', '閉じる ▴') }, () => { G.more[sh.d] = false; choose(G.k); }));
+        }
+        showHeads(sh);
         const old = G.vals[k] || [];
         inputs = {}; sizes.textContent = '';
         sh.p.forEach(([n, label0, kind, sym0, dl], i) => {
           // (a size of a round shape typed as a diameter: its label and its letter, D for R and d for r)
           const label = G.dia && dl ? dl : label0, sym = G.dia && dl ? ((sym0 || n) === 'R' ? 'D' : 'd') : sym0;
-          inputs[n] = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: old[i] !== undefined ? old[i] : sh.def[i], 'aria-label': label });
+          inputs[n] = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: old[i] !== undefined ? old[i] : '', placeholder: toDisplay(sh.def[i]), 'aria-label': label });
           inputs[n].addEventListener('input', run);
           inputs[n].addEventListener('focus', () => inputs[n].select());
           sizes.append(el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl' }, label, kind === 'n' ? '' : el('i', { text: ' ' + (sym || n) })), inputs[n],
@@ -9328,9 +12475,7 @@
           const row = { def, val, expr: '', result: '' };
           row.node = tapButton({ class: 'geo-row' }, async () => {
             if (!row.expr) return;
-            const key = await sheet(def[0] + '  ' + clip(row.shown, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'], ['copy', tr('Copy the result', '結果をコピー')]]);
-            if (key === 'use') useExample(row.expr);
-            else if (key === 'copy') copyText(row.result);
+            resultSheet(def[0], row.expr, row.shown || valueShown(row.result));
           });
           row.node.append(el('span', { class: 'geo-name' }, def[0], el('small', { text: def[1] })), val);
           return row;
@@ -9339,32 +12484,955 @@
         for (const row of rows) outs.append(row.node);
         graph.hidden = !sh.graph;
         if (sh.k === 'sphere') graph.dataset.pro = ''; else delete graph.dataset.pro;
+        // (D6) "⟳ 3D" for solids and tanks
+        view3d.hidden = sh.d < 3; proRow3d.hidden = true; picBox.classList.toggle('has3d', sh.d >= 3);
+        if (hasPro()) delete view3d.dataset.pro; else view3d.dataset.pro = '';
         run();
       };
+      // ---- (D6) the shape in the 3D graph
+      // the unit the sizes are turned into (as for the results: run), and the sizes as numbers in it (a diameter
+      // halved where a radius goes)
+      const baseOf = (sh, v) => {
+        const own = Array.from(new Set([].concat(...sh.p.map(([n, , kind]) => (kind && kind !== 'a2' ? [] : v[n].replace(/π/g, '').match(/\p{L}+/gu) || [])))));
+        const target = own.length === 1 ? own[0] : G.unit;
+        return { own, base: G.unit || (own.length ? target || 'm' : '') };
+      };
+      const sizesNum = async (sh, v, base) => {
+        const s = {};
+        for (const [n, , kind, , dl] of sh.p) {
+          const e = geoValue(v[n], kind, G.unit), pw = kind === 'a2' ? 2 : 1;
+          const x = await numValue(base && kind !== 'n' && kind !== 'deg' ? `(${e}) / (1 ${base}${pw > 1 ? '^' + pw : ''})` : e);
+          s[n] = x / (G.dia && dl ? 2 : 1);
+        }
+        return s;
+      };
+      // the labels of the sizes on the solid ("r = 15 cm", "d = 30 cm" for a diameter): the letter, the number in
+      // the unit of the sizes (written with the digits of the 3D picture, D7) and the unit
+      const labelsOf = (sh, s, base) => {
+        const lab = { dia: G.dia };
+        for (const [n, , kind, sym0, dl] of sh.p) {
+          if (kind === 'n' || kind === 'deg') continue;
+          const d2 = G.dia && dl, sym = d2 ? ((sym0 || n) === 'R' ? 'D' : 'd') : (sym0 || n);
+          lab[n] = { sym, val: d2 ? 2 * s[n] : s[n], unit: base ? base + (kind === 'a2' ? '²' : '') : '' };
+        }
+        return lab;
+      };
+      // the number of a result as the tool shows it (the part after ≈, without "≈")
+      const approxOf = (t) => { const s = String(t || ''), i = s.lastIndexOf('≈'); return (i >= 0 ? s.slice(i + 1) : s).replace(/^\s*=\s*/, '').trim(); };
+      const rowOf = (pred) => rows.find(pred);
+      const FULL = () => tr('Full', '満杯に対して'), CAP = () => tr('Capacity (full)', '満杯の量');
+      let liveT = 0, liveAt = 0;
+      const show3d = async () => {
+        const sh = cur();
+        if (sh.d < 3) return;
+        if (!hasPro()) {
+          proRow3d.hidden = false;
+          if (!store.get('qalc.shape3dfree', false)) { store.set('qalc.shape3dfree', true); toast(tr('Turning the solid in 3D is a QCalc Pro feature.', '3D で回して見るのは QCalc Pro の機能です'), 4000); }
+          return;
+        }
+        const v = values();
+        if (msg.textContent) { toast(msg.textContent, 2600); return; }
+        const { own, base } = baseOf(sh, v), s = await sizesNum(sh, v, base);
+        if (G.k !== sh.k) return;
+        const model = Object.values(s).every((x) => isFinite(x)) ? shapeModel(sh.k, s, labelsOf(sh, s, base)) : null;
+        if (!model) { toast(tr('These sizes cannot be drawn in 3D', 'この大きさでは 3D で描けません'), 2600); return; }
+        // a tank: the volume scale (round amounts in the unit of the results; about 3 with their numbers)
+        let scale = null;
+        if (model.tank) {
+          let f = 1, unit = base ? base + '³' : '';
+          if (base && G.vu) { const x = await numValue(`(1 ${base}^3) / (1 ${G.vu})`); if (x > 0) { f = x; unit = (VOL_UNITS.find((u) => u[0] === G.vu) || [0, G.vu])[1]; } }
+          const span = model.tank.full * f, raw = span / 10, p10 = Math.pow(10, Math.floor(Math.log10(raw)));
+          let step = 10 * p10;
+          for (const m of [1, 2, 2.5, 5]) if (m * p10 >= raw * 0.999) { step = m * p10; break; }
+          const n = Math.ceil(span / step - 1e-9) - 1, nice = (x) => { const q = x / Math.pow(10, Math.floor(Math.log10(x) + 1e-9)); return [1, 2, 2.5, 5, 10].some((m) => Math.abs(q - m) < 1e-6); };
+          let every = 1, best = Infinity;
+          for (const m of [1, 2, 4, 5, 10]) { const sc = Math.abs(Math.floor(n / m) - 3) + (nice(step * m) ? 0 : 0.5); if (Math.floor(n / m) >= 1 && sc < best) { best = sc; every = m; } }
+          scale = { step, every, f, unit };
+          model.vf = f; model.vunit = unit;
+        }
+        // the amount at the level and how full, from the tool's rows when they are for these sizes; while the
+        // engine works (the level being dragged), from the page's own formulas (TANK_V)
+        const fresh = () => G.done && G.done.k === sh.k && G.done.key === JSON.stringify(values());
+        const tankNow = () => {
+          const T = model.tank, liq = rowOf((r) => r.def[3] === 3), pc = rowOf((r) => r.def[0] === FULL()), cap = rowOf((r) => r.def[0] === CAP());
+          if (fresh() && liq && liq.result && pc && pc.result) return { amount: approxOf(liq.shown), pct: approxOf(pc.shown), liq: liq.shown, cap: cap && cap.result ? cap.shown : '' };
+          // (while the level is dragged, before the tool has worked its rows out: the numbers written as the tool
+          // writes them (the digits of the setting, or the calculator's precision; groups of three only with "Digit
+          // grouping"), and the capacity, which does not change, as the tool has it; D6P)
+          const asRow = (v, kind) => digText(v, digSpec(kind) || { mode: 'sig', n: Math.min(Number(S.precision) || 10, DIG_MAX), trim: true }, !!S.grouping);
+          const x = T.V(T.h) * model.vf, u = model.vunit ? ' ' + model.vunit : '', pq = asRow(T.V(T.h) / T.full * 100, 'pct') + ' %';
+          return { amount: asRow(x, 'vol') + u, pct: pq, liq: '≈ ' + asRow(x, 'vol') + u, cap: cap && cap.result ? cap.shown : '≈ ' + asRow(T.full * model.vf, 'vol') + u };
+        };
+        const link = G.link3d = {
+          model, title: sh.name, scale,
+          lines: () => {
+            if (model.tank) { const q = tankNow(); return [tr('Liquid ', '液量 ') + q.liq + tr(' (', '（') + q.pct + tr(')', '）'), q.cap ? tr('Capacity ', '満杯の量 ') + q.cap : '']; }
+            const vol = rowOf((r) => r.def[3] === 3), ar = rowOf((r) => r.def[3] === 2);
+            return [vol && vol.result ? vol.def[0] + ' ' + vol.shown : '', ar && ar.result ? ar.def[0] + ' ' + ar.shown : ''];
+          },
+          rows: () => rows.map((q) => ({ name: q.def[0], small: typeof q.def[1] === 'string' ? q.def[1] : '', result: q.result, expr: q.expr, text: q.result ? '' : q.val.textContent })),
+          // (the amount at the level in the 3D picture: rounded for reading, with the digits of the picture (D7: auto, 3
+          // significant digits, % with one decimal); the exact values stay above the graph and in the tool)
+          levelText: () => { const T = model.tank, u = model.vunit ? ' ' + model.vunit : ''; return digPic(T.V(T.h) * model.vf, 'amount') + u + tr(' (', '（') + digPic(T.V(T.h) / T.full * 100, 'pct') + ' %' + tr(')', '）'); },
+          // the height dragged into the tool's field (in the unit of the sizes, rounded as the slider is)
+          setLevel: (h, final) => {
+            const inp = inputs.h;
+            if (!inp || G.k !== sh.k) return;
+            const st = levelStep(model.tank), dec = Math.max(0, -Math.floor(Math.log10(st) + 1e-9)), num = String(+h.toFixed(dec));
+            const ownU = own.length && !G.unit ? ' ' + base : '';
+            inp.value = toDisplay(num) + ownU;
+            model.lab.h = { sym: 'h', val: +num, unit: base };
+            G.vals[sh.k] = sh.p.map(([n]) => inputs[n].value);
+            G.done = null;
+            clearTimeout(liveT);
+            if (final) { run(); return; }
+            const now = Date.now();
+            if (now - liveAt > 160) { liveAt = now; runNow(); } else liveT = setTimeout(() => { liveAt = Date.now(); runNow(); }, 160 - (now - liveAt));
+          }
+        };
+        openSolid3d(link);
+      };
+      view3d.addEventListener('click', show3d);
       const msg = el('div', { class: 'geo-msg', role: 'status' });
+      const exNote = el('div', { class: 'form-hint geo-ex-note', text: tr('Gray numbers are examples: the results use them until you type your own sizes.', '薄い字は例です。大きさを入れるまでは、例の値で計算しています。'), hidden: true });
       const typed = () => { G.vals[G.k] = cur().p.map(([n]) => inputs[n].value); };
       unit.addEventListener('change', () => { G.unit = unit.value; typed(); choose(G.k); });
       b2.addEventListener('click', () => { if (cur().d !== 2) { typed(); choose(G.last[2] || 'circle'); } });
       b3.addEventListener('click', () => { if (cur().d !== 3) { typed(); choose(G.last[3] || 'sphere'); } });
       b4.addEventListener('click', () => { if (cur().d !== 4 && proGate('tanks')) { typed(); choose(G.last[4] || 'htank'); } });
+      p.showKind = (d) => { const b = { 2: b2, 3: b3, 4: b4 }[d]; if (b && cur().d !== d) b.click(); };
+      p.help = () => (cur().d === 4 ? 'tanks' : 'shapes'); // "?" (1.12.0, H)
       vUnit.addEventListener('change', () => { G.vu = vUnit.value; save(); run(); });
       aUnit.addEventListener('change', () => { G.au = aUnit.value; save(); run(); });
-      dens.addEventListener('change', () => { G.dens = dens.value; densIn.hidden = G.dens !== 'own'; save(); run(); if (G.dens === 'own') densIn.focus(); });
+      const showCaution = () => { const d = cur().d; cautionTank.hidden = d !== 4; cautionWeight.hidden = d !== 3 || !G.dens; cautionHead.hidden = !cur().head; };
+      dens.addEventListener('change', () => { G.dens = dens.value; densIn.hidden = G.dens !== 'own'; showCaution(); save(); run(); if (G.dens === 'own') densIn.focus(); });
       densIn.addEventListener('input', () => { G.dv = densIn.value; save(); run(); });
       amtIn.addEventListener('input', () => { G.amt[G.k] = amtIn.value; save(); run(); });
-      p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips,
-        el('div', { class: 'geo-main' }, pic, el('div', { class: 'geo-side' }, rdSeg, sizes,
+      p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips, headRow,
+        el('div', { class: 'geo-main' }, picBox, el('div', { class: 'geo-side' }, rdSeg, sizes,
           el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
-        outUnits, msg, outs, amtRow, weightRow, graph,
+        outUnits, dig.more, msg, exNote, proRow3d, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
         // 1.11.0: the volume from measured values (a table of cross sections, a grid of heights)
         tapButton({ class: 'btn geo-link', text: tr('Volume from measured values (cross sections, grid of heights) ›', '測った値から体積（断面積の表・点高法）›') }, () => openSections()),
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
       p.run = run;
+      digRuns.add(() => run());
+      // (D6: a solid of the examples of the 3D graph: its sizes typed here (as radii), and shown in 3D once its
+      // values are there)
+      p.setShape = (k, vals) => { typed(); G.dia = false; G.vals[k] = vals.map((x) => toDisplay(x)); choose(k); };
+      p.view3d = async () => { await runNow(); show3d(); };
       choose(G.k);
     });
     // opened again: the precision or the angle unit of the settings may have changed
     if (p.run) p.run();
+    if (kind && p.showKind) p.showKind(kind);
     return p;
+  }
+  // ------------------------------------------------ solid from a profile (1.12.0, D2; QCalc Pro)
+  // A table of positions along the axis and diameters (or radii), as measured on a turned part, a pot
+  // or a vase; an inner profile (the inside of a container) under "More". Between the points: straight
+  // (stacked frustums; the volume exactly by the engine) or a smooth monotone cubic (worked out here).
+  // Two points at the same position make a step. The results: the outer volume, the inner capacity,
+  // the material and its weight, the surface; the shrinkage of pottery; a quick-reference table of
+  // the height and the amount; the profile drawn, and the solid in 3D (the 3D graph: Pro).
+  const PF_UNITS = ['mm', 'cm', 'm', 'in'];
+  const PF_CM3 = { mm: 1e-3, cm: 1, m: 1e6, in: 16.387064 }; // cm³ in one unit³
+  const PF_EX = () => [
+    [tr('Stepped shaft (iron)', '段付きの軸（鉄）'), { unit: 'mm', dia: true, rows: [[0, 20], [30, 20], [30, 12], [70, 12]], inner: [], dens: 'iron' }],
+    [tr('Cup', 'コップ'), { unit: 'cm', dia: true, rows: [[0, 6], [10, 8]], inner: [[0.5, 5.4], [10, 7.6]], dens: '' }],
+    [tr('Vase', '花瓶'), { unit: 'cm', dia: true, rows: [[0, 8], [6, 14], [14, 10], [20, 6], [24, 7]], inner: [], dens: '' }]
+  ];
+  // the points of a profile: [{ z, r, zs, rs (as typed, for the exact expression) }] or { error, row }
+  function pfPoints(rows, dia) {
+    const pts = [];
+    for (let i = 0; i < rows.length; i++) {
+      const a = String(rows[i][0] || '').trim(), b = String(rows[i][1] || '').trim();
+      if (!a && !b) continue;
+      if (!a || !b) return { error: trf('Row {0}: enter both the position and the size (or clear the row)', '{0} 行目：位置と大きさの両方を入れてください（使わない行は空にします）', i + 1), row: i, col: a ? 1 : 0 };
+      const z = statVal(a), d = statVal(b);
+      if (!isFinite(z)) return { error: trf('Row {0}: enter the position as a number', '{0} 行目：位置を数で入れてください', i + 1), row: i, col: 0 };
+      if (!isFinite(d)) return { error: trf('Row {0}: enter the size as a number', '{0} 行目：大きさを数で入れてください', i + 1), row: i, col: 1 };
+      if (d < 0) return { error: trf('Row {0}: a diameter or radius cannot be negative', '{0} 行目：直径・半径は負にできません', i + 1), row: i, col: 1 };
+      if (pts.length && z < pts[pts.length - 1].z) return { error: trf('Row {0}: the positions must not go down from row to row (the same position twice makes a step)', '{0} 行目：位置は行ごとに同じか大きくしてください（同じ位置を 2 回入れると段になります）', i + 1), row: i, col: 0 };
+      pts.push({ z, r: dia ? d / 2 : d, zs: exprNum(z), rs: dia ? '(' + exprNum(d) + ' / 2)' : exprNum(d) });
+    }
+    if (pts.length < 2 || pts[pts.length - 1].z === pts[0].z) return { error: tr('Enter at least two points at different positions', '位置の違う点を 2 つ以上入れてください') };
+    return pts;
+  }
+  // the radius along the profile: straight, or monotone cubic (Fritsch–Carlson) in each part between steps
+  function pfShape(pts, smooth) {
+    const segs = [];
+    for (let i = 1; i < pts.length; i++) if (pts[i].z > pts[i - 1].z) segs.push({ a: pts[i - 1], b: pts[i], i: i - 1 });
+    const slope = new Map();
+    if (smooth) {
+      // the runs without a step
+      let run = [pts[0]];
+      const runs = [];
+      for (let i = 1; i < pts.length; i++) { if (pts[i].z === pts[i - 1].z) { runs.push(run); run = [pts[i]]; } else run.push(pts[i]); }
+      runs.push(run);
+      for (const q of runs) {
+        const n = q.length;
+        if (n < 2) continue;
+        const d = [], m = new Array(n).fill(0);
+        for (let i = 0; i < n - 1; i++) d.push((q[i + 1].r - q[i].r) / (q[i + 1].z - q[i].z));
+        m[0] = d[0]; m[n - 1] = d[n - 2];
+        for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+        for (let i = 0; i < n - 1; i++) {
+          if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+          const al = m[i] / d[i], be = m[i + 1] / d[i], t = al * al + be * be;
+          if (t > 9) { const k = 3 / Math.sqrt(t); m[i] = k * al * d[i]; m[i + 1] = k * be * d[i]; }
+        }
+        q.forEach((p, i) => slope.set(p, m[i]));
+      }
+    }
+    // r(z) and r'(z) in a segment
+    const at = (s, z) => {
+      const h = s.b.z - s.a.z, t = (z - s.a.z) / h;
+      if (!smooth) return [s.a.r + (s.b.r - s.a.r) * t, (s.b.r - s.a.r) / h];
+      const m0 = slope.get(s.a), m1 = slope.get(s.b), t2 = t * t, t3 = t2 * t;
+      const r = (2 * t3 - 3 * t2 + 1) * s.a.r + (t3 - 2 * t2 + t) * h * m0 + (-2 * t3 + 3 * t2) * s.b.r + (t3 - t2) * h * m1;
+      const dr = ((6 * t2 - 6 * t) * s.a.r + (3 * t2 - 4 * t + 1) * h * m0 + (-6 * t2 + 6 * t) * s.b.r + (3 * t2 - 2 * t) * h * m1) / h;
+      return [Math.max(0, r), dr];
+    };
+    // the volume from the bottom up to the height y (above the first point)
+    const volumeTo = (y) => {
+      let v = 0;
+      const top = pts[0].z + y;
+      for (const s of segs) {
+        if (s.a.z >= top) break;
+        const hi = Math.min(s.b.z, top);
+        if (!smooth) {
+          const r0 = s.a.r, r1 = at(s, hi)[0], h = hi - s.a.z;
+          v += Math.PI * h * (r0 * r0 + r0 * r1 + r1 * r1) / 3;
+        } else v += glPiece((z) => { const r = at(s, z)[0]; return Math.PI * r * r; }, s.a.z, hi, 24);
+      }
+      return v;
+    };
+    const height = pts[pts.length - 1].z - pts[0].z;
+    let side = 0;
+    for (const s of segs) side += smooth ? glPiece((z) => { const [r, dr] = at(s, z); return 2 * Math.PI * r * Math.sqrt(1 + dr * dr); }, s.a.z, s.b.z, 32)
+      : Math.PI * (s.a.r + s.b.r) * Math.hypot(s.b.z - s.a.z, s.b.r - s.a.r);
+    let steps = 0;
+    for (let i = 1; i < pts.length; i++) if (pts[i].z === pts[i - 1].z) steps += Math.PI * Math.abs(pts[i].r * pts[i].r - pts[i - 1].r * pts[i - 1].r);
+    const ends = Math.PI * (pts[0].r * pts[0].r + pts[pts.length - 1].r * pts[pts.length - 1].r);
+    return { segs, at, volumeTo, height, volume: volumeTo(height), surface: side + steps + ends, rmax: Math.max(...pts.map((p) => p.r)) };
+  }
+  // the exact volume of a straight profile for the engine: π × Σ h (r₀² + r₀ r₁ + r₁²) / 3
+  const pfExact = (pts) => 'π × (' + pts.slice(1).map((p, i) => [pts[i], p]).filter(([a, b]) => b.z > a.z)
+    .map(([a, b]) => `(${b.zs} − ${a.zs}) × (${a.rs}^2 + ${a.rs} × ${b.rs} + ${b.rs}^2) / 3`).join(' + ') + ')';
+  // the radius as one expression in x for the 3D graph (straight pieces; a smooth profile sampled)
+  function pfNodes(sh, smooth) {
+    const nodes = [];
+    for (const s of sh.segs) {
+      const n = smooth ? 8 : 1;
+      for (let k = 0; k < n; k++) { const z0 = s.a.z + (s.b.z - s.a.z) * k / n, z1 = s.a.z + (s.b.z - s.a.z) * (k + 1) / n; nodes.push([z0, sh.at(s, z0)[0], z1, sh.at(s, Math.min(z1, s.b.z - 1e-12))[0]]); }
+    }
+    const R = (v) => +v.toPrecision(10);
+    return nodes.map((q) => q.map(R));
+  }
+  // the radius of pfExpr as a function, for the edges of the 3D view (specRims, 1.12.0 BG09)
+  function pfQ(sh, pts, smooth) {
+    const nodes = pfNodes(sh, smooth), z0 = +pts[0].z.toPrecision(10);
+    return (x) => {
+      if (x < z0) return 0;
+      for (const [a, r0, b, r1] of nodes) if (x < b) return r0 + (r1 - r0) * (x - a) / (b - a);
+      const L = nodes[nodes.length - 1];
+      return L && x <= L[2] ? L[3] : 0;
+    };
+  }
+  function pfExpr(sh, pts, smooth) {
+    const nodes = pfNodes(sh, smooth);
+    const N = (v) => engineNum(String(+v.toPrecision(10)));
+    // (the last end itself too, 1.12.0 BG09: the last column of the 3D grid lies on it, and had no value)
+    const L = nodes[nodes.length - 1];
+    let e = L ? `if(x <= ${N(L[2])}, ${N(L[3])}, 0)` : '0';
+    for (let i = nodes.length - 1; i >= 0; i--) { const [z0, r0, z1, r1] = nodes[i]; e = `if(x < ${N(z1)}, ${N(r0)} + (${N(r1 - r0)}) × (x − ${N(z0)}) / ${N(z1 - z0)}, ${e})`; }
+    return `if(x < ${N(pts[0].z)}, 0, ${e})`;
+  }
+  // a density typed or chosen, in g/cm³ (t/m³ and kg/L are the same; kg/m³ is a thousandth)
+  function pfDensity(key, typed) {
+    const d = key === 'own' ? String(typed || '') : (DENSITIES.find((x) => x[0] === key) || [])[2];
+    if (!d) return NaN;
+    const m = /^\s*([^\s a-zA-Z]+)\s*(.*)$/.exec(d.replace(/\^3|³/g, '3'));
+    if (!m) return NaN;
+    // (BG17: a material's density is kept with a decimal point, "7.85"; only a typed one is in the person's form)
+    const v = key === 'own' ? statVal(m[1]) : Number(m[1]), u = m[2].replace(/\s+/g, '').toLowerCase();
+    if (!isFinite(v) || v <= 0) return NaN;
+    if (u === 'g/cm3' || u === 't/m3' || u === 'kg/l' || u === 'g/ml' || u === '') return v;
+    if (u === 'kg/m3') return v / 1000;
+    return NaN;
+  }
+  function openProfileTool() {
+    const p = panel('profile', tr('Solid from a profile', '輪郭から回転体'), (p) => {
+      const saved = store.get('qalc.profile', null) || {};
+      const ex = PF_EX()[0][1];
+      const D = { unit: PF_UNITS.indexOf(saved.unit) >= 0 ? saved.unit : ex.unit, dia: saved.dia !== false, smooth: !!saved.smooth, shrink: saved.shrink || '',
+        rows: Array.isArray(saved.rows) && saved.rows.length ? saved.rows : ex.rows.map((r) => r.map(decSign)), inner: Array.isArray(saved.inner) ? saved.inner : [], dens: saved.dens !== undefined ? saved.dens : ex.dens, dv: saved.dv || '', seq: 0, q: '' };
+      const save = () => store.set('qalc.profile', { unit: D.unit, dia: D.dia, smooth: D.smooth, shrink: D.shrink, rows: D.rows, inner: D.inner, dens: D.dens, dv: D.dv });
+      const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
+        ...PF_EX().map(([label, e]) => tapButton({ class: 'area-chip', text: label }, () => {
+          Object.assign(D, { unit: e.unit, dia: e.dia, rows: e.rows.map((r) => r.map(decSign)), inner: e.inner.map((r) => r.map(decSign)), dens: e.dens }); // (BG17: 0,5 with a decimal comma)
+          if (e.inner.length) more.open = true;
+          sync(); save(); build(); run();
+        })));
+      const bD = tapButton({ text: tr('Diameter', '直径') }, () => { D.dia = true; sync(); save(); build(); run(); }), bR = tapButton({ text: tr('Radius', '半径') }, () => { D.dia = false; sync(); save(); build(); run(); });
+      const unitSel = el('select', { 'aria-label': tr('Unit of the lengths', '長さの単位') });
+      for (const u of PF_UNITS) unitSel.append(el('option', { value: u, text: u }));
+      unitSel.addEventListener('change', () => { D.unit = unitSel.value; save(); build(); run(); });
+      const table = el('div', { class: 'sec-table sec-2 pf-table', role: 'table' }), tools = el('div', { class: 'sec-tools' });
+      const itable = el('div', { class: 'sec-table sec-2 pf-table', role: 'table' }), itools = el('div', { class: 'sec-tools' });
+      const bLine = tapButton({ text: tr('Straight (frustums)', '直線（円錐台）') }, () => { D.smooth = false; sync(); save(); run(); }), bCurve = tapButton({ text: tr('Smooth (monotone cubic)', 'なめらか（単調な 3 次）') }, () => { D.smooth = true; sync(); save(); run(); });
+      const shrinkIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: D.shrink, placeholder: decSign(tr('e.g. 12.5', '例：12.5')), 'aria-label': tr('Shrinkage (%)', '収縮率（%）') });
+      shrinkIn.addEventListener('input', () => { D.shrink = shrinkIn.value; shrinkIn.removeAttribute('aria-invalid'); save(); run(); });
+      const more = el('details', { class: 'sec-more pf-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }),
+        el('div', { class: 'section-title', text: tr('Inner profile (the inside of a container)', '内側の輪郭（容器の内側）') }), itable, itools,
+        el('div', { class: 'geo-size pf-between' }, el('span', { class: 'geo-lbl', text: tr('Between the points', '点の間') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Between the points', '点の間') }, bLine, bCurve)),
+        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Shrinkage of pottery (%)', '陶芸の収縮率（%）') }), shrinkIn));
+      if (D.inner.length) more.open = true;
+      const dens = el('select', { 'aria-label': tr('Material (density)', '材料（密度）') });
+      dens.append(el('option', { value: '', text: tr('Weight: choose a material', '重さ：材料を選ぶ') }));
+      for (const [k, s] of DENSITIES) dens.append(el('option', { value: k, text: decSign(s) })); // (BG13: 1.000 g/cm³ with a decimal comma)
+      dens.append(el('option', { value: 'own', text: tr('Another density…', 'ほかの密度…') }));
+      const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: D.dv, placeholder: decSign(tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³')), 'aria-label': tr('Density', '密度') });
+      dens.addEventListener('change', () => { D.dens = dens.value; sync(); save(); run(); });
+      densIn.addEventListener('input', () => { D.dv = densIn.value; save(); run(); });
+      const pic = el('div', { class: 'pf-pic' });
+      const msg = el('div', { class: 'geo-msg', role: 'alert' });
+      const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
+      // (BG21: "Volume and surface" in the 3D view shows the values of the tool, as they are here)
+      const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る') }, () => {
+        if (!D.three) return;
+        const vals = (D.vals || []).slice();
+        openPlot3dWith(D.three.exprs, { range: D.three.range, equal: true, res: 61, grow: 'h', rims: D.three.rims,
+          solid: { src: D, title: tr('Values of the solid of revolution', '回転体の値'), hint: tr('The values found in "Solid from a profile". Other formulas drawn here are measured as an ordinary 3D graph.', '「輪郭から回転体」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測れます。'), values: () => vals } });
+      });
+      // (D3: the solid as an STL file, one unit of the profile in millimetres)
+      const stlBtn = tapButton({ class: 'btn stl-btn', text: tr('Save as STL', 'STL で保存') }, () => { if (D.stl) openStlSheet(D.stl, 'profile', { mm: 1, cm: 10, m: 1000, in: 25.4 }[D.unit]); });
+      const quickBox = el('div', { class: 'quick-box' });
+      const quick = el('details', { class: 'sec-more quick-pf' }, el('summary', { text: tr('Height and amount: quick-reference table ▾', '高さと量の早見表 ▾') }), quickBox);
+      quick.addEventListener('toggle', () => { if (quick.open) run(); });
+      const caution = cautionLine(tr('The solid is round about its axis, between the points as chosen; weights with typical densities.', '前提：軸のまわりに丸い形で、点の間は選んだつなぎ方。重さは代表的な密度です。'));
+      const hint = el('div', { class: 'form-hint', text: tr('Enter the positions along the axis from the bottom (or one end) and the diameters there; two rows at the same position make a step. Paste a table from a spreadsheet into the first box. Tap a result for the three actions.', '軸に沿った位置を下（または片方の端）から、その位置の直径といっしょに入れます。同じ位置を 2 行入れると段になります。表計算ソフトの表は最初の欄に貼り付けられます。結果をタップすると 3 つの操作ができます。') });
+      const sync = () => {
+        for (const [b, on] of [[bD, D.dia], [bR, !D.dia], [bLine, !D.smooth], [bCurve, D.smooth]]) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }
+        unitSel.value = D.unit; dens.value = D.dens; densIn.hidden = D.dens !== 'own';
+      };
+      // the cells of a table (as in Statistics; a paste fills the table from there)
+      const cell = (list, r, c, box) => {
+        const inp = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: (list()[r] || [])[c] || '', placeholder: c ? (D.dia ? 'D' : 'r') : 'z',
+          'aria-label': c ? trf('Size, row {0}', '{0} 行目の大きさ', r + 1) : trf('Position, row {0}', '{0} 行目の位置', r + 1) });
+        inp.addEventListener('input', () => { const L = list(); while (L[r].length <= c) L[r].push(''); L[r][c] = inp.value; inp.removeAttribute('aria-invalid'); save(); run(); });
+        inp.addEventListener('paste', (e) => {
+          const t = (e.clipboardData || window.clipboardData).getData('text');
+          if (!/[\t\n;]/.test(t.trim()) && !(!commaMode && /,/.test(t.trim()))) return;
+          e.preventDefault();
+          const lines = t.replace(/\r/g, '').split('\n').filter((l) => l.trim() !== '');
+          if (lines.length > 1 && !/\d/.test(lines[0])) lines.shift();
+          const cells = pastedDecimals(lines.map((l) => (/\t/.test(l) ? l.split('\t') : /;/.test(l) ? l.split(';') : !commaMode && /,/.test(l) ? l.split(',') : l.trim().split(/\s+/)).map((s) => s.trim())));
+          const L = list();
+          if (r === 0 && c === 0) L.length = 0;
+          cells.slice(0, 500).forEach((vals, i) => { while (L.length <= r + i) L.push(['', '']); vals.slice(0, 2 - c).forEach((v, j) => { L[r + i][c + j] = v; }); });
+          save(); build(); run();
+        });
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
+        return inp;
+      };
+      const fillTable = (box, bar, list, inner) => {
+        box.textContent = ''; bar.textContent = '';
+        const L = list();
+        if (inner && !L.length) L.push(['', ''], ['', '']);
+        box.append(el('div', { class: 'sec-h', role: 'columnheader', text: tr('Position z', '位置 z') + ' (' + D.unit + ')' }), el('div', { class: 'sec-h', role: 'columnheader', text: (D.dia ? tr('Diameter D', '直径 D') : tr('Radius r', '半径 r')) + ' (' + D.unit + ')' }));
+        L.forEach((row, r) => box.append(cell(list, r, 0, box), cell(list, r, 1, box)));
+        const btn = (text, label, f) => tapButton({ class: 'btn sec-btn', text, 'aria-label': label }, () => { f(); save(); build(); run(); });
+        bar.append(btn(tr('+ Row', '+ 行'), tr('Add a row', '行を追加'), () => L.push(['', ''])), btn(tr('− Row', '− 行'), tr('Delete the last row', '最後の行を削除'), () => { if (L.length > (inner ? 0 : 2)) L.pop(); }),
+          btn(tr('Clear', 'すべて消す'), tr('Clear the table', '表をすべて消す'), () => { L.length = 0; if (!inner) L.push(['', ''], ['', '']); }));
+      };
+      const build = () => { fillTable(table, tools, () => D.rows, false); fillTable(itable, itools, () => D.inner, true); };
+      const dig = digitsControl(); // (1.12.0, D7)
+      const row = (name, small, shown, expr) => {
+        const node = tapButton({ class: 'geo-row' }, () => { if (expr) resultSheet(name, expr, shown); });
+        node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), el('span', { class: 'geo-val', text: shown }));
+        outs.append(node);
+        D.vals.push({ name, small, text: shown, expr }); // (BG21: for the 3D view)
+        return node;
+      };
+      const mark = (box, r, c) => { const ins = box.querySelectorAll('input'); if (ins[r * 2 + c]) ins[r * 2 + c].setAttribute('aria-invalid', 'true'); };
+      // the cm³ of a volume in the unit, shown as cm³ (mL) or L
+      // (1.12.0, D7: the numbers after ≈ with the digits set for their kind)
+      const inCm3 = (v) => { const c = v * PF_CM3[D.unit]; return c >= 1000 ? '≈ ' + digNum(c / 1000, 'vol', 10) + ' L' : D.unit === 'cm' ? '' : '≈ ' + digNum(c, 'vol', 10) + ' cm³'; };
+      // an amount in mL as mL or L
+      const mlText = (ml) => (ml >= 1000 ? '≈ ' + digNum(ml / 1000, 'vol', 10) + ' L' : '≈ ' + digNum(ml, 'vol', 10) + ' mL');
+      const drawPic = (o, i, so, si) => {
+        const top = Math.max(o[o.length - 1].z, i ? i[i.length - 1].z : -Infinity), bot = Math.min(o[0].z, i ? i[0].z : Infinity), rmax = Math.max(so.rmax, si ? si.rmax : 0) || 1;
+        const s = Math.min(120 / ((top - bot) || 1), 80 / rmax), X = (r) => +(100 + r * s).toFixed(1), Y = (z) => +(138 - (z - bot) * s).toFixed(1);
+        const line = (pts, sh) => { const out = []; for (const sg of sh.segs) { const n = D.smooth ? 10 : 1; for (let k = 0; k <= n; k++) { const z = sg.a.z + (sg.b.z - sg.a.z) * k / n; out.push([z, sh.at(sg, Math.min(z, sg.b.z))[0]]); } } return out; };
+        const poly = (pts, sh) => { const l = line(pts, sh); return l.map(([z, r]) => X(r) + ',' + Y(z)).concat(l.slice().reverse().map(([z, r]) => X(-r) + ',' + Y(z))).join(' '); };
+        let t = `<polygon class="g" points="${poly(o, so)}"/>`;
+        if (i) t += `<polygon class="g hole" points="${poly(i, si)}"/>`;
+        t += `<path class="e" d="M100 6V146"/>`;
+        pic.innerHTML = `<svg viewBox="0 0 200 150" role="img" aria-label="${tr('The profile turned about its axis', '軸のまわりに回した輪郭')}">${t}</svg>`;
+      };
+      const run = async () => {
+        const seq = ++D.seq;
+        msg.textContent = ''; outs.textContent = ''; quickBox.textContent = ''; view.hidden = true; D.three = null; stlBtn.hidden = true; D.stl = null; D.vals = [];
+        const o = pfPoints(D.rows, D.dia);
+        if (o.error) { if (o.row !== undefined) mark(table, o.row, o.col); msg.textContent = o.error; pic.textContent = ''; return; }
+        const hasInner = D.inner.some((r) => String(r[0] || '').trim() || String(r[1] || '').trim());
+        const i = hasInner ? pfPoints(D.inner, D.dia) : null;
+        if (i && i.error) { if (i.row !== undefined) mark(itable, i.row, i.col); msg.textContent = tr('Inner profile: ', '内側の輪郭：') + i.error; return; }
+        const so = pfShape(o, D.smooth), si = i ? pfShape(i, D.smooth) : null;
+        drawPic(o, i, so, si);
+        const u = D.unit, u3 = ' ' + u + '³';
+        // the exact outer volume (straight pieces) from the engine
+        let outerText = '≈ ' + digNum(so.volume, 'vol', 10) + u3, outerExpr = exprNum(so.volume) + ' ' + u + '^3';
+        if (!D.smooth) {
+          const r = await Bridge.send('calc', { expr: pfExact(o), opts: engineOpts(), timeout: 4000 });
+          if (seq !== D.seq) return;
+          if (r.ok && r.result && !r.timeout) { const ex = r.result.split(' ≈ ')[0].split(' = ')[0].trim(); outerText = '= ' + ex + u3 + (/π|√/.test(ex) ? ' ≈ ' + digNum(so.volume, 'vol', 10) + u3 : ''); outerExpr = '(' + pfExact(o) + ') ' + u + '^3'; }
+        }
+        row(tr('Outer volume', '外側の体積'), inCm3(so.volume), outerText, outerExpr).classList.add('tool-main');
+        let cap = 0;
+        if (si) {
+          cap = si.volume;
+          const ml = cap * PF_CM3[u];
+          row(tr('Inner capacity', '内側の容量'), mlText(ml), '≈ ' + digNum(cap, 'vol', 10) + u3, exprNum(cap) + ' ' + u + '^3');
+          const f = statVal(D.shrink);
+          if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = decSign(tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）')); }
+          else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの容量', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), mlText(ml * k), exprNum(cap * k) + ' ' + u + '^3'); }
+        } else {
+          const f = statVal(D.shrink);
+          if (String(D.shrink).trim() && !(f >= 0 && f < 100)) { shrinkIn.setAttribute('aria-invalid', 'true'); msg.textContent = decSign(tr('Shrinkage: type a percentage from 0 to below 100 (for example 12.5)', '収縮率：0 以上 100 未満の % を入れてください（例：12.5）')); }
+          else if (f > 0) { const k = Math.pow(1 - f / 100, 3); row(trf('After shrinking {0} %', '収縮 {0} % のあとの体積', statNum(f)), trf('× (1 − {0})³ = × {1}', '× (1 − {0})³ = × {1}', statNum(f / 100), statNum(k)), '≈ ' + digNum(so.volume * k, 'vol', 10) + u3, exprNum(so.volume * k) + ' ' + u + '^3'); }
+        }
+        const mat = so.volume - cap;
+        if (si && mat < 0) msg.textContent = tr('The inner profile is larger than the outer one somewhere: check the sizes', '内側の輪郭が外側より大きいところがあります。大きさを確かめてください');
+        if (si) row(tr('Material', '材料の体積'), tr('outer − inner', '外側 − 内側'), '≈ ' + digNum(mat, 'vol', 10) + u3, exprNum(mat) + ' ' + u + '^3');
+        const rho = pfDensity(D.dens, D.dv);
+        if (D.dens && !isFinite(rho)) { densIn.setAttribute('aria-invalid', 'true'); row(tr('Weight', '重さ'), '', decSign(tr('check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')), ''); }
+        else if (isFinite(rho)) { densIn.removeAttribute('aria-invalid'); const g = mat * PF_CM3[u] * rho; row(tr('Weight', '重さ'), trf('{0} g/cm³', '{0} g/cm³', statNum(rho)) + (D.dens !== 'own' && D.dens !== 'water' ? tr(' (typical)', '（目安）') : ''), g >= 1000 ? '≈ ' + digNum(g / 1000, 'mass', 10) + ' kg' : '≈ ' + digNum(g, 'mass', 10) + ' g', exprNum(g) + ' g'); }
+        row(tr('Surface area', '表面積'), tr('outside: the side, the steps and the two ends', '外側：側面・段・両端の面'), '≈ ' + digNum(so.surface, 'area', 10) + ' ' + u + '²', exprNum(so.surface) + ' ' + u + '^2');
+        row(tr('Height', '高さ'), '', statNum(so.height) + ' ' + u, exprNum(so.height) + ' ' + u);
+        // 3D (the 3D graph: Pro)
+        const w = +((Math.max(so.rmax, si ? si.rmax : 0) || 1) * 1.08).toPrecision(6);
+        const R = pfExpr(so, o, D.smooth), exprs = [`√((${R})^2 − y^2)`, `−√((${R})^2 − y^2)`];
+        if (si) { const r2 = pfExpr(si, i, D.smooth); exprs.push(`√((${r2})^2 − y^2)`, `−√((${r2})^2 − y^2)`); }
+        const Qo = pfQ(so, o, D.smooth), Qi = si ? pfQ(si, i, D.smooth) : null;
+        D.three = { exprs, range: [engineNum(String(o[0].z)), engineNum(String(o[o.length - 1].z)), engineNum(String(-w)), engineNum(String(w))],
+          rims: { kind: 'h', groups: [exprs.map((e, n) => n)], Q: si ? [Qo, Qo, Qi, Qi] : [Qo, Qo] } };
+        view.hidden = false;
+        if (!(si && mat < 0)) { D.stl = { kind: 'profile', o, i, smooth: D.smooth, volume: so.volume - cap }; stlShow(stlBtn); }
+        // the quick-reference table: the height and the amount inside (or of the whole solid)
+        if (quick.open) {
+          const sh = si || so, total = sh.volume, top = sh.height, inMl = (v) => v * PF_CM3[u];
+          const nice = (span) => { const raw = span / 10, q = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5]) if (m * q >= raw * 0.999) return m * q; return 10 * q; };
+          const step = nice(top), rows = [], raw = [];
+          for (let k = 0; k * step < top * (1 - 1e-9); k++) { const v = sh.volumeTo(k * step); rows.push([statNum(k * step, 6), digNum(inMl(v), 'vol', 6), digNum(v / total * 100, 'pct', 4)]); raw.push([k * step, inMl(v), v / total * 100]); }
+          rows.push([statNum(top, 6), digNum(inMl(total), 'vol', 6), digNum(100, 'pct', 4)]); raw.push([top, inMl(total), 100]);
+          showTable(quickBox, { title: si ? tr('The amount inside for each height', '高さごとの内側の量') : tr('The volume up to each height', '高さごとの体積'), head: [tr('Height', '高さ') + ' (' + u + ')', (si ? tr('Amount', '量') + ' (mL)' : tr('Volume', '体積') + ' (cm³)'), '%'], rows, raw, name: 'profile' });
+        }
+      };
+      p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Sizes as', '大きさ') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Sizes as', '大きさ') }, bD, bR)),
+        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unitSel), table, tools, more,
+        el('div', { class: 'geo-weight' }, dens, densIn), pic, el('div', { class: 'geo-units' }, dig.sel), dig.more, msg, outs, el('div', { class: 'tool-tbl-btns' }, view, stlBtn), quick, caution, hint);
+      digRuns.add(() => run());
+      sync(); build(); run();
+    });
+    return p;
+  }
+  // ------------------------------------------ sharing the graphs (1.12.0, D4)
+  // A share button (↗) on the 2D and the 3D graph: an image of the graph (PNG) with the functions under
+  // it, handed to the system's share sheet (QalcNative.shareImage; in a browser it is downloaded).
+  // Free: at most 800 pixels wide, with a small "QCalc" in the corner; QCalc Pro: the full resolution of
+  // the graph and no mark, and on the 3D graph also a short moving picture (GIF): the solid turning into
+  // being when it is a solid of revolution, else the graph turning around once; at most 480 pixels wide,
+  // 3 seconds and 2 MB, made here (gifEncode, no library).
+  const shareApi = () => (window.QalcNative && QalcNative.shareImage ? QalcNative : window.QalcDev && QalcDev.shareImage ? QalcDev : null);
+  const SHARE_FREE_W = 800, GIF_W = 480, GIF_FRAMES = 24, GIF_DELAY = 12, GIF_MAX = 2 * 1024 * 1024;
+  // the words of a legend: the functions, as shown under the graph
+  const legendWords = (lg) => (lg ? Array.from(lg.children).map((s) => Array.from(s.childNodes).map((n) => n.textContent.trim()).filter(Boolean).join(' – ')).filter(Boolean).join('   ') : '');
+  // the image of a canvas with a band under it for the words, and the mark when not Pro: a data URL
+  function graphPng(canvas, words, pro) {
+    const css = canvas.clientWidth || canvas.width, k = pro ? 1 : Math.min(1, SHARE_FREE_W / canvas.width);
+    const W = Math.round(canvas.width * k), H = Math.round(canvas.height * k), s = W / css, band = words || !pro ? Math.round(30 * s) : 0;
+    const c = el('canvas'); c.width = W; c.height = H + band;
+    const g = c.getContext('2d'), cs = getComputedStyle(document.documentElement);
+    g.fillStyle = cs.getPropertyValue('--plot-bg').trim() || '#fff'; g.fillRect(0, 0, W, H + band);
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(canvas, 0, 0, W, H);
+    if (band) {
+      g.fillStyle = cs.getPropertyValue('--surface').trim() || '#f4f6fa'; g.fillRect(0, H, W, band);
+      g.textBaseline = 'middle'; g.font = Math.round(13 * s) + 'px system-ui, sans-serif';
+      g.fillStyle = cs.getPropertyValue('--text').trim() || '#111';
+      const mark = pro ? 0 : Math.round(56 * s);
+      let t = words || '';
+      while (t && g.measureText(t).width > W - mark - 16 * s) t = t.slice(0, -2) + '…';
+      g.textAlign = 'left'; g.fillText(t, 8 * s, H + band / 2);
+      if (!pro) { g.textAlign = 'right'; g.font = '600 ' + Math.round(12 * s) + 'px system-ui, sans-serif'; g.globalAlpha = 0.6; g.fillText('QCalc', W - 8 * s, H + band / 2); g.globalAlpha = 1; }
+    }
+    return c.toDataURL('image/png');
+  }
+  // hands an image (a data URL) to the share sheet, or downloads it in a browser
+  function shareData(dataUrl, mime, text) {
+    const api = shareApi(), b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+    if (api) { api.shareImage(b64, mime, text); return; }
+    const a = el('a', { href: dataUrl, download: 'QCalc-graph.' + (mime === 'image/gif' ? 'gif' : 'png') });
+    document.body.append(a); a.click(); a.remove();
+  }
+  function shareGraph2d() {
+    const pro = hasPro() || PRO_GATES.share_pro !== 'pro';
+    const words = legendWords(P.legend);
+    shareData(graphPng(P.canvas, words, pro), 'image/png', words ? words + ' — QCalc' : 'QCalc');
+  }
+  async function shareGraph3d() {
+    if (!Q3.data) return;
+    const words = legendWords(Q3.legend), text = words ? words + ' — QCalc' : 'QCalc';
+    const locked = PRO_GATES.share_pro === 'pro' && !hasPro();
+    if (sheetResolve) closeSheet(null);
+    const sh = $('#sheet');
+    sh.textContent = '';
+    sh.append(el('div', { class: 'stitle', text: tr('Share the graph', 'グラフを共有') }),
+      el('button', { text: tr('Picture (PNG)', '画像（PNG）'), onclick: () => closeSheet('png') }),
+      el('button', { text: tr('Moving picture (GIF)', '動く画像（GIF）') + (locked ? '  ⭐ Pro' : ''), onclick: () => closeSheet('gif') }),
+      el('div', { class: 'pro-sheet-note', text: Q3.revInfo ? tr('The GIF shows the solid turning into being (3 seconds).', 'GIF は、立体ができていく様子です（3 秒）。') : tr('The GIF shows the graph turning around once (3 seconds).', 'GIF は、グラフが 1 回転する様子です（3 秒）。') }),
+      el('button', { text: tr('Not now', 'あとで'), onclick: () => closeSheet(null) }));
+    const k = await new Promise((resolve) => { sheetResolve = resolve; $('#scrim').classList.add('show', 'over-panels'); sh.classList.add('open'); sh.inert = false; });
+    if (k === 'png') shareData(graphPng(Q3.canvas, words, !locked), 'image/png', text);
+    else if (k === 'gif') { if (!proGate('share_pro')) return; const g = await gif3d(); if (g) shareData(g, 'image/gif', text); }
+  }
+  // The moving picture of the 3D graph: GIF_FRAMES frames drawn one after another (the angle of the solid
+  // turning into being, or the turn of the graph), each scaled to at most GIF_W pixels wide; made smaller
+  // when the file would be over 2 MB. A data URL, or null.
+  async function gif3d() {
+    const c = Q3.canvas;
+    if (!c || !Q3.data || Q3.gifBusy) return null;
+    Q3.gifBusy = true;
+    toast(tr('Making the moving picture…', '動く画像を作っています…'), 2500);
+    const keep = { az: Q3.az, grow: Q3.grow, gv: c.dataset.grow };
+    try {
+      let w = Math.min(GIF_W, c.width), out = null;
+      const frames = [];
+      for (let f = 0; f < GIF_FRAMES; f++) {
+        if (Q3.revInfo) { const th = 2 * Math.PI * (f + 1) / GIF_FRAMES; Q3.grow = f === GIF_FRAMES - 1 ? null : { ax: Q3.revInfo, theta: th, still: true }; }
+        else Q3.az = keep.az + 2 * Math.PI * f / GIF_FRAMES;
+        Q3.captureQ = 1.5;
+        draw3d();
+        frames.push(await new Promise((r) => requestAnimationFrame(() => { const q = el('canvas'); q.width = c.width; q.height = c.height; q.getContext('2d').drawImage(c, 0, 0); r(q); })));
+      }
+      for (; w >= 160 && !out; w = Math.round(w * 0.75)) {
+        const h = Math.round(c.height * w / c.width), small = el('canvas'); small.width = w; small.height = h;
+        const g = small.getContext('2d'), data = [];
+        for (const q of frames) { g.drawImage(q, 0, 0, w, h); data.push(g.getImageData(0, 0, w, h).data); }
+        const bytes = gifEncode(data, w, h, GIF_DELAY);
+        if (bytes.length <= GIF_MAX) {
+          let bin = '';
+          for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+          out = 'data:image/gif;base64,' + btoa(bin);
+          c.dataset.gif = JSON.stringify({ w, h, frames: data.length, bytes: bytes.length });
+        }
+      }
+      return out;
+    } finally {
+      Q3.captureQ = null; Q3.az = keep.az; Q3.grow = keep.grow; if (keep.gv !== undefined) c.dataset.grow = keep.gv;
+      Q3.gifBusy = false;
+      draw3d();
+    }
+  }
+  // A GIF89a of frames (RGBA data of w × h), looping, each shown delay hundredths of a second: one palette
+  // of 256 colors for all the frames (median cut of the colors of the frames), every frame in full,
+  // compressed with LZW. Returns the bytes (Uint8Array).
+  function gifEncode(frames, w, h, delay) {
+    // the palette: the colors of the frames (about 50 000 of their pixels) cut in two along their widest channel, at
+    // the median, until there are 256 boxes; each box's mean is a color
+    const sample = [], step = 4 * Math.max(1, Math.ceil(frames.length * w * h / 50000));
+    for (const d of frames) for (let i = 0; i < d.length; i += step) sample.push(d[i] | (d[i + 1] << 8) | (d[i + 2] << 16));
+    let boxes = [sample];
+    while (boxes.length < 256) {
+      let bi = -1, bw = 0, ch = 0;
+      boxes.forEach((b, n) => {
+        if (b.length < 2) return;
+        for (let q = 0; q < 3; q++) { let lo = 255, hi = 0; for (const v of b) { const x = (v >> (8 * q)) & 255; if (x < lo) lo = x; if (x > hi) hi = x; } if (hi - lo > bw) { bw = hi - lo; bi = n; ch = q; } }
+      });
+      if (bi < 0 || bw === 0) break;
+      const b = boxes[bi].sort((p, q) => ((p >> (8 * ch)) & 255) - ((q >> (8 * ch)) & 255)), m = b.length >> 1;
+      boxes.splice(bi, 1, b.slice(0, m), b.slice(m));
+    }
+    const pal = boxes.filter((b) => b.length).map((b) => { let r = 0, g = 0, bl = 0; for (const v of b) { r += v & 255; g += (v >> 8) & 255; bl += (v >> 16) & 255; } return [Math.round(r / b.length), Math.round(g / b.length), Math.round(bl / b.length)]; });
+    while (pal.length < 256) pal.push([0, 0, 0]);
+    const cache = new Map(), near = (r, g, b) => {
+      const key = ((r >> 2) << 12) | ((g >> 2) << 6) | (b >> 2);
+      let k = cache.get(key);
+      if (k === undefined) { let bd = Infinity; for (let i = 0; i < 256; i++) { const p = pal[i], d = (p[0] - r) ** 2 + (p[1] - g) ** 2 + (p[2] - b) ** 2; if (d < bd) { bd = d; k = i; } } cache.set(key, k); }
+      return k;
+    };
+    const out = [];
+    const u16 = (v) => out.push(v & 255, (v >> 8) & 255);
+    for (const ch of 'GIF89a') out.push(ch.charCodeAt(0));
+    u16(w); u16(h); out.push(0xf7, 0, 0);
+    for (const p of pal) out.push(p[0], p[1], p[2]);
+    out.push(0x21, 0xff, 0x0b); for (const ch of 'NETSCAPE2.0') out.push(ch.charCodeAt(0)); out.push(3, 1, 0, 0, 0);
+    for (const d of frames) {
+      out.push(0x21, 0xf9, 4, 4); u16(delay); out.push(0, 0);
+      out.push(0x2c); u16(0); u16(0); u16(w); u16(h); out.push(0);
+      const idx = new Uint8Array(w * h);
+      for (let i = 0, j = 0; i < idx.length; i++, j += 4) idx[i] = near(d[j], d[j + 1], d[j + 2]);
+      const lz = gifLzw(idx, 8);
+      out.push(8);
+      for (let i = 0; i < lz.length; i += 255) { const n = Math.min(255, lz.length - i); out.push(n); for (let q = 0; q < n; q++) out.push(lz[i + q]); }
+      out.push(0);
+    }
+    out.push(0x3b);
+    return Uint8Array.from(out);
+  }
+  // LZW for GIF (as in the GIF89a specification; the same steps as omggif's encoder)
+  function gifLzw(idx, min) {
+    const clear = 1 << min, eoi = clear + 1, out = [];
+    let size = min + 1, next = eoi + 1, cur = 0, shift = 0, table = new Map();
+    const emit = (c) => { cur |= c << shift; shift += size; while (shift >= 8) { out.push(cur & 255); cur >>>= 8; shift -= 8; } };
+    emit(clear);
+    let pre = idx[0];
+    for (let i = 1; i < idx.length; i++) {
+      const k = idx[i], key = (pre << 8) | k, c = table.get(key);
+      if (c !== undefined) { pre = c; continue; }
+      emit(pre);
+      if (next === 4096) { emit(clear); next = eoi + 1; size = min + 1; table = new Map(); }
+      else { if (next >= (1 << size)) size++; table.set(key, next++); }
+      pre = k;
+    }
+    emit(pre); emit(eoi);
+    if (shift > 0) out.push(cur & 255);
+    return out;
+  }
+  // ------------------------------------------ STL for 3D printers (1.12.0, D3; QCalc Pro)
+  // The solids of the app as closed meshes of triangles, saved as ASCII STL files: a solid of revolution
+  // (the area tools' "Make a solid"), a solid with known cross sections (the same), and a solid from a
+  // profile (D2). A solid of revolution is its meridian, a closed polygon in (t along the axis, ρ the
+  // distance from it), turned about the axis in N steps; the points of the polygon on the axis become one
+  // point each, so that the mesh closes there (the tip of a cone). A solid with cross sections is lofted
+  // through its sections (the same number of corners in each), with the two ends closed; a section that
+  // has shrunk to a point (where the region is pinched) becomes one point. The points are welded where they
+  // fall together, triangles without area are dropped, and the triangles are turned so that their normals
+  // point out (the signed volume is positive). Before a file is offered the mesh is checked: every edge is
+  // shared by exactly two triangles, once each way; no triangle has no area; and its volume is within
+  // 0.5 % of the solid's volume as the app calculated it. One unit of the graph is a number of millimetres
+  // chosen in the sheet (the profile's own unit gives the first value), and the number of triangles stays
+  // under a limit (standard 20 000, fine 60 000: about 5 and 15 MB).
+  const STL_LIMIT = { std: 20000, fine: 60000 }, STL_TURNS = { std: 96, fine: 160 };
+  // the button "Save as STL" shown (with ⭐ Pro while it is locked)
+  function stlShow(b) { b.textContent = tr('Save as STL', 'STL で保存') + (PRO_GATES.stl === 'pro' && !hasPro() ? '  ⭐ Pro' : ''); b.hidden = false; }
+  // a mesh being built: points welded to a grid of q
+  function meshNew(q) { return { v: [], f: [], key: new Map(), q: q || 1e-9 }; }
+  function meshPt(m, x, y, z) {
+    const r = (a) => Math.round(a / m.q), k = r(x) + ',' + r(y) + ',' + r(z);
+    let i = m.key.get(k);
+    if (i === undefined) { i = m.v.length / 3; m.v.push(x, y, z); m.key.set(k, i); }
+    return i;
+  }
+  function meshTri(m, a, b, c) { if (a !== b && b !== c && a !== c) m.f.push(a, b, c); }
+  // a closed polygon [[t, ρ], …] turned about the axis ('x': t along x; 'z': t along z) in n steps
+  function meshRevolve(m, poly, n, axis) {
+    const pt = (t, r, k) => { const th = 2 * Math.PI * k / n, c = Math.cos(th), s = Math.sin(th); if (r <= m.q) r = 0; return axis === 'z' ? meshPt(m, r * c, r * s, t) : meshPt(m, t, r * c, r * s); };
+    for (let i = 0; i < poly.length; i++) {
+      const [t0, r0] = poly[i], [t1, r1] = poly[(i + 1) % poly.length];
+      for (let k = 0; k < n; k++) {
+        const A = pt(t0, r0, k), B = pt(t1, r1, k), C = pt(t1, r1, k + 1 === n ? 0 : k + 1), D = pt(t0, r0, k + 1 === n ? 0 : k + 1);
+        meshTri(m, A, B, C); meshTri(m, A, C, D);
+      }
+    }
+  }
+  // sections [[[x, y, z], …], …] (each a closed polygon with the same number of corners, in order),
+  // joined side by side, the two ends closed by fans from their centres
+  function meshLoft(m, secs) {
+    const ids = secs.map((s) => s.map(([x, y, z]) => meshPt(m, x, y, z))), K = ids[0].length;
+    for (let j = 0; j + 1 < ids.length; j++) for (let i = 0; i < K; i++) {
+      const a = ids[j][i], b = ids[j][(i + 1) % K], c = ids[j + 1][(i + 1) % K], d = ids[j + 1][i];
+      meshTri(m, a, b, c); meshTri(m, a, c, d);
+    }
+    for (const [s, dir] of [[secs[0], 1], [secs[secs.length - 1], -1]]) {
+      const c = [0, 1, 2].map((q) => s.reduce((t, p) => t + p[q], 0) / s.length), ci = meshPt(m, c[0], c[1], c[2]);
+      const id = s.map(([x, y, z]) => meshPt(m, x, y, z));
+      for (let i = 0; i < K; i++) { if (dir > 0) meshTri(m, ci, id[(i + 1) % K], id[i]); else meshTri(m, ci, id[i], id[(i + 1) % K]); }
+    }
+  }
+  // the mesh finished: triangles without area dropped, turned outward; { v, f }
+  function meshDone(m) {
+    const v = m.v, f = [], tiny = m.q * m.q;
+    for (let t = 0; t < m.f.length; t += 3) {
+      const a = 3 * m.f[t], b = 3 * m.f[t + 1], c = 3 * m.f[t + 2];
+      const ux = v[b] - v[a], uy = v[b + 1] - v[a + 1], uz = v[b + 2] - v[a + 2], wx = v[c] - v[a], wy = v[c + 1] - v[a + 1], wz = v[c + 2] - v[a + 2];
+      const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+      if (nx * nx + ny * ny + nz * nz > tiny) f.push(m.f[t], m.f[t + 1], m.f[t + 2]);
+    }
+    const out = { v: new Float64Array(v), f: new Int32Array(f) };
+    if (meshVolume(out) < 0) for (let t = 0; t < f.length; t += 3) { const q = out.f[t + 1]; out.f[t + 1] = out.f[t + 2]; out.f[t + 2] = q; }
+    return out;
+  }
+  function meshVolume(M) {
+    const v = M.v, f = M.f;
+    let s = 0;
+    for (let t = 0; t < f.length; t += 3) {
+      const a = 3 * f[t], b = 3 * f[t + 1], c = 3 * f[t + 2];
+      s += v[a] * (v[b + 1] * v[c + 2] - v[b + 2] * v[c + 1]) - v[a + 1] * (v[b] * v[c + 2] - v[b + 2] * v[c]) + v[a + 2] * (v[b] * v[c + 1] - v[b + 1] * v[c]);
+    }
+    return s / 6;
+  }
+  // the checks: { tris, verts, open (edges not shared by exactly two triangles, once each way), flat
+  // (triangles without area), volume, size [dx, dy, dz] }
+  function meshCheck(M) {
+    const v = M.v, f = M.f, E = new Map();
+    let flat = 0;
+    let lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < v.length; i += 3) for (let q = 0; q < 3; q++) { if (v[i + q] < lo[q]) lo[q] = v[i + q]; if (v[i + q] > hi[q]) hi[q] = v[i + q]; }
+    const size = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) || 1, tiny = (size * 1e-12) ** 2;
+    for (let t = 0; t < f.length; t += 3) {
+      const a = f[t], b = f[t + 1], c = f[t + 2];
+      for (const [p, q] of [[a, b], [b, c], [c, a]]) { const k = p + ',' + q; E.set(k, (E.get(k) || 0) + 1); }
+      const A = 3 * a, B = 3 * b, C = 3 * c;
+      const ux = v[B] - v[A], uy = v[B + 1] - v[A + 1], uz = v[B + 2] - v[A + 2], wx = v[C] - v[A], wy = v[C + 1] - v[A + 1], wz = v[C + 2] - v[A + 2];
+      const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+      if (!(nx * nx + ny * ny + nz * nz > tiny)) flat++;
+    }
+    let open = 0;
+    for (const [k, n] of E) { const [p, q] = k.split(','); if (n !== 1 || E.get(q + ',' + p) !== 1) open++; }
+    return { tris: f.length / 3, verts: v.length / 3, open, flat, volume: meshVolume(M), size: [0, 1, 2].map((q) => hi[q] - lo[q]) };
+  }
+  // ASCII STL, the lengths times scale (millimetres)
+  function stlText(M, name, scale) {
+    const v = M.v, f = M.f, n = (x) => { const s = (+x.toPrecision(9)).toString(); return s === '-0' ? '0' : s; }, out = ['solid ' + name];
+    for (let t = 0; t < f.length; t += 3) {
+      const P = [f[t], f[t + 1], f[t + 2]].map((i) => [v[3 * i] * scale, v[3 * i + 1] * scale, v[3 * i + 2] * scale]);
+      const u = [0, 1, 2].map((q) => P[1][q] - P[0][q]), w = [0, 1, 2].map((q) => P[2][q] - P[0][q]);
+      let N = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+      const l = Math.hypot(N[0], N[1], N[2]) || 1; N = N.map((q) => q / l);
+      out.push(' facet normal ' + N.map(n).join(' '), '  outer loop', ...P.map((p) => '   vertex ' + p.map(n).join(' ')), '  endloop', ' endfacet');
+    }
+    out.push('endsolid ' + name);
+    return out.join('\n') + '\n';
+  }
+  // a polyline [[t, ρ], …] simplified to about n points (Douglas–Peucker, the tolerance found by halving)
+  function polySimplify(pts, n) {
+    if (pts.length <= n) return pts;
+    const keepAt = (tol) => {
+      const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1;
+      const st = [[0, pts.length - 1]];
+      while (st.length) {
+        const [a, b] = st.pop();
+        let best = -1, bd = tol;
+        const [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1;
+        for (let i = a + 1; i < b; i++) { const d = Math.abs((pts[i][0] - ax) * dy - (pts[i][1] - ay) * dx) / L; if (d > bd) { bd = d; best = i; } }
+        if (best > 0) { keep[best] = 1; st.push([a, best], [best, b]); }
+      }
+      return keep;
+    };
+    let lo = 0, hi = 1;
+    for (const p of pts) hi = Math.max(hi, Math.abs(p[0]), Math.abs(p[1]));
+    for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2, c = keepAt(m).reduce((s, x) => s + x, 0); if (c > n) lo = m; else hi = m; }
+    const keep = keepAt(hi);
+    return pts.filter((p, i) => keep[i]);
+  }
+  // the engine's samples of expressions on a..b (about steps + 1 points, closer where a curve bends, and
+  // not at the same places for each expression): [{ x, y }] or null
+  async function stlSamples(es, a, b, steps) {
+    const r = await Bridge.send('plot', { exprs: es, min: String(a), max: String(b), steps, var: 'x', opts: iOpts(), timeout: 8000 });
+    if (!r.ok || !Array.isArray(r.series) || r.series.length !== es.length) return null;
+    return r.series.map((s) => ({ x: s.x, y: s.y.map((q) => (q === null || !isFinite(q) ? null : q)) }));
+  }
+  // the value of samples { x, y } at x, on the straight line between the two around it (null outside them,
+  // or where one of the two has none)
+  function stlAt(S, x) {
+    const X = S.x, n = X.length, e = (Math.abs(X[n - 1] - X[0]) || 1) * 1e-9;
+    if (!n || x < X[0] - e || x > X[n - 1] + e) return null;
+    if (n === 1) return S.y[0];
+    let i = 0, j = n - 1;
+    while (j - i > 1) { const m = (i + j) >> 1; if (X[m] <= x) i = m; else j = m; }
+    const a = S.y[i], b = S.y[i + 1];
+    if (a === null || b === null) return x - X[i] <= e ? a : X[i + 1] - x <= e ? b : null;
+    const t = Math.max(0, Math.min(1, (x - X[i]) / ((X[i + 1] - X[i]) || 1)));
+    return a + (b - a) * t;
+  }
+  // the places of all the samples, in order, once each
+  const stlGrid = (sm, off) => [...new Set([].concat(...sm.map((q) => q.x)))].sort((a, b) => a - b).map((x) => x - (off || 0));
+  // The meridians of a solid of revolution: [poly] in (t, ρ), and the axis; or { error }.
+  // spec: { kind: 'h', u, v, parts } (the distances of the two curves from the axis, signed) or
+  // { kind: 'v', sides: [{ f, g, a, b }], kv } (each side's curves as functions of x, present for x − kv
+  // in a..b); points: how many points a meridian may have
+  async function stlMeridians(spec, points) {
+    const polys = [];
+    if (spec.kind === 'h') {
+      for (const p of spec.parts) {
+        const sm = await stlSamples([spec.u, spec.v], p.lo, p.hi, 400);
+        if (!sm) return { error: tr('Could not calculate the solid', '立体を計算できませんでした') };
+        const out = [], inn = [];
+        for (const x of stlGrid(sm)) {
+          const u = stlAt(sm[0], x), v = stlAt(sm[1], x);
+          if (u === null || v === null) continue;
+          const au = Math.abs(u), av = Math.abs(v);
+          out.push([x, Math.max(au, av)]); inn.push([x, u * v > 0 ? Math.min(au, av) : 0]);
+        }
+        if (out.length < 2) continue;
+        const hole = inn.some((q) => q[1] > 0), half = hole ? Math.floor(points / 2) - 2 : points - 4;
+        const o = polySimplify(out, half), i2 = hole ? polySimplify(inn, half) : [inn[0], inn[inn.length - 1]];
+        polys.push(o.concat(i2.slice().reverse()));
+      }
+      return { polys, axis: 'x' };
+    }
+    // around a vertical axis: the union of the sides at each distance, one interval
+    const lo = Math.min(...spec.sides.map((s) => s.a)), hi = Math.max(...spec.sides.map((s) => s.b)), h = (hi - lo) / 400;
+    const samp = [], places = [];
+    for (const s of spec.sides) {
+      const sm = await stlSamples([s.f, s.g], spec.kv + s.a, spec.kv + s.b, Math.max(20, Math.round((s.b - s.a) / h)));
+      if (!sm) return { error: tr('Could not calculate the solid', '立体を計算できませんでした') };
+      const F = { x: sm[0].x.map((x) => x - spec.kv), y: sm[0].y }, G = { x: sm[1].x.map((x) => x - spec.kv), y: sm[1].y };
+      samp.push({ s, F, G }); places.push(...F.x, ...G.x);
+    }
+    const at = (q, r) => { const f = stlAt(q.F, r), g = stlAt(q.G, r); return f === null || g === null ? null : [Math.min(f, g), Math.max(f, g)]; };
+    const bot = [], top = [];
+    for (const r of [...new Set(places)].sort((a, b) => a - b)) {
+      const iv = samp.map((q) => at(q, r)).filter(Boolean);
+      if (!iv.length) return { error: tr('The region is not one piece at every distance from the axis: this solid cannot be saved as STL', '軸からの距離によって領域が 2 つに分かれるので、この立体は STL にできません') };
+      iv.sort((a, b) => a[0] - b[0]);
+      for (let n = 1; n < iv.length; n++) if (iv[n][0] > iv[n - 1][1] + 1e-9 * (1 + Math.abs(iv[n - 1][1]))) return { error: tr('The region is not one piece at every distance from the axis: this solid cannot be saved as STL', '軸からの距離によって領域が 2 つに分かれるので、この立体は STL にできません') };
+      bot.push([Math.min(...iv.map((q) => q[0])), r]); top.push([Math.max(...iv.map((q) => q[1])), r]);
+    }
+    // (in (t, ρ): the height along the axis and the distance)
+    const half = Math.floor(points / 2) - 2;
+    const b2 = polySimplify(bot.map(([z, r]) => [r, z]), half).map(([r, z]) => [z, r]), t2 = polySimplify(top.map(([z, r]) => [r, z]), half).map(([r, z]) => [z, r]);
+    polys.push(b2.concat(t2.slice().reverse()));
+    return { polys, axis: 'z' };
+  }
+  // the sections of a solid with known cross sections: [[[x, y, z]]] or { error }
+  async function stlSections(spec, per) {
+    const out = [];
+    for (const p of spec.parts) {
+      const sm = await stlSamples(spec.g ? [spec.f, spec.g] : [spec.f], p.lo, p.hi, Math.max(8, Math.min(400, per)));
+      if (!sm) return { error: tr('Could not calculate the solid', '立体を計算できませんでした') };
+      const secs = [], G = stlGrid(sm), m = Math.max(8, Math.min(400, per));
+      // (no more sections than the limit of triangles allows: evenly among the places of the samples)
+      const places = G.length > m + 1 ? Array.from({ length: m + 1 }, (_, k) => G[Math.round(k * (G.length - 1) / m)]) : G;
+      for (const x of places) {
+        const f = stlAt(sm[0], x), g = spec.g ? stlAt(sm[1], x) : 0;
+        if (f === null || g === null) continue;
+        const lo = Math.min(f, g), hi = Math.max(f, g), s = hi - lo, c = (lo + hi) / 2;
+        let yz;
+        if (spec.shape === 'sq') yz = [[lo, 0], [hi, 0], [hi, s], [lo, s]];
+        else if (spec.shape === 'rect') yz = [[lo, 0], [hi, 0], [hi, spec.k * s], [lo, spec.k * s]];
+        else if (spec.shape === 'eq') yz = [[lo, 0], [hi, 0], [c, s * Math.sqrt(3) / 2]];
+        else if (spec.shape === 'rl') yz = [[lo, 0], [hi, 0], [lo, s]];
+        else if (spec.shape === 'rh') yz = [[lo, 0], [hi, 0], [c, s / 2]];
+        else { yz = []; for (let k = 0; k <= 32; k++) { const ph = Math.PI * k / 32; yz.push([c + s / 2 * Math.cos(ph), s / 2 * Math.sin(ph)]); } }
+        secs.push(yz.map(([y, z]) => [x, y, z]));
+      }
+      if (secs.length >= 2) out.push(secs);
+    }
+    return out.length ? out : { error: noRealText() };
+  }
+  // The meridian of a solid from a profile (D2), in (t, ρ): the outer profile up, across the top (open
+  // when the inner profile reaches the top, else on the axis), the inner profile down, across the bottom
+  function stlProfilePoly(o, i, smooth) {
+    const chain = (pts) => { const sh = pfShape(pts, smooth), out = [[pts[0].z, pts[0].r]]; for (const s of sh.segs) { if (s.a !== pts[0] && (out[out.length - 1][0] !== s.a.z || out[out.length - 1][1] !== s.a.r)) out.push([s.a.z, s.a.r]); const n = smooth ? 12 : 1; for (let k = 1; k <= n; k++) { const z = s.a.z + (s.b.z - s.a.z) * k / n; out.push([z, sh.at(s, k === n ? s.b.z : z)[0]]); } } return out; };
+    const O = chain(o);
+    if (!i) return [[O[0][0], 0]].concat(O, [[O[O.length - 1][0], 0]]);
+    const I = chain(i), e = 1e-9 * (1 + Math.abs(O[O.length - 1][0] - O[0][0]));
+    if (I[0][0] < O[0][0] - e || I[I.length - 1][0] > O[O.length - 1][0] + e) return null;
+    const P = [];
+    if (I[0][0] > O[0][0] + e) P.push([I[0][0], 0], [O[0][0], 0]);
+    P.push(...O);
+    if (I[I.length - 1][0] < O[O.length - 1][0] - e) P.push([O[O.length - 1][0], 0], [I[I.length - 1][0], 0]);
+    P.push(...I.slice().reverse());
+    return P;
+  }
+  // Builds the mesh of a solid: spec { kind: 'h' | 'v' | 'sec' | 'profile', …, volume (as calculated) };
+  // { mesh, check, ok } or { error }
+  async function stlBuild(spec, quality) {
+    const cap = STL_LIMIT[quality] || STL_LIMIT.std;
+    let n = STL_TURNS[quality] || STL_TURNS.std, M;
+    if (spec.kind === 'sec') {
+      const K = spec.shape === 'semi' ? 33 : spec.shape === 'sq' || spec.shape === 'rect' ? 4 : 3;
+      const per = Math.floor(cap / (2 * K) / Math.max(1, spec.parts.length)) - 2;
+      const all = await stlSections(spec, per);
+      if (all.error) return all;
+      const size = Math.max(1e-9, ...[].concat(...[].concat(...all)).map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]), Math.abs(p[2]))));
+      const m = meshNew(size * 1e-9);
+      for (const secs of all) meshLoft(m, secs);
+      M = meshDone(m);
+    } else {
+      let polys, axis;
+      if (spec.kind === 'profile') {
+        const P = stlProfilePoly(spec.o, spec.i, spec.smooth);
+        if (!P) return { error: tr('The inner profile must lie within the outer one, from bottom to top', '内側の輪郭は、外側の輪郭の高さの範囲の中に入れてください') };
+        polys = [P]; axis = 'x';
+        if (P.length * 2 * n > cap) n = Math.max(24, Math.floor(cap / (2 * P.length)));
+      } else {
+        const r = await stlMeridians(spec, Math.floor(cap / (2 * n)));
+        if (r.error) return r;
+        polys = r.polys; axis = r.axis;
+      }
+      if (!polys.length) return { error: noRealText() };
+      const size = Math.max(1e-9, ...[].concat(...polys).map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]))));
+      const m = meshNew(size * 1e-9);
+      for (const P of polys) meshRevolve(m, P, n, axis);
+      M = meshDone(m);
+    }
+    const check = meshCheck(M);
+    const volOk = !(spec.volume > 0) || Math.abs(check.volume / spec.volume - 1) <= 0.005;
+    check.want = spec.volume || null; check.turns = spec.kind === 'sec' ? null : n; check.cap = cap;
+    return { mesh: M, check, ok: check.tris > 0 && check.tris <= cap && check.open === 0 && check.flat === 0 && check.volume > 0 && volOk };
+  }
+  // The sheet "Save as STL": the size of one unit in millimetres, standard or fine, what will be saved, and
+  // the button. name: for the file; unit: the first millimetres of one unit
+  async function openStlSheet(spec, name, mmPerUnit) {
+    if (!proGate('stl')) return;
+    if (sheetResolve) closeSheet(null);
+    const saved = store.get('qalc.stl', null) || {};
+    const st = { q: saved.q === 'fine' ? 'fine' : 'std', mm: mmPerUnit ? String(mmPerUnit) : (saved.mm || '10'), seq: 0, mesh: null };
+    const sh = $('#sheet');
+    sh.textContent = '';
+    const mmIn = el('input', { inputmode: 'decimal', value: st.mm, 'aria-label': tr('Millimetres for one unit', '1 単位あたりの mm') });
+    const bS = tapButton({ text: tr('Standard', '標準') }, () => setQ('std')), bF = tapButton({ text: tr('Fine', '細かい') }, () => setQ('fine'));
+    const info = el('div', { class: 'stl-info', role: 'status' }), err = el('div', { class: 'form-hint warn' });
+    const save = el('button', { class: 'accent', text: tr('Save the STL file', 'STL ファイルを保存') });
+    sh.append(el('div', { class: 'stitle', text: tr('Save as STL (for 3D printers)', 'STL で保存（3D プリンター用）') }),
+      el('label', { class: 'geo-size stl-mm' }, el('span', { class: 'geo-lbl', text: tr('1 unit =', '1 単位 =') }), mmIn, el('span', { text: 'mm' })),
+      el('div', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Triangles', '三角形') }), el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Triangles', '三角形') }, bS, bF)),
+      info, err, save, el('div', { class: 'pro-sheet-note', text: tr('A closed mesh in millimetres (ASCII STL). Check the size and the walls in your slicer before printing.', '閉じた立体の面（ASCII 形式の STL、単位 mm）。印刷の前に、スライサーで大きさと壁の厚さを確かめてください。') }),
+      tapButton({ class: 'linkish pro-how', text: tr('How to use ›', '使い方 ›') }, () => { closeSheet(null); openManual('stl'); }), // (1.12.0, H)
+      el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
+    const mm = () => { const v = statVal(mmIn.value); return v > 0 && isFinite(v) ? v : NaN; };
+    const show = () => {
+      const c = st.mesh && st.mesh.check;
+      sh.dataset.mesh = c ? JSON.stringify(Object.assign({ ok: st.mesh.ok }, c)) : '';
+      if (!c) return;
+      const k = mm(), s = c.size.map((q) => statNum(+(q * k).toPrecision(4))).join(' × ');
+      info.textContent = isFinite(k) ? trf('{0} triangles · {1} mm · {2} cm³', '三角形 {0} 個・{1} mm・{2} cm³', statNum(c.tris), s, statNum(+(c.volume * k * k * k / 1000).toPrecision(5))) : '';
+      save.disabled = !st.mesh.ok || !isFinite(k);
+      err.textContent = !st.mesh.ok ? tr('The solid could not be made into a closed mesh, so it is not saved.', '閉じた立体の面にできなかったため、保存できません。') : !isFinite(k) ? tr('Enter the millimetres for one unit (a positive number, for example 10)', '1 単位あたりの mm を正の数で入れてください（例：10）') : '';
+      if (!isFinite(k)) mmIn.setAttribute('aria-invalid', 'true'); else mmIn.removeAttribute('aria-invalid');
+    };
+    const build = async () => {
+      const seq = ++st.seq;
+      st.mesh = null; info.textContent = tr('Calculating…', '計算中…'); err.textContent = ''; save.disabled = true; sh.dataset.mesh = '';
+      const r = await stlBuild(spec, st.q);
+      if (seq !== st.seq) return;
+      if (r.error) { info.textContent = ''; err.textContent = r.error; sh.dataset.mesh = JSON.stringify({ error: r.error }); return; }
+      st.mesh = r; show();
+    };
+    function setQ(q) { st.q = q; bS.classList.toggle('on', q === 'std'); bF.classList.toggle('on', q === 'fine'); bS.setAttribute('aria-pressed', String(q === 'std')); bF.setAttribute('aria-pressed', String(q === 'fine')); store.set('qalc.stl', { q: st.q, mm: mmIn.value }); build(); }
+    mmIn.addEventListener('input', () => { store.set('qalc.stl', { q: st.q, mm: mmIn.value }); show(); });
+    save.addEventListener('click', () => {
+      if (!st.mesh || !st.mesh.ok || !isFinite(mm())) return;
+      const d = new Date(), z = (q) => String(q).padStart(2, '0');
+      const file = 'QCalc-' + name + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.stl';
+      const text = stlText(st.mesh.mesh, 'QCalc_' + name, mm());
+      savingWhat = 'stl';
+      closeSheet(null);
+      if (window.QalcNative && QalcNative.saveFile) { QalcNative.saveFile(file, 'model/stl', text); return; }
+      const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: 'model/stl' })), download: file });
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      fileSaved({ ok: true });
+    });
+    const k = new Promise((resolve) => { sheetResolve = resolve; $('#scrim').classList.add('show', 'over-panels'); sh.classList.add('open'); sh.inert = false; });
+    setQ(st.q);
+    await k;
   }
   // ------------------------------------------ volume from measured values (1.11.0)
   // Two ways that are used on site, from values typed or pasted from a spreadsheet:
@@ -9411,8 +13479,9 @@
           if (lines.length > 1 && !/\d/.test(lines[0])) lines.shift();
           // (pasted into the first box: the table is the pasted one, the rows below it go)
           if (r === 0 && c === 0 && lines.length >= 2) list.length = Math.min(list.length, lines.length);
+          const table = pastedDecimals(lines.map((l) => (/\t/.test(l) ? l.split('\t') : /;/.test(l) ? l.split(';') : !commaMode && /,/.test(l) ? l.split(',') : l.trim().split(/\s+/)).map((s) => s.trim())));
           lines.forEach((l, i) => {
-            const vals = (/\t/.test(l) ? l.split('\t') : /;/.test(l) ? l.split(';') : /,/.test(l) ? l.split(',') : l.trim().split(/\s+/)).map((s) => s.trim());
+            const vals = table[i];
             while (list.length <= r + i) list.push(new Array(list[0].length).fill(''));
             vals.forEach((v, j) => { if (M.mode === 'sec' ? c + j < 2 : true) { while (list[r + i].length <= c + j) { for (const row of list) row.push(''); } list[r + i][c + j] = v; } });
           });
@@ -9461,8 +13530,7 @@
         const r = { val, expr: '', result: '' };
         r.node = tapButton({ class: 'geo-row' }, async () => {
           if (!r.expr) return;
-          const k = await sheet(name + '  ' + clip(r.result, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'], ['copy', tr('Copy the result', '結果をコピー')]]);
-          if (k === 'use') useExample(r.expr); else if (k === 'copy') copyText(r.result);
+          resultSheet(name, r.expr, r.result);
         });
         r.node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), val);
         outs.append(r.node);
@@ -9484,9 +13552,9 @@
           // ("21333.33333 L", "0.0000025 m³": the number and its unit)
           if (c.ok && c.result) text += (c.result.indexOf('≈') >= 0 || v.approx || v.result.indexOf(' ≈ ') >= 0 ? ' ≈ ' : ' = ') + numberPart(c.result).replace(/-/g, '−').replace(/^([−\d.Ee+×^]+)(.*)$/, (all, n, un) => n + ' ' + (un || (to === 'L' ? 'L' : 'm³')));
         }
-        // (as plain text: the math notation would put the unit into the fraction)
-        r.val.textContent = text;
-        r.result = text; r.expr = withUnit.replace(`(${e})`, '(' + exact + ')');
+        // (as plain text: the math notation would put the unit into the fraction; BG13: in the number format)
+        r.val.textContent = valueShown(text);
+        r.result = valueShown(text); r.expr = withUnit.replace(`(${e})`, '(' + exact + ')');
         return true;
       };
       const num = async (t) => { const s = normalizeExpr(t); return s ? { t: s, v: await numValue(s) } : null; };
@@ -9575,7 +13643,9 @@
         ...EX.map(([label, f]) => tapButton({ class: 'area-chip', text: label }, () => { f(); unit.value = M.unit; setMode(M.mode); })));
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Method', '方法') }, bSec, bGrid),
         el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit of the lengths', '長さの単位') }), unit),
-        ab, table, tools, msg, outs, how, ex,
+        ab, table, tools, msg, outs, how,
+        // the note under the results (A7): between the measured values the shape is filled in by the formulas
+        cautionLine(tr('Between the measured values the shape is filled in by the formulas shown.', '前提：測った値の間は、表示した公式で補っています。')), ex,
         el('div', { class: 'form-hint', text: tr('Type the values or paste a table from a spreadsheet (columns separated by tabs or commas) into a box: it fills the table from there. Tap a result to put its expression into the input field or to copy it. The tables are kept for the next time.', '値を入れるか、表計算ソフトの表（タブかカンマ区切り）を欄に貼り付けると、そこから表に入ります。結果をタップすると、式を入力欄に入れたりコピーしたりできます。表は次回のために残ります。') }));
       p.run = run;
       setMode(M.mode);
@@ -9584,7 +13654,7 @@
   }
   // a sphere of radius r in the 3D graph, with its volume and surface area (a QCalc Pro feature)
   async function showSphere(r) {
-    if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です')); return; }
+    if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
     const built = !!panels.plot;
     if (!built) { store.set('qalc.plot.mode', '3d'); store.set('qalc.plot3d.ok', false); }
     openPlot();
@@ -9602,7 +13672,7 @@
       const fExpr = el('input', { placeholder: tr('e.g. pi*x^2 (arguments x, y, z)', '例：pi*x^2（引数は x, y, z）'), autocapitalize: 'off' });
       const addVar = el('button', { class: 'btn primary', text: tr('Save variable', '変数を保存') });
       const addFn = el('button', { class: 'btn primary', text: tr('Save function', '関数を保存') });
-      p.body.append(
+      p.body.append(listTabs('defs'),
         el('div', { class: 'section-title', text: tr('Saved', '保存済み') }), list,
         el('div', { class: 'section-title', text: tr('Add or change a variable', '変数を追加・変更') }),
         el('div', { class: 'form-row' }, el('label', { text: tr('Name', '名前') }), vName),
@@ -9701,13 +13771,1467 @@
     return p;
   }
 
+
+  // ------------------------------------------- history: search, selection (1.12.0)
+  // From the history's menu (🕘): "Search" puts a search box into the top bar and shows only the
+  // lines whose expression, result or note has the words; "Select" lets lines be tapped to choose
+  // them, and a bar at the bottom gives their sum and average (with the unit when they have the
+  // same kind of unit) and copies them.
+  const histFiltered = () => !!histQuery.trim();
+  const hsInput = el('input', { type: 'search', class: 'hs-input', autocomplete: 'off', spellcheck: 'false', placeholder: tr('Search the history', '履歴を検索'), 'aria-label': tr('Search the history', '履歴を検索') });
+  const hsCount = el('span', { class: 'hs-count', 'aria-live': 'polite' });
+  const hsBar = el('div', { class: 'hsearch', hidden: true }, hsInput, hsCount,
+    el('button', { class: 'icon-btn', type: 'button', 'aria-label': tr('Close the search', '検索を閉じる'), text: '×', onclick: () => closeHistSearch() }));
+  $('.bar').append(hsBar);
+  hsInput.addEventListener('input', () => { histQuery = hsInput.value; filterHistory(); });
+  function openHistSearch() {
+    if (!proGate('history_tools')) return;
+    closeHistSelect();
+    drawAllOlder();
+    document.body.classList.add('hsearching');
+    hsBar.hidden = false;
+    hsInput.value = ''; histQuery = '';
+    filterHistory();
+    setTimeout(() => hsInput.focus(), 50);
+  }
+  function closeHistSearch() {
+    if (hsBar.hidden) return false;
+    hsBar.hidden = true;
+    document.body.classList.remove('hsearching');
+    histQuery = '';
+    filterHistory();
+    histEl.scrollTop = histEl.scrollHeight;
+    focusExpr();
+    return true;
+  }
+  function filterHistory() {
+    const words = toolNorm(histQuery).split(' ').filter(Boolean);
+    let n = 0;
+    for (const it of histEl.querySelectorAll('.h-item')) {
+      const h = it._h;
+      if (!h) continue;
+      const hay = toolNorm(toDisplay(h.expr) + ' ' + displayResult(h) + ' ' + (h.note || ''));
+      const ok = !words.length || words.every((w) => hay.indexOf(w) >= 0);
+      it.hidden = !ok;
+      if (ok) n++;
+    }
+    const sec = histEl.querySelector('.h-pinned');
+    if (sec) sec.hidden = !Array.from(sec.querySelectorAll('.h-item')).some((x) => !x.hidden);
+    hsCount.textContent = words.length ? trf('{0} found', '{0} 件', n) : '';
+  }
+  const selBar = el('div', { class: 'hselbar', hidden: true, role: 'region', 'aria-label': tr('Selected lines', '選んだ行') });
+  const selInfo = el('div', { class: 'hs-info', 'aria-live': 'polite' });
+  selBar.append(selInfo, el('div', { class: 'hs-btns' },
+    el('button', { class: 'btn', type: 'button', text: tr('Copy', 'コピー'), onclick: () => copySelected() }),
+    el('button', { class: 'btn primary', type: 'button', text: tr('Done', '終わる'), onclick: () => closeHistSelect() })));
+  document.body.append(selBar);
+  function openHistSelect() {
+    if (!proGate('history_tools')) return;
+    closeHistSearch();
+    drawAllOlder();
+    histSel = new Set();
+    document.body.classList.add('hselect');
+    selBar.hidden = false;
+    for (const it of histEl.querySelectorAll('.h-item')) it.classList.remove('sel');
+    updateSelected();
+  }
+  function closeHistSelect() {
+    if (!histSel) return false;
+    histSel = null;
+    selSeq++;
+    document.body.classList.remove('hselect');
+    selBar.hidden = true;
+    for (const it of histEl.querySelectorAll('.h-item.sel')) { it.classList.remove('sel'); it.removeAttribute('aria-selected'); }
+    focusExpr();
+    return true;
+  }
+  function toggleSelected(item) {
+    const h = item._h;
+    if (!h || !histSel) return;
+    if (histSel.has(h)) histSel.delete(h); else histSel.add(h);
+    item.classList.toggle('sel', histSel.has(h));
+    item.setAttribute('aria-selected', String(histSel.has(h)));
+    vibrate();
+    updateSelected();
+  }
+  async function updateSelected() {
+    const list = history.filter((h) => histSel && histSel.has(h));
+    const seq = ++selSeq;
+    selInfo.textContent = '';
+    const head = el('div', { class: 'hs-n', text: list.length ? trf('{0} selected', '{0} 行を選択', list.length) : tr('Tap the lines to add up', '合計する行をタップしてください') });
+    selInfo.append(head);
+    if (!list.length) return;
+    const vals = list.map((h) => insertText(h));
+    if (vals.some((v) => !v)) { selInfo.append(el('div', { class: 'form-hint warn', text: tr('A result that cannot be used in a calculation is selected (too long, or text)', '計算に使えない結果（長すぎる・文字）が選ばれています') })); return; }
+    const sum = vals.map((v) => '(' + v + ')').join(' + ');
+    const r = await Bridge.send('calc', { expr: sum, opts: engineOpts(), timeout: 3000 });
+    if (seq !== selSeq) return;
+    if (!r.ok || !r.result || r.timeout) { selInfo.append(el('div', { class: 'form-hint warn', text: localMessage(r.error) || tr('Could not add them up', '合計を計算できませんでした') })); return; }
+    // a sum of different kinds of units stays a sum ("5 km + 3 kg"): said, not given as a total
+    const exact = r.result.split(' ≈ ')[0];
+    if (/[A-Za-z]/.test(exact) && /\s[+−]\s/.test(exact.replace(/\([^()]*\)/g, ''))) {
+      selInfo.append(el('div', { class: 'form-hint warn', text: tr('The units do not match, so they cannot be added up', '単位がそろっていないので、合計できません') }));
+      return;
+    }
+    // the average as a decimal (9/2 = 4 + 1/2 = 4.5 is more than the bar needs)
+    const avg = await Bridge.send('calc', { expr: '(' + sum + ') / ' + list.length, opts: Object.assign(engineOpts(), { approx: 'approx', fraction: 'decimal' }), timeout: 3000 });
+    if (seq !== selSeq) return;
+    const row = (name, rr, cls) => { const v = el('span', { class: 'hs-v' }); showResult(v, resultText(rr)); return el('div', { class: 'hs-row ' + (cls || '') }, el('span', { class: 'hs-l', text: name }), v); };
+    selInfo.append(row(tr('Sum', '合計'), r, 'sum'));
+    if (avg.ok && avg.result && !avg.timeout) selInfo.append(row(tr('Average', '平均'), avg, 'avg'));
+  }
+  function copySelected() {
+    const list = history.filter((h) => histSel && histSel.has(h));
+    if (!list.length) { toast(tr('Nothing is selected', '何も選ばれていません'), 1500); return; }
+    copyText(list.map((h) => toDisplay(h.expr) + ' ' + displayResult(h)).join('\n'));
+  }
+  // a dialog with one line of text: the text, or null when cancelled
+  function promptSheet(title, value, placeholder) {
+    if (sheetResolve) closeSheet(null);
+    return new Promise((resolve) => {
+      const sh = $('#sheet');
+      sh.textContent = '';
+      const inp = el('input', { type: 'text', class: 'sheet-input', value: value || '', placeholder: placeholder || '', 'aria-label': title, maxlength: '120' });
+      const done = (v) => { sheetResolve = null; closeSheet(null); resolve(v); };
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); done(inp.value); } });
+      sh.append(el('div', { class: 'stitle', text: title }), inp,
+        el('button', { class: 'accent', text: tr('Save', '保存'), onclick: () => done(inp.value) }),
+        el('button', { text: tr('Cancel', 'キャンセル'), onclick: () => done(null) }));
+      sheetResolve = () => resolve(null);
+      $('#scrim').classList.add('show', 'over-panels');
+      sh.classList.add('open');
+      sh.inert = false;
+      setTimeout(() => { inp.focus(); inp.select(); }, 60);
+    });
+  }
+
+  // -------------------------------------------------------- memory keys
+  // M+, M−, MR and MC (1.12.0; setting "Show the memory keys", off at first): a row above the keys.
+  // M+ and M− add the value of the expression in the field (or else of the newest result) to the
+  // memory, MR puts the memory into the expression, MC clears it. The memory is kept (qalc.memory),
+  // in the engine's form, exactly when it can be (1/3 stays 1/3).
+  function buildMemRow() {
+    let row = $('#memrow');
+    if (!row) { row = el('div', { id: 'memrow', class: 'memrow' }); $('#keypad').insertBefore(row, $('#toolbar')); }
+    row.hidden = !S.memkeys;
+    row.textContent = '';
+    if (!S.memkeys) return;
+    const k = (label, name, op) => { const b = el('button', { class: 'key mem', type: 'button', text: label, 'aria-label': name }); bindPress(b, () => { vibrate(); memOp(op); }); return b; };
+    row.append(k('MC', tr('Clear the memory', 'メモリーを消す'), 'MC'), k('MR', tr('Insert the memory', 'メモリーを呼び出す'), 'MR'),
+      k('M+', tr('Add to the memory', 'メモリーに足す'), 'M+'), k('M−', tr('Subtract from the memory', 'メモリーから引く'), 'M−'),
+      el('span', { class: 'mem-val', id: 'mem-val', 'aria-live': 'polite' }));
+    showMemory();
+  }
+  function showMemory() {
+    const v = $('#mem-val');
+    if (v) v.textContent = memory ? 'M = ' + clip(displayText(memory), 24) : tr('M: empty', 'M：空');
+  }
+  async function memOp(op) {
+    if (!proGate('memkeys')) return;
+    if (op === 'MC') { memory = ''; store.set('qalc.memory', memory); showMemory(); return; }
+    if (op === 'MR') { if (memory) insert(toDisplay(wrapValue(memory)), 0, false); else toast(tr('The memory is empty', 'メモリーは空です'), 1500); return; }
+    const raw = exprEl.value.trim();
+    const v = raw ? withoutOpenTo(normalizeExpr(raw)) : (history.length ? insertText(history[history.length - 1]) : '');
+    if (!v || v.indexOf('□') >= 0) { toast(tr('Type a value or calculate one first', '先に値を入れるか、計算してください'), 2000); return; }
+    if (!engineReady) { toast(tr('The calculation engine is starting', '計算エンジンを準備中です'), 1500); return; }
+    const r = await Bridge.send('calc', { expr: '(' + (memory || '0') + ') ' + (op === 'M+' ? '+' : '−') + ' (' + v + ')', opts: Object.assign(engineOpts(), { base: 10 }), timeout: 3000 });
+    if (!r.ok || !r.result || r.timeout || (r.messages || []).some((m) => m.type === 'error')) { toast(localMessage(r.error) || tr('Could not add it to the memory', 'メモリーに足せませんでした'), 2500); return; }
+    const t = legacyInsertText({ result: r.result, base: 10 });
+    if (!t) { toast(tr('Could not add it to the memory', 'メモリーに足せませんでした'), 2500); return; }
+    memory = t.replace(/^\((.*)\)$/, '$1');
+    store.set('qalc.memory', memory);
+    showMemory();
+  }
+
+  // ------------------------------------------------------- what is new
+  // On the first start of a new version, a card with what is new, once (1.12.0): to those who used
+  // an earlier version, each with "Try it". Closed, it does not come again.
+  const NEWS_VERSION = '1.12';
+  const NEWS = () => [
+    ['🧰', tr('Tools: find a tool by what you want to do', '道具：やりたいことで探せます'), () => openTools()],
+    ['🔢', tr('Number format: a decimal comma (1,5) if you like', '数の書き方：小数点を「,」にもできます'), () => openSettings()],
+    ['🕘', tr('History: search, pin with a star, notes, add up lines', '履歴：検索・星で固定・メモ・選んで合計'), () => historyActions()],
+    ['📈', tr('Graph: one switch for the area and the length', 'グラフ：面積と長さを切り替えて表示'), () => openAreaTool()]
+  ];
+  // the card is the last thing in the history, just above the field (it covers nothing); it goes
+  // with the first calculation, its ×, or a "Try it"
+  function closeNews() { if (newsCard) { newsCard.remove(); newsCard = null; } }
+  function showNews() {
+    // not on an empty history (the first screen with its examples stays whole): shown when there is one
+    if (!usedBefore || !history.length || store.get('qalc.news', '') === NEWS_VERSION) return;
+    store.set('qalc.news', NEWS_VERSION); // once: also when it is not closed
+    const card = el('div', { class: 'news-card', role: 'region', 'aria-label': tr('What is new', '新しい機能') });
+    card.append(el('div', { class: 'news-t' }, el('span', { text: tr('New in this version', 'この版の新しい機能') }),
+      el('button', { class: 'icon-btn news-x', type: 'button', 'aria-label': tr('Close', '閉じる'), text: '×', onclick: () => closeNews() })));
+    for (const [ico, text, run] of NEWS()) {
+      card.append(el('div', { class: 'news-row' }, el('span', { class: 'ico', text: ico, 'aria-hidden': 'true' }), el('span', { class: 'news-x-t', text }),
+        el('button', { class: 'btn news-try', type: 'button', text: tr('Try it', '試す'), 'aria-label': tr('Try it', '試す') + ': ' + text, onclick: () => { closeNews(); run(); } })));
+    }
+    // (1.12.0, H) everything new, step by step: the section of the user manual
+    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.12.0 (user manual) ›', '1.12.0 の新しい機能（説明書）›') }, () => openManual('new-1-12'))));
+    newsCard = card;
+    histEl.append(card);
+    // its title and × in sight, also when the history is short (memory keys, a small screen)
+    histEl.scrollTop = Math.max(0, card.offsetTop - histEl.offsetTop - 4);
+  }
+  // ------------------------------------------------- everyday calculations (1.12.0, C1)
+  // Every tool has the same form (as the shapes): example chips above, the boxes, the results at once
+  // as rows (tap one: put its expression into the field, keep it in the history, copy it), one line
+  // of explanation below, and for money the note of what the result assumes. spec: { chips:
+  // [[label, values]], fields: [{ k, label, def, ph, opts, more, kind }], run(v) → { rows: [{ name,
+  // small, value (shown), expr }], msg, table: { head, rows, name } }, hint, caution }
+  // A number of money or a count, grouped in the number format (1,500 / 1.500 / 1 500)
+  function fmtNum(v, dec) {
+    if (!isFinite(v)) return '';
+    const neg = v < 0, t = Math.abs(v).toFixed(dec === undefined ? 0 : dec);
+    let [i, f] = t.split('.');
+    i = i.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group);
+    if (f) f = f.replace(/0+$/, '');
+    return (neg ? '−' : '') + i + (f ? NF.dec + f : '');
+  }
+  // a number typed in a box: in the number format ("1.500,5" with a decimal comma), with "%" or the
+  // Japanese "割" (3割 = 30 %), groups allowed; NaN when it is not a plain number
+  function boxNum(t) {
+    let s = String(t || '').trim().replace(/[\s ]/g, '').replace(/[，]/g, ',').replace(/[．]/g, '.').replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[−–]/g, '-');
+    let scale = 1;
+    if (/割$/.test(s)) { s = s.slice(0, -1); scale = 10; } else if (/%$/.test(s)) s = s.slice(0, -1);
+    if (commaMode) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, '');
+    return /^-?\d+(\.\d+)?$|^-?\.\d+$/.test(s) ? Number(s) * scale : NaN;
+  }
+  // a plain number for an expression ("1500", "0.08")
+  const exprNum = (v) => String(+(+v).toPrecision(12)).replace('-', '−');
+  // the defaults of the language: the tax rates, and the unit of rounding money (1 yen, 0.01 euro)
+  const TAX_RATES = { ja: ['10', '8'], de: ['19', '7'], fr: ['20', '10', '5.5'], es: ['21', '10', '4'], ko: ['10'], 'zh-TW': ['5'], en: [] };
+  const MONEY_DEC = { ja: 0, ko: 0, 'zh-TW': 0 }[LANG] !== undefined ? 0 : 2;
+  function simpleTool(id, title, spec) {
+    const p = panel(id, title, (p) => {
+      const saved = store.get('qalc.tool.' + id, null) || {};
+      const inputs = {}, chosen = {};
+      const save = () => { const o = {}; for (const f of spec.fields) o[f.k] = f.opts ? chosen[f.k] : inputs[f.k].value; store.set('qalc.tool.' + id, o); };
+      const box = (f) => {
+        if (f.opts) {
+          // a choice of a few: a switch (aria-pressed)
+          chosen[f.k] = f.opts.some((o) => o[0] === saved[f.k]) ? saved[f.k] : f.def;
+          const btns = f.opts.map(([v, label]) => tapButton({ text: decSign(label), 'aria-pressed': String(v === chosen[f.k]), class: v === chosen[f.k] ? 'on' : '' }, () => {
+            chosen[f.k] = v;
+            btns.forEach((b, i) => { const on = f.opts[i][0] === v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+            save(); showFields(); run();
+          }));
+          const row = el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: f.label }), el('span', { class: 'seg mini', role: 'group', 'aria-label': f.label }, ...btns));
+          row._f = f;
+          return row;
+        }
+        const inp = el('input', { inputmode: f.kind === 'date' || f.kind === 'time' ? 'text' : 'decimal', type: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), value: typeof saved[f.k] === 'string' ? saved[f.k] : (typeof f.def === 'function' ? f.def() : f.def || ''), 'aria-label': f.label });
+        inp.addEventListener('input', () => { inp.removeAttribute('aria-invalid'); save(); run(); });
+        inp.addEventListener('focus', () => inp.select()); // (F, task 3: a value is replaced by typing, as in the shapes)
+        inputs[f.k] = inp;
+        const row = el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: f.label }), inp);
+        if (f.chips) row.append(el('span', { class: 'tool-mini-chips' }, ...f.chips().map((c) => tapButton({ class: 'area-chip', text: c }, () => { inp.value = c; save(); run(); }))));
+        row._f = f;
+        return row;
+      };
+      const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
+        ...spec.chips.map(([label, vals]) => tapButton({ class: 'area-chip', text: label }, () => {
+          for (const [k, v] of Object.entries(vals)) {
+            if (inputs[k]) inputs[k].value = v;
+            else if (chosen[k] !== undefined) { chosen[k] = v; const row = rows.find((r) => r._f.k === k); if (row) row.querySelectorAll('button').forEach((b, i) => { const on = row._f.opts[i][0] === v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); }
+          }
+          save(); showFields(); run();
+        })));
+      const rows = spec.fields.map(box);
+      const main = el('div', { class: 'tool-fields' }, ...rows.filter((r) => !r._f.more));
+      const moreRows = rows.filter((r) => r._f.more);
+      const more = moreRows.length ? el('details', { class: 'sec-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }), ...moreRows) : null;
+      const msg = el('div', { class: 'geo-msg', role: 'alert' });
+      const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
+      const tableBox = el('div', { class: 'tool-table' });
+      const caution = spec.caution ? cautionLine(spec.caution) : null;
+      // fields shown only for some choices (when: values → boolean)
+      const showFields = () => { const v = values(); for (const r of rows) if (r._f.when) r.hidden = !r._f.when(v); };
+      const values = () => { const v = {}; for (const f of spec.fields) v[f.k] = f.opts ? chosen[f.k] : inputs[f.k].value; return v; };
+      let seq = 0;
+      const run = debounce(async () => {
+        const my = ++seq;
+        msg.textContent = '';
+        let r;
+        try { r = await spec.run(values(), inputs); } catch (e) { r = { msg: tr('Could not calculate this', '計算できませんでした') }; }
+        if (my !== seq) return;
+        outs.textContent = ''; tableBox.textContent = '';
+        if (!r || r.msg) { msg.textContent = (r && r.msg) || ''; outs.hidden = true; if (r && r.bad && inputs[r.bad]) inputs[r.bad].setAttribute('aria-invalid', 'true'); return; }
+        outs.hidden = false;
+        r.rows.forEach((row, i) => {
+          const node = tapButton({ class: 'geo-row' + (i === 0 ? ' tool-main' : '') }, () => { if (row.expr) resultSheet(row.name, row.expr, '= ' + row.value, row.value); });
+          node.append(el('span', { class: 'geo-name' }, row.name, row.small ? el('small', { text: row.small }) : ''), el('span', { class: 'geo-val', text: row.value }));
+          outs.append(node);
+        });
+        if (r.table) showTable(tableBox, r.table);
+      }, 120);
+      p.body.append(chips, main, ...(more ? [more] : []), msg, outs, ...(caution ? [caution] : []), tableBox, el('div', { class: 'form-hint', text: spec.hint }));
+      showFields();
+      p.run = run;
+      run();
+    });
+    p.run && p.run();
+    return p;
+  }
+  // a table of a tool (a loan, savings): shown (free), the first rows and "All rows ▾", copy, and
+  // saving as a CSV file (QCalc Pro, the key 'tables', as exporting the history)
+  function showTable(box, t) {
+    const head = el('tr', {}, ...t.head.map((h) => el('th', { text: h })));
+    const body = (rows) => rows.map((r) => el('tr', {}, ...r.map((c) => el('td', { text: c }))));
+    const tbl = el('table', { class: 'tool-tbl' }, el('thead', {}, head), el('tbody', {}, ...body(t.rows.slice(0, 12))));
+    const all = t.rows.length > 12 ? el('details', { class: 'sec-more' }, el('summary', { text: trf('All {0} rows ▾', '全 {0} 行 ▾', t.rows.length) })) : null;
+    if (all) all.addEventListener('toggle', () => { if (all.open && !all._done) { all._done = true; tbl.tBodies[0].append(...body(t.rows.slice(12))); } }, { once: false });
+    const copy = tapButton({ class: 'btn', text: tr('Copy the table', '表をコピー') }, () => copyText([t.head].concat(t.rows).map((r) => r.join('\t')).join('\n')));
+    const csv = tapButton({ class: 'btn', text: tr('Save as CSV', 'CSV で保存') + (PRO_GATES.tables === 'pro' && !hasPro() ? '  ⭐ Pro' : '') }, () => saveTableCsv(t));
+    box.append(el('div', { class: 'section-title', text: t.title }), el('div', { class: 'tbl-wrap' }, tbl), ...(all ? [all] : []), el('div', { class: 'tool-tbl-btns' }, copy, csv));
+  }
+  let savingWhat = '';
+  function saveTableCsv(t) {
+    if (!proGate('tables')) return;
+    const sep = commaMode ? ';' : ',', cell = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+    const plain = (c) => String(c).replace(new RegExp('\\' + NF.group.replace(/[ ]/, ' '), 'g'), '').replace(/−/g, '-');
+    // (1.12.0, D7: the tables of the tools with all the digits of their numbers, unless "as shown" is chosen)
+    const full = t.raw && digits().csv === 'full';
+    const csv = '﻿' + [t.head.map(cell).join(sep)].concat(t.rows.map((r, j) => r.map((c, i) => (full ? cell(csvNum(t.raw[j][i])) : i === 0 ? cell(c) : cell(plain(c)))).join(sep))).join('\r\n') + '\r\n';
+    const d = new Date(), z = (n) => String(n).padStart(2, '0');
+    const name = 'QCalc-' + t.name + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.csv';
+    savingWhat = 'table';
+    if (window.QalcNative && QalcNative.saveFile) { QalcNative.saveFile(name, 'text/csv', csv); return; }
+    const a = el('a', { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), download: name });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    fileSaved({ ok: true });
+  }
+  const roundBy = (x, mode, u) => { const q = x / u; const r = mode === 'down' ? Math.floor(q + 1e-9) : mode === 'up' ? Math.ceil(q - 1e-9) : Math.round(q); return r * u; };
+  const roundFn = (mode) => (mode === 'down' ? 'floor' : mode === 'up' ? 'ceil' : 'round');
+  const ROUNDING = () => [['down', tr('Down', '切り捨て')], ['near', tr('Nearest', '四捨五入')], ['up', tr('Up', '切り上げ')]];
+  const unitWord = () => (MONEY_DEC ? '' : tr('', '円'));
+
+  // ---- Shopping: the price with a discount and the tax
+  function openPriceTool() {
+    const rates = TAX_RATES[LANG] || [];
+    return simpleTool('price', tr('Price: discount and tax', '値段：割引と税'), {
+      chips: [[tr('1500, 10% off, tax 8%', '1500 円・1割引・税 8%'), { price: '1500', off: '10', tax: '8', dir: 'add' }],
+        [tr('Tax included 1100 → before tax', '税込 1100 円 → 税抜'), { price: '1100', off: '', tax: rates[0] || '10', dir: 'remove' }]],
+      fields: [
+        { k: 'dir', label: tr('The price is', '値段は'), opts: [['add', tr('before tax', '税抜')], ['remove', tr('with tax', '税込')]], def: 'add' },
+        { k: 'price', label: tr('Price', '値段'), def: '', ph: MONEY_DEC ? 'e.g. 19,99' : tr('e.g. 1500', '例：1500') },
+        { k: 'off', label: tr('Discount (%)', '割引（% か ○割）'), def: '', ph: tr('e.g. 10', '例：10、3割'), when: (v) => v.dir === 'add' },
+        { k: 'tax', label: tr('Tax rate (%)', '税率（%）'), def: rates[0] ? toDisplay(rates[0]) : '', ph: tr('e.g. 10', '例：10'), chips: () => rates.map((r) => toDisplay(r)) },
+        { k: 'round', label: tr('Rounding', '端数'), opts: ROUNDING(), def: LANG === 'ja' ? 'down' : 'near' },
+        { k: 'off2', label: tr('Second discount (%)', '続けての割引（%）'), def: '', ph: tr('e.g. 5', '例：5'), more: true, when: (v) => v.dir === 'add' }
+      ],
+      hint: tr('The discount is taken first, then the tax is added; the result is rounded to the currency’s unit as chosen.', '割引を先に引いてから税を足し、最後に端数を処理します（日本語では 1 円単位）。'),
+      caution: tr('The tax rates are the usual rates of the language as of November 2026; check the rate that applies.', '前提：税率の初期値は 2026 年 11 月時点のもの。当てはまる税率を確かめてください。'),
+      run: async (v) => {
+        const price = boxNum(v.price), tax = v.tax === '' ? 0 : boxNum(v.tax), off = v.off === '' ? 0 : boxNum(v.off), off2 = v.off2 === '' ? 0 : boxNum(v.off2);
+        if (!v.price) return { msg: tr('Enter the price', '値段を入れてください') };
+        if (!(price >= 0)) return { msg: tr('The price must be a number, such as 1500', '値段は 1500 のような数にしてください'), bad: 'price' };
+        if (!(tax >= 0 && tax < 100)) return { msg: tr('The tax rate must be a number from 0 to 100, such as 10', '税率は 0〜100 の数にしてください（例：10）'), bad: 'tax' };
+        if (!(off >= 0 && off <= 100) || !(off2 >= 0 && off2 <= 100)) return { msg: tr('A discount must be from 0 to 100 %', '割引は 0〜100 % にしてください'), bad: 'off' };
+        const u = MONEY_DEC ? 0.01 : 1, uE = MONEY_DEC ? '0.01' : '1', fn = roundFn(v.round), m = v.round;
+        const rows = [];
+        if (v.dir === 'add') {
+          const after = price * (1 - off / 100) * (1 - off2 / 100);
+          const disc = `${exprNum(price)}${off ? ` × (1 − ${exprNum(off)}%)` : ''}${off2 ? ` × (1 − ${exprNum(off2)}%)` : ''}`;
+          const total = roundBy(after * (1 + tax / 100), m, u);
+          const totalE = `${fn}(${disc} × (1 + ${exprNum(tax)}%)${MONEY_DEC ? ' × 100) / 100' : ')'}`;
+          rows.push({ name: tr('With tax', '税込'), small: off || off2 ? tr('after the discount', '割引のあと') : '', value: fmtNum(total, MONEY_DEC) + unitWord(), expr: totalE });
+          if (off || off2) rows.push({ name: tr('After the discount (before tax)', '割引後（税抜）'), value: fmtNum(roundBy(after, m, u), MONEY_DEC) + unitWord(), expr: MONEY_DEC ? `${fn}(${disc} × 100) / 100` : `${fn}(${disc})` });
+          rows.push({ name: tr('Tax', '税'), value: fmtNum(total - roundBy(after, m, u), MONEY_DEC) + unitWord(), expr: '' });
+          if (off || off2) rows.push({ name: tr('You save (with tax)', '安くなった額（税込）'), value: fmtNum(roundBy(price * (1 + tax / 100), m, u) - total, MONEY_DEC) + unitWord(), expr: '' });
+        } else {
+          const before = roundBy(price / (1 + tax / 100), m, u);
+          rows.push({ name: tr('Before tax', '税抜'), value: fmtNum(before, MONEY_DEC) + unitWord(), expr: `${fn}(${exprNum(price)} / (1 + ${exprNum(tax)}%)${MONEY_DEC ? ' × 100) / 100' : ')'}` });
+          rows.push({ name: tr('Tax', '税'), value: fmtNum(price - before, MONEY_DEC) + unitWord(), expr: '' });
+        }
+        void uE;
+        return { rows };
+      }
+    });
+  }
+  // ---- Shopping: percentages
+  function openPercentTool() {
+    return simpleTool('percent', tr('Percentages', '割合'), {
+      chips: [[tr('30 of 120', '120 のうち 30'), { mode: 'of', a: '30', b: '120' }], [tr('From 80 to 100', '80 から 100 へ'), { mode: 'change', a: '80', b: '100' }]],
+      fields: [
+        { k: 'mode', label: tr('Find', '求めるもの'), opts: [['of', tr('A is what % of B', 'A は B の何 %')], ['change', tr('Change from A to B', 'A から B への増減率')]], def: 'of' },
+        { k: 'a', label: 'A', def: '', ph: tr('e.g. 30', '例：30') },
+        { k: 'b', label: 'B', def: '', ph: tr('e.g. 120', '例：120') }
+      ],
+      hint: tr('"Change" is (B − A) / A: + for an increase, − for a decrease.', '増減率は (B − A) ÷ A です（増えたら ＋、減ったら −）。'),
+      run: async (v) => {
+        const a = boxNum(v.a), b = boxNum(v.b);
+        if (!v.a || !v.b) return { msg: tr('Enter A and B', 'A と B を入れてください') };
+        if (!isFinite(a)) return { msg: tr('A must be a number', 'A は数にしてください'), bad: 'a' };
+        if (!isFinite(b)) return { msg: tr('B must be a number', 'B は数にしてください'), bad: 'b' };
+        if (v.mode === 'of') {
+          if (b === 0) return { msg: tr('B must not be 0', 'B は 0 以外にしてください'), bad: 'b' };
+          return { rows: [{ name: tr('A is … % of B', 'A は B の'), value: fmtNum(a / b * 100, 4) + ' %', expr: `${exprNum(a)} / ${exprNum(b)} to %` }] };
+        }
+        if (a === 0) return { msg: tr('A must not be 0 (a change from 0 has no rate)', 'A は 0 以外にしてください（0 からの増減率はありません）'), bad: 'a' };
+        const c = (b - a) / a * 100;
+        return { rows: [{ name: tr('Change', '増減率'), value: (c > 0 ? '+' : '') + fmtNum(c, 4) + ' %', expr: `(${exprNum(b)} − ${exprNum(a)}) / ${exprNum(a)} to %` },
+          { name: tr('Difference', '差'), value: (b - a > 0 ? '+' : '') + fmtNum(b - a, 6), expr: `${exprNum(b)} − ${exprNum(a)}` }] };
+      }
+    });
+  }
+  // ---- Shopping: which is cheaper (the amounts in the engine's units: g and kg, mL and L, pieces)
+  function openUnitPriceTool() {
+    return simpleTool('unitprice', tr('Unit price: which is cheaper', '単価の比較'), {
+      chips: [[tr('298 for 500 g / 498 for 1 kg', '298 円で 500 g と 498 円で 1 kg'), { p1: '298', q1: '500 g', p2: '498', q2: '1 kg' }],
+        [tr('158 for 1 L / 98 for 500 mL', '158 円で 1 L と 98 円で 500 mL'), { p1: '158', q1: '1 L', p2: '98', q2: '500 mL' }]],
+      fields: [
+        { k: 'p1', label: tr('Price A', 'A の値段'), def: '', ph: tr('e.g. 298', '例：298') },
+        { k: 'q1', label: tr('Amount A', 'A の量'), def: '', ph: tr('e.g. 500 g', '例：500 g、6 個') },
+        { k: 'p2', label: tr('Price B', 'B の値段'), def: '', ph: tr('e.g. 498', '例：498') },
+        { k: 'q2', label: tr('Amount B', 'B の量'), def: '', ph: tr('e.g. 1 kg', '例：1 kg') }
+      ],
+      hint: tr('Amounts with units (g, kg, mL, L, oz, lb) are compared in the same unit; a number alone is a count of pieces.', '量は単位付き（g、kg、mL、L など）なら同じ単位にそろえて比べます。数だけなら個数として比べます。'),
+      caution: tr('The price per unit is rounded for showing; the comparison uses the exact values.', '前提：単価は表示のため丸めています（比べるときは丸める前の値）。'),
+      run: async (v) => {
+        if (!v.p1 || !v.q1 || !v.p2 || !v.q2) return { msg: tr('Enter the price and the amount of A and B', 'A と B の値段と量を入れてください') };
+        const p1 = boxNum(v.p1), p2 = boxNum(v.p2);
+        if (!(p1 >= 0)) return { msg: tr('The price must be a number', '値段は数にしてください'), bad: 'p1' };
+        if (!(p2 >= 0)) return { msg: tr('The price must be a number', '値段は数にしてください'), bad: 'p2' };
+        // the amounts: a unit of mass or volume (per 100 g / 100 mL), or pieces
+        const amount = async (q) => {
+          const t = normalizeExpr(String(q).replace(/個|pcs?|pieces?|Stück|piezas?|pièces?|개|個/gi, '').trim());
+          if (/^[\d.,\s]+$/.test(String(q).replace(/個|pcs?|pieces?|Stück|piezas?|pièces?|개/gi, '').trim())) { const n = boxNum(String(q).replace(/[^\d.,]/g, '')); return n > 0 ? { n, kind: 'pc' } : null; }
+          // (converted by the engine: "500 g", "1 kg to g" = "1000 g"; a volume to mL)
+          for (const base of ['g', 'mL']) {
+            const r = await Bridge.send('calc', { expr: `(${t}) to ${base}`, opts: Object.assign(engineOpts(), { approx: 'approx', grouping: false, fraction: 'decimal', notation: 'auto', base: 10, units: 'none' }), timeout: 1500 });
+            const m = r.ok && r.result && r.result.replace(/^≈\s*/, '').match(new RegExp('^([0-9.]+(?:E[−+-]?\\d+)?)\\s*' + base + '$'));
+            if (m && Number(m[1]) > 0) return { n: Number(m[1].replace('−', '-')), kind: base };
+          }
+          return null;
+        };
+        const a1 = await amount(v.q1), a2 = await amount(v.q2);
+        if (!a1) return { msg: tr('Amount A: write it as 500 g, 1 L or 6 (pieces)', 'A の量は 500 g、1 L、6（個）のように書いてください'), bad: 'q1' };
+        if (!a2) return { msg: tr('Amount B: write it as 500 g, 1 L or 6 (pieces)', 'B の量は 500 g、1 L、6（個）のように書いてください'), bad: 'q2' };
+        if (a1.kind !== a2.kind) return { msg: tr('A and B must be amounts of the same kind (both a weight, both a volume or both pieces)', 'A と B は同じ種類の量にしてください（両方とも重さ、両方とも体積、両方とも個数）') };
+        const per = a1.kind === 'pc' ? 1 : 100, unit = a1.kind === 'pc' ? tr('1 piece', '1 個') : '100 ' + a1.kind;
+        const u1 = p1 / a1.n * per, u2 = p2 / a2.n * per;
+        const better = Math.abs(u1 - u2) <= 1e-12 * Math.max(u1, u2) ? tr('The same', '同じ') : u1 < u2 ? tr('A is cheaper', 'A が安い') : tr('B is cheaper', 'B が安い');
+        const diff = Math.abs(u1 - u2) / Math.max(u1, u2) * 100;
+        return { rows: [
+          { name: better, small: diff > 1e-9 ? trf('by {0} % per unit', '単価で {0} % 安い', fmtNum(diff, 1)) : '', value: '', expr: '' },
+          { name: tr('A per ', 'A の単価（') + unit + tr('', '）'), value: fmtNum(u1, 2), expr: `${exprNum(p1)} / ${exprNum(a1.n)} × ${per}` },
+          { name: tr('B per ', 'B の単価（') + unit + tr('', '）'), value: fmtNum(u2, 2), expr: `${exprNum(p2)} / ${exprNum(a2.n)} × ${per}` }] };
+      }
+    });
+  }
+  // ---- Shopping: splitting a bill
+  function openSplitTool() {
+    return simpleTool('split', tr('Split the bill', '割り勘'), {
+      chips: [[tr('10000 for 3', '10000 円を 3 人'), { total: '10000', n: '3', unit: MONEY_DEC ? '0.01' : '100' }], [tr('7777 for 4', '7777 円を 4 人'), { total: '7777', n: '4', unit: MONEY_DEC ? '0.01' : '10' }]],
+      fields: [
+        { k: 'total', label: tr('Total', '合計'), def: '', ph: tr('e.g. 10000', '例：10000') },
+        { k: 'n', label: tr('People', '人数'), def: '', ph: tr('e.g. 3', '例：3') },
+        { k: 'unit', label: tr('Each pays in steps of', '1 人分の単位'), opts: MONEY_DEC ? [['0.01', '0.01'], ['0.1', '0.10'], ['1', '1']] : [['1', JA ? '1 円' : '1'], ['10', JA ? '10 円' : '10'], ['100', JA ? '100 円' : '100']], def: MONEY_DEC ? '0.01' : '100' }
+      ],
+      hint: tr('Each pays the share rounded up to the step; what is paid too much is shown (or, rounded down, what one person pays more).', '1 人分を単位で切り上げた額と、集めすぎた額を出します（切り捨てたときに 1 人が多く払う額も）。'),
+      run: async (v) => {
+        const t = boxNum(v.total), n = boxNum(v.n), u = Number(v.unit);
+        if (!v.total || !v.n) return { msg: tr('Enter the total and the number of people', '合計と人数を入れてください') };
+        if (!(t >= 0)) return { msg: tr('The total must be a number', '合計は数にしてください'), bad: 'total' };
+        if (!(n >= 1) || n !== Math.floor(n)) return { msg: tr('The number of people must be a whole number of 1 or more', '人数は 1 以上の整数にしてください'), bad: 'n' };
+        const up = Math.ceil(t / n / u - 1e-9) * u, down = Math.floor(t / n / u + 1e-9) * u;
+        const dec = u < 1 ? 2 : 0;
+        return { rows: [
+          { name: tr('Each (rounded up)', '1 人（切り上げ）'), value: fmtNum(up, dec) + unitWord(), expr: `ceil(${exprNum(t)} / ${exprNum(n)} / ${exprNum(u)}) × ${exprNum(u)}` },
+          { name: tr('Paid too much', '集めすぎ'), value: fmtNum(up * n - t, dec) + unitWord(), expr: '' },
+          { name: tr('Rounded down: each', '切り捨て：1 人'), small: trf('one person pays {0} more', '1 人が {0} 多く払う', fmtNum(t - down * n, dec)), value: fmtNum(down, dec) + unitWord(), expr: `floor(${exprNum(t)} / ${exprNum(n)} / ${exprNum(u)}) × ${exprNum(u)}` }] };
+      }
+    });
+  }
+  // ---- Money: a loan (equal payments, or equal principal), with its table
+  function openLoanTool() {
+    return simpleTool('loan', tr('Loan', 'ローン'), {
+      chips: [[tr('30,000,000 at 1 % for 35 years', '3000 万円・年 1%・35 年'), { amount: '30000000', rate: '1', years: '35', method: 'equal' }],
+        [tr('2,000,000 at 3 % for 5 years', '200 万円・年 3%・5 年'), { amount: '2000000', rate: '3', years: '5', method: 'equal' }]],
+      fields: [
+        { k: 'amount', label: tr('Amount borrowed', '借りる額'), def: '', ph: tr('e.g. 30000000', '例：30000000') },
+        { k: 'rate', label: tr('Interest a year (%)', '年利（%）'), def: '', ph: tr('e.g. 1', '例：1') },
+        { k: 'years', label: tr('Years', '年数'), def: '', ph: tr('e.g. 35', '例：35') },
+        { k: 'method', label: tr('Payments', '返し方'), opts: [['equal', tr('Equal payments', '元利均等（毎月同じ額）')], ['principal', tr('Equal principal', '元金均等（元金が同じ額）')]], def: 'equal' }
+      ],
+      hint: tr('Monthly payments with the interest of a year divided by 12. Equal principal: the first payment is the largest.', '毎月返す場合です（年利の 12 分の 1 を月の利息とします）。元金均等は最初の月がいちばん多くなります。'),
+      caution: tr('Rounded to whole units at the end; a bank may round each payment and adjust the last one.', '前提：端数は最後に丸めています。金融機関の額とは、毎月の端数の扱いで少し違うことがあります。'),
+      run: async (v) => {
+        const P0 = boxNum(v.amount), y = boxNum(v.years), R = v.rate === '' ? NaN : boxNum(v.rate);
+        if (!v.amount || !v.years || v.rate === '') return { msg: tr('Enter the amount, the interest and the years', '借りる額、年利、年数を入れてください') };
+        if (!(P0 > 0)) return { msg: tr('The amount must be a number above 0', '借りる額は 0 より大きい数にしてください'), bad: 'amount' };
+        if (!(R >= 0 && R < 100)) return { msg: tr('The interest must be from 0 to 100 %', '年利は 0〜100 % にしてください'), bad: 'rate' };
+        if (!(y > 0 && y <= 100) || Math.round(y * 12) !== y * 12) return { msg: tr('The years must be a number of months: 35, or 2.5', '年数は 35 や 2.5 のように、月の数になる値にしてください'), bad: 'years' };
+        const n = Math.round(y * 12), r = R / 100 / 12, dec = MONEY_DEC;
+        const rowsT = [];
+        let monthly, total, interest, first = 0, last = 0;
+        const rE = `${exprNum(R)}% / 12`;
+        let expr;
+        if (v.method === 'equal') {
+          monthly = r ? P0 * r / (1 - Math.pow(1 + r, -n)) : P0 / n;
+          total = monthly * n; interest = total - P0;
+          expr = r ? `${exprNum(P0)} × (${rE}) / (1 − (1 + ${rE})^(−${n}))` : `${exprNum(P0)} / ${n}`;
+          let bal = P0;
+          for (let k = 1; k <= n; k++) { const i = bal * r, pr = monthly - i; bal -= pr; rowsT.push([String(k), fmtNum(monthly, dec), fmtNum(pr, dec), fmtNum(i, dec), fmtNum(Math.max(0, bal), dec)]); }
+        } else {
+          const pr = P0 / n;
+          let bal = P0; total = 0;
+          for (let k = 1; k <= n; k++) { const i = bal * r, pay = pr + i; if (k === 1) first = pay; if (k === n) last = pay; total += pay; bal -= pr; rowsT.push([String(k), fmtNum(pay, dec), fmtNum(pr, dec), fmtNum(i, dec), fmtNum(Math.max(0, bal), dec)]); }
+          interest = total - P0;
+          expr = `${exprNum(P0)} / ${n} + ${exprNum(P0)} × (${rE})`;
+        }
+        const rows = v.method === 'equal'
+          ? [{ name: tr('Each month', '毎月の返済額'), value: fmtNum(monthly, dec) + unitWord(), expr }]
+          : [{ name: tr('First month', '最初の月'), small: trf('last month {0}', '最後の月 {0}', fmtNum(last, dec) + unitWord()), value: fmtNum(first, dec) + unitWord(), expr }];
+        rows.push({ name: tr('Interest in all', '利息の合計'), value: fmtNum(interest, dec) + unitWord(), expr: '' }, { name: tr('Paid in all', '返す額の合計'), value: fmtNum(total, dec) + unitWord(), expr: '' });
+        return { rows, table: { title: tr('Payments, month by month', '返済表（月ごと）'), name: 'loan', head: [tr('Month', '回'), tr('Payment', '返済額'), tr('Principal', '元金'), tr('Interest', '利息'), tr('Left', '残り')], rows: rowsT } };
+      }
+    });
+  }
+  // ---- Money: saving every month with compound interest
+  function openSavingsTool() {
+    return simpleTool('savings', tr('Savings and compound interest', '積立と複利'), {
+      chips: [[tr('30,000 a month, 3 %, 20 years', '月 3 万円・年 3%・20 年'), { monthly: '30000', rate: '3', years: '20', start: '' }], [tr('1,000,000 at 5 % for 10 years', '100 万円を年 5%・10 年'), { monthly: '0', rate: '5', years: '10', start: '1000000' }]],
+      fields: [
+        { k: 'monthly', label: tr('Each month', '毎月の積立額'), def: '', ph: tr('e.g. 30000', '例：30000') },
+        { k: 'rate', label: tr('Interest a year (%)', '年利（%）'), def: '', ph: tr('e.g. 3', '例：3') },
+        { k: 'years', label: tr('Years', '年数'), def: '', ph: tr('e.g. 20', '例：20') },
+        { k: 'start', label: tr('At the start', '最初にある額'), def: '', ph: '0', more: true }
+      ],
+      hint: tr('Interest added every month (the interest of a year divided by 12); a saving at the end of each month.', '利息は毎月（年利の 12 分の 1）付き、積立は毎月の終わりに入れるとします。'),
+      caution: tr('Before tax on the interest; the interest rate is taken as fixed.', '前提：利息の税は引いていません。利率は変わらないとします。'),
+      run: async (v) => {
+        const m = v.monthly === '' ? 0 : boxNum(v.monthly), R = v.rate === '' ? NaN : boxNum(v.rate), y = boxNum(v.years), s0 = v.start === '' ? 0 : boxNum(v.start);
+        if (v.rate === '' || !v.years || (v.monthly === '' && v.start === '')) return { msg: tr('Enter the saving, the interest and the years', '積立額、年利、年数を入れてください') };
+        if (!(m >= 0)) return { msg: tr('The saving must be a number', '積立額は数にしてください'), bad: 'monthly' };
+        if (!(R >= 0 && R < 100)) return { msg: tr('The interest must be from 0 to 100 %', '年利は 0〜100 % にしてください'), bad: 'rate' };
+        if (!(y > 0 && y <= 100) || Math.round(y * 12) !== y * 12) return { msg: tr('The years must be a number of months: 20, or 2.5', '年数は 20 や 2.5 のように、月の数になる値にしてください'), bad: 'years' };
+        if (!(s0 >= 0)) return { msg: tr('The amount at the start must be a number', '最初にある額は数にしてください'), bad: 'start' };
+        const n = Math.round(y * 12), i = R / 100 / 12, dec = MONEY_DEC;
+        let bal = s0, paid = s0;
+        const rowsT = [];
+        for (let k = 1; k <= n; k++) { bal = bal * (1 + i) + m; paid += m; if (k % 12 === 0 || k === n) rowsT.push([String(Math.ceil(k / 12)), fmtNum(paid, dec), fmtNum(bal - paid, dec), fmtNum(bal, dec)]); }
+        const iE = `${exprNum(R)}% / 12`;
+        const expr = i ? `${exprNum(s0)} × (1 + ${iE})^${n} + ${exprNum(m)} × ((1 + ${iE})^${n} − 1) / (${iE})` : `${exprNum(s0)} + ${exprNum(m)} × ${n}`;
+        return { rows: [{ name: tr('At the end', '最後の額'), value: fmtNum(bal, dec) + unitWord(), expr },
+          { name: tr('Put in', '入れた額'), value: fmtNum(paid, dec) + unitWord(), expr: '' }, { name: tr('Interest', '増えた額（利息）'), value: fmtNum(bal - paid, dec) + unitWord(), expr: '' }],
+          table: { title: tr('Year by year', '年ごと'), name: 'savings', head: [tr('Year', '年'), tr('Put in', '入れた額'), tr('Interest', '利息'), tr('Amount', '額')], rows: rowsT } };
+      }
+    });
+  }
+  // ---- Dates: days between, a date after n days, an age; in Japanese also the era and the zodiac
+  // (the eras from their first day: 1989-01-07 is Shōwa 64, 1989-01-08 Heisei 1)
+  const ERAS = [['令和', 'Reiwa', 2019, 5, 1], ['平成', 'Heisei', 1989, 1, 8], ['昭和', 'Shōwa', 1926, 12, 25], ['大正', 'Taishō', 1912, 7, 30], ['明治', 'Meiji', 1868, 1, 25]];
+  const ETO = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'], ETO10 = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+  function eraOf(y, m, d) {
+    for (const [ja, en, ey, em, ed] of ERAS) if (y > ey || (y === ey && (m > em || (m === em && d >= ed)))) { const n = y - ey + 1; return { name: JA ? ja : en, n, text: (JA ? ja : en + ' ') + (n === 1 ? (JA ? '元' : '1') : n) + (JA ? '年' : '') }; }
+    return null;
+  }
+  // a date typed: 2026-11-19, 2026/11/19, 2026.11.19, 19.11.2026, today; in Japanese also 令和8年11月19日, R8.11.19
+  function parseDate(t) {
+    t = String(t || '').trim().replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+    if (!t) return null;
+    if (/^(today|heute|hoy|aujourd'hui|오늘|今日|今天)$/i.test(t)) { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() }; }
+    let m = t.match(/^(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})\s*日?$/);
+    if (!m && (m = t.match(/^(\d{1,2})\s*[./-]\s*(\d{1,2})\s*[./-]\s*(\d{4})$/))) m = [m[0], m[3], LANG === 'en' && /\//.test(t) ? m[1] : m[2], LANG === 'en' && /\//.test(t) ? m[2] : m[1]];
+    let y, mo, d;
+    if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+    else {
+      const e = t.match(/^(令和|平成|昭和|大正|明治|[RHSTMrhstm])\s*(元|\d{1,2})\s*[年.]\s*(\d{1,2})\s*[月.]\s*(\d{1,2})\s*日?$/);
+      if (!e) return null;
+      const k = { 令和: 0, R: 0, r: 0, 平成: 1, H: 1, h: 1, 昭和: 2, S: 2, s: 2, 大正: 3, T: 3, t: 3, 明治: 4, M: 4, m: 4 }[e[1]];
+      y = ERAS[k][2] + (e[2] === '元' ? 1 : +e[2]) - 1; mo = +e[3]; d = +e[4];
+      const era = eraOf(y, mo, d);
+      if (!era || era.name !== (JA ? ERAS[k][0] : ERAS[k][1])) return { bad: 'era' };
+    }
+    const dt = new Date(Date.UTC(y, mo - 1, d));
+    if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return null;
+    return { y, m: mo, d };
+  }
+  const dayNum = (o) => Math.round(Date.UTC(o.y, o.m - 1, o.d) / 86400000);
+  const fromDay = (n) => { const d = new Date(n * 86400000); return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate() }; };
+  const WEEK = () => [tr('Sun', '日'), tr('Mon', '月'), tr('Tue', '火'), tr('Wed', '水'), tr('Thu', '木'), tr('Fri', '金'), tr('Sat', '土')];
+  const dateText = (o) => { const w = WEEK()[new Date(Date.UTC(o.y, o.m - 1, o.d)).getUTCDay()]; const z = (n) => String(n).padStart(2, '0'); return JA ? `${o.y}年${o.m}月${o.d}日（${w}）` : `${o.y}-${z(o.m)}-${z(o.d)} (${w})`; };
+  function openDateTool() {
+    const today = () => { const d = new Date(), z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); };
+    const modes = [['after', tr('n days after', '○日後')], ['between', tr('Days between', '日数の差')], ['age', tr('Age', '年齢')]].concat(JA ? [['era', '和暦・干支']] : []);
+    return simpleTool('date', tr('Dates', '日付'), {
+      chips: [[tr('100 days from today', '今日から 100 日後'), { mode: 'after', d1: today(), n: '100' }], [tr('Days to 2027-01-01', '2027 年 1 月 1 日までの日数'), { mode: 'between', d1: today(), d2: '2027-01-01' }]].concat(JA ? [['昭和64年1月7日', { mode: 'era', d1: '1989-01-07' }]] : []),
+      fields: [
+        { k: 'mode', label: tr('Find', '求めるもの'), opts: modes, def: 'after' },
+        { k: 'd1', label: tr('Date', '日付'), def: today, ph: JA ? '2026-11-19、令和8年11月19日' : '2026-11-19', kind: 'date', chips: () => [tr('today', '今日')] },
+        { k: 'n', label: tr('Days', '日数'), def: '100', ph: tr('e.g. 100 or −30', '例：100、−30'), when: (v) => v.mode === 'after' },
+        { k: 'd2', label: tr('Second date', 'もう 1 つの日付'), def: '', ph: '2027-01-01', kind: 'date', when: (v) => v.mode === 'between' || v.mode === 'age' }
+      ],
+      hint: tr('Dates as 2026-11-19 (or "today"). Days between counts the days from the first date to the second; an age is in full years on the second date (today if empty).', '日付は 2026-11-19 か「今日」（日本語では 令和8年11月19日 も）。日数の差は 1 つめから 2 つめまでの日数、年齢は 2 つめの日（空なら今日）の満年齢です。'),
+      run: async (v) => {
+        const a = parseDate(v.d1);
+        if (!v.d1) return { msg: tr('Enter a date', '日付を入れてください') };
+        if (!a || a.bad) return { msg: a && a.bad ? tr('That date is not in that era', 'その日付は、その元号の期間にありません（例：昭和64年は1月7日まで）') : tr('Write the date as 2026-11-19', '日付は 2026-11-19 のように書いてください'), bad: 'd1' };
+        if (v.mode === 'after') {
+          const n = boxNum(v.n);
+          if (!isFinite(n) || n !== Math.floor(n)) return { msg: tr('The days must be a whole number, such as 100 or −30', '日数は 100 や −30 のような整数にしてください'), bad: 'n' };
+          const r = fromDay(dayNum(a) + n);
+          return { rows: [{ name: n >= 0 ? trf('{0} days after', '{0} 日後', fmtNum(n)) : trf('{0} days before', '{0} 日前', fmtNum(-n)), value: dateText(r) + (JA && eraOf(r.y, r.m, r.d) ? '　' + eraOf(r.y, r.m, r.d).text : ''), expr: '' }] };
+        }
+        if (v.mode === 'era') {
+          const e = eraOf(a.y, a.m, a.d), k = ((a.y - 4) % 12 + 12) % 12, k10 = ((a.y - 4) % 10 + 10) % 10;
+          return { rows: [{ name: '和暦', value: e ? e.text + a.m + '月' + a.d + '日' : '明治より前', expr: '' }, { name: '干支（その年）', small: '1 月 1 日で替わるものとします', value: ETO10[k10] + ETO[k] + '（' + ETO[k] + '年）', expr: '' }, { name: '曜日', value: WEEK()[new Date(Date.UTC(a.y, a.m - 1, a.d)).getUTCDay()] + '曜日', expr: '' }] };
+        }
+        const b = v.d2 ? parseDate(v.d2) : v.mode === 'age' ? parseDate('today') : null;
+        if (!v.d2 && v.mode === 'between') return { msg: tr('Enter the second date', 'もう 1 つの日付を入れてください') };
+        if (!b || b.bad) return { msg: tr('Write the second date as 2027-01-01', 'もう 1 つの日付は 2027-01-01 のように書いてください'), bad: 'd2' };
+        if (v.mode === 'between') {
+          const n = dayNum(b) - dayNum(a);
+          return { rows: [{ name: tr('Days', '日数'), small: tr('from the first date to the second', '1 つめから 2 つめまで'), value: fmtNum(n) + tr(' days', ' 日'), expr: '' }, { name: tr('Weeks', '週'), value: trf('{0} weeks {1} days', '{0} 週 {1} 日', fmtNum(Math.trunc(n / 7)), Math.abs(n % 7)), expr: '' }] };
+        }
+        let age = b.y - a.y;
+        if (b.m < a.m || (b.m === a.m && b.d < a.d)) age--;
+        if (age < 0) return { msg: tr('The birthday must be before the second date', '誕生日は 2 つめの日付より前にしてください'), bad: 'd1' };
+        const nb = { y: b.y + ((b.m > a.m || (b.m === a.m && b.d >= a.d)) ? 1 : 0), m: a.m, d: a.d };
+        const nbOk = parseDate(nb.y + '-' + nb.m + '-' + nb.d) || { y: nb.y, m: 3, d: 1 }; // (29 February: 1 March in other years)
+        return { rows: [{ name: tr('Age', '満年齢'), value: trf('{0} years', '{0} 歳', age), expr: '' }, { name: tr('Next birthday', '次の誕生日'), small: trf('in {0} days', 'あと {0} 日', dayNum(nbOk) - dayNum(b)), value: dateText(nbOk), expr: '' }] };
+      }
+    });
+  }
+  // ---- Times: h:mm plus or minus h:mm, the hours worked (end − start − break) × the pay an hour
+  function parseHM(t) {
+    const s = String(t || '').trim().replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[：]/g, ':');
+    let m = s.match(/^(\d{1,3}):(\d{1,2})$/);
+    if (m && +m[2] < 60) return +m[1] * 60 + +m[2];
+    m = s.match(/^(\d{1,3})\s*(h|時間?)\s*(?:(\d{1,2})\s*(m|min|分)?)?$/i);
+    if (m && (!m[3] || +m[3] < 60)) return +m[1] * 60 + (m[3] ? +m[3] : 0);
+    m = s.match(/^(\d{1,4})\s*(m|min|分)$/i);
+    if (m) return +m[1];
+    return NaN;
+  }
+  const hmText = (min) => { const neg = min < 0; min = Math.abs(Math.round(min)); return (neg ? '−' : '') + Math.floor(min / 60) + ':' + String(min % 60).padStart(2, '0'); };
+  function openTimeTool() {
+    return simpleTool('time', tr('Times', '時間'), {
+      chips: [[tr('Worked 9:00–17:30, break 1:00', '9:00〜17:30・休憩 1:00'), { mode: 'work', t1: '9:00', t2: '17:30', brk: '1:00', wage: '' }], [tr('1:45 + 2:30', '1:45 ＋ 2:30'), { mode: 'add', t1: '1:45', t2: '2:30', op: 'plus' }]],
+      fields: [
+        { k: 'mode', label: tr('Find', '求めるもの'), opts: [['work', tr('Hours worked', '勤務時間')], ['add', tr('h:mm ± h:mm', '時:分の足し引き')]], def: 'work' },
+        { k: 't1', label: tr('Start / first', '始め・1 つめ'), def: '9:00', ph: '9:00', kind: 'time' },
+        { k: 'op', label: tr('Operation', '計算'), opts: [['plus', '＋'], ['minus', '−']], def: 'plus', when: (v) => v.mode === 'add' },
+        { k: 't2', label: tr('End / second', '終わり・2 つめ'), def: '17:30', ph: '17:30', kind: 'time' },
+        { k: 'brk', label: tr('Break', '休憩'), def: '1:00', ph: '1:00', kind: 'time', when: (v) => v.mode === 'work' },
+        { k: 'wage', label: tr('Pay an hour', '時給'), def: '', ph: tr('e.g. 1200', '例：1200'), when: (v) => v.mode === 'work' }
+      ],
+      hint: tr('Times as 9:00 or 1:45 (also 2h 30m). An end before the start is taken as the next day (a night shift).', '時刻・時間は 9:00、1:45 のように（2時間30分 も可）。終わりが始めより前なら、次の日として数えます（夜勤）。'),
+      run: async (v) => {
+        const a = parseHM(v.t1), b = parseHM(v.t2);
+        if (!v.t1 || !v.t2) return { msg: tr('Enter two times, such as 9:00 and 17:30', '9:00 と 17:30 のように、2 つの時刻を入れてください') };
+        if (!isFinite(a)) return { msg: tr('Write the time as 9:00', '時刻は 9:00 のように書いてください'), bad: 't1' };
+        if (!isFinite(b)) return { msg: tr('Write the time as 17:30', '時刻は 17:30 のように書いてください'), bad: 't2' };
+        if (v.mode === 'add') {
+          const r = v.op === 'plus' ? a + b : a - b;
+          return { rows: [{ name: tr('Result', '結果'), small: trf('{0} hours', '{0} 時間', fmtNum(r / 60, 4)), value: hmText(r), expr: `${a} min ${v.op === 'plus' ? '+' : '−'} ${b} min to h` }] };
+        }
+        const br = v.brk ? parseHM(v.brk) : 0;
+        if (!isFinite(br)) return { msg: tr('Write the break as 1:00 or 45 min', '休憩は 1:00 や 45分 のように書いてください'), bad: 'brk' };
+        let w = b - a; if (w < 0) w += 24 * 60;
+        w -= br;
+        if (w < 0) return { msg: tr('The break is longer than the time worked', '休憩が勤務時間より長くなっています'), bad: 'brk' };
+        const rows = [{ name: tr('Hours worked', '勤務時間'), small: trf('{0} hours', '{0} 時間', fmtNum(w / 60, 4)), value: hmText(w), expr: '' }];
+        if (v.wage) {
+          const pay = boxNum(v.wage);
+          if (!(pay >= 0)) return { msg: tr('The pay must be a number', '時給は数にしてください'), bad: 'wage' };
+          rows.push({ name: tr('Pay', '給料'), value: fmtNum(pay * w / 60, MONEY_DEC) + unitWord(), expr: `${exprNum(pay)} × ${w} / 60` });
+        }
+        return { rows };
+      }
+    });
+  }
+
+  // ---------------------------------------------------------- conversion (1.12.0, C2)
+  // Two boxes, each with a unit: what is typed in one is converted into the other (both ways), with
+  // ⇄ to swap them, the kinds of units as chips (the common ones; every kind of the engine under
+  // "Other kinds"), the pairs used last, and the result as a row (tap: field, history, copy). All the
+  // units of the engine, also the Japanese ones (尺, 坪, 升 …); currencies with the rates of the app
+  // (when they were last updated is shown; they work offline); fuel economy (km/L, L/100 km, mpg).
+  const FUEL = [['km/L', 'km/L', 1], ['L/100km', 'L/100 km', 0], ['mpgUS', 'mpg (US)', 0.425143707], ['mpgUK', 'mpg (UK)', 0.354006189]];
+  const fuelTo = (x, u) => (u === 'L/100km' ? 100 / x : x * FUEL.find((f) => f[0] === u)[2]); // to km/L
+  const fuelFrom = (k, u) => (u === 'L/100km' ? 100 / k : k / FUEL.find((f) => f[0] === u)[2]);
+  const MY_CURRENCY = { ja: 'JPY', de: 'EUR', fr: 'EUR', es: 'EUR', ko: 'KRW', 'zh-TW': 'TWD' }[LANG] || 'USD';
+  const CONV_KINDS = () => [
+    ['Length', tr('Length', '長さ'), ['km'], ['mi']], ['Mass', tr('Weight', '重さ'), ['kg'], ['lb']], ['Volume', tr('Volume', '体積'), ['L'], ['gal']],
+    ['Area', tr('Area', '面積'), ['m^2', 'm²'], JA ? ['坪'] : ['ft^2', 'ft²']], ['Temperature', tr('Temperature', '温度'), ['oC', '°C'], ['oF', '°F']],
+    ['Speed', tr('Speed', '速さ'), ['km/h', 'kph'], ['mph']], ['Time', tr('Time', '時間'), ['h'], ['min']],
+    ['fuel', tr('Fuel economy', '燃費'), ['km/L'], ['L/100km']], ['Currency', tr('Currency', '通貨'), [MY_CURRENCY], [MY_CURRENCY === 'USD' ? 'EUR' : 'USD']]
+  ];
+  const KIND_ALIASES = { Speed: ['Speed', 'Velocity'], Mass: ['Mass', 'Weight'] };
+  const JP_UNIT_KIND = { 坪: 'Area', 反: 'Area', 畝: 'Area', 町歩: 'Area', 歩: 'Area', 寸: 'Length', 尺: 'Length', 間: 'Length', 丈: 'Length', 里: 'Length', 町: 'Length',
+    合: 'Volume', 升: 'Volume', 斗: 'Volume', 石: 'Volume', 勺: 'Volume', 匁: 'Mass', 貫: 'Mass', 斤: 'Mass', 両: 'Mass' };
+  // ------------------------------------------------------- statistics (1.12.0, C4)
+  // "Statistics" in Tools ("Data"): one column (count, sum, mean, median, mode, the standard deviations
+  // of a sample and of a population, the quartiles) or two (the regression line first, the other
+  // models under "More ▾", r, R² and a predicted value), and the points with the line in the 2D
+  // graph. The numbers are worked out here in double precision and shown with 10 significant digits;
+  // a tap on a result offers the engine's expression (mean([…]), median([…]) …), which the calculator
+  // gives exactly. The quartiles are those of the school books (the medians of the lower and the
+  // upper half, without the median when n is odd); the spreadsheets' QUARTILE.INC is under "More".
+  const STAT_MAX = 2000;
+  const STAT_EX = () => [
+    [tr('Test scores (1 column)', 'テストの点（1 列）'), 1, [62, 75, 81, 58, 90, 73, 68, 85, 77, 70].map((v) => [String(v)])],
+    [tr('Height and weight (2 columns)', '身長と体重（2 列）'), 2, [[155, 50], [160, 54], [165, 59], [170, 62], [175, 68], [180, 72]].map((r) => r.map(String))],
+    [tr('Temperature and sales (2 columns)', '気温と売上（2 列）'), 2, [[18, 120], [21, 135], [24, 160], [27, 190], [30, 230], [33, 260]].map((r) => r.map(String))]
+  ];
+  // a number as shown: 10 significant digits (or digits), the number format, "× 10^−5" for very small or large ones
+  function statNum(v, digits) {
+    if (!isFinite(v)) return '';
+    if (v === 0) return '0';
+    let s = String(+v.toPrecision(digits || 10)), exp = '';
+    const m = s.match(/^(-?[\d.]+)e([+-]\d+)$/);
+    if (m) { s = m[1]; exp = ' × 10^' + String(Number(m[2])).replace('-', '−'); }
+    const neg = s[0] === '-';
+    if (neg) s = s.slice(1);
+    let [i, f] = s.split('.');
+    i = i.replace(/\B(?=(\d{3})+(?!\d))/g, NF.group);
+    return (neg ? '−' : '') + i + (f ? NF.dec + f : '') + exp;
+  }
+  // a value typed or pasted into the table (the number format, also 1.5e3); NaN if it is not a number
+  function statVal(t) {
+    const s = String(t || '').trim();
+    if (!s) return NaN;
+    const v = boxNum(s);
+    if (isFinite(v) && !/[%割]$/.test(s)) return v;
+    const e = s.replace(/[−–]/g, '-').replace(commaMode ? ',' : /^$/, '.');
+    return /^-?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(e) ? Number(e) : NaN;
+  }
+  const statMedian = (a) => { const k = a.length; return k ? (k % 2 ? a[(k - 1) / 2] : (a[k / 2 - 1] + a[k / 2]) / 2) : NaN; };
+  // one column: n, sum, mean, median, modes, variances, quartiles (school books and QUARTILE.INC), min, max
+  function statOne(xs) {
+    const n = xs.length, s = xs.slice().sort((a, b) => a - b);
+    let sum = 0, c = 0; // (compensated sum)
+    for (const x of xs) { const y = x - c, t = sum + y; c = (t - sum) - y; sum = t; }
+    const mean = sum / n;
+    let m2 = 0;
+    for (const x of xs) m2 += (x - mean) * (x - mean);
+    const half = Math.floor(n / 2), lower = s.slice(0, half), upper = s.slice(n - half);
+    const cnt = new Map();
+    for (const x of s) cnt.set(x, (cnt.get(x) || 0) + 1);
+    const top = Math.max(...cnt.values()), modes = top > 1 ? Array.from(cnt).filter((e) => e[1] === top).map((e) => e[0]) : [];
+    const inc = (p) => { const h = (n - 1) * p, lo = Math.floor(h); return s[lo] + (h - lo) * (s[Math.min(lo + 1, n - 1)] - s[lo]); };
+    return { n, sum, mean, median: statMedian(s), modes, top, vs: n > 1 ? m2 / (n - 1) : NaN, vp: m2 / n,
+      q1: statMedian(lower), q3: statMedian(upper), lower, upper, min: s[0], max: s[n - 1], inc1: inc(0.25), inc3: inc(0.75) };
+  }
+  // least squares: y = a x + b on (u, v); r
+  function statLine(us, vs) {
+    const n = us.length;
+    let mu = 0, mv = 0;
+    for (let i = 0; i < n; i++) { mu += us[i]; mv += vs[i]; }
+    mu /= n; mv /= n;
+    let suu = 0, suv = 0, svv = 0;
+    for (let i = 0; i < n; i++) { const du = us[i] - mu, dv = vs[i] - mv; suu += du * du; suv += du * dv; svv += dv * dv; }
+    if (!(suu > 0)) return null;
+    const a = suv / suu;
+    return { a, b: mv - a * mu, r: svv > 0 ? suv / Math.sqrt(suu * svv) : NaN, mu, mv };
+  }
+  // R² of a model f on the original y: 1 − SSres / SStot
+  function statR2(xs, ys, f) {
+    const my = ys.reduce((s, y) => s + y, 0) / ys.length;
+    let ssr = 0, sst = 0;
+    for (let i = 0; i < xs.length; i++) { const e = ys[i] - f(xs[i]); ssr += e * e; sst += (ys[i] - my) * (ys[i] - my); }
+    return sst > 0 ? 1 - ssr / sst : NaN;
+  }
+  // the models of two columns: [key, name, equation shown, expression (in x), f, R²] or [key, name, why not]
+  function statModels(xs, ys) {
+    const out = [], N = (v) => statNum(v), E = exprNum;
+    // (a term that is 0 is left out: y = 2x², y = 3x)
+    const signed = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + N(-v) + t : ' + ' + N(v) + t), signedE = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + E(-v) + t : ' + ' + E(v) + t);
+    const lead = (v, t, rest, restE) => (v === 0 ? [(rest.replace(/^ \+ /, '').replace(/^ − /, '−') || '0'), (restE.replace(/^ \+ /, '').replace(/^ − /, '−') || '0')] : [N(v) + t + rest, E(v) + t + restE]);
+    // a coefficient that is only rounding (its term below 1e-10 of the largest y) is 0: y = 2x², not 2x² + 3.1 × 10^−15
+    const ymax = Math.max(...ys.map(Math.abs)) || 1, xmax = Math.max(...xs.map(Math.abs)) || 1;
+    const snap = (v, k) => (Math.abs(v) * Math.pow(xmax, k) < 1e-10 * ymax ? 0 : v);
+    const L0 = statLine(xs, ys), L = L0 && Object.assign({}, L0, { a: snap(L0.a, 1), b: snap(L0.b, 0) });
+    if (L) {
+      const f = (x) => L.a * x + L.b;
+      const [sh, ex] = lead(L.a, 'x', signed(L.b, ''), signedE(L.b, ''));
+      out.push(['linear', tr('Line', '直線'), 'y = ' + sh, ex, f, statR2(xs, ys, f), L]);
+    }
+    // quadratic, in u = x − mean (for exact sums), then written in x
+    const distinct = new Set(xs).size;
+    if (distinct >= 3) {
+      const n = xs.length, m = xs.reduce((s, x) => s + x, 0) / n, S = [0, 0, 0, 0, 0], T = [0, 0, 0];
+      for (let i = 0; i < n; i++) { const u = xs[i] - m; let p = 1; for (let k = 0; k <= 4; k++) { S[k] += p; if (k <= 2) T[k] += p * ys[i]; p *= u; } }
+      const A = [[S[0], S[1], S[2], T[0]], [S[1], S[2], S[3], T[1]], [S[2], S[3], S[4], T[2]]];
+      for (let i = 0; i < 3; i++) {
+        let piv = i;
+        for (let j = i + 1; j < 3; j++) if (Math.abs(A[j][i]) > Math.abs(A[piv][i])) piv = j;
+        [A[i], A[piv]] = [A[piv], A[i]];
+        for (let j = 0; j < 3; j++) if (j !== i) { const q = A[j][i] / A[i][i]; for (let k = i; k < 4; k++) A[j][k] -= q * A[i][k]; }
+      }
+      const c0 = A[0][3] / A[0][0], c1 = A[1][3] / A[1][1], c2 = A[2][3] / A[2][2];
+      const p2 = snap(c2, 2), p1 = snap(c1 - 2 * c2 * m, 1), p0 = snap(c0 - c1 * m + c2 * m * m, 0), f = (x) => (p2 * x + p1) * x + p0;
+      const [sh, ex] = lead(p2, 'x²', signed(p1, 'x') + signed(p0, ''), signedE(p1, 'x') + signedE(p0, ''));
+      if ([p0, p1, p2].every(isFinite)) out.push(['quad', tr('Quadratic', '2 次式'), 'y = ' + sh, ex.replace('x²', 'x^2'), f, statR2(xs, ys, f)]);
+    } else out.push(['quad', tr('Quadratic', '2 次式'), tr('needs three different x', '異なる x が 3 つ必要です')]);
+    const ypos = ys.every((y) => y > 0), xpos = xs.every((x) => x > 0);
+    const Le = ypos ? statLine(xs, ys.map(Math.log)) : null;
+    if (Le) { const a = Math.exp(Le.b), b = Le.a, f = (x) => a * Math.exp(b * x); out.push(['exp', tr('Exponential', '指数'), 'y = ' + N(a) + ' e^(' + N(b) + 'x)', E(a) + ' e^(' + E(b) + 'x)', f, statR2(xs, ys, f)]); }
+    else out.push(['exp', tr('Exponential', '指数'), ypos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every y must be above 0', 'y がすべて 0 より大きいときだけ使えます')]);
+    const Ll = xpos ? statLine(xs.map(Math.log), ys) : null;
+    if (Ll) { const a = Ll.b, b = Ll.a, f = (x) => a + b * Math.log(x); out.push(['log', tr('Logarithmic', '対数'), 'y = ' + N(a) + signed(b, ' ln x'), E(a) + signedE(b, ' ln(x)'), f, statR2(xs, ys, f)]); }
+    else out.push(['log', tr('Logarithmic', '対数'), xpos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every x must be above 0', 'x がすべて 0 より大きいときだけ使えます')]);
+    const Lp = xpos && ypos ? statLine(xs.map(Math.log), ys.map(Math.log)) : null;
+    if (Lp) { const a = Math.exp(Lp.b), b = Lp.a, f = (x) => a * Math.pow(x, b); out.push(['power', tr('Power', '累乗'), 'y = ' + N(a) + ' x^' + N(b), E(a) + ' x^(' + E(b) + ')', f, statR2(xs, ys, f)]); }
+    else out.push(['power', tr('Power', '累乗'), xpos && ypos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every x and y must be above 0', 'x と y がすべて 0 より大きいときだけ使えます')]);
+    return out;
+  }
+  // ---- Data: calculation notes (1.12.0, D5)
+  // A memo of calculations, one on each line, with the result on the right: "rent = 85000 JPY" gives a
+  // name that the lines below can use (in this memo only), "ans" is the value of the line above, and a
+  // line "total" (合計, Summe, …) adds the results of the lines above it, back to the last such line.
+  // Units and currencies work as on the calculator (the engine). A line that starts with # or // is a
+  // note. Only the line that changed and the lines below it are calculated again. Several memos (the
+  // first free; more, and saving as text or CSV: QCalc Pro, key 'notes'); copy and share as text.
+  // How the names work: a name is replaced, before a line is calculated, by its expression in
+  // parentheses (with the names in it replaced in turn), so the exact value, units and currencies go
+  // through and nothing is defined in the engine (the calculator's variables are not touched, and the
+  // same name can mean another thing in another memo). A name is letters (any script), digits and _,
+  // not starting with a digit; it stands for itself where it is not part of a longer word.
+  const NOTE_MAX = 300, NOTE_TOTAL = /^\s*(合計|小計|total|subtotal|sum|summe|gesamt|zwischensumme|suma|totale?|somme|합계|소계|總計|合計|小計)\s*[:：=]?\s*$/i;
+  const NOTE_NAME_CH = 'A-Za-z_\\u00C0-\\u024F\\u0370-\\u03FF\\u0400-\\u04FF\\u3040-\\u30FF\\u3400-\\u9FFF\\uAC00-\\uD7AF\\uF900-\\uFAFF';
+  const NOTE_ASSIGN = new RegExp('^\\s*([' + NOTE_NAME_CH + '][' + NOTE_NAME_CH + '0-9]*)\\s*[=＝]\\s*([^=].*)$');
+  const NOTE_EX = () => [
+    [tr('Rent and bills', '家賃と光熱費'), [tr('rent', '家賃') + ' = 85000 JPY', tr('electricity', '電気') + ' = 6200 JPY', tr('water', '水道') + ' = 3100 JPY', tr('total', '合計'), tr('ans × 12', 'ans × 12')]],
+    [tr('Travel budget', '旅の予算'), [tr('hotel', 'ホテル') + ' = 3 × 120 USD', tr('meals', '食事') + ' = 3 × 45 USD', tr('total', '合計'), tr('ans to JPY', 'ans to JPY')]],
+    [tr('A room', '部屋の広さ'), [tr('width', '横') + ' = 3.6 m', tr('depth', '奥行き') + ' = 2.7 m', tr('width × depth', '横 × 奥行き'), tr('ans to ft^2', 'ans to ft^2')]]
+  ];
+  // the line with the names (and ans) replaced: { expr } or { error }
+  function noteExpand(text, names, prev) {
+    const isCh = (c) => !!c && new RegExp('[' + NOTE_NAME_CH + '0-9]').test(c);
+    let s = text;
+    const keys = Object.keys(names).concat(prev !== null ? ['ans'] : []).sort((a, b) => b.length - a.length);
+    for (const k of keys) {
+      const v = k === 'ans' && !(k in names) ? prev : names[k];
+      let out = '', i = 0;
+      for (;;) {
+        const j = s.indexOf(k, i);
+        if (j < 0) { out += s.slice(i); break; }
+        if (!isCh(s[j - 1]) && !isCh(s[j + k.length])) { out += s.slice(i, j) + '(' + v + ')'; i = j + k.length; }
+        else { out += s.slice(i, j + 1); i = j + 1; }
+      }
+      s = out;
+    }
+    return { expr: s };
+  }
+  function openNotesTool() {
+    const p = panel('notes', tr('Calculation notes', '計算メモ'), (p) => {
+      const saved = store.get('qalc.notes', null) || {};
+      const N = { memos: Array.isArray(saved.memos) && saved.memos.length ? saved.memos.slice(0, 50) : [{ id: 1, title: tr('Memo 1', 'メモ 1'), lines: NOTE_EX()[0][1].map(decSign) }], cur: saved.cur || 1, seq: 0, cache: [] };
+      if (!N.memos.some((m) => m.id === N.cur)) N.cur = N.memos[0].id;
+      const memo = () => N.memos.find((m) => m.id === N.cur) || N.memos[0];
+      const save = () => store.set('qalc.notes', { memos: N.memos, cur: N.cur });
+      const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
+        ...NOTE_EX().map(([label, lines]) => tapButton({ class: 'area-chip', text: label }, () => { memo().lines = lines.map(decSign); save(); build(); run(0); }))); // (BG17: 3,6 m with a decimal comma)
+      const pick = el('select', { 'aria-label': tr('Memo', 'メモ') });
+      const fillPick = () => { pick.textContent = ''; for (const m of N.memos) pick.append(el('option', { value: String(m.id), text: m.title })); pick.value = String(N.cur); };
+      pick.addEventListener('change', () => { N.cur = Number(pick.value); N.cache = []; save(); build(); run(0); });
+      const addBtn = tapButton({ class: 'btn', text: tr('+ New memo', '＋ 新しいメモ') + (PRO_GATES.notes === 'pro' && !hasPro() && N.memos.length >= 1 ? '  ⭐ Pro' : ''), 'aria-label': tr('New memo', '新しいメモ') }, () => {
+        if (N.memos.length >= 1 && !proGate('notes')) return;
+        const id = Math.max(...N.memos.map((m) => m.id)) + 1;
+        N.memos.push({ id, title: trf('Memo {0}', 'メモ {0}', N.memos.length + 1), lines: [''] }); N.cur = id; N.cache = []; save(); fillPick(); build(); run(0);
+        const f = list.querySelector('input'); if (f) f.focus();
+      });
+      const list = el('div', { class: 'note-lines', role: 'list' });
+      const msg = el('div', { class: 'geo-msg', role: 'alert' });
+      // one line: the field and its result
+      const lineRow = (i) => {
+        const inp = el('input', { inputmode: 'text', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false', value: memo().lines[i] || '', placeholder: i === 0 ? tr('e.g. rent = 85000 JPY', '例：家賃 = 85000 JPY') : '', 'aria-label': trf('Line {0}', '{0} 行目', i + 1), enterkeyhint: 'next' });
+        const res = tapButton({ class: 'note-res', 'aria-label': trf('Result of line {0}', '{0} 行目の結果', i + 1) }, () => { const c = N.cache[i]; if (c && c.ok) resultSheet(memo().lines[i], c.expr, c.shown); });
+        inp.addEventListener('input', () => { memo().lines[i] = inp.value; save(); run(i); });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); const L = memo().lines; if (L.length >= NOTE_MAX) return; const at = inp.selectionStart === 0 && inp.value ? i : i + 1; L.splice(at, 0, ''); save(); build(); run(at); const f = list.querySelectorAll('input')[at === i ? i + 1 : at]; if (f) f.focus(); }
+          else if (e.key === 'Backspace' && !inp.value && memo().lines.length > 1) { e.preventDefault(); memo().lines.splice(i, 1); save(); build(); run(i); const f = list.querySelectorAll('input')[Math.max(0, i - 1)]; if (f) f.focus(); }
+        });
+        inp.addEventListener('paste', (e) => {
+          const t = (e.clipboardData || window.clipboardData).getData('text');
+          if (!/\n/.test(t.trim())) return;
+          e.preventDefault();
+          const add = t.replace(/\r/g, '').split('\n'), L = memo().lines;
+          const before = inp.value.slice(0, inp.selectionStart), after = inp.value.slice(inp.selectionEnd);
+          add[0] = before + add[0]; add[add.length - 1] += after;
+          L.splice(i, 1, ...add.slice(0, NOTE_MAX - L.length + 1)); save(); build(); run(i);
+        });
+        // (the result already known, when the lines are laid out again)
+        const c = N.cache[i];
+        if (c && c.done && c.text === inp.value) { res.textContent = c.ok ? (c.total ? tr('Total ', '合計 ') : '') + c.shown : c.err || ''; res.classList.toggle('bad', !c.ok && !!c.err); }
+        return el('div', { class: 'note-line', role: 'listitem' }, inp, res);
+      };
+      const build = () => { list.textContent = ''; memo().lines.forEach((l, i) => list.append(lineRow(i))); };
+      // the results from line `from` on (the lines above keep theirs)
+      const run = async (from) => {
+        const seq = ++N.seq, L = memo().lines, rows = list.querySelectorAll('.note-line');
+        // (what the lines above give: their names, the value of the line above, the start of the sum)
+        const names = {};
+        let prev = null, sumFrom = 0;
+        for (let i = 0; i < from; i++) {
+          const c = N.cache[i];
+          // (a line not finished, or changed meanwhile, is calculated again from there)
+          if (!c || !c.done || c.text !== String(L[i] || '')) { from = i; break; }
+          if (c.name) names[c.name] = c.expr;
+          if (c.ok) prev = c.expr;
+          if (c.total) sumFrom = i + 1;
+        }
+        for (let i = from; i < L.length; i++) {
+          if (seq !== N.seq) return;
+          const text = String(L[i] || ''), res = rows[i] && rows[i].querySelector('.note-res'), c = { text };
+          N.cache[i] = c;
+          if (!text.trim() || /^\s*(#|\/\/)/.test(text)) { c.done = true; if (res) { res.textContent = ''; res.classList.remove('bad'); } continue; }
+          let body = text, name = null;
+          if (NOTE_TOTAL.test(text)) {
+            const parts = [];
+            for (let k = sumFrom; k < i; k++) if (N.cache[k] && N.cache[k].ok && !N.cache[k].total) parts.push('(' + N.cache[k].expr + ')');
+            body = parts.length ? parts.join(' + ') : '0'; c.total = true; sumFrom = i + 1;
+          } else {
+            const m = NOTE_ASSIGN.exec(text);
+            if (m && !/^(ans)$/i.test(m[1])) { name = m[1]; body = m[2]; }
+          }
+          const ex = c.total ? { expr: body } : noteExpand(normalizeExpr(body), names, prev);
+          const r = await Bridge.send('calc', { expr: ex.expr, opts: engineOpts(), timeout: 4000 });
+          if (seq !== N.seq) return;
+          c.done = true;
+          if (r.ok && r.result && !r.timeout && !(r.messages || []).some((q) => q.type === 'error')) {
+            c.ok = true; c.expr = ex.expr; c.shown = resultText(r);
+            if (name) { c.name = name; names[name] = ex.expr; }
+            prev = ex.expr;
+            if (res) { res.textContent = (c.total ? tr('Total ', '合計 ') : '') + c.shown; res.classList.remove('bad'); }
+          } else {
+            c.ok = false;
+            const err = r.timeout ? tr('took too long', '時間がかかりすぎました') : localMessage(((r.messages || []).find((q) => q.type === 'error') || {}).text || r.error) || tr('could not be calculated', '計算できませんでした');
+            c.err = err;
+            if (res) { res.textContent = err; res.classList.add('bad'); }
+          }
+        }
+        N.cache.length = L.length;
+        msg.textContent = '';
+      };
+      // copy, share, and under "More": rename, save as text or CSV (Pro), delete
+      const asText = () => memo().lines.map((l, i) => { const c = N.cache[i]; return c && c.ok ? l + '  →  ' + c.shown : l; }).join('\n');
+      const copyBtn = tapButton({ class: 'btn', text: tr('Copy', 'コピー') }, () => copyText(asText()));
+      const shareBtn = tapButton({ class: 'btn', text: tr('Share', '共有') }, () => {
+        if (window.QalcNative && QalcNative.shareText) QalcNative.shareText(asText());
+        else if (window.QalcDev && QalcDev.shareText) QalcDev.shareText(asText());
+        else copyText(asText());
+      });
+      const exp = (kind) => {
+        if (!proGate('notes')) return;
+        const d = new Date(), z = (q) => String(q).padStart(2, '0'), stamp = d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate());
+        const sep = commaMode ? ';' : ',', cell = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+        const text = kind === 'csv' ? '﻿' + [[tr('Line', '行'), tr('Calculation', '計算'), tr('Result', '結果')].map(cell).join(sep)].concat(memo().lines.map((l, i) => [i + 1, l, N.cache[i] && N.cache[i].ok ? N.cache[i].shown : ''].map(cell).join(sep))).join('\r\n') + '\r\n' : asText() + '\n';
+        const name = 'QCalc-notes-' + stamp + (kind === 'csv' ? '.csv' : '.txt');
+        savingWhat = 'notes';
+        if (kind === 'csv' && window.QalcNative && QalcNative.saveFile) { QalcNative.saveFile(name, 'text/csv', text); return; }
+        if (kind === 'txt' && window.QalcNative && QalcNative.saveFile) { QalcNative.saveFile(name, 'text/plain', text); return; }
+        const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: kind === 'csv' ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8' })), download: name });
+        document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+        fileSaved({ ok: true });
+      };
+      const lock = () => (PRO_GATES.notes === 'pro' && !hasPro() ? '  ⭐ Pro' : '');
+      const titleIn = el('input', { inputmode: 'text', 'aria-label': tr('Name of the memo', 'メモの名前') });
+      titleIn.addEventListener('input', () => { memo().title = titleIn.value.trim() || tr('Memo', 'メモ'); save(); fillPick(); });
+      const delBtn = tapButton({ class: 'btn', text: tr('Delete this memo', 'このメモを消す') }, async () => {
+        const k = await sheet(tr('Delete this memo?', 'このメモを消しますか？'), [['del', tr('Delete', '消す'), 'danger']]);
+        if (k !== 'del') return;
+        N.memos = N.memos.filter((m) => m.id !== N.cur);
+        if (!N.memos.length) N.memos.push({ id: 1, title: tr('Memo 1', 'メモ 1'), lines: [''] });
+        N.cur = N.memos[0].id; N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
+      });
+      const txtBtn = tapButton({ class: 'btn', text: tr('Save as text', 'テキストで保存') + lock() }, () => exp('txt'));
+      const csvBtn = tapButton({ class: 'btn', text: tr('Save as CSV', 'CSV で保存') + lock() }, () => exp('csv'));
+      const more = el('details', { class: 'sec-more note-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }),
+        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Name', '名前') }), titleIn), el('div', { class: 'tool-tbl-btns' }, txtBtn, csvBtn), delBtn);
+      more.addEventListener('toggle', () => { if (more.open) titleIn.value = memo().title; });
+      const hint = el('div', { class: 'form-hint', text: tr('One calculation on each line. "name = …" gives a name for the lines below (in this memo), "ans" is the line above, and "total" adds the lines above. Tap a result for the three actions.', '1 行に 1 つの計算。「名前 = 式」で下の行で使える名前（このメモの中だけ）、「ans」は上の行の値、「合計」で上の行を足します。結果をタップすると 3 つの操作。') });
+      p.body.append(chips, el('div', { class: 'geo-size note-pick' }, pick, addBtn), list, msg, el('div', { class: 'tool-tbl-btns' }, copyBtn, shareBtn), more, hint);
+      fillPick(); build(); run(0);
+    });
+    return p;
+  }
+  function openStatsTool() {
+    const p = panel('stats', tr('Statistics', '統計'), (p) => {
+      const saved = store.get('qalc.stats', null) || {};
+      const ex0 = STAT_EX()[0];
+      const D = { cols: saved.cols === 2 ? 2 : 1, rows: Array.isArray(saved.rows) && saved.rows.length ? saved.rows.slice(0, STAT_MAX) : ex0[2].map((r) => r.slice()), px: typeof saved.px === 'string' ? saved.px : '' };
+      const save = () => store.set('qalc.stats', { cols: D.cols, rows: D.rows, px: D.px });
+      const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
+        ...STAT_EX().map(([label, cols, rows]) => tapButton({ class: 'area-chip', text: label }, () => { D.cols = cols; D.rows = rows.map((r) => r.slice()); save(); setCols(cols); })));
+      const b1 = tapButton({ text: tr('1 column', '1 列') }, () => setCols(1)), b2 = tapButton({ text: tr('2 columns (x and y)', '2 列（x と y）') }, () => setCols(2));
+      const seg = el('span', { class: 'seg mini', role: 'group', 'aria-label': tr('Columns', '列の数') }, b1, b2);
+      const table = el('div', { class: 'sec-table stat-table', role: 'table' });
+      const tools = el('div', { class: 'sec-tools' });
+      const msg = el('div', { class: 'geo-msg', role: 'alert' });
+      const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
+      const more = el('details', { class: 'sec-more stat-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }));
+      const moreOut = el('div', { class: 'geo-out tool-out' });
+      more.append(moreOut);
+      const pxIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: D.px, placeholder: tr('e.g. 185', '例：185'), 'aria-label': tr('x for the predicted value', '予測する x') });
+      const pxRow = el('label', { class: 'geo-size stat-px' }, el('span', { class: 'geo-lbl', text: tr('Predict at x =', '予測：x =') }), pxIn);
+      const graph = tapButton({ class: 'btn geo-graph', text: tr('📈 Show in a graph', '📈 グラフで見る') }, () => showGraph());
+      const hint = el('div', { class: 'form-hint stat-hint' });
+      // a value box: on paste of several values (tabs, commas, lines) the table becomes the pasted one from there
+      const cell = (r, c) => {
+        const inp = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: (D.rows[r] || [])[c] || '',
+          placeholder: D.cols === 1 ? tr('value', '値') : c ? 'y' : 'x', 'aria-label': D.cols === 1 ? trf('Value, row {0}', '{0} 行目の値', r + 1) : trf('{0}, row {1}', '{1} 行目の {0}', c ? 'y' : 'x', r + 1) });
+        inp.addEventListener('input', () => { while (D.rows[r].length <= c) D.rows[r].push(''); D.rows[r][c] = inp.value; inp.removeAttribute('aria-invalid'); save(); run(); });
+        inp.addEventListener('paste', (e) => {
+          const t = (e.clipboardData || window.clipboardData).getData('text');
+          if (!/[\t\n;]/.test(t.trim()) && !(!commaMode && /,/.test(t.trim()))) return;
+          e.preventDefault();
+          const lines = t.replace(/\r/g, '').split('\n').filter((l) => l.trim() !== '');
+          if (lines.length > 1 && !/\d/.test(lines[0])) lines.shift(); // (a row of headings)
+          const cells = pastedDecimals(lines.map((l) => (/\t/.test(l) ? l.split('\t') : /;/.test(l) ? l.split(';') : !commaMode && /,/.test(l) ? l.split(',') : l.trim().split(/\s+/)).map((s) => s.trim())));
+          const wide = Math.max(...cells.map((x) => x.length));
+          if (r === 0 && c === 0) { D.rows = []; D.cols = wide >= 2 ? 2 : 1; }
+          cells.slice(0, STAT_MAX - r).forEach((vals, i) => {
+            while (D.rows.length <= r + i) D.rows.push(['', '']);
+            vals.slice(0, 2 - c).forEach((v, j) => { D.rows[r + i][c + j] = v; });
+          });
+          if (wide > 2) toast(tr('Only the first two columns are used', '最初の 2 列だけを使います'), 3000);
+          save(); setCols(D.cols);
+        });
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
+        return inp;
+      };
+      const btn = (text, label, f) => tapButton({ class: 'btn sec-btn', text, 'aria-label': label }, () => { f(); save(); build(); run(); });
+      const build = () => {
+        table.textContent = ''; tools.textContent = '';
+        table.classList.toggle('sec-2', D.cols === 2);
+        if (D.cols === 2) table.append(el('div', { class: 'sec-h', role: 'columnheader', text: 'x' }), el('div', { class: 'sec-h', role: 'columnheader', text: 'y' }));
+        else table.append(el('div', { class: 'sec-h', role: 'columnheader', text: tr('Values', '値') }));
+        D.rows.forEach((row, r) => { for (let c = 0; c < D.cols; c++) table.append(cell(r, c)); });
+        tools.append(btn(tr('+ Row', '+ 行'), tr('Add a row', '行を追加'), () => { if (D.rows.length < STAT_MAX) D.rows.push(['', '']); }),
+          btn(tr('− Row', '− 行'), tr('Delete the last row', '最後の行を削除'), () => { if (D.rows.length > 1) D.rows.pop(); }),
+          btn(tr('Clear', 'すべて消す'), tr('Clear the table', '表をすべて消す'), () => { D.rows = [['', ''], ['', ''], ['', '']]; }));
+      };
+      const setCols = (n) => {
+        D.cols = n;
+        for (const [b, k] of [[b1, 1], [b2, 2]]) { b.classList.toggle('on', n === k); b.setAttribute('aria-pressed', String(n === k)); }
+        pxRow.hidden = n !== 2; graph.hidden = n !== 2;
+        save(); build(); run();
+      };
+      pxIn.addEventListener('input', () => { D.px = pxIn.value; pxIn.removeAttribute('aria-invalid'); save(); run(); });
+      // a result row: a tap offers the three actions with the engine's expression
+      const row = (box, name, small, shown, expr, main) => {
+        const val = el('span', { class: 'geo-val', text: shown });
+        const node = tapButton({ class: 'geo-row' + (main ? ' tool-main' : '') }, () => { if (expr) resultSheet(name, expr, shown.replace(/^(?![=≈])/, '= ')); });
+        node.append(el('span', { class: 'geo-name' }, name, small ? el('small', { text: small }) : ''), val);
+        box.append(node);
+        return node;
+      };
+      const inputAt = (r, c) => table.querySelectorAll('input')[r * D.cols + c];
+      const fail = (inp, text) => { if (inp) inp.setAttribute('aria-invalid', 'true'); msg.textContent = text; outs.textContent = ''; moreOut.textContent = ''; more.hidden = true; D.fit = null; };
+      const list = (vs) => '[' + vs.map(exprNum).join(', ') + ']';
+      const run = () => {
+        msg.textContent = ''; outs.textContent = ''; moreOut.textContent = ''; more.hidden = false; D.fit = null;
+        const xs = [], ys = [];
+        for (let r = 0; r < D.rows.length; r++) {
+          const a = String(D.rows[r][0] || '').trim(), b = D.cols === 2 ? String(D.rows[r][1] || '').trim() : '';
+          if (!a && !b) continue;
+          if (D.cols === 2 && (!a || !b)) return fail(inputAt(r, a ? 1 : 0), trf('Row {0}: enter both x and y (or clear the row)', '{0} 行目：x と y の両方を入れてください（使わない行は空にします）', r + 1));
+          const va = statVal(a);
+          if (!isFinite(va)) return fail(inputAt(r, 0), trf('Row {0}: enter a number, such as 12.5', '{0} 行目：数を入れてください（例：12.5）', r + 1).replace('12.5', toDisplay('12.5')));
+          xs.push(va);
+          if (D.cols === 2) {
+            const vb = statVal(b);
+            if (!isFinite(vb)) return fail(inputAt(r, 1), trf('Row {0}: enter a number, such as 12.5', '{0} 行目：数を入れてください（例：12.5）', r + 1).replace('12.5', toDisplay('12.5')));
+            ys.push(vb);
+          }
+        }
+        if (!xs.length) return fail(null, tr('Enter the values in the table, one in each row (or paste them)', '表に値を 1 行に 1 つずつ入れてください（貼り付けもできます）'));
+        if (D.cols === 1) {
+          const s = statOne(xs), L = list(xs), dash = '—';
+          row(outs, tr('Mean', '平均'), 'x̄', statNum(s.mean), 'mean(' + L + ')', true);
+          row(outs, tr('Count', '個数'), 'n', String(s.n), String(s.n));
+          row(outs, tr('Sum', '合計'), 'Σx', statNum(s.sum), 'total(' + L + ')');
+          row(outs, tr('Median', '中央値'), '', statNum(s.median), 'median(' + L + ')');
+          const mo = row(outs, tr('Mode', '最頻値'), s.modes.length ? trf('{0} times', '{0} 回', s.top) : '', s.modes.length ? s.modes.map(statNum).join(', ') : tr('none (every value once)', 'なし（どの値も 1 回）'), s.modes.length === 1 ? 'mode(' + L + ')' : '');
+          if (!s.modes.length) mo.querySelector('.geo-val').classList.add('geo-val-text'); // (words, not a number)
+          row(outs, tr('Standard deviation (sample)', '標準偏差（標本）'), tr('s, divided by n − 1', 's、n − 1 で割る'), s.n > 1 ? statNum(Math.sqrt(s.vs)) : dash, s.n > 1 ? 'stdev(' + L + ')' : '');
+          row(outs, tr('Standard deviation (population)', '標準偏差（母集団）'), tr('σ, divided by n', 'σ、n で割る'), statNum(Math.sqrt(s.vp)), 'stdevp(' + L + ')');
+          row(outs, tr('Quartiles', '四分位数'), 'Q1 / Q3', s.n > 1 ? statNum(s.q1) + ' / ' + statNum(s.q3) : dash, s.n > 1 ? 'median(' + list(s.lower) + ')' : '');
+          row(moreOut, tr('Smallest / largest', '最小値 / 最大値'), '', statNum(s.min) + ' / ' + statNum(s.max), 'min(' + L + ')');
+          row(moreOut, tr('Range', '範囲'), tr('largest − smallest', '最大 − 最小'), statNum(s.max - s.min), 'max(' + L + ') − min(' + L + ')');
+          if (s.n > 1) row(moreOut, tr('Interquartile range', '四分位範囲'), 'Q3 − Q1', statNum(s.q3 - s.q1), 'median(' + list(s.upper) + ') − median(' + list(s.lower) + ')');
+          if (s.n > 1) row(moreOut, tr('Variance (sample / population)', '分散（標本 / 母集団）'), 's² / σ²', statNum(s.vs) + ' / ' + statNum(s.vp), 'var(' + L + ')');
+          row(moreOut, tr('Quartiles as in spreadsheets', '表計算ソフトの四分位数'), 'QUARTILE.INC', statNum(s.inc1) + ' / ' + statNum(s.inc3), 'quartile(' + L + ', 1)');
+          hint.textContent = tr('The sample standard deviation divides by n − 1 (for a part of all the data), the population one by n (for all of it). The quartiles are the medians of the lower and the upper half (without the median when n is odd), as in school books.',
+            '標本の標準偏差は n − 1 で割ります（全体の一部のデータから全体を推し量るとき）。母集団の標準偏差は n で割ります（データが全体のとき）。四分位数は、下半分と上半分のそれぞれの中央値です（n が奇数のときは中央値を除く。教科書の方法）。');
+          return;
+        }
+        if (xs.length < 2) return fail(null, tr('Enter at least two rows of x and y', 'x と y を 2 行以上入れてください'));
+        const models = statModels(xs, ys), lin = models.find((m) => m[0] === 'linear');
+        if (!lin) return fail(null, tr('Every x is the same, so no line can be drawn: enter different x', 'x がすべて同じなので、直線を引けません。違う x を入れてください'));
+        D.fit = { xs, ys, expr: lin[3] };
+        const L = lin[6];
+        row(outs, tr('Regression line', '回帰直線'), tr('least squares', '最小二乗法'), lin[2], lin[3], true);
+        row(outs, tr('Correlation coefficient', '相関係数'), 'r', isFinite(L.r) ? statNum(L.r) : '—', isFinite(L.r) ? exprNum(L.r) : '');
+        row(outs, tr('Coefficient of determination', '決定係数'), 'R²', isFinite(lin[5]) ? statNum(lin[5]) : '—', isFinite(lin[5]) ? exprNum(lin[5]) : '');
+        const pxv = statVal(D.px);
+        if (String(D.px).trim() && !isFinite(pxv)) pxIn.setAttribute('aria-invalid', 'true');
+        if (isFinite(pxv)) row(outs, trf('Predicted y at x = {0}', 'x = {0} のときの y（予測）', statNum(pxv)), 'ŷ', statNum(lin[4](pxv)), lin[3].replace(/x/g, '(' + exprNum(pxv) + ')'));
+        row(outs, tr('Rows', '行の数'), 'n', String(xs.length), String(xs.length));
+        for (const m of models.filter((q) => q[0] !== 'linear')) {
+          if (m.length === 3) { row(moreOut, m[1], '', m[2], ''); continue; }
+          const at = isFinite(pxv) ? '  ' + trf('(x = {0}: {1})', '（x = {0} で {1}）', statNum(pxv), statNum(m[4](pxv))) : '';
+          row(moreOut, m[1], 'R² = ' + (isFinite(m[5]) ? statNum(m[5]) : '—') + at, m[2], m[3]);
+        }
+        const xm = xs.reduce((a, b) => a + b, 0) / xs.length, ym = ys.reduce((a, b) => a + b, 0) / ys.length;
+        row(moreOut, tr('Means of x and y', 'x と y の平均'), 'x̄ / ȳ', statNum(xm) + ' / ' + statNum(ym), 'mean(' + list(xs) + ')');
+        hint.textContent = tr('The line is found by least squares; r near ±1 means the points lie close to it. Other curves are under "More"; their R² is worked out on the y values themselves.',
+          '回帰直線は最小二乗法で求めます。r が ±1 に近いほど、点は直線の近くに並びます。ほかの曲線は「詳しく」の中にあります（決定係数は元の y の値で計算）。');
+      };
+      // the points and the line in the 2D graph
+      const showGraph = () => {
+        if (!D.fit) return;
+        const { xs, ys, expr } = D.fit;
+        let lo = Math.min(...xs), hi = Math.max(...xs);
+        const pad = (hi - lo) * 0.15 || Math.abs(lo) * 0.2 || 1;
+        openPlotWith([expr], { points: xs.map((x, i) => ({ x, y: ys[i] })), range: [+(lo - pad).toPrecision(6), +(hi + pad).toPrecision(6)] });
+      };
+      p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Columns', '列') }), seg), table, tools, pxRow, msg, outs, more, graph, hint);
+      setCols(D.cols);
+    });
+    return p;
+  }
+  function openConverter() {
+    const p = panel('convert', tr('Convert units and currencies', '単位・通貨の換算'), (p) => {
+      const saved = store.get('qalc.conv', null) || {};
+      const C = { kind: saved.kind || 'Length', a: saved.a || '', b: saved.b || '', from: 'a', seq: 0, units: [] };
+      const save = () => store.set('qalc.conv', { kind: C.kind, a: uA.value, b: uB.value, va: vA.value });
+      const vA = el('input', { type: 'text', inputmode: 'decimal', autocapitalize: 'off', spellcheck: 'false', value: typeof saved.va === 'string' ? saved.va : '1', 'aria-label': tr('Value to convert', '換算する値') });
+      const vB = el('input', { type: 'text', inputmode: 'decimal', autocapitalize: 'off', spellcheck: 'false', 'aria-label': tr('Converted value', '換算した値') });
+      const uA = el('select', { 'aria-label': tr('Unit of the first value', '1 つめの単位') }), uB = el('select', { 'aria-label': tr('Unit of the second value', '2 つめの単位') });
+      const swap = tapButton({ class: 'btn conv-swap', 'aria-label': tr('Swap the units', '単位を入れ替える'), text: '⇅' }, () => {
+        const ua = uA.value; uA.value = uB.value; uB.value = ua;
+        const va = vA.value; vA.value = vB.value || va; C.from = 'a';
+        save(); convert();
+      });
+      const kinds = el('div', { class: 'geo-chips conv-kinds', role: 'group', 'aria-label': tr('Kind of units', '単位の種類') });
+      const other = el('select', { 'aria-label': tr('Other kinds', 'ほかの種類') });
+      const recentRow = el('div', { class: 'rev-ex conv-recent' });
+      const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
+      const msg = el('div', { class: 'geo-msg', role: 'alert' });
+      const rates = el('div', { class: 'form-hint conv-rates' });
+      const rowA = el('div', { class: 'conv-row' }, vA, uA), rowB = el('div', { class: 'conv-row' }, vB, uB);
+      p.body.append(kinds, el('div', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Other kinds', 'ほかの種類') }), other),
+        rowA, el('div', { class: 'conv-mid' }, swap), rowB, msg, outs, rates, recentRow,
+        el('div', { class: 'form-hint', text: tr('Type in either box: the other follows. A value can be an expression (1/3, 2 + 3). Tap the result to keep it, put it into the field or copy it.', 'どちらの欄に入れても、もう一方が換算されます。値は式でもかまいません（1/3、2 + 3）。結果をタップすると、履歴に残す・入力欄に入れる・コピーができます。') }));
+      const fmtOut = (t) => toDisplay(String(t).replace(/^-/, '−'));
+      // the units of a kind (the engine's order: the common ones first)
+      const unitsOf = (kind) => {
+        if (kind === 'fuel') return FUEL.map(([n, label]) => ({ name: n, abbr: label, title: '' }));
+        const names = KIND_ALIASES[kind] || [kind];
+        // (the Japanese units are a category of their own in the engine: here also with their kind)
+        return (catalogs.units || []).filter((it) => names.indexOf(it._top) >= 0 || JP_UNIT_KIND[it.name] === kind || JP_UNIT_KIND[it.abbr] === kind).slice().sort((x, y) => x._i - y._i);
+      };
+      const label = (it) => {
+        if (!it.title) return it.abbr;
+        const ja = JA && it._ja ? it._ja.split(' ')[0] : '';
+        return it.abbr + '  ' + (ja || it.title);
+      };
+      const findUnit = (list, wants) => list.find((it) => wants.some((w) => it.name === w || it.abbr === w)) || null;
+      const setKind = (kind, keepUnits) => {
+        C.kind = kind;
+        const list = unitsOf(kind);
+        C.units = list;
+        for (const sel of [uA, uB]) { sel.textContent = ''; for (const it of list) sel.append(el('option', { value: it.name, text: label(it) })); }
+        const def = CONV_KINDS().find((k) => k[0] === kind);
+        const a0 = keepUnits && list.some((u) => u.name === keepUnits[0]) ? keepUnits[0] : (def && findUnit(list, def[2]) || list[0] || {}).name;
+        const b0 = keepUnits && list.some((u) => u.name === keepUnits[1]) ? keepUnits[1] : (def && findUnit(list, def[3]) || list[1] || list[0] || {}).name;
+        if (a0) uA.value = a0; if (b0) uB.value = b0;
+        kinds.querySelectorAll('button').forEach((b) => { const on = b.dataset.kind === kind; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+        other.value = CONV_KINDS().some((k) => k[0] === kind) ? '' : kind;
+        rates.textContent = '';
+        if (kind === 'Currency') { rates.append(tr('Exchange rates updated: ', '為替レートの更新：') + fmtTime(ratesTime) + ' ', el('a', { href: '#', text: tr('Update now', '今すぐ更新'), onclick: (e) => { e.preventDefault(); openRates(); } })); }
+        save();
+      };
+      const convert = debounce(async () => {
+        const seq = ++C.seq, src = C.from === 'a' ? vA : vB, dst = C.from === 'a' ? vB : vA, su = C.from === 'a' ? uA.value : uB.value, du = C.from === 'a' ? uB.value : uA.value;
+        msg.textContent = ''; outs.textContent = '';
+        const raw = src.value.trim();
+        if (!raw) { dst.value = ''; return; }
+        if (C.kind === 'fuel') {
+          const x = boxNum(raw);
+          if (!(x > 0)) { msg.textContent = tr('Enter a number above 0, such as 15', '15 のように、0 より大きい数を入れてください'); dst.value = ''; return; }
+          const y = fuelFrom(fuelTo(x, su), du);
+          const t = String(+y.toPrecision(8));
+          dst.value = fmtOut(t);
+          showRow(fmtOut(String(+x.toPrecision(10))) + ' ' + FUEL.find((f) => f[0] === su)[1], fmtOut(t) + ' ' + FUEL.find((f) => f[0] === du)[1], '');
+          return;
+        }
+        const v = withoutOpenTo(normalizeExpr(raw));
+        const A = C.units.find((u) => u.name === su) || { abbr: su, name: su }, B = C.units.find((u) => u.name === du) || { abbr: du, name: du };
+        // the number in the second unit: the ratio of the two amounts (no unit to read back; also for
+        // currencies, which the engine may show with a symbol); temperatures (with their zero points)
+        // with "to"
+        const temp = C.kind === 'Temperature';
+        const q = temp ? `(${v} (${A.abbr})) to ${B.name}` : `(${v} (${A.abbr})) / (1 (${B.abbr}))`;
+        const expr = `${v} ${A.abbr} to ${B.abbr}`;
+        const r = await Bridge.send('calc', { expr: q, opts: Object.assign(engineOpts(), { approx: 'approx', grouping: false, base: 10, notation: 'auto', fraction: 'decimal', mixed_units: false, units: 'none' }), timeout: 3000 });
+        if (seq !== C.seq) return;
+        const res = r.ok && r.result ? r.result.split(' ≈ ').pop().replace(/^[≈=]\s*/, '') : '';
+        const m = res.match(/^([−-]?[\d.]+(?:E[−+-]?\d+)?)\s*(°?[A-Za-zµ°]*)$/);
+        if (!r.ok || r.timeout || !m || (!temp && m[2]) || (r.messages || []).some((x) => x.type === 'error')) { msg.textContent = localMessage(r.error) || tr('This cannot be converted: check the value', '換算できません。値を確かめてください'); dst.value = ''; return; }
+        dst.value = fmtOut(m[1]);
+        showRow(toDisplay(v) + ' ' + A.abbr, fmtOut(m[1]) + ' ' + B.abbr, expr);
+      }, 150);
+      const showRow = (from, to, expr) => {
+        const node = tapButton({ class: 'geo-row tool-main' }, () => { resultSheet(from, expr || to, '= ' + to, to); });
+        node.append(el('span', { class: 'geo-name', text: from }), el('span', { class: 'geo-val', text: '= ' + to }));
+        outs.append(node);
+        // the pair, remembered (the four last)
+        const pair = { kind: C.kind, a: uA.value, b: uB.value };
+        const list = (store.get('qalc.conv.recent', []) || []).filter((q) => !(q.kind === pair.kind && q.a === pair.a && q.b === pair.b));
+        list.unshift(pair);
+        store.set('qalc.conv.recent', list.slice(0, 4));
+        showRecent();
+      };
+      const showRecent = () => {
+        recentRow.textContent = '';
+        const list = (store.get('qalc.conv.recent', []) || []).filter((q) => q && q.kind && q.a && q.b);
+        if (!list.length) return;
+        const abbr = (kind, name) => (kind === 'fuel' ? (FUEL.find((f) => f[0] === name) || [0, name])[1] : ((catalogs.units || []).find((u) => u.name === name) || { abbr: name }).abbr);
+        recentRow.append(el('span', { class: 'area-lbl', text: tr('Used last: ', '最近：') }),
+          ...list.map((q) => tapButton({ class: 'area-chip', text: abbr(q.kind, q.a) + ' → ' + abbr(q.kind, q.b) }, () => { setKind(q.kind, [q.a, q.b]); C.from = 'a'; convert(); })));
+      };
+      vA.addEventListener('input', () => { C.from = 'a'; save(); convert(); });
+      vB.addEventListener('input', () => { C.from = 'b'; convert(); });
+      uA.addEventListener('change', () => { save(); convert(); });
+      uB.addEventListener('change', () => { save(); convert(); });
+      other.addEventListener('change', () => { if (other.value) { setKind(other.value); C.from = 'a'; convert(); } });
+      msg.textContent = tr('Loading the units…', '単位を読み込み中…');
+      loadCatalog('units').then(() => {
+        msg.textContent = '';
+        for (const [k, name] of CONV_KINDS()) {
+          if (k !== 'fuel' && !unitsOf(k).length) continue;
+          kinds.append(tapButton({ class: 'geo-chip', 'data-kind': k, 'aria-pressed': 'false', text: name }, () => { setKind(k); C.from = 'a'; convert(); }));
+        }
+        const tops = Array.from(new Set((catalogs.units || []).map((it) => it._top))).filter((t) => t && !CONV_KINDS().some((k) => (KIND_ALIASES[k[0]] || [k[0]]).indexOf(t) >= 0)).sort((x, y) => catName(x).localeCompare(catName(y)));
+        other.append(el('option', { value: '', text: tr('Choose…', '選ぶ…') }), ...tops.map((t) => el('option', { value: t, text: catName(t) })));
+        setKind(C.kind, saved.a && saved.b ? [saved.a, saved.b] : null);
+        showRecent();
+        convert();
+      }).catch(() => { msg.textContent = tr('Could not load the units', '単位を読み込めませんでした'); });
+      p.conv = { vA, vB, uA, uB, setKind };
+    });
+    return p;
+  }
+
+  // ---------------------------------------------------------------- tools
+  // "Tools" (1.12.0): every tool in one place, found by what one wants to do. A search box on top
+  // (the words of all seven languages find a tool, whatever the language of the page: VAT,
+  // Mehrwertsteuer, IVA …), the tools used last, then the tools by purpose. A group without tools
+  // yet is not shown. Each tool: [id, group, icon, name, what it does (one line), words to find it by,
+  // how to open it]. Graph tools are listed too, so that "volume" also finds the solid of revolution.
+  const TOOL_GROUPS = [['shop', tr('Shopping', '買い物')], ['money', tr('Money', 'お金')], ['time', tr('Dates and times', '日付と時間')],
+    ['convert', tr('Conversion', '換算')], ['geo', tr('Shapes and volumes', '図形と体積')], ['data', tr('Data', 'データ')]];
+  const TOOLS = [
+    // 1.12.0 (C2): conversion
+    ['convert', 'convert', '⇄', tr('Convert units and currencies', '単位・通貨の換算'), tr('Length, weight, volume, temperature, fuel economy, currencies…', '長さ・重さ・体積・温度・燃費・通貨など'),
+      'convert conversion unit units currency exchange mile km inch feet pound kg celsius fahrenheit fuel mpg 換算 変換 単位 通貨 為替 マイル インチ フィート ポンド 摂氏 華氏 燃費 尺 坪 升 かんさん たんい umrechnen Einheit Währung convertir unidad moneda convertir unité devise 변환 단위 환율 통화 換算 單位 貨幣 匯率',
+      () => openConverter()],
+    // 1.12.0 (C4): statistics
+    // 1.12.0 (D5): calculation notes (the tool is free; more memos and saving them: the gate 'notes')
+    ['memo', 'data', '📝', tr('Calculation notes', '計算メモ'), tr('A calculation on each line with its result; names, totals, units and currencies', '1 行ずつ計算して結果を右に。名前・合計・単位・通貨も'),
+      'notes memo notepad calculation sheet lines budget total sum variables names list 計算メモ メモ 計算 合計 名前 変数 家計 予算 一覧 めも けいさん Notizen Rechenblatt Summe notas cálculo suma notes calcul somme 계산 메모 합계 計算筆記 備忘 總計',
+      () => openNotesTool()],
+    ['stats', 'data', '📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰'),
+      'statistics stats mean average median mode standard deviation variance quartile regression correlation trend least squares data 統計 平均 中央値 最頻値 標準偏差 分散 四分位 回帰 相関 決定係数 最小二乗 データ 散布図 へいきん ちゅうおうち とうけい Statistik Mittelwert Durchschnitt Median Standardabweichung Varianz Quartil Regression Korrelation Daten estadística media promedio mediana moda desviación varianza cuartil regresión correlación datos statistiques moyenne médiane mode écart-type variance quartile régression corrélation données 통계 평균 중앙값 최빈값 표준편차 분산 사분위 회귀 상관 데이터 統計 平均 中位數 眾數 標準差 變異數 四分位 迴歸 相關 資料',
+      () => openStatsTool()],
+    // 1.12.0 (C1): everyday calculations
+    ['price', 'shop', '🏷', tr('Price: discount and tax', '値段：割引と税'), tr('Tax included or not, a discount (also two), rounding', '税込・税抜、割引（2 回も）、端数の扱い'),
+      'price tax vat sales discount off percent sale shopping 値段 消費税 税込 税抜 税 割引 値引き 割 セール ぜいこみ わりびき Preis Mehrwertsteuer MwSt Steuer Rabatt precio IVA impuesto descuento prix TVA taxe remise réduction 가격 부가세 세금 할인 價格 營業稅 稅 折扣',
+      () => openPriceTool()],
+    ['percent', 'shop', '%', tr('Percentages', '割合'), tr('A is what % of B, the change from A to B', 'A は B の何 %、増減率'),
+      'percent percentage ratio change increase decrease rate 割合 パーセント 何% 増減率 増加率 比率 わりあい Prozent Anteil Änderung porcentaje cambio pourcentage variation 퍼센트 비율 증감률 百分比 比例 增減率',
+      () => openPercentTool()],
+    ['unitprice', 'shop', '⚖', tr('Unit price: which is cheaper', '単価の比較'), tr('Price per 100 g, 100 mL or piece', '100 g・100 mL・1 個あたりの値段で比べる'),
+      'unit price cheaper compare per gram kilogram litre 単価 比較 どっちが安い グラム たんか Grundpreis Preisvergleich precio unitario comparar prix unitaire comparer 단가 비교 單價 比較',
+      () => openUnitPriceTool()],
+    ['split', 'shop', '👥', tr('Split the bill', '割り勘'), tr('Each person’s share, rounded', '1 人分（端数の扱い）'),
+      'split bill share people each restaurant 割り勘 わりかん 人数 1人あたり Rechnung teilen dividir la cuenta partager l’addition 더치페이 분담 平分 AA 分攤',
+      () => openSplitTool()],
+    ['loan', 'money', '🏠', tr('Loan', 'ローン'), tr('Monthly payment, interest in all, table', '毎月の返済額、利息の合計、返済表'),
+      'loan mortgage payment monthly interest repayment ローン 住宅ローン 返済 毎月 利息 元利均等 元金均等 ろーん Kredit Darlehen Rate Zinsen préstamo hipoteca cuota intereses prêt crédit mensualité intérêts 대출 상환 이자 貸款 房貸 還款 利息',
+      () => openLoanTool()],
+    ['savings', 'money', '🐷', tr('Savings and compound interest', '積立と複利'), tr('What a monthly saving grows to', '毎月の積立がいくらになるか'),
+      'savings compound interest deposit invest grow 積立 複利 貯金 預金 利息 つみたて Sparen Zinseszins ahorro interés compuesto épargne intérêts composés 적금 복리 저축 儲蓄 複利 存款',
+      () => openSavingsTool()],
+    ['date', 'time', '📅', tr('Dates', '日付'), JA ? '日数の差、○日後、年齢、和暦・干支' : tr('Days between, n days after, age', '日数の差、○日後、年齢'),
+      'date days between after before age birthday calendar weekday 日付 日数 何日後 何日前 年齢 誕生日 曜日 和暦 西暦 元号 干支 ひづけ Datum Tage Alter fecha días edad date jours âge 날짜 일수 나이 日期 天數 年齡',
+      () => openDateTool()],
+    ['time', 'time', '⏱', tr('Times', '時間'), tr('h:mm plus or minus, hours worked and pay', '時:分の足し引き、勤務時間と給料'),
+      'time hours minutes add work shift wage pay hourly 時間 時刻 勤務時間 時給 給料 休憩 じかん Zeit Stunden Arbeitszeit Stundenlohn tiempo horas jornada salario temps heures travail salaire 시간 근무 시급 時間 工時 時薪',
+      () => openTimeTool()],
+    ['flat', 'geo', '📐', tr('Flat shapes', '平面の図形'), tr('Area and perimeter of a circle, rectangle, triangle, trapezoid…', '円・長方形・三角形・台形などの面積と周の長さ'),
+      'area perimeter circle rectangle triangle trapezoid ellipse sector polygon 面積 周 円 長方形 三角形 台形 楕円 扇形 めんせき えん さんかくけい Fläche Umfang Kreis Rechteck Dreieck Trapez área perímetro círculo rectángulo triángulo aire périmètre cercle rectangle triangle 넓이 둘레 원 직사각형 삼각형 面積 周長 圓 長方形 三角形 梯形',
+      () => openShapes(2)],
+    ['solids', 'geo', '🧊', tr('Solids', '立体の図形'), tr('Volume and surface of a sphere, cylinder, cone, box, pyramid…', '球・円柱・円錐・直方体・角錐などの体積と表面積'),
+      'volume surface sphere cylinder cone cube box pyramid frustum torus pipe weight density 体積 表面積 球 円柱 円錐 直方体 立方体 角錐 円錐台 パイプ 重さ 密度 たいせき Volumen Oberfläche Kugel Zylinder Kegel Quader Pyramide Gewicht volumen superficie esfera cilindro cono pirámide peso volume surface sphère cylindre cône pyramide poids 부피 겉넓이 구 원기둥 원뿔 무게 體積 表面積 球 圓柱 圓錐 重量',
+      () => openShapes(3)],
+    ['tanks', 'geo', '🛢', tr('Tanks: liquid and level', '容器の液量'), tr('Amount of liquid from its height in a tank, and the height for an amount', 'タンクの液面の高さから液量、液量から高さ'),
+      'tank liquid level height amount litre liter fuel water oil container タンク 容器 液量 液面 水位 灯油 たんく えきりょう Tank Füllstand Flüssigkeit Liter tanque depósito nivel líquido litros réservoir cuve niveau liquide litres 탱크 용기 수위 액량 油槽 水塔 液位 容量',
+      () => openShapes(4)],
+    ['sections', 'geo', '📏', tr('Volume from measured values', '測った値から体積'), tr('Cross sections or a grid of heights (earthwork, ponds)', '断面積の表や、格子の点の高さから（土量・池など）'),
+      'cross section measured earthwork soil grid heights simpson average end area 断面 土量 点高法 平均断面法 シンプソン 盛土 切土 どりょう Querschnitt Erdmasse Aushub sección transversal movimiento de tierras profil en travers cubature terrassement 단면 토량 斷面 土方',
+      () => openSections()],
+    ['revolution', 'geo', '🔄', tr('Solid of revolution (graph)', '回転体（グラフ）'), tr('Turn the region between two curves around an axis', '2 つの曲線の間を軸のまわりに回した立体'),
+      'revolution solid rotate axis washer shell volume make 回転体 回転 体積 軸 立体 立体にする かいてんたい りったい Rotationskörper Drehkörper Körper Volumen sólido de revolución sólido volumen solide de révolution solide volume 회전체 입체 부피 旋轉體 立體 體積',
+      () => openRevolutionTool()],
+    // 1.12.0 (D2, QCalc Pro): a solid from a measured profile
+    ['profile', 'geo', '🏺', tr('Solid from a profile', '輪郭から回転体'), tr('Positions and diameters along an axis: volume, capacity, weight, surface', '軸に沿った位置と直径から：体積・容量・重さ・表面積'),
+      'profile solid revolution turned part shaft vase pot cup capacity weight lathe pottery shrinkage 輪郭 回転体 旋盤 軸 段付き 花瓶 壺 コップ 器 容量 重さ 陶芸 収縮 りんかく Profil Drehteil Welle Vase Topf Volumen Gewicht Töpfern Schwindung perfil pieza torneada eje jarrón vasija capacidad peso cerámica contracción profil pièce tournée arbre vase pot capacité poids poterie retrait 윤곽 회전체 선반 축 꽃병 도자기 용량 무게 수축 輪廓 旋轉體 車床 軸 花瓶 陶藝 容量 重量 收縮',
+      () => openProfileTool()],
+    ['area2d', 'geo', '📈', tr('Area and length in a graph', 'グラフの面積・長さ'), tr('Area between curves and the length of a curve', '曲線の間の面積、曲線の長さ'),
+      'area integral between curves length curve graph 面積 積分 曲線 長さ めんせき Fläche Integral Kurvenlänge área integral longitud de curva aire intégrale longueur 넓이 적분 곡선 길이 面積 積分 曲線 長度',
+      () => openAreaTool()]
+  ];
+  // what is typed in the search box and the words of the tools, made comparable: width, case,
+  // katakana as hiragana (タンク and たんく), no spaces
+  const toolNorm = (t) => String(t || '').normalize('NFKC').toLowerCase().replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60)).replace(/\s+/g, ' ').trim();
+  function toolMatches(t, q) {
+    const words = toolNorm(q).split(' ').filter(Boolean);
+    if (!words.length) return false;
+    const hay = toolNorm(t[3] + ' ' + t[4] + ' ' + t[5]);
+    return words.every((w) => hay.indexOf(w) >= 0);
+  }
+  function useTool(t) {
+    if (PRO_GATES[t[0]] && !proGate(t[0])) return; // a tool made a Pro feature asks first (1.12.0)
+    if ((t[1] === 'shop' || t[1] === 'money' || t[1] === 'time') && !proGate('everyday')) return;
+    const recent = (store.get('qalc.tools.recent', []) || []).filter((id) => id !== t[0] && TOOLS.some((x) => x[0] === id));
+    recent.unshift(t[0]);
+    store.set('qalc.tools.recent', recent.slice(0, 4));
+    t[6]();
+    // "Used last" is up to date when Tools is seen again (after the tool's panel has covered it)
+    setTimeout(() => { if (panels.tools && panels.tools.refresh) panels.tools.refresh(); }, 400);
+  }
+  function toolRow(t) {
+    return tapButton({ class: 'tool-row', 'data-tool': t[0] }, () => useTool(t))
+      .appendChild(el('span', { class: 'ico', text: t[2] })).parentNode
+      .appendChild(el('span', { class: 'tool-t' }, el('span', { class: 'n', text: t[3] }), el('span', { class: 'd', text: t[4] }))).parentNode;
+  }
+  function openTools() {
+    const p = panel('tools', tr('Tools', '道具'), (p) => {
+      const search = el('input', { class: 'search', type: 'search', autocomplete: 'off', spellcheck: 'false',
+        placeholder: tr('What do you want to do?', 'やりたいことで探す'), 'aria-label': tr('Find a tool by what you want to do', 'やりたいことで道具を探す') });
+      const found = el('div', { class: 'tool-found', 'aria-live': 'polite' });
+      const lists = el('div', { class: 'tool-lists' });
+      p.body.append(search, el('div', { class: 'form-hint tool-eg', text: tr('For example: tax, loan, days, tank, volume', '例：消費税、ローン、日数、タンク、体積') }), found, lists);
+      const fill = () => {
+        lists.textContent = '';
+        const recent = (store.get('qalc.tools.recent', []) || []).map((id) => TOOLS.find((t) => t[0] === id)).filter(Boolean);
+        if (recent.length) lists.append(el('div', { class: 'section-title', text: tr('Used last', '最近使った道具') }), el('div', { class: 'card tool-list' }, ...recent.map(toolRow)));
+        for (const [g, name] of TOOL_GROUPS) {
+          const in_ = TOOLS.filter((t) => t[1] === g);
+          if (in_.length) lists.append(el('div', { class: 'section-title', text: name }), el('div', { class: 'card tool-list' }, ...in_.map(toolRow)));
+        }
+        // 1.12.0 (C3): in the app, the widget and the tile
+        if (quickApi()) lists.append(el('div', { class: 'section-title', text: tr('Home screen', 'ホーム画面') }), el('div', { class: 'card tool-list' }, quickRow()));
+      };
+      const find = () => {
+        const q = search.value;
+        found.textContent = '';
+        lists.hidden = !!q.trim();
+        if (!q.trim()) return;
+        const hits = TOOLS.filter((t) => toolMatches(t, q)).map(toolRow);
+        if (quickMatches(q)) hits.push(quickRow());
+        if (hits.length) found.append(el('div', { class: 'card tool-list' }, ...hits));
+        else found.append(el('div', { class: 'card muted', text: tr('No tool was found for this. Try another word, or choose from the list below the search box after clearing it. Many calculations can also be typed directly, for example 5 km to mi.', 'この言葉では道具が見つかりませんでした。別の言葉で探すか、検索欄を空にして一覧から選んでください。5 km to mi のように、計算画面に直接入れて計算できることも多くあります。') }));
+      };
+      search.addEventListener('input', find);
+      p.refresh = () => { fill(); find(); };
+    });
+    p.refresh();
+    return p;
+  }
+  // the area and the solid of revolution of a 2D graph, opened from "Tools"
+  function openAreaTool() {
+    openPlot();
+    if (P.setMode) P.setMode('2d');
+    const U = P.areaUI;
+    if (U && !U.areaOpen) setAreaOpen(true);
+    return U;
+  }
+  // 1.12.0 (B0a): the 2D graph with "Make a solid" open (not "Area and length")
+  function openRevolutionTool() {
+    openPlot();
+    if (P.setMode) P.setMode('2d');
+    const U = P.areaUI;
+    if (U && U.rev && U.rev.box.hidden) U.rev.open();
+    return U;
+  }
+
+  // ---------------------------------------------------------------- lists
+  // "Lists" (1.12.0): the functions, the units and currencies, the constants and the user's own
+  // variables and functions, as four tabs above each of the four lists; the last tab used opens.
+  const LIST_TABS = [['functions', tr('Functions', '関数')], ['units', tr('Units', '単位・通貨')], ['variables', tr('Constants', '定数')], ['defs', tr('My own', '自分の定義')]];
+  function listTabs(active) {
+    return el('div', { class: 'seg list-tabs', role: 'tablist', 'aria-label': tr('Lists', '一覧') },
+      ...LIST_TABS.map(([k, label]) => tapButton({ class: k === active ? 'on' : '', role: 'tab', 'aria-selected': String(k === active), text: label }, () => {
+        if (k === active) return;
+        closePanel();
+        openLists(k);
+      })));
+  }
+  function openLists(kind) {
+    const k = kind || store.get('qalc.lists.tab', 'functions');
+    const tab = LIST_TABS.some((t) => t[0] === k) ? k : 'functions';
+    store.set('qalc.lists.tab', tab);
+    return tab === 'defs' ? openDefs() : openCatalog(tab);
+  }
+
+  // ------------------------------------------------------- result actions
+  // A tap on a result of a tool offers the same three things in every tool (1.12.0): put its
+  // expression into the input field, keep it in the history (staying in the tool), copy it.
+  // (copy: the text copied, when not the result as shown)
+  // result: as the tool shows it (the number format); copy: what is copied, as shown too (the result without
+  // the "= " or "≈ " in front when not given, like a result copied from the history). 1.12.0 (BG12): until the fix, some tools gave their text as shown and others in the
+  // engine's form, and "Keep it in the history" put the shown text into the history, where it was taken for
+  // the engine's: with a decimal comma 1.458 (yen) came back as 1,458 and 84.685,71 as 84,685;71.
+  async function resultSheet(title, expr, result, copy) {
+    const shown = String(result || '');
+    if (copy === undefined) copy = shown.replace(/^[=≈]\s*/, '');
+    const k = await sheet(title + '  ' + clip(shown, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'],
+      ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy the result', '結果をコピー')]]);
+    if (k === 'use') useExample(expr);
+    else if (k === 'keep') keepResult(expr, shownToEngine(shown));
+    else if (k === 'copy') copyText(copy || shown);
+  }
+  // a text as shown (the number format) → the engine's form, as the history keeps its results: the digit
+  // groups as thin spaces (shown again in the number format), the decimal sign ".", ";" between arguments ","
+  function shownToEngine(t) {
+    t = String(t || '');
+    const g = NF.group === '.' ? '\\.' : NF.group === ',' ? ',' : '[\\u202f\\u00a0]';
+    t = t.replace(new RegExp('(\\d)' + g + '(?=\\d{3}(?!\\d))', 'g'), '$1\u202f');
+    if (commaMode) t = t.replace(/(\d),(?=\d)/g, '$1.').replace(/;/g, ',');
+    return t;
+  }
+  // a result of a tool as a line of the history, as the tool showed it ("= 8π ≈ 25.13274123")
+  function keepResult(expr, shown) {
+    let t = String(shown || '').trim(), approx = false;
+    if (t.indexOf('= ') === 0) t = t.slice(2);
+    else if (t.indexOf('≈ ') === 0) { t = t.slice(2); approx = true; }
+    if (!expr || !t) return;
+    history.push({ expr, result: t, approx, base: 10, msgs: [], t: Date.now() });
+    history = trimHistory(history);
+    historyChanged();
+    histEl.scrollTop = histEl.scrollHeight;
+    histPinned = true;
+    toast(tr('Kept in the history', '履歴に残しました'), 1600);
+  }
+
   // ------------------------------------------------------------ settings
   // color themes (QCalc Pro): the colors of the keys and the highlights (style.css)
   const THEMES = [['blue', tr('Blue', 'ブルー')], ['green', tr('Green', 'グリーン')], ['teal', tr('Teal', 'ティール')],
     ['purple', tr('Purple', 'パープル')], ['rose', tr('Rose', 'ローズ')], ['orange', tr('Orange', 'オレンジ')], ['graphite', tr('Graphite', 'グラファイト')]];
   const SETTINGS = [
     [tr('Language', '言語'), [
-      ['lang', LANG_TITLE, LANG_NAMES]
+      ['lang', LANG_TITLE, [['auto', langAutoLabel()]].concat(LANG_NAMES), langAutoNote()]
     ]],
     [tr('Calculation', '計算'), [
       ['angle', tr('Angle unit', '角度の単位'), [['rad', tr('Radians', 'ラジアン')], ['deg', tr('Degrees', '度')], ['gra', tr('Gradians', 'グラード')]]],
@@ -9722,6 +15246,9 @@
           '1〜3600 秒（既定 20）。「=」の計算がこの時間を過ぎると中止します。「計算中…」をタップすれば途中でも止められます')]
     ]],
     [tr('Display', '表示'), [
+      ['numfmt', tr('Number format', '数の書き方'), [['auto', trf('Automatic: as in your region ({0})', '自動：地域の書き方（{0}）', NUMFMT_SAMPLE[localeFormat(deviceLocale())])],
+        ['dot', NUMFMT_SAMPLE.dot], ['comma', NUMFMT_SAMPLE.comma], ['space', NUMFMT_SAMPLE.space]],
+        tr('The decimal sign of the numbers you type and see. With 1,5 the arguments are separated by ";": max(1,5; 2)', '入力・表示する数の小数点。1,5 の書き方では、引数を「;」で区切ります：max(1,5; 2)')],
       ['fraction', tr('Fractions', '分数の表示'), [['auto', tr('Automatic', '自動')], ['decimal', tr('Decimal', '小数')], ['exact', tr('Decimal (when exact)', '小数（厳密なときだけ）')], ['fraction', tr('Fraction', '分数')], ['combined', tr('Mixed fraction', '帯分数')]]],
       ['precision', tr('Precision (significant digits)', '有効桁数'), 'number', proOffered()
         ? tr('2 to 200000 digits (default 10; above 1000 with QCalc Pro). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 10。1000 桁を超えるには QCalc Pro）。大きくするほど計算に時間がかかります')
@@ -9737,13 +15264,26 @@
       ['text_size', tr('Text size', '文字の大きさ'), [['normal', tr('Normal', '標準')], ['large', tr('Large', '大きめ')], ['xlarge', tr('Extra large', '特大')]], tr('Text in the history, the input field and the result', '履歴・入力欄・結果の文字の大きさ')],
       ['theme', tr('Color theme', '配色テーマ'), THEMES, tr('The color of the keys and the highlights, in the light and the dark theme', 'キーや強調表示の色（ライト・ダークの両方）')]
     ]],
+    // 1.12.0 (D7): the digits of the results of the tools for shapes, tanks and solids (the same control as above
+    // their results)
+    [tr('Digits of the tools', '道具の結果の桁'), [
+      ['digits', tr('Shapes, tanks, solid from a profile, make a solid', '図形・容器・輪郭から回転体・立体にする'), 'digits',
+        tr('Separate from the precision of the calculator. Exact values stay; only the decimals after "≈" change', '計算機の「有効桁数」とは別です。厳密な値はそのままで、変わるのは「≈」の後ろの小数だけです')]
+    ]],
     [tr('Input', '操作'), [
       ['preview', tr('Show the result while typing', '入力中に結果を表示'), 'bool'],
-      ['auto_rates', tr('Update exchange rates automatically (every 7 days)', '為替レートを自動更新（7日ごと）'), 'bool'],
       ['auto_ans', tr('An operator in an empty field continues from ans', '空欄で演算子を押すと ans から続ける'), 'bool'],
-      ['haptics', tr('Vibrate when a key is pressed', 'キーを押したときに振動'), 'bool']
+      ['haptics', tr('Vibrate when a key is pressed', 'キーを押したときに振動'), 'bool'],
+      ['memkeys', tr('Show the memory keys (M+ M− MR MC)', 'メモリーキー（M+ M− MR MC）を出す'), 'bool']
+    ]],
+    // 1.12.0: updating the rates was an item of the menu until 1.11.0
+    [tr('Exchange rates', '為替レート'), [
+      ['auto_rates', tr('Update exchange rates automatically (every 7 days)', '為替レートを自動更新（7日ごと）'), 'bool'],
+      ['rates_now', tr('Update exchange rates now', '為替レートを今すぐ更新'), 'link']
     ]]
   ];
+  // the settings that most people never change are under "More settings" (1.12.0), closed at first
+  const ADV_SETTINGS = ['structuring', 'complex', 'units', 'mixed_units', 'time_limit', 'max_decimals', 'base', 'notation', 'grouping', 'math_view', 'auto_ans', 'haptics', 'memkeys'];
   // the settings that are numbers: smallest, largest (now, and with QCalc Pro) and default value
   const NUMBER_RANGE = {
     precision: { min: 2, max: maxPrecision, limit: MAX_PRECISION, def: 10 },
@@ -9751,10 +15291,27 @@
   };
   function openSettings() {
     const p = panel('settings', tr('Settings', '設定'), (p) => {
+      const adv = el('details', { class: 'adv-settings' }, el('summary', { text: tr('More settings', '詳しい設定') }));
       for (const [group, rows] of SETTINGS) {
-        p.body.append(el('div', { class: 'section-title', text: group }));
-        for (const [key, label, type, sub] of rows) {
+        const main = rows.filter((r) => ADV_SETTINGS.indexOf(r[0]) < 0), more = rows.filter((r) => ADV_SETTINGS.indexOf(r[0]) >= 0);
+        for (const [part, list] of [[p.body, main], [adv, more]]) {
+        if (!list.length) continue;
+        part.append(el('div', { class: 'section-title', text: group }));
+        for (const [key, label, type, sub] of list) {
           let input;
+          if (type === 'link') {
+            const when = el('div', { class: 's' });
+            p.ratesWhen = () => { when.textContent = tr('Last updated: ', '最終更新：') + fmtTime(ratesTime); };
+            p.ratesWhen();
+            part.append(tapButton({ class: 'setting setting-link' }, () => openRates()).appendChild(el('div', { class: 'lbl' }, el('div', { text: label }), when)).parentNode
+              .appendChild(el('span', { class: 'chev', text: '›', 'aria-hidden': 'true' })).parentNode);
+            continue;
+          }
+          if (type === 'digits') {
+            const c = digitsControl();
+            part.append(el('div', { class: 'setting dig-setting' }, el('div', { class: 'lbl' }, el('div', { text: label }), sub ? el('div', { class: 's', text: sub }) : null), c.sel), c.more);
+            continue;
+          }
           if (type === 'bool') {
             input = el('input', { type: 'checkbox' });
             input.checked = !!S[key];
@@ -9769,7 +15326,7 @@
               const locked = key === 'precision' && n > maxPrecision();
               if (locked) n = maxPrecision();
               S[key] = n; input.value = n; settingsChanged();
-              if (locked) proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'));
+              if (locked) proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'), 'precision');
             });
           } else {
             input = el('select');
@@ -9779,7 +15336,7 @@
               const v = input.value;
               if (key === 'theme' && v !== 'blue' && !hasPro()) {
                 input.value = 'blue'; S.theme = 'blue'; settingsChanged();
-                proPrompt(tr('Color themes are a QCalc Pro feature', '配色テーマは QCalc Pro の機能です'));
+                proPrompt(tr('Color themes are a QCalc Pro feature', '配色テーマは QCalc Pro の機能です'), 'themes');
                 return;
               }
               S[key] = (key === 'base' || key === 'max_decimals') ? Number(v) : v;
@@ -9788,15 +15345,18 @@
           }
           const name = el('div', { text: label });
           if (key === 'theme' || key === 'precision') name.dataset.pro = '';
-          p.body.append(el('label', { class: 'setting' },
+          part.append(el('label', { class: 'setting' },
             el('div', { class: 'lbl' }, name, sub ? el('div', { class: 's', text: sub }) : null), input));
           (p.inputs = p.inputs || {})[key] = input;
         }
+        }
       }
+      p.body.append(adv);
       p.body.append(el('div', { class: 'section-title', text: '' }),
         el('button', { class: 'btn', text: tr('Reset all settings', '設定を初期値に戻す'), onclick: async () => {
           if (!(await confirmSheet(tr('Reset all settings to their defaults?', '設定を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
-          S = Object.assign({}, DEFAULTS, { lang: LANG }); settingsChanged(); // the language stays
+          S = Object.assign({}, DEFAULTS, { lang: LANG_AUTO ? 'auto' : LANG }); settingsChanged(); // the language stays
+          digitsChanged(); // (D7: the digits of the tools too)
           for (const k of Object.keys(p.inputs)) { const i = p.inputs[k]; if (i.type === 'checkbox') i.checked = !!S[k]; else i.value = String(S[k]); }
         } }));
     });
@@ -9804,7 +15364,18 @@
   }
   function settingsChanged() {
     saveSettings();
-    if (S.lang !== LANG) { setLanguage(S.lang); return; }
+    if (S.lang !== (LANG_AUTO ? 'auto' : LANG)) { setLanguage(S.lang); return; }
+    // another number format: the expression being typed is written again in it, the keys and the
+    // history follow (what is saved is in the engine's form and does not change)
+    const field = toInternal(exprEl.value), wasNF = NF;
+    applyNumFmt();
+    if (!!$('#memrow') && $('#memrow').hidden === !!S.memkeys) buildKeypad(); // the memory keys shown or hidden
+    if (NF !== wasNF) {
+      exprEl.value = toDisplay(field);
+      buildKeypad();
+      renderHistory(false);
+      draw();
+    }
     updateChips();
     applyTextSize();
     applyTheme();
@@ -9834,6 +15405,25 @@
   let engineName = '';
   const PRIVACY_URL = 'https://hiroshitsu.github.io/qcalc/privacy.html' + (JA ? '#ja' : ''); // English first, then Japanese (English for the other languages)
   const SOURCE_URL = 'https://github.com/HiroshiTsu/qcalc';
+  const PLAY_URL = 'https://play.google.com/store/apps/details?id=io.github.hiroshitsu.qcalc';
+  const FEEDBACK_TO = 'hiroshitsu.apps@gmail.com';
+  // "Tell someone about QCalc": the share sheet with one line and the address of QCalc on Google Play
+  function shareApp() {
+    const t = tr('QCalc, a scientific calculator for Android: ', 'QCalc（Android の関数電卓）：') + PLAY_URL;
+    if (window.QalcNative && QalcNative.shareText) QalcNative.shareText(t);
+    else if (window.QalcDev && QalcDev.shareText) QalcDev.shareText(t);
+    else copyText(t);
+  }
+  // "Send a bug report or an idea": a draft in the mail app (mailto:, opened by MainActivity with
+  // ACTION_SENDTO) with the version, the Android version, the phone and the language, nothing else
+  function sendFeedback(app) {
+    const v = (app && app.version) || '';
+    const lang = (LANG_NAMES.find((x) => x[0] === LANG) || [LANG, LANG])[1];
+    const subject = trf('QCalc {0}: bug report or idea', 'QCalc {0}：不具合・要望', v);
+    const body = [tr('Version: ', '版：') + v, 'Android: ' + ((app && app.android) || ''), tr('Phone: ', '端末：') + ((app && app.device) || ''),
+      tr('Language: ', '言語：') + lang + ' (' + LANG + ')', '', tr('(Please write what happened, or your idea, here.)', '（ここに、起きたことや要望を書いてください）'), ''].join('\n');
+    openUrl('mailto:' + FEEDBACK_TO + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body));
+  }
   function openAbout() {
     const p = panel('about', tr('About this app', 'このアプリについて'), (p) => {
       let app = {};
@@ -9843,16 +15433,27 @@
           el('div', { style: 'font-weight:700;font-size:17px', text: 'QCalc' }),
           el('div', { class: 'muted', text: tr('Version ', 'バージョン ') + (app.version || '') + tr(' / engine ', ' ／ 計算エンジン ') + (engineName || 'libqalculate') }),
           el('div', { class: 'muted', text: (app.device || '') + (app.android ? tr(' (Android ', '（Android ') + app.android + tr(')', '）') : '') })),
+        // 1.12.0 (M4, decisions 65 and 66): telling someone about QCalc, and a bug report or an idea
+        // sent by mail directly (not as a one-star review). The mail has only the version, the phone
+        // and the language; nothing of the history or the settings. The person sends it or not.
+        el('div', { class: 'card' },
+          el('div', {}, el('a', { href: '#', class: 'share-app', text: tr('Tell someone about QCalc', 'QCalc を人に教える'), onclick: (e) => { e.preventDefault(); shareApp(); } })),
+          el('div', {}, el('a', { href: '#', class: 'send-feedback', text: tr('Send a bug report or an idea', '不具合・要望を送る'), onclick: (e) => { e.preventDefault(); sendFeedback(app); } })),
+          el('div', { class: 'muted', style: 'font-size:13px;margin-top:4px', text: trf('The mail goes to {0} with only the version, the phone and the language. You decide whether to send it.', 'メールの宛先は {0} で、版・端末・言語だけが入ります。送るかどうかはあなたが決めます。', FEEDBACK_TO) })),
         el('div', { class: 'card', html: tr(
           'All calculations are done by <b>libqalculate</b>, the calculation engine of the open-source calculator Qalculate!. QCalc builds its official source code for Android (arm64) and adds a user interface for phones. It is not made by the developers of Qalculate!.<br><br>' +
           'Expressions are written in the same way as in Qalculate!.',
           '計算はすべて、オープンソースの電卓 Qalculate! の計算エンジン <b>libqalculate</b> が行います。QCalc は、その公式ソースコードを Android（arm64）向けにビルドして組み込んだ、スマホ向けの電卓です。Qalculate! の開発者が作ったアプリではありません。<br><br>' +
           '式の書き方は Qalculate! と同じです。') },
-          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Examples and tips', '式の例・使い方を見る'), onclick: (e) => { e.preventDefault(); openExamples(); } }))),
+          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Examples and tips', '使い方と例を見る'), onclick: (e) => { e.preventDefault(); openExamples(); } })),
+          // (1.12.0, H)
+          el('div', {}, el('a', { href: '#', class: 'manual-link', text: tr('User manual', '取扱説明書'), onclick: (e) => { e.preventDefault(); openManual(''); } }))),
         el('div', { class: 'card', html: tr(
           '<b>Privacy</b><br>QCalc collects no personal data and sends nothing anywhere. It uses the internet only to download exchange rates (from three sources such as the European Central Bank), and sends no information about you then either. The history and the settings are kept on your device and are never sent to the developer.',
           '<b>プライバシー</b><br>QCalc は個人情報を集めず、どこにも送りません。インターネットを使うのは為替レートの取得（欧州中央銀行など 3 か所からのダウンロード）だけで、そのときもあなたの情報は送りません。計算の履歴や設定は端末の中に保存し、開発者に送ることはありません。') },
-          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Privacy policy', 'プライバシーポリシー'), onclick: (e) => { e.preventDefault(); openUrl(PRIVACY_URL); } }))),
+          el('div', { style: 'margin-top:6px' }, el('a', { href: '#', text: tr('Privacy policy', 'プライバシーポリシー'), onclick: (e) => { e.preventDefault(); openUrl(PRIVACY_URL); } })),
+          // the terms of use: shown when they have been read by a lawyer (TERMS_READY, A7)
+          TERMS_READY ? el('div', {}, el('a', { href: '#', text: tr('Terms of use', '利用規約'), onclick: (e) => { e.preventDefault(); openTerms(); } })) : null),
         el('div', { class: 'card' },
           el('div', { text: tr('License: GNU GPL v2 or later (the same as libqalculate)', 'ライセンス：GNU GPL v2 以降（libqalculate と同じ）') }),
           el('div', { class: 'muted', style: 'font-size:13px', text: tr('The calculation engine also contains GMP, MPFR, libxml2 and more. Because MPFR is LGPL v3 or later, the engine as a whole is distributed under the GNU GPL v3 or later.', '計算エンジンには GMP・MPFR・libxml2 なども組み込んでいます。MPFR が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。') }),
@@ -9900,17 +15501,129 @@
   }
 
   // ----------------------------------------------------------------- Pro
-  async function proPrompt(what) {
-    const k = await sheet(what, [['pro', tr('About QCalc Pro', 'QCalc Pro について'), 'accent']]);
-    if (k === 'pro') openPro();
+  // The Pro sheet (1.12.0): what a locked feature does, the price and "Buy" on one sheet, so that the
+  // purchase needs no other screen; "About QCalc Pro" shows everything. what: the title (the feature
+  // is a Pro feature), key: the feature (PRO_INFO) or one of the fixed Pro features.
+  // Until 1.11.0 the sheet had only the title and "About QCalc Pro".
+  const TERMS_READY = false; // the terms of use (A7) are a draft until a lawyer has read them: not shown
+  async function proPrompt(what, key) {
+    if (sheetResolve) closeSheet(null);
+    const info = PRO_INFO()[key] || PRO_FIXED().find((f) => f[3] === key);
+    const sh = $('#sheet');
+    sh.textContent = '';
+    sh.append(el('div', { class: 'stitle', text: what }));
+    if (info) sh.append(el('div', { class: 'pro-feat pro-sheet-feat' }, proIco(key, info[0]),
+      el('div', {}, el('div', { class: 'n', text: info[1] }), el('div', { class: 'muted', text: info[2] }),
+        // (1.12.0, H) how the feature is used: its section of the user manual
+        tapButton({ class: 'linkish pro-how', text: tr('How to use ›', '使い方 ›'), 'aria-label': tr('How to use ›', '使い方 ›') + ' ' + info[1] }, () => { closeSheet(null); openManual(PRO_HELP[key] || 'pro'); }))));
+    sh.append(el('div', { class: 'pro-sheet-note', text: tr('One purchase unlocks every Pro feature, also those of later updates. No subscription, no ads.', '1 回の購入で、すべての Pro 機能が使えます（今後増える機能も）。サブスクリプションも広告もありません。') }));
+    const done = (k) => closeSheet(k);
+    if (PRO.state === 'pending') sh.append(el('div', { class: 'form-hint', text: tr('Your payment is being processed. QCalc Pro will be unlocked when it is complete.', '支払いの手続き中です。完了すると QCalc Pro が使えるようになります。') }));
+    else sh.append(el('button', { class: 'accent pro-buy', text: PRO.price ? trf('Buy QCalc Pro ({0})', 'QCalc Pro を購入（{0}）', PRO.price) : tr('Buy QCalc Pro', 'QCalc Pro を購入'), onclick: () => done('buy') }));
+    sh.append(el('button', { text: tr('Restore a purchase', '購入を復元'), onclick: () => done('restore') })); // bought before, on another device or after reinstalling
+    sh.append(el('button', { text: tr('About QCalc Pro', 'QCalc Pro について'), onclick: () => done('pro') }));
+    if (TERMS_READY) sh.append(termsNotice());
+    sh.append(el('button', { text: tr('Not now', 'あとで'), onclick: () => done(null) }));
+    const k = await new Promise((resolve) => {
+      sheetResolve = resolve;
+      $('#scrim').classList.add('show', 'over-panels');
+      sh.classList.add('open');
+      sh.inert = false;
+    });
+    if (k === 'buy') buyPro();
+    else if (k === 'restore') restorePro();
+    else if (k === 'pro') openPro();
   }
-  const PRO_FEATURES = [
-    ['🎯', tr('High precision', '高精度'), tr('Up to 200000 significant digits (free: up to 1000)', '有効桁数は最大 200000 桁（無料版は 1000 桁まで）')],
-    ['🧊', tr('3D graphs', '3D グラフ'), tr('Surfaces z = f(x, y) that you can turn with a finger', '指で回せる曲面 z = f(x, y)')],
-    ['🎨', tr('Color themes', '配色テーマ'), tr('Seven colors for the keys and the highlights, in the light and the dark theme', 'キーや強調表示を 7 色から選べます（ライト・ダークの両方）')],
-    ['📤', tr('Export the history', '履歴の書き出し'), tr('Save the history as a CSV file that spreadsheets can open', '履歴を CSV ファイルに保存（表計算ソフトで開けます）')],
-    ['✨', tr('Future Pro features', '今後の Pro 機能'), tr('The Pro features of later updates, at no extra cost', '今後のアップデートで増える Pro 機能も、追加料金なしで使えます')]
+  // "By buying, you agree to the terms of use" with a link to them (shown when TERMS_READY)
+  function termsNotice() {
+    const [a, b] = trf('By buying QCalc Pro, you agree to the {0}.', 'QCalc Pro を購入すると、{0}に同意したものとみなします。', '\u0000').split('\u0000');
+    return el('div', { class: 'form-hint terms-notice' }, a,
+      tapButton({ class: 'linkish', text: tr('terms of use', '利用規約') }, () => { closeSheet(null); openTerms(); }), b || '');
+  }
+  // The terms of use (a draft in design/terms-draft/ until a lawyer has read them; then on the site
+  // beside the privacy policy, docs/terms.html, English first and the other languages below)
+  const TERMS_URL = 'https://hiroshitsu.github.io/qcalc/terms.html' + (LANG === 'en' ? '' : '#' + LANG);
+  function openTerms() { openUrl(TERMS_URL); }
+  // The note of the tools whose results may be used for money or safety (1.12.0, A7): always the
+  // same short line in the same place, under the results, with what the result assumes. The terms
+  // of use (draft) say the same: the app is a tool for learning and everyday reference, not for
+  // trade or certification under the Measurement Act, design or construction, tax returns, medicine
+  // or decisions about safety.
+  function cautionLine(premise) {
+    return el('div', { class: 'caution', role: 'note' }, el('span', { class: 'caution-i', 'aria-hidden': 'true', text: 'ⓘ' }),
+      el('span', { class: 'caution-t', text: joinSentences(tr('For reference only (not for trade, certification, design, construction or tax).', '参考値です（取引・証明、設計・施工、税務には使えません）。'), premise) }));
+  }
+  // two sentences: with a space, but none after a full stop of Japanese or Chinese (。)
+  function joinSentences(a, b) {
+    if (!b) return a;
+    return a + (/[。．！？]$/.test(a) ? '' : ' ') + b;
+  }
+  // the Pro features that are not tools: icon, name, what it gives, key of the prompt
+  const PRO_FIXED = () => [
+    ['🎯', tr('High precision', '高精度'), tr('Up to 200000 significant digits (free: up to 1000)', '有効桁数は最大 200000 桁（無料版は 1000 桁まで）'), 'precision'],
+    ['🧊', tr('3D graphs', '3D グラフ'), tr('Surfaces z = f(x, y) and solids that you can turn with a finger, also a solid of revolution growing in 3D', '指で回せる曲面 z = f(x, y) と立体（回転体が 3D でできていく様子も）'), '3d'],
+    ['🎨', tr('Color themes', '配色テーマ'), tr('Seven colors for the keys and the highlights, in the light and the dark theme', 'キーや強調表示を 7 色から選べます（ライト・ダークの両方）'), 'themes'],
+    ['📤', tr('Export the history', '履歴の書き出し'), tr('Save the history as a CSV file that spreadsheets can open', '履歴を CSV ファイルに保存（表計算ソフトで開けます）'), 'export']
   ];
+  // the features that PRO_GATES can make Pro: icon, name, what it gives
+  const PRO_INFO = () => ({
+    enclosed: ['〰', tr('Area enclosed by curves', '曲線で囲まれた面積'), tr('The area between two or more curves in the 2D graph', '2D グラフで、2 本以上の曲線に囲まれた部分の面積')],
+    tanks: ['🛢', tr('Tanks', '容器'), tr('The volume of liquid at a level in horizontal and vertical tanks', '横置き・縦置きのタンクで、液面の高さから液の量')],
+    revolution: ['⟳', tr('Solids of revolution', '回転体'), tr('Turn a region of the 2D graph around an axis: volume and surface', '2D グラフの部分を軸のまわりに回した体積と表面積')],
+    regions: ['▦', tr('Volumes of regions', '領域の体積'), tr('Volumes over regions of the plane', '平面の領域の上の体積')],
+    sections: ['📏', tr('Volume from measured values', '測った値から体積'), tr('Cross sections or a grid of heights (earthwork, ponds)', '断面積の表や、格子の点の高さから（土量・池など）')],
+    history_tools: ['🕘', tr('History tools', '履歴の道具'), tr('Search, pin, notes, and the sum of lines', '検索・固定・メモ・選んだ行の合計')],
+    memkeys: ['M+', tr('Memory keys', 'メモリーキー'), 'M+ M− MR MC'],
+    cross_sections: ['◪', tr('Cross sections', '断面の立体'), tr('Squares, triangles or half discs on a base region', '底面の上に正方形・三角形・半円を立てた立体')],
+    rev_lines: ['☰', tr('Lines of the method and Pappus', '方法の線とパップスの定理'), tr('Disks or shells drawn in the graph; V = 2π d A', 'グラフに円板・殻の線、V = 2π d A')],
+    everyday: ['🏷', tr('Everyday tools', '日常の計算'), tr('Price and tax, loan, savings, dates and times', '値段と税、ローン、積立、日付と時間')],
+    tables: ['📄', tr('Tables as CSV files', '表の CSV 保存'), tr('Save the tables of a loan or of savings as CSV files for a spreadsheet (showing them stays free)', 'ローンや積立の表を、表計算ソフト用の CSV ファイルに保存（表を見るのは無料）')],
+    convert: ['⇄', tr('Convert units and currencies', '単位・通貨の換算'), tr('Two boxes that convert both ways', '両方向に換算できる 2 つの欄')],
+    quick: ['⌂', tr('Widget, tile and shortcuts', 'ウィジェット・タイル・ショートカット'), tr('Open QCalc from the home screen and the quick settings', 'ホーム画面やクイック設定から QCalc を開く')],
+    stats: ['📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰')],
+    tank_heads: ['🛢', tr('Tank heads and quick-reference tables', 'タンクの鏡板と早見表'), tr('Hemispherical, semi-elliptical and dished heads; the amount for each height and the height for each amount', '半球・半楕円・皿形の鏡板、高さごとの液量と液量ごとの高さの表')],
+    profile: ['🏺', tr('Solid from a profile', '輪郭から回転体'), tr('Volume, capacity, weight and surface from positions and diameters (turned parts, pottery)', '位置と直径から体積・容量・重さ・表面積（旋盤の部品・陶芸）')],
+    stl: ['🖨', tr('STL files for 3D printers', 'STL ファイル（3D プリンター）'), tr('Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres', '回転体・断面の立体・輪郭から回転体を、閉じた立体の面（mm）として保存')],
+    notes: ['📝', tr('More calculation notes, saved as files', '計算メモの 2 つ目以降と書き出し'), tr('Several memos of calculations, and saving them as text or CSV (the first memo is free)', '計算メモをいくつも作り、テキストや CSV で保存（1 つ目のメモは無料）')],
+    share_pro: ['🎞', tr('GIF and pictures without the mark', 'GIF と透かしなしの共有'), tr('The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without "QCalc" in the corner', '3D グラフを動く画像（GIF）で、グラフの画像を高い解像度・透かしなしで共有')]
+  });
+  // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
+  function proFeatures() {
+    const info = PRO_INFO();
+    const gated = Object.keys(PRO_GATES).filter((k) => PRO_GATES[k] === 'pro' && info[k]).map((k) => info[k].concat([k]));
+    return PRO_FIXED().concat(gated, [
+      ['✨', tr('Future Pro features', '今後の Pro 機能'), tr('The Pro features of later updates, at no extra cost', '今後のアップデートで増える Pro 機能も、追加料金なしで使えます'), 'future']]);
+  }
+  // The small pictures of the Pro features (1.12.0, 要判断 14: B, the line pictures, as the author decided):
+  // drawn in the accent colour with lines, the same on every phone, in the light and the dark theme. A
+  // feature without one keeps its symbol.
+  const PRO_SVG = {
+    precision: '<circle cx="10" cy="10" r="6.5"/><path d="M15 15l5.5 5.5"/><path d="M7.5 8.5v3M10 8.5v3M12.5 8.5v3"/>',
+    '3d': '<path d="M3 15c3-4 6-4 9 0s6 4 9 0"/><path d="M3 10c3-4 6-4 9 0s6 4 9 0"/><path d="M6.5 8.3v9.4M12 10v9.6M17.5 8.3v9.4"/>',
+    themes: '<path d="M12 3a9 9 0 1 0 0 18c1.4 0 1.8-1 1.3-2-.6-1.2.2-2.5 1.6-2.5H17a4 4 0 0 0 4-4C21 7 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/>',
+    export: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M12.5 10v7M9.8 14.5l2.7 2.7 2.7-2.7"/>',
+    tables: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 4.5v15M15 4.5v15"/>',
+    tank_heads: '<path d="M7 7h10a5 5 0 0 1 0 10H7A5 5 0 0 1 7 7z"/><path d="M2.6 13.5h18.8"/>',
+    profile: '<path d="M9 3h6M10 3c0 3-4 5-4 10s2 8 6 8 6-3 6-8-4-7-4-10"/><path d="M12 2v20" stroke-dasharray="2 2"/>',
+    stl: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+    share_pro: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.2l5 2.8-5 2.8z"/><path d="M3 8.5h2M3 15.5h2M19 8.5h2M19 15.5h2"/>',
+    notes: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
+    future: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>'
+  };
+  // the picture of a feature: its line picture, or its symbol
+  function proIco(key, sym) {
+    const d = PRO_SVG[key], s = el('span', { class: 'ico', 'aria-hidden': 'true' });
+    if (d) s.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+    else s.textContent = sym;
+    return s;
+  }
+  // what stays free (the Pro panel): the calculator itself and the tools that are not Pro
+  function freeFeatures() {
+    const info = PRO_INFO();
+    return [tr('The calculator: exact results, units, currencies, matrices, calculus', '計算：厳密な結果、単位、通貨、行列、微分と積分'),
+      tr('2D graphs, areas and lengths', '2D グラフ、面積と長さ'),
+      tr('Shapes: areas and volumes', '図形：面積と体積')].concat(Object.keys(PRO_GATES).filter((k) => PRO_GATES[k] !== 'pro' && info[k]).map((k) => info[k][1]));
+  }
   function openPro() {
     const p = panel('pro', 'QCalc Pro', (p) => { p.refresh = () => { p.body.textContent = ''; fillPro(p.body); }; });
     p.refresh();
@@ -9925,7 +15638,8 @@
         el('div', { class: 'muted', text: PRO.legacy
           ? tr('It is free for you, because you used QCalc before QCalc Pro began. Thank you!', 'QCalc Pro が始まる前から QCalc を使っていただいているので、無料で使えます。ありがとうございます！')
           : PRO.billing === 'debug' ? tr('Unlocked in this test build.', 'このテスト版では最初から使えます。')
-            : tr('Thank you for your purchase!', 'ご購入ありがとうございます！') }));
+            : tr('Thank you for your purchase!', 'ご購入ありがとうございます！') }),
+        tapButton({ class: 'linkish pro-how', text: tr('How to use the Pro features ›', 'Pro の機能の使い方 ›') }, () => openManual('pro-features')));
     } else {
       card.append(el('div', { class: 'pro-title', text: tr('Unlock all features with a one-time purchase', '1 回の購入で、すべての機能が使えます') }),
         el('div', { class: 'muted', text: tr('No subscription and no ads. The purchase belongs to your Google account, so it also works on your other devices.', 'サブスクリプションも広告もありません。購入は Google アカウントに記録されるので、ほかの端末でも使えます。') }));
@@ -9935,11 +15649,18 @@
     }
     body.append(card);
     const list = el('div', { class: 'card' });
-    for (const [ico, name, desc] of PRO_FEATURES) {
-      list.append(el('div', { class: 'pro-feat' }, el('span', { class: 'ico', text: ico }),
-        el('div', {}, el('div', { class: 'n', text: name }), el('div', { class: 'muted', text: desc }))));
+    for (const [ico, name, desc, key] of proFeatures()) {
+      // (1.12.0, H) the section of the user manual about the feature
+      list.append(el('div', { class: 'pro-feat' }, proIco(key, ico),
+        el('div', {}, el('div', { class: 'n', text: name }), el('div', { class: 'muted', text: desc }),
+          tapButton({ class: 'linkish pro-how', text: tr('How to use ›', '使い方 ›'), 'aria-label': tr('How to use ›', '使い方 ›') + ' ' + name }, () => openManual(PRO_HELP[key] || 'pro')))));
     }
     body.append(list, el('div', { class: 'form-hint', text: tr('Everything else in QCalc stays free.', 'そのほかの機能は、すべて無料のまま使えます。') }));
+    // what is free, so that what the purchase adds is clear (1.12.0)
+    const free = el('ul', { class: 'free-list' });
+    for (const t of freeFeatures()) free.append(el('li', { text: t }));
+    body.append(el('div', { class: 'section-title', text: tr('Free', '無料で使えるもの') }), free);
+    if (TERMS_READY && !PRO.pro) body.append(termsNotice());
     if (PRO.billing === 'debug') {
       // test builds: see the app as without Pro
       const box = el('input', { type: 'checkbox' });
@@ -9967,7 +15688,8 @@
     PRO = readPro();
     applyTheme();
     if (panels.settings && panels.settings.inputs && panels.settings.inputs.precision) panels.settings.inputs.precision.max = maxPrecision();
-    if (!before && hasPro()) toast(tr('QCalc Pro is unlocked. Thank you!', 'QCalc Pro が使えるようになりました。ありがとうございます！'), 4000);
+    if (!before && hasPro()) toast(tr('QCalc Pro is unlocked. Thank you!', 'QCalc Pro が使えるようになりました。ありがとうございます！'), 8000,
+      [tr('How to use the Pro features', 'Pro の機能の使い方'), () => openManual('pro-features')]);
     else if (ev && typeof ev.message === 'string' && ev.message) toast(localMessage(ev.message), 4500);
     if (panels.pro && panels.pro.refresh) panels.pro.refresh();
     if (before !== hasPro() && exprEl.value.trim()) exprChanged(); // the precision may be different
@@ -9984,11 +15706,14 @@
     };
     const z = (n) => String(n).padStart(2, '0');
     const when = (t) => { const d = new Date(t); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); };
-    const rows = [[tr('Date', '日時'), tr('Expression', '式'), tr('Result', '結果'), tr('Number', '数値')].map((x) => cell(x)).join(',')];
+    // (1.12.0) with a decimal comma the cells are separated by ";", as spreadsheets in such regions
+    // (Excel in German, French, Spanish …) read a CSV file, and the numbers have the decimal comma
+    const sep = commaMode ? ';' : ',';
+    const rows = [[tr('Date', '日時'), tr('Expression', '式'), tr('Result', '結果'), tr('Number', '数値')].map((x) => cell(x)).join(sep)];
     for (const h of history) {
       if (!h || typeof h !== 'object' || typeof h.expr !== 'string') continue;
       const shown = displayResult(h).replace(/^= /, '');
-      rows.push([h.t ? when(h.t) : '', cell(h.expr, true), cell(shown, true), plainNumber(h)].map((x, i) => (i === 1 || i === 2 ? x : cell(x))).join(','));
+      rows.push([h.t ? when(h.t) : '', cell(toDisplay(h.expr), true), cell(shown, true), decSign(plainNumber(h))].map((x, i) => (i === 1 || i === 2 ? x : cell(x))).join(sep));
     }
     return '\ufeff' + rows.join('\r\n') + '\r\n';
   }
@@ -9999,7 +15724,7 @@
     return /^-?\d+(?:\.\d+)?(?:E-?\d+)?$/.test(t) ? t : '';
   }
   function exportHistory() {
-    if (!hasPro()) { proPrompt(tr('Exporting the history is a QCalc Pro feature', '履歴の書き出しは QCalc Pro の機能です')); return; }
+    if (!hasPro()) { proPrompt(tr('Exporting the history is a QCalc Pro feature', '履歴の書き出しは QCalc Pro の機能です'), 'export'); return; }
     if (!history.length) { toast(tr('The history is empty', '履歴はありません'), 1400); return; }
     const d = new Date(), z = (n) => String(n).padStart(2, '0');
     const name = 'QCalc-history-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.csv';
@@ -10013,8 +15738,131 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     fileSaved({ ok: true });
   }
+  // ------------------------------------------- quick ways into the app (1.12.0, C3)
+  // The widget on the home screen, the tile of the quick settings and the shortcuts of the app's
+  // icon (Widget.java, QuickTile.java, Quick.java) open the app at a new calculation, Tools or
+  // Convert: the app calls window.qalcOpen. The page gives the widget the newest line of the history
+  // as shown (number format) and the texts of the widget and the shortcuts in the app's language.
+  // In a browser there is none of this; the test page can stand in for the app (QalcDev).
+  function quickApi() {
+    if (window.QalcNative && QalcNative.pinWidget) return QalcNative;
+    if (window.QalcDev && QalcDev.pinWidget) return QalcDev;
+    return null;
+  }
+  function quickLabels() {
+    return {
+      calc: tr('Calculate', '計算'), tools: tr('Tools', '道具'), convert: tr('Convert', '換算'),
+      empty: tr('No calculation yet', 'まだ計算していません'), newCalc: tr('New calculation', '新しい計算'),
+      convertLong: tr('Convert units and currencies', '単位・通貨の換算')
+    };
+  }
+  let widgetSent = null;
+  function syncWidget() {
+    const q = quickApi();
+    if (!q || !q.setWidget) return;
+    const h = history.length ? history[history.length - 1] : null;
+    const expr = h ? toDisplay(h.expr || '') : '', res = h && h.result ? displayResult(h) : '';
+    if (expr + '\n' + res === widgetSent) return;
+    widgetSent = expr + '\n' + res;
+    try { q.setWidget(expr.slice(0, 200), res.slice(0, 200)); } catch (e) { }
+  }
+  // once the page has started (the language is known, and the app makes the shortcuts with these texts)
+  function syncQuick() {
+    const q = quickApi();
+    try { if (q && q.setQuickLabels) q.setQuickLabels(JSON.stringify(quickLabels())); } catch (e) { }
+    syncWidget();
+  }
+  // the row at the end of Tools (in the app only), also found by its words in the search
+  function quickRow() {
+    return tapButton({ class: 'tool-row quick-row', 'data-tool': 'quick' }, () => openQuickSheet())
+      .appendChild(el('span', { class: 'ico', text: '⌂', 'aria-hidden': 'true' })).parentNode
+      .appendChild(el('span', { class: 'tool-t' }, el('span', { class: 'n', text: tr('Open QCalc quickly', 'QCalc をすぐ開く') }),
+        el('span', { class: 'd', text: tr('A widget on the home screen, a tile in the quick settings', 'ホーム画面のウィジェット、クイック設定のタイル') }))).parentNode;
+  }
+  const QUICK_WORDS = ['widget', 'tile', 'home screen', 'shortcut', 'quick settings', 'ウィジェット', 'タイル', 'ホーム画面', 'ショートカット', 'クイック設定',
+    'kachel', 'startbildschirm', 'schnelleinstellungen', 'icono', 'pantalla de inicio', 'ajustes rápidos', 'tuile', 'écran d’accueil', 'réglages rapides',
+    '위젯', '타일', '홈 화면', '빠른 설정', '小工具', '圖塊', '主畫面', '快速設定'];
+  function quickMatches(q) {
+    const w = String(q || '').trim().toLowerCase().replace(/'/g, '’');
+    if (!quickApi() || w.length < 2) return false;
+    return QUICK_WORDS.some((x) => x.indexOf(w) === 0 || w.indexOf(x) >= 0) || tr('Open QCalc quickly', 'QCalc をすぐ開く').toLowerCase().indexOf(w) >= 0;
+  }
+  // the app opens a place: whatever is open is closed first (a sheet, the menu, panels, a form)
+  window.qalcOpen = function (what) {
+    if (!varPopEl.hidden) closeVarPop();
+    if ($('#sheet').classList.contains('open')) closeSheet(null);
+    closeHistSelect(); closeHistSearch();
+    if ($('#drawer').classList.contains('open')) closeDrawer();
+    for (let i = 0; i < 20 && panelStack.length; i++) closePanel();
+    if (what === 'tools') openTools();
+    else if (what === 'convert') openConverter();
+    else { if (CF.id) closeForm(); focusExpr(); }
+    return true;
+  };
+  // "Open QCalc quickly" (at the end of Tools): the widget, the tile, and what the icon offers
+  async function openQuickSheet() {
+    const q = quickApi();
+    if (!q || !proGate('quick')) return;
+    if (sheetResolve) closeSheet(null);
+    const sh = $('#sheet');
+    sh.textContent = '';
+    const item = (key, label, note, cls) => el('button', { class: 'quick-item ' + (cls || ''), 'data-quick': key, onclick: () => closeSheet(key) },
+      el('span', { class: 'n', text: label }), el('span', { class: 'd', text: note }));
+    sh.append(el('div', { class: 'stitle', text: tr('Open QCalc quickly', 'QCalc をすぐ開く') }),
+      item('widget', tr('Put a widget on the home screen', 'ホーム画面にウィジェットを置く'), tr('The last result, with buttons for Calculate, Tools and Convert', '最後の結果と、「計算」「道具」「換算」のボタン'), 'accent'),
+      item('tile', tr('Add a tile to the quick settings', 'クイック設定にタイルを足す'), tr('Opens QCalc from the panel you pull down from the top of the screen', '画面の上から下ろすパネルから開けます')),
+      el('div', { class: 'pro-sheet-note quick-icon', text: tr('Touch and hold the QCalc icon to choose New calculation, Tools or Convert.', 'QCalc のアイコンを長押しすると、「新しい計算」「道具」「換算」を選べます。') }),
+      el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
+    const k = await new Promise((resolve) => {
+      sheetResolve = resolve;
+      $('#scrim').classList.add('show', 'over-panels');
+      sh.classList.add('open');
+      sh.inert = false;
+    });
+    if (k === 'widget') {
+      let r = 'failed';
+      try { r = String(q.pinWidget()); } catch (e) { }
+      if (r !== 'asked') quickSteps('widget');
+    } else if (k === 'tile') {
+      let r = 'unsupported';
+      try { if (q.addTile) r = String(q.addTile()); } catch (e) { }
+      if (r !== 'asked') quickSteps('tile');
+    }
+  }
+  // how to do it by hand, when the system cannot ask (older Android, some home screens)
+  function quickSteps(what) {
+    const steps = what === 'tile' ? [
+      tr('Pull down from the top of the screen twice, so that all the quick settings are shown.', '画面の上から 2 回下ろして、クイック設定をすべて出します。'),
+      tr('Tap ✎ (Edit).', '✎（編集）をタップします。'),
+      tr('Find the QCalc tile and drag it up among the tiles in use.', '「QCalc」のタイルを探して、上の並びまで指で動かします。')
+    ] : [
+      tr('Touch and hold an empty place on the home screen.', 'ホーム画面の何もないところを長押しします。'),
+      tr('Choose “Widgets”.', '「ウィジェット」を選びます。'),
+      tr('Find QCalc, then touch and hold the widget and drag it to where you want it.', '「QCalc」を探して、ウィジェットを長押ししたまま置きたい場所まで動かします。')
+    ];
+    if (sheetResolve) closeSheet(null);
+    const sh = $('#sheet');
+    sh.textContent = '';
+    sh.append(el('div', { class: 'stitle', text: what === 'tile' ? tr('How to add the tile', 'タイルの足し方') : tr('How to put the widget on the home screen', 'ウィジェットの置き方') }),
+      el('ol', { class: 'quick-steps' }, ...steps.map((t) => el('li', { text: t }))),
+      el('div', { class: 'pro-sheet-note', text: tr('The names can differ a little from phone to phone.', '名前は機種によって少し違うことがあります。') }),
+      el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
+    sheetResolve = () => { };
+    $('#scrim').classList.add('show', 'over-panels');
+    sh.classList.add('open');
+    sh.inert = false;
+  }
+  // the answer to "Add a tile" (Android 13 and later): 2 added, 1 already there, 0 not added, else a failure
+  function quickAnswer(ev) {
+    if (ev.what !== 'tile') return;
+    const r = Number(ev.result);
+    if (r === 2) toast(tr('The tile was added to the quick settings', 'クイック設定にタイルを足しました'), 2500);
+    else if (r === 1) toast(tr('The tile is already in the quick settings', 'タイルはもうクイック設定にあります'), 2500);
+    else if (r !== 0) quickSteps('tile');
+  }
   function fileSaved(ev) {
-    if (ev.ok) toast(tr('History exported', '履歴を書き出しました'), 2000);
+    const what = savingWhat; savingWhat = '';
+    if (ev.ok) toast(what === 'table' ? tr('Table saved', '表を保存しました') : what === 'stl' ? tr('STL file saved', 'STL ファイルを保存しました') : what === 'notes' ? tr('Memo saved', 'メモを保存しました') : tr('History exported', '履歴を書き出しました'), 2000);
     else if (!ev.cancelled) toast(localMessage(ev.error) || tr('Could not save the file', 'ファイルを保存できませんでした'), 3500);
   }
 
@@ -10022,6 +15870,7 @@
   window.qalcBack = function () {
     if (!varPopEl.hidden) { closeVarPop(); return true; }
     if ($('#sheet').classList.contains('open')) { closeSheet(null); return true; }
+    if (closeHistSelect() || closeHistSearch()) return true;
     if ($('#drawer').classList.contains('open')) { closeDrawer(); return true; }
     if (panelStack.length) { closePanel(); return true; }
     if (CF.id) { closeForm(); return true; }
@@ -10029,8 +15878,8 @@
     return false;
   };
   window.qalcPause = function () {
-    store.set('qalc.history', history.slice(-300));
-    store.set('qalc.draft', exprEl.value);
+    store.set('qalc.history', trimHistory(history));
+    store.set('qalc.draft', toInternal(exprEl.value));
   };
 
   // ---------------------------------------------------------------- boot
@@ -10076,6 +15925,7 @@
     if (LANG === 'en') return;
     const set = (sel, attr, en, ja) => { const e = $(sel); if (e) e.setAttribute(attr, tr(en, ja)); };
     set('#btn-menu', 'aria-label', 'Menu', 'メニュー');
+    set('#btn-hist', 'aria-label', 'History', '履歴');
     set('#chip-angle', 'title', 'Angle unit', '角度の単位');
     set('#chip-approx', 'title', 'Exact or approximate', '厳密計算・近似');
     set('#chip-base', 'title', 'Number base of results', '結果の進数');
@@ -10091,18 +15941,42 @@
     nextBoxEl.textContent = tr('Next box ▶', '次の欄 ▶');
   }
   // "Language" in the menu and in the settings (LANG_TITLE): the page is loaded again in the new language
+  // 1.12.0: "Same as device" first, with the language it gives now; ✓ on it while no language has
+  // been chosen
   async function chooseLanguage() {
-    const k = await sheet(LANG_TITLE, LANG_NAMES.map(([l, name]) => [l, (l === LANG ? '✓ ' : '') + name]));
+    const k = await sheet(LANG_TITLE + '\n' + langAutoNote(), [['auto', (LANG_AUTO ? '✓ ' : '') + langAutoLabel()]].concat(
+      LANG_NAMES.map(([l, name]) => [l, (!LANG_AUTO && l === LANG ? '✓ ' : '') + name])));
     if (k) setLanguage(k);
   }
+  // "Same as device / 端末の設定に合わせる (now 日本語)": in the language of the page and in English
+  function langAutoLabel() {
+    const name = (LANG_NAMES.find((x) => x[0] === deviceLang()) || LANG_NAMES[0])[1];
+    const now = trf('(now {0})', '（今は {0}）', name);
+    return (LANG === 'en' ? 'Same as device' : tr('Same as device', '端末の設定に合わせる') + ' / Same as device') + (now[0] === '（' ? '' : ' ') + now;
+  }
+  function langAutoNote() { return tr('When QCalc does not have the language of the device, it is in English', '端末の言語に QCalc がないときは英語になります'); }
   function setLanguage(lang) {
+    if (lang === 'auto') {
+      // no language of one's own: qalc.lang and qalc.langsys go, and on Android 13 and later the
+      // language set for QCalc in the system settings goes back to the system default
+      let now = deviceLang();
+      try { if (window.QalcNative && window.QalcNative.setLangAuto) { const l = window.QalcNative.setLangAuto(); if (LANGS.indexOf(l) >= 0) now = l; } } catch (e) { }
+      store.del('qalc.lang');
+      store.del('qalc.langsys');
+      S.lang = 'auto';
+      saveSettings();
+      if (LANG_AUTO && now === LANG) return;
+      window.qalcPause(); // the history and the expression being typed
+      location.reload();
+      return;
+    }
     if (LANGS.indexOf(lang) < 0) return;
     store.set('qalc.lang', lang); // the user's own choice (see LANG)
     // on Android 13 and later it becomes the language set for QCalc in the system settings too (1.11.0)
     try { if (window.QalcNative && window.QalcNative.setLang) window.QalcNative.setLang(lang); } catch (e) { }
     S.lang = lang;
     saveSettings();
-    if (lang === LANG) return;
+    if (lang === LANG && !LANG_AUTO) return; // (from "Same as device" to the same language: loaded again, now kept)
     window.qalcPause(); // the history and the expression being typed
     location.reload();
   }
@@ -10124,18 +15998,37 @@
     renderHistory(true);
     const draft = store.get('qalc.draft', '');
     if (draft && typeof draft === 'string' && !exprEl.value) {
-      exprEl.value = draft;
-      exprEl.setSelectionRange(draft.length, draft.length);
+      exprEl.value = toDisplay(draft);
+      exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length);
     }
     autosize();
     focusExpr();
     startEngine();
+    startupMark('ui');
+    showNews();
+    syncQuick();
+    // the test page: ?open=tools (or calc, convert) as the app does for the widget
+    try { const o = new URLSearchParams(location.search).get('open'); if (!window.QalcNative && /^(calc|tools|convert)$/.test(o || '')) setTimeout(() => window.qalcOpen(o), 0); } catch (e) { }
+  }
+  // The times of the start (1.12.0), from the start of the page: the keypad and the newest history
+  // shown (ui), the engine ready (engine) and the first result. The app writes them to its log
+  // (adb logcat -s QCalc), and reports the first one to the system as "fully drawn" (pageReady), so
+  // that `am start -W` and the system's own log show the whole start.
+  const startup = {};
+  function startupMark(k) {
+    if (k in startup) return;
+    startup[k] = Math.round(window.performance && performance.now ? performance.now() : 0);
+    if (k === 'ui') { try { if (window.QalcNative && QalcNative.pageReady) QalcNative.pageReady(); } catch (e) { } }
+    if (k === 'engine' || k === 'first') {
+      try { console.info('QCalc startup: ' + Object.keys(startup).map((x) => x + ' ' + startup[x] + ' ms').join(', ')); } catch (e) { }
+    }
   }
   async function startEngine() {
     previewEl.textContent = tr('Starting the calculation engine…', '計算エンジンを準備中…');
     const r = await Bridge.send('init');
     previewEl.textContent = '';
     if (!r.ok) {
+      commitWaiting = false;
       msgEl.textContent = (localMessage(r.error) || tr('Could not start the calculation engine', '計算エンジンを起動できませんでした')) + tr(' (tap here to try again)', '（ここをタップすると、もう一度試します）');
       msgEl.className = 'msg error';
       msgEl.onclick = () => { msgEl.onclick = null; msgEl.textContent = ''; msgEl.className = 'msg'; startEngine(); };
@@ -10153,9 +16046,26 @@
     autoUpdateRates();
     const sub = $('#drawer-sub');
     if (sub) sub.textContent = tr('Calculation engine ', '計算エンジン ') + engineName;
-    if (exprEl.value.trim()) exprChanged();
+    startupMark('engine');
+    if (commitWaiting) { commitWaiting = false; commit(); } // "=" was pressed while the engine was starting
+    else if (exprEl.value.trim()) exprChanged();
+    if (CF.id) formChanged();
     // the lists of names for the suggestions, once the first calculations are out of the way
     setTimeout(() => { if (!sugData) loadSugData(); }, 2500);
   }
   boot();
+  }
+  // 1.12.0: only the file of the texts of the language in use is loaded (each is about 90 KB of
+  // script that the phone had to read at every start). Without it (it could not be loaded) the
+  // page is in English, as tr() gives the English text for a text it does not find.
+  const I18N_FILE = { es: 'i18n-es.js', de: 'i18n-de.js', fr: 'i18n-fr.js', ko: 'i18n-ko.js', 'zh-TW': 'i18n-zh-TW.js' };
+  if (Object.prototype.hasOwnProperty.call(I18N_FILE, LANG) && !(window.QCALC_I18N && window.QCALC_I18N[LANG])) {
+    let started = false;
+    const go = () => { if (!started) { started = true; start(); } };
+    const s = document.createElement('script');
+    s.src = I18N_FILE[LANG];
+    s.onload = go;
+    s.onerror = go;
+    document.head.append(s);
+  } else start();
 })();

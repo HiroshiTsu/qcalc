@@ -3,7 +3,7 @@
   --surface: #ffffff;
   --surface-2: #eef1f5;
   --text: #1b2130;
-  --muted: #687082;
+  --muted: #5f6778; /* 1.12.0: 5:1 on the key background (was #687082, 4.4:1) */
   --line: #dde2ea;
   --accent: #2563eb;
   --accent-text: #ffffff;
@@ -245,7 +245,13 @@ input, select, textarea { font: inherit; color: inherit; }
   user-select: text;
   caret-color: var(--accent);
 }
-#expr::placeholder { color: var(--muted); opacity: .6; }
+#expr::placeholder { color: var(--muted); opacity: .85; } /* (1.12.0: readable, was .6) */
+/* 1.12.0 (F, 要判断 39): the empty field keeps one line (the hint cut with …): with large text on a small screen the
+   hint took two lines ("Ausdruck eingeben" at 320 px and 200 %), and the history lost a line for it */
+#expr:placeholder-shown { white-space: nowrap; overflow: hidden; }
+#expr::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 1.12.0 (F, task 3): the example sizes, gray but readable (the results use them until a size is typed) */
+.geo-size input::placeholder { color: var(--muted); opacity: 1; font-style: italic; }
 .preview {
   min-height: 24px;
   max-height: 4.6em; /* a very long result scrolls instead of pushing the keypad off the screen */
@@ -328,6 +334,22 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 .ptab.on { background: var(--accent); color: var(--accent-text); }
 .ptab.pressed { filter: brightness(.9); }
+/* 1.12.0 (F, 要判断 39 (b), the author's decision): with large text on a phone the top row of keys is hidden and
+   shown from the ⌨ at the end of the tabs (app.js applyCompactKeys) */
+.pages-row { display: flex; gap: 5px; margin-bottom: 5px; align-items: stretch; }
+.pages-row .pages { flex: 1 1 auto; margin-bottom: 0; min-width: 0; }
+.tb-toggle { flex: 0 0 48px; border: 0; border-radius: 10px; background: var(--key-fn); color: var(--text); font-size: 18px; padding: 0; position: relative; touch-action: none; }
+.tb-toggle::before { content: ""; position: absolute; left: -2px; right: -8px; top: -6px; bottom: -6px; }
+.tb-toggle.on { background: var(--accent); color: var(--accent-text); }
+.tb-toggle.pressed { filter: brightness(.9); }
+.tb-toggle[hidden] { display: none; }
+.keypad.kb-compact:not(.tb-open) .toolbar { display: none; }
+/* (the tabs beside the ⌨ sized by their names, so that "Funktionen" keeps its room; the hint of the empty field
+   smaller, so that it fits on its one line) */
+.keypad.kb-compact .pages { grid-template-columns: minmax(48px, auto) auto auto auto; }
+.keypad.kb-compact .ptab { padding: 0 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-toggle { flex-basis: 44px; }
+html.big-keys #expr::placeholder { font-size: .8em; }
 .grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -507,6 +529,15 @@ input, select, textarea { font: inherit; color: inherit; }
 .vol-legend { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); margin: 6px 0 2px; line-height: 1.4; }
 .vol-legend[hidden] { display: none; }
 .vol-legend i { flex: none; width: 16px; height: 16px; border-radius: 5px; border: 2px solid transparent; }
+/* 1.12.0 (BG21): the values of a solid made elsewhere in "Volume and surface" of the 3D graph, as the rows of "Make a solid" */
+.solid-vals { margin: 8px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.solid-vals[hidden], .vol-tools[hidden] { display: none; }
+.solid-title { font-weight: 700; padding: 10px 12px 2px; }
+.solid-vals .geo-row { flex-wrap: wrap; row-gap: 2px; }
+.solid-vals .geo-val { flex: 1 1 auto; overflow-wrap: break-word; overflow-x: auto; overflow-y: hidden; text-align: right; }
+.solid-vals .geo-row:first-of-type .geo-val { font-size: 1.3em; font-weight: 700; }
+.solid-vals .form-hint { padding: 4px 12px 10px; }
+.vol-offer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 6px; }
 .section-title { font-weight: 700; font-size: 14px; margin: 18px 2px 6px; color: var(--muted); }
 .setting {
   display: flex; align-items: center; gap: 10px;
@@ -604,6 +635,8 @@ input, select, textarea { font: inherit; color: inherit; }
   touch-action: none;
 }
 .plot-wrap canvas { width: 100%; height: 100%; display: block; }
+.plot-wrap canvas.plot-fade { position: absolute; left: 0; top: 0; pointer-events: none; }
+.plot-wrap canvas.plot-fade[hidden] { display: none; }
 .plot-ctl { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .plot-ctl button {
   width: 40px; height: 40px;
@@ -999,7 +1032,7 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 
 /* ------------------------------------------------- area and volume (graphs) */
 .area-wrap { margin: 6px 0 4px; }
-.area-toggle.on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.area-toggle.on { background: var(--accent-soft); color: var(--key-op-text); border-color: var(--accent); } /* (1.12.0: the darker text of the theme, 5:1 and more) */
 .area-box { margin-top: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 .area-box[hidden] { display: none; }
 .area-box select { flex: 1 1 0; min-width: 0; max-width: 46%; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
@@ -1011,8 +1044,10 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .area-box .calc-row select { max-width: none; }
 .calc-btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
 .area-box .plot-range { flex-wrap: wrap; row-gap: 6px; }
-.seg.mini { display: inline-flex; margin: 0; flex: 0 0 auto; }
+.seg.mini { display: inline-flex; margin: 0; flex: 0 0 auto; max-width: 100%; flex-wrap: wrap; } /* (BG18: wraps rather than being cut on a narrow screen with large text) */
 .seg.mini button { flex: 0 0 auto; padding: 6px 12px; font-size: 13px; }
+.seg.mini button { min-width: 48px; } /* (F) a short label (Korean "x축") was 43 px wide */
+.seg.mini button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; } /* (BG18: a long label, French "Mensualités constantes", wraps inside its button) */
 .disk-row { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
 .disk-row[hidden], .area-box .form-hint[hidden] { display: none; }
 .disk-row input { width: 5em; }
@@ -1063,14 +1098,15 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .geo-unit:empty { display: none; }
 .geo-msg { color: var(--danger); font-size: 14px; margin: 8px 2px 0; }
 /* 1.11.0: radius or diameter, the units of the results, the weight and the height from an amount */
-.geo-rd { margin: 0 0 4px; }
+.geo-rd { margin: 0 0 4px; flex-wrap: wrap; max-width: 100%; } /* (BG18: "Radius | Durchmesser" with large text at 320 px) */
+.geo-rd button { flex: 1 0 auto; }
 .geo-units, .geo-weight { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
-.geo-units select, .geo-weight select, .geo-weight input, .geo-amt input { flex: 1 1 140px; min-width: 0; min-height: 40px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 15px; }
+.geo-units select, .geo-units .dig-sel, .geo-weight select, .geo-weight input, .geo-amt input { flex: 1 1 140px; min-width: 0; min-height: 40px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 15px; }
 .geo-weight .geo-val, .geo-amt .geo-val { flex: 1 1 100%; font-size: 15px; }
 .geo-weight .geo-val:empty, .geo-amt .geo-val:empty { display: none; }
 .geo-amt { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 14px; }
 .geo-pic svg .liq, .geo-chip svg .liq { fill: #3b82f6; fill-opacity: .45; stroke: none; }
-.geo-rd[hidden], .geo-units[hidden], .geo-weight[hidden], .geo-amt[hidden], .geo-weight input[hidden] { display: none; }
+.geo-rd[hidden], .geo-units[hidden], .geo-units select[hidden], .geo-weight[hidden], .geo-amt[hidden], .geo-weight input[hidden] { display: none; }
 .geo-msg:empty { display: none; }
 .geo-out { margin: 10px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
 .geo-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 12px; text-align: left; background: none; border: 0; color: var(--text); }
@@ -1195,3 +1231,417 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 /* (1.11.0: a link of the tools may take two lines: "Volume from measured values (cross sections, grid
    of heights) ›" made the panel of the shapes wider than a 320-pixel screen) */
 .geo-link { white-space: normal; }
+
+/* ------------------------------------------------------------ 1.12.0 (A2) */
+/* the menu of a history line: ⋯ at its left, where the right-aligned text leaves room */
+.h-item { position: relative; padding-left: 34px; }
+.h-more {
+  position: absolute; left: -6px; top: 2px; width: 40px; height: 40px;
+  border: 0; border-radius: 20px; background: transparent; color: var(--muted);
+}
+.h-more::before { content: "⋯"; font-size: 20px; line-height: 1; }
+.h-more:active { background: var(--surface-2); }
+#btn-hist { flex: 0 0 auto; color: var(--text); }
+.bar .title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the note on what moved in the menu (shown once) */
+.moved-note { margin: 8px 12px 4px; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft, #e8efff); font-size: 13.5px; line-height: 1.45; }
+.moved-note .moved-t { font-weight: 700; margin-bottom: 4px; }
+.moved-note ul { margin: 0 0 6px; padding-left: 18px; }
+#drawer .moved-note .moved-ok { display: inline-block; width: auto; min-height: 36px; padding: 4px 16px; margin: 0; }
+/* Tools */
+.tool-list { padding: 4px 0; }
+.tool-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 12px;
+  border: 0; background: transparent; text-align: left; color: var(--text);
+}
+.tool-row + .tool-row { border-top: 1px solid var(--line); }
+.tool-row:active { background: var(--surface-2); }
+.tool-row .ico { font-size: 22px; width: 28px; text-align: center; flex: 0 0 auto; }
+.tool-row .tool-t { display: flex; flex-direction: column; min-width: 0; }
+.tool-row .n { font-weight: 600; font-size: 15px; }
+.tool-row .d { color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.tool-found:not(:empty) { margin-top: 8px; }
+/* the tabs of the lists */
+.seg.list-tabs { display: flex; margin-bottom: 10px; }
+.seg.list-tabs button { flex: 1 1 0; min-width: 0; padding-left: 4px; padding-right: 4px; font-size: 13px; overflow-wrap: anywhere; }
+.seg.mini.solid-kinds { display: flex; flex-wrap: wrap; margin: 2px 0 8px; }
+.seg.mini.solid-kinds button { flex: 1 1 auto; }
+.adv-settings { margin-top: 14px; }
+.adv-settings > summary { cursor: pointer; padding: 12px 4px; font-weight: 600; color: var(--accent); min-height: 48px; box-sizing: border-box; list-style: none; }
+.adv-settings > summary::-webkit-details-marker { display: none; }
+.adv-settings > summary::after { content: " ▾"; }
+.adv-settings[open] > summary::after { content: " ▴"; }
+.setting-link { width: 100%; text-align: left; border: 0; background: transparent; color: var(--text); font: inherit; }
+.setting-link .chev { font-size: 22px; color: var(--muted); padding: 0 6px; }
+.geo-chip.geo-more { justify-content: center; color: var(--accent); font-weight: 600; min-height: 44px; }
+/* the switch of the area tool: Area or Length (1.12.0, BG05) */
+.area-mode-row { margin-top: 2px; }
+.seg.mini.area-modes { display: inline-flex; }
+.seg.mini.area-modes button { min-width: 96px; min-height: 48px; }
+.area-out[hidden] { display: none; }
+.area-out { cursor: pointer; }
+.tool-eg { margin: 4px 2px 0; }
+
+/* ------------------------------------------------------------ 1.12.0 (A4) */
+/* Touch areas of at least 48 × 48 dp (= CSS px in the WebView). Where a control is drawn smaller,
+   the area around it (::after) takes the touch; the drawings stay as they were or grow a little. */
+.icon-btn { width: 48px; height: 48px; border-radius: 24px; }
+.chip { position: relative; }
+.chip::after { content: ""; position: absolute; left: -1px; right: -1px; top: -10px; bottom: -10px; }
+/* (F) the examples on the first screen (36 px high): 48 px to touch, up to the middle of the gaps */
+.ex-chips .ex-chip { position: relative; }
+.ex-chips .ex-chip::before { content: ""; position: absolute; left: -3px; right: -3px; top: -6px; bottom: -6px; }
+.empty > .btn { min-height: 48px; padding: 10px 16px; } /* (F) "Examples and tips" on the first screen: was 35 px high */
+.toolbar { margin-bottom: 6px; }
+.toolbar .key { height: 40px; position: relative; }
+/* (::before: the x key draws its mark with ::after) */
+.toolbar .key::before { content: ""; position: absolute; left: -3px; right: -3px; top: -4px; bottom: -4px; }
+.ptab { height: 38px; position: relative; }
+.ptab::before { content: ""; position: absolute; left: 0; right: 0; top: -4px; bottom: -6px; }
+#expr { min-height: 48px; }
+input.search { min-height: 48px; box-sizing: border-box; }
+.h-more { width: 48px; height: 48px; left: -10px; top: -4px; border-radius: 24px; }
+/* the phone's font size, in the panels (app.js applyTextSize: up to 1.15 times) */
+.panel-body { zoom: var(--pfs, 1); }
+/* Large screens and landscape (1.12.0): two columns, the history and the input field on the
+   left, the keys on the right. targetSdk 36: on a large screen the system ignores a fixed
+   orientation, so the page must work in any shape; changing the size (folding, a split screen)
+   keeps everything, as the activity is not made again (configChanges in the manifest). */
+@media (min-width: 600px) and (min-height: 300px), (orientation: landscape) and (min-width: 480px) and (max-height: 599px) {
+  #app {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 42%);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "bar bar" "hist keys" "entry keys" "form keys";
+  }
+  .bar { grid-area: bar; }
+  #history { grid-area: hist; }
+  .entry { grid-area: entry; }
+  #cform { grid-column: 1; grid-row: 2 / 5; }
+  .keypad { grid-area: keys; align-self: end; border-left: 1px solid var(--line); }
+}
+@media (orientation: landscape) and (max-height: 599px) {
+  /* a phone turned sideways: lower keys, so that all five rows fit beside the history */
+  .keypad .grid .key { height: 36px; font-size: 19px; }
+  .keypad .grid { gap: 4px; }
+  .keypad { padding-top: 4px; }
+}
+.toolbar .key:first-child::before { left: -8px; }
+.toolbar .key:last-child::before { right: -8px; }
+/* the controls of the panels: 48 dp high (buttons, fields, lists to choose from, switches);
+   chips keep their look and take the touches around them */
+.panel-body .btn, .panel-body select, .panel-body input:not([type="checkbox"]):not([type="radio"]),
+.panel-body .seg button, .panel-body .plot-ctl button, #sheet button { min-height: 48px; }
+.panel-body .plot-ctl button { min-width: 48px; }
+.panel-body .area-chip, .panel-body .ex-chip, .panel-body .sample { position: relative; }
+.panel-body .area-chip::before, .panel-body .ex-chip::before, .panel-body .cats button::before { content: ""; position: absolute; left: -5px; right: -5px; top: -10px; bottom: -10px; }
+.panel-body .cats button { position: relative; }
+.panel-body .card a { display: inline-block; padding: 14px 0; }
+.adv-settings > summary { min-height: 48px; }
+.panel-body .cats button { min-height: 48px; } /* (the row scrolls sideways and so clips anything around the chips) */
+
+/* ------------------------------------------------ history: pinned, notes, search, selection (1.12.0) */
+.h-pinned { border-bottom: 2px solid var(--line); margin-bottom: 4px; }
+.h-pin-t { font-size: 12px; font-weight: 700; color: var(--muted); padding: 6px 12px 2px; }
+.h-item.starred .h-expr::before { content: "★ "; color: var(--accent); }
+.h-note { font-size: 13px; color: var(--muted); font-style: italic; padding-bottom: 2px; overflow-wrap: anywhere; }
+.hsearch { display: flex; align-items: center; gap: 4px; flex: 1 1 auto; min-width: 0; }
+.hsearch[hidden] { display: none; }
+body.hsearching .bar > .title, body.hsearching .bar > .chips, body.hsearching #btn-hist { display: none; }
+.hs-input { flex: 1 1 auto; min-width: 0; height: 48px; font-size: 16px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
+.hs-count { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.hsearch .icon-btn { flex: 0 0 auto; }
+body.hselect .h-item { padding-left: 44px; }
+body.hselect .h-item::before { content: ""; position: absolute; left: 12px; top: 50%; width: 20px; height: 20px; margin-top: -10px; border: 2px solid var(--muted); border-radius: 6px; box-sizing: border-box; }
+body.hselect .h-item.sel { background: var(--surface-2); }
+body.hselect .h-item.sel::before { background: var(--accent); border-color: var(--accent); }
+body.hselect .h-item.sel::after { content: "✓"; position: absolute; left: 15px; top: 50%; margin-top: -11px; color: var(--accent-text); font-size: 15px; font-weight: 700; }
+body.hselect .h-item .h-more { visibility: hidden; }
+.hselbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(0,0,0,.12); padding: 8px 12px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: flex-end; }
+.hselbar[hidden] { display: none; }
+.hs-info { flex: 1 1 auto; min-width: 0; }
+.hs-n { font-size: 13px; color: var(--muted); }
+.hs-row { display: flex; gap: 8px; align-items: baseline; font-size: 15px; }
+.hs-row.sum { font-size: 20px; font-weight: 700; }
+.hs-l { color: var(--muted); font-size: 13px; font-weight: 400; flex: 0 0 auto; }
+.hs-v { min-width: 0; overflow-wrap: anywhere; }
+.hs-btns { display: flex; gap: 6px; flex: 0 0 auto; }
+.hs-btns .btn { min-height: 48px; }
+/* while choosing lines: the keys and the field make room for the history (the bar covers its bottom) */
+body.hselect .keypad, body.hselect .entry { display: none; }
+body.hselect #history { padding-bottom: 150px; }
+.sheet-input { display: block; width: 100%; box-sizing: border-box; height: 48px; font-size: 16px; padding: 0 12px; margin: 0 0 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
+/* memory keys */
+.memrow { display: grid; grid-template-columns: repeat(4, 1fr) 1.6fr; gap: 5px; margin-bottom: 5px; align-items: center; }
+.memrow[hidden] { display: none; }
+.memrow .key.mem { height: 36px; font-size: 14px; border-radius: 10px; background: var(--key-fn); font-weight: 600; position: relative; }
+.memrow .key.mem::before { content: ""; position: absolute; left: -3px; right: -3px; top: -6px; bottom: -6px; }
+.mem-val { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+/* what is new */
+.news-card { background: var(--surface); border: 2px solid var(--accent); border-radius: 16px; padding: 2px 6px 4px 12px; margin: 6px 10px; }
+.news-row { padding: 0; }
+.news-t { display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 15px; }
+.news-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 14px; }
+.news-row .ico { flex: 0 0 auto; font-size: 18px; }
+.news-x-t { flex: 1 1 auto; min-width: 0; }
+.news-try { flex: 0 0 auto; min-height: 48px; }
+.news-x { flex: 0 0 auto; }
+
+/* ------------------------------------------------------------ the Pro sheet (1.12.0) */
+.sheet .pro-sheet-feat { padding: 4px 12px 8px; }
+.pro-sheet-note { font-size: 14px; color: var(--muted); padding: 0 12px 6px; }
+.sheet button.pro-buy { font-weight: 700; }
+.terms-notice { padding: 4px 12px; }
+.linkish { border: 0; background: none; color: var(--accent); text-decoration: underline; padding: 12px 2px; min-height: 48px; font: inherit; display: inline; width: auto !important; }
+.free-list { margin: 4px 0 8px; padding-left: 22px; }
+.free-list li { padding: 3px 0; }
+
+/* ------------------------------------------- the note of the tools for money or safety (1.12.0, A7) */
+.caution { display: flex; gap: 6px; align-items: flex-start; font-size: 12.5px; line-height: 1.45; color: var(--muted); margin: 6px 0 8px; padding: 6px 8px; border-left: 3px solid var(--line); background: var(--surface-2); border-radius: 0 8px 8px 0; }
+.caution[hidden] { display: none; }
+.caution-i { flex: 0 0 auto; font-size: 14px; line-height: 1.3; }
+.caution-t { min-width: 0; overflow-wrap: anywhere; }
+
+/* the two switches of the 2D graph side by side (1.12.0, B0a) */
+.area-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+.area-toggles > .area-toggle { margin: 0; }
+.tools .area-toggles { display: contents; } /* in the row of the graph's tools, like the other switches */
+
+/* ⟳ 3D among the round buttons of the 2D graph (1.12.0, B0) */
+.plot-ctl button.rev3d { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; gap: 0; }
+.plot-ctl button.rev3d .rev3d-i { font-size: 18px; }
+.plot-ctl button.rev3d small { font-size: 10px; font-weight: 700; }
+.plot-ctl button.rev3d.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); opacity: 1; }
+/* 1.12.0 (BG20): a solid made in the 2D graph, in 3D: its volume large, and the way back to 2D */
+.rev3d-back { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin: 4px 0 8px; }
+.rev3d-back .rev3d-back-btn { min-height: 48px; }
+.rev3d-vol { font-size: 20px; font-weight: 700; line-height: 1.3; color: var(--text); overflow-wrap: anywhere; }
+/* (without QCalc Pro: "Turn it in 3D (QCalc Pro)" above the results of "Make a solid") */
+.rev-pro-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; margin: 6px 0; padding: 8px 12px; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent-soft); color: var(--key-op-text); font-weight: 700; text-align: start; }
+.rev-pro-row .rev-pro-i { font-size: 20px; flex: 0 0 auto; }
+.rev-pro-row .rev-pro-t { flex: 1 1 auto; overflow-wrap: anywhere; }
+.rev-pro-row .rev-pro-go { flex: 0 0 auto; font-size: 20px; }
+.rev3d-back[hidden], .rev-pro-row[hidden] { display: none; }
+/* 1.12.0 (D6): "⟳ 3D" beside the picture of a solid or a tank of "Shapes", and the shape in the 3D graph */
+.geo-pic-box { flex: 0 0 42%; max-width: 190px; position: relative; min-width: 0; }
+.geo-pic-box.has3d { align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding-top: 52px; }
+.geo-3d { position: absolute; left: 0; top: 0; width: 48px; height: 48px; border-radius: 24px; border: 1px solid var(--line); background: var(--surface); color: var(--text); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; gap: 0; padding: 0; opacity: .96; box-shadow: 0 1px 3px rgba(0, 0, 0, .14); }
+.geo-3d .rev3d-i { font-size: 18px; }
+.geo-3d small { font-size: 10px; font-weight: 700; }
+.geo-3d[hidden] { display: none; }
+.legend .msw::before { width: 12px; height: 12px; border-radius: 3px; }
+.legend .msw.glass::before { background: rgba(120, 160, 205, .16); border: 1.5px solid rgba(45, 62, 90, .7); box-sizing: border-box; }
+.dark .legend .msw.glass::before { background: rgba(190, 215, 255, .1); border-color: rgba(215, 228, 250, .7); }
+.legend .note::before { display: none; }
+.plot-form[hidden], .smp-wrap[hidden], .area-wrap[hidden], .tank-level[hidden] { display: none; }
+.rev3d-vol > div + div { font-size: 16px; font-weight: 600; }
+/* the solid: the volume first and large, the method small below it, the surfaces under "More ▾" */
+.rev-out .geo-row .geo-val { font-size: 1.45em; font-weight: 700; }
+.rev-more { margin: 6px 0; }
+.rev-more > summary { cursor: pointer; padding: 12px 4px; min-height: 48px; box-sizing: border-box; color: var(--accent); font-weight: 600; list-style: none; }
+.rev-more > summary::-webkit-details-marker { display: none; }
+
+/* the shapes of the cross sections as picture buttons (1.12.0, B1) */
+.sec-shapes { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+.sec-shape { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; min-width: 64px; min-height: 56px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); font-size: 12px; }
+.sec-shape svg { width: 36px; height: 28px; }
+.sec-shape.on { background: var(--accent-soft); color: var(--key-op-text); border-color: var(--accent); }
+.sec-more > summary { cursor: pointer; padding: 12px 4px; min-height: 48px; box-sizing: border-box; color: var(--accent); font-weight: 600; list-style: none; }
+.sec-more > summary::-webkit-details-marker { display: none; }
+.sec-row[hidden] { display: none; }
+
+/* B2: the lines of the method, Pappus–Guldinus, the angle of the 3D solid */
+.rev-slices-row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 6px 0; }
+.rev-slices-row[hidden], .rev-n[hidden], .rev-angle[hidden] { display: none; }
+.btn.rev-slices.on { background: var(--accent-soft); color: var(--key-op-text); border-color: var(--accent); }
+.rev-n input[type="range"], .rev-angle input[type="range"] { flex: 1 1 120px; min-width: 100px; min-height: 48px; }
+.rev-pappus { font-size: 13px; color: var(--muted); margin: 4px 0; overflow-wrap: anywhere; }
+.rev-angle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rev-angle-v, .rev-n-v { min-width: 3.2em; font-variant-numeric: tabular-nums; }
+
+/* the everyday tools (1.12.0, C1) */
+.tool-choice .seg.mini { flex: 1 1 0; flex-wrap: wrap; }
+.tool-mini-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.geo-size { flex-wrap: wrap; }
+.geo-row.tool-main .geo-val { font-size: 1.45em; font-weight: 700; }
+.tool-table .tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.tool-tbl { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+.tool-tbl th, .tool-tbl td { padding: 6px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+.tool-tbl th { background: var(--surface-2); position: sticky; top: 0; }
+.tool-tbl-btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+
+/* the conversion (1.12.0, C2) */
+.conv-row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+.conv-row input { flex: 1 1 0; min-width: 0; font-size: 22px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--text); min-height: 48px; box-sizing: border-box; }
+.conv-row select { flex: 1 1 0; min-width: 0; max-width: 55%; padding: 10px 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--text); font-size: 15px; min-height: 48px; }
+.conv-mid { display: flex; justify-content: center; }
+.conv-swap { min-width: 64px; min-height: 48px; font-size: 20px; }
+.conv-kinds .geo-chip.on, .geo-chips .geo-chip[aria-pressed="true"] { background: var(--accent-soft); color: var(--key-op-text); border-color: var(--accent); }
+
+/* 1.12.0 (C3): "Open QCalc quickly": the widget and the tile, each with a line saying what it is;
+   the steps to do it by hand */
+.sheet button.quick-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding-top: 10px; padding-bottom: 10px; }
+.sheet button.quick-item .n { font-weight: 600; }
+.sheet button.quick-item .d { font-size: 13px; font-weight: 400; color: var(--muted); line-height: 1.35; white-space: normal; }
+.sheet .quick-icon { padding-top: 6px; }
+.quick-steps { margin: 2px 12px 8px 0; padding-left: 32px; line-height: 1.5; font-size: 15px; }
+.quick-steps li { margin: 6px 0; }
+
+/* UI review of B0-C3 (1.12.0): a number is never broken in the middle ("5,567,99 / 8.07"): when the
+   value does not fit beside its name, it goes under it (the everyday tools, the conversion, the volume
+   of a solid); a formula too wide even then scrolls instead of being cut */
+.tool-out .geo-row, .rev-out .geo-row { flex-wrap: wrap; row-gap: 2px; }
+.tool-out .geo-val, .rev-out .geo-val { flex: 1 1 auto; overflow-wrap: break-word; word-break: keep-all; } /* (keep-all: 令和9年 stays together) */
+.rev-out .geo-val { overflow-x: auto; overflow-y: hidden; }
+/* the value of "Lines n =" stays beside its slider */
+.area-box .plot-range.rev-n { flex-wrap: nowrap; }
+.rev-n input[type="range"] { min-width: 60px; }
+.rev-n-v { min-width: 2em; text-align: right; }
+/* the small choices inside a field (tax rates, "today"): touch areas of 48 dp */
+.tool-mini-chips .area-chip { min-height: 48px; min-width: 48px; padding: 0 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); color: var(--text); font-size: 14px; }
+/* the first screen fits again at 360 × 740 (the keys became taller in A4, for 48 dp): on short screens
+   the empty history is tighter, without the line on tapping results (also in the tips) */
+@media (max-height: 780px) {
+  .history .empty { margin: 2px 0 4px; line-height: 1.4; }
+  .history .empty .empty-sub { display: none; }
+  .empty .empty-try { margin-top: 4px; }
+  .ex-chips { margin: 2px 0 6px; }
+}
+
+/* the statistics tool (1.12.0, C4): one column of values flows in rows (fewer screens to scroll),
+   the prediction and the graph only for two columns */
+.stat-table:not(.sec-2) { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+.stat-table:not(.sec-2) .sec-h { grid-column: 1 / -1; }
+.stat-px[hidden], .geo-graph[hidden] { display: none; }
+.stat-table input { min-height: 44px; }
+.stat-more > summary { min-height: 48px; display: flex; align-items: center; }
+.tool-out .geo-val.geo-val-text { font-size: 14px; font-weight: 400; color: var(--muted); }
+.stat-more .geo-val { font-size: calc(15px * var(--fs)); }
+
+/* stage U (1.12.0): touch areas of 48 dp in the tools: the result rows, the "+ −" of the times, the
+   chips of the kinds of units and of "More shapes" (a little larger to touch than they look) */
+.tool-out .geo-row, .rev-out .geo-row { min-height: 48px; }
+.tool-choice .seg.mini button { min-width: 48px; }
+.geo-chip { position: relative; }
+.geo-chip::before { content: ""; position: absolute; left: -4px; right: -4px; top: -6px; bottom: -6px; }
+.conv-kinds .geo-chip { min-height: 40px; }
+.conv-kinds { margin-bottom: 8px; }
+/* a field with small choices (three tax rates in Spanish and French): the field keeps room for a
+   number, and the choices go under it when the row is too narrow */
+.geo-size:has(.tool-mini-chips) input { min-width: 88px; }
+.tool-mini-chips { margin-left: auto; }
+
+/* the heads of tanks and the quick-reference table (1.12.0, D1) */
+.head-more .seg.mini { flex-wrap: wrap; }
+.head-more .seg.mini button { flex: 1 1 auto; white-space: normal; }
+.head-row[hidden] { display: none; }
+.quick-tank .geo-size input { max-width: 10em; }
+
+/* a solid from a profile (1.12.0, D2) */
+.pf-pic svg { display: block; width: 100%; max-width: 260px; height: auto; margin: 6px auto; }
+.pf-pic .g { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.pf-pic .g.hole { fill: var(--surface); }
+.pf-pic .e { stroke: var(--muted); stroke-dasharray: 4 3; fill: none; }
+.pf-table input { min-height: 44px; }
+.pf-between { flex-direction: column; align-items: stretch; gap: 4px; }
+.pf-between .seg.mini { display: flex; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.pf-between .seg.mini button { flex: 1 1 auto; white-space: normal; overflow-wrap: anywhere; min-width: 48px; min-height: 48px; }
+
+/* stage U, round 2 (1.12.0) */
+/* 要判断 27, (b) as the author decided: on screens lower than 600 px the tabs, the top row of keys and the
+   input field are drawn lower (about 40 px), and the 48 dp to touch reach around them (the tabs and the keys
+   with ::before; the input field takes the touches on the padding of its section, app.js) */
+@media (max-height: 599px) {
+  .ptab { height: 30px; }
+  .ptab::before { top: -8px; bottom: -10px; }
+  .toolbar .key { height: 36px; }
+  .toolbar .key::before { top: -6px; bottom: -6px; }
+  #expr { min-height: 40px; }
+}
+/* the results of the shapes and the tanks as those of the tools (record 8): a value that does not fit beside
+   its name goes below it, and a number or an exact expression is not broken in the middle */
+.geo-out .geo-row { flex-wrap: wrap; row-gap: 2px; }
+.geo-out .geo-val { flex: 1 1 auto; overflow-wrap: break-word; word-break: keep-all; }
+/* the converter: the number and the unit list each on their own line when they do not both fit (320 px, large text) */
+.conv-row { flex-wrap: wrap; }
+.conv-row input { flex: 1 1 8em; }
+.conv-row select { flex: 1 1 9em; max-width: none; }
+/* an exact result with its approximation that is wider than the history (320 px, large text): the line breaks after
+   = or ≈ instead of the end being hidden off the right (it still scrolls when one part alone is too wide) */
+.h-res.math { white-space: normal; }
+/* the sheet "Save as STL" (1.12.0, D3) */
+.sheet .stl-mm, .sheet .geo-size { padding: 4px 12px; }
+.stl-mm input { max-width: 8em; }
+.stl-info { padding: 6px 12px; font-variant-numeric: tabular-nums; color: var(--muted); overflow-wrap: anywhere; }
+/* calculation notes (1.12.0, D5): one line, its field and its result; the result goes below when both do not fit */
+.note-pick { gap: 8px; }
+.note-pick select { flex: 1 1 8em; min-width: 0; min-height: 48px; }
+.note-lines { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+.note-line { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.note-line input { flex: 1 1 10em; min-width: 0; min-height: 48px; box-sizing: border-box; font-size: 16px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--text); }
+.note-res { flex: 1 1 6em; min-width: 0; min-height: 48px; text-align: right; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; font-size: calc(15px * var(--fs)); overflow-wrap: break-word; word-break: keep-all; padding: 4px 2px; }
+.note-res:empty { min-height: 0; padding: 0; pointer-events: none; }
+.note-res.bad { color: var(--danger); font-weight: 400; font-size: 13px; }
+/* the line pictures of the Pro features (1.12.0, 要判断 14 B) */
+.pro-feat .ico svg { display: block; margin: 2px auto 0; color: var(--accent); }
+/* 1.12.0 (H): the user manual. "?" at the right end of a panel's bar (48 dp), the links "How to use ›" */
+.help-btn { flex: 0 0 48px; position: relative; font-weight: 700; font-size: 17px; color: var(--accent); }
+.help-btn::after { content: ''; position: absolute; inset: 11px; border: 1.5px solid currentColor; border-radius: 50%; opacity: .75; pointer-events: none; }
+.panel-bar .ptitle { min-width: 0; overflow-wrap: anywhere; line-height: 1.2; }
+.pro-how { display: inline-block; font-size: 14px; padding: 12px 0; }
+.pro-feat .pro-how { margin-top: -6px; }
+.manual-card { display: flex; flex-direction: column; gap: 4px; }
+.manual-btn { min-height: 48px; font-weight: 700; }
+.news-more { margin-top: 2px; }
+.manual-link { display: inline-block; min-height: 48px; line-height: 48px; }
+/* the user manual inside the app (1.12.0, H; made by manual/build.py): text and simple SVG pictures */
+.manual-body { --m-accent: var(--accent); --m-on-accent: var(--accent-text, #fff); --m-soft: var(--accent-soft); line-height: 1.65; }
+.manual-top { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.manual-search { box-sizing: border-box; width: 100%; min-height: 48px; padding: 10px 12px; margin: 4px 0 8px; font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; }
+.manual-doc h2 { font-size: 1.3em; margin: 1.6em 0 .4em; padding-top: .5em; border-top: 2px solid var(--line); line-height: 1.3; }
+.manual-doc h3 { font-size: 1.12em; margin: 1.4em 0 .35em; line-height: 1.35; }
+.manual-doc h4 { font-size: 1em; margin: 1em 0 .3em; }
+.manual-doc p { margin: .45em 0; }
+.manual-doc a { color: var(--accent); }
+.manual-doc .m-toc { background: var(--surface-2); border-radius: 12px; padding: 10px 14px; }
+.manual-doc .m-toc-t { font-weight: 700; }
+.manual-doc .m-toc ol { margin: 0; padding-left: 1.3em; }
+.manual-doc .m-toc ol ol { font-size: .94em; }
+.manual-doc .m-toc a { display: block; min-height: 40px; padding: 9px 0; line-height: 22px; box-sizing: border-box; } /* (a long title wraps with its number on its first line) */
+.manual-doc .m-lbl { font-weight: 700; }
+.manual-doc .m-what .m-lbl { display: block; color: var(--muted); font-size: .9em; }
+.manual-doc .m-steps ol { margin: .2em 0; padding-left: 1.5em; }
+.manual-doc .m-steps li { margin: .25em 0; }
+.manual-doc .m-box { border-radius: 10px; padding: 6px 12px; margin: .6em 0; background: var(--surface-2); }
+.manual-doc .m-box p, .manual-doc .m-box ul { margin: .2em 0; }
+.manual-doc .m-tip { border-left: 4px solid var(--accent); }
+.manual-doc .m-mis { border-left: 4px solid var(--warn, #c77700); }
+.manual-doc .m-note { border-left: 4px solid var(--danger, #c0392b); }
+.manual-doc .m-badge { display: inline-block; padding: 0 8px; border-radius: 6px; background: var(--accent); color: var(--accent-text, #fff); font-weight: 700; font-size: .85em; }
+.manual-doc b.ui { font-weight: 700; }
+.manual-doc code { font-family: ui-monospace, monospace; font-size: .92em; background: var(--surface-2); padding: 0 4px; border-radius: 4px; overflow-wrap: anywhere; }
+.manual-doc .m-tw { overflow-x: auto; }
+.manual-doc table { border-collapse: collapse; margin: .5em 0; font-size: .94em; }
+.manual-doc th, .manual-doc td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
+.manual-doc th { background: var(--surface-2); }
+.manual-doc .m-fig { margin: .8em 0; }
+.manual-doc .m-fig figcaption { color: var(--muted); font-size: .9em; }
+.manual-doc .m-svg svg { width: 100%; max-width: 280px; height: auto; color: var(--text); display: block; }
+.manual-doc .m-idx { padding-left: 1.1em; font-size: .92em; }
+/* 1.12.0 (D7): the digits of the results of the tools */
+/* (touch areas of at least 48 × 48 dp, as every control: A4; UX01 of the suite found 40) */
+.dig-sel, .geo-units .dig-sel { min-height: 48px; }
+.dig-more { margin: 6px 0 2px; }
+.dig-body { display: flex; flex-direction: column; gap: 8px; padding: 6px 0 4px; }
+.dig-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.dig-row .dig-lbl { flex: 0 0 auto; min-width: 7em; font-size: 14px; color: var(--muted); }
+.dig-row .seg.mini { flex: 0 1 auto; flex-wrap: wrap; }
+.dig-n { width: 4.2em; min-height: 48px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 15px; text-align: center; }
+.dig-per { gap: 8px; font-size: 14px; }
+.dig-per input { width: 22px; height: 22px; }
+.dig-kinds { display: flex; flex-direction: column; gap: 6px; padding-left: 8px; border-left: 2px solid var(--line); }
+.dig-nw { display: inline-flex; align-items: center; gap: 6px; }
+.dig-unit { font-size: 14px; color: var(--muted); }
+.dig-kinds[hidden], .dig-warn[hidden], .dig-sel option[hidden], .dig-nw[hidden] { display: none; }
+.dig-setting + .dig-more { padding: 0 12px 8px; }
+.dig-body .btn { align-self: flex-start; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: start; height: auto; }
