@@ -71,46 +71,13 @@ de-DE, fr-FR, ko-KR and zh-TW, after those translations have been added; listing
 The notes in German, French, Korean and Traditional Chinese were translated by machine (Claude) and
 have not been checked by native speakers.
 
-1.12.1 (when 1.12.0 was already released; only the automatic update of the exchange rates changed).
-The Google Play version (with purchases) has had ACCESS_NETWORK_STATE since 1.3.0, because the Google Play
-Billing Library adds it; 1.12.1 only uses it in the app too. So there is no new permission on Play; the APK
-without purchases gets it new:
-
-<en-US>
-• Exchange rates are updated when you open the app (at start or when you come back to it), if they are more than an hour old; until now every 7 days
-• Not by themselves while roaming abroad or in Data Saver; "Update now" always works
-• No new permissions: "View network connections", already in the app, is now also used to check roaming and Data Saver
-</en-US>
-<ja-JP>
-・為替レートを、アプリを開いたとき（起動したとき・アプリに戻ったとき）に、前回の更新から 1 時間以上たっていれば自動で更新します（これまでは 7 日ごと）
-・海外ローミング中とデータセーバー中は自動では更新しません。「今すぐ更新」はいつでも使えます
-・権限は増えていません。これまでもあった「ネットワーク接続の表示」を、ローミングとデータセーバーを確かめるのにも使います
-</ja-JP>
-<es-419>
-• Los tipos de cambio se actualizan al abrir la app (al iniciarla o al volver a ella) si tienen más de una hora; antes, cada 7 días
-• No se actualizan solos en roaming en el extranjero ni con Ahorro de datos; "Actualizar ahora" siempre funciona
-• Sin permisos nuevos: "Ver conexiones de red", que la app ya tenía, ahora también comprueba el roaming y el Ahorro de datos
-</es-419>
-<de-DE>
-• Wechselkurse werden beim Öffnen der App aktualisiert (beim Start oder wenn Sie zurückkehren), wenn sie älter als eine Stunde sind; bisher alle 7 Tage
-• Nicht von selbst beim Roaming im Ausland oder im Datensparmodus; „Jetzt aktualisieren“ geht immer
-• Keine neuen Berechtigungen: „Netzwerkverbindungen abrufen“, das die App schon hatte, prüft jetzt auch Roaming und Datensparmodus
-</de-DE>
-<fr-FR>
-• Les taux de change sont mis à jour à l’ouverture de l’app (au démarrage ou quand vous y revenez) s’ils ont plus d’une heure ; jusqu’ici tous les 7 jours
-• Pas d’eux-mêmes en itinérance à l’étranger ni avec l’Économiseur de données ; « Mettre à jour maintenant » marche toujours
-• Aucune nouvelle autorisation : « Afficher les connexions réseau », que l’app avait déjà, sert aussi à vérifier l’itinérance et l’Économiseur de données
-</fr-FR>
-<ko-KR>
-• 앱을 열 때(시작할 때·앱으로 돌아올 때) 마지막 업데이트에서 1시간 이상 지났으면 환율을 자동으로 업데이트합니다(지금까지는 7일마다)
-• 해외 로밍 중과 데이터 세이버 사용 중에는 자동으로 업데이트하지 않습니다. ‘지금 업데이트’는 언제든 쓸 수 있습니다
-• 새 권한은 없습니다. 앱에 이미 있던 ‘네트워크 연결 보기’를 로밍과 데이터 세이버 확인에도 씁니다
-</ko-KR>
-<zh-TW>
-• 開啟 App 時（啟動時、回到 App 時），若距上次更新超過 1 小時，就自動更新匯率（之前是每 7 天）
-• 國際漫遊和數據節省模式時不會自動更新；「立即更新」隨時都能用
-• 沒有新增權限：App 原本就有的「查看網路連線」，現在也用來確認漫遊和數據節省模式
-</zh-TW>
+1.12.1 (when 1.12.0 was already released): paste store/release-notes-1.12.1.txt, the final notes for the
+12 locales of the Play listing (en-US, en-GB, en-AU, ja-JP, de-DE, es-ES, es-419, fr-FR, fr-CA, ko-KR, zh-TW,
+zh-HK). The words (Data Saver, roaming, "Update now" …) are those of the app's settings. Bitcoin and the
+precious metals were already updated with the rates in 1.12.0, so the notes only say that the manual explains
+it now. The Google Play version (with purchases) has had ACCESS_NETWORK_STATE since 1.3.0, because the Google
+Play Billing Library adds it (billing 8.3.0, through com.google.android.datatransport transport-runtime and
+transport-backend-cct); 1.12.1 only uses it in the app too. So there is no new permission on Play.
 
 1.12.0 (when 1.11.0 was already released):
 
