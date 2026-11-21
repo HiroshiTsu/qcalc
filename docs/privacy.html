@@ -26,7 +26,7 @@
 <body>
 
 <h1>QCalc Privacy Policy</h1>
-<p class="meta">Effective date: November 11, 2026<br>Updated: November 12, 2026 (changed the contact email address); November 13, 2026 (QCalc Pro purchases and exporting the history)</p>
+<p class="meta">Effective date: November 11, 2026<br>Updated: November 12, 2026 (changed the contact email address); November 13, 2026 (QCalc Pro purchases and exporting the history); November 21, 2026 (when exchange rates are updated automatically, and the permission to view network connections, from version 1.12.1; "Update exchange rates now" is in the settings)</p>
 <p class="lang"><a href="#ja" lang="ja">日本語</a></p>
 
 <p>This privacy policy explains how QCalc (package name <code>io.github.hiroshitsu.qcalc</code>, "the app"), a calculator app for Android, handles information. The app is developed and published by an individual developer (HiroshiTsu).</p>
@@ -40,7 +40,12 @@
 </ul>
 
 <h2>2. Internet use (exchange rates)</h2>
-<p>The app connects to the internet only to download exchange-rate files for currency conversion: when you use "Update exchange rates now" in the settings or "Update now" on the converter screen, or, if the setting "Update exchange rates automatically (at start; not while roaming or in Data Saver)" is on, when the app starts (if the rates are more than an hour old; not while the device is roaming abroad or in Data Saver). It connects to these servers:</p>
+<p>The app connects to the internet only to download exchange-rate files for currency conversion: when you use "Update exchange rates now" in the settings or "Update now" on the converter screen, or, if the setting "Update exchange rates automatically" is on:</p>
+<ul>
+  <li>version 1.12.1 and later: when the app is opened (when it starts or when you come back to it), if the rates are more than an hour old; not while the device is roaming abroad or in Data Saver;</li>
+  <li>version 1.12.0: when the rates are more than 7 days old.</li>
+</ul>
+<p>It connects to these servers:</p>
 <ul>
   <li>European Central Bank (<code>www.ecb.europa.eu</code>): rates of the major currencies</li>
   <li>Coinbase (<code>api.coinbase.com</code>): the price of Bitcoin</li>
@@ -67,7 +72,7 @@
 <h2>5. Permissions</h2>
 <ul>
   <li>Internet (<code>INTERNET</code>): to download exchange rates.</li>
-  <li>View network connections (<code>ACCESS_NETWORK_STATE</code>): to check whether the device is roaming or in Data Saver (then the exchange rates are not downloaded by themselves).</li>
+  <li>View network connections (<code>ACCESS_NETWORK_STATE</code>), version 1.12.1 and later: to check whether the device is roaming or in Data Saver (then the exchange rates are not downloaded by themselves).</li>
   <li>Vibration (<code>VIBRATE</code>): for key-press feedback (can be turned off in the settings).</li>
   <li>Google Play billing (<code>com.android.vending.BILLING</code>), in versions where QCalc Pro can be bought: to buy QCalc Pro through Google Play.</li>
 </ul>
@@ -89,7 +94,7 @@
 
 <h1 id="ja" lang="ja">QCalc プライバシーポリシー</h1>
 <div lang="ja">
-<p class="meta">制定日：2026年11月11日<br>改定日：2026年11月12日（お問い合わせ先のメールアドレスを変更）、2026年11月13日（QCalc Pro の購入と履歴の書き出しについて追記）</p>
+<p class="meta">制定日：2026年11月11日<br>改定日：2026年11月12日（お問い合わせ先のメールアドレスを変更）、2026年11月13日（QCalc Pro の購入と履歴の書き出しについて追記）、2026年11月21日（バージョン 1.12.1 からの為替レートの自動更新のタイミングと、ネットワーク接続の表示の権限について追記。「為替レートを今すぐ更新」の場所を設定に直す）</p>
 
 <p>このプライバシーポリシーは、Android 用の電卓アプリ「QCalc」（パッケージ名 <code>io.github.hiroshitsu.qcalc</code>、以下「本アプリ」）が、利用者の情報をどのように扱うかを説明するものです。本アプリは個人の開発者（HiroshiTsu）が作成・公開しています。</p>
 
@@ -102,7 +107,12 @@
 </ul>
 
 <h2>2. インターネットの使用（為替レートの取得）</h2>
-<p>本アプリがインターネットに接続するのは、通貨換算に使う為替レートのファイルをダウンロードするときだけです。ダウンロードは、設定の「為替レートを今すぐ更新」、または換算の画面の「今すぐ更新」を使ったとき、または設定「為替レートを自動更新」が有効な場合にアプリを起動したとき（前回の更新から1時間以上たっていれば。海外ローミング中とデータセーバー中は除く）行います（英語の画面では "Update exchange rates now"、"Update now"、"Update exchange rates automatically (at start; not while roaming or in Data Saver)"）。接続先は次のサーバーです。</p>
+<p>本アプリがインターネットに接続するのは、通貨換算に使う為替レートのファイルをダウンロードするときだけです。ダウンロードは、設定の「為替レートを今すぐ更新」または換算の画面の「今すぐ更新」を使ったとき（英語の画面では "Update exchange rates now"、"Update now"）、または設定「為替レートを自動更新」が有効な場合に、次のときに行います。</p>
+<ul>
+  <li>バージョン 1.12.1 以降：アプリを開いたとき（起動したとき・アプリに戻ったとき）。前回の更新から1時間以上たっていれば取りに行きます。海外ローミング中とデータセーバー中は自動では取りません。</li>
+  <li>バージョン 1.12.0：前回の更新から7日以上たったとき。</li>
+</ul>
+<p>接続先は次のサーバーです。</p>
 <ul>
   <li>欧州中央銀行（<code>www.ecb.europa.eu</code>）：主要通貨の為替レート</li>
   <li>Coinbase（<code>api.coinbase.com</code>）：ビットコインの価格</li>
@@ -129,7 +139,7 @@
 <h2>5. 権限</h2>
 <ul>
   <li>インターネット（<code>INTERNET</code>）：為替レートのダウンロードに使います。</li>
-  <li>ネットワーク接続の表示（<code>ACCESS_NETWORK_STATE</code>）：ローミング中かどうかとデータセーバーを確かめるために使います（そのあいだは為替レートを自動では取りません）。</li>
+  <li>ネットワーク接続の表示（<code>ACCESS_NETWORK_STATE</code>。バージョン 1.12.1 以降）：ローミング中かどうかとデータセーバーを確かめるために使います（そのあいだは為替レートを自動では取りません）。</li>
   <li>バイブレーション（<code>VIBRATE</code>）：キーを押したときの振動に使います（設定で止められます）。</li>
   <li>Google Play の課金（<code>com.android.vending.BILLING</code>。QCalc Pro を購入できる版だけ）：Google Play で QCalc Pro を購入するために使います。</li>
 </ul>

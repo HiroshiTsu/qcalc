@@ -586,7 +586,7 @@
     "Up to {0} equations: the rest was left out": "Hasta {0} ecuaciones: el resto se dejó fuera",
     "Up to {0} functions are drawn: {1} more left out": "Se dibujan hasta {0} funciones: se omitieron {1} más",
     "Update exchange rates": "Actualizar tipos de cambio",
-    "Update exchange rates automatically (at start; not while roaming or in Data Saver)": "Actualizar los tipos de cambio automáticamente (al iniciar; no en itinerancia ni con Ahorro de datos)",
+    "Update exchange rates automatically (when the app is opened; not while roaming or in Data Saver)": "Actualizar los tipos de cambio automáticamente (al abrir la app; no en itinerancia ni con Ahorro de datos)",
     "Update now": "Actualizar ahora",
     "Updated from {0} of {1} sources.": "Se actualizó desde {0} de {1} fuentes.",
     "User-defined variables and functions": "Variables y funciones del usuario",

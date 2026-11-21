@@ -574,7 +574,7 @@
     "Up to {0} equations: the rest was left out": "Bis zu {0} Gleichungen: Der Rest wurde weggelassen",
     "Up to {0} functions are drawn: {1} more left out": "Es werden bis zu {0} Funktionen gezeichnet: {1} weitere weggelassen",
     "Update exchange rates": "Wechselkurse aktualisieren",
-    "Update exchange rates automatically (at start; not while roaming or in Data Saver)": "Wechselkurse automatisch aktualisieren (beim Start; nicht beim Roaming oder im Datensparmodus)",
+    "Update exchange rates automatically (when the app is opened; not while roaming or in Data Saver)": "Wechselkurse automatisch aktualisieren (beim Öffnen der App; nicht beim Roaming oder im Datensparmodus)",
     "Update now": "Jetzt aktualisieren",
     "Updated from {0} of {1} sources.": "Aus {0} von {1} Quellen aktualisiert.",
     "User-defined variables and functions": "Eigene Variablen und Funktionen",
