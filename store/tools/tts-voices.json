@@ -1,0 +1,47 @@
+{
+ "about": "The designed narration voices of tts_engines.py: for each engine a female and a male voice, made from the description and the seed as a short reference recording in anchor_lang (the anchor text), then used for every paragraph in every language. Change a description, a seed or anchor_lang and run 'design --redesign' to make the voice again. No recording of a real person is used.",
+ "anchor": {
+  "en": "This is a calm narration voice. It reads numbers, units and formulas clearly, at an even, unhurried pace.",
+  "ja": "これは、落ち着いたナレーションの声です。数字や単位、式も、はっきりと、ゆったりした一定の速さで読み上げます。"
+ },
+ "engines": {
+  "qwen3": {
+   "female": {
+    "description": "A calm, mature adult woman in her late thirties narrating a product explainer video. Warm, clear and natural voice, medium-low pitch, unhurried and even pace, friendly but not excited, precise articulation of numbers and technical words, recorded close to the microphone in a quiet studio.",
+    "seed": 20261121,
+    "anchor_lang": "en"
+   },
+   "male": {
+    "description": "A calm, mature adult man in his forties narrating a product explainer video. Warm, clear and natural baritone, unhurried and even pace, friendly but not excited, precise articulation of numbers and technical words, recorded close to the microphone in a quiet studio.",
+    "seed": 20261122,
+    "anchor_lang": "en"
+   }
+  },
+  "ming": {
+   "female": {
+    "description": "这是一位成熟稳重的成年女性旁白，声音温暖、清晰、自然，音调中低，语速平稳从容，语气亲切但不夸张，数字和术语吐字清楚，像在安静的录音棚里贴近麦克风录制的产品介绍。",
+    "note": "A calm, mature adult woman narrating a product video: warm, clear, natural, medium-low pitch, even pace, friendly, clear numbers, a quiet studio. (Ming's voice design was trained mostly with Chinese descriptions.)",
+    "seed": 20261121,
+    "anchor_lang": "en"
+   },
+   "male": {
+    "description": "这是一位成熟稳重的成年男性旁白，男中音，声音温暖、清晰、自然，语速平稳从容，语气亲切但不夸张，数字和术语吐字清楚，像在安静的录音棚里贴近麦克风录制的产品介绍。",
+    "note": "A calm, mature adult man narrating a product video: a warm, clear, natural baritone, even pace, friendly, clear numbers, a quiet studio.",
+    "seed": 20261122,
+    "anchor_lang": "en"
+   }
+  },
+  "irodori": {
+   "female": {
+    "description": "落ち着いた大人の女性のナレーション。やや低めで温かく、はっきりとした自然な声。ゆったりとした一定の速さで、明るすぎず、数字や用語をていねいに読む。静かなスタジオで、マイクの近くで録音したようなクリアな音。",
+    "seed": 20261121,
+    "anchor_lang": "ja"
+   },
+   "male": {
+    "description": "落ち着いた大人の男性のナレーション。低めで温かく、はっきりとした自然な声。ゆったりとした一定の速さで、明るすぎず、数字や用語をていねいに読む。静かなスタジオで、マイクの近くで録音したようなクリアな音。",
+    "seed": 20261122,
+    "anchor_lang": "ja"
+   }
+  }
+ }
+}
