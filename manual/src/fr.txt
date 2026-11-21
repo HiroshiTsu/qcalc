@@ -383,7 +383,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Pour un autre axe, revenez avec [[← Back to 2D]] et touchez sa ligne ; la ligne y = k se glisse au doigt. [[View in 3D]] le montre de nouveau en 3D.
 :step: [[↶ Undo]] revient à l'axe précédent.
 :shot: solid | La région entre y = x et y = x² tournée autour de l'axe des x
-:example: Entre y = x et y = x², autour de l'axe des x → volume 2π/15 ≈ 0,418879
+:example: Entre y = x et y = x², autour de l'axe des x → volume 2π/15 ≈ 0,41887902
 :tip: [[Show the method with lines]] trace les disques (rondelles) ou les coquilles. La ligne [[Pappus–Guldinus theorem: ]] compare le volume obtenu par le centre de gravité à l'intégrale.
 :pro: Faire tourner le solide au doigt en 3D est une fonction de QCalc Pro, comme le graphique 3D. Sans Pro, la ligne [[Turn it in 3D (QCalc Pro)]] s'affiche à la place.
 
@@ -471,7 +471,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :example: Le volume d’un cylindre 11250π ≈ 35342,91735 cm³ → recommandé 11250π ≈ 35342,9 cm³ ; avec 2 décimales 11250π ≈ 35342,92 cm³ ; avec 4 chiffres significatifs 11250π ≈ 35340 cm³
 :tip: Pour Formes, Cuves, Solide à partir d’un profil et le graphique, [[More: each kind, the 3D picture, rounding, CSV ▾]] règle aussi [[Each kind of quantity on its own]] (volume, aire, longueur, poids et %), les nombres [[In the 3D picture]] (recommandé : 3 chiffres significatifs, % avec une décimale), l’arrondi ([[Round half up]], [[Round down]] ou [[Round up]]) et les tableaux enregistrés en CSV ([[All the digits]] ou [[As shown]]). Les valeurs exactes (11250π) restent ; seuls les nombres après « ≈ » changent.
 Il y a trois façons de revenir. Pour un outil, appuyez sur [[Back to the default (recommended)]] dans ⋯ → [[Digits shown…]]. Pour tous les outils, appuyez sur [[All back to the default (recommended)]] sous [[Digits shown by each tool]] dans les paramètres ([[Precision (significant digits)]] de la calculatrice revient aussi à 10 et [[Maximum decimal places]] à sans limite). Pour tout, appuyez sur [[Reset all settings]] dans les paramètres (les paramètres et les chiffres de chaque outil reviennent par défaut ; la langue reste).
-Les chiffres recommandés en donnent un ou deux de plus que ce qui est d'ordinaire nécessaire (rien n'est ajouté aux valeurs exactes). L’argent est affiché jusqu’à la plus petite unité de la devise de votre région (0,01 euro), avec ses zéros (19,90) ; Formes, Cuves, Solide à partir d’un profil et Faire un solide ont 6 chiffres significatifs après « ≈ », l’aire, la longueur et les valeurs 3D du graphique 8, et les % une décimale. Les chiffres recommandés n’ont pas de zéros finaux, sauf pour l’argent, les prix unitaires et les statistiques.
+Les chiffres recommandés en donnent un ou deux de plus que ce qui est d'ordinaire nécessaire (rien n'est ajouté aux valeurs exactes). L’argent est affiché jusqu’à la plus petite unité de la devise de votre région (0,01 euro), avec ses zéros (19,90) ; Formes, Cuves et Solide à partir d’un profil ont 6 chiffres significatifs après « ≈ », l’aire, la longueur, Faire un solide et les valeurs 3D du graphique 8 (au moins 5 décimales), et les % une décimale. Les chiffres recommandés n’ont pas de zéros finaux, sauf pour l’argent, les prix unitaires et les statistiques.
 
 Le calcul est fait avec 12 chiffres de plus que ceux affichés (au moins 4 près de la limite de la précision ; l’intégration numérique 4 de plus, 24 chiffres au plus) ; le résultat est arrondi pour l'affichage.
 

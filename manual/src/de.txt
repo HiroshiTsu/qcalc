@@ -383,7 +383,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Für eine andere Achse gehen Sie mit [[← Back to 2D]] zurück und tippen auf ihre Linie; die Linie y = k ziehen Sie mit dem Finger. [[View in 3D]] zeigt ihn wieder in 3D.
 :step: [[↶ Undo]] kehrt zur vorherigen Achse zurück.
 :shot: solid | Der Bereich zwischen y = x und y = x² um die x-Achse gedreht
-:example: Zwischen y = x und y = x², um die x-Achse → Volumen 2π/15 ≈ 0,418879
+:example: Zwischen y = x und y = x², um die x-Achse → Volumen 2π/15 ≈ 0,41887902
 :tip: [[Show the method with lines]] zeichnet die Scheiben (Ringe) oder Zylinderschalen. Die Zeile [[Pappus–Guldinus theorem: ]] vergleicht das Volumen aus dem Schwerpunkt mit dem Integral.
 :pro: Den Körper in 3D mit dem Finger zu drehen ist, wie der 3D-Graph, eine Funktion von QCalc Pro. Ohne Pro erscheint stattdessen die Zeile [[Turn it in 3D (QCalc Pro)]].
 
@@ -471,7 +471,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :example: Das Volumen eines Zylinders 11250π ≈ 35342,91735 cm³ → empfohlen 11250π ≈ 35342,9 cm³; mit 2 Nachkommastellen 11250π ≈ 35342,92 cm³; mit 4 gültigen Ziffern 11250π ≈ 35340 cm³
 :tip: Für Figuren, Behälter, Körper aus einem Profil und den Graphen stellt [[More: each kind, the 3D picture, rounding, CSV ▾]] außerdem [[Each kind of quantity on its own]] ein (Volumen, Fläche, Länge, Gewicht und %), die Zahlen [[In the 3D picture]] (empfohlen: 3 gültige Ziffern, % mit einer Nachkommastelle), das Runden ([[Round half up]], [[Round down]] oder [[Round up]]) und die als CSV gespeicherten Tabellen ([[All the digits]] oder [[As shown]]). Exakte Werte (11250π) bleiben; nur die Zahlen nach „≈“ ändern sich.
 Es gibt drei Wege zurück. Für ein Werkzeug drücken Sie [[Back to the default (recommended)]] unter ⋯ → [[Digits shown…]]. Für alle Werkzeuge drücken Sie [[All back to the default (recommended)]] unter [[Digits shown by each tool]] in den Einstellungen (auch [[Precision (significant digits)]] des Rechners wird 10 und [[Maximum decimal places]] wieder ohne Grenze). Für alles drücken Sie [[Reset all settings]] in den Einstellungen (Einstellungen und Stellen je Werkzeug auf den Standard; die Sprache bleibt).
-Die empfohlenen Stellen sind ein bis zwei mehr, als meist nötig ist (genauen Werten werden keine Stellen angehängt). Geld wird bis zur kleinsten Einheit der Währung Ihrer Region gezeigt (0,01 Euro), mit seinen Nullen (19,90); Figuren, Behälter, Körper aus einem Profil und Körper bilden haben 6 gültige Ziffern nach „≈“, Fläche, Länge und 3D-Werte des Graphen 8, % eine Nachkommastelle. Empfohlene Stellen haben keine Nullen am Ende, außer bei Geld, Grundpreisen und Statistik.
+Die empfohlenen Stellen sind ein bis zwei mehr, als meist nötig ist (genauen Werten werden keine Stellen angehängt). Geld wird bis zur kleinsten Einheit der Währung Ihrer Region gezeigt (0,01 Euro), mit seinen Nullen (19,90); Figuren, Behälter und Körper aus einem Profil haben 6 gültige Ziffern nach „≈“, Fläche, Länge, Körper bilden und 3D-Werte des Graphen 8 (mindestens 5 Nachkommastellen), % eine Nachkommastelle. Empfohlene Stellen haben keine Nullen am Ende, außer bei Geld, Grundpreisen und Statistik.
 
 Gerechnet wird mit 12 Stellen mehr als angezeigt (nahe der Grenze der Genauigkeit mindestens 4; numerische Integration 4 mehr, höchstens 24 Stellen); zum Anzeigen wird gerundet.
 

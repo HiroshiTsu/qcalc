@@ -383,7 +383,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: For another axis, go back with [[← Back to 2D]] and tap its line; drag the line y = k with a finger. [[View in 3D]] shows it in 3D again.
 :step: [[↶ Undo]] goes back to the axis before.
 :shot: solid | The region between y = x and y = x² turned around the x axis
-:example: Between y = x and y = x², around the x axis → volume 2π/15 ≈ 0.418879
+:example: Between y = x and y = x², around the x axis → volume 2π/15 ≈ 0.41887902
 :tip: [[Show the method with lines]] draws the disks (washers) or shells. The line [[Pappus–Guldinus theorem: ]] compares the volume from the centroid with the integral.
 :pro: Turning the solid with a finger in 3D is a QCalc Pro feature, like the 3D graph. Without Pro, the row [[Turn it in 3D (QCalc Pro)]] appears instead.
 
@@ -471,7 +471,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :example: The volume of a cylinder 11250π ≈ 35342.91735 cm³ → recommended 11250π ≈ 35342.9 cm³; with 2 decimal places 11250π ≈ 35342.92 cm³; with 4 significant digits 11250π ≈ 35340 cm³
 :tip: For Shapes, Tanks, Solid from a profile and the graph, [[More: each kind, the 3D picture, rounding, CSV ▾]] also sets [[Each kind of quantity on its own]] (volume, area, length, weight and %), the numbers [[In the 3D picture]] (recommended: 3 significant digits, % with one decimal), the rounding ([[Round half up]], [[Round down]] or [[Round up]]) and the quick-reference tables saved as CSV ([[All the digits]] or [[As shown]]). Exact values (11250π) stay; only the numbers after "≈" change.
 There are three ways back. For one tool, press [[Back to the default (recommended)]] in ⋯ → [[Digits shown…]]. For every tool, press [[All back to the default (recommended)]] under [[Digits shown by each tool]] in the settings (the calculator's [[Precision (significant digits)]] goes back to 10 and [[Maximum decimal places]] to no limit as well). For everything, press [[Reset all settings]] in the settings (the settings and the digits of each tool go back to their defaults; the language stays).
-The recommended digits are a digit or two more than are usually needed (no digits are added to values that are exact). Money is shown to the smallest unit of the currency of your region (1 yen, 0.01 dollar), with its zeros (19.90); Shapes, Tanks, Solid from a profile and Make a solid have 6 significant digits after "≈", the area, the length and the 3D values of the graph 8, and % one decimal. Recommended digits have no zeros at the end, but for money, unit prices and statistics.
+The recommended digits are a digit or two more than are usually needed (no digits are added to values that are exact). Money is shown to the smallest unit of the currency of your region (1 yen, 0.01 dollar), with its zeros (19.90); Shapes, Tanks and Solid from a profile have 6 significant digits after "≈", the area, the length, Make a solid and the 3D values of the graph 8 (at least 5 decimals), and % one decimal. Recommended digits have no zeros at the end, but for money, unit prices and statistics.
 
 The calculation is made with 12 digits more than are shown (at least 4 near the limit of the precision; numeric integration 4 more, 24 digits at most); the result is rounded for showing.
 

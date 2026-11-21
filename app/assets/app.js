@@ -6434,7 +6434,7 @@
     return row;
   }
   // (1.12.0, D7: the number after ≈ with the digits set: a volume, or a surface area for the rows of the surfaces;
-  // feature/screen-digits: the place "solid" of the shared digits, 6 significant digits when recommended)
+  // feature/screen-digits: the place "solid" of the shared digits, recommended as the graph's area: 8 significant digits)
   const revShow = (row, val, expr) => {
     row.result = val.text.indexOf('≈ ') === 0 ? val.text : '= ' + val.text;
     row.val.textContent = ''; showResult(row.val, valueShown(row.result, 'solid', row.kind || 'vol')); row.expr = expr;
@@ -8496,8 +8496,8 @@
   // One setting (S.digits) for the shapes tool (with the tanks), "Solid from a profile", the graph (its area,
   // length, 3D values and "Make a solid") and the numbers in the 3D picture. It is opened from ⋯ "Digits shown…"
   // of each of them and from the list in the settings (digitsSheet), as the digits of the other tools are:
-  // recommended (each place its own: 6 significant digits after "≈" for the shapes, the tanks, the profiles and
-  // "Make a solid", 8 for the area, the length and the 3D values of the graph, % with one decimal), or a number
+  // recommended (each place its own: 6 significant digits after "≈" for the shapes, the tanks and the profiles,
+  // 8 for the area, the length, "Make a solid" and the 3D values of the graph, % with one decimal), or a number
   // of decimal places or of significant digits, the same for every result or for each kind of quantity (volume,
   // area, length, weight, %), and on its own for the numbers in the 3D picture (recommended: 3 significant
   // digits, % with one decimal). The exact part of a result (11250π) stays as the engine gives it. Rounding half
@@ -14189,8 +14189,9 @@
     const M = MONEY();
     if (inGroup(key)) {
       if (kind === 'pct') return { m: 'dec', n: 1, why: tr('% with 1 decimal', '% は小数点以下 1 桁') };
-      if (key === 'graph') return { m: 'sig', n: 8, minDec: 5, why: tr('the area, the length and the 3D values of the graph: 8 significant digits (at least 5 decimals, never more than the estimated error allows)', 'グラフの面積・長さ・3D の値は有効 8 桁（小数は 5 桁以上。誤差の見積もりで確かな桁まで）') };
-      if (key === 'solids') return { m: 'sig', n: 6, why: tr('6 significant digits after "≈" (shapes, tanks, solids from a profile, "Make a solid"); the area, the length and the 3D values of the graph: 8 (at least 5 decimals, never more than the estimated error allows); % with 1 decimal; the 3D picture: 3', '「≈」の後ろは有効 6 桁（図形・容器・輪郭から回転体・立体にする）、グラフの面積・長さ・3D の値は有効 8 桁（小数は 5 桁以上。誤差の見積もりで確かな桁まで）、% は小数点以下 1 桁、3D の絵の中は有効 3 桁') };
+      // (the graph's values, "Make a solid" too: the same screen, the same digits; the owner, 11-21 10:03)
+      if (key === 'graph' || key === 'solid') return { m: 'sig', n: 8, minDec: 5, why: tr('the area, the length, "Make a solid" and the 3D values of the graph: 8 significant digits (at least 5 decimals, never more than the estimated error allows)', 'グラフの面積・長さ・立体にする・3D の値は有効 8 桁（小数は 5 桁以上。誤差の見積もりで確かな桁まで）') };
+      if (key === 'solids') return { m: 'sig', n: 6, why: tr('6 significant digits after "≈" (shapes, tanks, solids from a profile); the area, the length, "Make a solid" and the 3D values of the graph: 8 (at least 5 decimals, never more than the estimated error allows); % with 1 decimal; the 3D picture: 3', '「≈」の後ろは有効 6 桁（図形・容器・輪郭から回転体）、グラフの面積・長さ・立体にする・3D の値は有効 8 桁（小数は 5 桁以上。誤差の見積もりで確かな桁まで）、% は小数点以下 1 桁、3D の絵の中は有効 3 桁') };
       return { m: 'sig', n: 6, why: tr('6 significant digits after "≈"', '「≈」の後ろは有効 6 桁') };
     }
     switch (key) {

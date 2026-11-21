@@ -383,7 +383,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Para otro eje, vuelve con [[← Back to 2D]] y toca su línea; la línea y = k se arrastra con el dedo. [[View in 3D]] lo muestra de nuevo en 3D.
 :step: [[↶ Undo]] vuelve al eje anterior.
 :shot: solid | La región entre y = x e y = x² girada alrededor del eje x
-:example: Entre y = x e y = x², alrededor del eje x → volumen 2π/15 ≈ 0.418879
+:example: Entre y = x e y = x², alrededor del eje x → volumen 2π/15 ≈ 0.41887902
 :tip: [[Show the method with lines]] dibuja los discos (arandelas) o las capas. La línea [[Pappus–Guldinus theorem: ]] compara el volumen a partir del centroide con la integral.
 :pro: Girar el sólido con el dedo en 3D es una función de QCalc Pro, como la gráfica 3D. Sin Pro aparece en su lugar la fila [[Turn it in 3D (QCalc Pro)]].
 
@@ -471,7 +471,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :example: El volumen de un cilindro 11250π ≈ 35342,91735 cm³ → recomendado 11250π ≈ 35342,9 cm³; con 2 decimales 11250π ≈ 35342,92 cm³; con 4 cifras significativas 11250π ≈ 35340 cm³
 :tip: En Figuras, Depósitos, Sólido a partir de un perfil y el gráfico, [[More: each kind, the 3D picture, rounding, CSV ▾]] ajusta además [[Each kind of quantity on its own]] (volumen, área, longitud, peso y %), los números [[In the 3D picture]] (recomendado: 3 cifras significativas, % con un decimal), el redondeo ([[Round half up]], [[Round down]] o [[Round up]]) y las tablas guardadas como CSV ([[All the digits]] o [[As shown]]). Los valores exactos (11250π) se mantienen; solo cambian los números tras "≈".
 Hay tres formas de volver. Para una herramienta, pulsa [[Back to the default (recommended)]] en ⋯ → [[Digits shown…]]. Para todas, pulsa [[All back to the default (recommended)]] en [[Digits shown by each tool]] de los ajustes ([[Precision (significant digits)]] de la calculadora vuelve también a 10 y [[Maximum decimal places]] a sin límite). Para todo, pulsa [[Reset all settings]] en los ajustes (los ajustes y las cifras de cada herramienta vuelven a sus valores predeterminados; el idioma se queda).
-Las cifras recomendadas son una o dos más de las que suelen hacer falta (a los valores exactos no se les añaden cifras). El dinero se muestra hasta la unidad más pequeña de la moneda de tu región (0,01 euros), con sus ceros (19,90); Figuras, Depósitos, Sólido a partir de un perfil y Hacer un sólido tienen 6 cifras significativas tras "≈", el área, la longitud y los valores 3D del gráfico 8, y el % un decimal. Las cifras recomendadas no llevan ceros finales, salvo el dinero, los precios por unidad y la estadística.
+Las cifras recomendadas son una o dos más de las que suelen hacer falta (a los valores exactos no se les añaden cifras). El dinero se muestra hasta la unidad más pequeña de la moneda de tu región (0,01 euros), con sus ceros (19,90); Figuras, Depósitos y Sólido a partir de un perfil tienen 6 cifras significativas tras "≈", el área, la longitud, Hacer un sólido y los valores 3D del gráfico 8 (al menos 5 decimales), y el % un decimal. Las cifras recomendadas no llevan ceros finales, salvo el dinero, los precios por unidad y la estadística.
 
 El cálculo se hace con 12 cifras más de las que se muestran (al menos 4 cerca del límite de la precisión; la integración numérica 4 más, como mucho 24 cifras), y el resultado se redondea para mostrarlo.
 
