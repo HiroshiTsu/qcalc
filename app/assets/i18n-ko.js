@@ -1638,6 +1638,8 @@
     "Volume, liquid": "부피·액량",
     "digits": "자리",
     "← Back to the shape": "← 도형으로 돌아가기",
+    "Values from \"Solid from a profile\"": "‘윤곽에서 회전체’의 값",
+    "← Back to the profile": "← 윤곽으로 돌아가기",
     "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "3D 그래프의 ‘부피·겉넓이’를 열면 지금 그린 곡면 아래(곡면이 둘이면 그 사이)의 부피와 겉넓이가 바로 나옵니다. 범위는 직사각형이나 원 x² + y² ≤ R²입니다. 2D 그래프(⟳ 3D), ‘윤곽에서 회전체’, ‘도형’(⟳ 3D)에서 만든 입체에서는 거기서 구한 값이 나옵니다. 아래의 ‘도형 예시’에서는 ‘도형’의 모든 입체를 그 값 그대로 3D로 그릴 수 있습니다(‘수 바꾸기’로 ‘도형’이 열립니다)."
   },
   messages: {

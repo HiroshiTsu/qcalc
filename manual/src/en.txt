@@ -332,7 +332,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: [[More ▾]] adds the inner profile of a vessel and the shrinkage of pottery.
 :shot: profile | The example stepped shaft
 :example: The example stepped shaft → outer volume 4440π mm³ ≈ 13.95 cm³, about 109.5 g in iron
-:tip: [[View in 3D]] shows the shape; an STL file can be printed with a 3D printer ([STL files](#stl)).
+:tip: [[View in 3D]] shows the solid turned about its axis, with the steps, the flat ends and the inside drawn as in the STL file; turn it with one finger, and [[Cut in half]] shows the cut. [[← Back to the profile]] goes back to the table. An STL file can be printed with a 3D printer ([STL files](#stl)).
 
 ## stl | STL files for 3D printers
 :pro:

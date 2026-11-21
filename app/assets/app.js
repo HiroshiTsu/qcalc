@@ -8376,12 +8376,13 @@
     Q3.revInfo = Md.grow === 'rev' ? 'mesh' : null;
     if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
     showAngle3d(360);
-    Q3.from2d = { lines: link.lines, back: tr('← Back to the shape', '← 図形に戻る'), onBack: () => closePanel() };
+    // (1.13.0: a solid from a profile has its own title and button, link.valuesTitle, link.hint and link.back)
+    Q3.from2d = { lines: link.lines, back: link.back || tr('← Back to the shape', '← 図形に戻る'), onBack: () => closePanel() };
     // (the values of the tool for "Volume and surface", which opens closed; they stay while no other
     // formulas are drawn, BG21)
     Q3.solid = { fresh: false, exprs: (Q3.exprs || []).join('\n'), src: link, model: true,
-      title: tr('Values from "Shapes": ', '「図形」の値：') + link.title,
-      hint: tr('The values found in "Shapes". Other formulas drawn here are measured as an ordinary 3D graph.', '「図形」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測ります。'),
+      title: link.valuesTitle || tr('Values from "Shapes": ', '「図形」の値：') + link.title,
+      hint: link.hint || tr('The values found in "Shapes". Other formulas drawn here are measured as an ordinary 3D graph.', '「図形」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測ります。'),
       values: link.rows };
     closeVolumeBox();
     Object.assign(Q3, VIEW3D);
@@ -10389,6 +10390,99 @@
     for (let k = 0; k <= m; k++) { const z = g.a * Math.sin(k / m * Math.PI / 2); out.push([z, k === m ? 0 : g.prof(z)]); }
     return out;
   }
+  // The model of a solid from a profile ("Solid from a profile", D2) for the 3D graph (1.13.0, fix/profile-3d-step). Until
+  // then it was drawn as the surfaces z = ±√(r(x)² − y²) on a grid of 61 × 61, and a grid of z = f(x, y) cannot draw
+  // the face of a step, where the radius jumps (the specRims did not close it either): on the author's phone the
+  // stepped shaft of the examples had a ragged gap at its step, through which the inside showed. Now, as a solid of
+  // "Shapes" (shapeModel), the meridian of "Save as STL" (stlProfilePoly: the outer profile up, across the top, the
+  // inner profile down, across the bottom) is turned about the z axis, standing on the floor: the steps, the flat
+  // ends, a pointed end and the inside of a container are faces of their own, the same as in the STL file, and it
+  // grows by turning (the row of the angle). o, i: the points of the outer and the inner profile (pfPoints; i null),
+  // smooth: monotone cubic between the points. Returns null when it cannot be drawn (the inner profile outside the
+  // heights of the outer one).
+  const PF_MAX_PTS = 160, PF_CORNER = Math.cos(12 * Math.PI / 180);
+  // the points of an open chain [[t, r], …] that stay within tol of it (Douglas–Peucker; the two ends stay)
+  function pfSimplify(P, tol) {
+    const keep = new Uint8Array(P.length), st = [[0, P.length - 1]];
+    keep[0] = keep[P.length - 1] = 1;
+    while (st.length) {
+      const [a, b] = st.pop(), [ax, ay] = P[a], dx = P[b][0] - ax, dy = P[b][1] - ay, L = Math.hypot(dx, dy);
+      let best = -1, bd = tol;
+      for (let k = a + 1; k < b; k++) {
+        const d = L > 0 ? Math.abs((P[k][0] - ax) * dy - (P[k][1] - ay) * dx) / L : Math.hypot(P[k][0] - ax, P[k][1] - ay);
+        if (d > bd) { bd = d; best = k; }
+      }
+      if (best >= 0) { keep[best] = 1; st.push([a, best], [best, b]); }
+    }
+    return P.filter((p, k) => keep[k]);
+  }
+  function profileModel(o, i, smooth) {
+    const C = modelColors();
+    // a smooth profile sampled as for STL (12 points a piece), fewer when it has many pieces
+    const per = Math.max(2, Math.min(12, Math.round(240 / Math.max(1, o.length + (i ? i.length : 0) - 2))));
+    const P = stlProfilePoly(o, i, smooth, per);
+    if (!P || P.length < 3) return null;
+    const z0 = o[0].z, raw = P.map(([z, r]) => [z - z0, Math.max(0, r)]);
+    const top = Math.max(...raw.map((p) => p[0])), R = Math.max(...raw.map((p) => p[1]));
+    if (!(top > 0) || !(R > 0) || !isFinite(top + R)) return null;
+    const span = Math.max(top, R), eps = span * 1e-9;
+    let Q = [];
+    for (const p of raw) { const q = Q[Q.length - 1]; if (!q || Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) > eps) Q.push(p); }
+    while (Q.length > 2 && Math.abs(Q[0][0] - Q[Q.length - 1][0]) + Math.abs(Q[0][1] - Q[Q.length - 1][1]) <= eps) Q.pop();
+    // a long table (pasted from a spreadsheet): fewer points, within a ten-thousandth of the size or a little more, so
+    // that turning the graph stays quick; the steps and the corners stay
+    for (let tol = span * 1e-4; Q.length > PF_MAX_PTS && tol < span * 0.02; tol *= 2) Q = pfSimplify(Q, tol);
+    const n = Q.length, onAxis = (p) => p[1] <= eps;
+    const dir = (k) => { const a = Q[k], b = Q[(k + 1) % n], dt = b[0] - a[0], dr = b[1] - a[1], L = Math.hypot(dt, dr) || 1; return [dt / L, dr / L]; };
+    const axisEdge = (k) => onAxis(Q[k]) && onAxis(Q[(k + 1) % n]);
+    const corner = (k) => { const a = dir((k + n - 1) % n), b = dir(k); return a[0] * b[0] + a[1] * b[1] < PF_CORNER; };
+    // the pieces: the edges between two corners (or the axis), each smooth inside (its normals from its neighbours)
+    let start = 0;
+    for (let k = 0; k < n; k++) if (!axisEdge(k) && (axisEdge((k + n - 1) % n) || corner(k))) { start = k; break; }
+    const pieces = [];
+    let cur = null;
+    for (let m = 0; m < n; m++) {
+      const k = (start + m) % n;
+      if (axisEdge(k)) { cur = null; continue; }
+      if (!cur || corner(k)) { cur = [Q[k]]; pieces.push(cur); }
+      cur.push(Q[(k + 1) % n]);
+    }
+    const segs = [], steps = [];
+    pieces.forEach((pc, j) => {
+      const m = pc.length - 1, pts = [];
+      for (let q = 0; q <= m; q++) {
+        const a = pc[Math.max(0, q - 1)], b = pc[Math.min(m, q + 1)], dt = b[0] - a[0], dr = b[1] - a[1], L = Math.hypot(dt, dr) || 1;
+        // (a line along the edge of each piece, none on the axis)
+        const gj = q === 0 ? (onAxis(pc[0]) ? j + 0.5 : j) : q === m ? (onAxis(pc[m]) ? j + 0.5 : j + 1) : j + q / m;
+        pts.push(pp(pc[q][0], pc[q][1], -dr / L, dt / L, gj));
+      }
+      segs.push({ pts, flat: false });
+      for (let q = 0; q < m; q++) if (Math.abs(pc[q + 1][0] - pc[q][0]) <= eps) steps.push([+pc[q][0].toPrecision(6), +pc[q][1].toPrecision(6), +pc[q + 1][1].toPrecision(6)]);
+    });
+    const edges = pieces.reduce((a, pc) => a + pc.length - 1, 0);
+    const N = Math.max(24, Math.min(72, Math.floor(6000 / Math.max(1, edges))));
+    const out = profileOutline(segs);
+    const M = { k: 'profile', s: {}, lab: {}, colors: C, grow: 'rev', R, top };
+    const room = Math.max(R * 0.28, top * 0.06);
+    M.box = [-R - room, R + room, -R - room, R + room, 0, top * 1.08 + room * 0.3];
+    M.mesh = (f) => {
+      if (M.meshF === f && M.meshC) return M.meshC;
+      M.meshF = f;
+      return (M.meshC = revolve(newMesh(), segs, { axis: 'z', theta: 2 * Math.PI * f, n: N, rgb: C.solid, mer: 0, cut: C.cut, poly: out.poly, tri: out.tri }));
+    };
+    // (for the tests: the points of the meridian, the flat faces (steps, ends: [t, r0, r1]), the pieces around, and the
+    // volume and the area of the whole mesh, which are those of the tool when the solid is closed)
+    const W = M.mesh(1), V = W.v;
+    let vol = 0, area = 0;
+    for (let t = 0; t < W.t.length; t += 3) {
+      const a = W.t[t] * MV, b = W.t[t + 1] * MV, c = W.t[t + 2] * MV;
+      const ux = V[b] - V[a], uy = V[b + 1] - V[a + 1], uz = V[b + 2] - V[a + 2], wx = V[c] - V[a], wy = V[c + 1] - V[a + 1], wz = V[c + 2] - V[a + 2];
+      area += Math.hypot(uy * wz - uz * wy, uz * wx - ux * wz, ux * wy - uy * wx) / 2;
+      vol += (V[a] * (V[b + 1] * V[c + 2] - V[b + 2] * V[c + 1]) - V[a + 1] * (V[b] * V[c + 2] - V[b + 2] * V[c]) + V[a + 2] * (V[b] * V[c + 1] - V[b + 1] * V[c])) / 6;
+    }
+    M.info = { pts: n, pieces: pieces.length, steps, turns: N, tris: W.t.length / 3, vol: +Math.abs(vol).toPrecision(8), area: +area.toPrecision(8) };
+    return M;
+  }
   // The model of a shape of "Shapes" for the 3D graph. k: the shape, s: its sizes as numbers in one unit
   // (a diameter already halved), lab: the texts of the labels of its sizes ({ r: 'r = 15 cm', … }).
   // Returns null for a shape that cannot be drawn. The solid is centred on the z axis and stands on the
@@ -11635,7 +11729,7 @@
       mMs.over = performance.now() - t0;
       for (const k in mMs) mMs[k] = Math.round(mMs[k] * 10) / 10;
       mo.ms = mMs;
-      c.dataset.model = JSON.stringify(Object.assign({ k: MD.k, tris: mTris, grow: Math.round(mGrow * 1000) / 1000, fill: !!Q3.fill, box: MD.box.map((x) => +x.toPrecision(6)) }, mo,
+      c.dataset.model = JSON.stringify(Object.assign({ k: MD.k, tris: mTris, grow: Math.round(mGrow * 1000) / 1000, fill: !!Q3.fill, box: MD.box.map((x) => +x.toPrecision(6)) }, mo, MD.info ? { info: MD.info } : {},
         MD.tank ? { h: MD.tank.hShow, top: MD.tank.top, glass: MD.tank.glass.t.length / 3, liquid: MD.tank.liquid(MD.tank.hShow).t.length / 3 } : {}));
     }
     // (1.12.0, BG08: the time of this drawing, also in data-ms for the tests, and the layer of the last frame
@@ -12700,35 +12794,6 @@
   // the exact volume of a straight profile for the engine: π × Σ h (r₀² + r₀ r₁ + r₁²) / 3
   const pfExact = (pts) => 'π × (' + pts.slice(1).map((p, i) => [pts[i], p]).filter(([a, b]) => b.z > a.z)
     .map(([a, b]) => `(${b.zs} − ${a.zs}) × (${a.rs}^2 + ${a.rs} × ${b.rs} + ${b.rs}^2) / 3`).join(' + ') + ')';
-  // the radius as one expression in x for the 3D graph (straight pieces; a smooth profile sampled)
-  function pfNodes(sh, smooth) {
-    const nodes = [];
-    for (const s of sh.segs) {
-      const n = smooth ? 8 : 1;
-      for (let k = 0; k < n; k++) { const z0 = s.a.z + (s.b.z - s.a.z) * k / n, z1 = s.a.z + (s.b.z - s.a.z) * (k + 1) / n; nodes.push([z0, sh.at(s, z0)[0], z1, sh.at(s, Math.min(z1, s.b.z - 1e-12))[0]]); }
-    }
-    const R = (v) => +v.toPrecision(10);
-    return nodes.map((q) => q.map(R));
-  }
-  // the radius of pfExpr as a function, for the edges of the 3D view (specRims, 1.12.0 BG09)
-  function pfQ(sh, pts, smooth) {
-    const nodes = pfNodes(sh, smooth), z0 = +pts[0].z.toPrecision(10);
-    return (x) => {
-      if (x < z0) return 0;
-      for (const [a, r0, b, r1] of nodes) if (x < b) return r0 + (r1 - r0) * (x - a) / (b - a);
-      const L = nodes[nodes.length - 1];
-      return L && x <= L[2] ? L[3] : 0;
-    };
-  }
-  function pfExpr(sh, pts, smooth) {
-    const nodes = pfNodes(sh, smooth);
-    const N = (v) => engineNum(String(+v.toPrecision(10)));
-    // (the last end itself too, 1.12.0 BG09: the last column of the 3D grid lies on it, and had no value)
-    const L = nodes[nodes.length - 1];
-    let e = L ? `if(x <= ${N(L[2])}, ${N(L[3])}, 0)` : '0';
-    for (let i = nodes.length - 1; i >= 0; i--) { const [z0, r0, z1, r1] = nodes[i]; e = `if(x < ${N(z1)}, ${N(r0)} + (${N(r1 - r0)}) × (x − ${N(z0)}) / ${N(z1 - z0)}, ${e})`; }
-    return `if(x < ${N(pts[0].z)}, 0, ${e})`;
-  }
   // a density typed or chosen, in g/cm³ (t/m³ and kg/L are the same; kg/m³ is a thousandth)
   function pfDensity(key, typed) {
     const d = key === 'own' ? String(typed || '') : (DENSITIES.find((x) => x[0] === key) || [])[2];
@@ -12780,11 +12845,22 @@
       const msg = el('div', { class: 'geo-msg', role: 'alert' });
       const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
       // (BG21: "Volume and surface" in the 3D view shows the values of the tool, as they are here)
+      // (1.13.0, fix/profile-3d-step: the profile turned about its axis, as "Save as STL" makes it (profileModel), with the
+      // steps, the ends and the inside; until then surfaces z = ±√(r(x)² − y²), which left a ragged gap at a step)
       const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る') }, () => {
         if (!D.three) return;
-        const vals = (D.vals || []).slice();
-        openPlot3dWith(D.three.exprs, { range: D.three.range, equal: true, res: 61, grow: 'h', rims: D.three.rims,
-          solid: { src: D, title: tr('Values of the solid of revolution', '回転体の値'), hint: tr('The values found in "Solid from a profile". Other formulas drawn here are measured as an ordinary 3D graph.', '「輪郭から回転体」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測れます。'), values: () => vals } });
+        if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
+        const vals = (D.vals || []).slice(), T = D.three;
+        const model = profileModel(T.o, T.i, T.smooth);
+        if (!model) { toast(tr('These sizes cannot be drawn in 3D', 'この大きさでは 3D で描けません'), 2600); return; }
+        // above the graph: the outer volume, and the capacity of a container or the surface area
+        const line = (name) => { const v = vals.find((x) => x.name === name); return v ? v.name + ' ' + v.text : ''; };
+        openSolid3d({ model, title: tr('Solid from a profile', '輪郭から回転体'),
+          lines: () => [vals[0] ? vals[0].name + ' ' + vals[0].text : '', T.i ? line(tr('Inner capacity', '内側の容量')) : line(tr('Surface area', '表面積'))],
+          rows: () => vals,
+          valuesTitle: tr('Values from "Solid from a profile"', '「輪郭から回転体」の値'),
+          hint: tr('The values found in "Solid from a profile". Other formulas drawn here are measured as an ordinary 3D graph.', '「輪郭から回転体」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測れます。'),
+          back: tr('← Back to the profile', '← 輪郭に戻る') });
       });
       // (D3: the solid as an STL file, one unit of the profile in millimetres)
       const stlBtn = tapButton({ class: 'btn stl-btn', text: tr('Save as STL', 'STL で保存') }, () => { if (D.stl) openStlSheet(D.stl, 'profile', { mm: 1, cm: 10, m: 1000, in: 25.4 }[D.unit]); });
@@ -12892,13 +12968,8 @@
         else if (isFinite(rho)) { densIn.removeAttribute('aria-invalid'); const g = mat * PF_CM3[u] * rho; row(tr('Weight', '重さ'), trf('{0} g/cm³', '{0} g/cm³', statNum(rho)) + (D.dens !== 'own' && D.dens !== 'water' ? tr(' (typical)', '（目安）') : ''), g >= 1000 ? '≈ ' + pk(g / 1000, 'mass') + ' kg' : '≈ ' + pk(g, 'mass') + ' g', exprNum(g) + ' g'); }
         row(tr('Surface area', '表面積'), tr('outside: the side, the steps and the two ends', '外側：側面・段・両端の面'), '≈ ' + pk(so.surface, 'area') + ' ' + u + '²', exprNum(so.surface) + ' ' + u + '^2');
         row(tr('Height', '高さ'), '', pv(so.height) + ' ' + u, exprNum(so.height) + ' ' + u);
-        // 3D (the 3D graph: Pro)
-        const w = +((Math.max(so.rmax, si ? si.rmax : 0) || 1) * 1.08).toPrecision(6);
-        const R = pfExpr(so, o, D.smooth), exprs = [`√((${R})^2 − y^2)`, `−√((${R})^2 − y^2)`];
-        if (si) { const r2 = pfExpr(si, i, D.smooth); exprs.push(`√((${r2})^2 − y^2)`, `−√((${r2})^2 − y^2)`); }
-        const Qo = pfQ(so, o, D.smooth), Qi = si ? pfQ(si, i, D.smooth) : null;
-        D.three = { exprs, range: [engineNum(String(o[0].z)), engineNum(String(o[o.length - 1].z)), engineNum(String(-w)), engineNum(String(w))],
-          rims: { kind: 'h', groups: [exprs.map((e, n) => n)], Q: si ? [Qo, Qo, Qi, Qi] : [Qo, Qo] } };
+        // 3D (QCalc Pro): the points of the profile, turned about the axis by profileModel
+        D.three = { o, i: si ? i : null, smooth: D.smooth };
         view.hidden = false;
         if (!(si && mat < 0)) { D.stl = { kind: 'profile', o, i, smooth: D.smooth, volume: so.volume - cap }; stlShow(stlBtn); }
         // the quick-reference table: the height and the amount inside (or of the whole solid)
@@ -13308,8 +13379,9 @@
   }
   // The meridian of a solid from a profile (D2), in (t, ρ): the outer profile up, across the top (open
   // when the inner profile reaches the top, else on the axis), the inner profile down, across the bottom
-  function stlProfilePoly(o, i, smooth) {
-    const chain = (pts) => { const sh = pfShape(pts, smooth), out = [[pts[0].z, pts[0].r]]; for (const s of sh.segs) { if (s.a !== pts[0] && (out[out.length - 1][0] !== s.a.z || out[out.length - 1][1] !== s.a.r)) out.push([s.a.z, s.a.r]); const n = smooth ? 12 : 1; for (let k = 1; k <= n; k++) { const z = s.a.z + (s.b.z - s.a.z) * k / n; out.push([z, sh.at(s, k === n ? s.b.z : z)[0]]); } } return out; };
+  // (per: the points of a smooth piece; 12 for the STL file, fewer for the 3D view of a long profile, profileModel)
+  function stlProfilePoly(o, i, smooth, per) {
+    const chain = (pts) => { const sh = pfShape(pts, smooth), out = [[pts[0].z, pts[0].r]]; for (const s of sh.segs) { if (s.a !== pts[0] && (out[out.length - 1][0] !== s.a.z || out[out.length - 1][1] !== s.a.r)) out.push([s.a.z, s.a.r]); const n = smooth ? (per || 12) : 1; for (let k = 1; k <= n; k++) { const z = s.a.z + (s.b.z - s.a.z) * k / n; out.push([z, sh.at(s, k === n ? s.b.z : z)[0]]); } } return out; };
     const O = chain(o);
     if (!i) return [[O[0][0], 0]].concat(O, [[O[O.length - 1][0], 0]]);
     const I = chain(i), e = 1e-9 * (1 + Math.abs(O[O.length - 1][0] - O[0][0]));

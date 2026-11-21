@@ -1639,6 +1639,8 @@
     "Volume, liquid": "體積、液量",
     "digits": "位",
     "← Back to the shape": "← 回到幾何圖形",
+    "Values from \"Solid from a profile\"": "「由輪廓求旋轉體」的值",
+    "← Back to the profile": "← 回到輪廓",
     "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "在 3D 圖形中，開啟「體積與表面積」就會立即顯示所畫曲面下方（或兩個曲面之間）的體積與表面積，範圍是長方形或圓盤 x² + y² ≤ R²。在 2D 圖形（⟳ 3D）、「由輪廓求旋轉體」或「幾何圖形」（⟳ 3D）中做出的立體，會顯示在那裡求出的值。下方的「圖形範例」可以用幾何圖形的值，以 3D 繪製任何立體（「更改數值」會開啟幾何圖形）。"
   },
   messages: {
