@@ -15958,6 +15958,11 @@
     const sh = $('#sheet');
     sh.textContent = '';
     sh.append(el('div', { class: 'stitle', text: what }));
+    // (feature/ratings) what the feature looks like: a photo of it from the user manual, when the manual has one, and
+    // one line of what it gives
+    const shot = PRO_PHOTO[key], line = PRO_LINE()[key];
+    if (shot) sh.append(el('figure', { class: 'pro-shot' }, el('img', { src: 'pro/' + PRO_PHOTO_LANG() + '/' + shot + '.webp', alt: '', width: 540, decoding: 'async' })));
+    if (line) sh.append(el('div', { class: 'pro-line', text: line }));
     if (info) sh.append(el('div', { class: 'pro-feat pro-sheet-feat' }, proIco(key, info[0]),
       el('div', {}, el('div', { class: 'n', text: info[1] }), el('div', { class: 'muted', text: info[2] }),
         // (1.12.0, H) how the feature is used: its section of the user manual
@@ -16011,6 +16016,25 @@
     ['🎨', tr('Color themes', '配色テーマ'), tr('Seven colors for the keys and the highlights, in the light and the dark theme', 'キーや強調表示を 7 色から選べます（ライト・ダークの両方）'), 'themes'],
     ['📤', tr('Export the history', '履歴の書き出し'), tr('Save the history as a CSV file that spreadsheets can open', '履歴を CSV ファイルに保存（表計算ソフトで開けます）'), 'export']
   ];
+  // (feature/ratings) The photos of the Pro sheet: parts of the photos of the user manual, cut by manual/pro-photos.js
+  // into app/assets/pro/<language>/<name>.webp (about 50 KB a language; the manual inside the app has no photos).
+  // The features whose screen the manual shows; the others (high precision, colour themes, tables as CSV files)
+  // have only their line until the manual has a photo of them.
+  const PRO_PHOTO = { '3d': 'graph3d', share_pro: 'graph3d', tank_heads: 'tank', profile: 'profile', stl: 'stl', notes: 'notes', export: 'history' };
+  const PRO_PHOTO_LANG = () => (['ja', 'en', 'de', 'es', 'fr', 'ko', 'zh-TW'].indexOf(LANG) >= 0 ? LANG : 'en');
+  // one line of what each Pro feature gives, under its photo (PRO_INFO and PRO_FIXED say what it is)
+  const PRO_LINE = () => ({
+    precision: tr('π or √2 to tens of thousands of digits', 'π や √2 を何万桁でも計算できます'),
+    '3d': tr('Turn it with a finger and see it from every side', '指で回して、どの向きからでも見られます'),
+    themes: tr('The keys and the highlights in the color you like', 'キーと強調の色を、好きな色にできます'),
+    export: tr('Open the whole history in a spreadsheet', '履歴をまとめて表計算ソフトで開けます'),
+    tables: tr('Use the loan and savings tables in a spreadsheet', 'ローンや積立の表を、表計算ソフトで使えます'),
+    tank_heads: tr('Tanks with heads too: the amount of liquid from its level', '鏡板の付いたタンクでも、液面の高さから液量が分かります'),
+    profile: tr('Volume, weight and surface from the diameters you measured', '測った直径から、体積・重さ・表面積が分かります'),
+    stl: tr('Print the solids you made on a 3D printer', '作った立体を 3D プリンターで印刷できます'),
+    share_pro: tr('Send the turning 3D graph as a GIF', '回る 3D グラフを GIF で送れます'),
+    notes: tr('Keep several memos and save them as files', 'メモをいくつも作って、ファイルに保存できます')
+  });
   // the features that PRO_GATES can make Pro: icon, name, what it gives
   const PRO_INFO = () => ({
     enclosed: ['〰', tr('Area enclosed by curves', '曲線で囲まれた面積'), tr('The area between two or more curves in the 2D graph', '2D グラフで、2 本以上の曲線に囲まれた部分の面積')],

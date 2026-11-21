@@ -1427,6 +1427,16 @@ body.hselect #history { padding-bottom: 150px; }
 
 /* ------------------------------------------------------------ the Pro sheet (1.12.0) */
 .sheet .pro-sheet-feat { padding: 4px 12px 8px; }
+/* (feature/ratings) the photo of the feature (a part of the manual's photo, 540 px wide) and its line: as wide as the
+   sheet, but at most a quarter of the screen's height (a fifth on short screens), so that "Buy" stays in sight; when
+   the height limits it, it is narrower, with its frame around it */
+.sheet .pro-shot { margin: 0 12px 6px; }
+.sheet .pro-shot img {
+  display: block; width: auto; height: auto; max-width: 100%; max-height: 25vh; margin: 0 auto;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); pointer-events: none;
+}
+@media (max-height: 700px) { .sheet .pro-shot img { max-height: 20vh; } }
+.sheet .pro-line { padding: 0 12px 4px; font-weight: 600; }
 .pro-sheet-note { font-size: 14px; color: var(--muted); padding: 0 12px 6px; }
 .sheet button.pro-buy { font-weight: 700; }
 .terms-notice { padding: 4px 12px; }
