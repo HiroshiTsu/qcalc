@@ -332,7 +332,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: [[More ▾]] ergänzt das Innenprofil eines Gefäßes und die Schwindung von Keramik.
 :shot: profile | Das Beispiel der abgesetzten Welle
 :example: Die Beispielwelle → Außenvolumen 4440π mm³ ≈ 13,95 cm³, etwa 109,5 g in Eisen
-:tip: [[View in 3D]] zeigt die Form; eine STL-Datei lässt sich mit einem 3D-Drucker drucken ([STL-Dateien](#stl)).
+:tip: [[View in 3D]] zeigt den um die Achse gedrehten Körper, Stufen, flache Enden und Innenseite wie in der STL-Datei; mit einem Finger drehen, [[Cut in half]] zeigt den Schnitt, [[← Back to the profile]] führt zur Tabelle zurück. Eine STL-Datei lässt sich mit einem 3D-Drucker drucken ([STL-Dateien](#stl)).
 
 ## stl | STL-Dateien für 3D-Drucker
 :pro:

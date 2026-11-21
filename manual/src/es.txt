@@ -332,7 +332,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: [[More ▾]] añade el perfil interior de un recipiente y la contracción de la cerámica.
 :shot: profile | El ejemplo del eje escalonado
 :example: El eje escalonado de ejemplo → volumen exterior 4440π mm³ ≈ 13.95 cm³, unos 109.5 g en hierro
-:tip: [[View in 3D]] muestra la forma; un archivo STL se puede imprimir con una impresora 3D ([Archivos STL](#stl)).
+:tip: [[View in 3D]] muestra el sólido girado alrededor de su eje, con los escalones, los extremos planos y el interior como en el archivo STL; gíralo con un dedo, [[Cut in half]] muestra el corte y [[← Back to the profile]] vuelve a la tabla. Un archivo STL se puede imprimir con una impresora 3D ([Archivos STL](#stl)).
 
 ## stl | Archivos STL para impresoras 3D
 :pro:

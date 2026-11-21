@@ -1624,6 +1624,8 @@
     "Volume, liquid": "Volumen, Füllmenge",
     "digits": "Stellen",
     "← Back to the shape": "← Zurück zur Figur",
+    "Values from \"Solid from a profile\"": "Werte aus „Körper aus einem Profil“",
+    "← Back to the profile": "← Zurück zum Profil",
     "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "Im 3D-Graphen zeigt „Volumen und Oberfläche“ sofort beim Öffnen das Volumen unter der gezeichneten Fläche (oder zwischen zwei Flächen) und den Oberflächeninhalt, über dem Rechteck oder über einer Kreisscheibe x² + y² ≤ R². Für einen im 2D-Graphen (⟳ 3D), in „Körper aus einem Profil“ oder in „Figuren“ (⟳ 3D) gebildeten Körper zeigt es die dort gefundenen Werte. Unter „Beispiel“ unten lässt sich jeder Körper der Figuren mit seinen Werten in 3D zeichnen („Zahlen ändern“ öffnet die Figuren)."
   },
   messages: {

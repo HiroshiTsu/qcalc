@@ -332,7 +332,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: [[More ▾]] ajoute le profil intérieur d'un récipient et le retrait de la céramique.
 :shot: profile | L'exemple de l'arbre étagé
 :example: L'arbre étagé de l'exemple → volume extérieur 4440π mm³ ≈ 13,95 cm³, environ 109,5 g en fer
-:tip: [[View in 3D]] montre la forme ; un fichier STL s'imprime avec une imprimante 3D ([Fichiers STL](#stl)).
+:tip: [[View in 3D]] montre le solide tourné autour de son axe, avec les marches, les bouts plats et l'intérieur comme dans le fichier STL ; tournez-le d'un doigt, [[Cut in half]] montre la coupe et [[← Back to the profile]] ramène au tableau. Un fichier STL s'imprime avec une imprimante 3D ([Fichiers STL](#stl)).
 
 ## stl | Fichiers STL pour imprimantes 3D
 :pro:

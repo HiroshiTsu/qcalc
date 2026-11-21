@@ -1624,6 +1624,8 @@
     "Volume, liquid": "Volume, liquide",
     "digits": "chiffres",
     "← Back to the shape": "← Retour à la forme",
+    "Values from \"Solid from a profile\"": "Valeurs de « Solide à partir d’un profil »",
+    "← Back to the profile": "← Retour au profil",
     "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "Dans le graphique 3D, « Volume et surface » affiche dès son ouverture le volume sous la surface tracée (ou entre deux surfaces) et l’aire de la surface, au-dessus du rectangle ou d’un disque x² + y² ≤ R². Pour un solide fait dans le graphique 2D (⟳ 3D), dans « Solide à partir d’un profil » ou dans « Formes » (⟳ 3D), il affiche les valeurs trouvées là. Sous « Exemple », en bas, chaque solide de Formes peut être dessiné en 3D avec ses valeurs (« Changer les nombres » ouvre Formes)."
   },
   messages: {

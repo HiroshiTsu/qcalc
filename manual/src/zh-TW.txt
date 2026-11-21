@@ -331,7 +331,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :step: [[More ▾]] 可加入容器的內側剖面和陶瓷的收縮率。
 :shot: profile | 階梯軸的範例
 :example: 範例的階梯軸 → 外側體積 4440π mm³ ≈ 13.95 cm³，鐵製約 109.5 g
-:tip: [[View in 3D]] 可看形狀；STL 檔可用 3D 印表機列印（[STL 檔](#stl)）。
+:tip: [[View in 3D]] 可看繞軸旋轉而成的立體，台階、平的端面和內側都和 STL 檔一樣；用一根手指轉動，[[Cut in half]] 可看切面，[[← Back to the profile]] 回到表格。STL 檔可用 3D 印表機列印（[STL 檔](#stl)）。
 
 ## stl | 3D 印表機用的 STL 檔
 :pro:
