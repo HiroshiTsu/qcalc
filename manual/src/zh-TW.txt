@@ -24,6 +24,14 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :tip: 點一下歷史紀錄中的結果，可以放入輸入欄或複製。
 :mistake: 英文字母 x 是變數，不是「乘」。乘法請用 × 鍵（或 *）。
 
+## new-1-13 | 1.13.0 的新功能
+- **各畫面的顯示位數**：每個工具畫面都能選擇結果要顯示幾位數。從畫面標題右邊的 ⋯ 打開 [[Digits shown…]]（[各畫面的顯示位數](#digits)）。
+- **三種選法**：從 [[Recommended (automatic)]]、[[Significant digits]]、[[Decimals]] 中選擇，再用 + 和 − 決定位數。
+- **末尾的 0**：選了位數時，可選 [[Keep (2.50)]] 或 [[Drop (2.5)]]。
+- **變更的標記**：改過預設位數的畫面，會在 ⋯ 的 [[Digits shown…]] 和設定的一覽加上「[[changed]]」標記。
+- **恢復預設值**：只還原該畫面時按 [[Back to the default (recommended)]]；全部畫面則在設定的 [[Digits shown by each tool]] 中按 [[All back to the default (recommended)]]。
+- **金額的位數**：金額依裝置地區的貨幣位數顯示（新台幣到 1 元，美元到 0.01 元）。決定的是地區而不是語言（不論哪種語言，德國的裝置都用歐元）。
+
 ## new-1-12 | 1.12.0 的新功能
 - **更容易懂**：選單變成 8 個項目，工具集中在 [[Tools]]。在各工具中點一下範例就會填入，結果立刻顯示。
 - **日常工具**：[[Price: discount and tax]]、[[Percentages]]、[[Unit price: which is cheaper]]、[[Split the bill]]、[[Loan]]、[[Savings and compound interest]]、[[Dates]]、[[Times]]、[[Convert units and currencies]]、[[Statistics]]、[[Calculation notes]]。

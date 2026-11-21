@@ -24,6 +24,14 @@ QCalc는 식을 종이에 쓰듯 입력하면 바로 결과가 나오는 계산�
 :tip: 기록의 결과를 탭하면 입력란에 넣거나 복사할 수 있습니다.
 :mistake: 영문자 x는 변수이지 「곱하기」가 아닙니다. 곱셈은 × 키(또는 *)로 하세요.
 
+## new-1-13 | 1.13.0의 새 기능
+- **화면별 표시 자릿수**: 도구 화면마다 결과를 몇 자리로 표시할지 고를 수 있습니다. 화면 제목 오른쪽의 ⋯에서 [[Digits shown…]]을 엽니다([화면별 표시 자릿수](#digits)).
+- **세 가지 방법**: [[Recommended (automatic)]]·[[Significant digits]]·[[Decimals]] 중에서 고르고, +와 −로 자릿수를 정합니다.
+- **끝자리의 0**: 자릿수를 골랐을 때는 [[Keep (2.50)]] 또는 [[Drop (2.5)]]로 할 수 있습니다.
+- **변경 표시**: 기본값에서 바꾼 화면에는 ⋯의 [[Digits shown…]]과 설정의 목록에 ‘[[changed]]’ 표시가 붙습니다.
+- **기본값으로 되돌리기**: 그 화면만은 [[Back to the default (recommended)]], 모든 화면은 설정의 [[Digits shown by each tool]]에서 [[All back to the default (recommended)]]로 되돌릴 수 있습니다.
+- **금액의 자릿수**: 금액은 기기 지역의 통화 자릿수로 표시합니다(원은 1원까지, 달러는 0.01달러까지). 정하는 것은 언어가 아니라 지역입니다(어느 언어라도 독일의 기기라면 유로).
+
 ## new-1-12 | 1.12.0의 새 기능
 - **알기 쉽게**: 메뉴는 8개 항목이 되었고 도구는 [[Tools]]에 모였습니다. 각 도구에서 예를 탭하면 채워지고 결과가 바로 나옵니다.
 - **일상 도구**: [[Price: discount and tax]], [[Percentages]], [[Unit price: which is cheaper]], [[Split the bill]], [[Loan]], [[Savings and compound interest]], [[Dates]], [[Times]], [[Convert units and currencies]], [[Statistics]], [[Calculation notes]].

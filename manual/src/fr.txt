@@ -25,6 +25,14 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :tip: Touchez un résultat de l'historique pour le mettre dans le champ de saisie ou le copier.
 :mistake: La lettre x est une variable, pas « fois ». Multipliez avec la touche × (ou *).
 
+## new-1-13 | Nouveautés de la 1.13.0
+- **Chiffres affichés par outil** : chaque outil affiche ses résultats avec son propre nombre de chiffres. Ouvrez [[Digits shown…]] par ⋯ à droite du titre de l'outil ([Chiffres affichés par outil](#digits)).
+- **Trois façons de choisir** : [[Recommended (automatic)]], [[Significant digits]] ou [[Decimals]] ; le nombre se règle avec + et −.
+- **Zéros finaux** : avec des chiffres choisis, [[Keep (2.50)]] ou [[Drop (2.5)]].
+- **Une marque** : un outil qui n'utilise pas ses chiffres par défaut porte la marque « [[changed]] » dans ⋯ → [[Digits shown…]] et dans la liste des paramètres.
+- **Retour aux valeurs par défaut** : [[Back to the default (recommended)]] pour un outil ; [[All back to the default (recommended)]] sous [[Digits shown by each tool]] dans les paramètres, pour tous les outils.
+- **Argent** : les montants ont les décimales de la devise de la région du téléphone (aucune pour le yen, deux pour l'euro et le dollar). C'est la région qui décide, pas la langue (des euros sur un téléphone en Allemagne, dans toutes les langues).
+
 ## new-1-12 | Nouveautés de la 1.12.0
 - **Plus clair** : le menu a huit entrées et les outils sont réunis dans [[Tools]]. Dans chaque outil, touchez un exemple pour le remplir ; le résultat s'affiche aussitôt.
 - **Outils du quotidien** : [[Price: discount and tax]], [[Percentages]], [[Unit price: which is cheaper]], [[Split the bill]], [[Loan]], [[Savings and compound interest]], [[Dates]], [[Times]], [[Convert units and currencies]], [[Statistics]], [[Calculation notes]].

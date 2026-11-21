@@ -25,6 +25,14 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :tip: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu übernehmen oder zu kopieren.
 :mistake: Der Buchstabe x ist eine Variable, kein „mal“. Multiplizieren Sie mit der Taste × (oder *).
 
+## new-1-13 | Neu in 1.13.0
+- **Angezeigte Stellen je Werkzeug**: Jedes Werkzeug zeigt seine Ergebnisse mit eigener Stellenzahl. Öffnen Sie [[Digits shown…]] über ⋯ rechts neben dem Titel des Werkzeugs ([Angezeigte Stellen je Werkzeug](#digits)).
+- **Drei Arten der Wahl**: [[Recommended (automatic)]], [[Significant digits]] oder [[Decimals]]; die Zahl stellen Sie mit + und − ein.
+- **Nullen am Ende**: Mit gewählten Stellen [[Keep (2.50)]] oder [[Drop (2.5)]].
+- **Markierung**: Ein Werkzeug, das nicht seine Standardstellen verwendet, trägt die Markierung „[[changed]]“ unter ⋯ → [[Digits shown…]] und in der Liste der Einstellungen.
+- **Zurück zum Standard**: [[Back to the default (recommended)]] für ein Werkzeug; [[All back to the default (recommended)]] unter [[Digits shown by each tool]] in den Einstellungen für alle Werkzeuge.
+- **Geld**: Geldbeträge haben die Nachkommastellen der Währung der Region des Telefons (Yen keine, Euro und Dollar zwei). Es entscheidet die Region, nicht die Sprache (Euro auf einem Telefon in Deutschland, in jeder Sprache).
+
 ## new-1-12 | Neu in 1.12.0
 - **Übersichtlicher**: Das Menü hat acht Einträge, die Werkzeuge sind unter [[Tools]] zusammengefasst. In jedem Werkzeug füllt ein Beispiel per Tippen die Felder aus; das Ergebnis erscheint sofort.
 - **Alltagswerkzeuge**: [[Price: discount and tax]], [[Percentages]], [[Unit price: which is cheaper]], [[Split the bill]], [[Loan]], [[Savings and compound interest]], [[Dates]], [[Times]], [[Convert units and currencies]], [[Statistics]], [[Calculation notes]].
@@ -34,7 +42,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 - **Schnell öffnen**: ein Widget, eine Kachel der Schnelleinstellungen und Verknüpfungen am Symbol ([Widget, Kachel und Verknüpfungen](#widget)).
 - **Teilen**: Bilder von Graphen, bei 3D auch als bewegtes GIF ([Teilen](#share)).
 - **Körper und Tanks in 3D**: [[!⟳ 3D]] oben links am Bild in [[Solids]] und [[Tanks]] zeigt die Form mit den eingegebenen Maßen in 3D; bei einem Tank lässt sich der Füllstand ziehen, um die Menge zu sehen ([Körper und Tanks in 3D](#shapes-3d); 3D ist QCalc Pro).
-- **Stellen der Ergebnisse**: die Stellen der Ergebnisse von Figuren, Tanks usw., als Nachkommastellen oder gültige Ziffern, für jede Art von Größe, mit der Rundung; jedes % hat anfangs eine Nachkommastelle ([Angezeigte Stellen je Werkzeug](#digits)).
+- **Stellen der Ergebnisse**: die Stellen der Ergebnisse von Figuren, Tanks usw., als Nachkommastellen oder signifikante Stellen, für jede Art von Größe, mit der Rundung; jedes % hat anfangs eine Nachkommastelle ([Angezeigte Stellen je Werkzeug](#digits)).
 - **QCalc Pro**: CSV von Tabellen, Tankböden mit Tabellen, Körper aus einem Profil, STL-Dateien, weitere Rechennotizen und mehr ([QCalc Pro](#pro)).
 - **Diese Anleitung**: Sie ist in der App. Das „?“ oben rechts in einem Werkzeug oder Fenster öffnet den passenden Abschnitt.
 
@@ -303,7 +311,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :example: Ein Zylinder mit 30 cm Durchmesser und 50 cm Höhe → Volumen 11250π ≈ 35342,91735 cm³
 :tip: Ein Tank wird durchsichtig gezeichnet, die Flüssigkeit als Körper in eigener Farbe. Ziehen Sie vom Füllstand (dem Kästchen mit der Menge) nach oben oder unten, um ihn zu bewegen: [[Height of the liquid]] im Werkzeug ändert sich mit. Ein Ziehen an anderer Stelle dreht den Graphen. Auch der Regler [[Level]] darunter bewegt ihn.
 :tip: Die Striche an der Wand sind runde Mengen: Bei einem liegenden oder kugelförmigen Tank sind ihre Abstände sichtbar ungleich.
-:tip: Die Zahlen am Füllstand sind zum Ablesen gerundet (3 gültige Ziffern, % mit einer Nachkommastelle); die genauen Werte stehen über dem Graphen und im Werkzeug ([Angezeigte Stellen je Werkzeug](#digits)).
+:tip: Die Zahlen am Füllstand sind zum Ablesen gerundet (3 signifikante Stellen, % mit einer Nachkommastelle); die genauen Werte stehen über dem Graphen und im Werkzeug ([Angezeigte Stellen je Werkzeug](#digits)).
 :note: Ohne QCalc Pro erscheint direkt über den Ergebnissen die Zeile [[Turn it in 3D (QCalc Pro)]].
 
 ## measured | Volumen aus Messwerten
@@ -469,9 +477,9 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Mit gewählten Stellen sind [[Trailing zeros]] auf [[Keep (2.50)]] (anfangs: genau so viele Stellen wie gewählt, 1,000000000) oder [[Drop (2.5)]] (1).
 :step: Ein Werkzeug, das nicht seine Standardstellen verwendet, trägt in der Liste der Einstellungen und in [[Digits shown…]] unter ⋯ die Markierung „[[changed]]“.
 :example: Das Volumen eines Zylinders 11250π ≈ 35342,91735 cm³ → empfohlen 11250π ≈ 35342,9 cm³; mit 2 Nachkommastellen 11250π ≈ 35342,92 cm³; mit 4 gültigen Ziffern 11250π ≈ 35340 cm³
-:tip: Für Figuren, Behälter, Körper aus einem Profil und den Graphen stellt [[More: each kind, the 3D picture, rounding, CSV ▾]] außerdem [[Each kind of quantity on its own]] ein (Volumen, Fläche, Länge, Gewicht und %), die Zahlen [[In the 3D picture]] (empfohlen: 3 gültige Ziffern, % mit einer Nachkommastelle), das Runden ([[Round half up]], [[Round down]] oder [[Round up]]) und die als CSV gespeicherten Tabellen ([[All the digits]] oder [[As shown]]). Exakte Werte (11250π) bleiben; nur die Zahlen nach „≈“ ändern sich.
+:tip: Für Figuren, Behälter, Körper aus einem Profil und den Graphen stellt [[More: each kind, the 3D picture, rounding, CSV ▾]] außerdem [[Each kind of quantity on its own]] ein (Volumen, Fläche, Länge, Gewicht und %), die Zahlen [[In the 3D picture]] (empfohlen: 3 signifikante Stellen, % mit einer Nachkommastelle), das Runden ([[Round half up]], [[Round down]] oder [[Round up]]) und die als CSV gespeicherten Tabellen ([[All the digits]] oder [[As shown]]). Exakte Werte (11250π) bleiben; nur die Zahlen nach „≈“ ändern sich.
 Es gibt drei Wege zurück. Für ein Werkzeug drücken Sie [[Back to the default (recommended)]] unter ⋯ → [[Digits shown…]]. Für alle Werkzeuge drücken Sie [[All back to the default (recommended)]] unter [[Digits shown by each tool]] in den Einstellungen (auch [[Precision (significant digits)]] des Rechners wird 10 und [[Maximum decimal places]] wieder ohne Grenze). Für alles drücken Sie [[Reset all settings]] in den Einstellungen (Einstellungen und Stellen je Werkzeug auf den Standard; die Sprache bleibt).
-Die empfohlenen Stellen sind ein bis zwei mehr, als meist nötig ist (genauen Werten werden keine Stellen angehängt). Geld wird bis zur kleinsten Einheit der Währung Ihrer Region gezeigt (0,01 Euro), mit seinen Nullen (19,90); Figuren, Behälter und Körper aus einem Profil haben 6 gültige Ziffern nach „≈“, Fläche, Länge, Körper bilden und 3D-Werte des Graphen 8 (mindestens 5 Nachkommastellen), % eine Nachkommastelle. Empfohlene Stellen haben keine Nullen am Ende, außer bei Geld, Grundpreisen und Statistik.
+Die empfohlenen Stellen sind ein bis zwei mehr, als meist nötig ist (genauen Werten werden keine Stellen angehängt). Geld wird bis zur kleinsten Einheit der Währung Ihrer Region gezeigt (0,01 Euro), mit seinen Nullen (19,90); Figuren, Behälter und Körper aus einem Profil haben 6 signifikante Stellen nach „≈“, Fläche, Länge, Körper bilden und 3D-Werte des Graphen 8 (mindestens 5 Nachkommastellen), % eine Nachkommastelle. Empfohlene Stellen haben keine Nullen am Ende, außer bei Geld, Grundpreisen und Statistik.
 
 Gerechnet wird mit 12 Stellen mehr als angezeigt (nahe der Grenze der Genauigkeit mindestens 4; numerische Integration 4 mehr, höchstens 24 Stellen); zum Anzeigen wird gerundet.
 

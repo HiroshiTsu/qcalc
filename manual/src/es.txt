@@ -25,6 +25,14 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :tip: Toca un resultado del historial para ponerlo en el campo de entrada o copiarlo.
 :mistake: La letra x es una variable, no «por». Multiplica con la tecla × (o *).
 
+## new-1-13 | Novedades de 1.13.0
+- **Cifras mostradas en cada herramienta**: cada herramienta muestra sus resultados con su propio número de cifras. Abre [[Digits shown…]] desde ⋯ a la derecha del título de la herramienta ([Cifras mostradas en cada herramienta](#digits)).
+- **Tres formas de elegir**: [[Recommended (automatic)]], [[Significant digits]] o [[Decimals]]; el número se ajusta con + y −.
+- **Ceros finales**: con las cifras elegidas, [[Keep (2.50)]] o [[Drop (2.5)]].
+- **Una marca**: una herramienta que no usa sus cifras predeterminadas lleva la marca «[[changed]]» en ⋯ → [[Digits shown…]] y en la lista de los ajustes.
+- **Volver a lo predeterminado**: [[Back to the default (recommended)]] para una herramienta; [[All back to the default (recommended)]] en [[Digits shown by each tool]] de los ajustes, para todas.
+- **Dinero**: las cantidades de dinero llevan los decimales de la moneda de la región del teléfono (ninguno para el yen, dos para el euro y el dólar). Decide la región, no el idioma (euros en un teléfono en Alemania, en cualquier idioma).
+
 ## new-1-12 | Novedades de 1.12.0
 - **Más claro**: el menú tiene ocho opciones y las herramientas están juntas en [[Tools]]. En cada herramienta, toca un ejemplo para rellenarla; el resultado aparece al momento.
 - **Herramientas cotidianas**: [[Price: discount and tax]], [[Percentages]], [[Unit price: which is cheaper]], [[Split the bill]], [[Loan]], [[Savings and compound interest]], [[Dates]], [[Times]], [[Convert units and currencies]], [[Statistics]], [[Calculation notes]].

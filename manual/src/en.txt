@@ -25,6 +25,14 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :tip: Tap an answer in the history to put it into the input field or to copy it.
 :mistake: The letter x is a variable, not "times". Multiply with the × key (or *).
 
+## new-1-13 | What is new in 1.13.0
+- **Digits shown by each tool**: each tool shows its results with its own number of digits. Open [[Digits shown…]] from ⋯ at the right of the tool's title ([Digits shown by each tool](#digits)).
+- **Three ways to choose**: [[Recommended (automatic)]], [[Significant digits]] or [[Decimals]]; set the number with + and −.
+- **Trailing zeros**: with digits chosen, [[Keep (2.50)]] or [[Drop (2.5)]].
+- **A mark**: a tool that does not use its default digits has the mark "[[changed]]" in ⋯ → [[Digits shown…]] and in the settings' list.
+- **Back to the defaults**: [[Back to the default (recommended)]] for one tool; [[All back to the default (recommended)]] under [[Digits shown by each tool]] in the settings for every tool.
+- **Money**: amounts of money have the decimals of the currency of the phone's region (none for yen, two for dollars). The region decides, not the language (euros on a phone in Germany, in any language).
+
 ## new-1-12 | What is new in 1.12.0
 - **Clearer**: the menu has eight items, and the tools are together in [[Tools]]. In every tool, tap an example to fill it in; the answer appears at once.
 - **Everyday tools**: [[Price: discount and tax]], [[Percentages]], [[Unit price: which is cheaper]], [[Split the bill]], [[Loan]], [[Savings and compound interest]], [[Dates]], [[Times]], [[Convert units and currencies]], [[Statistics]], [[Calculation notes]].
