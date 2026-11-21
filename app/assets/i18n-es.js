@@ -1605,7 +1605,6 @@
     "Round down": "Truncar",
     "Round half up": "Redondear",
     "Round up": "Redondear hacia arriba",
-    "Significant digits": "Cifras significativas",
     "Tables saved as CSV": "Tablas guardadas como CSV",
     "The same for all": "Igual para todos",
     "The values found in \"Shapes\". Other formulas drawn here are measured as an ordinary 3D graph.": "Los valores hallados en \"Figuras\". Otras fórmulas dibujadas aquí se miden como un gráfico 3D corriente.",

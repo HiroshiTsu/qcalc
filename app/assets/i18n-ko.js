@@ -1596,7 +1596,6 @@
     "Round down": "내림",
     "Round half up": "반올림",
     "Round up": "올림",
-    "Significant digits": "유효숫자 자릿수",
     "Tables saved as CSV": "CSV로 저장하는 표",
     "The same for all": "모두 같게",
     "The values found in \"Shapes\". Other formulas drawn here are measured as an ordinary 3D graph.": "‘도형’에서 구한 값입니다. 여기서 다른 식을 그리면 보통의 3D 그래프로 잴 수 있습니다.",

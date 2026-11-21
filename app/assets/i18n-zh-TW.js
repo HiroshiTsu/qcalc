@@ -1597,7 +1597,6 @@
     "Round down": "無條件捨去",
     "Round half up": "四捨五入",
     "Round up": "無條件進位",
-    "Significant digits": "有效數字位數",
     "Tables saved as CSV": "存成 CSV 的表",
     "The same for all": "全部相同",
     "The values found in \"Shapes\". Other formulas drawn here are measured as an ordinary 3D graph.": "這是「幾何圖形」求出的值。在這裡畫別的式子，就會當成一般的 3D 圖形來測量。",

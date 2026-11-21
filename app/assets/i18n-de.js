@@ -1593,7 +1593,6 @@
     "Round down": "Abrunden",
     "Round half up": "Kaufmännisch runden",
     "Round up": "Aufrunden",
-    "Significant digits": "Gültige Ziffern",
     "Tables saved as CSV": "Als CSV gespeicherte Tabellen",
     "The same for all": "Für alle gleich",
     "The values found in \"Shapes\". Other formulas drawn here are measured as an ordinary 3D graph.": "Die Werte aus „Figuren“. Andere hier gezeichnete Formeln werden wie ein gewöhnlicher 3D-Graph gemessen.",

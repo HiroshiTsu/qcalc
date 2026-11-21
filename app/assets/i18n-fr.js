@@ -1593,7 +1593,6 @@
     "Round down": "Arrondir vers le bas",
     "Round half up": "Arrondir au plus proche",
     "Round up": "Arrondir vers le haut",
-    "Significant digits": "Chiffres significatifs",
     "Tables saved as CSV": "Tableaux enregistrés en CSV",
     "The same for all": "Identique pour tous",
     "The values found in \"Shapes\". Other formulas drawn here are measured as an ordinary 3D graph.": "Les valeurs trouvées dans « Formes ». D’autres formules tracées ici sont mesurées comme un graphique 3D ordinaire.",
