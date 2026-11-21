@@ -5238,7 +5238,8 @@
     U.lenText = shownValue(total); U.lenName = tr('Perimeter', '周の長さ');
     showResult(U.len, tr('Perimeter ', '周の長さ ') + valueShown(shownValue(total), 'graph', 'len'));
     onGraph(tr('Perimeter', '周の長さ'), total);
-    U.len.append(el('div', { class: 'form-hint', text: tr('Curves: ', '曲線：') + shownValue(lf).replace(/^= /, '') + ' + ' + shownValue(lg).replace(/^= /, '') +
+    // (the parts with the digits of the graph and the decimal sign of the number format, as the total)
+    U.len.append(el('div', { class: 'form-hint', text: tr('Curves: ', '曲線：') + valueShown(shownValue(lf), 'graph', 'len').replace(/^= /, '') + ' + ' + valueShown(shownValue(lg), 'graph', 'len').replace(/^= /, '') +
       (sides.length ? tr(', with the vertical sides at a and b', '、a と b の縦の辺を含む') : '') }));
     note();
   }
@@ -7171,7 +7172,7 @@
     if (seq !== U.seq) return;
     out.textContent = '';
     showResult(out, tr('Surface area ', '表面積 ') + valueShown(shownValue(total), 'graph', 'area'));
-    out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + digitsText('graph', shownValue(p), null, 'area').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+    out.append(el('div', { class: 'form-hint', text: parts.map((p, i) => names[i] + tr(': ', '：') + valueShown(shownValue(p), 'graph', 'area').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
     if (S.real && S.real.note && !append) out.append(el('div', { class: 'form-hint', text: S.real.note }));
     if (missing) out.append(el('div', { class: 'form-hint', text: trf('{0} points without a real value were left out (the value is approximate)', '実数の値がない {0} 点を除いています（おおよその値です）', missing) }));
   }
@@ -7495,7 +7496,7 @@
     if (seq !== U.seq) return;
     vol.textContent = '';
     showResult(vol, tr('Volume ', '体積 ') + valueShown(shownValue(total), 'graph', 'vol'));
-    if (many) vol.append(el('div', { class: 'form-hint', text: vals.map((v, m) => trf('Part {0}', '部分 {0}', m + 1) + tr(': ', '：') + digitsText('graph', shownValue(v), null, 'vol').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+    if (many) vol.append(el('div', { class: 'form-hint', text: vals.map((v, m) => trf('Part {0}', '部分 {0}', m + 1) + tr(': ', '：') + valueShown(shownValue(v), 'graph', 'vol').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
     Q3.volExpr = exprs.join(' + ');
     U.ins.hidden = false;
     // the surface area: the upper and the lower surface over each part (the floor z = 0: the area of the part)
@@ -7533,7 +7534,7 @@
     if (seq !== U.seq) return;
     surf.textContent = '';
     showResult(surf, tr('Surface area ', '表面積 ') + valueShown(shownValue(all), 'graph', 'area'));
-    surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + digitsText('graph', shownValue(p), null, 'area').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+    surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + valueShown(shownValue(p), 'graph', 'area').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
   }
   // --------------------------------------- regions given by formulas (3D graph, 1.11.0)
   // "Region: Custom" of "Volume and surface": a rectangle typed with numbers, a disk with a centre, a
@@ -7945,7 +7946,7 @@
     if (stale()) return;
     surf.textContent = '';
     showResult(surf, tr('Surface area ', '表面積 ') + valueShown(shownValue(all), 'graph', 'area'));
-    surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + digitsText('graph', shownValue(p), null, 'area').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
+    surf.append(el('div', { class: 'form-hint', text: sums.map((p, m) => A[m].name + tr(': ', '：') + valueShown(shownValue(p), 'graph', 'area').replace(/^= /, '')).join(tr(' / ', ' ／ ')) }));
   }
   // whether "Enclosed" is the first choice for the surfaces that are chosen: two surfaces that cross
   // in the drawn range (f − g takes both signs on its grid). One surface with z = 0, or two that only
