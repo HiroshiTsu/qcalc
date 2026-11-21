@@ -11968,7 +11968,7 @@
     if (pct) unit = ' %';
     // (the number worked out here: rounded from all its digits for the shared digits, its kind by its power)
     const t = String(+val.toPrecision(10)), text = '≈ ' + t + unit, kind = pct ? 'pct' : dim === 3 ? 'vol' : dim === 2 ? 'area' : 'len';
-    return { result: text, shown: '≈ ' + fmtDigits('shapes', val, null, kind) + unit, num: val, expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
+    return { result: text, shown: '≈ ' + rowDigits('shapes', val, kind) + unit, num: val, expr: t + (dim === 3 && ctx.base ? (ctx.vu ? ' ' + ctx.vu : ' ' + ctx.base + '^3') : dim === 1 && ctx.base ? ' ' + ctx.base : ''),
       vol: what === 'liq' && ctx.base ? `(${+x.toPrecision(12)} ${ctx.base}^3)` : '' };
   }
   // the picture of a tank with heads, filled to the level typed
@@ -12538,7 +12538,7 @@
           // (while the level is dragged, before the tool has worked its rows out: the numbers written as the tool
           // writes them (the shared digits of their kind), and the capacity, which does not change, as the tool
           // has it; D6P)
-          const asRow = (v, kind) => fmtDigits('shapes', v, null, kind);
+          const asRow = (v, kind) => rowDigits('shapes', v, kind);
           const x = T.V(T.h) * model.vf, u = model.vunit ? ' ' + model.vunit : '', pq = asRow(T.V(T.h) / T.full * 100, 'pct') + ' %';
           return { amount: asRow(x, 'vol') + u, pct: pq, liq: '≈ ' + asRow(x, 'vol') + u, cap: cap && cap.result ? cap.shown : '≈ ' + asRow(T.full * model.vf, 'vol') + u };
         };
@@ -14135,6 +14135,9 @@
     const r = digitsRule(key, auto, kind, 'js');
     return groupedNum(roundDigits(jsDigits(v), r.m, r.n, r.zeros, r.minDec, false, r.round));
   }
+  // a number of a row of a tool written as the engine's answers are: groups of three only with "Digit grouping" (the
+  // rows of the heads of tanks, and the rows above the 3D graph while the level is dragged, as in 1.12.0: D6P)
+  const rowDigits = (key, v, kind) => { const t = fmtDigits(key, v, null, kind); return S.grouping ? t : t.split(NF.group).join(''); };
   // the decimals of the numbers typed (the statistics: 12.3 and 14.1 have 1)
   const decimalsOf = (t) => { const s = String(t).replace(/[eE].*$/, ''); const i = Math.max(s.lastIndexOf('.'), commaMode ? s.lastIndexOf(',') : -1); return i < 0 ? 0 : s.length - i - 1; };
   // The precision the engine works with for a screen: 12 more than are shown (with n decimals: the size of
