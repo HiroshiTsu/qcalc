@@ -576,7 +576,7 @@
     "Up to {0} equations: the rest was left out": "식은 {0}개까지입니다(나머지는 넣지 않았습니다)",
     "Up to {0} functions are drawn: {1} more left out": "{0}개까지 그릴 수 있습니다(나머지 {1}개는 그리지 않았습니다)",
     "Update exchange rates": "환율 업데이트",
-    "Update exchange rates automatically (at start; not while roaming or in Data Saver)": "환율 자동 업데이트(시작할 때. 해외 로밍 중과 데이터 세이버 사용 중에는 제외)",
+    "Update exchange rates automatically (when the app is opened; not while roaming or in Data Saver)": "환율 자동 업데이트(앱을 열 때. 해외 로밍 중과 데이터 세이버 사용 중에는 제외)",
     "{0} decimals: the smallest unit of {1} (the calculation is exact in it)": "소수 {0}자리: {1}의 가장 작은 단위(계산은 이 단위로 정확하게)",
     "{0} decimals: one more than the smallest unit of {1} (two more below 1)": "소수 {0}자리: {1}의 가장 작은 단위보다 1자리 더(1보다 작으면 2자리 더)",
     "The decimals of the data + 2 (the smallest, the largest and the sum: as the data; r and R²: 4)": "데이터의 소수 자릿수 + 2(최솟값·최댓값·합계는 데이터와 같게, r과 R²는 4자리)",

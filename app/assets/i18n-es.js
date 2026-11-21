@@ -585,7 +585,7 @@
     "Up to {0} equations: the rest was left out": "Hasta {0} ecuaciones: el resto se dejó fuera",
     "Up to {0} functions are drawn: {1} more left out": "Se dibujan hasta {0} funciones: se omitieron {1} más",
     "Update exchange rates": "Actualizar tipos de cambio",
-    "Update exchange rates automatically (at start; not while roaming or in Data Saver)": "Actualizar los tipos de cambio automáticamente (al iniciar; no en itinerancia ni con Ahorro de datos)",
+    "Update exchange rates automatically (when the app is opened; not while roaming or in Data Saver)": "Actualizar los tipos de cambio automáticamente (al abrir la app; no en itinerancia ni con Ahorro de datos)",
     "{0} decimals: the smallest unit of {1} (the calculation is exact in it)": "{0} decimales: la unidad más pequeña de {1} (el cálculo es exacto en ella)",
     "{0} decimals: one more than the smallest unit of {1} (two more below 1)": "{0} decimales: una más que la unidad más pequeña de {1} (dos más por debajo de 1)",
     "The decimals of the data + 2 (the smallest, the largest and the sum: as the data; r and R²: 4)": "Los decimales de los datos + 2 (mínimo, máximo y suma: como los datos; r y R²: 4)",

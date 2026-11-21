@@ -573,7 +573,7 @@
     "Up to {0} equations: the rest was left out": "Bis zu {0} Gleichungen: Der Rest wurde weggelassen",
     "Up to {0} functions are drawn: {1} more left out": "Es werden bis zu {0} Funktionen gezeichnet: {1} weitere weggelassen",
     "Update exchange rates": "Wechselkurse aktualisieren",
-    "Update exchange rates automatically (at start; not while roaming or in Data Saver)": "Wechselkurse automatisch aktualisieren (beim Start; nicht beim Roaming oder im Datensparmodus)",
+    "Update exchange rates automatically (when the app is opened; not while roaming or in Data Saver)": "Wechselkurse automatisch aktualisieren (beim Öffnen der App; nicht beim Roaming oder im Datensparmodus)",
     "{0} decimals: the smallest unit of {1} (the calculation is exact in it)": "{0} Nachkommastellen: die kleinste Einheit von {1} (darin wird genau gerechnet)",
     "{0} decimals: one more than the smallest unit of {1} (two more below 1)": "{0} Nachkommastellen: eine mehr als die kleinste Einheit von {1} (unter 1 zwei mehr)",
     "The decimals of the data + 2 (the smallest, the largest and the sum: as the data; r and R²: 4)": "Nachkommastellen der Daten + 2 (Minimum, Maximum und Summe wie die Daten; r und R²: 4)",

@@ -15677,7 +15677,7 @@
     ]],
     // 1.12.0: updating the rates was an item of the menu until 1.11.0
     [tr('Exchange rates', '為替レート'), [
-      ['auto_rates', tr('Update exchange rates automatically (at start; not while roaming or in Data Saver)', '為替レートを自動更新（起動時。海外ローミング中とデータセーバー中は除く）'), 'bool'],
+      ['auto_rates', tr('Update exchange rates automatically (when the app is opened; not while roaming or in Data Saver)', '為替レートを自動更新（アプリを開いたとき。海外ローミング中とデータセーバー中は除く）'), 'bool'],
       ['rates_now', tr('Update exchange rates now', '為替レートを今すぐ更新'), 'link']
     ]]
   ];

@@ -577,7 +577,7 @@
     "Up to {0} equations: the rest was left out": "方程式最多 {0} 個（其餘未放入）",
     "Up to {0} functions are drawn: {1} more left out": "最多畫出 {0} 個函數（其餘 {1} 個未畫出）",
     "Update exchange rates": "更新匯率",
-    "Update exchange rates automatically (at start; not while roaming or in Data Saver)": "自動更新匯率（啟動時；國際漫遊和數據節省模式時除外）",
+    "Update exchange rates automatically (when the app is opened; not while roaming or in Data Saver)": "自動更新匯率（開啟 App 時；國際漫遊和數據節省模式時除外）",
     "{0} decimals: the smallest unit of {1} (the calculation is exact in it)": "小數 {0} 位：{1} 的最小單位（以此單位精確計算）",
     "{0} decimals: one more than the smallest unit of {1} (two more below 1)": "小數 {0} 位：比 {1} 的最小單位多 1 位（小於 1 時多 2 位）",
     "The decimals of the data + 2 (the smallest, the largest and the sum: as the data; r and R²: 4)": "資料的小數位數 + 2（最小值、最大值、總和與資料相同，r 與 R² 為 4 位）",
