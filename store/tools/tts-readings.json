@@ -1,0 +1,44 @@
+{
+ "ja": [
+  ["60 mph to km/h", "時速 60 マイルを キロメートル毎時に"],
+  ["60 mph は何 km/h", "時速 60 マイルは、時速何キロ"],
+  ["km/h", "キロメートル毎時"],
+  ["mph", "マイル毎時"]
+ ],
+ "es": [
+  ["100 km/h to mph", "100 kilómetros por hora a millas por hora"],
+  ["Cuántas mph son 100 km/h", "Cuántas millas por hora son 100 kilómetros por hora"],
+  ["alquiler = 950 EUR", "alquiler igual a 950 euros"],
+  ["km/h", "kilómetros por hora"],
+  ["mph", "millas por hora"],
+  ["EUR", "euros"]
+ ],
+ "de": [
+  ["100 km/h to mph", "100 Kilometer pro Stunde in Meilen pro Stunde"],
+  ["Wie viel mph sind 100 km/h", "Wie viele Meilen pro Stunde sind 100 Kilometer pro Stunde"],
+  ["Miete = 980 EUR", "Miete gleich 980 Euro"],
+  ["km/h", "Kilometer pro Stunde"],
+  ["mph", "Meilen pro Stunde"],
+  ["EUR", "Euro"]
+ ],
+ "fr": [
+  ["100 km/h to mph", "100 kilomètres à l’heure en miles à l’heure"],
+  ["Combien de mph font 100 km/h", "Combien de miles à l’heure font 100 kilomètres à l’heure"],
+  ["loyer = 850 EUR", "loyer égal à 850 euros"],
+  ["km/h", "kilomètres à l’heure"],
+  ["mph", "miles à l’heure"],
+  ["EUR", "euros"]
+ ],
+ "ko": [
+  ["100 km/h to mph처럼", "시속 100킬로미터를 마일로처럼"],
+  ["100 km/h는 몇 mph", "시속 100킬로미터는 시속 몇 마일"],
+  ["월세 = 650000 KRW", "월세는 650000원"],
+  ["KRW", "원"]
+ ],
+ "zh-TW": [
+  ["100 km/h to mph", "時速100公里換算成英里"],
+  ["100 km/h 是多少 mph", "時速100公里是時速多少英里"],
+  ["房租 = 18000 TWD", "房租等於 18000 元"],
+  ["TWD", "元"]
+ ]
+}
