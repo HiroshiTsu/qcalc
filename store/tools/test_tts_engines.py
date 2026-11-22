@@ -66,6 +66,26 @@ class FakeEngine(T.Engine):
         return i
 
 
+class FakeQwen(FakeEngine):
+    """A made-up Qwen3 with its two ways of cloning: honest=True reads otherwise in each way (as the library should),
+    honest=False the same both ways (as the owner's audio of 11-22 21:21 was)."""
+    CLONES = ('xvector', 'icl')
+
+    def __init__(self, honest=True):
+        super().__init__('qwen3', tag='xvec')
+        self.clone, self.honest, self.prompts = 'xvector', honest, {}
+
+    def say(self, text, lang, ref, seed):
+        self.prompts[(ref['wav'], ref['text'], self.clone)] = [types.SimpleNamespace(
+            ref_code=None if self.clone == 'xvector' else [1, 2], ref_text=None if self.clone == 'xvector' else ref['text'],
+            x_vector_only_mode=self.clone == 'xvector', icl_mode=self.clone == 'icl')]
+        self.calls.append((lang, text, self.clone, seed))
+        n = len(text.replace(' ', '')) * 0.06 + (0.5 if self.honest and self.clone == 'icl' else 0.0)
+        return C.to_int16(tone(n)), RATE
+
+    prompt_info = T.Qwen3.prompt_info
+
+
 VOICES = T.load_voices()
 
 
@@ -307,6 +327,41 @@ class Runs(unittest.TestCase):
         names = sorted(os.listdir(os.path.join(self.dir, 'tts', 'sample', 'ja')))
         self.assertIn('ja-qwen3-female-p09-youtube-01.wav', names)
         self.assertIn('ja-qwen3-female-xvec-p09-youtube-01.wav', names)
+
+    def test_clone_check_when_the_two_ways_differ(self):
+        q = FakeQwen(honest=True)
+        r = T.clone_check(self.dir, ['ja', 'en'], q, 'female', VOICES, {}, {}, log=self.log.append)
+        self.assertEqual(r, {'ja': (False, (0, 0)), 'en': (False, (0, 0))})
+        self.assertEqual([c[2] for c in q.calls], ['xvector', 'icl', 'xvector', 'icl'])
+        self.assertEqual(len(set(c[3] for c in q.calls)), 1)                     # one seed for both ways
+        self.assertEqual(q.clone, 'xvector')                                     # the engine's own way kept
+        d = os.path.join(self.dir, 'tts', 'clone-check')
+        self.assertEqual(sorted(os.listdir(d)), ['en-qwen3-female-icl.wav', 'en-qwen3-female-xvector.wav', 'ja-qwen3-female-icl.wav', 'ja-qwen3-female-xvector.wav'])
+        text = '\n'.join(self.log)
+        self.assertIn('different audio', text)
+        self.assertIn('codes none, text none, x_vector_only_mode True', text)
+        self.assertIn('codes yes, text yes, x_vector_only_mode False, icl_mode True', text)
+
+    def test_clone_check_when_they_are_the_same_and_the_old_files_too(self):
+        # the files of A made the same as the old ones (as the owner's zips of 11-22 21:21): found and told
+        langs = ['ja']
+        use = T.parse_use('qwen3:female', langs)
+        T.make_all(self.dir, use, {'qwen3': FakeEngine('qwen3')}, VOICES, {}, {}, log=self.log.append)
+        T.make_all(self.dir, use, {'qwen3': FakeEngine('qwen3', tag='xvec')}, VOICES, {}, {}, log=self.log.append)
+        n = len(C.paragraphs_of('ja'))
+        self.assertEqual(T.same_audio(self.dir, 'ja'), (n, n))                  # the made-up engine reads alike both times
+        r = T.clone_check(self.dir, langs, FakeQwen(honest=False), 'female', VOICES, {}, {}, log=self.log.append)
+        self.assertEqual(r, {'ja': (True, (n, n))})
+        text = '\n'.join(self.log)
+        self.assertIn('the SAME audio both ways', text)
+        self.assertIn('%d of %d audio files of A are the very same audio' % (n, n), text)
+        with self.assertRaises(SystemExit):
+            T.clone_check(self.dir, langs, FakeEngine('irodori', langs=['ja']), 'female', VOICES, {}, {}, log=self.log.append)
+
+    def test_main_clone_check(self):
+        q = FakeQwen()
+        self.assertEqual(T.main(['clone-check', self.dir, 'ko', '--engine', 'qwen3', '--voice', 'female'], engines={'qwen3': q}, log=self.log.append), 0)
+        self.assertEqual([(c[0], c[2]) for c in q.calls], [('ko', 'xvector'), ('ko', 'icl')])
 
     def test_main_all_needs_an_engine_of_this_environment(self):
         with self.assertRaises(SystemExit) as cm:

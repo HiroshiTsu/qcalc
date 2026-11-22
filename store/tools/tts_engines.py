@@ -29,6 +29,7 @@ Usage:
   python store/tools/tts_engines.py sample <work> [langs] --engine E [--voice female,male]
   python store/tools/tts_engines.py all <work> --use ja=irodori:female,en=qwen3:female,... [--redo ja:7]
   python store/tools/tts_engines.py listen <work>
+  python store/tools/tts_engines.py clone-check <work> [langs] --engine qwen3 [--voice female]
   options: --device auto|cpu|cuda  --dtype auto|fp16|fp32|bf16  --qwen-size 1.7b|0.6b  --qwen-clone xvector|icl  --seed S
            --ming-repo DIR  --irodori-model REPO[/subfolder]  --no-text-normalization (ming)
 
@@ -40,12 +41,17 @@ Usage:
           manifest.json as chatterbox_tts.py writes it, with the engine and the voice of each language) and
           <work>/voice-tts-<lang>.zip for each complete language
   listen  writes the listening lists again
+  clone-check  (11-23) whether the two ways of cloning of Qwen3 give different audio on this computer: the first
+          paragraph of each language read with the same seed both ways (icl, xvector) into <work>/tts/clone-check/,
+          what each prompt holds (the reference's codes and text: in-context only), the version of qwen-tts; and how
+          many audio files of A in <work>/voice-tts/<lang>/ are the very same audio as the old file of their paragraph
 
 For every paragraph the time it took and the most memory of the GPU it used are shown and kept in the manifest.
 A file is made only when it is missing, so a stopped run goes on where it stopped.
 """
 import datetime
 import hashlib
+import wave
 import html
 import json
 import os
@@ -211,6 +217,21 @@ class Qwen3(Engine):
         self.seed_all(seed)
         wavs, sr = m.generate_voice_design(text=text, language=self.LANG[lang], instruct=description)
         return self.pcm(wavs[0]), sr
+
+    def prompt_info(self, ref):
+        """What the prompt of this reference and way of cloning holds (clone-check): for each item, whether it has the
+        reference's codes and text (in-context) and its two flags."""
+        items = self.prompts.get((ref['wav'], ref['text'], self.clone))
+        if items is None:
+            return 'none yet'
+        items = items if isinstance(items, (list, tuple)) else [items]
+        out = []
+        for it in items:
+            code = getattr(it, 'ref_code', None)
+            out.append('codes %s, text %s, x_vector_only_mode %s, icl_mode %s' % (
+                'none' if code is None else 'yes', 'yes' if getattr(it, 'ref_text', None) else 'none',
+                getattr(it, 'x_vector_only_mode', '?'), getattr(it, 'icl_mode', '?')))
+        return '; '.join(out)
 
     def say(self, text, lang, ref, seed):
         m = self._model('read')
@@ -462,6 +483,76 @@ def synth(eng, text, lang, ref, seed):
     return pcm, sr, round(time.time() - t0, 1), eng.peak_mb()
 
 
+def pcm_md5(path):
+    """The MD5 of the samples of a WAV file (not of its header)."""
+    with wave.open(path) as w:
+        return hashlib.md5(w.readframes(w.getnframes())).hexdigest()
+
+
+def same_audio(work, lang):
+    """In <work>/voice-tts/<lang>/: each audio file of A (…-xvec-<video>-<NN>-<key>.wav) beside the old file of the same
+    engine, voice, video and paragraph (made by the in-context reading). Returns (pairs, how many are the same audio)."""
+    d = os.path.join(work, 'voice-tts', lang)
+    if not os.path.isdir(d):
+        return 0, 0
+    files = sorted(os.listdir(d))
+    pairs = same = 0
+    for f in files:
+        m = re.match(r'^(.+)-xvec-(.+)-(\d\d)-[0-9a-f]{8}\.wav$', f)
+        if not m:
+            continue
+        head, video, k = m.groups()
+        olds = [g for g in files if re.match(r'^%s-%s-%s-[0-9a-f]{8}\.wav$' % (re.escape(head), re.escape(video), k), g)]
+        if not olds:
+            continue
+        pairs += 1
+        same += pcm_md5(os.path.join(d, f)) == pcm_md5(os.path.join(d, olds[0]))
+    return pairs, same
+
+
+def library_version(name):
+    try:
+        from importlib import metadata
+        return metadata.version(name)
+    except Exception:
+        return '?'
+
+
+def clone_check(work, langs, eng, voice, voices, opt, readings, log=print):
+    """(11-23: the audio of A sent by the owner was the very same as the old audio, every paragraph of the 7 languages)
+    The first paragraph of each language read with the same seed in both ways of cloning; whether the two are the same
+    audio, what each prompt holds, and the old and new audio files of the work folder compared. Returns
+    {lang: (same audio both ways, (pairs, same) in voice-tts)}."""
+    if not getattr(eng, 'CLONES', None):
+        raise SystemExit('clone-check is for an engine with two ways of cloning (qwen3)')
+    ref = ensure_voice(work, eng, voice, voices, False, log)
+    seed = int(opt.get('seed') or C.DEFAULT_SEED)
+    out = os.path.join(work, 'tts', 'clone-check')
+    os.makedirs(out, exist_ok=True)
+    log('%s %s (%s %s), seed %d' % (eng.name, voice, eng.library, library_version(eng.library.replace('_', '-')), seed))
+    keep, result = eng.clone, {}
+    for lang in langs:
+        video, k, start, room, text = C.paragraphs_of(lang)[0]
+        said = spoken(eng.name, lang, text, readings)
+        sums = {}
+        for mode in eng.CLONES:
+            eng.clone = mode
+            pcm, sr = eng.say(said, lang, ref, seed)
+            path = os.path.join(out, '%s-%s-%s-%s.wav' % (lang, eng.name, voice, mode))
+            C.write_wav(path, C.trim(pcm, sr), sr)
+            sums[mode] = pcm_md5(path)
+            log('%s %-7s %.2f s  %s  (the prompt: %s)' % (lang, mode, C.wav_seconds(path), os.path.basename(path), eng.prompt_info(ref)))
+        eng.clone = keep
+        same = len(set(sums.values())) == 1
+        log('%s: %s' % (lang, 'the SAME audio both ways: on this computer the way of cloning changes nothing (A cannot help here)' if same
+                        else 'different audio: A (xvector) reads otherwise than the old way (icl)'))
+        pairs, nsame = same_audio(work, lang)
+        if pairs:
+            log('%s: voice-tts/%s/: %d of %d audio files of A are the very same audio as the old file of their paragraph' % (lang, lang, nsame, pairs))
+        result[lang] = (same, (pairs, nsame))
+    return result
+
+
 def make_sample(work, langs, eng, voices_wanted, voices, opt, readings, log=print):
     base = os.path.join(work, 'tts', 'sample')
     mpath = os.path.join(base, 'manifest.json')
@@ -648,7 +739,7 @@ FLAGS = {'redesign', 'no_text_normalization'}
 
 
 def options(argv):
-    if not argv or argv[0] not in ('design', 'sample', 'all', 'listen'):
+    if not argv or argv[0] not in ('design', 'sample', 'all', 'listen', 'clone-check'):
         raise SystemExit(__doc__.split('Usage:')[1].split('  design  makes')[0])
     cmd, pos, opt, i = argv[0], [], dict(OPTS), 1
     for f in FLAGS:
@@ -725,6 +816,9 @@ def main(argv=None, engines=None, log=print):
     if cmd == 'design':
         for v in wanted:
             ensure_voice(work, eng, v, voices, opt['redesign'], log)
+        return 0
+    if cmd == 'clone-check':
+        clone_check(work, langs, eng, wanted[0], voices, opt, readings, log)
         return 0
     make_sample(work, langs, eng, wanted, voices, opt, readings, log)
     return 0

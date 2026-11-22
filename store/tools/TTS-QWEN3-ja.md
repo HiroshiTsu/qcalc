@@ -232,6 +232,45 @@ python store\tools\tts_engines.py all $HOME\qcalc-voice --use qwen3:female
 - **「check ja:7 …」と出たとき**：その段落を聞いて、おかしければ `--redo ja:7` を足して同じコマンドを実行します（別の seed で作り直します）。
 - **「long ja:7 …」と出たとき**：速く読んでも場面に入らない段落です。そのまま Claude に伝えてください（文の直し方を考えます）。
 
+### A が効いているか確かめる（11 月 23 日）
+
+11 月 22 日 21:21 から作った A の zip（7 言語）は、音の中身が、前の音声（20:20 に送った、英語なまりのもの）と 1 バイトも違いませんでした（7 言語の 175 段落すべて）。作り直すまえに、このパソコンで A と前の作り方が本当に違う音になるかを確かめます。1 言語に 1 分ほどです。
+
+#### Ubuntu
+
+```sh
+git fetch --depth 1 origin feature/tts-engines
+git checkout -B feature/tts-engines FETCH_HEAD
+python store/tools/tts_engines.py clone-check ~/qcalc-voice ja,en --engine qwen3 --voice female
+```
+
+#### Windows
+
+```powershell
+git fetch --depth 1 origin feature/tts-engines
+git checkout -B feature/tts-engines FETCH_HEAD
+python store\tools\tts_engines.py clone-check $HOME\qcalc-voice ja,en --engine qwen3 --voice female
+```
+
+同じ段落を、同じ seed で、A（`xvector`）と前の作り方（`icl`）の両方で読ませ、`qcalc-voice/tts/clone-check/` に WAV を書きます（聞き比べられます）。表示の見方は次のとおりです。
+
+- **`different audio`**：A はこのパソコンでも別の音になります。それなのに zip の音が前と同じだったのは、A のファイルが A で作られていないということです。次の行の「`N of N audio files of A are the very same audio`」でも確かめられます。その A のファイルを別のフォルダに移してから（消さなくてかまいません）、上の 6 のコマンドで作り直します。
+
+  Ubuntu：
+
+  ```sh
+  mkdir -p ~/qcalc-voice/old-xvec && find ~/qcalc-voice/voice-tts -name 'qwen3-female-xvec-*.wav' -exec mv -t ~/qcalc-voice/old-xvec {} +
+  ```
+
+  Windows：
+
+  ```powershell
+  New-Item -ItemType Directory -Force $HOME\qcalc-voice\old-xvec | Out-Null
+  Get-ChildItem -Recurse $HOME\qcalc-voice\voice-tts -Filter 'qwen3-female-xvec-*.wav' | Move-Item -Destination $HOME\qcalc-voice\old-xvec
+  ```
+
+- **`the SAME audio both ways`**：このパソコンの Qwen3-TTS では、作り方を変えても音が変わりません。A では英語なまりは直りません。表示をそのまま Claude に貼ってください（`qwen-tts` の版も 1 行目に出ます）。言語ごとの見本で作る B などを考えます。
+
 ## 7. zip を添付する
 
 1 つの言語ができるたびに、作業用のフォルダに `voice-tts-<言語>.zip` ができます（`voice-tts-ja.zip`、`voice-tts-en.zip` など）。zip には、音声と、どの音声がどの動画のどの場面かの記録（manifest.json）と、声の見本が入っています。
