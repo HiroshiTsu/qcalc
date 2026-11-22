@@ -310,7 +310,8 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: [[← Back to the shape]] vuelve a la herramienta con la misma figura y las mismas medidas.
 :shot: shapes3d | Un depósito horizontal con fondos en 3D
 :example: Un cilindro de 30 cm de diámetro y 50 cm de altura → volumen 11250π ≈ 35342,91735 cm³
-:tip: El depósito se dibuja transparente y el líquido como un sólido de su propio color. Arrastre hacia arriba o abajo desde el nivel (el recuadro con la cantidad) para moverlo: [[Height of the liquid]] de la herramienta cambia también. Arrastrar en otro sitio gira el gráfico. El control [[Level]] de abajo también lo mueve.
+:tip: El depósito se dibuja como vidrio transparente y el líquido como un sólido con su aspecto (agua, agua de mar, queroseno o gasolina; con otra elección, en el color de la app). Arrastre hacia arriba o abajo desde el nivel (el recuadro con la cantidad) para moverlo: [[Height of the liquid]] de la herramienta cambia también. Arrastrar en otro sitio gira el gráfico. El control [[Level]] de abajo también lo mueve.
+:tip: Un sólido se dibuja con el aspecto del material elegido para su peso ([[Material (density)]]: hierro, acero inoxidable, aluminio, cobre, latón, madera, PLA, ABS, acrílico y otros); sin elección, en azul. [[See-through]] y los botones de debajo también funcionan aquí ([Gráfica 3D](#graph-3d)).
 :tip: Las marcas de la pared son cantidades redondas: en un depósito horizontal o esférico sus distancias son visiblemente desiguales.
 :tip: Los números del nivel están redondeados para leerlos (3 cifras significativas, % con un decimal); los valores exactos están encima del gráfico y en la herramienta ([Cifras mostradas en cada herramienta](#digits)).
 :note: Sin QCalc Pro, la fila [[Turn it in 3D (QCalc Pro)]] aparece justo encima de los resultados.
@@ -410,7 +411,11 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Escribe hasta cuatro funciones y los intervalos de x e y, y pulsa [[Draw]].
 :step: Gire en cualquier dirección con un dedo (también por encima y por debajo). Con dos dedos: pellizque para ampliar o reducir, deslícelos juntos para mover la imagen y gírelos para girarla en la pantalla.
 :step: Con el botón del cubo elige al instante [[From the front]], [[From above]] o [[From the side]]. [[!⟲]] vuelve a la vista y el tamaño iniciales.
+:step: [[See-through]] hace transparentes las superficies y los sólidos: se ven sus caras de atrás e interiores y dónde se cortan dos superficies, y los bordes se mantienen. El control deslizante ajusta la opacidad. Con dos cosas o más, los botones de debajo eligen cuáles son transparentes (por ejemplo, solo el [[Container]] de un depósito, con el [[Liquid]] opaco).
+:step: [[Box and axes]] oculta o muestra la caja con su cuadrícula y sus ejes.
 :shot: graph3d | La gráfica 3D (la esfera de ejemplo)
+:tip: El 3D se dibuja con la GPU del dispositivo (WebGL 2), con luz y sombras casi reales; los colores según la altura se mantienen. Si va lento, se dibuja algo más tosco mientras gira y nítido de nuevo al levantar el dedo.
+:tip: En un dispositivo sin WebGL 2, el 3D se dibuja como antes; entonces [[See-through]] no se puede pulsar y aparece «[[Not available on this device]]».
 :tip: [[Partial derivatives ▾]] dibuja ∂f/∂x y ∂f/∂y.
 
 ## volume-3d | Volumen y superficie (3D)

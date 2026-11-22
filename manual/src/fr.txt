@@ -310,7 +310,8 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: [[← Back to the shape]] revient à l’outil avec la même forme et les mêmes dimensions.
 :shot: shapes3d | Une cuve horizontale avec fonds en 3D
 :example: Un cylindre de 30 cm de diamètre et de 50 cm de hauteur → volume 11250π ≈ 35342,91735 cm³
-:tip: La cuve est dessinée transparente, le liquide comme un solide de sa propre couleur. Faites glisser vers le haut ou le bas depuis le niveau (la case de la quantité) pour le déplacer : [[Height of the liquid]] dans l’outil change aussi. Un glissement ailleurs fait tourner le graphique. Le curseur [[Level]] en dessous le déplace aussi.
+:tip: La cuve est dessinée comme du verre clair, le liquide comme un solide qui a son aspect (eau, eau de mer, kérosène ou essence ; sinon dans la couleur de l’app). Faites glisser vers le haut ou le bas depuis le niveau (la case de la quantité) pour le déplacer : [[Height of the liquid]] dans l’outil change aussi. Un glissement ailleurs fait tourner le graphique. Le curseur [[Level]] en dessous le déplace aussi.
+:tip: Un solide est dessiné avec l’aspect du matériau choisi pour son poids ([[Material (density)]] : fer, acier inoxydable, aluminium, cuivre, laiton, bois, PLA, ABS, acrylique et autres) ; sans choix, en bleu. [[See-through]] et les boutons dessous fonctionnent ici aussi ([Graphique 3D](#graph-3d)).
 :tip: Les traits sur la paroi sont des quantités rondes : dans une cuve horizontale ou sphérique, leurs écarts sont visiblement inégaux.
 :tip: Les nombres au niveau sont arrondis pour la lecture (3 chiffres significatifs, % avec une décimale) ; les valeurs exactes sont au-dessus du graphique et dans l’outil ([Chiffres affichés par outil](#digits)).
 :note: Sans QCalc Pro, la ligne [[Turn it in 3D (QCalc Pro)]] apparaît juste au-dessus des résultats.
@@ -410,7 +411,11 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Tapez jusqu'à quatre fonctions et les intervalles de x et de y, puis appuyez sur [[Draw]].
 :step: Faites tourner dans tous les sens d’un doigt (y compris par-dessus et par-dessous). À deux doigts : pincez pour zoomer, faites-les glisser ensemble pour déplacer l’image, tournez-les pour la faire pivoter dans l’écran.
 :step: Le bouton au cube propose aussitôt [[From the front]], [[From above]] ou [[From the side]]. [[!⟲]] rétablit la vue et la taille de départ.
+:step: [[See-through]] rend les surfaces et les solides transparents : leurs faces arrière et intérieures et l’intersection de deux surfaces apparaissent, les arêtes restent. Le curseur règle l’opacité. Avec deux choses ou plus, les boutons dessous choisissent ce qui est transparent (par exemple seulement le [[Container]] d’une cuve, le [[Liquid]] restant opaque).
+:step: [[Box and axes]] masque ou affiche la boîte avec sa grille et ses axes.
 :shot: graph3d | Le graphique 3D (la sphère de l'exemple)
+:tip: La 3D est dessinée par le GPU de l’appareil (WebGL 2), avec une lumière et des ombres presque réelles ; les couleurs selon la hauteur restent. Si c’est lent, le dessin est un peu plus grossier pendant la rotation et redevient net quand vous levez le doigt.
+:tip: Sur un appareil sans WebGL 2, la 3D est dessinée comme avant ; [[See-through]] ne peut alors pas être touché et affiche « [[Not available on this device]] ».
 :tip: [[Partial derivatives ▾]] trace ∂f/∂x et ∂f/∂y.
 
 ## volume-3d | Volume et surface (3D)

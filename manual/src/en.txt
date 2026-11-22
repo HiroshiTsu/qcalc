@@ -310,7 +310,8 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: [[← Back to the shape]] goes back to the tool with the same shape and sizes.
 :shot: shapes3d | A lying tank with heads in 3D
 :example: A cylinder of diameter 30 cm and height 50 cm → volume 11250π ≈ 35342.91735 cm³
-:tip: A tank is drawn clear, its liquid as a solid of its own color. Drag up or down from the level (the box with the amount) to move it: [[Height of the liquid]] in the tool changes too. A drag elsewhere turns the graph. The slider [[Level]] below moves it as well.
+:tip: A tank is drawn as clear glass, its liquid as a solid that looks like what it is (water, seawater, kerosene or gasoline; other choices have the app's color). Drag up or down from the level (the box with the amount) to move it: [[Height of the liquid]] in the tool changes too. A drag elsewhere turns the graph. The slider [[Level]] below moves it as well.
+:tip: A solid is drawn in the look of the material chosen for its weight ([[Material (density)]]: iron, stainless steel, aluminium, copper, brass, wood, PLA, ABS, acrylic and others); with none chosen, in blue. [[See-through]] and the buttons under it work here too ([3D graph](#graph-3d)).
 :tip: The marks on the wall are round amounts: in a lying or a spherical tank their gaps are visibly uneven.
 :tip: The numbers at the level are rounded for reading (3 significant digits, % with one decimal); the exact values are above the graph and in the tool ([Digits shown by each tool](#digits)).
 :note: Without QCalc Pro, the row [[Turn it in 3D (QCalc Pro)]] appears just above the results.
@@ -410,7 +411,11 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Type up to four functions and the ranges of x and y, then press [[Draw]].
 :step: Turn it any way with one finger (over the top and under the bottom too). With two fingers, pinch to zoom, move them together to shift the picture, and twist them to turn it in the screen.
 :step: The cube button gives [[From the front]], [[From above]] or [[From the side]] at once. [[!⟲]] gives the first view and size back.
+:step: [[See-through]] makes the surfaces and solids see-through: their back and inner faces and where two surfaces meet show, and their edges stay. The slider sets how opaque they are. With two things or more, the buttons under it choose which are see-through (for example only the [[Container]] of a tank, with the [[Liquid]] solid).
+:step: [[Box and axes]] hides or shows the box with its grid and axes.
 :shot: graph3d | The 3D graph (the sample sphere)
+:tip: 3D is drawn by the device's GPU (WebGL 2), with light and shadows close to real things; the colors by height stay. When it is slow, it is drawn a little coarser while you turn it and sharp again when you lift your finger.
+:tip: On a device without WebGL 2, 3D is drawn as before; then [[See-through]] cannot be pressed and says "[[Not available on this device]]".
 :tip: [[Partial derivatives ▾]] draws ∂f/∂x and ∂f/∂y.
 
 ## volume-3d | Volume and surface (3D)
