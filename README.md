@@ -41,7 +41,7 @@ The app is in English, Japanese, Spanish, German, French, Korean and Traditional
 
 QCalc Pro is a one-time purchase in Google Play (the one-time product `qcalc_pro`) that unlocks a precision above 1000 digits, 3D graphs, the color themes, exporting the history, and the Pro features of later versions. Everything else stays free. Since 1.12.0, as the author decided, what is for learning and everyday use stays free and what is mainly for work is Pro: saving tables as CSV files, the heads of tanks (hemispherical, semi-elliptical, dished) with quick-reference tables, solids from a measured profile (volume, capacity, weight, surface), STL files for 3D printers, moving GIF pictures of the 3D graph and pictures of graphs at full resolution without the mark, and more than one calculation note with saving them as files. Which feature is Pro is set in one place (`PRO_GATES` in `app/assets/app.js`), and a feature once free is never made Pro.
 
-- The purchase is made with the Google Play Billing Library (`app/src-billing/PlayBilling.java`). It is built only with Gradle and `qcalc.billing=true` (see `app/build.gradle`); `build-apk.sh` and `build-aab.sh` leave it out.
+- The purchase is made with the Google Play Billing Library (`app/src-billing/PlayBilling.java`), and Google Play's in-app review sheet is asked for with the Play In-App Review Library (`app/src-billing/PlayReview.java`; when and how often: "In-App Review" in `app/assets/app.js`). They are built only with Gradle and `qcalc.billing=true` (see `app/build.gradle`); `build-apk.sh` and `build-aab.sh` leave them out, and such a build never asks for the review sheet.
 - **A build without the library cannot sell Pro, so it locks nothing**: every feature is free, as in the versions before Pro. The test build (`.debug`) has Pro unlocked, and the Pro panel can lock it to show the app as without Pro.
 - People who used QCalc before Pro began keep the Pro features for free (`Pro.java`).
 
@@ -71,7 +71,7 @@ The design document set is in [design/](design/), in English and in Japanese wit
 | --- | --- |
 | `bridge/qalc-engine.cc` | A small program that calls libqalculate (it talks to the app with one JSON object per line) |
 | `app/AndroidManifest.xml`, `app/src/` | The Java code of the app (WebView, starting and supervising the engine, downloading exchange rates, saving the history and settings, QCalc Pro, the language, the widget, the quick settings tile and the shortcuts (`Widget`, `QuickTile`, `Quick`, `QuickText`), and the pictures shared from the graphs (`ShareFiles`, `ShareProvider`)) |
-| `app/src-billing/` | The purchase of QCalc Pro with the Google Play Billing Library (only in Gradle builds with `qcalc.billing=true`) |
+| `app/src-billing/` | The purchase of QCalc Pro with the Google Play Billing Library, and Google Play's in-app review sheet with the Play In-App Review Library (only in Gradle builds with `qcalc.billing=true`) |
 | `app/res/`, `app/res-debug/` | App name, theme and launcher icons (`res-debug` holds the name of the test build, "QCalc (debug)") |
 | `app/assets/` | The user interface (HTML / CSS / JavaScript). `mathview.js` turns expressions into math notation, shown with KaTeX (`katex/`). `licenses.js` holds the license texts of the bundled software |
 | `app/jniLibs/arm64-v8a/libqalcengine.so` | The prebuilt calculation engine (an arm64 executable; `build-engine.sh` rebuilds it) |
@@ -156,7 +156,7 @@ Notes:
 
 QCalc is free software under the GNU General Public License, version 2 or later ([LICENSE](LICENSE)). libqalculate is also licensed under GPL v2 or later.
 
-As a special exception, the copyright holder of QCalc's own code (everything in this repository that is not in `third_party/`) gives permission to link it with the Google Play Billing Library and the libraries it needs, and to distribute the result, without the GPL applying to those libraries. Any other software that is GPL-licensed, such as libqalculate, is not covered by this exception; QCalc's app code does not link libqalculate, which runs as a separate program (the engine).
+As a special exception, the copyright holder of QCalc's own code (everything in this repository that is not in `third_party/`) gives permission to link it with the Google Play Billing Library, the Play In-App Review Library (`com.google.android.play:review`), and the libraries they need, and to distribute the result, without the GPL applying to those libraries. Any other software that is GPL-licensed, such as libqalculate, is not covered by this exception; QCalc's app code does not link libqalculate, which runs as a separate program (the engine).
 
 The engine also contains GMP (LGPL v3 or later, or GPL v2 or later), MPFR (LGPL v3 or later), FLINT (LGPL v3 or later), libxml2 (MIT), the musl libc bundled with zig (MIT), LLVM libc++ / libc++abi / libunwind (Apache License 2.0 with LLVM Exceptions) and compiler_rt (MIT). Because MPFR and FLINT are LGPL v3 or later, the engine as a whole is distributed under the terms of the GNU GPL v3 or later. The user interface shows math notation with KaTeX 0.16.11 (MIT, `app/assets/katex/`). The sources are in `third_party/`, and the full license texts can be read in the app under "About this app" → "Open source licenses".
 
