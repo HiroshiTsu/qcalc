@@ -4398,6 +4398,8 @@
       return;
     }
     P.msg.textContent = tr('Calculating…', '計算中…');
+    // (feature/ratings, VR01) what a and b had been changed by the person when this graph was asked for: typed after it, they stay
+    const typedAtDraw = P.areaUI ? Object.assign({ a: 0, b: 0 }, P.areaUI.typed) : null;
     const r = await Bridge.send('plot', { exprs: P.exprs, min: String(min), max: String(max), steps: 600, var: 'x', opts: engineOpts(), timeout: 12000 });
     if (!r.ok && r.error === 'invalid range' && !keepView && !P.swapped) {
       // the range the wrong way round ("5 to 1"): the two ends change places
@@ -4430,7 +4432,7 @@
     } else {
       P.area = null;
       // with the area tools open, a new graph shows its area at once (unless a form or a shape asks for its own)
-      if (P.areaUI) { P.areaUI.auto = !P.areaUI.box.hidden && !(P.pending && P.pending.area); areaFunctionsChanged(); }
+      if (P.areaUI) { P.areaUI.auto = !P.areaUI.box.hidden && !(P.pending && P.pending.area); P.areaUI.typedBase = typedAtDraw; areaFunctionsChanged(); P.areaUI.typedBase = null; }
     }
     if (P.calcUI) calcFunctionsChanged();
     store.set('qalc.plot.ok', false);
@@ -5422,6 +5424,8 @@
     // a typed range is calculated when it is left (or Enter): the chosen result follows by itself
     for (const inp of [a, b]) {
       inp.addEventListener('change', () => computeArea());
+      // (feature/ratings, VR01) typed by the person: the range found for a new graph no longer replaces it (below)
+      inp.addEventListener('input', () => areaTyped(inp === a ? 'a' : 'b'));
       inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
     }
     // the expression of the result shown: the integral of the area, or of the length
@@ -5571,10 +5575,18 @@
   const areaG = () => (P.areaUI.f2.value === 'axis' ? null : P.series[Number(P.areaUI.f2.value)]);
   const areaGExpr = () => { const g = areaG(); return g ? g.expr : '0'; };
   // the crossing points of the two functions in the drawn values, then exact or precise ones
+  // (feature/ratings, VR01) a or b changed by the person (typed, or an edge of the area dragged): counted, so that a
+  // search of the crossing points begun before does not write its range over it
+  function areaTyped(k) { const U = P.areaUI; U.typed = U.typed || { a: 0, b: 0 }; U.typed[k]++; }
   async function areaPairChanged() {
     const U = P.areaUI, f = P.series[Number(U.f1.value)], g = areaG();
     const auto = U.auto;
     U.auto = false;
+    // (feature/ratings, VR01) on a slow phone the search below can take seconds: a or b typed in the meantime stays
+    // (until 1.13.0 the range found was written over it, and the area or the solid was of the range found)
+    // (from when the graph was asked for, when this search follows a new graph: its plot may wait for the engine too)
+    U.typed = U.typed || { a: 0, b: 0 };
+    const typed0 = U.typedBase ? { a: U.typedBase.a, b: U.typedBase.b } : { a: U.typed.a, b: U.typed.b };
     // a newer call (another graph, another pair, an example) makes this one stop before it writes
     // a and b, whatever order the engine answers in (1.8.2)
     const seq = U.pairSeq = (U.pairSeq || 0) + 1;
@@ -5618,9 +5630,13 @@
     }
     // the range to start with: from the first to the last crossing point, else the part of the
     // drawn range where the functions have real values
-    if (pts.length >= 2) { U.a.value = toDisplay(pts[0].text); U.b.value = toDisplay(pts[pts.length - 1].text); }
-    else if (real && real.clipped && real.parts.length) { U.a.value = toDisplay(String(real.parts[0].a)); U.b.value = toDisplay(String(real.parts[real.parts.length - 1].b)); }
-    else if (view) { U.a.value = toDisplay(String(view.lo)); U.b.value = toDisplay(String(view.hi)); }
+    let lo = null, hi = null;
+    if (pts.length >= 2) { lo = pts[0].text; hi = pts[pts.length - 1].text; }
+    else if (real && real.clipped && real.parts.length) { lo = String(real.parts[0].a); hi = String(real.parts[real.parts.length - 1].b); }
+    else if (view) { lo = String(view.lo); hi = String(view.hi); }
+    // (VR01) only into a field the person has not changed since this search began
+    if (lo !== null && U.typed.a === typed0.a) U.a.value = toDisplay(lo);
+    if (hi !== null && U.typed.b === typed0.b) U.b.value = toDisplay(hi);
     if (auto) await computeArea(true);
     else if (U.rev && !U.rev.box.hidden) computeRevolution(true);
   }
@@ -5638,6 +5654,7 @@
       text = String(x);
     }
     U[k].value = text;
+    areaTyped(k);
     if (!done) return;
     A[k] = x;
     computeArea(); // the result the switch shows (1.12.0; until 1.11.0 the area, and the length only if it had been shown)
