@@ -513,6 +513,7 @@ L'intégration numérique (aires, longueurs et volumes du graphique) est sûre �
 
 ## pro-free | Ce qui est gratuit
 :what: Les calculs, les graphiques 2D, les aires et longueurs, les solides de révolution, les formes, les cuves (fonds plats), les outils du quotidien, la conversion, les statistiques, la première note de calcul, le widget et ce manuel sont gratuits, sans publicité.
+- Sans Pro, la 3D peut être essayée gratuitement une fois. La vue 3D affiche alors « Essai gratuit de la 3D, une seule fois », et l'essai se termine quand la vue 3D est fermée. Le GIF, le STL et les autres exports ne sont pas compris.
 
 ## pro-features | Ce qu'ajoute QCalc Pro
 :what: Un seul achat débloque toutes les fonctions Pro, y compris celles des futures mises à jour. Sans abonnement ni publicité.
@@ -545,7 +546,7 @@ Le prix s'affiche sur l'écran d'achat de Google Play.
 - **x donne des résultats étranges** : x est une variable ; multipliez avec la touche ×.
 - **Les taux de change sont anciens** : appuyez sur [[Update exchange rates now]] (avec internet).
 - **La rangée de touches du haut manque** : avec un grand texte elle est masquée ; ⌨ au bout des onglets l'affiche.
-- **Le graphique 3D ne s'ouvre pas** : le graphique 3D est une fonction de QCalc Pro ([QCalc Pro](#pro)).
+- **Le graphique 3D ne s'ouvre pas** : le graphique 3D est une fonction de QCalc Pro ; sans Pro, il peut être essayé gratuitement une fois ([QCalc Pro](#pro)).
 
 ## errors | Messages d'erreur et comment corriger
 :what: Un message d'erreur dit ce qui ne va pas et comment le corriger. Les plus courants :

@@ -513,6 +513,7 @@ Numeric integration (areas, lengths and volumes of the graph) is certain to abou
 
 ## pro-free | What is free
 :what: Calculations, 2D graphs, areas and lengths, solids of revolution, shapes, tanks (flat heads), the everyday tools, conversion, statistics, the first calculation memo, the widget and this manual are all free, with no ads.
+- Without Pro, 3D can be tried once for free. The 3D view then says "A free trial of 3D, once only", and the trial ends when the 3D view is closed. GIF, STL and the other exports are not included.
 
 ## pro-features | What QCalc Pro adds
 :what: One purchase unlocks every Pro feature, also those of later updates. No subscription, no ads.
@@ -545,7 +546,7 @@ The price is shown on the Google Play purchase screen.
 - **x gives strange answers**: x is a variable; multiply with the × key.
 - **The currency rates are old**: press [[Update exchange rates now]] (with the internet).
 - **The top row of keys is missing**: it is hidden with a large text size; ⌨ at the right end of the tabs shows it.
-- **The 3D graph does not open**: the 3D graph is a QCalc Pro feature ([QCalc Pro](#pro)).
+- **The 3D graph does not open**: the 3D graph is a QCalc Pro feature; without Pro it can be tried once for free ([QCalc Pro](#pro)).
 
 ## errors | Error messages and how to fix them
 :what: An error message says what is wrong and how to fix it. The common ones:

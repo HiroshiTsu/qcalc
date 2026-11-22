@@ -13,7 +13,8 @@ rootProject.file('version.properties').withInputStream { appVersion.load(it) }
 // QCalc Pro (the purchase in Google Play): with qcalc.billing=true (in gradle.properties, or
 // ./gradlew -Pqcalc.billing=true …) the app includes app/src-billing (PlayBilling.java) and the
 // Google Play Billing Library, and Pro can be bought. Without it Pro cannot be bought and nothing
-// is locked (see app/src/…/Pro.java).
+// is locked (see app/src/…/Pro.java). The same build has Google Play's in-app review (PlayReview.java
+// and the Play In-App Review Library, see app/src/…/Review.java); the build without it has neither.
 def withBilling = (findProperty('qcalc.billing') ?: 'false').toString().toBoolean()
 
 def keystoreFile = rootProject.file('keystore.properties')
@@ -107,5 +108,8 @@ dependencies {
     if (withBilling) {
         // Google Play requires version 8 or later (from August 31, 2026)
         implementation 'com.android.billingclient:billing:8.3.0'
+        // Google Play's in-app review sheet (feature/ratings, the author's decision of 2026-11-22): the
+        // Play In-App Review Library, the newest stable version
+        implementation 'com.google.android.play:review:2.0.2'
     }
 }

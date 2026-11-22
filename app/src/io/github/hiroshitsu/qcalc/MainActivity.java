@@ -85,6 +85,8 @@ public class MainActivity extends Activity {
     };
     /** QCalc Pro (the purchase in Google Play, see Pro.java). */
     private Pro pro;
+    /** Google Play's in-app review sheet (only in the build for Google Play, see Review.java). */
+    private final Review review = new Review();
     /** The text of a file being saved, while the system's file picker is open. */
     private String pendingSave;
     /** The page's setting "Light or dark": "system" (the phone's setting), "light" or "dark". */
@@ -1072,6 +1074,45 @@ public class MainActivity extends Activity {
                 if (pro != null) pro.setTestUnlocked(unlocked);
             } catch (RuntimeException e) {
                 Log.e(TAG, "setTestPro", e);
+            }
+        }
+
+        /**
+         * Google Play's in-app review sheet (feature/ratings): whether this build can ask for it (the build for
+         * Google Play has the Play In-App Review Library; see Review.java).
+         */
+        @JavascriptInterface
+        public boolean reviewAvailable() {
+            return review.available();
+        }
+
+        /**
+         * Asks Google Play for the review sheet; the page has decided that the time is right (app.js). The end is
+         * reported as {"event":"review","state":"done"|"unavailable"|"none"}: "done" says only that Google Play
+         * went through the request, not that the sheet was shown.
+         */
+        @JavascriptInterface
+        public void requestReview() {
+            onUi("requestReview", new Runnable() {
+                @Override
+                public void run() {
+                    review.ask(MainActivity.this, new Review.Done() {
+                        @Override
+                        public void done(String state) {
+                            sendEvent("{\"event\":\"review\",\"state\":" + JSONObject.quote(state) + "}");
+                        }
+                    });
+                }
+            });
+        }
+
+        /** When the app was first installed on this phone (ms since 1970; an update keeps it), or 0. */
+        @JavascriptInterface
+        public double installTime() {
+            try {
+                return getPackageManager().getPackageInfo(getPackageName(), 0).firstInstallTime;
+            } catch (Exception e) {
+                return 0;
             }
         }
 

@@ -545,6 +545,127 @@
     return false;
   }
   function maxPrecision() { return hasPro() ? MAX_PRECISION : FREE_MAX_PRECISION; }
+  // ---- 3D once for free (feature/ratings, the author's decision of 2026-11-22). Who has no Pro, in a build that sells
+  // it, can open a 3D view once: the graph's 3D, "⟳ 3D" of a solid, "View in 3D" of the shapes and of a solid from a
+  // profile, the sphere. It says so when it opens (a line above the graph, and a toast), and when that 3D view is closed
+  // (back to 2D, back to the tool, the graph closed) the trial is over and the Pro sheet follows, with its photo and
+  // line, as for any locked feature. Only looking at the 3D view: GIF, STL, pictures without the mark and the other Pro
+  // features keep their own gates. Whether it was used is kept on this phone only (qalc.try3d: the day; installing
+  // again may give it again). The test builds reset it in the Pro panel.
+  const TRY3D = { on: false, used: false };
+  function try3dLeft() {
+    if (!proOffered() || hasPro() || TRY3D.on) return false;
+    return !store.get('qalc.try3d', '');
+  }
+  function can3d() { return hasPro() || TRY3D.on; }
+  // (a door that opens the 3D view only after more work, which may still fail: whether it may open)
+  function may3d() { return can3d() || try3dLeft(); }
+  // a door into the 3D view: true when it may open now (Pro, the trial going on, or the trial starting here)
+  function open3dOk(what) {
+    if (can3d()) return true;
+    if (try3dLeft()) { startTry3d(); return true; }
+    proPrompt(what, '3d');
+    return false;
+  }
+  function startTry3d() {
+    TRY3D.on = true; TRY3D.used = true;
+    store.set('qalc.try3d', new Date().toISOString().slice(0, 10));
+    showTry3d();
+    setTimeout(() => toast(tr('A free trial of 3D, once only. It ends when you close the 3D view.', '1 回だけの無料のお試しです。3D を閉じると終わります'), 6000), 300);
+  }
+  // the 3D view of the trial was closed: the trial is over, and the Pro sheet follows
+  function endTry3d() {
+    if (!TRY3D.on) return false;
+    TRY3D.on = false;
+    showTry3d();
+    setTimeout(() => proPrompt(tr('The free trial of 3D is over. 3D graphs are a QCalc Pro feature', '3D のお試しは終わりました。3D グラフは QCalc Pro の機能です'), '3d'), 400);
+    return true;
+  }
+  function showTry3d() { if (Q3.tryRow) Q3.tryRow.hidden = !TRY3D.on; }
+  // the 3D view was left (back to 2D, the graph closed): the end of a trial; with Pro, after a look of 10 s or more, a
+  // moment for the review sheet (In-App Review, below)
+  function left3d() {
+    const t = Q3.shownAt || 0;
+    Q3.shownAt = 0;
+    if (endTry3d()) return;
+    if (t && Date.now() - t >= 10000) reviewMoment('3d');
+  }
+
+  // ---- In-App Review (feature/ratings, the author's decision of 2026-11-22): Google Play's own review sheet, with the
+  // Play In-App Review Library, which only the build for Google Play has (PlayReview.java, QalcNative.reviewAvailable;
+  // the build without billing has neither). Asked for only when all of these hold (decided on 2026-11-21):
+  //   1. installed 3 days ago or more (Android's time of the first installation; else the first start counted here)
+  //   2. opened 5 times or more (starts at least 30 minutes apart)
+  //   3. no error just before: no engine error or timeout and no error of the page in this session, the last
+  //      calculation not an error, "Send a bug report or an idea" not opened in the last 7 days
+  //   4. right after something worked: a 3D view looked at for 10 s or more and closed, a tool's result kept in the
+  //      history, copied, shared or saved
+  //   5. 30 days or more since it was last asked for (and at most 3 times in 365 days); not for 180 days after "Rate on
+  //      Google Play"
+  // Never in the session of the free 3D trial, in the first minute after the start, within a minute after the Pro
+  // sheet, or while a sheet is open. No question first ("Do you like QCalc?"): Google's rules forbid asking only the
+  // happy ones. Google Play decides whether the sheet is shown (and may not show it, by its own limits); the app learns
+  // nothing (no stars, no text, not even whether it was shown), so nothing is shown as an error. What is counted is
+  // kept on this phone only (qalc.review: first, opens, last, asked, rated, report). The test builds never ask by
+  // themselves: the Pro panel has "Ask for the review sheet now", which ignores the conditions.
+  const DAY_MS = 86400000;
+  const REVIEW = { at: Date.now(), err: false, calcErr: false, proAt: 0, test: false };
+  function reviewApi() {
+    try { if (window.QalcNative && QalcNative.reviewAvailable) return QalcNative.reviewAvailable() ? QalcNative : null; } catch (e) { return null; }
+    return window.QalcDev && QalcDev.requestReview ? QalcDev : null;
+  }
+  function reviewRec() { const r = store.get('qalc.review', null); return r && typeof r === 'object' ? r : {}; }
+  (function countStart() {
+    const r = reviewRec(), now = Date.now();
+    if (!r.first) r.first = now;
+    if (!r.last || now - r.last >= 30 * 60000 || now < r.last) { r.opens = (Number(r.opens) || 0) + 1; r.last = now; }
+    store.set('qalc.review', r);
+  })();
+  window.addEventListener('error', () => { REVIEW.err = true; });
+  function installTime() {
+    let t = 0;
+    try { if (window.QalcNative && QalcNative.installTime) t = Number(QalcNative.installTime()) || 0; } catch (e) { t = 0; }
+    try { if (!t && window.QalcDev && QalcDev.installTime) t = Number(QalcDev.installTime()) || 0; } catch (e) { t = 0; }
+    return t;
+  }
+  // why the sheet may not be asked for now ('' when it may): for the tests and the Pro panel of the test builds
+  function reviewWhy(now) {
+    now = now || Date.now();
+    const r = reviewRec(), since = installTime() || r.first || now;
+    if (now - since < 3 * DAY_MS) return 'days';
+    if ((Number(r.opens) || 0) < 5) return 'opens';
+    if (REVIEW.err || REVIEW.calcErr) return 'error';
+    if (r.report && now - r.report < 7 * DAY_MS) return 'report';
+    const asked = (r.asked || []).filter((t) => now - t < 365 * DAY_MS);
+    if (asked.length && now - asked[asked.length - 1] < 30 * DAY_MS) return 'month';
+    if (asked.length >= 3) return 'year';
+    if (r.rated && now - r.rated < 180 * DAY_MS) return 'rated';
+    if (TRY3D.used) return 'trial';
+    if (now - REVIEW.at < 60000) return 'start';
+    if (REVIEW.proAt && now - REVIEW.proAt < 60000) return 'pro';
+    if ($('#sheet').classList.contains('open')) return 'sheet';
+    return '';
+  }
+  // something has just worked: ask for the sheet, a moment later, if everything above holds
+  function reviewMoment(kind) {
+    if (!reviewApi() || (window.QalcNative && PRO.billing === 'debug')) return;
+    setTimeout(() => { const api = reviewApi(); if (api && !reviewWhy()) askReview(api, kind); }, 1500);
+  }
+  function askReview(api, kind) {
+    const r = reviewRec(), now = Date.now();
+    r.asked = (r.asked || []).filter((t) => now - t < 365 * DAY_MS).concat([now]);
+    store.set('qalc.review', r);
+    try { api.requestReview(kind || ''); } catch (e) { }
+  }
+  function reviewNote(k) { const r = reviewRec(); r[k] = Date.now(); store.set('qalc.review', r); }
+  // the app reports the end of a request (only the test button says anything about it)
+  function reviewDone(ev) {
+    if (!REVIEW.test) return;
+    REVIEW.test = false;
+    toast(ev.state === 'done' ? tr('Google Play went through the request (it decides whether the sheet is shown)', 'Google Play が要求を処理しました（シートを出すかは Google Play が決めます）')
+      : ev.state === 'none' ? tr('This build has no in-app review (the build for Google Play has it)', 'このビルドにはアプリ内レビューがありません（Google Play 版にあります）')
+        : tr('Google Play did not take the request (as when the app is not installed from Google Play)', 'Google Play は要求を受けませんでした（Google Play から入れていないときなど）'), 6000);
+  }
   function engineOpts() {
     return {
       angle: S.angle, approx: S.approx, fraction: S.fraction, precision: Math.min(Number(S.precision) || 10, maxPrecision()),
@@ -1468,6 +1589,9 @@
     committing = false;
     clearInterval(busyTimer);
     clearInterval(cancelTimer);
+    // (feature/ratings, In-App Review: no error just before)
+    REVIEW.calcErr = !r.ok || !!r.timeout || !r.result;
+    if ((!r.ok && r.code !== 'cancelled') || r.timeout) REVIEW.err = true;
     if (!r.ok) {
       previewEl.textContent = '';
       msgEl.textContent = r.code === 'cancelled' ? tr('The calculation was stopped', '計算を中止しました') : (localMessage(r.error) || tr('Could not calculate', '計算できませんでした'));
@@ -1575,7 +1699,8 @@
   Bridge.setEventHandler((ev) => {
     if (ev.event === 'pro') { proChanged(ev); return; }
     if (ev.event === 'saved') { fileSaved(ev); return; }
-    if (ev.event === 'shared') { if (!ev.ok) toast(tr('Could not share the image', '画像を共有できませんでした'), 3500); return; }
+    if (ev.event === 'shared') { if (!ev.ok) toast(tr('Could not share the image', '画像を共有できませんでした'), 3500); else reviewMoment('share'); return; }
+    if (ev.event === 'review') { reviewDone(ev); return; }
     if (ev.event === 'quick') { quickAnswer(ev); return; }
     if (ev.event !== 'ans') return;
     const h = sessionEntries.get(ev.id);
@@ -4067,11 +4192,12 @@
     if (Q3.model && !Q3.opening3d) endModel3d(false);
     const p = panel('plot', tr('Graph', 'グラフ'), (p) => {
       // (D6: and when the graph is closed: "← Back to the shape" and Back)
-      p.onClose = () => { if (Q3.model) endModel3d(false); };
+      // (feature/ratings: and the 3D view is left, which ends the free trial)
+      p.onClose = () => { if (Q3.model) endModel3d(false); if (mode3d) { mode3d = false; left3d(); } };
       // 2D (y = f(x)) and 3D (z = f(x, y)); the last one used is shown
       const b2 = el('button', { text: tr('2D  y = f(x)', '2D　y = f(x)') }), b3 = el('button', { text: tr('3D  z = f(x, y)', '3D　z = f(x, y)') });
       const f2 = el('div', { class: 'plot-mode' }), f3 = build3d();
-      let started2d = false;
+      let started2d = false, mode3d = false;
       // "?" of the graph: the section of what is open (the solid, the area, "Volume and surface")
       p.help = () => {
         if (!f3.hidden) return Q3.model ? 'shapes-3d' : f3.querySelector('.vol-toggle.on') ? 'volume-3d' : 'graph-3d';
@@ -4081,7 +4207,12 @@
         return 'graph-2d';
       };
       const setMode = (m) => {
-        if (m === '3d' && !hasPro()) m = '2d';
+        // (feature/ratings: Pro, or the free trial of 3D going on)
+        if (m === '3d' && !can3d()) m = '2d';
+        const left = mode3d && m !== '3d';
+        mode3d = m === '3d';
+        if (mode3d && !Q3.shownAt) Q3.shownAt = Date.now();
+        if (left) left3d();
         store.set('qalc.plot.mode', m);
         b2.classList.toggle('on', m === '2d'); b3.classList.toggle('on', m === '3d');
         b2.setAttribute('aria-pressed', String(m === '2d')); b3.setAttribute('aria-pressed', String(m === '3d'));
@@ -4095,7 +4226,7 @@
       b2.addEventListener('click', () => setMode('2d'));
       b3.dataset.pro = '';
       b3.addEventListener('click', () => {
-        if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
+        if (!open3dOk(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'))) return;
         setMode('3d');
       });
       const ta = el('textarea', { rows: 2, placeholder: tr('Functions (one per line, variable x)', '関数（1行に1つ、変数は x）'), spellcheck: 'false', autocapitalize: 'off' });
@@ -5345,7 +5476,7 @@
   function revTo3d() {
     const U = P.areaUI, R = U && U.rev;
     if (!R) return;
-    const pro = hasPro(), first = !pro && !store.get('qalc.rev3dfree', false);
+    const pro = may3d(), first = !pro && !store.get('qalc.rev3dfree', false); // (feature/ratings: or the free trial of 3D)
     // (the hint about the axes, shown the first time "Make a solid" opens, waits for a later time: it is
     // about the 2D graph, which is left at once with Pro, and the line below says more without it)
     const hint = store.get('qalc.revhint', false);
@@ -5369,10 +5500,10 @@
   // the solid of "Make a solid" is calculated (the 3D view can be opened): with Pro, "⟳ 3D" pressed before
   // opens it now; without Pro, the row "Turn it in 3D (QCalc Pro)" stands for "View in 3D" (BG20)
   function revReady(R) {
-    if (!hasPro() && !R.proRow.hidden) R.view.hidden = true;
+    if (!may3d() && !R.proRow.hidden) R.view.hidden = true;
     const t = R.go3d;
     R.go3d = 0;
-    if (t && Date.now() - t < 60000 && hasPro()) R.show3d();
+    if (t && Date.now() - t < 60000 && may3d()) R.show3d();
   }
   // shapes to draw and measure: a circle (radius r), an ellipse (half axes a and b)
   const PARAM_NAMES = { r: tr('radius r', '半径 r'), a: tr('half axis a (x)', 'x 方向の半径 a'), b: tr('half axis b (y)', 'y 方向の半径 b') };
@@ -8242,6 +8373,10 @@
       if (U && U.rev && !U.rev.box.hidden) revHint();
     });
     const backRow = el('div', { class: 'rev3d-back', hidden: true }, backBtn, backVol);
+    // (feature/ratings) the free trial of 3D: said above the graph while it lasts
+    const tryRow = el('div', { class: 'try3d-row', role: 'note', hidden: !TRY3D.on },
+      el('span', { class: 'try3d-i', 'aria-hidden': 'true', text: '🎁' }),
+      el('span', { text: tr('A free trial of 3D, once only. It ends when you close the 3D view (GIF and STL stay QCalc Pro).', '1 回だけの無料のお試しです。3D を閉じると終わります（GIF・STL は QCalc Pro）') }));
     // 1.12.0 (D6): the height of the liquid of a tank of "Shapes" (also for the keyboard and a screen reader;
     // the level can be dragged in the graph too)
     const levelRange = el('input', { type: 'range', min: '0', max: '100', step: '1', value: '0', 'aria-label': tr('Height of the liquid', '液面の高さ') });
@@ -8249,7 +8384,7 @@
     levelRange.addEventListener('input', () => { const T = Q3.model && Q3.model.tank; if (T) setLevel3d(Number(levelRange.value) * levelStep(T), false); });
     levelRange.addEventListener('change', () => { const T = Q3.model && Q3.model.tank; if (T) setLevel3d(Number(levelRange.value) * levelStep(T), true); });
     const levelRow = el('div', { class: 'plot-range rev-angle tank-level', hidden: true }, el('span', { text: tr('Level', '液面') }), levelRange, levelVal);
-    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow, backRow, backVol, backBtn, levelRow, levelRange, levelVal });
+    Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow, backRow, backVol, backBtn, levelRow, levelRange, levelVal, tryRow });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
@@ -8291,7 +8426,7 @@
           el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax),
           el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr(' to ', ' 〜 ').trim() }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
-      backRow, wrap, angleRow, levelRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
+      tryRow, backRow, wrap, angleRow, levelRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
@@ -8309,7 +8444,7 @@
   // The 3D graph of surfaces and points from elsewhere (a matrix: planes of a linear system, rows as
   // points). opts: points [{x, y, z, label}], range [x0, x1, y0, y1]. 3D graphs are a QCalc Pro feature.
   function openPlot3dWith(exprs, opts) {
-    if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
+    if (!open3dOk(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'))) return;
     opts = opts || {};
     endModel3d(false); // (D6)
     if (Q3.samples) Q3.samples.clearChoice(); // (another graph than a sample, 1.8.2)
@@ -8365,7 +8500,7 @@
   // the height of the liquid into the tool). "← Back to the shape" closes the graph: the tool is under it,
   // with the same shape and sizes.
   function openSolid3d(link) {
-    if (!hasPro()) { proPrompt(tr('Turning the solid in 3D is a QCalc Pro feature', '3D で回して見るのは QCalc Pro の機能です'), '3d'); return; }
+    if (!open3dOk(tr('Turning the solid in 3D is a QCalc Pro feature', '3D で回して見るのは QCalc Pro の機能です'))) return;
     const Md = link.model;
     Md.levelText = link.levelText;
     if (Md.tank) { Md.tank.hShow = Md.tank.h; Md.scale = link.scale || null; }
@@ -12598,7 +12733,7 @@
       const show3d = async () => {
         const sh = cur();
         if (sh.d < 3) return;
-        if (!hasPro()) {
+        if (!may3d()) {
           proRow3d.hidden = false;
           if (!store.get('qalc.shape3dfree', false)) { store.set('qalc.shape3dfree', true); toast(tr('Turning the solid in 3D is a QCalc Pro feature.', '3D で回して見るのは QCalc Pro の機能です'), 4000); }
           return;
@@ -12849,7 +12984,7 @@
       // steps, the ends and the inside; until then surfaces z = ±√(r(x)² − y²), which left a ragged gap at a step)
       const view = tapButton({ class: 'btn', text: tr('View in 3D', '3D で見る') }, () => {
         if (!D.three) return;
-        if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
+        if (!may3d()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
         const vals = (D.vals || []).slice(), T = D.three;
         const model = profileModel(T.o, T.i, T.smooth);
         if (!model) { toast(tr('These sizes cannot be drawn in 3D', 'この大きさでは 3D で描けません'), 2600); return; }
@@ -13708,7 +13843,7 @@
   }
   // a sphere of radius r in the 3D graph, with its volume and surface area (a QCalc Pro feature)
   async function showSphere(r) {
-    if (!hasPro()) { proPrompt(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'), '3d'); return; }
+    if (!open3dOk(tr('3D graphs are a QCalc Pro feature', '3D グラフは QCalc Pro の機能です'))) return;
     const built = !!panels.plot;
     if (!built) { store.set('qalc.plot.mode', '3d'); store.set('qalc.plot3d.ok', false); }
     openPlot();
@@ -14529,7 +14664,7 @@
     const tbl = el('table', { class: 'tool-tbl' }, el('thead', {}, head), el('tbody', {}, ...body(t.rows.slice(0, 12))));
     const all = t.rows.length > 12 ? el('details', { class: 'sec-more' }, el('summary', { text: trf('All {0} rows ▾', '全 {0} 行 ▾', t.rows.length) })) : null;
     if (all) all.addEventListener('toggle', () => { if (all.open && !all._done) { all._done = true; tbl.tBodies[0].append(...body(t.rows.slice(12))); } }, { once: false });
-    const copy = tapButton({ class: 'btn', text: tr('Copy the table', '表をコピー') }, () => copyText([t.head].concat(t.rows).map((r) => r.join('\t')).join('\n')));
+    const copy = tapButton({ class: 'btn', text: tr('Copy the table', '表をコピー') }, () => { copyText([t.head].concat(t.rows).map((r) => r.join('\t')).join('\n')); reviewMoment('tool'); });
     const csv = tapButton({ class: 'btn', text: tr('Save as CSV', 'CSV で保存') + (PRO_GATES.tables === 'pro' && !hasPro() ? '  ⭐ Pro' : '') }, () => saveTableCsv(t));
     box.append(el('div', { class: 'section-title', text: t.title }), el('div', { class: 'tbl-wrap' }, tbl), ...(all ? [all] : []), el('div', { class: 'tool-tbl-btns' }, copy, csv));
   }
@@ -15161,11 +15296,12 @@
       };
       // copy, share, and under "More": rename, save as text or CSV (Pro), delete
       const asText = () => memo().lines.map((l, i) => { const c = N.cache[i]; return c && c.ok ? l + '  →  ' + c.shown : l; }).join('\n');
-      const copyBtn = tapButton({ class: 'btn', text: tr('Copy', 'コピー') }, () => copyText(asText()));
+      const copyBtn = tapButton({ class: 'btn', text: tr('Copy', 'コピー') }, () => { copyText(asText()); reviewMoment('tool'); });
       const shareBtn = tapButton({ class: 'btn', text: tr('Share', '共有') }, () => {
         if (window.QalcNative && QalcNative.shareText) QalcNative.shareText(asText());
         else if (window.QalcDev && QalcDev.shareText) QalcDev.shareText(asText());
         else copyText(asText());
+        reviewMoment('tool');
       });
       const exp = (kind) => {
         if (!proGate('notes')) return;
@@ -15675,8 +15811,8 @@
     const k = await sheet(title + '  ' + clip(shown, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'],
       ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy the result', '結果をコピー')]]);
     if (k === 'use') useExample(expr);
-    else if (k === 'keep') keepResult(expr, shownToEngine(shown));
-    else if (k === 'copy') copyText(copy || shown);
+    else if (k === 'keep') { keepResult(expr, shownToEngine(shown)); reviewMoment('tool'); }
+    else if (k === 'copy') { copyText(copy || shown); reviewMoment('tool'); }
   }
   // a text as shown (the number format) → the engine's form, as the history keeps its results: the digit
   // groups as thin spaces (shown again in the number format), the decimal sign ".", ";" between arguments ","
@@ -15920,6 +16056,7 @@
   // given; MainActivity opens the same page in the browser when no app can open it (Links.fallback). Without the app
   // (the browser, the test page), the page on the web. No library: the Play Store's own page, not the in-app review.
   function rateApp() {
+    reviewNote('rated'); // (In-App Review: not for 180 days after this)
     if (window.QalcNative && QalcNative.openUrl) QalcNative.openUrl(PLAY_APP_URL);
     else window.open(PLAY_URL, '_blank');
   }
@@ -15933,6 +16070,7 @@
   // "Send a bug report or an idea": a draft in the mail app (mailto:, opened by MainActivity with
   // ACTION_SENDTO) with the version, the Android version, the phone and the language, nothing else
   function sendFeedback(app) {
+    reviewNote('report'); // (In-App Review: not for 7 days after this)
     const v = (app && app.version) || '';
     const lang = (LANG_NAMES.find((x) => x[0] === LANG) || [LANG, LANG])[1];
     const subject = trf('QCalc {0}: bug report or idea', 'QCalc {0}：不具合・要望', v);
@@ -16053,6 +16191,7 @@
       sh.classList.add('open');
       sh.inert = false;
     });
+    REVIEW.proAt = Date.now(); // (In-App Review: not within a minute after the Pro sheet)
     if (k === 'buy') buyPro();
     else if (k === 'restore') restorePro();
     else if (k === 'pro') openPro();
@@ -16213,6 +16352,26 @@
       });
       body.append(el('div', { class: 'section-title', text: tr('Test build', 'テスト版') }),
         el('label', { class: 'setting' }, el('div', { class: 'lbl' }, el('div', { text: tr('Pro unlocked (for testing)', 'Pro を有効にする（テスト用）') })), box));
+      // (feature/ratings) the free trial of 3D again, and Google Play's review sheet now (its conditions ignored)
+      const R = reviewRec(), why = reviewWhy(), inst = installTime();
+      const state = el('div', { class: 'form-hint dev-review' });
+      state.textContent = trf('Trial of 3D: {0}. Review sheet: installed {1} days ago, opened {2} times, last asked {3}; now: {4}',
+        '3D のお試し：{0}。レビュー：入れて {1} 日、開いた回数 {2}、最後に出した日 {3}、今：{4}',
+        store.get('qalc.try3d', '') ? tr('used', '使用済み') : tr('not used', '未使用'),
+        Math.floor((Date.now() - (inst || R.first || Date.now())) / DAY_MS), Number(R.opens) || 0,
+        (R.asked || []).length ? new Date(R.asked[R.asked.length - 1]).toISOString().slice(0, 10) : '—', why || tr('it may be asked for', '出せる'));
+      body.append(
+        el('button', { class: 'btn dev-try3d', text: tr('Give the free trial of 3D again', '3D のお試しを元に戻す'), onclick: () => {
+          store.del('qalc.try3d'); TRY3D.used = false; TRY3D.on = false;
+          toast(tr('The free trial of 3D can be used again', '3D のお試しをもう一度使えるようにしました'), 2500);
+          if (panels.pro && panels.pro.refresh) panels.pro.refresh();
+        } }),
+        el('button', { class: 'btn dev-review-now', text: tr('Ask for the review sheet now (conditions ignored)', 'レビューのシートを今出す（条件を無視）'), onclick: () => {
+          const api = reviewApi();
+          if (!api) { REVIEW.test = true; reviewDone({ state: 'none' }); return; }
+          REVIEW.test = true;
+          askReview(api, 'test');
+        } }), state);
     }
   }
   function buyPro() {
@@ -16404,6 +16563,7 @@
   }
   function fileSaved(ev) {
     const what = savingWhat; savingWhat = '';
+    if (ev.ok) reviewMoment('tool');
     if (ev.ok) toast(what === 'table' ? tr('Table saved', '表を保存しました') : what === 'stl' ? tr('STL file saved', 'STL ファイルを保存しました') : what === 'notes' ? tr('Memo saved', 'メモを保存しました') : tr('History exported', '履歴を書き出しました'), 2000);
     else if (!ev.cancelled) toast(localMessage(ev.error) || tr('Could not save the file', 'ファイルを保存できませんでした'), 3500);
   }

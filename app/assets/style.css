@@ -1470,6 +1470,11 @@ body.hselect #history { padding-bottom: 150px; }
 .rev-pro-row .rev-pro-t { flex: 1 1 auto; overflow-wrap: anywhere; }
 .rev-pro-row .rev-pro-go { flex: 0 0 auto; font-size: 20px; }
 .rev3d-back[hidden], .rev-pro-row[hidden] { display: none; }
+/* feature/ratings: the free trial of 3D, said above the 3D graph while it lasts */
+.try3d-row { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0 8px; padding: 8px 12px; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent-soft); color: var(--text); font-size: 14px; line-height: 1.4; }
+.try3d-row .try3d-i { flex: 0 0 auto; font-size: 18px; line-height: 1.2; }
+.try3d-row[hidden] { display: none; }
+.dev-review { margin: 6px 0 0; }
 /* 1.12.0 (D6): "⟳ 3D" beside the picture of a solid or a tank of "Shapes", and the shape in the 3D graph */
 .geo-pic-box { flex: 0 0 42%; max-width: 190px; position: relative; min-width: 0; }
 .geo-pic-box.has3d { align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding-top: 52px; }
