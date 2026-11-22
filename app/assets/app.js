@@ -8336,7 +8336,113 @@
   // Coordinates: the box is u, v in [-1, 1] (x, y) and w in [-ZS, ZS] (z).
   const ZS = 0.72;
   const VIEW3D = { az: -0.62, el: 0.52, zoom: 1 };
-  const Q3 = Object.assign({ exprs: [], range: [], res: 41, data: null, mark: null, raf: 0, started: false }, VIEW3D);
+  // ---- the view of the 3D graph (feature/3d-view): a rotation, so that the graph turns any way (over the top
+  // and under the bottom too), not two angles. R is a 3 × 3 matrix by rows: the camera's axes (x to the right,
+  // y up, z away from the eye) in the box's axes (u, v, w), so that a point of the box is (R[0] u + R[1] v +
+  // R[2] w, R[3] u + …, R[6] u + …) in the camera's axes and the other way round with R's columns. Until
+  // 1.13.0 the view was az (turned about the box's z axis) and el (tilted toward looking from above, at most
+  // ±1.5): rotAzEl makes that rotation (the first view and the thumbnails are as before).
+  function rotAzEl(az, el) {
+    const ca = Math.cos(az), sa = Math.sin(az), ce = Math.cos(el), se = Math.sin(el);
+    return [ca, -sa, 0, sa * se, ca * se, ce, sa * ce, ca * ce, -se];
+  }
+  function rotMul(A, B) {
+    const C = new Array(9);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) C[3 * i + j] = A[3 * i] * B[j] + A[3 * i + 1] * B[3 + j] + A[3 * i + 2] * B[6 + j];
+    return C;
+  }
+  // a turn by a (radians) about the axis (x, y, z) of length 1 (Rodrigues)
+  function rotAxis(x, y, z, a) {
+    const c = Math.cos(a), s = Math.sin(a), t = 1 - c;
+    return [t * x * x + c, t * x * y - s * z, t * x * z + s * y, t * x * y + s * z, t * y * y + c, t * y * z - s * x, t * x * z - s * y, t * y * z + s * x, t * z * z + c];
+  }
+  // the rows made of length 1 and at right angles again (many small turns add up rounding errors)
+  function rotFix(R) {
+    const a = R.slice(0, 3), b = R.slice(3, 6);
+    const la = Math.hypot(a[0], a[1], a[2]) || 1; a[0] /= la; a[1] /= la; a[2] /= la;
+    const d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; b[0] -= d * a[0]; b[1] -= d * a[1]; b[2] -= d * a[2];
+    const lb = Math.hypot(b[0], b[1], b[2]) || 1; b[0] /= lb; b[1] /= lb; b[2] /= lb;
+    // (z = y × x: the camera's axes are left-handed, x right, y up, z away, as rotAzEl makes them)
+    return [a[0], a[1], a[2], b[0], b[1], b[2], b[1] * a[2] - b[2] * a[1], b[2] * a[0] - b[0] * a[2], b[0] * a[1] - b[1] * a[0]];
+  }
+  // quaternions (w, x, y, z) for the smooth turn to a set view, of a proper rotation: R with its last row
+  // turned round (flipZ), as the camera's axes are left-handed
+  const flipZ = (R) => [R[0], R[1], R[2], R[3], R[4], R[5], -R[6], -R[7], -R[8]];
+  function rotQuat(R) {
+    const t = R[0] + R[4] + R[8];
+    let q;
+    if (t > 0) { const s = Math.sqrt(t + 1) * 2; q = [s / 4, (R[7] - R[5]) / s, (R[2] - R[6]) / s, (R[3] - R[1]) / s]; }
+    else if (R[0] > R[4] && R[0] > R[8]) { const s = Math.sqrt(1 + R[0] - R[4] - R[8]) * 2; q = [(R[7] - R[5]) / s, s / 4, (R[1] + R[3]) / s, (R[2] + R[6]) / s]; }
+    else if (R[4] > R[8]) { const s = Math.sqrt(1 + R[4] - R[0] - R[8]) * 2; q = [(R[2] - R[6]) / s, (R[1] + R[3]) / s, s / 4, (R[5] + R[7]) / s]; }
+    else { const s = Math.sqrt(1 + R[8] - R[0] - R[4]) * 2; q = [(R[3] - R[1]) / s, (R[2] + R[6]) / s, (R[5] + R[7]) / s, s / 4]; }
+    return q;
+  }
+  function quatRot(q) {
+    const [w, x, y, z] = q;
+    return [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w), 2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w), 2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)];
+  }
+  function quatSlerp(a, b, t) {
+    let d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+    if (d < 0) { b = b.map((v) => -v); d = -d; }
+    if (d > 0.9995) { const q = a.map((v, i) => v + (b[i] - v) * t), l = Math.hypot(...q); return q.map((v) => v / l); }
+    const th = Math.acos(d), s = Math.sin(th), ka = Math.sin((1 - t) * th) / s, kb = Math.sin(t * th) / s;
+    return a.map((v, i) => v * ka + b[i] * kb);
+  }
+  // the set views (feature/3d-view): the first one (slanted), from the front (from −y: x to the right, z up),
+  // from above (x to the right, y up) and from the side (from +x: y to the right, z up)
+  const VIEWS3D = () => [
+    ['slant', tr('Slanted (first view)', '斜め（最初の向き）'), rotAzEl(VIEW3D.az, VIEW3D.el)],
+    ['front', tr('From the front', '正面'), rotAzEl(0, 0)],
+    ['top', tr('From above', '上'), rotAzEl(0, Math.PI / 2)],
+    ['side', tr('From the side', '横'), rotAzEl(-Math.PI / 2, 0)]
+  ];
+  // the first view: the slanted one, its size and no shift
+  function resetView3d() { Object.assign(Q3, VIEW3D); Q3.rot = rotAzEl(VIEW3D.az, VIEW3D.el); Q3.pan = [0, 0]; Q3.viewAnim = null; }
+  // the end of a turn (a finger lifted, a set view reached): the full drawing, with the lamp back at the upper
+  // left of the screen, fading in over 0.2 s (1.12.0, BG08, BG19)
+  function endTurn3d() {
+    if (!Q3.turning) return;
+    if (Q3.shLock) Q3.fadeInNext = true;
+    Q3.shLock = null;
+    Q3.turning = false; Q3.turnN = 0; Q3.turnMs = 0; Q3.turnList = []; requestDraw3d();
+  }
+  // a set view: turned to it smoothly in 0.35 s (at once with "reduce motion"), back to the middle
+  function setView3d(R) {
+    const from = rotQuat(flipZ(Q3.rot)), to = rotQuat(flipZ(R)), p0 = (Q3.pan || [0, 0]).slice();
+    clearMark3d();
+    const done = () => { Q3.rot = R.slice(); Q3.pan = [0, 0]; Q3.viewAnim = null; if (Q3.turning) endTurn3d(); else draw3d(); };
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { done(); return; }
+    const t0 = performance.now(), id = {};
+    Q3.viewAnim = id;
+    const step = (now) => {
+      if (Q3.viewAnim !== id) return;
+      const k = Math.min(1, (now - t0) / 350), e = 1 - Math.pow(1 - k, 3);
+      if (k >= 1) { done(); return; }
+      Q3.rot = flipZ(quatRot(quatSlerp(from, to, e))); Q3.pan = [p0[0] * (1 - e), p0[1] * (1 - e)];
+      Q3.turning = true; draw3d();
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  const VIEW_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>';
+  function closeViewMenu3d() {
+    if (Q3.viewMenu) { Q3.viewMenu.remove(); Q3.viewMenu = null; }
+    if (Q3.viewBtn) Q3.viewBtn.setAttribute('aria-expanded', 'false');
+  }
+  function toggleViewMenu3d() {
+    if (Q3.viewMenu) { closeViewMenu3d(); return; }
+    const b = Q3.viewBtn, wrap = b && b.closest('.plot-wrap');
+    if (!wrap) return;
+    const m = el('div', { class: 'view3d-menu', role: 'menu' }, ...VIEWS3D().map(([k, name, R]) =>
+      el('button', { role: 'menuitem', 'data-view': k, text: name, onclick: () => { closeViewMenu3d(); setView3d(R); } })));
+    const wr = wrap.getBoundingClientRect(), br = b.getBoundingClientRect();
+    m.style.top = Math.max(4, br.top - wr.top) + 'px';
+    m.style.right = Math.max(4, wr.right - br.left + 6) + 'px';
+    wrap.appendChild(m);
+    Q3.viewMenu = m;
+    b.setAttribute('aria-expanded', 'true');
+  }
+  const Q3 = Object.assign({ exprs: [], range: [], res: 41, data: null, mark: null, raf: 0, started: false, rot: rotAzEl(VIEW3D.az, VIEW3D.el), pan: [0, 0] }, VIEW3D);
   const VIRIDIS = [[68, 1, 84], [65, 68, 135], [42, 120, 142], [34, 168, 132], [122, 209, 81], [253, 231, 37]];
   function viridis(t) {
     t = Math.max(0, Math.min(1, t)) * (VIRIDIS.length - 1);
@@ -8360,7 +8466,9 @@
     const ctl = el('div', { class: 'plot-ctl' },
       el('button', { text: '+', 'aria-label': tr('Zoom in', '拡大'), onclick: () => zoom3d(1.25) }),
       el('button', { text: '−', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom3d(0.8) }),
-      el('button', { text: '⟲', 'aria-label': tr('Reset the view', '向きと大きさを戻す'), onclick: () => { Object.assign(Q3, VIEW3D); clearMark3d(); draw3d(); } }),
+      el('button', { text: '⟲', 'aria-label': tr('Reset the view', '向きと大きさを戻す'), onclick: () => { resetView3d(); closeViewMenu3d(); clearMark3d(); draw3d(); } }),
+      // (feature/3d-view) the set views: from the front, from above, from the side, or the first one
+      Q3.viewBtn = el('button', { class: 'views', 'aria-label': tr('Set views (front, top, side)', '決まった向き（正面・上・横）'), 'aria-haspopup': 'true', 'aria-expanded': 'false', onclick: () => toggleViewMenu3d(), html: VIEW_ICON }),
       Q3.eqBtn = el('button', { class: 'eq', text: '1:1', 'aria-label': tr('The same scale on the x, y and z axes', 'x・y・z の目盛りの間隔をそろえる'), onclick: () => { setEqual3d(!Q3.equalNow); clearMark3d(); draw3d(); } }),
       // 1.12.0 (D4): a picture or a moving picture of the graph to the share sheet
       el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share the graph', 'グラフを共有'), onclick: () => shareGraph3d() }));
@@ -8402,6 +8510,22 @@
     levelRange.addEventListener('change', () => { const T = Q3.model && Q3.model.tank; if (T) setLevel3d(Number(levelRange.value) * levelStep(T), true); });
     const levelRow = el('div', { class: 'plot-range rev-angle tank-level', hidden: true }, el('span', { text: tr('Level', '液面') }), levelRange, levelVal);
     Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow, backRow, backVol, backBtn, levelRow, levelRange, levelVal, tryRow });
+    // (feature/3d-view, every 3D view drawn with WebGL 2) see-through and how opaque, what is see-through (each formula,
+    // the solid, the container and the liquid of a tank: off, the keys taken out of it), and the box with its grid and
+    // axes; kept on this phone. Without WebGL 2 the see-through cannot be chosen, and says so
+    const sv = store.get('qalc.plot3d.see', null);
+    Q3.see = { on: !!(sv && sv.on === true), a: sv && sv.a >= 0.1 && sv.a <= 0.9 ? sv.a : 0.35, box: !(sv && sv.box === false), off: sv && sv.off && typeof sv.off === 'object' ? sv.off : {} };
+    const saveSee = () => store.set('qalc.plot3d.see', Q3.see);
+    const seeBtn = tapButton({ class: 'btn see-btn', 'aria-pressed': 'false', text: tr('See-through', '透明') }, () => { if (!gl3dReady()) return; Q3.see.on = !Q3.see.on; saveSee(); syncSeeRow(); draw3d(); });
+    const seeRange = el('input', { type: 'range', min: '10', max: '90', step: '5', 'aria-label': tr('How opaque (%)', '濃さ（%）') });
+    const seeVal = el('span', { class: 'rev-angle-v' });
+    seeRange.addEventListener('input', () => { Q3.see.a = Number(seeRange.value) / 100; saveSee(); syncSeeRow(); requestDraw3d(); });
+    const boxBtn = tapButton({ class: 'btn box-btn', 'aria-pressed': 'true', text: tr('Box and axes', '箱と目盛り') }, () => { Q3.see.box = !Q3.see.box; saveSee(); syncSeeRow(); draw3d(); });
+    const seeNote = el('span', { class: 'see-note', id: 'see-note', hidden: true, text: tr('Not available on this device', 'この端末では使えません') });
+    // (what is see-through: a chip for each formula, the solid, the container and the liquid of a tank)
+    const seeChips = el('div', { class: 'see-chips', role: 'group', 'aria-label': tr('See-through: what', '透明にするもの'), hidden: true });
+    const seeRow = el('div', { class: 'plot-range rev-angle see-row', hidden: true }, seeBtn, seeRange, seeVal, boxBtn, seeNote, seeChips);
+    Object.assign(Q3, { seeRow, seeBtn, seeRange, seeVal, boxBtn, seeNote, seeChips, saveSee });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
@@ -8443,7 +8567,7 @@
           el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax),
           el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr(' to ', ' 〜 ').trim() }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
-      tryRow, backRow, wrap, angleRow, levelRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
+      tryRow, backRow, wrap, angleRow, levelRow, seeRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
@@ -8537,7 +8661,7 @@
       hint: link.hint || tr('The values found in "Shapes". Other formulas drawn here are measured as an ordinary 3D graph.', '「図形」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測ります。'),
       values: link.rows };
     closeVolumeBox();
-    Object.assign(Q3, VIEW3D);
+    resetView3d();
     clearMark3d();
     Q3.data = null;
     store.set('qalc.plot.mode', '3d');
@@ -8557,6 +8681,40 @@
     if (Q3.partialEl) Q3.partialEl.hidden = !!Md;
     if (Q3.levelRow) Q3.levelRow.hidden = !(Md && Md.tank);
     syncLevelRow();
+    syncSeeRow();
+  }
+  // the row of see-through and the box (feature/3d-view): shown in every 3D view (since 11-22 20:40); the see-through
+  // button cannot be pressed without WebGL 2 (or with the test switch "3D with WebGL" off), with a note; with the
+  // see-through on, a chip for each thing drawn chooses whether it is see-through
+  function syncSeeRow() {
+    if (!Q3.seeRow) return;
+    const Md = Q3.model, shown = !!(Q3.data || Md);
+    Q3.seeRow.hidden = !shown;
+    if (!shown) return;
+    const ok = gl3dWanted() && gl3dReady(), on = ok && Q3.see.on, pc = Math.round(Q3.see.a * 100);
+    Q3.seeBtn.disabled = !ok; Q3.seeBtn.setAttribute('aria-pressed', String(on)); Q3.seeBtn.classList.toggle('on', on);
+    if (ok) Q3.seeBtn.removeAttribute('aria-describedby'); else Q3.seeBtn.setAttribute('aria-describedby', 'see-note');
+    Q3.seeNote.hidden = ok;
+    Q3.seeRange.disabled = !on; Q3.seeRange.hidden = !ok; Q3.seeRange.value = String(pc);
+    Q3.seeVal.hidden = !ok; Q3.seeVal.textContent = pc + '%';
+    const box = Q3.see.box !== false;
+    Q3.boxBtn.setAttribute('aria-pressed', String(box)); Q3.boxBtn.classList.toggle('on', box);
+    // the chips (only when there are two things or more to choose from)
+    const G = gl3dGroups(Q3.data, Md), ch = Q3.seeChips;
+    ch.textContent = '';
+    ch.hidden = !on || G.list.length < 2;
+    if (ch.hidden) return;
+    for (const it of G.list) {
+      const k = it.k, sel = (Md && Md.tank && k === 8) ? G.groups[8].see > 0 : (k === 9 ? G.groups[9].see > 0 : G.groups[k].see > 0);
+      const b = tapButton({ class: 'chip see-chip' + (sel ? ' on' : ''), 'aria-pressed': String(sel), 'data-key': it.key }, () => {
+        Q3.see.off = Q3.see.off || {};
+        Q3.see.off[it.key] = sel;
+        Q3.saveSee(); syncSeeRow(); draw3d();
+      });
+      if (it.color) b.append(el('span', { class: 'see-sw', style: 'background:' + it.color, 'aria-hidden': 'true' }));
+      b.append(el('span', { text: it.label }));
+      ch.append(b);
+    }
   }
   // a size written on a model ({ sym, val, unit } → "r = 15 cm"; D7: the digits of the 3D picture)
   const labText = (o) => (!o ? '' : typeof o === 'string' ? o : o.sym + ' = ' + digPic(o.val, 'dim') + (o.unit ? ' ' + o.unit : ''));
@@ -8846,6 +9004,7 @@
         if (Md.grow) { startGrow('mesh'); if (Md.grow !== 'rev' && Q3.angleRow) Q3.angleRow.hidden = true; }
         if (Md.tank) startFill(Md);
       }
+      syncSeeRow();
       draw3d();
       return;
     }
@@ -8910,6 +9069,7 @@
       if (shown || seq !== Q3.seq) return;
       shown = true;
       Q3.data = data;
+      syncSeeRow();
       clearMark3d();
       // (1.12.0, BG09: the solid turns into being once its edges are known; until then "Calculating…")
       if (Q3.growNext && rimsReady()) { const ax = Q3.growNext; Q3.growNext = null; startGrow(ax); }
@@ -9322,13 +9482,18 @@
   // coordinates gi and gj (for the lines of the grid; NaN: no lines); and (1.12.0, BG19) while the graph is
   // turned, how much of the lamp reaches the corner (0 to 1), kept from the drawing before the turn.
   const CV = 12, CT = 3 * CV;
+  // (feature/3d-view, WebGL 2 for every 3D view: each triangle also keeps its group, gk, the k of the buffer when it was
+  // added: the number of its surface (0 to 7), 8 a solid of "Shapes" or "Solid from a profile" or the liquid of a tank,
+  // 9 the container of a tank; for the see-through and the material of each)
   function triBuf(holder) {
     let a = holder && holder.triBuf;
     if (!a) { a = { f: new Float32Array(CT * 4096), n: 0 }; if (holder) holder.triBuf = a; }
-    a.n = 0;
+    if (!a.gk) a.gk = new Uint8Array(4096);
+    a.n = 0; a.k = 0;
     a.add = function (p, q, r) {
       if ((this.n + 1) * CT > this.f.length) { const b = new Float32Array(this.f.length * 2); b.set(this.f); this.f = b; }
-      this.f.set(p, this.n * CT); this.f.set(q, this.n * CT + CV); this.f.set(r, this.n * CT + 2 * CV); this.n++;
+      if (this.n + 1 > this.gk.length) { const b = new Uint8Array(this.gk.length * 2); b.set(this.gk); this.gk = b; }
+      this.f.set(p, this.n * CT); this.f.set(q, this.n * CT + CV); this.f.set(r, this.n * CT + 2 * CV); this.gk[this.n] = this.k; this.n++;
     };
     return a;
   }
@@ -9454,7 +9619,7 @@
   // soft, as a shadow is: on a layer over the floor, every point of the floor keeps the height of the
   // lowest part of a surface above it along the light; the strength follows that height, and the
   // softness too, from three blurs of the shadow (about 2, 6 and 14 CSS pixels) blended by the height
-  // of the surfaces around the point. tb: the triangles; o: the turn of the camera (ca, sa, ce, se),
+  // of the surfaces around the point. tb: the triangles; o: the view of the camera (RV),
   // the half sizes of the box (EX, EY, EZ), cam ({ cx, cy, S }), dark, cache, lamp (the lamp in the
   // box's axes, or null: the one at the upper left of the screen), layer (a layer to draw again, or null),
   // k (the strength, 0 to 1). Returns what was drawn, or null when the lamp is not above the floor.
@@ -9463,11 +9628,11 @@
   // (1.12.0, BG19: the layer is the floor itself, in the box's axes, so that it is drawn again with only a
   // new projection while the graph is turned: the lamp then stays on the box, see draw3d)
   function floorShadow(g, tb, o) {
-    const { ca, sa, ce, se, EX, EY, EZ, cam } = o;
+    const { RV, EX, EY, EZ, cam } = o;
     // the direction of the lamp in the box's axes (u, v, w): the camera's axes turned back (camN)
-    const lp = o.lamp || lampInBox(ca, sa, ce, se), lw = lp[2];
+    const lp = o.lamp || lampInBox(RV), lw = lp[2];
     if (!(lw > 0.2)) return null;
-    const fadeIn = smoothStep(0.2, 0.35, lw) * smoothStep(0, 0.15, se);
+    const fadeIn = smoothStep(0.2, 0.35, lw) * smoothStep(0, 0.15, -RV[8]);
     if (!(fadeIn > 0.004)) return null;
     const Lr = o.layer || floorLayer(tb, o, lp);
     if (!Lr.px) return { px: 0, layer: Lr };
@@ -9476,7 +9641,7 @@
     // (a cell (i, j) of the layer is the point u = i / Ru − EX, v = j / Rv − EY of the floor, w = −EZ: the
     // projection is parallel, so the layer is laid on the floor by one affine map, and it covers the floor
     // and nothing else: no clip, which made every frame of a turn slower)
-    g.transform(S * ca / Ru, -S * se * sa / Ru, -S * sa / Rv, -S * se * ca / Rv, cam.cx + S * (sa * EY - ca * EX), cam.cy + S * (EZ * ce + se * (sa * EX + ca * EY)));
+    g.transform(S * RV[0] / Ru, -S * RV[3] / Ru, S * RV[1] / Rv, -S * RV[4] / Rv, cam.cx - S * (RV[0] * EX + RV[1] * EY + RV[2] * EZ), cam.cy + S * (RV[3] * EX + RV[4] * EY + RV[5] * EZ));
     g.globalAlpha = alpha;
     g.imageSmoothingEnabled = true;
     // (only the part of the layer with a shadow, BG19)
@@ -9485,16 +9650,16 @@
     g.restore();
     return { px: Lr.px, cells: [Lr.LW, Lr.LH], fade: Math.round(fadeIn * 1000) / 1000, alpha: Math.round(alpha * 1000) / 1000, kept: !!o.layer, layer: Lr };
   }
-  // the lamp (LAMP, in the camera's axes) in the box's axes for the camera turned by ca, sa, ce, se
-  function lampInBox(ca, sa, ce, se) {
+  // the lamp (LAMP, in the camera's axes) in the box's axes for the view RV (its columns)
+  function lampInBox(RV) {
     const lx = LAMP[0], ly = LAMP[1], lz = LAMP[2];
-    return [ca * lx + sa * se * ly + sa * ce * lz, -sa * lx + ca * se * ly + ca * ce * lz, ce * ly - se * lz];
+    return [RV[0] * lx + RV[3] * ly + RV[6] * lz, RV[1] * lx + RV[4] * ly + RV[7] * lz, RV[2] * lx + RV[5] * ly + RV[8] * lz];
   }
   // the layer of floorShadow: Ru and Rv cells for each unit of the box along u and v (a cell about 2 CSS pixels
   // wide; a whole number of cells across the floor), lp the lamp in the box's axes; the triangles are in the
   // camera's axes of o
   function floorLayer(tb, o, lp) {
-    const { ca, sa, ce, se, EX, EY, EZ, cam } = o, [lu, lv, lw] = lp;
+    const { RV, EX, EY, EZ, cam } = o, [lu, lv, lw] = lp;
     const T = tb.f, nt = tb.n, R = Math.max(8, cam.S / 2), LW = Math.ceil(2 * EX * R), LH = Math.ceil(2 * EY * R), n = LW * LH, Ru = LW / (2 * EX), Rv = LH / (2 * EY);
     const C = o.cache;
     if (!C.floorBuf || C.floorBuf.n < n) C.floorBuf = { n, h: new Float32Array(n), a: new Float32Array(n), m: new Float32Array(n), b1: new Float32Array(n), b2: new Float32Array(n), b3: new Float32Array(n), hb: new Float32Array(n), t: new Float32Array(n) };
@@ -9507,7 +9672,7 @@
       for (let m = 0; m < 3; m++) {
         const k = t * CT + m * CV;
         const xc = (T[k] - cam.cx) * iS, yc = (cam.cy - T[k + 1]) * iS, zc = T[k + 2];
-        const u = ca * xc + sa * se * yc + sa * ce * zc, v = -sa * xc + ca * se * yc + ca * ce * zc, w = ce * yc - se * zc;
+        const u = RV[0] * xc + RV[3] * yc + RV[6] * zc, v = RV[1] * xc + RV[4] * yc + RV[7] * zc, w = RV[2] * xc + RV[5] * yc + RV[8] * zc;
         // along the light down to the floor, on the layer
         const h = w + EZ > 0 ? w + EZ : 0, f = h / lw;
         fx[m] = (u - lu * f + EX) * Ru; fy[m] = (v - lv * f + EY) * Rv; fz[m] = h;
@@ -9731,6 +9896,381 @@
     g.drawImage(off, lx0 / q, ly0 / q, LW / q, LH / q);
     g.restore();
     return { shown, q, SM, zbuf: { zb, x0: lx0, y0: ly0, w: LW, h: LH, q }, shadow: LK && o.shadow ? { px: inShadow, edge, map: LK.map, lock: true } : SM ? { px: inShadow, edge, map: [SM.MW, SM.MH], ms: Math.round(tMap * 10) / 10 } : null };
+  }
+  // ---- (feature/3d-view, the owner's choice of 11-22 13:17) WebGL 2 for the solid of "Solid from a profile": a
+  // prototype, to be tried on a phone before the other 3D views. The model's triangles are drawn by the GPU into a
+  // canvas of their own and laid into the 2D canvas where the surfaces would be painted, so the box is behind them
+  // and the axes, labels and sizes over them as before. Opaque: a depth test with MSAA, the light of surfacePaint for
+  // each pixel (the lamp at the upper left, the sky, the floor, a highlight, Fresnel), the lines of the pieces, and the
+  // lamp's shadows (a shadow map, filtered: soft edges). See-through, and materials that let light through (water):
+  // depth peeling, the nearest faces, then the nearest behind them, and so on (6 layers, 4 while turning), added front
+  // to back, so faces behind one another are in their order whatever the order of the triangles; the faces seen
+  // edge-on and the lines stay strong, so the shape still reads. Materials (MATS): the metals mirror a bright room and
+  // have a sharp highlight (GGX), wood and concrete are dull, the liquids clear and tinted. No WebGL 2 (or the context
+  // lost): the 2D canvas as before, and no see-through.
+  // (the keys are those of DENSITIES; 1.14.0: stainless steel, aluminium, copper, brass, wood, and the resins PLA, ABS
+  // and acrylic in the list. Stainless steel a polished silver, sharper than iron; PLA and ABS a light glossy plastic
+  // (white, ivory: a base above 1 keeps them light on the side away from the lamp); acrylic a clear resin, see-through
+  // as water is)
+  const MATS = {
+    iron: { metal: 1, rough: 0.42, base: [0.56, 0.57, 0.58] },
+    stainless: { metal: 1, rough: 0.16, base: [0.8, 0.8, 0.82] },
+    aluminium: { metal: 1, rough: 0.3, base: [0.91, 0.92, 0.92] },
+    copper: { metal: 1, rough: 0.32, base: [0.95, 0.64, 0.54] },
+    brass: { metal: 1, rough: 0.3, base: [0.91, 0.78, 0.42] },
+    wood: { metal: 0, rough: 0.8, base: [0.55, 0.36, 0.2] },
+    pla: { metal: 0, rough: 0.24, base: [1.08, 1.09, 1.12] },
+    abs: { metal: 0, rough: 0.28, base: [1.1, 1.05, 0.92] },
+    acrylic: { metal: 0, rough: 0.05, base: [0.8, 0.9, 0.96], opacity: 0.72 },
+    concrete: { metal: 0, rough: 0.92, base: [0.63, 0.62, 0.59] },
+    water: { metal: 0, rough: 0.06, base: [0.16, 0.42, 0.85], opacity: 0.78 },
+    sea: { metal: 0, rough: 0.06, base: [0.1, 0.44, 0.6], opacity: 0.8 },
+    kerosene: { metal: 0, rough: 0.06, base: [0.93, 0.89, 0.62], opacity: 0.6 },
+    gasoline: { metal: 0, rough: 0.06, base: [0.96, 0.74, 0.34], opacity: 0.6 }
+  };
+  // the look of a material chosen in a tool: a key of DENSITIES (the same name), or for a density typed (g/cm³) the
+  // metal it is (aluminium 2.7, iron and steel 7.85, stainless steel 7.93, brass 8.5, copper 8.96); anything else: the
+  // colors of the app
+  function matLook(key, typed) {
+    if (MATS[key]) return Object.assign({ key }, MATS[key]);
+    const d = Number(typed);
+    if (key === 'own' && isFinite(d)) {
+      const k = d >= 2.6 && d <= 2.85 ? 'aluminium' : d >= 7.7 && d < 7.9 ? 'iron' : d >= 7.9 && d <= 8.05 ? 'stainless' : d >= 8.3 && d <= 8.75 ? 'brass' : d >= 8.85 && d <= 9.0 ? 'copper' : '';
+      if (k) return Object.assign({ key: k }, MATS[k]);
+    }
+    return null;
+  }
+  // the container of a tank with WebGL 2: clear glass; when the see-through is on and the container is not chosen for it,
+  // an opaque light grey (the liquid hidden, as the owner chose)
+  const GLASS = { key: 'glass', metal: 0, rough: 0.08, base: [0.74, 0.84, 0.95], opacity: 0.14 };
+  const OPAQUE_TANK = { key: 'tank', metal: 0, rough: 0.45, base: [0.8, 0.83, 0.88] };
+  const LIQUID_KEYS = ['water', 'sea', 'kerosene', 'gasoline'];
+  // the groups of a 3D drawing (feature/3d-view, every 3D view with WebGL 2): list, one for each thing in it (a surface by
+  // its formula, the solid, the liquid and the container of a tank) with its key, label and color, for the choice of what
+  // is see-through; groups, GL3D_NG of { mat, see, cast } for gl3dPaint. With the see-through on, a thing is see-through
+  // unless it was taken out of it (Q3.see.off[key]); the liquid of a tank is not see-through unless chosen (the container
+  // is, so the liquid is seen inside it).
+  function gl3dGroups(D, MD) {
+    const S = Q3.see || {}, on = !!S.on && gl3dWanted() && GL3D.state === 1, a = S.a || 0.35, off = S.off || {};
+    const groups = [], list = [];
+    for (let k = 0; k < GL3D_NG; k++) groups.push({ mat: null, see: 0, cast: true });
+    const chosen = (key, dflt) => on && (off[key] === undefined ? dflt : !off[key]);
+    const rgbCss = (c) => (c ? 'rgb(' + c.map((x) => Math.round(x)).join(',') + ')' : '');
+    (D && D.series || []).forEach((sr, i) => {
+      if (i > 7) return;
+      const key = 's:' + (sr.expr || i);
+      if (!list.some((x) => x.key === key)) list.push({ key, k: i, label: toDisplay(sr.expr || ''), color: rgbCss(sr.drawRgb || sr.rgb) });
+      groups[i].see = chosen(key, true) ? a : 0;
+      groups[i].cast = !groups[i].see;  // (what is see-through casts no shadow)
+    });
+    if (MD) {
+      const name = (Q3.link && Q3.link.title) || tr('Solid', '立体');
+      if (MD.tank) {
+        list.push({ key: 'glass', k: 9, label: tr('Container', '容器') }, { key: 'liquid', k: 8, label: tr('Liquid', '液体'), color: MD.liquidMat ? rgbCss(MD.liquidMat.base.map((x) => Math.min(255, x * 255))) : '' });
+        const g9 = chosen('glass', true);
+        groups[9] = on && !g9 ? { mat: OPAQUE_TANK, see: 0, cast: true } : { mat: GLASS, see: on ? a : 0, cast: false };
+        const sl = chosen('liquid', false) ? a : 0;
+        groups[8] = { mat: MD.liquidMat || null, see: sl, cast: !sl };
+      } else {
+        list.push({ key: 'model', k: 8, label: name, color: MD.mat ? rgbCss(MD.mat.base.map((x) => Math.min(255, x * 255))) : '' });
+        const sm = chosen('model', true) ? a : 0;
+        groups[8] = { mat: MD.mat || null, see: sm, cast: !sm };
+      }
+    }
+    return { list, groups, on };
+  }
+  const GL3D = { state: 0 };  // 0 not tried yet, 1 ready, -1 no WebGL 2 here
+  // the test switch "3D with WebGL" (test builds; on unless turned off)
+  function gl3dWanted() { try { return localStorage.getItem('qalc.dev.gl3d') !== 'false'; } catch (e) { return true; } }
+  // a switch of the test builds ("true"): ms3d, the time of each 3D drawing in a corner; pf200, the example of 200 rows on the test page
+  function devFlag(k) { try { return localStorage.getItem('qalc.dev.' + k) === 'true'; } catch (e) { return false; } }
+  function gl3dReady() { if (GL3D.state === 0) gl3dInit(); return GL3D.state === 1; }
+  // (the GPU's layer away, when the 3D view shows something drawn on the 2D canvas)
+  function gl3dHide() { if (GL3D.cv && !GL3D.cv.hidden) GL3D.cv.hidden = true; }
+  // (feature/3d-view, the owner's decision of 11-22 20:40: every 3D view with WebGL 2) The triangles are those of the 2D
+  // canvas's drawing (triBuf: the place on the screen, the depth, the normal in the camera's axes, the color, the lines,
+  // the group), sent as points in the camera's axes; each group (a surface, the solid, the liquid, the container of a
+  // tank) has its own material, see-through and whether it casts the lamp's shadow.
+  const GL3D_NG = 12;
+  const GL3D_VS = `#version 300 es
+in vec3 aP; in vec3 aN; in vec3 aC; in vec2 aG; in float aK;
+uniform float uS, uZR; uniform vec2 uC, uSize; uniform vec3 uLX, uLY, uLD;
+out vec3 vN; out vec3 vC; out vec2 vG; out vec3 vL; flat out int vK;
+void main() {
+  vec2 px = uC + vec2(aP.x, -aP.y) * uS;
+  gl_Position = vec4(px.x / uSize.x * 2.0 - 1.0, 1.0 - px.y / uSize.y * 2.0, aP.z / uZR, 1.0);
+  vN = aN; vC = aC / 255.0; vG = aG; vK = int(aK + 0.5);
+  // (the container of a tank a hair nearer the eye: the liquid touches its wall, and an opaque container must win there)
+  if (vK == 9) gl_Position.z -= 0.0006;
+  vL = vec3(dot(aP, uLX), dot(aP, uLY), dot(aP, uLD)) / uZR * 0.5 + 0.5;
+}`;
+  const GL3D_SVS = `#version 300 es
+in vec3 aP; in float aK;
+uniform vec3 uLX, uLY, uLD; uniform float uZR; uniform float uGCast[12];
+void main() {
+  int k = int(aK + 0.5);
+  gl_Position = uGCast[k] > 0.5 ? vec4(vec3(dot(aP, uLX), dot(aP, uLY), dot(aP, uLD)) / uZR, 1.0) : vec4(2.0, 2.0, 2.0, 1.0);
+}`;
+  const GL3D_SFS = `#version 300 es
+precision mediump float; void main() {}`;
+  const GL3D_FS = `#version 300 es
+precision highp float; precision highp sampler2DShadow;
+in vec3 vN; in vec3 vC; in vec2 vG; in vec3 vL; flat in int vK;
+uniform vec3 uL, uH, uF; uniform float uDark;
+uniform vec4 uMesh; uniform float uMeshW;
+uniform vec4 uGMat[12]; uniform vec3 uGBase[12]; uniform float uGSee[12];
+uniform vec4 uFade;
+uniform int uPass;
+uniform sampler2D uPrev; uniform vec2 uFB;
+uniform sampler2DShadow uSh; uniform float uShOn, uShTex;
+uniform vec3 uLX, uLY, uLD;
+out vec4 o;
+vec3 room(vec3 r, float rough) {
+  float t = clamp(r.y * 0.5 + 0.5, 0.0, 1.0);
+  vec3 top = vec3(1.0, 1.0, 1.02), hor = vec3(0.62, 0.66, 0.72), gnd = vec3(0.36, 0.36, 0.38);
+  vec3 c = t > 0.5 ? mix(hor, top, smoothstep(0.5, 1.0, t)) : mix(gnd, hor, smoothstep(0.0, 0.5, t));
+  float w = 0.08 + rough * 0.5;
+  float b1 = smoothstep(w, 0.0, abs(r.x + 0.55) - 0.18) * smoothstep(w, 0.0, abs(r.y - 0.25) - 0.35);
+  float b2 = smoothstep(w, 0.0, abs(r.x - 0.75) - 0.08) * smoothstep(w, 0.0, abs(r.y) - 0.5);
+  return (c + vec3(1.6) * b1 + vec3(0.9) * b2) * (uDark > 0.5 ? 0.75 : 1.0);
+}
+void main() {
+  if (uPass == 1) { float prev = texture(uPrev, gl_FragCoord.xy / uFB).r; if (gl_FragCoord.z <= prev + 1e-6) discard; }
+  vec4 mt = uGMat[vK]; vec3 base = uGBase[vK]; float see = uGSee[vK];
+  vec3 n = normalize(vN); if (n.z > 0.0) n = -n;   // the side turned to the eye (z away from it)
+  float dif = dot(n, uL), nh = dot(n, uH), fil = dot(n, uF);
+  // the lamp's shadow: 9 filtered looks around the point in the lamp's map, the point moved 2 texels out along its
+  // normal toward the lamp first (no speckles of a surface shadowing itself where the light grazes it)
+  float lit = 1.0;
+  if (uShOn > 0.5 && dif > 0.04) {
+    vec3 q = vL + vec3(dot(n, uLX), dot(n, uLY), dot(n, uLD)) * 2.0 * uShTex;
+    float bias = 0.0006 + 0.0025 * (1.0 - dif), sh = 0.0;
+    for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) sh += texture(uSh, vec3(q.xy + vec2(float(i), float(j)) * uShTex, q.z - bias));
+    lit = sh / 9.0;
+    if (dif < 0.12) lit = 1.0 - (1.0 - lit) * (dif - 0.04) / 0.08;
+  }
+  vec3 col;
+  if (mt.w > 0.5) {
+    vec3 V = vec3(0.0, 0.0, -1.0), R = reflect(vec3(0.0, 0.0, 1.0), n);
+    float rough = mt.y, a = rough * rough, met = mt.x;
+    vec3 F0 = mix(vec3(0.04), base, met), Fr = F0 + (1.0 - F0) * pow(1.0 - max(dot(n, V), 1e-3), 5.0);
+    vec3 H = normalize(uL + V); float NdH = max(dot(n, H), 0.0), NdL = max(dif, 0.0);
+    float D = a * a / (3.14159 * pow(NdH * NdH * (a * a - 1.0) + 1.0, 2.0));
+    vec3 spec = Fr * D * NdL * 0.9 * lit, env = room(R, rough) * Fr;
+    vec3 diff = base * (1.0 - met) * (0.32 + 0.12 * n.y + 0.62 * NdL * lit + 0.2 * max(fil, 0.0));
+    col = diff + env + spec;
+  } else {
+    float AMB = uDark > 0.5 ? 0.3 : 0.34, DIF = uDark > 0.5 ? 0.66 : 0.62, KS = uDark > 0.5 ? 0.42 : 0.38;
+    vec3 env = uDark > 0.5 ? vec3(150.0, 165.0, 190.0) / 255.0 : vec3(236.0, 241.0, 250.0) / 255.0;
+    float kd = AMB + 0.08 * n.y + DIF * max(dif, 0.0) * lit + 0.22 * max(fil, 0.0);
+    float sp = nh > 0.0 ? KS * pow(nh, 56.0) * lit : 0.0;
+    float om = 1.0 - max(-n.z, 0.0), fr = (uDark > 0.5 ? 0.42 : 0.5) * (0.04 + 0.96 * pow(om, 5.0));
+    col = vC * kd * (1.0 - fr) + env * fr + sp;
+  }
+  // the lines along the edges of the pieces (none where gi is below −1000)
+  float line = 0.0;
+  if (vG.x > -1000.0 && uMesh.a > 0.0) {
+    vec2 d = abs(vG - floor(vG + 0.5)), w = max(fwidth(vG), vec2(1e-6));
+    float dd = min(d.x / w.x, d.y / w.y) - uMeshW;
+    if (dd < 1.0) line = dd <= 0.0 ? 1.0 : 1.0 - dd;
+  }
+  col = mix(col, uMesh.rgb, line * uMesh.a);
+  // the parts not measured fade into the background ("Volume and surface")
+  col = mix(col, uFade.rgb, uFade.a);
+  float alpha = 1.0, edge = pow(1.0 - abs(n.z), 3.0);
+  if (see > 0.0) { alpha = max(see + (1.0 - see) * 0.75 * edge, line * 0.45); col = mix(col, col * 0.55, edge); }
+  else if (mt.w > 0.5 && mt.z < 1.0) alpha = mt.z + (1.0 - mt.z) * 0.6 * edge;
+  o = uPass == 1 ? vec4(col * alpha, alpha) : vec4(col, 1.0);
+}`;
+  const GL3D_QVS = `#version 300 es
+in vec2 aQ; out vec2 vT; void main() { vT = aQ * 0.5 + 0.5; gl_Position = vec4(aQ, 0.0, 1.0); }`;
+  const GL3D_QFS = `#version 300 es
+precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void main() { o = texture(uTex, vT); }`;
+  function gl3dInit() {
+    GL3D.state = -1;
+    try {
+      const cv = document.createElement('canvas');
+      const gl = cv.getContext('webgl2', { antialias: true, alpha: true, premultipliedAlpha: true, depth: true, preserveDrawingBuffer: false });
+      if (!gl) return;
+      const sh = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+      const prog = (vs, fs, attrs) => {
+        const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+        attrs.forEach((a, i) => gl.bindAttribLocation(p, i, a));
+        gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+        const u = {}, n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+        for (let i = 0; i < n; i++) { const a = gl.getActiveUniform(p, i); u[a.name] = gl.getUniformLocation(p, a.name); }
+        return { p, u };
+      };
+      Object.assign(GL3D, {
+        cv, gl, main: prog(GL3D_VS, GL3D_FS, ['aP', 'aN', 'aC', 'aG', 'aK']), shadow: prog(GL3D_SVS, GL3D_SFS, ['aP', 'aN', 'aC', 'aG', 'aK']), quad: prog(GL3D_QVS, GL3D_QFS, ['aQ']),
+        vbo: gl.createBuffer(), ibo: gl.createBuffer(), qbo: gl.createBuffer(), vao: gl.createVertexArray(), qvao: gl.createVertexArray(), mesh: null, nIdx: 0, fb: null, w: 0, h: 0
+      });
+      gl.bindVertexArray(GL3D.vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, GL3D.vbo);
+      [[0, 3, 0], [1, 3, 3], [2, 3, 6], [3, 2, 9], [4, 1, 11]].forEach(([l, n, off]) => { gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, n, gl.FLOAT, false, GLV * 4, off * 4); });
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, GL3D.ibo);
+      gl.bindVertexArray(GL3D.qvao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, GL3D.qbo); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, 0);
+      gl.bindVertexArray(null);
+      // the lamp's map (2048 × 2048 depths, compared and filtered by the GPU)
+      const tex = (w, h, ifmt, fmt, type, cmp) => {
+        // (made on unit 0, so that the lamp's map on unit 1 stays bound)
+        const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, t);
+        const f = cmp ? gl.LINEAR : gl.NEAREST;
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        if (cmp) { gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_MODE, gl.COMPARE_REF_TO_TEXTURE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL); }
+        gl.texStorage2D(gl.TEXTURE_2D, 1, ifmt, w, h);
+        return t;
+      };
+      GL3D.tex = tex;
+      GL3D.SH = 2048; GL3D.shTex = tex(GL3D.SH, GL3D.SH, gl.DEPTH_COMPONENT24, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, true);
+      GL3D.shFb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, GL3D.shFb); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, GL3D.shTex, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      cv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); GL3D.state = 0; GL3D.gl = null; });
+      GL3D.renderer = (() => { const x = gl.getExtension('WEBGL_debug_renderer_info'); return x ? String(gl.getParameter(x.UNMASKED_RENDERER_WEBGL)) : String(gl.getParameter(gl.RENDERER)); })();
+      GL3D.state = 1;
+    } catch (e) { GL3D.state = -1; GL3D.error = String(e && e.message || e).slice(0, 200); }
+  }
+  // the textures of the depth peeling, for a size in pixels
+  function gl3dPeelTargets(w, h) {
+    const G = GL3D, gl = G.gl;
+    if (G.fb && G.w === w && G.h === h) return;
+    if (G.fb) { [G.colT, G.accT, G.dep[0], G.dep[1]].forEach((t) => gl.deleteTexture(t)); gl.deleteFramebuffer(G.fb); gl.deleteFramebuffer(G.accFb); }
+    G.colT = G.tex(w, h, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE); G.accT = G.tex(w, h, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
+    G.dep = [G.tex(w, h, gl.DEPTH_COMPONENT24, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT), G.tex(w, h, gl.DEPTH_COMPONENT24, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT)];
+    G.fb = gl.createFramebuffer(); G.accFb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, G.accFb); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, G.accT, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    G.w = w; G.h = h;
+  }
+  // the numbers of a corner sent to the GPU: the point in the camera's axes (x right, y up, z away from the eye), the
+  // normal, the color (0 to 255), gi and gj (−1e4 for none), the group
+  const GLV = 12;
+  // the triangles of the drawing (tb: triBuf) drawn with WebGL 2 and laid into the 2D canvas g at once (so the box is
+  // behind them and the axes, labels, sizes and the glass in front of a tank over them). o: W, H, q (pixels for each CSS
+  // pixel), cx, cy, S (the camera of draw3d: screen = (cx + x·S, cy − y·S)), ZR (the depth range), lamp (toward the lamp,
+  // the camera's axes), dark, mesh (the lines), groups (GL3D_NG of { mat, see, cast }: the material (MATS), how opaque
+  // when see-through (0: not), whether it casts the lamp's shadow), shadow, layers (of the depth peeling), fade
+  // ([r, g, b, amount], "Volume and surface"), finish. Returns what was drawn.
+  function gl3dPaint(g, tb, o) {
+    const G = GL3D, gl = G.gl, t0 = performance.now();
+    if (!gl || gl.isContextLost()) { G.state = 0; return null; }
+    const w = Math.max(1, Math.round(o.W * o.q)), h = Math.max(1, Math.round(o.H * o.q));
+    if (G.cv.width !== w || G.cv.height !== h) { G.cv.width = w; G.cv.height = h; }
+    // the corners, from the triangles of the 2D canvas (the place on the screen back to the camera's axes)
+    const nv = tb.n * 3, F = tb.f, K = tb.gk, iS = 1 / o.S;
+    if (!G.vbuf || G.vbuf.length < nv * GLV) G.vbuf = new Float32Array(Math.max(nv * GLV, 4096 * GLV) * 1.5 | 0);
+    const B = G.vbuf, used = new Set();
+    for (let v = 0; v < nv; v++) {
+      const a = v * CV, b = v * GLV, k = K[(v / 3) | 0];
+      B[b] = (F[a] - o.cx) * iS; B[b + 1] = (o.cy - F[a + 1]) * iS; B[b + 2] = F[a + 2];
+      B[b + 3] = F[a + 3]; B[b + 4] = F[a + 4]; B[b + 5] = F[a + 5];
+      B[b + 6] = F[a + 6]; B[b + 7] = F[a + 7]; B[b + 8] = F[a + 8];
+      const gi = F[a + 9], gj = F[a + 10];
+      B[b + 9] = gi === gi ? gi : -1e4; B[b + 10] = gj === gj ? gj : -1e4; B[b + 11] = k;
+      used.add(k);
+    }
+    gl.bindVertexArray(G.vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, G.vbo);
+    if (G.vcap !== B.length) { gl.bufferData(gl.ARRAY_BUFFER, B.byteLength, gl.DYNAMIC_DRAW); G.vcap = B.length; }
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, B, 0, nv * GLV);
+    gl.bindVertexArray(null);
+    const ZR = o.ZR, L = o.lamp, ln = Math.hypot(L[0], L[1], L[2]) || 1, Lc = [L[0] / ln, L[1] / ln, L[2] / ln];
+    let H = [Lc[0], Lc[1], Lc[2] - 1]; const hn = Math.hypot(H[0], H[1], H[2]) || 1; H = H.map((x) => x / hn);
+    // the lamp's axes: depth along the light (away from the lamp), and two across it
+    const LD = [-Lc[0], -Lc[1], -Lc[2]], up = Math.abs(LD[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    let LX = [up[1] * LD[2] - up[2] * LD[1], up[2] * LD[0] - up[0] * LD[2], up[0] * LD[1] - up[1] * LD[0]]; const lx = Math.hypot(...LX); LX = LX.map((x) => x / lx);
+    const LY = [LD[1] * LX[2] - LD[2] * LX[1], LD[2] * LX[0] - LD[0] * LX[2], LD[0] * LX[1] - LD[1] * LX[0]];
+    // the groups: their material, see-through and shadow (only those drawn count for the depth peeling)
+    const NG = GL3D_NG, gm = new Float32Array(4 * NG), gb = new Float32Array(3 * NG), gs = new Float32Array(NG), gc = new Float32Array(NG);
+    let anySee = false, anyClear = false;
+    const info = [];
+    for (let k = 0; k < NG; k++) {
+      const q = (o.groups && o.groups[k]) || {}, m = q.mat || null;
+      gm[4 * k] = m ? m.metal : 0; gm[4 * k + 1] = m ? m.rough : 0.5; gm[4 * k + 2] = m && m.opacity !== undefined ? m.opacity : 1; gm[4 * k + 3] = m ? 1 : 0;
+      gb.set(m ? m.base : [0.5, 0.5, 0.5], 3 * k);
+      gs[k] = q.see > 0 ? q.see : 0; gc[k] = q.cast === false ? 0 : 1;
+      if (used.has(k)) {
+        if (gs[k] > 0) anySee = true; else if (m && m.opacity !== undefined && m.opacity < 1) anyClear = true;
+        info.push({ k, see: gs[k] > 0 ? Math.round(gs[k] * 100) / 100 : 0, mat: m ? m.key || '' : '', cast: gc[k] > 0 });
+      }
+    }
+    const peel = anySee || anyClear, shadow = !!o.shadow && info.some((x) => x.cast);
+    if (peel) gl3dPeelTargets(w, h);
+    const lampAxes = (P) => { gl.uniform1f(P.u.uZR, ZR); gl.uniform3fv(P.u.uLX, LX); gl.uniform3fv(P.u.uLY, LY); gl.uniform3fv(P.u.uLD, LD); };
+    gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS); gl.disable(gl.CULL_FACE); gl.disable(gl.BLEND);
+    // the lamp's map (only what casts a shadow: not the glass of a tank)
+    if (shadow) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, G.shFb); gl.viewport(0, 0, G.SH, G.SH);
+      gl.clear(gl.DEPTH_BUFFER_BIT);
+      gl.useProgram(G.shadow.p); lampAxes(G.shadow); gl.uniform1fv(G.shadow.u['uGCast[0]'], gc);
+      gl.bindVertexArray(G.vao); gl.drawArrays(gl.TRIANGLES, 0, nv);
+    }
+    const P = G.main;
+    gl.useProgram(P.p); lampAxes(P);
+    gl.uniform1f(P.u.uS, o.S); gl.uniform2f(P.u.uC, o.cx, o.cy); gl.uniform2f(P.u.uSize, o.W, o.H);
+    gl.uniform3fv(P.u.uL, Lc); gl.uniform3fv(P.u.uH, H); { const f = Math.hypot(0.45, 0.45, 0.77); gl.uniform3fv(P.u.uF, [0.45 / f, -0.45 / f, -0.77 / f]); }
+    gl.uniform1f(P.u.uDark, o.dark ? 1 : 0);
+    const ms = o.mesh;
+    gl.uniform4f(P.u.uMesh, ms ? ms[0] / 255 : 0, ms ? ms[1] / 255 : 0, ms ? ms[2] / 255 : 0, ms ? ms[3] : 0); gl.uniform1f(P.u.uMeshW, ms ? ms[4] * o.q / 2 : 0);
+    gl.uniform4fv(P.u['uGMat[0]'], gm); gl.uniform3fv(P.u['uGBase[0]'], gb); gl.uniform1fv(P.u['uGSee[0]'], gs);
+    const fd = o.fade;
+    gl.uniform4f(P.u.uFade, fd ? fd[0] / 255 : 0, fd ? fd[1] / 255 : 0, fd ? fd[2] / 255 : 0, fd ? fd[3] : 0);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, G.shTex); gl.uniform1i(P.u.uSh, 1);
+    gl.uniform1f(P.u.uShOn, shadow ? 1 : 0); gl.uniform1f(P.u.uShTex, 1 / G.SH);
+    gl.uniform2f(P.u.uFB, w, h);
+    gl.bindVertexArray(G.vao);
+    let layers = 0;
+    if (!peel) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.uniform1i(P.u.uPass, 0);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, null); gl.uniform1i(P.u.uPrev, 0);
+      gl.drawArrays(gl.TRIANGLES, 0, nv);
+    } else {
+      // depth peeling: the nearest faces, then the nearest behind them, and so on, added front to back
+      gl.bindFramebuffer(gl.FRAMEBUFFER, G.accFb); gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+      // (the first "last layer": depth 0, nothing peeled yet)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, G.fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, G.colT, 0);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, G.dep[1], 0);
+      gl.clearDepth(0); gl.clear(gl.DEPTH_BUFFER_BIT); gl.clearDepth(1);
+      const NL = o.layers || 6;
+      for (let l = 0; l < NL; l++) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, G.fb);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, G.dep[l % 2], 0);
+        gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.useProgram(P.p); gl.bindVertexArray(G.vao); gl.enable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, G.dep[(l + 1) % 2]); gl.uniform1i(P.u.uPrev, 0);
+        gl.uniform1i(P.u.uPass, 1);
+        gl.drawArrays(gl.TRIANGLES, 0, nv);
+        // under what is there: C += (1 − A) C_layer (premultiplied)
+        gl.bindFramebuffer(gl.FRAMEBUFFER, G.accFb);
+        gl.useProgram(G.quad.p); gl.bindVertexArray(G.qvao); gl.disable(gl.DEPTH_TEST);
+        gl.enable(gl.BLEND); gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ONE);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, G.colT); gl.uniform1i(G.quad.u.uTex, 0);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        layers++;
+      }
+      gl.disable(gl.BLEND);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.useProgram(G.quad.p); gl.bindVertexArray(G.qvao); gl.disable(gl.DEPTH_TEST);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, G.accT); gl.uniform1i(G.quad.u.uTex, 0);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    gl.bindVertexArray(null);
+    // (for the time on the screen: the GPU finished, so that the time is that of the drawing)
+    if (o.finish) gl.finish();
+    // laid into the 2D canvas now, in the order of the drawing (what draw3d draws after it is in front)
+    G.cv.hidden = true;
+    g.save(); g.imageSmoothingEnabled = true; g.drawImage(G.cv, 0, 0, o.W, o.H); g.restore();
+    const tGl = performance.now() - t0;
+    G.lastMs = tGl;
+    return { gl: true, ms: Math.round(tGl * 10) / 10, layers, see: anySee, clear: anyClear, shadow, tris: tb.n, px: [w, h], q: o.q, groups: info,
+      mat: info.filter((x) => x.mat).map((x) => x.mat).join(',') };
   }
   // the slope at p0 (value w0) from the points on its two sides, [place, value] (a: before, b: after;
   // null if none): the parabola through the three, or the line to the one there is
@@ -10093,7 +10633,7 @@
   // thick, and what comes through is that much less) and absorbs a little; at the end, what is drawn
   // behind, seen bent by the gelatin in front of it.
   function liquidPaint(g, c, M, mesh, opaque, vc, dark, q) {
-    const { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S } = M;
+    const { proj, T, U, V, dpr, W, H, RV, S } = M;
     const np = mesh.PX.length, none = { shown: 0, odd: 0, q, thick: 0 };
     if (!np) return none;
     const sx = new Float64Array(2 * np), sy = new Float64Array(2 * np), sd = new Float64Array(2 * np);
@@ -10153,7 +10693,7 @@
     // the eye): it is worked out once for a grid of normals (x and y from −1 to 1) for this view: the
     // light the skin mirrors, the share of the light that goes into it, how much of the skin the line of
     // sight goes through (1 looked at straight, more at a slant), and how much light falls on it.
-    const NL = q < 1 ? 128 : 256, lutKey = [NL, ce, se, dark, 'skin3'].join();
+    const NL = q < 1 ? 128 : 256, lutKey = [NL, RV[2], RV[5], RV[8], dark, 'skin3'].join();
     if (!Q3.liqLut || Q3.liqLut.key !== lutKey) {
       const lut = new Float32Array(NL * NL * 4);
       for (let iy = 0; iy < NL; iy++) {
@@ -10163,7 +10703,7 @@
           const cz = -Math.sqrt(1 - r2), cosT = -cz, om = 1 - cosT, fr = F0 + (1 - F0) * om * om * om * om * om;
           const rx = 2 * cosT * cx, ry = 2 * cosT * cy, rz = 2 * cosT * cz + 1;
           const rl = rx * Lx + ry * Ly + rz * Lz;
-          const env = groundI + (skyI - groundI) * sm(-0.3, 0.45, ry * ce - rz * se) + lampI * lampAt(rx, ry, rz) + (rl > 0.99 ? 60 * Math.pow(rl, 1500) : 0);
+          const env = groundI + (skyI - groundI) * sm(-0.3, 0.45, RV[2] * rx + RV[5] * ry + RV[8] * rz) + lampI * lampAt(rx, ry, rz) + (rl > 0.99 ? 60 * Math.pow(rl, 1500) : 0);
           const o = (iy * NL + ix) * 4;
           lut[o] = fr * env; lut[o + 1] = 1 - fr; lut[o + 2] = 1 / Math.max(cosT * cosT, 0.006);
           lut[o + 3] = 0.42 + 0.58 * Math.max(0, cx * Lx + cy * Ly + cz * Lz);
@@ -10196,7 +10736,7 @@
       // the normals of the corners in the camera's axes
       for (let m = 0; m < 3; m++) {
         const nu = TN[9 * t + 3 * m], nv = TN[9 * t + 3 * m + 1], nw = TN[9 * t + 3 * m + 2];
-        CN[3 * m] = nu * ca - nv * sa; CN[3 * m + 1] = nu * sa * se + nv * ca * se + nw * ce; CN[3 * m + 2] = nu * sa * ce + nv * ca * ce - nw * se;
+        CN[3 * m] = RV[0] * nu + RV[1] * nv + RV[2] * nw; CN[3 * m + 1] = RV[3] * nu + RV[4] * nv + RV[5] * nw; CN[3 * m + 2] = RV[6] * nu + RV[7] * nv + RV[8] * nw;
       }
       rasterTri(lx(sx[a]), ly(sy[a]), lx(sx[b]), ly(sy[b]), lx(sx[cc]), ly(sy[cc]), LW, LH, lpx);
     }
@@ -10935,7 +11475,7 @@
   // 'back' fills it with a little color before the liquid (and draws the seams at the back, faint); 'front'
   // fills it again after the liquid, with a little shine where the lamp is mirrored toward the eye, and draws
   // its outline and the seams in front.
-  function glassPaint(g, Md, X, side, dark) {
+  function glassPaint(g, Md, X, side, dark, gl) {
     const T = Md.tank, G = T.glass, V = G.v, n = V.length / MV, I = G.t;
     if (side === 'back') {
       if (!T.gp || T.gp.length !== n * 2) { T.gp = new Float32Array(n * 2); T.gn = new Float32Array(n); T.gs = new Float32Array(n); }
@@ -10960,9 +11500,12 @@
     const P = T.gp, hull = T.hull;
     const hullPath = () => { g.beginPath(); hull.forEach((i, k) => (k ? g.lineTo(P[2 * i], P[2 * i + 1]) : g.moveTo(P[2 * i], P[2 * i + 1]))); g.closePath(); };
     g.save();
-    hullPath();
-    g.fillStyle = dark ? (side === 'front' ? 'rgba(190,215,255,0.07)' : 'rgba(190,215,255,0.06)') : (side === 'front' ? 'rgba(120,160,205,0.10)' : 'rgba(120,160,205,0.13)');
-    g.fill();
+    // (with WebGL 2 the container is drawn by the GPU as a group of its own: no fill and no shine here, feature/3d-view)
+    if (!gl) {
+      hullPath();
+      g.fillStyle = dark ? (side === 'front' ? 'rgba(190,215,255,0.07)' : 'rgba(190,215,255,0.06)') : (side === 'front' ? 'rgba(120,160,205,0.10)' : 'rgba(120,160,205,0.13)');
+      g.fill();
+    }
     if (side === 'back') {
       g.strokeStyle = dark ? 'rgba(210,225,250,0.22)' : 'rgba(50,70,100,0.22)'; g.lineWidth = 1;
       g.beginPath(); seamPath(g, G, P, T.gn, false); g.stroke();
@@ -10970,7 +11513,7 @@
       return;
     }
     // a little shine: the triangles in front whose corners all mirror the lamp toward the eye (few)
-    for (const [lim, al] of [[0.86, 0.1], [0.95, 0.14]]) {
+    for (const [lim, al] of gl ? [] : [[0.86, 0.1], [0.95, 0.14]]) {
       g.beginPath();
       let any = false;
       for (let t = 0; t < I.length; t += 3) {
@@ -11008,9 +11551,11 @@
     const ink = css.getPropertyValue('--text').trim() || (dark ? '#e5e7eb' : '#111827'), bg = css.getPropertyValue('--plot-bg').trim() || (dark ? '#111' : '#fff');
     const P3 = (p) => { X.proj(X.U(p[0]), X.V(p[1]), X.Wz(p[2])); return [X.T[0], X.T[1], X.T[2]]; };
     // directions on the floor: to the right on the screen, and toward the eye
-    const rgt = [X.ca, -X.sa], twd = [-X.sa, -X.ca];
+    // (feature/3d-view: from the view's rotation; looking straight down, toward the eye is down the screen)
+    const unit2 = (a, b) => { const l = Math.hypot(a, b); return l > 1e-3 ? [a / l, b / l] : null; };
+    const rgt = unit2(X.RV[0], X.RV[1]) || unit2(-X.RV[3], -X.RV[4]) || [1, 0], twd = unit2(-X.RV[6], -X.RV[7]) || unit2(-X.RV[3], -X.RV[4]) || [0, -1];
     const T = Md.tank, growing = o.growing;
-    if (T) glassPaint(g, Md, X, 'front', dark);
+    if (T) glassPaint(g, Md, X, 'front', dark, o.gl);
     // a label in a little box: an italic letter, then the rest (" = 15 cm")
     const pill = (txt, x, y, al) => {
       const m = /^(\S+)( = .*)$/.exec(txt), a = m ? m[1] : '', b = m ? m[2] : txt;
@@ -11089,7 +11634,7 @@
       } else if (k === 'cyl' || k === 'cone' || k === 'frustum') {
         const H = Md.top, out2 = sR * 1.22;
         // the radius on the face toward the eye (the top seen from above, the bottom from below); a cone: its base
-        const zc = k === 'cone' ? 0 : X.se >= 0 ? H : 0, rr = k === 'frustum' && zc === H ? Md.s.r : k === 'frustum' ? Md.s.R : sR;
+        const zc = k === 'cone' ? 0 : -X.RV[8] >= 0 ? H : 0, rr = k === 'frustum' && zc === H ? Md.s.r : k === 'frustum' ? Md.s.R : sR;
         const d30 = [rgt[0] * 0.866 + twd[0] * 0.5, rgt[1] * 0.866 + twd[1] * 0.5];
         const tr2 = k === 'frustum' ? (zc === H ? L.r : L.R) : rad;
         if (dd) dim(at(d30, -rr, zc), at(d30, rr, zc), tr2, k === 'cone' || zc === 0 ? DOWN : UP);
@@ -11110,10 +11655,10 @@
         const s = Md.s;
         dim([0, 0, s.c], [s.a, 0, s.c], L.a, DOWN); dim([0, 0, s.c], [0, s.b, s.c], L.b, DOWN); dim([0, 0, s.c], [0, 0, 2 * s.c], L.c, LEFT);
       } else if (k === 'pipe') {
-        const s = Md.s, ex = sgn(X.ca) * s.L / 2;
-        dim([ex, 0, s.R], [ex, 0, 2 * s.R], L.R, sgn(X.ca) > 0 ? RIGHT : LEFT);
-        dim([ex, 0, s.R], [ex, 0, s.R - s.r], L.r, sgn(X.ca) > 0 ? RIGHT : LEFT);
-        const fy = -sgn(X.ca * X.ce) * s.R * 1.15;
+        const s = Md.s, ex = sgn(X.RV[0]) * s.L / 2;
+        dim([ex, 0, s.R], [ex, 0, 2 * s.R], L.R, sgn(X.RV[0]) > 0 ? RIGHT : LEFT);
+        dim([ex, 0, s.R], [ex, 0, s.R - s.r], L.r, sgn(X.RV[0]) > 0 ? RIGHT : LEFT);
+        const fy = -sgn(X.RV[7]) * s.R * 1.15;
         dim([-s.L / 2, fy, 0], [s.L / 2, fy, 0], L.L, DOWN);
       } else if (Md.grow === 'up') {
         const s = Md.s, H = Md.top, out2 = sR * 1.35;
@@ -11144,7 +11689,7 @@
       // where the scale is: lying, on the front of the shell toward the left end; standing, on the wall toward the
       // eye and a little to the left (the amount at the level goes to its right, away from the round buttons)
       let sv;
-      if (T.lying) sv = [-sgn(X.ca) * T.L * 0.22, -sgn(X.ca * X.ce || 1)];
+      if (T.lying) sv = [-sgn(X.RV[0]) * T.L * 0.22, -sgn(X.RV[7] || 1)];
       else { const c = Math.cos(0.6), s = Math.sin(0.6); sv = [twd[0] * c - rgt[0] * s, twd[1] * c - rgt[1] * s]; }
       const W3 = (z) => P3(T.wall(z, sv));
       // the line of the scale
@@ -11185,7 +11730,7 @@
       if (!growing) {
         const lab = L, lr = lab.dia ? lab.r : lab.r || lab.R;
         if (T.lying) {
-          const ex = T.L / 2 + T.a + R * 0.25, sx = sgn(X.ca);
+          const ex = T.L / 2 + T.a + R * 0.25, sx = sgn(X.RV[0]);
           if (lab.dia) dim([-sx * ex, 0, 0], [-sx * ex, 0, 2 * R], lr, sx > 0 ? LEFT : RIGHT); else dim([-sx * ex, 0, R], [-sx * ex, 0, 2 * R], lr, sx > 0 ? LEFT : RIGHT);
           if (h > 0) dim([sx * ex, 0, 0], [sx * ex, 0, h], lab.h, sx > 0 ? RIGHT : LEFT);
           const fy = sv[1] * R * 1.12;
@@ -11272,11 +11817,12 @@
     g.fillStyle = css.getPropertyValue('--plot-bg').trim() || '#fff';
     g.fillRect(0, 0, W, H);
     const D = Q3.data;
-    if (!D) return;
+    if (!D) { gl3dHide(); return; }
     const GR = Q3.grow; // the solid growing (startGrow)
     const dark = document.documentElement.classList.contains('dark');
     const gridColor = css.getPropertyValue('--plot-grid').trim(), axisColor = css.getPropertyValue('--plot-axis').trim();
-    const ca = Math.cos(Q3.az), sa = Math.sin(Q3.az), ce = Math.cos(Q3.el), se = Math.sin(Q3.el);
+    // the view (feature/3d-view: a rotation, rotAzEl until 1.13.0) and the shift of the picture (two fingers)
+    const RV = Q3.rot || rotAzEl(VIEW3D.az, VIEW3D.el), PAN = Q3.pan || [0, 0];
     const xs = D.xs, ys = D.ys, x0 = xs[0], x1 = xs[D.nx - 1], y0 = ys[0], y1 = ys[D.ny - 1], z0 = D.z0, z1 = D.z1;
     // the half sizes of the box: x and y from −1 to 1 and z from −ZS to ZS, or (1:1:1) the same length
     // for one unit on all axes, the longest side from −1 to 1
@@ -11288,26 +11834,32 @@
       EX = (x1 - x0) / M; EY = (y1 - y0) / M; EZ = Math.max(0.03, (z1 - z0) / M);
     }
     const EH = Math.hypot(EX, EY);
-    const S = Math.min(W / (3.3 * EH / Math.SQRT2), H / (2 * (EZ * Math.abs(ce) + EH * Math.abs(se)) + 0.75)) * Q3.zoom;
-    const cx = W / 2, cy = H / 2;
+    // the scale: the box fits (across: its floor turned about z, as until 1.13.0; up: its height and floor as seen)
+    const hx = EZ * Math.abs(RV[2]) + EH * Math.hypot(RV[0], RV[1]), vy = EZ * Math.abs(RV[5]) + EH * Math.hypot(RV[3], RV[4]);
+    const S = Math.min(W / (3.3 * hx / Math.SQRT2), H / (2 * vy + 0.75)) * Q3.zoom;
+    const cx = W / 2 + PAN[0], cy = H / 2 + PAN[1];
     // (u, v, w) -> screen x, screen y and depth (larger is farther away)
     const T = [0, 0, 0];
     const proj = (u, v, w) => {
-      const xr = u * ca - v * sa, yr = u * sa + v * ca;
-      T[0] = cx + xr * S; T[1] = cy - (w * ce + yr * se) * S; T[2] = yr * ce - w * se;
+      T[0] = cx + (RV[0] * u + RV[1] * v + RV[2] * w) * S; T[1] = cy - (RV[3] * u + RV[4] * v + RV[5] * w) * S; T[2] = RV[6] * u + RV[7] * v + RV[8] * w;
       return T;
     };
     const U = (x) => ((x - x0) / (x1 - x0) * 2 - 1) * EX, V = (y) => ((y - y0) / (y1 - y0) * 2 - 1) * EY, Wz = (z) => ((z - z0) / (z1 - z0) * 2 - 1) * EZ;
     const line = (u1, v1, w1, u2, v2, w2) => { proj(u1, v1, w1); g.moveTo(T[0], T[1]); proj(u2, v2, w2); g.lineTo(T[0], T[1]); };
     // the three panes at the back of the box, with grid lines
-    const ub = proj(EX, 0, 0)[2] > proj(-EX, 0, 0)[2] ? EX : -EX;
-    const vb = proj(0, EY, 0)[2] > proj(0, -EY, 0)[2] ? EY : -EY;
-    const wb = proj(0, 0, EZ)[2] > proj(0, 0, -EZ)[2] ? EZ : -EZ;
+    // (feature/3d-view: a side seen edge-on, as in a set view, counts as at the back on the right, at the back, and
+    // at the bottom, so that the numbers are on the left, in front and at the bottom)
+    const ub = RV[6] > -1e-9 ? EX : -EX;
+    const vb = RV[7] > -1e-9 ? EY : -EY;
+    const wb = RV[8] > 1e-9 ? EZ : -EZ;
     const stx = niceStep(x1 - x0, 4), sty = niceStep(y1 - y0, 4), stz = niceStep(z1 - z0, 4);
     const gx = gridValues(x0, x1, stx, 40), gy = gridValues(y0, y1, sty, 40), gz = gridValues(z0, z1, stz, 40);
     // a path on the floor of the box (z at its bottom), from points (u, v)
     const pane0 = (pts) => { pts.forEach(([u, v], i) => { proj(u, v, -EZ); if (i) g.lineTo(T[0], T[1]); else g.moveTo(T[0], T[1]); }); g.closePath(); };
     const pane = (corners) => { g.beginPath(); corners.forEach(([u, v, w], i) => { proj(u, v, w); if (i) g.lineTo(T[0], T[1]); else g.moveTo(T[0], T[1]); }); g.closePath(); g.fill(); g.stroke(); };
+    // (feature/3d-view: the box, its grid and axes can be turned off, "Box and axes"; every 3D view since 11-22 20:40)
+    const boxOff = !!(Q3.see && Q3.see.box === false);
+    if (!boxOff) {
     g.fillStyle = dark ? 'rgba(255,255,255,0.035)' : 'rgba(30,50,90,0.035)';
     g.strokeStyle = axisColor; g.lineWidth = 1;
     pane([[-EX, -EY, wb], [EX, -EY, wb], [EX, EY, wb], [-EX, EY, wb]]);
@@ -11318,12 +11870,13 @@
     for (const y of gy) { line(-EX, V(y), wb, EX, V(y), wb); line(ub, V(y), -EZ, ub, V(y), EZ); }
     for (const z of gz) { line(ub, -EY, Wz(z), ub, EY, Wz(z)); line(-EX, vb, Wz(z), EX, vb, Wz(z)); }
     g.stroke();
+    }
     // the surfaces: project every grid point once, then lay the cells over the pixels with a depth
     // buffer (surfacePaint, 1.9.2)
     const cells = [];
     let cutLost = 0;  // (cells at the cut of a growing solid left out for want of a cut point, BG09)
     // a normal in the box's axes (u, v, w) in the camera's axes; grid coordinates of u and v
-    const camN = (nu, nv, nw) => [nu * ca - nv * sa, nu * sa * se + nv * ca * se + nw * ce, nu * sa * ce + nv * ca * ce - nw * se];
+    const camN = (nu, nv, nw) => [RV[0] * nu + RV[1] * nv + RV[2] * nw, RV[3] * nu + RV[4] * nv + RV[5] * nw, RV[6] * nu + RV[7] * nv + RV[8] * nw];
     const giOf = (u) => (u / EX + 1) / 2 * (D.nx - 1), gjOf = (v) => (v / EY + 1) / 2 * (D.ny - 1);
     // (1.12.0, BG19) while the graph is turned, the lamp stays where it was on the box when the turn began, so
     // that the shadows stay too: which points are in a shadow (the lamp's map of the drawing before the turn,
@@ -11340,9 +11893,8 @@
     const lockLit = (u, v, w, nu, nv, nw) => {
       const K = LKS, M = K.SM;
       if (!M) return 1;
-      const yr = u * K.sa + v * K.ca, x = u * K.ca - v * K.sa, y = w * K.ce + yr * K.se, z = yr * K.ce - w * K.se;
-      const myr = nu * K.sa + nv * K.ca;
-      let mx = nu * K.ca - nv * K.sa, my = nw * K.ce + myr * K.se, mz = myr * K.ce - nw * K.se;
+      const Q = K.RV, x = Q[0] * u + Q[1] * v + Q[2] * w, y = Q[3] * u + Q[4] * v + Q[5] * w, z = Q[6] * u + Q[7] * v + Q[8] * w;
+      let mx = Q[0] * nu + Q[1] * nv + Q[2] * nw, my = Q[3] * nu + Q[4] * nv + Q[5] * nw, mz = Q[6] * nu + Q[7] * nv + Q[8] * nw;
       const nl = Math.hypot(mx, my, mz) || 1;
       mx /= nl; my /= nl; mz /= nl;
       let dif = mx * LAMP[0] + my * LAMP[1] + mz * LAMP[2];
@@ -11353,7 +11905,7 @@
       return lit;
     };
     // the same for a normal in the camera's axes (a point of a cut cell), and for a grid point (kept)
-    const lockLitN = (u, v, w, n) => lockLit(u, v, w, ca * n[0] + sa * se * n[1] + sa * ce * n[2], -sa * n[0] + ca * se * n[1] + ca * ce * n[2], ce * n[1] - se * n[2]);
+    const lockLitN = (u, v, w, n) => lockLit(u, v, w, RV[0] * n[0] + RV[3] * n[1] + RV[6] * n[2], RV[1] * n[0] + RV[4] * n[1] + RV[7] * n[2], RV[2] * n[0] + RV[5] * n[1] + RV[8] * n[2]);
     const lockLitK = (s, k) => {
       let A = s.lockLit;
       if (!A || s.lockId !== LKS.id || A.length !== s.z.length) { A = s.lockLit = new Float32Array(s.z.length).fill(NaN); s.lockId = LKS.id; }
@@ -11372,7 +11924,7 @@
       const F = Q3.lastShade, same = (o) => o && o.D === D && o.dark === dark && o.EX === EX && o.EY === EY && o.EZ === EZ;
       if (!same(Q3.shLock)) {
         Q3.lockSeq = (Q3.lockSeq || 0) + 1;
-        Q3.shLock = same(F) ? Object.assign({}, F, { id: Q3.lockSeq }) : { D, dark, EX, EY, EZ, ca, sa, ce, se, SM: null, floor: null, lamp: lampInBox(ca, sa, ce, se), id: Q3.lockSeq, fresh: true };
+        Q3.shLock = same(F) ? Object.assign({}, F, { id: Q3.lockSeq }) : { D, dark, EX, EY, EZ, RV, SM: null, floor: null, lamp: lampInBox(RV), id: Q3.lockSeq, fresh: true };
       }
       LKS = Q3.shLock;
     }
@@ -11501,8 +12053,7 @@
               su += (p1.v - p2.v) * (p1.w + p2.w); sv += (p1.w - p2.w) * (p1.u + p2.u); sw += (p1.u - p2.u) * (p1.v + p2.v);
               dd += p1.d; ww += p1.w;
             }
-            const yr = su * sa + sv * ca;
-            const ncx = su * ca - sv * sa, ncy = sw * ce + yr * se, ncd = yr * ce - sw * se;
+            const ncx = RV[0] * su + RV[1] * sv + RV[2] * sw, ncy = RV[3] * su + RV[4] * sv + RV[5] * sw, ncd = RV[6] * su + RV[7] * sv + RV[8] * sw;
             const len = Math.hypot(ncx, ncy, ncd) || 1;
             cells.push({ s, poly, depth: dd * 4 / poly.length, shade: Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len, t: (ww / (poly.length * EZ) + 1) / 2, inR: chosen && inRegion(i, j) });
             continue;
@@ -11544,8 +12095,7 @@
             const e1 = [uu(P1) - uu(P0), vv(P1) - vv(P0), pw[P1] - pw[P0]], e2 = [uu(P2) - uu(P0), vv(P2) - vv(P0), pw[P2] - pw[P0]];
             nu = e1[1] * e2[2] - e1[2] * e2[1]; nv = e1[2] * e2[0] - e1[0] * e2[2]; nw = e1[0] * e2[1] - e1[1] * e2[0];
           }
-          const yr = nu * sa + nv * ca;
-          const ncx = nu * ca - nv * sa, ncy = nw * ce + yr * se, ncd = yr * ce - nw * se;
+          const ncx = RV[0] * nu + RV[1] * nv + RV[2] * nw, ncy = RV[3] * nu + RV[4] * nv + RV[5] * nw, ncd = RV[6] * nu + RV[7] * nv + RV[8] * nw;
           const len = Math.hypot(ncx, ncy, ncd) || 1;
           const shade = Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len;
           let dsum = 0, wsum = 0;
@@ -11645,7 +12195,7 @@
     // ending at once at 3°: turning the graph made it come and go)
     let shadowFaces = 0, shadowArea = 0;
     const outline = [];  // (the closed paths of the shadow, 1.11.0: drawn as a line too for the enclosed part)
-    const volFade = smoothStep(0.02, 0.3, se);
+    const volFade = smoothStep(0.02, 0.3, -RV[8]);
     if (vc && volFade > 0.004) {
       g.save();
       g.globalAlpha = volFade;
@@ -11756,7 +12306,10 @@
       }
     };
     let jelly = 0, faded = 0, rimTris = 0;
+    // (the group of each triangle: the number of its surface, for the see-through of each with WebGL 2)
+    const sIdx = new Map((D.series || []).map((sr, i) => [sr, Math.min(7, i)]));
     for (const cl of cells) {
+      tb.k = sIdx.get(cl.s) || 0;
       // the measured parts of the surfaces: drawn as the liquid, below
       if (cl.inR) { jelly++; continue; }
       if (fadeTo) faded++;
@@ -11775,9 +12328,10 @@
     // a solid or the liquid of a tank of "Shapes" (1.12.0, D6): its triangles with the surfaces' (so it is shaded
     // and has shadows as they do); while it grows, as far as it has grown
     const MD = D.model ? Q3.model : null;
-    const MX = MD ? { proj, T, U, V, Wz, camN, LKS, lockLitN, ca, sa, ce, se, nx: (x1 - x0) / (2 * EX), ny: (y1 - y0) / (2 * EY), nz: (z1 - z0) / (2 * EZ) } : null;
+    const MX = MD ? { proj, T, U, V, Wz, camN, LKS, lockLitN, RV, nx: (x1 - x0) / (2 * EX), ny: (y1 - y0) / (2 * EY), nz: (z1 - z0) / (2 * EZ) } : null;
     const mGrow = MD && GR && GR.ax === 'mesh' ? Math.max(0, Math.min(1, GR.theta / (2 * Math.PI))) : 1;
-    const mt0 = performance.now(), mTris = MD ? meshToTris(MD.tank ? MD.tank.liquid(MD.tank.hShow) : MD.mesh(mGrow), tb, MX) : 0, mMs = { tris: performance.now() - mt0 };
+    tb.k = 8;
+    const mt0 = performance.now(), mMesh = MD ? (MD.tank ? MD.tank.liquid(MD.tank.hShow) : MD.mesh(mGrow)) : null, mTris = MD ? meshToTris(mMesh, tb, MX) : 0, mMs = { tris: performance.now() - mt0 };
     // shadows from the lamp of the highlight (1.11.0): on the floor of the box (while it is at the
     // back, seen from above) and of the surfaces on themselves and on each other. Not while "Volume and
     // surface" shows the measured solid, which keeps its own look (the liquid casts no shadow from the
@@ -11795,25 +12349,45 @@
       const F = tb.f, iS = 1 / S;
       for (let v = 0; v < tb.n * 3; v++) {
         const o = v * CV, xc = (F[o] - cx) * iS, yc = (cy - F[o + 1]) * iS, zc = F[o + 2];
-        F[o + 11] = lockLitN(ca * xc + sa * se * yc + sa * ce * zc, -sa * xc + ca * se * yc + ca * ce * zc, ce * yc - se * zc, [F[o + 3], F[o + 4], F[o + 5]]);
+        F[o + 11] = lockLitN(RV[0] * xc + RV[3] * yc + RV[6] * zc, RV[1] * xc + RV[4] * yc + RV[7] * zc, RV[2] * xc + RV[5] * yc + RV[8] * zc, [F[o + 3], F[o + 4], F[o + 5]]);
       }
     }
     const tf = performance.now();
-    const floorO = { ca, sa, ce, se, EX, EY, EZ, cam: { cx, cy, S }, dark, cache: Q3, k: shK, lamp: LKS ? LKS.lamp : null, layer: LKS && LKS.floor && LKS.floor.lampKey === String(LKS.lamp) ? LKS.floor : null };
+    const floorO = { RV, EX, EY, EZ, cam: { cx, cy, S }, dark, cache: Q3, k: shK, lamp: LKS ? LKS.lamp : null, layer: LKS && LKS.floor && LKS.floor.lampKey === String(LKS.lamp) ? LKS.floor : null };
     const floor = shadows && wb === -EZ ? floorShadow(g, tb, floorO) : null;
     // (the layer of the floor: kept for a turn, BG19)
     if (floor && floor.layer) {
-      floor.layer.lampKey = String(LKS ? LKS.lamp : lampInBox(ca, sa, ce, se));
+      floor.layer.lampKey = String(LKS ? LKS.lamp : lampInBox(RV));
       if (LKS) LKS.floor = floor.layer;
     }
     const floorLayerNow = floor ? floor.layer : null;
     if (floor) { delete floor.layer; floor.ms = Math.round((performance.now() - tf) * 10) / 10; }
-    // (the back of the glass of a tank, behind the liquid)
-    if (MD && MD.tank) { const t0 = performance.now(); glassPaint(g, MD, MX, 'back', dark); mMs.back = performance.now() - t0; }
-    const surf = surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite: !!Q3.turning, k: shK } : null,
+    // (feature/3d-view, the owner's decision of 11-22 20:40: every 3D view with WebGL 2 when it is there (the surfaces of a
+    // 3D graph, the solid of ⟳ 3D, the solids and tanks of "Shapes", "Solid from a profile"); the 2D canvas otherwise, or
+    // with the test switch "3D with WebGL" off. The lamp kept on the box while turning, as for the 2D canvas, BG19)
+    const glWant = gl3dWanted() && tb.n > 0, glOn = glWant && gl3dReady();
+    // (the back of the glass of a tank, behind the liquid; with WebGL 2 the container is drawn by the GPU, and only its
+    // seams at the back here)
+    if (MD && MD.tank) { const t0 = performance.now(); glassPaint(g, MD, MX, 'back', dark, glOn); mMs.back = performance.now() - t0; }
+    const meshLines = mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null;
+    let glR = null;
+    if (glOn) {
+      // the container of a tank as a group of its own (after the floor's shadow, which it does not cast)
+      const nGlass = MD && MD.tank ? (tb.k = 9, meshToTris(MD.tank.glass, tb, MX)) : 0;
+      const lamp = LKS && shadows ? camN(LKS.lamp[0], LKS.lamp[1], LKS.lamp[2]) : LAMP;
+      // (coarser while turning when a drawing is slow: fewer pixels, and fewer layers of the see-through)
+      const q = Q3.captureQ || (Q3.turning && (GL3D.lastMs || 0) > 24 ? Math.min(dpr, 1.25) : Math.min(dpr, 3));
+      glR = gl3dPaint(g, tb, { W, H, q, cx, cy, S, ZR: Math.hypot(EX, EY, EZ) * 1.3, lamp, dark, mesh: meshLines, groups: gl3dGroups(D, MD).groups, shadow: shadows,
+        layers: Q3.turning ? 4 : 6, fade: fadeTo ? [fadeTo[0], fadeTo[1], fadeTo[2], VOL_FADE] : null, finish: devFlag('ms3d') });
+      // (the glass out of the triangles again: what follows, as the sizes on a solid, is of the liquid only)
+      tb.n -= nGlass;
+    }
+    if (!glR) gl3dHide();
+    c.dataset.gl = JSON.stringify(glR ? Object.assign({ on: true, renderer: GL3D.renderer }, glR) : { on: false, wanted: glWant, ready: GL3D.state === 1, error: GL3D.error || '' });
+    const surf = glR ? { shown: glR.tris, q: glR.q, SM: null, zbuf: null, shadow: null } : surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: meshLines, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite: !!Q3.turning, k: shK } : null,
       lock: LKS && shadows ? { L: camN(LKS.lamp[0], LKS.lamp[1], LKS.lamp[2]), map: LKS.SM ? [LKS.SM.MW, LKS.SM.MH] : null } : null });
     // (what the next turn keeps: the lamp's map and the floor's layer of this drawing, with its camera, BG19)
-    if (!Q3.turning && shadows && !Q3.captureQ) Q3.lastShade = { D, dark, EX, EY, EZ, ca, sa, ce, se, SM: surf.SM || null, floor: floorLayerNow, lamp: lampInBox(ca, sa, ce, se) };
+    if (!Q3.turning && shadows && !Q3.captureQ) Q3.lastShade = { D, dark, EX, EY, EZ, RV, SM: surf.SM || null, floor: floorLayerNow, lamp: lampInBox(RV) };
     else if (!Q3.turning && !shadows) Q3.lastShade = null;
     // (what was drawn, for the tests; shadow: the pixels in a shadow and at the soft edge of one, the
     // size of the lamp's map and the time to make it; floor: the cells of the floor's layer in a shadow)
@@ -11825,7 +12399,7 @@
       same: D.same || 0, seq: D.seq || 0, cut: GR ? { points: D.series.reduce((n, s) => n + (s.angP ? Object.keys(s.angP).length : 0), 0), dropped: cutLost } : null });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
-    if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
+    if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, RV, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
     // the color of the solid in the box, and what was drawn (for the tests)
     const lg = Q3.volUI && Q3.volUI.legend;
     if (lg) { lg.hidden = !vc; if (vc) { lg.firstChild.style.background = vc.swatch; lg.firstChild.style.borderColor = vc.line; } }
@@ -11836,23 +12410,37 @@
     const un = -ub, vn = -vb;
     let ze = null;
     for (const [eu, ev] of [[-EX, -EY], [-EX, EY], [EX, -EY], [EX, EY]]) { proj(eu, ev, 0); if (!ze || T[0] < ze.x) ze = { u: eu, v: ev, x: T[0] }; }
-    g.strokeStyle = axisColor; g.lineWidth = 1.2; g.beginPath();
-    line(-EX, vn, wb, EX, vn, wb); line(un, -EY, wb, un, EY, wb); line(ze.u, ze.v, -EZ, ze.u, ze.v, EZ);
-    g.stroke();
+    if (!boxOff) {
+      g.strokeStyle = axisColor; g.lineWidth = 1.2; g.beginPath();
+      line(-EX, vn, wb, EX, vn, wb); line(un, -EY, wb, un, EY, wb); line(ze.u, ze.v, -EZ, ze.u, ze.v, EZ);
+      g.stroke();
+    }
     g.fillStyle = axisColor; g.font = '11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     const out = (e, d) => e + Math.sign(e) * d; // a little outside the edge of the box
-    if (!MD) for (const x of gx) { proj(U(x), out(vn, 0.17), wb); g.fillText(fmt(x, stx), T[0], T[1]); }
-    if (!MD) for (const y of gy) { proj(out(un, 0.17), V(y), wb); g.fillText(fmt(y, sty), T[0], T[1]); }
+    // (feature/3d-view: the labels stay upright however the graph is turned; an axis seen end-on, as from the
+    // front or from above, has none, as they would all fall on one point)
+    const onScreen = (a, b) => { proj(a[0], a[1], a[2]); const x = T[0], y = T[1]; proj(b[0], b[1], b[2]); return [T[0] - x, T[1] - y]; };
+    const zDir = onScreen([ze.u, ze.v, -EZ], [ze.u, ze.v, EZ]), zLen = Math.hypot(zDir[0], zDir[1]);
+    const seen = { x: Math.hypot(...onScreen([-EX, vn, wb], [EX, vn, wb])) > 36, y: Math.hypot(...onScreen([un, -EY, wb], [un, EY, wb])) > 36, z: zLen > 36 };
+    // (a label put a little outside its edge in the box; when that is toward the eye, as from the front, it would sit on
+    // the edge: then it goes 14 px out from the middle of the picture instead)
+    const label = (txt, a, b, d, off) => {
+      proj(a[0], a[1], a[2]); const ex = T[0], ey = T[1]; proj(b[0], b[1], b[2]); let x = T[0], y = T[1];
+      if (Math.hypot(x - ex, y - ey) < d) { const dx = ex - cx, dy = ey - cy, l = Math.hypot(dx, dy) || 1; x = ex + dx / l * (off || 14); y = ey + dy / l * (off || 14); }
+      g.fillText(txt, x, y);
+    };
+    if (!MD && seen.x) for (const x of gx) label(fmt(x, stx), [U(x), vn, wb], [U(x), out(vn, 0.17), wb], 9);
+    if (!MD && seen.y) for (const y of gy) label(fmt(y, sty), [un, V(y), wb], [out(un, 0.17), V(y), wb], 9);
     g.textAlign = 'right';
-    if (!MD) for (const z of gz) {
+    if (!MD && seen.z) for (const z of gz) {
       if (Math.abs(Wz(z) - wb) < 0.1) continue;  // at the floor the x or y labels are there
       proj(ze.u, ze.v, Wz(z)); g.fillText(fmt(z, stz), T[0] - 7, T[1]);
     }
     g.font = 'bold 13px system-ui, sans-serif'; g.textAlign = 'center';
     if (!MD) {
-      proj(0, out(vn, 0.4), wb); g.fillText('x', T[0], T[1]);
-      proj(out(un, 0.4), 0, wb); g.fillText('y', T[0], T[1]);
-      proj(ze.u, ze.v, EZ); g.fillText('z', T[0], T[1] - 14);
+      if (seen.x) label('x', [0, vn, wb], [0, out(vn, 0.4), wb], 20, 30);
+      if (seen.y) label('y', [un, 0, wb], [out(un, 0.4), 0, wb], 20, 30);
+      if (zLen > 12) { proj(ze.u, ze.v, EZ); g.fillText('z', T[0] + zDir[0] / zLen * 14, T[1] + zDir[1] / zLen * 14); }
     }
     // points (the rows of a matrix, the solution of a linear system), in front of the surfaces
     for (const p of Q3.points || []) {
@@ -11877,7 +12465,7 @@
     if (MD) {
       const cr = c.getBoundingClientRect(), ctl = c.parentElement && c.parentElement.querySelector('.plot-ctl'), kr = ctl ? ctl.getBoundingClientRect() : null;
       const avoid = kr && kr.width ? { x: kr.left - cr.left - 4, y: kr.top - cr.top - 4, w: kr.width + 8, h: kr.height + 8 } : null;
-      const t0 = performance.now(), mo = modelOverlay(g, MD, MX, surf.zbuf, { css, dark, W, H, avoid, growing: mGrow < 1 || !!Q3.fill });
+      const t0 = performance.now(), mo = modelOverlay(g, MD, MX, surf.zbuf, { css, dark, W, H, avoid, growing: mGrow < 1 || !!Q3.fill, gl: !!glR });
       mMs.over = performance.now() - t0;
       for (const k in mMs) mMs[k] = Math.round(mMs[k] * 10) / 10;
       mo.ms = mMs;
@@ -11888,6 +12476,19 @@
     // fading out over the full drawing)
     Q3.lastDrawMs = performance.now() - t3;
     c.dataset.ms = String(Math.round(Q3.lastDrawMs));
+    // (feature/3d-view, test builds: "Show the time of a 3D drawing": how it was drawn and how long it took, at the lower
+    // left; while turning, also the frames a second)
+    if (devFlag('ms3d')) {
+      const now = performance.now(), fps = Q3.turning && Q3.msPrev ? Math.round(1000 / Math.max(1, now - Q3.msPrev)) : 0;
+      Q3.msPrev = now;
+      const txt = (glR ? 'WebGL 2' + (glR.layers ? ' · ' + (glR.see ? 'see-through' : 'clear') + ' ' + glR.layers : '') + (glR.mat ? ' · ' + glR.mat : '') : 'canvas') + ' · ' + tb.n + ' tris · ' + Math.round(Q3.lastDrawMs) + ' ms' + (glR ? ' (GPU ' + Math.round(glR.ms) + ')' : '') + (fps ? ' · ' + fps + ' fps' : '');
+      let mo = Q3.msEl;
+      if (!mo) mo = Q3.msEl = el('div', { class: 'plot-ms', 'aria-hidden': 'true' });
+      if (c.parentElement && mo.parentElement !== c.parentElement) c.parentElement.appendChild(mo);
+      mo.textContent = txt; mo.hidden = false;
+      c.dataset.msText = txt;
+    } else { delete c.dataset.msText; if (Q3.msEl) Q3.msEl.hidden = true; }
+    c.dataset.view = JSON.stringify({ rot: RV.map((x) => Math.round(x * 1e4) / 1e4), pan: PAN.map(Math.round), zoom: Math.round(Q3.zoom * 1000) / 1000, labels: seen });
     if (crossFade) {
       c.dataset.fade = 'in';
       void getComputedStyle(crossFade).opacity;
@@ -11918,44 +12519,90 @@
     Q3.tip.style.display = 'block';
     draw3d();
   }
+  // (feature/3d-view) one finger: a drag to the side turns the graph about the z axis of the box, so the floor does
+  // not tip (the owner's choice, 11-22 13:17, instead of a ball under the finger); a drag up or down turns it up or
+  // down about the screen's horizontal axis, over the top and under the bottom too (until 1.13.0 at most ±86°);
+  // 0.01 radian a CSS pixel. Upside down, the turn about z goes the other way, so that the front still follows the
+  // finger. Two fingers: pinch to zoom (about the point between them), move them together to shift the picture,
+  // twist them to turn it in the screen (after 7° of twist, so that a pinch does not turn it)
   function setup3dGestures(wrap) {
-    const pts = new Map();
-    let start = null, moved = false, lv = null;
-    const snapshot = () => ({ az: Q3.az, el: Q3.el, zoom: Q3.zoom, pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) });
+    const pts = new Map(), last = new Map();
+    let start = null, moved = false, lv = null, two = null;
+    const snapshot = () => ({ zoom: Q3.zoom, pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) });
     wrap.addEventListener('pointerdown', (e) => {
-      if (e.target.tagName === 'BUTTON' || !Q3.data) return;
+      if (Q3.viewMenu && !e.target.closest('.view3d-menu') && !e.target.closest('button.views')) closeViewMenu3d();
+      if (e.target.closest('button') || !Q3.data) return;  // (a button, or the picture on one)
+      Q3.viewAnim = null;  // (a set view on its way: it stays where it is)
       try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* the pointer is already gone */ }
       // (D6) a tank of "Shapes": a drag that starts at the level of the liquid moves it (up and down), not the graph
       if (!pts.size && !lv && Q3.model && Q3.model.tank && nearLevel3d(e.clientX, e.clientY) && Q3.levelHit && Q3.levelHit.perH) {
         if (Q3.fill) { Q3.fill = null; Q3.model.tank.hShow = Q3.model.tank.h; }
-        lv = { id: e.pointerId, y: e.clientY, h: Q3.model.tank.h, per: Q3.levelHit.perH };
+        lv = { id: e.pointerId, y: e.clientY, h: Q3.model.tank.h, per: Q3.levelHit.perH, at: { x: e.clientX, y: e.clientY } };
         if (Q3.canvas) Q3.canvas.dataset.drag = 'level';
         return;
       }
+      // (feature/3d-view) a second finger while the level is moved: the level back where it was, and the two fingers
+      // zoom, shift and twist the graph
+      if (lv && e.pointerId !== lv.id) {
+        const L = lv; lv = null;
+        if (Q3.canvas) delete Q3.canvas.dataset.drag;
+        setLevel3d(L.h, true);
+        pts.set(L.id, Object.assign({}, L.at)); last.set(L.id, Object.assign({}, L.at));
+      }
       if (Q3.grow && !Q3.grow.still) { Q3.grow = null; showAngle3d(360); if (Q3.canvas) Q3.canvas.dataset.grow = 'stopped'; draw3d(); } // a touch shows the whole solid at once
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      last.set(e.pointerId, { x: e.clientX, y: e.clientY });
       start = snapshot();
-      if (pts.size > 1) moved = true; else moved = false;
+      if (pts.size > 1) { moved = true; two = { twist: 0, twisting: false, shift: [0, 0], shifting: false }; } else moved = false;
     });
     wrap.addEventListener('pointermove', (e) => {
-      if (lv && e.pointerId === lv.id) { setLevel3d(lv.h + (e.clientY - lv.y) / lv.per, false); return; }
+      if (lv && e.pointerId === lv.id) { lv.at = { x: e.clientX, y: e.clientY }; setLevel3d(lv.h + (e.clientY - lv.y) / lv.per, false); return; }
       if (!pts.has(e.pointerId) || !start) return;
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const ids = Array.from(pts.keys());
+      const keepLast = () => { for (const id of ids) last.set(id, Object.assign({}, pts.get(id))); };
       if (ids.length === 1) {
         const p0 = start.pts.get(ids[0]), p1 = pts.get(ids[0]);
         if (!p0) return;
-        const dx = p1.x - p0.x, dy = p1.y - p0.y;
-        if (!moved && Math.abs(dx) + Math.abs(dy) <= 6) return;
+        if (!moved && Math.abs(p1.x - p0.x) + Math.abs(p1.y - p0.y) <= 6) return;
         moved = true;
-        Q3.az = start.az + dx * 0.01;
-        Q3.el = Math.max(-1.5, Math.min(1.5, start.el + dy * 0.01));
+        const q = last.get(ids[0]) || p0, dx = p1.x - q.x, dy = p1.y - q.y, d = Math.hypot(dx, dy);
+        keepLast();
+        if (!(d > 0)) return;
+        let R = Q3.rot;
+        // across: about the box's z axis (on the right of R); the other way while upside down (the camera's up has a
+        // negative z)
+        if (dx) { const a = dx * 0.01 * (R[5] < 0 ? -1 : 1), c = Math.cos(a), s = Math.sin(a); R = rotMul(R, [c, -s, 0, s, c, 0, 0, 0, 1]); }
+        // up and down: about the camera's x axis (on the left; the camera's y is up and the screen's down)
+        if (dy) R = rotMul(rotAxis(-1, 0, 0, dy * 0.01), R);
+        Q3.rot = rotFix(R);
       } else {
-        const a0 = start.pts.get(ids[0]), b0 = start.pts.get(ids[1]), a1 = pts.get(ids[0]), b1 = pts.get(ids[1]);
-        if (!a0 || !b0) return;
+        const a0 = last.get(ids[0]), b0 = last.get(ids[1]), a1 = pts.get(ids[0]), b1 = pts.get(ids[1]);
+        if (!a0 || !b0) { keepLast(); return; }
         const d0 = Math.hypot(a0.x - b0.x, a0.y - b0.y), d1 = Math.hypot(a1.x - b1.x, a1.y - b1.y);
+        keepLast();
         if (d0 < 10 || d1 < 10) return;
-        Q3.zoom = Math.max(0.4, Math.min(6, start.zoom * d1 / d0));
+        const r = Q3.canvas ? Q3.canvas.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
+        const m0 = [(a0.x + b0.x) / 2 - r.left - r.width / 2, (a0.y + b0.y) / 2 - r.top - r.height / 2];
+        const m1 = [(a1.x + b1.x) / 2 - r.left - r.width / 2, (a1.y + b1.y) / 2 - r.top - r.height / 2];
+        const pan = (Q3.pan || [0, 0]).slice();
+        // pinch: the point between the fingers stays where it is
+        const z1 = Math.max(0.4, Math.min(6, Q3.zoom * d1 / d0)), f = z1 / Q3.zoom;
+        Q3.zoom = z1;
+        pan[0] = m0[0] * (1 - f) + pan[0] * f; pan[1] = m0[1] * (1 - f) + pan[1] * f;
+        // move: the picture follows (after 8 px)
+        if (!two) two = { twist: 0, twisting: false, shift: [0, 0], shifting: false };
+        const sx = m1[0] - m0[0], sy = m1[1] - m0[1];
+        if (two.shifting) { pan[0] += sx; pan[1] += sy; }
+        else { two.shift[0] += sx; two.shift[1] += sy; if (Math.hypot(two.shift[0], two.shift[1]) > 8) { two.shifting = true; pan[0] += two.shift[0]; pan[1] += two.shift[1]; } }
+        const lim = [Math.max(r.width, 100) * Q3.zoom, Math.max(r.height, 100) * Q3.zoom];
+        Q3.pan = [Math.max(-lim[0], Math.min(lim[0], pan[0])), Math.max(-lim[1], Math.min(lim[1], pan[1]))];
+        // twist: turned in the screen as the fingers turn (clockwise on the screen is a negative turn about the
+        // camera's z in its axes, x right and y up)
+        let t = Math.atan2(b1.y - a1.y, b1.x - a1.x) - Math.atan2(b0.y - a0.y, b0.x - a0.x);
+        if (t > Math.PI) t -= 2 * Math.PI; else if (t < -Math.PI) t += 2 * Math.PI;
+        if (!two.twisting) { two.twist += t; if (Math.abs(two.twist) > 0.12) { two.twisting = true; t = two.twist; } else t = 0; }
+        if (t) Q3.rot = rotFix(rotMul(rotAxis(0, 0, 1, -t), Q3.rot));
       }
       clearMark3d();
       // while the graph is turned, the surfaces and the liquid are drawn with fewer pixels; in full
@@ -11971,16 +12618,11 @@
         return;
       }
       if (!pts.has(e.pointerId)) return;
-      pts.delete(e.pointerId);
+      pts.delete(e.pointerId); last.delete(e.pointerId);
+      if (pts.size < 2) two = null;
       if (!moved && pts.size === 0 && e.type === 'pointerup') pick3d(e.clientX, e.clientY);
       start = pts.size ? snapshot() : null;
-      if (!pts.size && Q3.turning) {
-        // (1.12.0, BG08, BG19: the full drawing, with the lamp back at the upper left of the screen, fades in
-        // over 0.2 s)
-        if (Q3.shLock) Q3.fadeInNext = true;
-        Q3.shLock = null;
-        Q3.turning = false; Q3.turnN = 0; Q3.turnMs = 0; Q3.turnList = []; requestDraw3d();
-      }
+      if (!pts.size && Q3.turning) endTurn3d();
     };
     wrap.addEventListener('pointerup', end);
     wrap.addEventListener('pointercancel', end);
@@ -12331,7 +12973,15 @@
     ['kerosene', tr('Kerosene about 0.80 g/cm³ (typical)', '灯油 約 0.80 g/cm³（目安）'), '0.80 g/cm^3'],
     ['gasoline', tr('Gasoline about 0.75 g/cm³ (typical)', 'ガソリン 約 0.75 g/cm³（目安）'), '0.75 g/cm^3'],
     ['concrete', tr('Concrete about 2.3 t/m³ (typical)', 'コンクリート 約 2.3 t/m³（目安）'), '2.3 t/m^3'],
-    ['iron', tr('Iron 7.85 g/cm³ (typical)', '鉄 7.85 g/cm³（目安）'), '7.85 g/cm^3']
+    ['wood', tr('Wood about 0.5 g/cm³ (typical; 0.3 to 0.9 by species and dryness)', '木 約 0.5 g/cm³（目安。種類と乾き具合で 0.3〜0.9）'), '0.5 g/cm^3'],
+    ['iron', tr('Iron 7.85 g/cm³ (typical)', '鉄 7.85 g/cm³（目安）'), '7.85 g/cm^3'],
+    ['stainless', tr('Stainless steel (SUS304) 7.93 g/cm³ (typical)', 'ステンレス（SUS304）7.93 g/cm³（目安）'), '7.93 g/cm^3'],
+    ['aluminium', tr('Aluminium 2.70 g/cm³ (typical)', 'アルミニウム 2.70 g/cm³（目安）'), '2.70 g/cm^3'],
+    ['copper', tr('Copper 8.96 g/cm³ (typical)', '銅 8.96 g/cm³（目安）'), '8.96 g/cm^3'],
+    ['brass', tr('Brass 8.5 g/cm³ (typical)', '真ちゅう 8.5 g/cm³（目安）'), '8.5 g/cm^3'],
+    ['pla', tr('PLA (3D printing) 1.24 g/cm³ (typical)', 'PLA（3D プリンター）1.24 g/cm³（目安）'), '1.24 g/cm^3'],
+    ['abs', tr('ABS 1.05 g/cm³ (typical)', 'ABS 1.05 g/cm³（目安）'), '1.05 g/cm^3'],
+    ['acrylic', tr('Acrylic 1.19 g/cm³ (typical)', 'アクリル 1.19 g/cm³（目安）'), '1.19 g/cm^3']
   ];
   // the units a volume or an area can be shown in
   const VOL_UNITS = [['L', 'L'], ['mL', 'mL'], ['m^3', 'm³'], ['cm^3', 'cm³'], ['gal', 'US gal'], ['ft^3', 'ft³']];
@@ -12761,6 +13411,11 @@
         if (G.k !== sh.k) return;
         const model = Object.values(s).every((x) => isFinite(x)) ? shapeModel(sh.k, s, labelsOf(sh, s, base)) : null;
         if (!model) { toast(tr('These sizes cannot be drawn in 3D', 'この大きさでは 3D で描けません'), 2600); return; }
+        // (feature/3d-view, with WebGL 2: the look of the material chosen for the weight; a solid of that material, a
+        // tank's liquid of water, seawater, kerosene or gasoline; other choices keep the app's colors)
+        const look = matLook(G.dens, G.dens === 'own' ? pfDensity('own', G.dv) : null);
+        if (model.tank) model.liquidMat = look && LIQUID_KEYS.includes(look.key) ? look : null;
+        else model.mat = look;
         // a tank: the volume scale (round amounts in the unit of the results; about 3 with their numbers)
         let scale = null;
         if (model.tank) {
@@ -12867,7 +13522,9 @@
     [tr('Stepped shaft (iron)', '段付きの軸（鉄）'), { unit: 'mm', dia: true, rows: [[0, 20], [30, 20], [30, 12], [70, 12]], inner: [], dens: 'iron' }],
     [tr('Cup', 'コップ'), { unit: 'cm', dia: true, rows: [[0, 6], [10, 8]], inner: [[0.5, 5.4], [10, 7.6]], dens: '' }],
     [tr('Vase', '花瓶'), { unit: 'cm', dia: true, rows: [[0, 8], [6, 14], [14, 10], [20, 6], [24, 7]], inner: [], dens: '' }]
-  ];
+  ].concat(PRO.billing === 'debug' && (window.QalcNative || devFlag('pf200')) ? [[tr('200 rows (test)', '200 行（試験用）'), { unit: 'mm', dia: true, rows: PF_ROWS200(), inner: [], dens: '' }]] : []);
+  // (feature/3d-view, test builds: a long profile, 200 rows of a turned part with waves and grooves, to time the 3D)
+  const PF_ROWS200 = () => Array.from({ length: 200 }, (_, i) => [i, Math.round((44 + 14 * Math.sin(i / 17) + 5 * Math.sin(i / 4.3) - (i % 40 < 3 ? 6 : 0)) * 10) / 10]);
   // the points of a profile: [{ z, r, zs, rs (as typed, for the exact expression) }] or { error, row }
   function pfPoints(rows, dia) {
     const pts = [];
@@ -13005,6 +13662,8 @@
         const vals = (D.vals || []).slice(), T = D.three;
         const model = profileModel(T.o, T.i, T.smooth);
         if (!model) { toast(tr('These sizes cannot be drawn in 3D', 'この大きさでは 3D で描けません'), 2600); return; }
+        // (feature/3d-view: the look of the material chosen for the weight, with WebGL 2)
+        model.mat = matLook(D.dens, D.dens === 'own' ? pfDensity('own', D.dv) : null);
         // above the graph: the outer volume, and the capacity of a container or the surface area
         const line = (name) => { const v = vals.find((x) => x.name === name); return v ? v.name + ' ' + v.text : ''; };
         openSolid3d({ model, title: tr('Solid from a profile', '輪郭から回転体'),
@@ -13162,7 +13821,11 @@
     const g = c.getContext('2d'), cs = getComputedStyle(document.documentElement);
     g.fillStyle = cs.getPropertyValue('--plot-bg').trim() || '#fff'; g.fillRect(0, 0, W, H + band);
     g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    // (feature/3d-view: a solid drawn with WebGL 2 is a layer over the canvas: drawn once into the canvas for the picture)
+    const glLayer = canvas === Q3.canvas && GL3D.cv && !GL3D.cv.hidden;
+    if (glLayer) { Q3.composite = true; try { draw3d(); } finally { Q3.composite = false; } }
     g.drawImage(canvas, 0, 0, W, H);
+    if (glLayer) requestDraw3d();
     if (band) {
       g.fillStyle = cs.getPropertyValue('--surface').trim() || '#f4f6fa'; g.fillRect(0, H, W, band);
       g.textBaseline = 'middle'; g.font = Math.round(13 * s) + 'px system-ui, sans-serif';
@@ -13211,13 +13874,13 @@
     if (!c || !Q3.data || Q3.gifBusy) return null;
     Q3.gifBusy = true;
     toast(tr('Making the moving picture…', '動く画像を作っています…'), 2500);
-    const keep = { az: Q3.az, grow: Q3.grow, gv: c.dataset.grow };
+    const keep = { rot: Q3.rot, grow: Q3.grow, gv: c.dataset.grow };
     try {
       let w = Math.min(GIF_W, c.width), out = null;
       const frames = [];
       for (let f = 0; f < GIF_FRAMES; f++) {
         if (Q3.revInfo) { const th = 2 * Math.PI * (f + 1) / GIF_FRAMES; Q3.grow = f === GIF_FRAMES - 1 ? null : { ax: Q3.revInfo, theta: th, still: true }; }
-        else Q3.az = keep.az + 2 * Math.PI * f / GIF_FRAMES;
+        else { const th = 2 * Math.PI * f / GIF_FRAMES, cs = Math.cos(th), sn = Math.sin(th); Q3.rot = rotMul(keep.rot, [cs, -sn, 0, sn, cs, 0, 0, 0, 1]); }
         Q3.captureQ = 1.5;
         draw3d();
         frames.push(await new Promise((r) => requestAnimationFrame(() => { const q = el('canvas'); q.width = c.width; q.height = c.height; q.getContext('2d').drawImage(c, 0, 0); r(q); })));
@@ -13236,7 +13899,7 @@
       }
       return out;
     } finally {
-      Q3.captureQ = null; Q3.az = keep.az; Q3.grow = keep.grow; if (keep.gv !== undefined) c.dataset.grow = keep.gv;
+      Q3.captureQ = null; Q3.rot = keep.rot; Q3.grow = keep.grow; if (keep.gv !== undefined) c.dataset.grow = keep.gv;
       Q3.gifBusy = false;
       draw3d();
     }
@@ -16367,7 +17030,17 @@
         if (window.QalcNative && QalcNative.setTestPro) QalcNative.setTestPro(box.checked);
         else if (window.QalcDev && QalcDev.setTestPro) QalcDev.setTestPro(box.checked);
       });
+      // (feature/3d-view) WebGL 2 for "Solid from a profile" on or off, and the time of each 3D drawing in a corner; before
+      // the switch of Pro, which stays the last one
+      const flag = (k, label, def) => {
+        const b = el('input', { type: 'checkbox' });
+        try { const v = localStorage.getItem('qalc.dev.' + k); b.checked = v === null ? def : v === 'true'; } catch (e) { b.checked = def; }
+        b.addEventListener('change', () => { try { localStorage.setItem('qalc.dev.' + k, String(b.checked)); } catch (e) { } });
+        return el('label', { class: 'setting' }, el('div', { class: 'lbl' }, el('div', { text: label })), b);
+      };
       body.append(el('div', { class: 'section-title', text: tr('Test build', 'テスト版') }),
+        flag('gl3d', tr('3D with WebGL 2', '3D を WebGL 2 で描く'), true),
+        flag('ms3d', tr('Show the time of each 3D drawing (for testing)', '3D の描画時間を表示する（テスト用）'), false),
         el('label', { class: 'setting' }, el('div', { class: 'lbl' }, el('div', { text: tr('Pro unlocked (for testing)', 'Pro を有効にする（テスト用）') })), box));
       // (feature/ratings) the free trial of 3D again, and Google Play's review sheet now (its conditions ignored)
       const R = reviewRec(), why = reviewWhy(), inst = installTime();

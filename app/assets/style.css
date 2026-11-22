@@ -637,6 +637,12 @@ html.big-keys #expr::placeholder { font-size: .8em; }
 .plot-wrap canvas { width: 100%; height: 100%; display: block; }
 .plot-wrap canvas.plot-fade { position: absolute; left: 0; top: 0; pointer-events: none; }
 .plot-wrap canvas.plot-fade[hidden] { display: none; }
+/* (feature/3d-view) the solid drawn with WebGL 2, a layer over the 2D canvas; the time of a drawing (test builds) */
+.plot-wrap canvas.plot-gl { position: absolute; left: 0; top: 0; pointer-events: none; }
+.plot-wrap canvas.plot-gl[hidden] { display: none; }
+.plot-ms { position: absolute; left: 6px; top: 6px; padding: 2px 6px; border-radius: 6px; font: 600 11px system-ui, sans-serif; background: rgba(255, 255, 255, .85); color: #111827; pointer-events: none; }
+html.dark .plot-ms { background: rgba(0, 0, 0, .6); color: #e5e7eb; }
+.plot-ms[hidden] { display: none; }
 .plot-ctl { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .plot-ctl button {
   width: 40px; height: 40px;
@@ -648,6 +654,15 @@ html.big-keys #expr::placeholder { font-size: .8em; }
 }
 .plot-ctl button.eq { font-size: 13px; font-weight: 700; }
 .plot-ctl button.eq.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); opacity: 1; }
+/* (feature/3d-view) the set views of the 3D graph: a small menu beside the buttons */
+.plot-ctl button.views { display: flex; align-items: center; justify-content: center; padding: 0; color: var(--text); }
+.plot-ctl button.views svg { pointer-events: none; }
+.view3d-menu {
+  position: absolute; z-index: 4; display: flex; flex-direction: column; min-width: 150px; padding: 4px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
+}
+.view3d-menu button { min-height: 44px; padding: 0 14px; text-align: left; white-space: nowrap; border: 0; background: none; border-radius: 8px; color: var(--text); font-size: 15px; }
+.view3d-menu button:active { background: var(--surface-2); }
 .plot-tip {
   position: absolute; left: 8px; bottom: 8px;
   background: var(--surface);
@@ -1511,6 +1526,16 @@ body.hselect #history { padding-bottom: 150px; }
 .rev-pappus { font-size: 13px; color: var(--muted); margin: 4px 0; overflow-wrap: anywhere; }
 .rev-angle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rev-angle-v, .rev-n-v { min-width: 3.2em; font-variant-numeric: tabular-nums; }
+/* (feature/3d-view) see-through and the box, for a solid of "Solid from a profile" (WebGL 2) */
+.see-row .btn.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.see-row .btn:disabled { opacity: .45; }
+.see-row .see-note { flex-basis: 100%; font-size: 13px; color: var(--muted, #6b7280); }
+/* (feature/3d-view) what is see-through: a chip for each formula, the solid, the container and the liquid of a tank */
+.see-row .see-chips { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+.see-row .see-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+.see-row .see-chip > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14em; }
+.see-row .see-chip.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.see-row .see-sw { width: 12px; height: 12px; border-radius: 3px; flex: none; box-shadow: 0 0 0 1px rgba(0,0,0,.18) inset; }
 
 /* the everyday tools (1.12.0, C1) */
 .tool-choice .seg.mini { flex: 1 1 0; flex-wrap: wrap; }

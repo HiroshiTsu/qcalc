@@ -305,11 +305,13 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :what: Die Form aus [[Solids]] oder [[Tanks]] mit den eingegebenen Maßen in 3D zum Drehen. Darüber groß das Volumen und die Oberfläche des Werkzeugs (bei einem Tank die Füllmenge und das Fassungsvermögen).
 :step: Wählen Sie in [[Solids]] oder [[Tanks]] der Werkzeuge eine Form und geben Sie die Maße ein.
 :step: Tippen Sie oben links am Bild auf [[!⟳ 3D]] (vorgelesen als [[View in 3D]]). Die Form wächst in 3D.
-:step: Mit einem Finger drehen, mit zwei zoomen. Ein Rotationskörper zeigt mit [[Cut in half]] seinen Schnitt.
+:step: Mit einem Finger in jede Richtung drehen (auch über oben und unten hinaus). Mit zwei Fingern: auseinander oder zusammen zum Zoomen, gemeinsam ziehen zum Verschieben, verdrehen zum Drehen im Bild. Ein Rotationskörper zeigt mit [[Cut in half]] seinen Schnitt.
+:step: Mit der Würfel-Schaltfläche wählen Sie sofort [[From the front]], [[From above]] oder [[From the side]]. [[!⟲]] stellt die erste Ansicht und Größe wieder her.
 :step: [[← Back to the shape]] führt mit derselben Form und denselben Maßen zum Werkzeug zurück.
 :shot: shapes3d | Ein liegender Tank mit Böden in 3D
 :example: Ein Zylinder mit 30 cm Durchmesser und 50 cm Höhe → Volumen 11250π ≈ 35342,91735 cm³
-:tip: Ein Tank wird durchsichtig gezeichnet, die Flüssigkeit als Körper in eigener Farbe. Ziehen Sie vom Füllstand (dem Kästchen mit der Menge) nach oben oder unten, um ihn zu bewegen: [[Height of the liquid]] im Werkzeug ändert sich mit. Ein Ziehen an anderer Stelle dreht den Graphen. Auch der Regler [[Level]] darunter bewegt ihn.
+:tip: Ein Tank wird wie klares Glas gezeichnet, die Flüssigkeit als Körper, der wie sie aussieht (Wasser, Meerwasser, Petroleum oder Benzin; bei anderer Wahl in der Farbe der App). Ziehen Sie vom Füllstand (dem Kästchen mit der Menge) nach oben oder unten, um ihn zu bewegen: [[Height of the liquid]] im Werkzeug ändert sich mit. Ein Ziehen an anderer Stelle dreht den Graphen. Auch der Regler [[Level]] darunter bewegt ihn.
+:tip: Ein Körper wird im Aussehen des für sein Gewicht gewählten Materials gezeichnet ([[Material (density)]]: Eisen, Edelstahl, Aluminium, Kupfer, Messing, Holz, PLA, ABS, Acryl und andere); ohne Wahl in Blau. [[See-through]] und die Schaltflächen darunter gibt es auch hier ([3D-Graph](#graph-3d)).
 :tip: Die Striche an der Wand sind runde Mengen: Bei einem liegenden oder kugelförmigen Tank sind ihre Abstände sichtbar ungleich.
 :tip: Die Zahlen am Füllstand sind zum Ablesen gerundet (3 signifikante Stellen, % mit einer Nachkommastelle); die genauen Werte stehen über dem Graphen und im Werkzeug ([Angezeigte Stellen je Werkzeug](#digits)).
 :note: Ohne QCalc Pro erscheint direkt über den Ergebnissen die Zeile [[Turn it in 3D (QCalc Pro)]].
@@ -407,8 +409,13 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :what: Zeichnet Flächen z = f(x, y) und Körper in 3D, die Sie mit dem Finger drehen können.
 :step: Wählen Sie [[!3D  z = f(x, y)]] unter [[Graph]].
 :step: Geben Sie bis zu vier Funktionen und die Bereiche von x und y ein und drücken Sie [[Draw]].
-:step: Mit einem Finger drehen, mit zwei zoomen.
+:step: Mit einem Finger in jede Richtung drehen (auch über oben und unten hinaus). Mit zwei Fingern: auseinander oder zusammen zum Zoomen, gemeinsam ziehen zum Verschieben, verdrehen zum Drehen im Bild.
+:step: Mit der Würfel-Schaltfläche wählen Sie sofort [[From the front]], [[From above]] oder [[From the side]]. [[!⟲]] stellt die erste Ansicht und Größe wieder her.
+:step: [[See-through]] macht Flächen und Körper durchsichtig: Rück- und Innenseiten und die Stellen, an denen sich zwei Flächen schneiden, werden sichtbar, die Kanten bleiben. Der Schieberegler stellt die Deckkraft ein. Bei zwei oder mehr Dingen wählen die Schaltflächen darunter, was durchsichtig ist (zum Beispiel nur der [[Container]] eines Tanks, die [[Liquid]] kräftig).
+:step: [[Box and axes]] blendet den Kasten mit Gitter und Achsen aus und wieder ein.
 :shot: graph3d | Der 3D-Graph (die Beispielkugel)
+:tip: 3D wird mit der GPU des Geräts (WebGL 2) gezeichnet, mit Licht und Schatten fast wie echt; die Farben nach der Höhe bleiben. Ist es langsam, wird beim Drehen etwas gröber gezeichnet und nach dem Loslassen wieder scharf.
+:tip: Auf einem Gerät ohne WebGL 2 wird 3D wie bisher gezeichnet; dann lässt sich [[See-through]] nicht drücken, und es erscheint „[[Not available on this device]]“.
 :tip: [[Partial derivatives ▾]] zeichnet ∂f/∂x und ∂f/∂y.
 
 ## volume-3d | Volumen und Oberfläche (3D)
