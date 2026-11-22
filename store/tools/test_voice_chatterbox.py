@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Tests of video_voice.py --engine chatterbox: a small made-up manifest of chatterbox_tts.py with WAV files, put
+"""Tests of video_voice.py --engine chatterbox (and --engine tts, the subtitles at the times of the voice, video_render.py
+--voice-cues): a small made-up manifest of chatterbox_tts.py with WAV files, put
 into small videos (the tests that make videos are skipped when ffmpeg is not there). Python standard library only.
 Usage: python3 store/tools/test_voice_chatterbox.py [-v]
 """
@@ -194,6 +195,105 @@ class Videos(Base):
         finally:
             V.OPT, V.LANGS, V.ONLY = saved
         self.assertTrue(os.path.exists(os.path.join(self.work, 'out-voice', 'ja', 'short-4-tank.mp4')))
+
+
+def speech(path, parts, rate=24000):
+    """A WAV of tones and silences: parts = [(seconds, loud)]."""
+    frames = []
+    for secs, loud in parts:
+        n = int(secs * rate)
+        frames += [int(6000 * math.sin(2 * math.pi * 220 * k / rate)) if loud else 0 for k in range(n)]
+    with wave.open(path, 'wb') as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(struct.pack('<%dh' % len(frames), *frames))
+
+
+class VoiceCues(Base):
+    """The subtitles at the times of the voice (11-22): the pauses of the WAV between the lines of a paragraph."""
+
+    def test_spans_at_the_pauses(self):
+        w = os.path.join(self.work, 'p.wav')
+        # 0.2 s quiet, line 1 for 2.0 s, a pause of 0.5 s, line 2 for 1.0 s with a short breath of 0.05 s in it, a pause of
+        # 0.4 s, line 3 for 1.5 s, 0.3 s quiet
+        speech(w, [(0.2, 0), (2.0, 1), (0.5, 0), (0.5, 1), (0.05, 0), (0.5, 1), (0.4, 0), (1.5, 1), (0.3, 0)])
+        spans, found = self.V.speech_spans(w, [10, 5, 7])
+        self.assertEqual(found, 2)
+        want = [(0.2, 2.2), (2.7, 3.75), (4.15, 5.65)]
+        for (a, b), (c, d) in zip(spans, want):
+            self.assertAlmostEqual(a, c, delta=0.03)
+            self.assertAlmostEqual(b, d, delta=0.03)
+
+    def test_spans_without_a_pause_follow_the_lengths(self):
+        w = os.path.join(self.work, 'p.wav')
+        speech(w, [(3.0, 1)])
+        spans, found = self.V.speech_spans(w, [1, 2])
+        self.assertEqual(found, 0)
+        self.assertAlmostEqual(spans[0][1], 1.0, delta=0.03)
+        self.assertAlmostEqual(spans[1][0], 1.0, delta=0.06)
+
+    def test_cues_follow_the_voice_and_speed(self):
+        segs = [{'dur': 10, 'lines': ['one two three four', 'five six']}, {'dur': 4, 'lines': []}]
+        w = os.path.join(self.work, 'p.wav')
+        speech(w, [(0.1, 0), (3.0, 1), (0.6, 0), (2.0, 1), (0.2, 0)])
+        cues, found, bounds = self.V.voice_cues('en', segs, {0: (w, 0.15, 9.7)})
+        self.assertEqual((found, bounds), (1, 1))
+        (a1, b1, l1), (a2, b2, l2) = cues
+        self.assertEqual((l1, l2), ('one two three four', 'five six'))
+        self.assertAlmostEqual(a1, 0.15 + 0.1 - 0.15, delta=0.03)   # 0.15 s before the voice
+        self.assertAlmostEqual(a2, 0.15 + 3.7 - 0.12, delta=0.03)   # 0.12 s before the second line
+        self.assertAlmostEqual(b1, a2 - 0.04, delta=0.001)
+        self.assertAlmostEqual(b2, 0.15 + 5.7 + 0.7, delta=0.03)    # 0.7 s after the voice
+        # read 1.5 times faster (longer than its room): the times shrink with it
+        speech(w, [(0.1, 0), (6.0, 1), (1.2, 0), (4.0, 1), (0.4, 0)])
+        cues, _f, _b = self.V.voice_cues('en', segs, {0: (w, 0.15, 9.7)})
+        self.assertAlmostEqual(cues[1][0], 0.15 + 7.3 / (11.7 / 9.7) - 0.12, delta=0.05)
+        self.assertLessEqual(cues[1][1], 10 - 0.1 + 1e-9)            # inside its segment
+
+    def test_engine_tts_and_cues_only(self):
+        # voice-tts/ (tts_engines.py) instead of voice-chatterbox/; --cues-only writes the cues without the videos
+        shutil.move(os.path.join(self.work, 'voice-chatterbox'), os.path.join(self.work, 'voice-tts'))
+        for r in self.rows:
+            r['engine'], r['voice'] = 'qwen3', 'female'
+        man = {'langs': {'ja': self.rows}, 'use': {'ja': 'qwen3:female'}}
+        with open(os.path.join(self.work, 'voice-tts', 'manifest.json'), 'w', encoding='utf-8') as f:
+            json.dump(man, f, ensure_ascii=False)
+        with self.assertRaises(self.V.NarrationError):
+            self.V.chatterbox_manifest('chatterbox')
+        creport = []
+        made = self.V.chatterbox_voices('ja', self.vids(), engine='tts', cues_only=True, cue_report=creport)
+        self.assertEqual(made, list(self.VIDEOS))
+        self.assertFalse(os.path.exists(os.path.join(self.work, 'out-voice')))
+        for n in self.VIDEOS:
+            with open(os.path.join(self.work, 'cues', 'ja', n + '.json'), encoding='utf-8') as f:
+                cues = json.load(f)
+            segs = [s for v, s in self.vids() if v == n][0]
+            self.assertEqual([c[2] for c in cues], [l for s in segs for l in s['lines']])
+            with open(os.path.join(self.work, 'cues', 'ja', n + '.srt'), encoding='utf-8') as f:
+                self.assertIn(' --> ', f.read())
+        self.assertEqual([r[1] for r in creport], list(self.VIDEOS))
+
+    def test_render_reads_the_voice_cues(self):
+        os.makedirs(os.path.join(self.work, 'cues', 'ja'))
+        with open(os.path.join(self.work, 'cues', 'ja', 'promo.json'), 'w', encoding='utf-8') as f:
+            json.dump([[0.25, 1.5, 'a'], [1.6, 3.0, 'b']], f)
+        argv = sys.argv
+        sys.argv = ['video_render.py', self.work, 'ja', 'promo', '--voice-cues']
+        try:
+            sys.modules.pop('video_render', None)
+            import video_render as R
+        finally:
+            sys.argv = argv
+        self.assertTrue(R.VOICE_CUES)
+        self.assertEqual((R.WORK, R.LANGS, R.ONLY), (self.work, ['ja'], ['promo']))
+        self.assertEqual(R.video_cues('ja', 'promo', []), [(0.25, 1.5, 'a'), (1.6, 3.0, 'b')])
+        with self.assertRaises(SystemExit):
+            R.video_cues('ja', 'youtube', [])
+        R.VOICE_CUES = False
+        segs = self.V.PLAN['langs']['ja']['promo']
+        self.assertEqual(R.video_cues('ja', 'promo', segs), self.V.video_plan.cues('ja', segs))
+        sys.modules.pop('video_render', None)
 
 
 if __name__ == '__main__':

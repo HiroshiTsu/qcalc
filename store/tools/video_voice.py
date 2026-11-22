@@ -38,12 +38,21 @@ With --engine chatterbox the audio made by store/tools/chatterbox_tts.py on the 
 into <work>, so that <work>/voice-chatterbox/manifest.json is there) is put into the videos: each paragraph found by
 video and segment, its text checked against the plan (a different text stops the run, naming the paragraphs), put at
 its start and read faster when it is longer than its room, as above; a video with paragraphs missing is not made.
-Usage: python3 store/tools/video_voice.py <work folder> [langs] [videos] [--engine local|gemini|chatterbox]
-       [--model M] [--voice V] [--style S] [--sample [N] | --synth-only]
+With --engine tts the same for the audio of store/tools/tts_engines.py (Qwen3-TTS for the videos, 11-22): its zips
+unpacked into <work>, so that <work>/voice-tts/manifest.json is there (the same manifest as chatterbox_tts.py's).
+With chatterbox and tts the subtitles follow the voice: in each paragraph the pauses of the WAV between its lines
+(the nearest to where the lengths of the lines put them; a longer pause is preferred) give when each line is said,
+and the cues are written to <work>/cues/<lang>/<video>.json and .srt (shown from just before the line is said until
+the next; the last line of a segment 0.7 s after the voice, inside its segment). store/tools/video_render.py
+--voice-cues burns those cues into the videos instead of the plan's. --cues-only writes the cues without the videos
+(no ffmpeg needed).
+Usage: python3 store/tools/video_voice.py <work folder> [langs] [videos] [--engine local|gemini|chatterbox|tts]
+       [--model M] [--voice V] [--style S] [--sample [N] | --synth-only | --cues-only]
 """
 import array
 import datetime
 import json
+import math
 import os
 import re
 import subprocess
@@ -60,14 +69,14 @@ PLAN = video_plan.PLAN
 def options(argv):
     """The positional arguments (work folder, langs, videos) and the options: --engine, --model, --voice (a
     list with commas for --sample), --style, --sample [N] (3 when N is left out), --synth-only."""
-    pos, opt, i = [], {'engine': 'local', 'model': None, 'voice': None, 'style': None, 'sample': None, 'synth-only': False}, 0
+    pos, opt, i = [], {'engine': 'local', 'model': None, 'voice': None, 'style': None, 'sample': None, 'synth-only': False, 'cues-only': False}, 0
     while i < len(argv):
         a = argv[i]
         if a.startswith('--'):
             k, eq, v = a[2:].partition('=')
             if k not in opt:
                 raise SystemExit('unknown option --%s' % k)
-            if k == 'synth-only':
+            if k in ('synth-only', 'cues-only'):
                 opt[k] = True
             elif k == 'sample' and not eq:
                 if i + 1 < len(argv) and argv[i + 1].isdigit():
@@ -86,8 +95,10 @@ def options(argv):
         else:
             pos.append(a)
         i += 1
-    if opt['engine'] not in ('local', 'gemini', 'chatterbox'):
-        raise SystemExit('--engine is local, gemini or chatterbox')
+    if opt['engine'] not in ('local', 'gemini', 'chatterbox', 'tts'):
+        raise SystemExit('--engine is local, gemini, chatterbox or tts')
+    if opt['cues-only'] and opt['engine'] not in ('chatterbox', 'tts'):
+        raise SystemExit('--cues-only is for --engine chatterbox or tts')
     if opt['sample'] is not None or opt['synth-only']:
         opt['engine'] = 'gemini'
     if opt['sample'] is not None:
@@ -436,28 +447,166 @@ class NarrationError(Exception):
     pass
 
 
-def chatterbox_manifest():
-    path = os.path.join(WORK, 'voice-chatterbox', 'manifest.json')
+# the folder of the audio in the work folder, and the tool that made it, for --engine chatterbox and --engine tts
+VOICE_DIRS = {'chatterbox': ('voice-chatterbox', 'chatterbox_tts.py'), 'tts': ('voice-tts', 'tts_engines.py')}
+
+
+def chatterbox_manifest(engine='chatterbox'):
+    folder, tool = VOICE_DIRS[engine]
+    path = os.path.join(WORK, folder, 'manifest.json')
     if not os.path.exists(path):
-        raise NarrationError('No %s: unpack the zips of chatterbox_tts.py into the work folder.' % path)
+        raise NarrationError('No %s: unpack the zips of %s into the work folder.' % (path, tool))
     with open(path, encoding='utf-8') as f:
         return json.load(f)
 
 
-def chatterbox_voices(lang, vids, man=None, report=None):
-    """The narration of the given videos of a language from the audio of Chatterbox (voice-chatterbox/): every
-    paragraph found by (video, segment) in the manifest, its text the same as the plan's now (otherwise it stops
-    with the paragraphs named: no old audio is used), each put at its start and faster when longer than its room
-    (place_and_mux). A video whose paragraphs are not all there is not made, and is told. Returns the videos made;
-    report (a list) gets a row for every paragraph read faster: (lang, video, n, seg, seconds, room, speed, too long)."""
-    man = man if man is not None else chatterbox_manifest()
-    base = os.path.join(WORK, 'voice-chatterbox')
+# ---- the subtitles at the times of the voice (--engine chatterbox and tts)
+
+def wav_levels(path, frame=0.01):
+    """The loudness of a 16-bit WAV in frames of 10 ms: (seconds per frame, [RMS of each frame]); ([] for other kinds)."""
+    with wave.open(path) as w:
+        rate, n, ch, sw = w.getframerate(), w.getnframes(), w.getnchannels(), w.getsampwidth()
+        raw = w.readframes(n)
+    if sw != 2:
+        return frame, []
+    a = array.array('h', raw)
+    if sys.byteorder == 'big':
+        a.byteswap()
+    if ch > 1:
+        a = a[0::ch]
+    step = max(1, int(rate * frame))
+    out = []
+    for i in range(0, len(a) - step + 1, step):
+        s = a[i:i + step]
+        out.append(math.sqrt(sum(x * x for x in s) / step))
+    return step / float(rate), out
+
+
+def speech_spans(path, weights, min_gap=0.08):
+    """When each of the lines of a paragraph is said in its WAV (seconds from the start of the WAV): [(start, end)] for
+    the lines, whose lengths are weights, and how many of the boundaries between them are at a pause of the voice
+    (the others where the lengths put them). A pause is a run of frames 30 dB under the loud part of the voice (its
+    95th percentile), at least min_gap long; for each boundary the one nearest to where the lengths put it, a longer
+    one preferred, in order and not further than a quarter of the paragraph (+ 0.3 s) from there."""
+    fs, rms = wav_levels(path)
+    n = len(weights)
+    tot = float(sum(weights)) or 1.0
+    if rms:
+        thr = sorted(rms)[int(0.95 * (len(rms) - 1))] * 10 ** (-30 / 20.0)
+        loud = [r >= thr and r > 0 for r in rms]
+    else:
+        loud = []
+    if not any(loud):
+        d = wav_dur(path)
+        cut, cum = [], 0.0
+        for w in weights:
+            a = d * cum / tot
+            cum += w
+            cut.append((a, d * cum / tot))
+        return cut, 0
+    first, last = loud.index(True), len(loud) - 1 - loud[::-1].index(True)
+    on, off = first * fs, (last + 1) * fs
+    gaps, i = [], first
+    while i <= last:
+        if loud[i]:
+            i += 1
+            continue
+        j = i
+        while j <= last and not loud[j]:
+            j += 1
+        if (j - i) * fs >= min_gap:
+            gaps.append((i * fs, j * fs))
+        i = j
+    span, cum, prev, bounds, found = off - on, 0.0, on, [], 0
+    for k in range(n - 1):
+        cum += weights[k]
+        e = on + span * cum / tot
+        best = None
+        for g0, g1 in gaps:
+            c = (g0 + g1) / 2.0
+            if g0 <= prev + 0.05 or abs(c - e) > 0.25 * span + 0.3:
+                continue
+            score = abs(c - e) - 0.5 * min(g1 - g0, 0.6)
+            if best is None or score < best[0]:
+                best = (score, g0, g1)
+        if best:
+            bounds.append((best[1], best[2]))
+            found += 1
+            prev = best[2]
+        else:
+            e = max(e, prev + 0.05)
+            bounds.append((e, e))
+            prev = e
+    spans, a = [], on
+    for g0, g1 in bounds:
+        spans.append((a, g0))
+        a = g1
+    spans.append((a, off))
+    return spans, found
+
+
+def voice_cues(lang, segs, placed):
+    """The subtitle cues (start, end, line) of a video at the times of its voice. placed = {segment: (wav, start, room)}:
+    each paragraph is placed and sped up as track_filter does it; each line is shown from 0.12 s before it is said (the
+    first of a segment 0.15 s, not before the segment) until the next line, the last one until 0.7 s after the voice
+    (0.1 s before the end of the segment at most). A segment without its audio keeps the plan's cues. Returns the cues,
+    the number of boundaries found at a pause and the number of boundaries."""
+    top = SPEED_TOP.get(lang, 1.5)
+    plan = video_plan.cues(lang, segs)
+    out, t0, found, bounds = [], 0.0, 0, 0
+    for k, s in enumerate(segs):
+        d = float(s['dur'])
+        lines = s['lines']
+        if lines and k in placed:
+            w, start, room = placed[k]
+            dur = wav_dur(w)
+            speed = min(top, dur / room) if dur > room else 1.0
+            weights = [max(1, video_plan.units(lang, spoken(lang, l))[0]) for l in lines]
+            spans, f = speech_spans(w, weights)
+            found += f
+            bounds += len(lines) - 1
+            times = [(start + a / speed, start + b / speed) for a, b in spans]
+            starts = []
+            for i, (a, b) in enumerate(times):
+                starts.append(max(t0 + 0.05, a - 0.15) if i == 0 else max(starts[-1] + 0.3, a - 0.12))
+            for i, (a, b) in enumerate(times):
+                if i + 1 < len(times):
+                    end = starts[i + 1] - 0.04
+                else:
+                    end = max(min(t0 + d - 0.1, b + 0.7), min(t0 + d - 0.02, starts[i] + 0.5))
+                out.append((round(starts[i], 3), round(end, 3), lines[i]))
+        elif lines:
+            out += [c for c in plan if t0 <= c[0] < t0 + d]
+        t0 += d
+    return out, found, bounds
+
+
+def write_cues(lang, name, cues):
+    d = os.path.join(WORK, 'cues', lang)
+    os.makedirs(d, exist_ok=True)
+    with open(os.path.join(d, name + '.json'), 'w', encoding='utf-8') as f:
+        json.dump([[a, b, l] for a, b, l in cues], f, ensure_ascii=False, indent=0)
+    video_plan.write_srt(os.path.join(d, name + '.srt'), cues)
+
+
+def chatterbox_voices(lang, vids, man=None, report=None, engine='chatterbox', cues_only=False, cue_report=None):
+    """The narration of the given videos of a language from the audio made on the owner's computer (voice-chatterbox/
+    of chatterbox_tts.py, or voice-tts/ of tts_engines.py with engine='tts'): every paragraph found by (video,
+    segment) in the manifest, its text the same as the plan's now (otherwise it stops with the paragraphs named: no
+    old audio is used), each put at its start and faster when longer than its room (place_and_mux), and the subtitle
+    cues at the times of the voice (voice_cues, written by write_cues). A video whose paragraphs are not all there is
+    not made, and is told. With cues_only only the cues are written (the videos need not be there). Returns the videos
+    made; report (a list) gets a row for every paragraph read faster: (lang, video, n, seg, seconds, room, speed, too
+    long); cue_report (a list) a row (lang, video, boundaries at a pause, boundaries) for every video."""
+    man = man if man is not None else chatterbox_manifest(engine)
+    folder = VOICE_DIRS[engine][0]
+    base = os.path.join(WORK, folder)
     rows = (man.get('langs') or {}).get(lang)
-    want = [(n, s) for n, s in vids if os.path.exists(os.path.join(WORK, 'out', lang, n + '.mp4'))]
+    want = [(n, s) for n, s in vids if cues_only or os.path.exists(os.path.join(WORK, 'out', lang, n + '.mp4'))]
     if not want:
         return []
     if not rows:
-        print('%s: no audio of this language in voice-chatterbox/manifest.json: %s not made' % (lang, ', '.join(n for n, _ in want)))
+        print('%s: no audio of this language in %s/manifest.json: %s not made' % (lang, folder, ', '.join(n for n, _ in want)))
         return []
     by = {(r.get('video'), r.get('seg')): r for r in rows}
     plan = paragraphs_seg(lang)
@@ -484,26 +633,42 @@ def chatterbox_voices(lang, vids, man=None, report=None):
         if missing:
             print('%s %s: not made, the audio of %s is missing' % (lang, name, ', '.join(missing)))
             continue
+        cues, found, bounds = voice_cues(lang, segs, {k: p for (_n, k), p in zip(ns, parts)})
+        write_cues(lang, name, cues)
+        if cue_report is not None:
+            cue_report.append((lang, name, found, bounds))
+        label = 'Chatterbox' if engine == 'chatterbox' else ', '.join(sorted({'%s:%s' % (r.get('engine'), r.get('voice')) for r in rows}))
+        if cues_only:
+            print('%s %s: %d cues at the times of the voice (%s), %d of %d boundaries at a pause' % (lang, name, len(cues), label, found, bounds))
+            made.append(name)
+            continue
         info = place_and_mux(lang, name, segs, parts, os.path.join(base, 'mix', lang, name))
         for (j, dur, speed, too_long), (n, k), (_w, _s, room) in zip(info, ns, parts):
             if speed > 1.0 and report is not None:
                 report.append((lang, name, n, k, round(dur, 2), round(room, 2), round(speed, 3), too_long))
         fast = [x for x in info if x[2] > 1.0]
-        print('%s %s: %d paragraphs (Chatterbox), %d read faster, %d still longer than the segment' % (lang, name, len(parts), len(fast), sum(1 for x in info if x[3])))
+        print('%s %s: %d paragraphs (%s), %d read faster, %d still longer than the segment; %d of %d subtitle boundaries at a pause' % (
+            lang, name, len(parts), label, len(fast), sum(1 for x in info if x[3]), found, bounds))
         made.append(name)
     return made
 
 
 def main():
-    if OPT['engine'] == 'chatterbox':
-        report, made = [], 0
+    if OPT['engine'] in ('chatterbox', 'tts'):
+        report, made, creport = [], 0, []
         try:
-            man = chatterbox_manifest()
+            man = chatterbox_manifest(OPT['engine'])
             for lang in LANGS:
-                made += len(chatterbox_voices(lang, [(n, s) for n, s in all_videos(lang) if not ONLY or n in ONLY], man, report))
+                made += len(chatterbox_voices(lang, [(n, s) for n, s in all_videos(lang) if not ONLY or n in ONLY], man, report,
+                                              engine=OPT['engine'], cues_only=OPT['cues-only'], cue_report=creport))
         except NarrationError as e:
             print(str(e))
             return 1
+        f, b = sum(r[2] for r in creport), sum(r[3] for r in creport)
+        print('subtitles at the times of the voice: %d of %d boundaries between lines at a pause (in %s)' % (f, b, os.path.join(WORK, 'cues')))
+        if OPT['cues-only']:
+            print('%d videos with cues' % made)
+            return 0
         print('%d videos made; %d paragraphs read faster%s' % (made, len(report), ':' if report else ''))
         for lang, name, n, k, dur, room, speed, too_long in report:
             print('  %s %s paragraph %s (segment %d): %.2f s in %.2f s, %.2f times%s' % (lang, name, n, k, dur, room, speed, ', still too long' if too_long else ''))
