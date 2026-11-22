@@ -27,7 +27,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 
 ## new-1-14 | Neu in 1.14.0
 - **3D fast wie echt**: 3D wird mit der GPU des Geräts (WebGL 2) gezeichnet, mit echtem Licht und Schatten: der 3D-Graph, [[!⟳ 3D]] im 2D-Graph, die Körper und Tanks der Formen und der Körper aus einem Profil ([3D-Graph](#graph-3d)).
-- **Durchsichtig**: Mit [[See-through]] sehen Sie durch Flächen und Körper: Rück- und Innenseiten und die Stellen, an denen sich zwei Flächen schneiden. Der Schieberegler stellt die Deckkraft ein; bei zwei oder mehr Dingen wählen Sie, was durchsichtig ist (zum Beispiel nur der [[Container]] eines Tanks).
+- **Durchsichtig**: Mit [[See-through]] sehen Sie durch Flächen und Körper: Rück- und Innenseiten und die Stellen, an denen sich zwei Flächen schneiden. Der Schieberegler stellt die Deckkraft ein und schaltet [[See-through]] ein, wenn er bewegt wird, während es aus ist; bei zwei oder mehr Dingen wählen Sie, was durchsichtig ist (zum Beispiel nur der [[Container]] eines Tanks).
 - **In jede Richtung drehen**: Ein Finger dreht 3D in jede Richtung, auch über oben und unten hinaus. Die Würfel-Schaltfläche wählt sofort [[From the front]], [[From above]] oder [[From the side]].
 - **Materialien**: Ein Körper sieht aus wie das in [[Material (density)]] gewählte Material, die Flüssigkeit eines Tanks wie Wasser, Meerwasser, Petroleum oder Benzin. Neue Materialien: Edelstahl, Aluminium, Kupfer, Messing, Holz, PLA, ABS und Acrylglas.
 - **3D einmal kostenlos**: Ohne QCalc Pro lässt sich 3D einmal kostenlos öffnen ([Was kostenlos ist](#pro-free)).
@@ -420,7 +420,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Geben Sie bis zu vier Funktionen und die Bereiche von x und y ein und drücken Sie [[Draw]].
 :step: Mit einem Finger in jede Richtung drehen (auch über oben und unten hinaus). Mit zwei Fingern: auseinander oder zusammen zum Zoomen, gemeinsam ziehen zum Verschieben, verdrehen zum Drehen im Bild.
 :step: Mit der Würfel-Schaltfläche wählen Sie sofort [[From the front]], [[From above]] oder [[From the side]]. [[!⟲]] stellt die erste Ansicht und Größe wieder her.
-:step: [[See-through]] macht Flächen und Körper durchsichtig: Rück- und Innenseiten und die Stellen, an denen sich zwei Flächen schneiden, werden sichtbar, die Kanten bleiben. Der Schieberegler stellt die Deckkraft ein. Bei zwei oder mehr Dingen wählen die Schaltflächen darunter, was durchsichtig ist (zum Beispiel nur der [[Container]] eines Tanks, die [[Liquid]] kräftig).
+:step: [[See-through]] macht Flächen und Körper durchsichtig: Rück- und Innenseiten und die Stellen, an denen sich zwei Flächen schneiden, werden sichtbar, die Kanten bleiben. Der Schieberegler daneben stellt die Deckkraft ein; wird er bewegt, während [[See-through]] aus ist, schaltet er es ebenfalls ein (der Schalter von [[See-through]] steht dann auf an). Ein erneuter Druck auf [[See-through]] schaltet es aus. Bei zwei oder mehr Dingen wählen die Schaltflächen darunter, was durchsichtig ist (zum Beispiel nur der [[Container]] eines Tanks, die [[Liquid]] kräftig).
 :step: [[Box and axes]] blendet den Kasten mit Gitter und Achsen aus und wieder ein.
 :shot: graph3d | Der 3D-Graph (die Beispielkugel)
 :tip: 3D wird mit der GPU des Geräts (WebGL 2) gezeichnet, mit Licht und Schatten fast wie echt; die Farben nach der Höhe bleiben. Ist es langsam, wird beim Drehen etwas gröber gezeichnet und nach dem Loslassen wieder scharf.

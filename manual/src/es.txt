@@ -27,7 +27,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 
 ## new-1-14 | Novedades de 1.14.0
 - **3D casi real**: el 3D se dibuja con la GPU del dispositivo (WebGL 2), con luz y sombras reales: la gráfica 3D, [[!⟳ 3D]] en la gráfica 2D, los sólidos y depósitos de las figuras y el sólido a partir de un perfil ([Gráfica 3D](#graph-3d)).
-- **Transparente**: con [[See-through]] se ve a través de superficies y sólidos: sus caras de atrás e interiores y dónde se cortan dos superficies. El control deslizante ajusta la opacidad; con dos cosas o más, elija cuáles son transparentes (por ejemplo, solo el [[Container]] de un depósito).
+- **Transparente**: con [[See-through]] se ve a través de superficies y sólidos: sus caras de atrás e interiores y dónde se cortan dos superficies. El control deslizante ajusta la opacidad y, si lo mueve con [[See-through]] desactivado, lo activa; con dos cosas o más, elija cuáles son transparentes (por ejemplo, solo el [[Container]] de un depósito).
 - **Gire en cualquier dirección**: un dedo gira el 3D en cualquier dirección, también por encima y por debajo. El botón del cubo elige al instante [[From the front]], [[From above]] o [[From the side]].
 - **Materiales**: un sólido tiene el aspecto del material elegido en [[Material (density)]], y el líquido de un depósito el del agua, el agua de mar, el queroseno o la gasolina. Nuevos materiales: acero inoxidable, aluminio, cobre, latón, madera, PLA, ABS y acrílico.
 - **3D una vez gratis**: sin QCalc Pro, el 3D se puede abrir una vez gratis ([Qué es gratis](#pro-free)).
@@ -420,7 +420,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Escribe hasta cuatro funciones y los intervalos de x e y, y pulsa [[Draw]].
 :step: Gire en cualquier dirección con un dedo (también por encima y por debajo). Con dos dedos: pellizque para ampliar o reducir, deslícelos juntos para mover la imagen y gírelos para girarla en la pantalla.
 :step: Con el botón del cubo elige al instante [[From the front]], [[From above]] o [[From the side]]. [[!⟲]] vuelve a la vista y el tamaño iniciales.
-:step: [[See-through]] hace transparentes las superficies y los sólidos: se ven sus caras de atrás e interiores y dónde se cortan dos superficies, y los bordes se mantienen. El control deslizante ajusta la opacidad. Con dos cosas o más, los botones de debajo eligen cuáles son transparentes (por ejemplo, solo el [[Container]] de un depósito, con el [[Liquid]] opaco).
+:step: [[See-through]] hace transparentes las superficies y los sólidos: se ven sus caras de atrás e interiores y dónde se cortan dos superficies, y los bordes se mantienen. El control deslizante de al lado ajusta la opacidad; si lo mueve con [[See-through]] desactivado, también lo activa (el interruptor de [[See-through]] pasa a activado). Pulse [[See-through]] otra vez para desactivarlo. Con dos cosas o más, los botones de debajo eligen cuáles son transparentes (por ejemplo, solo el [[Container]] de un depósito, con el [[Liquid]] opaco).
 :step: [[Box and axes]] oculta o muestra la caja con su cuadrícula y sus ejes.
 :shot: graph3d | La gráfica 3D (la esfera de ejemplo)
 :tip: El 3D se dibuja con la GPU del dispositivo (WebGL 2), con luz y sombras casi reales; los colores según la altura se mantienen. Si va lento, se dibuja algo más tosco mientras gira y nítido de nuevo al levantar el dedo.

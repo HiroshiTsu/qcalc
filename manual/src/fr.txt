@@ -27,7 +27,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 
 ## new-1-14 | Nouveautés de la 1.14.0
 - **Une 3D presque réelle** : la 3D est dessinée par le GPU de l’appareil (WebGL 2), avec une lumière et des ombres réelles : le graphique 3D, [[!⟳ 3D]] dans le graphique 2D, les solides et les cuves des formes, et le solide à partir d’un profil ([Graphique 3D](#graph-3d)).
-- **Transparent** : [[See-through]] permet de voir à travers les surfaces et les solides : leurs faces arrière et intérieures et l’intersection de deux surfaces. Le curseur règle l’opacité ; avec deux choses ou plus, choisissez ce qui est transparent (par exemple seulement le [[Container]] d’une cuve).
+- **Transparent** : [[See-through]] permet de voir à travers les surfaces et les solides : leurs faces arrière et intérieures et l’intersection de deux surfaces. Le curseur règle l’opacité et, déplacé quand [[See-through]] est désactivé, l’active ; avec deux choses ou plus, choisissez ce qui est transparent (par exemple seulement le [[Container]] d’une cuve).
 - **Tourner dans tous les sens** : un doigt fait tourner la 3D dans tous les sens, y compris par-dessus et par-dessous. Le bouton au cube propose aussitôt [[From the front]], [[From above]] ou [[From the side]].
 - **Matériaux** : un solide a l’aspect du matériau choisi dans [[Material (density)]], et le liquide d’une cuve celui de l’eau, de l’eau de mer, du kérosène ou de l’essence. Nouveaux matériaux : acier inoxydable, aluminium, cuivre, laiton, bois, PLA, ABS et acrylique.
 - **La 3D une fois gratuitement** : sans QCalc Pro, la 3D peut s’ouvrir une fois gratuitement ([Ce qui est gratuit](#pro-free)).
@@ -420,7 +420,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Tapez jusqu'à quatre fonctions et les intervalles de x et de y, puis appuyez sur [[Draw]].
 :step: Faites tourner dans tous les sens d’un doigt (y compris par-dessus et par-dessous). À deux doigts : pincez pour zoomer, faites-les glisser ensemble pour déplacer l’image, tournez-les pour la faire pivoter dans l’écran.
 :step: Le bouton au cube propose aussitôt [[From the front]], [[From above]] ou [[From the side]]. [[!⟲]] rétablit la vue et la taille de départ.
-:step: [[See-through]] rend les surfaces et les solides transparents : leurs faces arrière et intérieures et l’intersection de deux surfaces apparaissent, les arêtes restent. Le curseur règle l’opacité. Avec deux choses ou plus, les boutons dessous choisissent ce qui est transparent (par exemple seulement le [[Container]] d’une cuve, le [[Liquid]] restant opaque).
+:step: [[See-through]] rend les surfaces et les solides transparents : leurs faces arrière et intérieures et l’intersection de deux surfaces apparaissent, les arêtes restent. Le curseur à côté règle l’opacité ; le déplacer quand [[See-through]] est désactivé l’active aussi (l’interrupteur de [[See-through]] passe à activé). Touchez de nouveau [[See-through]] pour le désactiver. Avec deux choses ou plus, les boutons dessous choisissent ce qui est transparent (par exemple seulement le [[Container]] d’une cuve, le [[Liquid]] restant opaque).
 :step: [[Box and axes]] masque ou affiche la boîte avec sa grille et ses axes.
 :shot: graph3d | Le graphique 3D (la sphère de l'exemple)
 :tip: La 3D est dessinée par le GPU de l’appareil (WebGL 2), avec une lumière et des ombres presque réelles ; les couleurs selon la hauteur restent. Si c’est lent, le dessin est un peu plus grossier pendant la rotation et redevient net quand vous levez le doigt.

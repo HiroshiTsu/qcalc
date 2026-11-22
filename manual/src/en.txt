@@ -27,7 +27,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 
 ## new-1-14 | What is new in 1.14.0
 - **3D close to real things**: 3D is drawn by the device's GPU (WebGL 2), with real light and shadows: the 3D graph, [[!⟳ 3D]] in the 2D graph, the solids and tanks of the shapes, and the solid from a profile ([3D graph](#graph-3d)).
-- **See-through**: [[See-through]] lets you see through surfaces and solids: their back and inner faces and where two surfaces meet. The slider sets how opaque; with two things or more, choose which are see-through (for example only a tank's [[Container]]).
+- **See-through**: [[See-through]] lets you see through surfaces and solids: their back and inner faces and where two surfaces meet. The slider sets how opaque, and moving it while the see-through is off turns it on; with two things or more, choose which are see-through (for example only a tank's [[Container]]).
 - **Turn it any way**: one finger turns 3D in any direction, over the top and under the bottom too. The cube button gives [[From the front]], [[From above]] or [[From the side]] at once.
 - **Materials**: a solid looks like the material chosen in [[Material (density)]], and a tank's liquid like water, seawater, kerosene or gasoline. New materials: stainless steel, aluminium, copper, brass, wood, PLA, ABS and acrylic.
 - **3D once for free**: without QCalc Pro, 3D can be opened once for free ([What is free](#pro-free)).
@@ -420,7 +420,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Type up to four functions and the ranges of x and y, then press [[Draw]].
 :step: Turn it any way with one finger (over the top and under the bottom too). With two fingers, pinch to zoom, move them together to shift the picture, and twist them to turn it in the screen.
 :step: The cube button gives [[From the front]], [[From above]] or [[From the side]] at once. [[!⟲]] gives the first view and size back.
-:step: [[See-through]] makes the surfaces and solids see-through: their back and inner faces and where two surfaces meet show, and their edges stay. The slider sets how opaque they are. With two things or more, the buttons under it choose which are see-through (for example only the [[Container]] of a tank, with the [[Liquid]] solid).
+:step: [[See-through]] makes the surfaces and solids see-through: their back and inner faces and where two surfaces meet show, and their edges stay. The slider next to it sets how opaque they are; moving it while the see-through is off turns it on too (the switch of [[See-through]] shows on). Press [[See-through]] again to turn it off. With two things or more, the buttons under it choose which are see-through (for example only the [[Container]] of a tank, with the [[Liquid]] solid).
 :step: [[Box and axes]] hides or shows the box with its grid and axes.
 :shot: graph3d | The 3D graph (the sample sphere)
 :tip: 3D is drawn by the device's GPU (WebGL 2), with light and shadows close to real things; the colors by height stay. When it is slow, it is drawn a little coarser while you turn it and sharp again when you lift your finger.
