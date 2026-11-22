@@ -18,6 +18,9 @@ const LANGS = (process.argv[4] || 'ja,en,de,es,fr,ko,zh-TW').split(',');
 const SCENE_LIST = process.argv[5] ? process.argv[5].split(',') : null;
 const SET = { ja: 'ja', en: 'en', de: 'de', es: 'es', fr: 'fr', ko: 'ko', 'zh-TW': 'zh-TW' };
 const VW = 393, VH = 873, DPR = 2;
+// (1.14.0) the scenes recorded in slow motion, and how much slower (qcalc-page.js, setSlow): the 3D drawn with WebGL 2 is
+// slow in this browser (SwiftShader); VIDEO_SLOW=0 records them at their own speed
+const SLOW = process.env.VIDEO_SLOW === '0' ? {} : { rev: 4, rev3d: 4, profile: 4, tank3d: 8 };
 
 // a circle where a person taps, then the tap
 async function tap(page, target) {
@@ -38,6 +41,29 @@ async function tap(page, target) {
 }
 const eqKey = (page) => page.locator('#grid .key').filter({ hasText: /^=$/ }).first();
 async function typeAndEq(page, s) { await Q.type(page, s, 70); await sleep(300); await tap(page, eqKey(page)); await sleep(1500); }
+// (1.14.0) a tap on "See-through" under the 3D view; when the button is below the screen, the page is first scrolled
+// smoothly just enough to show it (the 3D view stays in sight)
+async function tapSee(page) {
+  const b = page.locator('.panel.open .see-btn').last();
+  if (!(await b.isVisible())) return false;
+  const r = await b.boundingBox();
+  if (!r) return false;
+  const over = r.y + r.height + 14 - VH;
+  if (over > 0) {
+    await page.evaluate(async (d) => {
+      const p = Array.from(document.querySelectorAll('.panel.open .panel-body')).pop(), from = p.scrollTop, t0 = performance.now();
+      await new Promise((res) => { const f = (t) => { const k = Math.min(1, (t - t0) / 450); p.scrollTop = from + d * (1 - Math.pow(1 - k, 3)); if (k < 1) requestAnimationFrame(f); else res(); }; requestAnimationFrame(f); });
+    }, over);
+    await sleep(250);
+  }
+  return tap(page, b);
+}
+// (1.14.0) a tap on a chip of the see-through (0: the first thing, as a tank's "Container"; 1: its "Liquid")
+async function tapSeeChip(page, n) {
+  const c = page.locator('.panel.open .see-chip').nth(n);
+  if (!(await c.count()) || !(await c.isVisible())) return false;
+  return tap(page, c);
+}
 // turns the 3D graph a little, as a finger does
 async function turn3d(page, ms) {
   const r = await Q.graphRect(page);
@@ -172,7 +198,8 @@ const SCENES = {
   },
   // (1.13.0) the stepped shaft (the first example) in 3D: it turns into being (the solid grows from 0° to 360°),
   // then a finger tilts it toward the eye, so that the flat ring of the step, where the shaft gets thinner, is
-  // seen from above (the shadow of the thin part lies on its far side); the view held there
+  // seen from above (the shadow of the thin part lies on its far side); the view held there. (1.14.0) Then
+  // "See-through" for a moment (the inside of the shaft seen through it), in the same length of the scene
   profile: {
     prep: async () => {},
     run: async (page) => {
@@ -185,8 +212,8 @@ const SCENES = {
         await Q.modelDone(page); await sleep(300); await smoothScroll(page, '.plot-wrap', 8); await sleep(400);
         const r = await Q.graphRect(page);
         await fingerDrag(page, r.x + r.width * 0.35, r.y + r.height * 0.5, 44, 46, 1800); // the view 0.44 around, 0.46 down
-      }
-      await sleep(2000);
+        await sleep(500); await tapSee(page); await sleep(1500);
+      } else await sleep(2000);
     }
   },
   tank: {
@@ -206,7 +233,8 @@ const SCENES = {
     }
   },
   // (1.12.0, D6) the lying tank with 2:1 heads at 30 % in the tool: ⟳ 3D (the tank grows, the liquid rises), then
-  // a finger drags the level up to about 85 % (the amount and % at the level follow), then turns the graph (QCalc Pro)
+  // a finger drags the level up to about 85 % (the amount and % at the level follow), then turns the graph (QCalc Pro).
+  // (1.14.0) Before the turn, "See-through", and its chip "Liquid" too: the liquid see-through as well as the container
   tank3d: {
     prep: async (page, lang) => { await Q.tankSetup(page, SET[lang], 30); await Q.scrollTo(page, '.geo-main', 4); },
     run: async (page) => {
@@ -231,7 +259,7 @@ const SCENES = {
       }
       await page.mouse.up();
       await page.evaluate(() => { const d = document.getElementById('finger'); if (d) { d.style.opacity = '0'; setTimeout(() => d.remove(), 500); } });
-      await sleep(1600); await turn3d(page, 1500); await sleep(900);
+      await sleep(300); await tapSee(page); await sleep(450); await tapSeeChip(page, 1); await sleep(600); await turn3d(page, 1500); await sleep(900);
     }
   },
   notes: {
@@ -246,16 +274,23 @@ const SCENES = {
 
 async function record(browser, lang, name) {
   const sc = SCENES[name];
-  const { ctx, page } = await Q.start(browser, BASE, SET[lang], { viewport: { width: VW, height: VH }, dpr: DPR, dark: name === 'rev' || name === 'rev3d' || name === 'axis' || name === 'notes' });
+  const K = SLOW[name] || 1;
+  const { ctx, page } = await Q.start(browser, BASE, SET[lang], { viewport: { width: VW, height: VH }, dpr: DPR, dark: name === 'rev' || name === 'rev3d' || name === 'axis' || name === 'notes', slowClock: K > 1 });
   await sc.prep(page, lang);
   await sleep(500);
   const cdp = await ctx.newCDPSession(page);
+  if (K > 1) {
+    await cdp.send('Animation.enable'); await cdp.send('Animation.setPlaybackRate', { playbackRate: 1 / K });
+    await page.evaluate((k) => window.__qcalcSetK(k), K);
+    Q.setSlow(K);
+  }
   const frames = [];
   cdp.on('Page.screencastFrame', (f) => { frames.push({ t: f.metadata.timestamp, data: f.data }); cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {}); });
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 92, maxWidth: VW * DPR, maxHeight: VH * DPR, everyNthFrame: 1 });
   const t0 = Date.now() / 1000;
   try { await sc.run(page, lang); } catch (e) { console.log(lang, name, 'ERROR', e.message.split('\n')[0]); }
   const t1 = Date.now() / 1000;
+  Q.setSlow(1);
   await cdp.send('Page.stopScreencast');
   await ctx.close();
   // the frames and their times → a clip at 30 frames a second
@@ -267,7 +302,7 @@ async function record(browser, lang, name) {
     const fn = String(i).padStart(5, '0') + '.jpg';
     fs.writeFileSync(path.join(dir, fn), Buffer.from(f.data, 'base64'));
     const next = i + 1 < frames.length ? frames[i + 1].t : Math.max(f.t + 0.5, t1);
-    list.push("file '" + fn + "'", 'duration ' + Math.max(0.001, next - f.t).toFixed(4));
+    list.push("file '" + fn + "'", 'duration ' + Math.max(0.001, (next - f.t) / K).toFixed(4));
   });
   if (frames.length) list.push("file '" + String(frames.length - 1).padStart(5, '0') + ".jpg'");
   fs.writeFileSync(path.join(dir, 'list.txt'), 'ffconcat version 1.0\n' + list.join('\n') + '\n');
@@ -275,7 +310,7 @@ async function record(browser, lang, name) {
   execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', path.join(dir, 'list.txt'), '-vf', 'fps=30,scale=786:1746:flags=lanczos,format=yuv420p', '-c:v', 'libx264', '-crf', '16', '-preset', 'veryfast', tmp]);
   fs.renameSync(tmp, out);
   fs.rmSync(dir, { recursive: true, force: true });
-  console.log(lang, name, frames.length, 'frames', (t1 - t0).toFixed(1) + ' s');
+  console.log(lang, name, frames.length, 'frames', (t1 - t0).toFixed(1) + ' s' + (K > 1 ? ' (slow motion ×' + K + ': ' + ((t1 - t0) / K).toFixed(1) + ' s)' : ''));
 }
 
 (async () => {

@@ -2,7 +2,27 @@
 // store pictures and in the videos (store/tools/shots.js, store/tools/video.js). Everything is the real
 // app: the page of app/assets with the real engine behind the test server of the page tests (README.md).
 // Needs Node.js and Playwright (as the tests and manual/shots.js).
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// (1.14.0) slow motion for the scenes whose drawing is slow in this browser (the 3D drawn with WebGL 2 on SwiftShader,
+// the CPU: a frame of a tank with its clear container takes about half a second): while a scene is recorded with
+// setSlow(k), every wait here is k times longer, and the page's clock runs k times slower (SLOW_CLOCK below: its
+// performance.now, Date.now, the times of requestAnimationFrame, setTimeout and setInterval; the CSS animations through
+// the DevTools, video.js). The frames are then laid k times closer together, so that the scene has its own pace and
+// k times as many frames.
+let SLOW = 1;
+const setSlow = (k) => { SLOW = k > 1 ? k : 1; };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms * SLOW));
+const SLOW_CLOCK = () => {
+  const P = performance, pnow = P.now.bind(P), dnow = Date.now.bind(Date);
+  let K = 1, r0 = pnow(), s0 = r0, d0 = dnow(), e0 = d0;
+  const sc = () => s0 + (pnow() - r0) / K;
+  window.__qcalcSetK = (k) => { const s = sc(), e = e0 + (dnow() - d0) / K; K = k > 1 ? k : 1; r0 = pnow(); s0 = s; d0 = dnow(); e0 = e; };
+  P.now = () => sc();
+  Date.now = () => e0 + (dnow() - d0) / K;
+  const raf = window.requestAnimationFrame.bind(window), st = window.setTimeout.bind(window), si = window.setInterval.bind(window);
+  window.requestAnimationFrame = (cb) => raf(() => cb(sc()));
+  window.setTimeout = (f, d, ...a) => st(f, (+d || 0) * K, ...a);
+  window.setInterval = (f, d, ...a) => si(f, (+d || 0) * K, ...a);
+};
 
 // the sets of pictures: the language of the app and the region of the phone (number format, currency)
 const SETS = {
@@ -43,9 +63,10 @@ async function start(browser, base, set, o) {
       localStorage.setItem('qalc.lang', JSON.stringify(l));
       localStorage.setItem('qalc.settings', JSON.stringify(st));
       localStorage.setItem('qalc.moved112', 'true');
-      localStorage.setItem('qalc.news', JSON.stringify('1.12'));
+      localStorage.setItem('qalc.news', JSON.stringify('1.14'));
     } catch (e) { }
   }, [S.lang, Object.assign({ auto_rates: false, appearance: o.dark ? 'dark' : 'light' }, o.settings || {})]);
+  if (o.slowClock) await ctx.addInitScript(SLOW_CLOCK);
   const page = await ctx.newPage();
   await page.goto(base + (o.q || '?pro=all'));
   await ready(page);
@@ -190,4 +211,4 @@ async function setPrecisionAndReload(page, n) {
   await page.reload(); await ready(page);
 }
 
-module.exports = { sleep, SETS, COMMA, mainExamples, localNotes, start, ready, home, menu, tool, type, eq, body, scrollTo, solid2d, solid3d, graphRect, profile, tank3d, tankSetup, modelDone, manualAbout, setPrecisionAndReload };
+module.exports = { sleep, setSlow, SETS, COMMA, mainExamples, localNotes, start, ready, home, menu, tool, type, eq, body, scrollTo, solid2d, solid3d, graphRect, profile, tank3d, tankSetup, modelDone, manualAbout, setPrecisionAndReload };
