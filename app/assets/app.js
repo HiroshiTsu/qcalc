@@ -8528,6 +8528,14 @@
       saveSee(); syncSeeRow();
       if (was) requestDraw3d(); else draw3d();
     });
+    // (a tap on the knob that does not move it, or a key at the end of the slider, sends no input event: it turns the
+    // see-through on too; a finger that scrolls the page from the slider ends with pointercancel, not pointerup)
+    const seeFromRange = () => {
+      if (!(gl3dWanted() && gl3dReady()) || Q3.see.on) return;
+      Q3.see.on = true; saveSee(); syncSeeRow(); draw3d();
+    };
+    seeRange.addEventListener('pointerup', seeFromRange);
+    seeRange.addEventListener('keydown', (e) => { if (/^(Arrow|Page|Home$|End$)/.test(e.key)) seeFromRange(); });
     const boxBtn = tapButton({ class: 'btn box-btn', 'aria-pressed': 'true', text: tr('Box and axes', '箱と目盛り') }, () => { Q3.see.box = !Q3.see.box; saveSee(); syncSeeRow(); draw3d(); });
     const seeNote = el('span', { class: 'see-note', id: 'see-note', hidden: true, text: tr('Not available on this device', 'この端末では使えません') });
     // (what is see-through: a chip for each formula, the solid, the container and the liquid of a tank)
