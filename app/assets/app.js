@@ -8367,7 +8367,15 @@
     const seeBtn = tapButton({ class: 'btn see-btn', 'aria-pressed': 'false', text: tr('See-through', '透明') }, () => { if (!gl3dReady()) return; Q3.see.on = !Q3.see.on; saveSee(); syncSeeRow(); draw3d(); });
     const seeRange = el('input', { type: 'range', min: '10', max: '90', step: '5', 'aria-label': tr('How opaque (%)', '濃さ（%）') });
     const seeVal = el('span', { class: 'rev-angle-v' });
-    seeRange.addEventListener('input', () => { Q3.see.a = Number(seeRange.value) / 100; saveSee(); syncSeeRow(); requestDraw3d(); });
+    // (the slider can be moved while the see-through is off, by a finger, the keyboard or a screen reader: it turns the
+    // see-through on, as a phone showed a slider that did not move until "See-through" was pressed first)
+    seeRange.addEventListener('input', () => {
+      if (!(gl3dWanted() && gl3dReady())) return;
+      const was = Q3.see.on;
+      Q3.see.a = Number(seeRange.value) / 100; Q3.see.on = true;
+      saveSee(); syncSeeRow();
+      if (was) requestDraw3d(); else draw3d();
+    });
     const boxBtn = tapButton({ class: 'btn box-btn', 'aria-pressed': 'true', text: tr('Box and axes', '箱と目盛り') }, () => { Q3.see.box = !Q3.see.box; saveSee(); syncSeeRow(); draw3d(); });
     const seeNote = el('span', { class: 'see-note', id: 'see-note', hidden: true, text: tr('Not available on this device', 'この端末では使えません') });
     // (what is see-through: a chip for each formula, the solid, the container and the liquid of a tank)
@@ -8532,8 +8540,10 @@
     syncSeeRow();
   }
   // the row of see-through and the box (feature/3d-view): shown in every 3D view (since 11-22 20:40); the see-through
-  // button cannot be pressed without WebGL 2 (or with the test switch "3D with WebGL" off), with a note; with the
-  // see-through on, a chip for each thing drawn chooses whether it is see-through
+  // button cannot be pressed without WebGL 2 (or with the test switch "3D with WebGL" off), with a note, and the slider
+  // is not shown; with WebGL 2 the slider can always be moved (moved while the see-through is off, it turns it on); with
+  // the see-through on, a chip for each thing drawn chooses whether it is see-through. "See-through" and "Box and axes"
+  // are drawn as switches (a track and a knob before the words, style.css), on or off at a glance in every language
   function syncSeeRow() {
     if (!Q3.seeRow) return;
     const Md = Q3.model, shown = !!(Q3.data || Md);
@@ -8543,7 +8553,7 @@
     Q3.seeBtn.disabled = !ok; Q3.seeBtn.setAttribute('aria-pressed', String(on)); Q3.seeBtn.classList.toggle('on', on);
     if (ok) Q3.seeBtn.removeAttribute('aria-describedby'); else Q3.seeBtn.setAttribute('aria-describedby', 'see-note');
     Q3.seeNote.hidden = ok;
-    Q3.seeRange.disabled = !on; Q3.seeRange.hidden = !ok; Q3.seeRange.value = String(pc);
+    Q3.seeRange.disabled = !ok; Q3.seeRange.hidden = !ok; Q3.seeRange.value = String(pc);
     Q3.seeVal.hidden = !ok; Q3.seeVal.textContent = pc + '%';
     const box = Q3.see.box !== false;
     Q3.boxBtn.setAttribute('aria-pressed', String(box)); Q3.boxBtn.classList.toggle('on', box);
