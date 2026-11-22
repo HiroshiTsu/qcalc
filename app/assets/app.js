@@ -16857,8 +16857,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (window.QalcNative && QalcNative.setTestPro) QalcNative.setTestPro(box.checked);
         else if (window.QalcDev && QalcDev.setTestPro) QalcDev.setTestPro(box.checked);
       });
-      // (feature/3d-view) WebGL 2 for "Solid from a profile" on or off, and the time of each 3D drawing in a corner; before
-      // the switch of Pro, which stays the last one
+      // (feature/3d-view) WebGL 2 for every 3D view on or off, and the time of each 3D drawing in a corner; before the
+      // switch of Pro, which stays the last one
       const flag = (k, label, def) => {
         const b = el('input', { type: 'checkbox' });
         try { const v = localStorage.getItem('qalc.dev.' + k); b.checked = v === null ? def : v === 'true'; } catch (e) { b.checked = def; }
