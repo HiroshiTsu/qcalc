@@ -431,7 +431,7 @@
     "How opaque (%)": "불투명도(%)",
     "Box and axes": "상자와 눈금",
     "Not available on this device": "이 기기에서는 사용할 수 없습니다",
-    "3D with WebGL (prototype: Solid from a profile)": "3D를 WebGL로 그리기(시험판: 윤곽으로 회전체)",
+    "3D with WebGL 2": "3D를 WebGL 2로 그리기",
     "Show the time of each 3D drawing (for testing)": "3D 그리기 시간 표시(테스트용)",
     "200 rows (test)": "200행(테스트)",
     "From the front": "정면",

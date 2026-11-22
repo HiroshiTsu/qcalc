@@ -440,7 +440,7 @@
     "How opaque (%)": "Opacidad (%)",
     "Box and axes": "Caja y ejes",
     "Not available on this device": "No disponible en este dispositivo",
-    "3D with WebGL (prototype: Solid from a profile)": "3D con WebGL (prototipo: sólido a partir de un perfil)",
+    "3D with WebGL 2": "3D con WebGL 2",
     "Show the time of each 3D drawing (for testing)": "Mostrar el tiempo de cada dibujo 3D (para pruebas)",
     "200 rows (test)": "200 filas (prueba)",
     "From the front": "De frente",

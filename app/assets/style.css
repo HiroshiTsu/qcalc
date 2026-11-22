@@ -1515,6 +1515,12 @@ body.hselect #history { padding-bottom: 150px; }
 .see-row .btn.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 .see-row .btn:disabled { opacity: .45; }
 .see-row .see-note { flex-basis: 100%; font-size: 13px; color: var(--muted, #6b7280); }
+/* (feature/3d-view) what is see-through: a chip for each formula, the solid, the container and the liquid of a tank */
+.see-row .see-chips { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+.see-row .see-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+.see-row .see-chip > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14em; }
+.see-row .see-chip.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.see-row .see-sw { width: 12px; height: 12px; border-radius: 3px; flex: none; box-shadow: 0 0 0 1px rgba(0,0,0,.18) inset; }
 
 /* the everyday tools (1.12.0, C1) */
 .tool-choice .seg.mini { flex: 1 1 0; flex-wrap: wrap; }

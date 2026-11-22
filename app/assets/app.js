@@ -8358,10 +8358,11 @@
     levelRange.addEventListener('change', () => { const T = Q3.model && Q3.model.tank; if (T) setLevel3d(Number(levelRange.value) * levelStep(T), true); });
     const levelRow = el('div', { class: 'plot-range rev-angle tank-level', hidden: true }, el('span', { text: tr('Level', '液面') }), levelRange, levelVal);
     Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow, backRow, backVol, backBtn, levelRow, levelRange, levelVal });
-    // (feature/3d-view, a prototype for "Solid from a profile" drawn with WebGL 2) see-through and how opaque, and the
-    // box with its grid and axes; kept on this phone. Without WebGL 2 the see-through cannot be chosen, and says so
+    // (feature/3d-view, every 3D view drawn with WebGL 2) see-through and how opaque, what is see-through (each formula,
+    // the solid, the container and the liquid of a tank: off, the keys taken out of it), and the box with its grid and
+    // axes; kept on this phone. Without WebGL 2 the see-through cannot be chosen, and says so
     const sv = store.get('qalc.plot3d.see', null);
-    Q3.see = { on: !!(sv && sv.on === true), a: sv && sv.a >= 0.1 && sv.a <= 0.9 ? sv.a : 0.35, box: !(sv && sv.box === false) };
+    Q3.see = { on: !!(sv && sv.on === true), a: sv && sv.a >= 0.1 && sv.a <= 0.9 ? sv.a : 0.35, box: !(sv && sv.box === false), off: sv && sv.off && typeof sv.off === 'object' ? sv.off : {} };
     const saveSee = () => store.set('qalc.plot3d.see', Q3.see);
     const seeBtn = tapButton({ class: 'btn see-btn', 'aria-pressed': 'false', text: tr('See-through', '透明') }, () => { if (!gl3dReady()) return; Q3.see.on = !Q3.see.on; saveSee(); syncSeeRow(); draw3d(); });
     const seeRange = el('input', { type: 'range', min: '10', max: '90', step: '5', 'aria-label': tr('How opaque (%)', '濃さ（%）') });
@@ -8369,8 +8370,10 @@
     seeRange.addEventListener('input', () => { Q3.see.a = Number(seeRange.value) / 100; saveSee(); syncSeeRow(); requestDraw3d(); });
     const boxBtn = tapButton({ class: 'btn box-btn', 'aria-pressed': 'true', text: tr('Box and axes', '箱と目盛り') }, () => { Q3.see.box = !Q3.see.box; saveSee(); syncSeeRow(); draw3d(); });
     const seeNote = el('span', { class: 'see-note', id: 'see-note', hidden: true, text: tr('Not available on this device', 'この端末では使えません') });
-    const seeRow = el('div', { class: 'plot-range rev-angle see-row', hidden: true }, seeBtn, seeRange, seeVal, boxBtn, seeNote);
-    Object.assign(Q3, { seeRow, seeBtn, seeRange, seeVal, boxBtn, seeNote });
+    // (what is see-through: a chip for each formula, the solid, the container and the liquid of a tank)
+    const seeChips = el('div', { class: 'see-chips', role: 'group', 'aria-label': tr('See-through: what', '透明にするもの'), hidden: true });
+    const seeRow = el('div', { class: 'plot-range rev-angle see-row', hidden: true }, seeBtn, seeRange, seeVal, boxBtn, seeNote, seeChips);
+    Object.assign(Q3, { seeRow, seeBtn, seeRange, seeVal, boxBtn, seeNote, seeChips, saveSee });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
@@ -8528,11 +8531,12 @@
     syncLevelRow();
     syncSeeRow();
   }
-  // the row of see-through and the box (feature/3d-view): shown for a solid of "Solid from a profile"; the see-through
-  // button cannot be pressed without WebGL 2 (or with the test switch "3D with WebGL" off), with a note
+  // the row of see-through and the box (feature/3d-view): shown in every 3D view (since 11-22 20:40); the see-through
+  // button cannot be pressed without WebGL 2 (or with the test switch "3D with WebGL" off), with a note; with the
+  // see-through on, a chip for each thing drawn chooses whether it is see-through
   function syncSeeRow() {
     if (!Q3.seeRow) return;
-    const Md = Q3.model, shown = !!Md && Md.k === 'profile' && !Md.tank;
+    const Md = Q3.model, shown = !!(Q3.data || Md);
     Q3.seeRow.hidden = !shown;
     if (!shown) return;
     const ok = gl3dWanted() && gl3dReady(), on = ok && Q3.see.on, pc = Math.round(Q3.see.a * 100);
@@ -8543,6 +8547,22 @@
     Q3.seeVal.hidden = !ok; Q3.seeVal.textContent = pc + '%';
     const box = Q3.see.box !== false;
     Q3.boxBtn.setAttribute('aria-pressed', String(box)); Q3.boxBtn.classList.toggle('on', box);
+    // the chips (only when there are two things or more to choose from)
+    const G = gl3dGroups(Q3.data, Md), ch = Q3.seeChips;
+    ch.textContent = '';
+    ch.hidden = !on || G.list.length < 2;
+    if (ch.hidden) return;
+    for (const it of G.list) {
+      const k = it.k, sel = (Md && Md.tank && k === 8) ? G.groups[8].see > 0 : (k === 9 ? G.groups[9].see > 0 : G.groups[k].see > 0);
+      const b = tapButton({ class: 'chip see-chip' + (sel ? ' on' : ''), 'aria-pressed': String(sel), 'data-key': it.key }, () => {
+        Q3.see.off = Q3.see.off || {};
+        Q3.see.off[it.key] = sel;
+        Q3.saveSee(); syncSeeRow(); draw3d();
+      });
+      if (it.color) b.append(el('span', { class: 'see-sw', style: 'background:' + it.color, 'aria-hidden': 'true' }));
+      b.append(el('span', { text: it.label }));
+      ch.append(b);
+    }
   }
   // a size written on a model ({ sym, val, unit } → "r = 15 cm"; D7: the digits of the 3D picture)
   const labText = (o) => (!o ? '' : typeof o === 'string' ? o : o.sym + ' = ' + digPic(o.val, 'dim') + (o.unit ? ' ' + o.unit : ''));
@@ -8832,6 +8852,7 @@
         if (Md.grow) { startGrow('mesh'); if (Md.grow !== 'rev' && Q3.angleRow) Q3.angleRow.hidden = true; }
         if (Md.tank) startFill(Md);
       }
+      syncSeeRow();
       draw3d();
       return;
     }
@@ -8896,6 +8917,7 @@
       if (shown || seq !== Q3.seq) return;
       shown = true;
       Q3.data = data;
+      syncSeeRow();
       clearMark3d();
       // (1.12.0, BG09: the solid turns into being once its edges are known; until then "Calculating…")
       if (Q3.growNext && rimsReady()) { const ax = Q3.growNext; Q3.growNext = null; startGrow(ax); }
@@ -9308,13 +9330,18 @@
   // coordinates gi and gj (for the lines of the grid; NaN: no lines); and (1.12.0, BG19) while the graph is
   // turned, how much of the lamp reaches the corner (0 to 1), kept from the drawing before the turn.
   const CV = 12, CT = 3 * CV;
+  // (feature/3d-view, WebGL 2 for every 3D view: each triangle also keeps its group, gk, the k of the buffer when it was
+  // added: the number of its surface (0 to 7), 8 a solid of "Shapes" or "Solid from a profile" or the liquid of a tank,
+  // 9 the container of a tank; for the see-through and the material of each)
   function triBuf(holder) {
     let a = holder && holder.triBuf;
     if (!a) { a = { f: new Float32Array(CT * 4096), n: 0 }; if (holder) holder.triBuf = a; }
-    a.n = 0;
+    if (!a.gk) a.gk = new Uint8Array(4096);
+    a.n = 0; a.k = 0;
     a.add = function (p, q, r) {
       if ((this.n + 1) * CT > this.f.length) { const b = new Float32Array(this.f.length * 2); b.set(this.f); this.f = b; }
-      this.f.set(p, this.n * CT); this.f.set(q, this.n * CT + CV); this.f.set(r, this.n * CT + 2 * CV); this.n++;
+      if (this.n + 1 > this.gk.length) { const b = new Uint8Array(this.gk.length * 2); b.set(this.gk); this.gk = b; }
+      this.f.set(p, this.n * CT); this.f.set(q, this.n * CT + CV); this.f.set(r, this.n * CT + 2 * CV); this.gk[this.n] = this.k; this.n++;
     };
     return a;
   }
@@ -9761,6 +9788,45 @@
     }
     return null;
   }
+  // the container of a tank with WebGL 2: clear glass; when the see-through is on and the container is not chosen for it,
+  // an opaque light grey (the liquid hidden, as the owner chose)
+  const GLASS = { key: 'glass', metal: 0, rough: 0.08, base: [0.74, 0.84, 0.95], opacity: 0.14 };
+  const OPAQUE_TANK = { key: 'tank', metal: 0, rough: 0.45, base: [0.8, 0.83, 0.88] };
+  const LIQUID_KEYS = ['water', 'sea', 'kerosene', 'gasoline'];
+  // the groups of a 3D drawing (feature/3d-view, every 3D view with WebGL 2): list, one for each thing in it (a surface by
+  // its formula, the solid, the liquid and the container of a tank) with its key, label and color, for the choice of what
+  // is see-through; groups, GL3D_NG of { mat, see, cast } for gl3dPaint. With the see-through on, a thing is see-through
+  // unless it was taken out of it (Q3.see.off[key]); the liquid of a tank is not see-through unless chosen (the container
+  // is, so the liquid is seen inside it).
+  function gl3dGroups(D, MD) {
+    const S = Q3.see || {}, on = !!S.on && gl3dWanted() && GL3D.state === 1, a = S.a || 0.35, off = S.off || {};
+    const groups = [], list = [];
+    for (let k = 0; k < GL3D_NG; k++) groups.push({ mat: null, see: 0, cast: true });
+    const chosen = (key, dflt) => on && (off[key] === undefined ? dflt : !off[key]);
+    const rgbCss = (c) => (c ? 'rgb(' + c.map((x) => Math.round(x)).join(',') + ')' : '');
+    (D && D.series || []).forEach((sr, i) => {
+      if (i > 7) return;
+      const key = 's:' + (sr.expr || i);
+      if (!list.some((x) => x.key === key)) list.push({ key, k: i, label: toDisplay(sr.expr || ''), color: rgbCss(sr.drawRgb || sr.rgb) });
+      groups[i].see = chosen(key, true) ? a : 0;
+      groups[i].cast = !groups[i].see;  // (what is see-through casts no shadow)
+    });
+    if (MD) {
+      const name = (Q3.link && Q3.link.title) || tr('Solid', '立体');
+      if (MD.tank) {
+        list.push({ key: 'glass', k: 9, label: tr('Container', '容器') }, { key: 'liquid', k: 8, label: tr('Liquid', '液体'), color: MD.liquidMat ? rgbCss(MD.liquidMat.base.map((x) => Math.min(255, x * 255))) : '' });
+        const g9 = chosen('glass', true);
+        groups[9] = on && !g9 ? { mat: OPAQUE_TANK, see: 0, cast: true } : { mat: GLASS, see: on ? a : 0, cast: false };
+        const sl = chosen('liquid', false) ? a : 0;
+        groups[8] = { mat: MD.liquidMat || null, see: sl, cast: !sl };
+      } else {
+        list.push({ key: 'model', k: 8, label: name, color: MD.mat ? rgbCss(MD.mat.base.map((x) => Math.min(255, x * 255))) : '' });
+        const sm = chosen('model', true) ? a : 0;
+        groups[8] = { mat: MD.mat || null, see: sm, cast: !sm };
+      }
+    }
+    return { list, groups, on };
+  }
   const GL3D = { state: 0 };  // 0 not tried yet, 1 ready, -1 no WebGL 2 here
   // the test switch "3D with WebGL" (test builds; on unless turned off)
   function gl3dWanted() { try { return localStorage.getItem('qalc.dev.gl3d') !== 'false'; } catch (e) { return true; } }
@@ -9769,33 +9835,40 @@
   function gl3dReady() { if (GL3D.state === 0) gl3dInit(); return GL3D.state === 1; }
   // (the GPU's layer away, when the 3D view shows something drawn on the 2D canvas)
   function gl3dHide() { if (GL3D.cv && !GL3D.cv.hidden) GL3D.cv.hidden = true; }
+  // (feature/3d-view, the owner's decision of 11-22 20:40: every 3D view with WebGL 2) The triangles are those of the 2D
+  // canvas's drawing (triBuf: the place on the screen, the depth, the normal in the camera's axes, the color, the lines,
+  // the group), sent as points in the camera's axes; each group (a surface, the solid, the liquid, the container of a
+  // tank) has its own material, see-through and whether it casts the lamp's shadow.
+  const GL3D_NG = 12;
   const GL3D_VS = `#version 300 es
-in vec3 aP; in vec3 aN; in vec3 aC; in vec2 aG;
-uniform vec3 uR0, uR1, uR2, uK, uB, uNs, uLX, uLY, uLD;
-uniform float uS, uZR; uniform vec2 uC, uSize;
-out vec3 vN; out vec3 vC; out vec2 vG; out vec3 vL;
+in vec3 aP; in vec3 aN; in vec3 aC; in vec2 aG; in float aK;
+uniform float uS, uZR; uniform vec2 uC, uSize; uniform vec3 uLX, uLY, uLD;
+out vec3 vN; out vec3 vC; out vec2 vG; out vec3 vL; flat out int vK;
 void main() {
-  vec3 b = aP * uK + uB, c = vec3(dot(uR0, b), dot(uR1, b), dot(uR2, b));
-  vec2 px = uC + vec2(c.x, -c.y) * uS;
-  gl_Position = vec4(px.x / uSize.x * 2.0 - 1.0, 1.0 - px.y / uSize.y * 2.0, c.z / uZR, 1.0);
-  vec3 nb = aN * uNs;
-  vN = vec3(dot(uR0, nb), dot(uR1, nb), dot(uR2, nb));
-  vC = aC / 255.0; vG = aG;
-  vL = vec3(dot(c, uLX), dot(c, uLY), dot(c, uLD)) / uZR * 0.5 + 0.5;
+  vec2 px = uC + vec2(aP.x, -aP.y) * uS;
+  gl_Position = vec4(px.x / uSize.x * 2.0 - 1.0, 1.0 - px.y / uSize.y * 2.0, aP.z / uZR, 1.0);
+  vN = aN; vC = aC / 255.0; vG = aG; vK = int(aK + 0.5);
+  // (the container of a tank a hair nearer the eye: the liquid touches its wall, and an opaque container must win there)
+  if (vK == 9) gl_Position.z -= 0.0006;
+  vL = vec3(dot(aP, uLX), dot(aP, uLY), dot(aP, uLD)) / uZR * 0.5 + 0.5;
 }`;
   const GL3D_SVS = `#version 300 es
-in vec3 aP;
-uniform vec3 uR0, uR1, uR2, uK, uB, uLX, uLY, uLD; uniform float uZR;
-void main() { vec3 b = aP * uK + uB, c = vec3(dot(uR0, b), dot(uR1, b), dot(uR2, b)); gl_Position = vec4(vec3(dot(c, uLX), dot(c, uLY), dot(c, uLD)) / uZR, 1.0); }`;
+in vec3 aP; in float aK;
+uniform vec3 uLX, uLY, uLD; uniform float uZR; uniform float uGCast[12];
+void main() {
+  int k = int(aK + 0.5);
+  gl_Position = uGCast[k] > 0.5 ? vec4(vec3(dot(aP, uLX), dot(aP, uLY), dot(aP, uLD)) / uZR, 1.0) : vec4(2.0, 2.0, 2.0, 1.0);
+}`;
   const GL3D_SFS = `#version 300 es
 precision mediump float; void main() {}`;
   const GL3D_FS = `#version 300 es
 precision highp float; precision highp sampler2DShadow;
-in vec3 vN; in vec3 vC; in vec2 vG; in vec3 vL;
+in vec3 vN; in vec3 vC; in vec2 vG; in vec3 vL; flat in int vK;
 uniform vec3 uL, uH, uF; uniform float uDark;
 uniform vec4 uMesh; uniform float uMeshW;
-uniform vec4 uMat; uniform vec3 uBase;
-uniform int uPass; uniform float uSee;
+uniform vec4 uGMat[12]; uniform vec3 uGBase[12]; uniform float uGSee[12];
+uniform vec4 uFade;
+uniform int uPass;
 uniform sampler2D uPrev; uniform vec2 uFB;
 uniform sampler2DShadow uSh; uniform float uShOn, uShTex;
 out vec4 o;
@@ -9810,25 +9883,26 @@ vec3 room(vec3 r, float rough) {
 }
 void main() {
   if (uPass == 1) { float prev = texture(uPrev, gl_FragCoord.xy / uFB).r; if (gl_FragCoord.z <= prev + 1e-6) discard; }
+  vec4 mt = uGMat[vK]; vec3 base = uGBase[vK]; float see = uGSee[vK];
   vec3 n = normalize(vN); if (n.z > 0.0) n = -n;   // the side turned to the eye (z away from it)
   float dif = dot(n, uL), nh = dot(n, uH), fil = dot(n, uF);
   // the lamp's shadow: 9 filtered looks around the point in the lamp's map
   float lit = 1.0;
   if (uShOn > 0.5 && dif > 0.04) {
-    float bias = 0.0012 + 0.004 * (1.0 - dif), s = 0.0;
-    for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) s += texture(uSh, vec3(vL.xy + vec2(float(i), float(j)) * 1.5 * uShTex, vL.z - bias));
-    lit = s / 9.0;
+    float bias = 0.0012 + 0.004 * (1.0 - dif), sh = 0.0;
+    for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) sh += texture(uSh, vec3(vL.xy + vec2(float(i), float(j)) * 1.5 * uShTex, vL.z - bias));
+    lit = sh / 9.0;
     if (dif < 0.12) lit = 1.0 - (1.0 - lit) * (dif - 0.04) / 0.08;
   }
   vec3 col;
-  if (uMat.w > 0.5) {
+  if (mt.w > 0.5) {
     vec3 V = vec3(0.0, 0.0, -1.0), R = reflect(vec3(0.0, 0.0, 1.0), n);
-    float rough = uMat.y, a = rough * rough, met = uMat.x;
-    vec3 F0 = mix(vec3(0.04), uBase, met), Fr = F0 + (1.0 - F0) * pow(1.0 - max(dot(n, V), 1e-3), 5.0);
+    float rough = mt.y, a = rough * rough, met = mt.x;
+    vec3 F0 = mix(vec3(0.04), base, met), Fr = F0 + (1.0 - F0) * pow(1.0 - max(dot(n, V), 1e-3), 5.0);
     vec3 H = normalize(uL + V); float NdH = max(dot(n, H), 0.0), NdL = max(dif, 0.0);
     float D = a * a / (3.14159 * pow(NdH * NdH * (a * a - 1.0) + 1.0, 2.0));
     vec3 spec = Fr * D * NdL * 0.9 * lit, env = room(R, rough) * Fr;
-    vec3 diff = uBase * (1.0 - met) * (0.32 + 0.12 * n.y + 0.62 * NdL * lit + 0.2 * max(fil, 0.0));
+    vec3 diff = base * (1.0 - met) * (0.32 + 0.12 * n.y + 0.62 * NdL * lit + 0.2 * max(fil, 0.0));
     col = diff + env + spec;
   } else {
     float AMB = uDark > 0.5 ? 0.3 : 0.34, DIF = uDark > 0.5 ? 0.66 : 0.62, KS = uDark > 0.5 ? 0.42 : 0.38;
@@ -9838,7 +9912,7 @@ void main() {
     float om = 1.0 - max(-n.z, 0.0), fr = (uDark > 0.5 ? 0.42 : 0.5) * (0.04 + 0.96 * pow(om, 5.0));
     col = vC * kd * (1.0 - fr) + env * fr + sp;
   }
-  // the lines along the edges of the pieces (none on the axis: no lines where gi is below −1000)
+  // the lines along the edges of the pieces (none where gi is below −1000)
   float line = 0.0;
   if (vG.x > -1000.0 && uMesh.a > 0.0) {
     vec2 d = abs(vG - floor(vG + 0.5)), w = max(fwidth(vG), vec2(1e-6));
@@ -9846,9 +9920,11 @@ void main() {
     if (dd < 1.0) line = dd <= 0.0 ? 1.0 : 1.0 - dd;
   }
   col = mix(col, uMesh.rgb, line * uMesh.a);
+  // the parts not measured fade into the background ("Volume and surface")
+  col = mix(col, uFade.rgb, uFade.a);
   float alpha = 1.0, edge = pow(1.0 - abs(n.z), 3.0);
-  if (uSee > 0.0) { alpha = max(uSee + (1.0 - uSee) * 0.75 * edge, line * 0.45); col = mix(col, col * 0.55, edge); }
-  else if (uMat.w > 0.5 && uMat.z < 1.0) alpha = uMat.z + (1.0 - uMat.z) * 0.6 * edge;
+  if (see > 0.0) { alpha = max(see + (1.0 - see) * 0.75 * edge, line * 0.45); col = mix(col, col * 0.55, edge); }
+  else if (mt.w > 0.5 && mt.z < 1.0) alpha = mt.z + (1.0 - mt.z) * 0.6 * edge;
   o = uPass == 1 ? vec4(col * alpha, alpha) : vec4(col, 1.0);
 }`;
   const GL3D_QVS = `#version 300 es
@@ -9871,12 +9947,12 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         return { p, u };
       };
       Object.assign(GL3D, {
-        cv, gl, main: prog(GL3D_VS, GL3D_FS, ['aP', 'aN', 'aC', 'aG']), shadow: prog(GL3D_SVS, GL3D_SFS, ['aP']), quad: prog(GL3D_QVS, GL3D_QFS, ['aQ']),
+        cv, gl, main: prog(GL3D_VS, GL3D_FS, ['aP', 'aN', 'aC', 'aG', 'aK']), shadow: prog(GL3D_SVS, GL3D_SFS, ['aP', 'aN', 'aC', 'aG', 'aK']), quad: prog(GL3D_QVS, GL3D_QFS, ['aQ']),
         vbo: gl.createBuffer(), ibo: gl.createBuffer(), qbo: gl.createBuffer(), vao: gl.createVertexArray(), qvao: gl.createVertexArray(), mesh: null, nIdx: 0, fb: null, w: 0, h: 0
       });
       gl.bindVertexArray(GL3D.vao);
       gl.bindBuffer(gl.ARRAY_BUFFER, GL3D.vbo);
-      [[0, 3, 0], [1, 3, 3], [2, 3, 6], [3, 2, 9]].forEach(([l, n, off]) => { gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, n, gl.FLOAT, false, MV * 4, off * 4); });
+      [[0, 3, 0], [1, 3, 3], [2, 3, 6], [3, 2, 9], [4, 1, 11]].forEach(([l, n, off]) => { gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, n, gl.FLOAT, false, GLV * 4, off * 4); });
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, GL3D.ibo);
       gl.bindVertexArray(GL3D.qvao);
       gl.bindBuffer(gl.ARRAY_BUFFER, GL3D.qbo); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
@@ -9914,57 +9990,79 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     G.w = w; G.h = h;
   }
-  // a model (a mesh: MV numbers a corner, triangles M.t) drawn with WebGL 2 and laid on g; o: the view of draw3d (RV,
-  // U, V, Wz, the normals' scale, S, cx, cy, W, H, q), the lamp in the camera's axes, dark, mesh (the lines), see
-  // (how opaque when see-through, or 0), mat (MATS), shadow (the lamp's shadows), layers. Returns what was drawn.
-  function gl3dPaint(g, M, o) {
+  // the numbers of a corner sent to the GPU: the point in the camera's axes (x right, y up, z away from the eye), the
+  // normal, the color (0 to 255), gi and gj (−1e4 for none), the group
+  const GLV = 12;
+  // the triangles of the drawing (tb: triBuf) drawn with WebGL 2 and laid into the 2D canvas g at once (so the box is
+  // behind them and the axes, labels, sizes and the glass in front of a tank over them). o: W, H, q (pixels for each CSS
+  // pixel), cx, cy, S (the camera of draw3d: screen = (cx + x·S, cy − y·S)), ZR (the depth range), lamp (toward the lamp,
+  // the camera's axes), dark, mesh (the lines), groups (GL3D_NG of { mat, see, cast }: the material (MATS), how opaque
+  // when see-through (0: not), whether it casts the lamp's shadow), shadow, layers (of the depth peeling), fade
+  // ([r, g, b, amount], "Volume and surface"), finish. Returns what was drawn.
+  function gl3dPaint(g, tb, o) {
     const G = GL3D, gl = G.gl, t0 = performance.now();
     if (!gl || gl.isContextLost()) { G.state = 0; return null; }
     const w = Math.max(1, Math.round(o.W * o.q)), h = Math.max(1, Math.round(o.H * o.q));
     if (G.cv.width !== w || G.cv.height !== h) { G.cv.width = w; G.cv.height = h; }
-    // the corners (the lines' gi and gj: NaN, none, as −1e4) and the triangles, sent again only for a new mesh
-    if (G.mesh !== M || G.meshN !== M.v.length) {
-      const V = new Float32Array(M.v.length);
-      for (let i = 0; i < M.v.length; i++) { const x = M.v[i]; V[i] = x === x ? x : -1e4; }
-      gl.bindVertexArray(G.vao);
-      gl.bindBuffer(gl.ARRAY_BUFFER, G.vbo); gl.bufferData(gl.ARRAY_BUFFER, V, gl.DYNAMIC_DRAW);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.ibo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(M.t), gl.DYNAMIC_DRAW);
-      gl.bindVertexArray(null);
-      G.mesh = M; G.meshN = M.v.length; G.nIdx = M.t.length;
+    // the corners, from the triangles of the 2D canvas (the place on the screen back to the camera's axes)
+    const nv = tb.n * 3, F = tb.f, K = tb.gk, iS = 1 / o.S;
+    if (!G.vbuf || G.vbuf.length < nv * GLV) G.vbuf = new Float32Array(Math.max(nv * GLV, 4096 * GLV) * 1.5 | 0);
+    const B = G.vbuf, used = new Set();
+    for (let v = 0; v < nv; v++) {
+      const a = v * CV, b = v * GLV, k = K[(v / 3) | 0];
+      B[b] = (F[a] - o.cx) * iS; B[b + 1] = (o.cy - F[a + 1]) * iS; B[b + 2] = F[a + 2];
+      B[b + 3] = F[a + 3]; B[b + 4] = F[a + 4]; B[b + 5] = F[a + 5];
+      B[b + 6] = F[a + 6]; B[b + 7] = F[a + 7]; B[b + 8] = F[a + 8];
+      const gi = F[a + 9], gj = F[a + 10];
+      B[b + 9] = gi === gi ? gi : -1e4; B[b + 10] = gj === gj ? gj : -1e4; B[b + 11] = k;
+      used.add(k);
     }
-    const R = o.RV, k = [o.U(1) - o.U(0), o.V(1) - o.V(0), o.Wz(1) - o.Wz(0)], b = [o.U(0), o.V(0), o.Wz(0)];
+    gl.bindVertexArray(G.vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, G.vbo);
+    if (G.vcap !== B.length) { gl.bufferData(gl.ARRAY_BUFFER, B.byteLength, gl.DYNAMIC_DRAW); G.vcap = B.length; }
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, B, 0, nv * GLV);
+    gl.bindVertexArray(null);
     const ZR = o.ZR, L = o.lamp, ln = Math.hypot(L[0], L[1], L[2]) || 1, Lc = [L[0] / ln, L[1] / ln, L[2] / ln];
     let H = [Lc[0], Lc[1], Lc[2] - 1]; const hn = Math.hypot(H[0], H[1], H[2]) || 1; H = H.map((x) => x / hn);
     // the lamp's axes: depth along the light (away from the lamp), and two across it
     const LD = [-Lc[0], -Lc[1], -Lc[2]], up = Math.abs(LD[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
     let LX = [up[1] * LD[2] - up[2] * LD[1], up[2] * LD[0] - up[0] * LD[2], up[0] * LD[1] - up[1] * LD[0]]; const lx = Math.hypot(...LX); LX = LX.map((x) => x / lx);
     const LY = [LD[1] * LX[2] - LD[2] * LX[1], LD[2] * LX[0] - LD[0] * LX[2], LD[0] * LX[1] - LD[1] * LX[0]];
-    const mat = o.mat, see = o.see || 0, clear = !see && mat && mat.opacity !== undefined && mat.opacity < 1;
-    const peel = see > 0 || clear, shadow = !!o.shadow && !peel;
+    // the groups: their material, see-through and shadow (only those drawn count for the depth peeling)
+    const NG = GL3D_NG, gm = new Float32Array(4 * NG), gb = new Float32Array(3 * NG), gs = new Float32Array(NG), gc = new Float32Array(NG);
+    let anySee = false, anyClear = false;
+    const info = [];
+    for (let k = 0; k < NG; k++) {
+      const q = (o.groups && o.groups[k]) || {}, m = q.mat || null;
+      gm[4 * k] = m ? m.metal : 0; gm[4 * k + 1] = m ? m.rough : 0.5; gm[4 * k + 2] = m && m.opacity !== undefined ? m.opacity : 1; gm[4 * k + 3] = m ? 1 : 0;
+      gb.set(m ? m.base : [0.5, 0.5, 0.5], 3 * k);
+      gs[k] = q.see > 0 ? q.see : 0; gc[k] = q.cast === false ? 0 : 1;
+      if (used.has(k)) {
+        if (gs[k] > 0) anySee = true; else if (m && m.opacity !== undefined && m.opacity < 1) anyClear = true;
+        info.push({ k, see: gs[k] > 0 ? Math.round(gs[k] * 100) / 100 : 0, mat: m ? m.key || '' : '', cast: gc[k] > 0 });
+      }
+    }
+    const peel = anySee || anyClear, shadow = !!o.shadow && info.some((x) => x.cast);
     if (peel) gl3dPeelTargets(w, h);
-    const common = (P) => {
-      gl.uniform3f(P.u.uR0, R[0], R[1], R[2]); gl.uniform3f(P.u.uR1, R[3], R[4], R[5]); gl.uniform3f(P.u.uR2, R[6], R[7], R[8]);
-      gl.uniform3fv(P.u.uK, k); gl.uniform3fv(P.u.uB, b); gl.uniform1f(P.u.uZR, ZR);
-      gl.uniform3fv(P.u.uLX, LX); gl.uniform3fv(P.u.uLY, LY); gl.uniform3fv(P.u.uLD, LD);
-    };
+    const lampAxes = (P) => { gl.uniform1f(P.u.uZR, ZR); gl.uniform3fv(P.u.uLX, LX); gl.uniform3fv(P.u.uLY, LY); gl.uniform3fv(P.u.uLD, LD); };
     gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS); gl.disable(gl.CULL_FACE); gl.disable(gl.BLEND);
-    // the lamp's map
+    // the lamp's map (only what casts a shadow: not the glass of a tank)
     if (shadow) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, G.shFb); gl.viewport(0, 0, G.SH, G.SH);
       gl.clear(gl.DEPTH_BUFFER_BIT);
-      gl.useProgram(G.shadow.p); common(G.shadow);
-      gl.bindVertexArray(G.vao); gl.drawElements(gl.TRIANGLES, G.nIdx, gl.UNSIGNED_INT, 0);
+      gl.useProgram(G.shadow.p); lampAxes(G.shadow); gl.uniform1fv(G.shadow.u['uGCast[0]'], gc);
+      gl.bindVertexArray(G.vao); gl.drawArrays(gl.TRIANGLES, 0, nv);
     }
     const P = G.main;
-    gl.useProgram(P.p); common(P);
-    gl.uniform3fv(P.u.uNs, [o.nx, o.ny, o.nz]); gl.uniform1f(P.u.uS, o.S); gl.uniform2f(P.u.uC, o.cx, o.cy); gl.uniform2f(P.u.uSize, o.W, o.H);
+    gl.useProgram(P.p); lampAxes(P);
+    gl.uniform1f(P.u.uS, o.S); gl.uniform2f(P.u.uC, o.cx, o.cy); gl.uniform2f(P.u.uSize, o.W, o.H);
     gl.uniform3fv(P.u.uL, Lc); gl.uniform3fv(P.u.uH, H); { const f = Math.hypot(0.45, 0.45, 0.77); gl.uniform3fv(P.u.uF, [0.45 / f, -0.45 / f, -0.77 / f]); }
     gl.uniform1f(P.u.uDark, o.dark ? 1 : 0);
     const ms = o.mesh;
     gl.uniform4f(P.u.uMesh, ms ? ms[0] / 255 : 0, ms ? ms[1] / 255 : 0, ms ? ms[2] / 255 : 0, ms ? ms[3] : 0); gl.uniform1f(P.u.uMeshW, ms ? ms[4] * o.q / 2 : 0);
-    gl.uniform4f(P.u.uMat, mat ? mat.metal : 0, mat ? mat.rough : 0.5, mat && mat.opacity !== undefined ? mat.opacity : 1, mat ? 1 : 0);
-    gl.uniform3fv(P.u.uBase, mat ? mat.base : [0.5, 0.5, 0.5]);
-    gl.uniform1f(P.u.uSee, see);
+    gl.uniform4fv(P.u['uGMat[0]'], gm); gl.uniform3fv(P.u['uGBase[0]'], gb); gl.uniform1fv(P.u['uGSee[0]'], gs);
+    const fd = o.fade;
+    gl.uniform4f(P.u.uFade, fd ? fd[0] / 255 : 0, fd ? fd[1] / 255 : 0, fd ? fd[2] / 255 : 0, fd ? fd[3] : 0);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, G.shTex); gl.uniform1i(P.u.uSh, 1);
     gl.uniform1f(P.u.uShOn, shadow ? 1 : 0); gl.uniform1f(P.u.uShTex, 1 / G.SH);
     gl.uniform2f(P.u.uFB, w, h);
@@ -9975,8 +10073,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.uniform1i(P.u.uPass, 0);
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, null); gl.uniform1i(P.u.uPrev, 0);
-      gl.drawElements(gl.TRIANGLES, G.nIdx, gl.UNSIGNED_INT, 0);
+      gl.drawArrays(gl.TRIANGLES, 0, nv);
     } else {
+      // depth peeling: the nearest faces, then the nearest behind them, and so on, added front to back
       gl.bindFramebuffer(gl.FRAMEBUFFER, G.accFb); gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       // (the first "last layer": depth 0, nothing peeled yet)
       gl.bindFramebuffer(gl.FRAMEBUFFER, G.fb);
@@ -9991,7 +10090,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         gl.useProgram(P.p); gl.bindVertexArray(G.vao); gl.enable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, G.dep[(l + 1) % 2]); gl.uniform1i(P.u.uPrev, 0);
         gl.uniform1i(P.u.uPass, 1);
-        gl.drawElements(gl.TRIANGLES, G.nIdx, gl.UNSIGNED_INT, 0);
+        gl.drawArrays(gl.TRIANGLES, 0, nv);
         // under what is there: C += (1 − A) C_layer (premultiplied)
         gl.bindFramebuffer(gl.FRAMEBUFFER, G.accFb);
         gl.useProgram(G.quad.p); gl.bindVertexArray(G.qvao); gl.disable(gl.DEPTH_TEST);
@@ -10010,18 +10109,13 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     gl.bindVertexArray(null);
     // (for the time on the screen: the GPU finished, so that the time is that of the drawing)
     if (o.finish) gl.finish();
+    // laid into the 2D canvas now, in the order of the drawing (what draw3d draws after it is in front)
+    G.cv.hidden = true;
+    g.save(); g.imageSmoothingEnabled = true; g.drawImage(G.cv, 0, 0, o.W, o.H); g.restore();
     const tGl = performance.now() - t0;
-    // the picture of the GPU: a layer over the 2D canvas (over the fading copy of the last frame too, BG19), under the
-    // buttons; for a picture or a GIF to share (o.composite) laid into the 2D canvas instead, at once
-    const wrap = o.canvas.parentElement;
-    if (o.composite || !wrap) { G.cv.hidden = true; g.save(); g.imageSmoothingEnabled = true; g.drawImage(G.cv, 0, 0, o.W, o.H); g.restore(); }
-    else {
-      if (!G.cv.classList.contains('plot-gl')) { G.cv.className = 'plot-gl'; G.cv.setAttribute('aria-hidden', 'true'); }
-      const after = Q3.fadeLayer && Q3.fadeLayer.parentElement === wrap ? Q3.fadeLayer : o.canvas;
-      if (G.cv.previousSibling !== after) after.after(G.cv);
-      G.cv.hidden = false;
-    }
-    return { gl: true, ms: Math.round(tGl * 10) / 10, layers, see: see > 0, clear, shadow, tris: G.nIdx / 3, px: [w, h], mat: mat ? mat.key : '' };
+    G.lastMs = tGl;
+    return { gl: true, ms: Math.round(tGl * 10) / 10, layers, see: anySee, clear: anyClear, shadow, tris: tb.n, px: [w, h], q: o.q, groups: info,
+      mat: info.filter((x) => x.mat).map((x) => x.mat).join(',') };
   }
   // the slope at p0 (value w0) from the points on its two sides, [place, value] (a: before, b: after;
   // null if none): the parabola through the three, or the line to the one there is
@@ -11226,7 +11320,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // 'back' fills it with a little color before the liquid (and draws the seams at the back, faint); 'front'
   // fills it again after the liquid, with a little shine where the lamp is mirrored toward the eye, and draws
   // its outline and the seams in front.
-  function glassPaint(g, Md, X, side, dark) {
+  function glassPaint(g, Md, X, side, dark, gl) {
     const T = Md.tank, G = T.glass, V = G.v, n = V.length / MV, I = G.t;
     if (side === 'back') {
       if (!T.gp || T.gp.length !== n * 2) { T.gp = new Float32Array(n * 2); T.gn = new Float32Array(n); T.gs = new Float32Array(n); }
@@ -11251,9 +11345,12 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const P = T.gp, hull = T.hull;
     const hullPath = () => { g.beginPath(); hull.forEach((i, k) => (k ? g.lineTo(P[2 * i], P[2 * i + 1]) : g.moveTo(P[2 * i], P[2 * i + 1]))); g.closePath(); };
     g.save();
-    hullPath();
-    g.fillStyle = dark ? (side === 'front' ? 'rgba(190,215,255,0.07)' : 'rgba(190,215,255,0.06)') : (side === 'front' ? 'rgba(120,160,205,0.10)' : 'rgba(120,160,205,0.13)');
-    g.fill();
+    // (with WebGL 2 the container is drawn by the GPU as a group of its own: no fill and no shine here, feature/3d-view)
+    if (!gl) {
+      hullPath();
+      g.fillStyle = dark ? (side === 'front' ? 'rgba(190,215,255,0.07)' : 'rgba(190,215,255,0.06)') : (side === 'front' ? 'rgba(120,160,205,0.10)' : 'rgba(120,160,205,0.13)');
+      g.fill();
+    }
     if (side === 'back') {
       g.strokeStyle = dark ? 'rgba(210,225,250,0.22)' : 'rgba(50,70,100,0.22)'; g.lineWidth = 1;
       g.beginPath(); seamPath(g, G, P, T.gn, false); g.stroke();
@@ -11261,7 +11358,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       return;
     }
     // a little shine: the triangles in front whose corners all mirror the lamp toward the eye (few)
-    for (const [lim, al] of [[0.86, 0.1], [0.95, 0.14]]) {
+    for (const [lim, al] of gl ? [] : [[0.86, 0.1], [0.95, 0.14]]) {
       g.beginPath();
       let any = false;
       for (let t = 0; t < I.length; t += 3) {
@@ -11303,7 +11400,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const unit2 = (a, b) => { const l = Math.hypot(a, b); return l > 1e-3 ? [a / l, b / l] : null; };
     const rgt = unit2(X.RV[0], X.RV[1]) || unit2(-X.RV[3], -X.RV[4]) || [1, 0], twd = unit2(-X.RV[6], -X.RV[7]) || unit2(-X.RV[3], -X.RV[4]) || [0, -1];
     const T = Md.tank, growing = o.growing;
-    if (T) glassPaint(g, Md, X, 'front', dark);
+    if (T) glassPaint(g, Md, X, 'front', dark, o.gl);
     // a label in a little box: an italic letter, then the rest (" = 15 cm")
     const pill = (txt, x, y, al) => {
       const m = /^(\S+)( = .*)$/.exec(txt), a = m ? m[1] : '', b = m ? m[2] : txt;
@@ -11605,8 +11702,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     // a path on the floor of the box (z at its bottom), from points (u, v)
     const pane0 = (pts) => { pts.forEach(([u, v], i) => { proj(u, v, -EZ); if (i) g.lineTo(T[0], T[1]); else g.moveTo(T[0], T[1]); }); g.closePath(); };
     const pane = (corners) => { g.beginPath(); corners.forEach(([u, v, w], i) => { proj(u, v, w); if (i) g.lineTo(T[0], T[1]); else g.moveTo(T[0], T[1]); }); g.closePath(); g.fill(); g.stroke(); };
-    // (feature/3d-view: the box, its grid and axes can be turned off for a solid of "Solid from a profile", "Box")
-    const boxOff = !!(D.model && Q3.model && Q3.model.k === 'profile' && Q3.see && Q3.see.box === false);
+    // (feature/3d-view: the box, its grid and axes can be turned off, "Box and axes"; every 3D view since 11-22 20:40)
+    const boxOff = !!(Q3.see && Q3.see.box === false);
     if (!boxOff) {
     g.fillStyle = dark ? 'rgba(255,255,255,0.035)' : 'rgba(30,50,90,0.035)';
     g.strokeStyle = axisColor; g.lineWidth = 1;
@@ -12054,7 +12151,10 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       }
     };
     let jelly = 0, faded = 0, rimTris = 0;
+    // (the group of each triangle: the number of its surface, for the see-through of each with WebGL 2)
+    const sIdx = new Map((D.series || []).map((sr, i) => [sr, Math.min(7, i)]));
     for (const cl of cells) {
+      tb.k = sIdx.get(cl.s) || 0;
       // the measured parts of the surfaces: drawn as the liquid, below
       if (cl.inR) { jelly++; continue; }
       if (fadeTo) faded++;
@@ -12075,6 +12175,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const MD = D.model ? Q3.model : null;
     const MX = MD ? { proj, T, U, V, Wz, camN, LKS, lockLitN, RV, nx: (x1 - x0) / (2 * EX), ny: (y1 - y0) / (2 * EY), nz: (z1 - z0) / (2 * EZ) } : null;
     const mGrow = MD && GR && GR.ax === 'mesh' ? Math.max(0, Math.min(1, GR.theta / (2 * Math.PI))) : 1;
+    tb.k = 8;
     const mt0 = performance.now(), mMesh = MD ? (MD.tank ? MD.tank.liquid(MD.tank.hShow) : MD.mesh(mGrow)) : null, mTris = MD ? meshToTris(mMesh, tb, MX) : 0, mMs = { tris: performance.now() - mt0 };
     // shadows from the lamp of the highlight (1.11.0): on the floor of the box (while it is at the
     // back, seen from above) and of the surfaces on themselves and on each other. Not while "Volume and
@@ -12106,21 +12207,29 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     }
     const floorLayerNow = floor ? floor.layer : null;
     if (floor) { delete floor.layer; floor.ms = Math.round((performance.now() - tf) * 10) / 10; }
-    // (the back of the glass of a tank, behind the liquid)
-    if (MD && MD.tank) { const t0 = performance.now(); glassPaint(g, MD, MX, 'back', dark); mMs.back = performance.now() - t0; }
-    // (feature/3d-view: the solid of "Solid from a profile" with WebGL 2 when it is there, a prototype; the 2D canvas
-    // otherwise. The lamp kept on the box while turning, as for the 2D canvas, BG19)
+    // (feature/3d-view, the owner's decision of 11-22 20:40: every 3D view with WebGL 2 when it is there (the surfaces of a
+    // 3D graph, the solid of ⟳ 3D, the solids and tanks of "Shapes", "Solid from a profile"); the 2D canvas otherwise, or
+    // with the test switch "3D with WebGL" off. The lamp kept on the box while turning, as for the 2D canvas, BG19)
+    const glWant = gl3dWanted() && tb.n > 0, glOn = glWant && gl3dReady();
+    // (the back of the glass of a tank, behind the liquid; with WebGL 2 the container is drawn by the GPU, and only its
+    // seams at the back here)
+    if (MD && MD.tank) { const t0 = performance.now(); glassPaint(g, MD, MX, 'back', dark, glOn); mMs.back = performance.now() - t0; }
     const meshLines = mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null;
-    const glWant = !!MD && MD.k === 'profile' && !MD.tank && gl3dWanted(), glOn = glWant && tb.n === mTris && gl3dReady();
-    const seeA = glOn && Q3.see && Q3.see.on ? Q3.see.a : 0;
     let glR = null;
     if (glOn) {
+      // the container of a tank as a group of its own (after the floor's shadow, which it does not cast)
+      const nGlass = MD && MD.tank ? (tb.k = 9, meshToTris(MD.tank.glass, tb, MX)) : 0;
       const lamp = LKS && shadows ? camN(LKS.lamp[0], LKS.lamp[1], LKS.lamp[2]) : LAMP;
-      glR = gl3dPaint(g, mMesh, { canvas: c, composite: !!(Q3.captureQ || Q3.composite), RV, U, V, Wz, nx: MX.nx, ny: MX.ny, nz: MX.nz, S, cx, cy, W, H, q: Q3.captureQ || Math.min(dpr, 3), ZR: Math.hypot(EX, EY, EZ) * 1.3, lamp, dark, mesh: meshLines, see: seeA, mat: MD.mat || null, shadow: shadows, layers: Q3.turning ? 4 : 6, finish: devFlag('ms3d') });
+      // (coarser while turning when a drawing is slow: fewer pixels, and fewer layers of the see-through)
+      const q = Q3.captureQ || (Q3.turning && (GL3D.lastMs || 0) > 24 ? Math.min(dpr, 1.25) : Math.min(dpr, 3));
+      glR = gl3dPaint(g, tb, { W, H, q, cx, cy, S, ZR: Math.hypot(EX, EY, EZ) * 1.3, lamp, dark, mesh: meshLines, groups: gl3dGroups(D, MD).groups, shadow: shadows,
+        layers: Q3.turning ? 4 : 6, fade: fadeTo ? [fadeTo[0], fadeTo[1], fadeTo[2], VOL_FADE] : null, finish: devFlag('ms3d') });
+      // (the glass out of the triangles again: what follows, as the sizes on a solid, is of the liquid only)
+      tb.n -= nGlass;
     }
     if (!glR) gl3dHide();
     c.dataset.gl = JSON.stringify(glR ? Object.assign({ on: true, renderer: GL3D.renderer }, glR) : { on: false, wanted: glWant, ready: GL3D.state === 1, error: GL3D.error || '' });
-    const surf = glR ? { shown: glR.tris, q: Q3.captureQ || Math.min(dpr, 3), SM: null, zbuf: null, shadow: null } : surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: meshLines, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite: !!Q3.turning, k: shK } : null,
+    const surf = glR ? { shown: glR.tris, q: glR.q, SM: null, zbuf: null, shadow: null } : surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: meshLines, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite: !!Q3.turning, k: shK } : null,
       lock: LKS && shadows ? { L: camN(LKS.lamp[0], LKS.lamp[1], LKS.lamp[2]), map: LKS.SM ? [LKS.SM.MW, LKS.SM.MH] : null } : null });
     // (what the next turn keeps: the lamp's map and the floor's layer of this drawing, with its camera, BG19)
     if (!Q3.turning && shadows && !Q3.captureQ) Q3.lastShade = { D, dark, EX, EY, EZ, RV, SM: surf.SM || null, floor: floorLayerNow, lamp: lampInBox(RV) };
@@ -12201,7 +12310,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (MD) {
       const cr = c.getBoundingClientRect(), ctl = c.parentElement && c.parentElement.querySelector('.plot-ctl'), kr = ctl ? ctl.getBoundingClientRect() : null;
       const avoid = kr && kr.width ? { x: kr.left - cr.left - 4, y: kr.top - cr.top - 4, w: kr.width + 8, h: kr.height + 8 } : null;
-      const t0 = performance.now(), mo = modelOverlay(g, MD, MX, surf.zbuf, { css, dark, W, H, avoid, growing: mGrow < 1 || !!Q3.fill });
+      const t0 = performance.now(), mo = modelOverlay(g, MD, MX, surf.zbuf, { css, dark, W, H, avoid, growing: mGrow < 1 || !!Q3.fill, gl: !!glR });
       mMs.over = performance.now() - t0;
       for (const k in mMs) mMs[k] = Math.round(mMs[k] * 10) / 10;
       mo.ms = mMs;
@@ -13147,6 +13256,11 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (G.k !== sh.k) return;
         const model = Object.values(s).every((x) => isFinite(x)) ? shapeModel(sh.k, s, labelsOf(sh, s, base)) : null;
         if (!model) { toast(tr('These sizes cannot be drawn in 3D', 'この大きさでは 3D で描けません'), 2600); return; }
+        // (feature/3d-view, with WebGL 2: the look of the material chosen for the weight; a solid of that material, a
+        // tank's liquid of water, seawater, kerosene or gasoline; other choices keep the app's colors)
+        const look = matLook(G.dens, G.dens === 'own' ? pfDensity('own', G.dv) : null);
+        if (model.tank) model.liquidMat = look && LIQUID_KEYS.includes(look.key) ? look : null;
+        else model.mat = look;
         // a tank: the volume scale (round amounts in the unit of the results; about 3 with their numbers)
         let scale = null;
         if (model.tank) {
@@ -16732,7 +16846,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         return el('label', { class: 'setting' }, el('div', { class: 'lbl' }, el('div', { text: label })), b);
       };
       body.append(el('div', { class: 'section-title', text: tr('Test build', 'テスト版') }),
-        flag('gl3d', tr('3D with WebGL (prototype: Solid from a profile)', '3D を WebGL で描く（試作：輪郭から回転体）'), true),
+        flag('gl3d', tr('3D with WebGL 2', '3D を WebGL 2 で描く'), true),
         flag('ms3d', tr('Show the time of each 3D drawing (for testing)', '3D の描画時間を表示する（テスト用）'), false),
         el('label', { class: 'setting' }, el('div', { class: 'lbl' }, el('div', { text: tr('Pro unlocked (for testing)', 'Pro を有効にする（テスト用）') })), box));
     }

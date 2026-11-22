@@ -428,7 +428,7 @@
     "How opaque (%)": "Deckkraft (%)",
     "Box and axes": "Kasten und Achsen",
     "Not available on this device": "Auf diesem Gerät nicht verfügbar",
-    "3D with WebGL (prototype: Solid from a profile)": "3D mit WebGL (Prototyp: Körper aus einem Profil)",
+    "3D with WebGL 2": "3D mit WebGL 2",
     "Show the time of each 3D drawing (for testing)": "Zeit jeder 3D-Zeichnung anzeigen (zum Testen)",
     "200 rows (test)": "200 Zeilen (Test)",
     "From the front": "Von vorn",

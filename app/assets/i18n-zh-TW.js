@@ -432,7 +432,7 @@
     "How opaque (%)": "不透明度（%）",
     "Box and axes": "外框與刻度",
     "Not available on this device": "此裝置無法使用",
-    "3D with WebGL (prototype: Solid from a profile)": "以 WebGL 繪製 3D（試作：由輪廓做旋轉體）",
+    "3D with WebGL 2": "以 WebGL 2 繪製 3D",
     "Show the time of each 3D drawing (for testing)": "顯示每次 3D 繪製的時間（測試用）",
     "200 rows (test)": "200 列（測試）",
     "From the front": "正面",
