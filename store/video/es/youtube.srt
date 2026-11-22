@@ -1,0 +1,120 @@
+1
+00:00:00,150 --> 00:00:02,955
+En la calculadora cuesta escribir fórmulas.
+
+2
+00:00:03,075 --> 00:00:07,830
+Las unidades piden otra app, y las gráficas otra más.
+
+3
+00:00:07,950 --> 00:00:11,730
+QCalc lo reúne todo en una calculadora científica.
+
+4
+00:00:12,150 --> 00:00:16,140
+Escribe las operaciones como en papel.
+
+5
+00:00:16,260 --> 00:00:20,935
+Con unidades, como 100 km/h to mph,
+
+6
+00:00:21,055 --> 00:00:25,730
+o resuelve una ecuación o una integral.
+
+7
+00:00:26,150 --> 00:00:32,912
+El resultado puede quedar exacto, con fracciones, raíces y π.
+
+8
+00:00:33,032 --> 00:00:37,730
+Con más precisión, hasta 200 000 cifras.
+
+9
+00:00:38,150 --> 00:00:42,956
+Las cuentas de cada día están en Herramientas.
+
+10
+00:00:43,076 --> 00:00:49,730
+El precio con o sin IVA: basta con tocar un ejemplo.
+
+11
+00:00:50,150 --> 00:00:56,912
+En el préstamo: cuota mensual, intereses y cuadro de amortización.
+
+12
+00:00:57,032 --> 00:01:01,730
+También dividir la cuenta, fechas y horas.
+
+13
+00:01:02,150 --> 00:01:10,895
+En el conversor, escribe un número y se convierte al momento:
+
+14
+00:01:11,015 --> 00:01:15,730
+longitud, peso, temperatura, consumo y divisas.
+
+15
+00:01:16,150 --> 00:01:21,427
+Dibuja dos funciones en la gráfica 2D y toca ⟳ 3D:
+
+16
+00:01:21,547 --> 00:01:27,314
+la región se convierte en un sólido de revolución, con su volumen.
+
+17
+00:01:27,434 --> 00:01:31,730
+Verlo en 3D es una función de QCalc Pro.
+
+18
+00:01:32,150 --> 00:01:38,880
+Toca un eje para girar la región a su alrededor,
+
+19
+00:01:39,000 --> 00:01:45,730
+y muestra los discos o capas que suman el volumen.
+
+20
+00:01:46,150 --> 00:01:50,487
+QCalc Pro toma las posiciones y diámetros medidos,
+
+21
+00:01:50,607 --> 00:01:57,730
+da el volumen, la capacidad y el peso, y guarda un archivo STL.
+
+22
+00:01:58,150 --> 00:02:02,608
+También el líquido de un depósito según su nivel.
+
+23
+00:02:02,728 --> 00:02:09,730
+Con QCalc Pro, arrastra el nivel en 3D y mira cómo cambia la cantidad.
+
+24
+00:02:10,150 --> 00:02:15,444
+Las notas de cálculo van línea a línea, con total.
+
+25
+00:02:15,564 --> 00:02:21,399
+Puedes poner nombre a los valores, como alquiler = 950 EUR.
+
+26
+00:02:21,519 --> 00:02:25,730
+El historial se puede buscar, fijar y sumar.
+
+27
+00:02:26,150 --> 00:02:34,074
+Toca ? en una pantalla para abrir su página del manual.
+
+28
+00:02:34,194 --> 00:02:37,730
+El manual funciona sin conexión.
+
+29
+00:02:38,150 --> 00:02:42,686
+Todo se calcula en tu móvil y no se recogen datos personales.
+
+30
+00:02:42,806 --> 00:02:47,730
+Cuentas como en papel, de la gráfica al sólido 3D. Esto es QCalc.
+

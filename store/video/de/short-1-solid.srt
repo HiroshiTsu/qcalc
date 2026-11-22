@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:07,066
+Die Fläche zwischen zwei Graphen,
+
+2
+00:00:07,186 --> 00:00:11,287
+⟳ 3D antippen,
+
+3
+00:00:11,407 --> 00:00:19,730
+und Körper und Volumen sind da.
+

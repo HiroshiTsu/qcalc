@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:07,417
+Rechnungen tippen, wie man sie schreibt.
+
+2
+00:00:07,538 --> 00:00:14,805
+Wie viel mph sind 100 km/h?
+
+3
+00:00:14,925 --> 00:00:19,730
+Gleichungen und Integrale direkt.
+

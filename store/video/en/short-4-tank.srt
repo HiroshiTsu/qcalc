@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:05,054
+A lying tank with heads: tap ⟳ 3D.
+
+2
+00:00:05,174 --> 00:00:11,334
+The liquid, with its amount and % at the level.
+
+3
+00:00:11,454 --> 00:00:15,730
+Drag the level, and the amount follows.
+

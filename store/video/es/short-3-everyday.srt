@@ -1,0 +1,16 @@
+1
+00:00:00,150 --> 00:00:04,786
+¿Un precio con IVA?
+
+2
+00:00:04,906 --> 00:00:10,730
+Toca un ejemplo y listo.
+
+3
+00:00:11,150 --> 00:00:15,968
+La cuota mensual de un préstamo
+
+4
+00:00:16,088 --> 00:00:21,730
+y todo el cuadro a la vez.
+

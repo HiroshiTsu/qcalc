@@ -1,66 +1,199 @@
 # QCalc — Google Play store listing (English)
 
 The texts to paste in Play Console under "Grow users" → "Store presence" → "Main store listing".
-English (United States, en-US) is the **default language** of the listing (versions 1.3.0 to 1.10.1 started
-in English; from 1.11.0 the app starts in the phone's language, and the listing stays in English for the
-languages without a translation), and the Japanese texts (listing-ja.md) are its Japanese (ja-JP) translation.
-Limits: app name 30 characters, short description 80, full description 4000.
+English (United States, en-US) is the **default language** of the listing: people whose language has no
+translation see it. English (United Kingdom, en-GB) and English (Australia, en-AU) are added under
+"Manage translations" with the spelling and the examples of those countries (maths, colour, VAT, GST).
+Limits: app name 30 characters, short description 80, full description 4000. The texts below are checked
+by store/tools/listing_check.py (lengths, and no rank, price or promotion words, no names of other apps);
+the same texts are in store/play-import/<locale>/ (1.12.0, stage M).
 
-The other translations: Spanish (listing-es.md, from 1.9.0), and German, French, Korean and
-Traditional Chinese (listing-de.md, listing-fr.md, listing-ko.md, listing-zh-TW.md, from 1.10.0).
+The other translations: listing-ja.md (ja-JP), listing-es.md (es-ES, es-419), listing-de.md (de-DE),
+listing-fr.md (fr-FR, fr-CA), listing-ko.md (ko-KR), listing-zh-TW.md (zh-TW, zh-HK).
 
-Screenshots for this listing: store/screenshots-en/ (1080 × 1920). Feature graphic:
-store/feature-graphic-en.png (1024 × 500; the Japanese listing uses store/feature-graphic-ja.png).
-App icon: store/icon-512.png (512 × 512, the same for every language).
+- Screenshots: store/screenshots-1.12/en/ (8 phone pictures 1080 × 1920, one 1920 × 1080, 5 each for
+  7-inch tablets 1200 × 1920 and 10-inch tablets 1600 × 2560; alt/ holds an alternative fifth phone picture, a solid
+  from a profile, not to upload with the others). en-GB and en-AU use store/screenshots-1.12/en-GB/.
+- Feature graphic: store/feature-graphic-1.12-en.png (1024 × 500).
+- App icon: store/icon-512.png (the same for every language).
+- How the words were chosen: store/research-1.12.md.
 
-## App name
+<!-- listing: en-US -->
+## English (United States, en-US) — the default
+
+### App name
 
 QCalc - Scientific Calculator
 
-## Short description
+### Short description
 
-Type math as you write it: units, currencies, equations, everyday tools, graphs.
+Type math as you write it: units, currency, prices and loans, graphs, 3D solids.
 
-## Full description
+### Full description
 
-QCalc is a calculator for Android built on libqalculate, the calculation engine of the open-source calculator Qalculate!. Type expressions as you would write them, such as "60 mph to km/h" or "solve(x^2 − 5x + 6 = 0)".
+A scientific calculator you type into the way you write math on paper. Convert units and currencies, work out prices and loans, solve equations, draw graphs and turn a region into a solid of revolution, all in one app.
+Try "60 mph to km/h", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can stay exact, with fractions, roots and π.
 
-■ Features
-• Units and currencies: length, mass, speed, temperature, energy and many more (5 km to mi, 100 USD to EUR), typed or on a conversion screen; exchange rates from the European Central Bank and others
-• Tools with examples that give the result at once: price with discount and tax, percentages, unit prices, splitting a bill, loans with a repayment table, savings with compound interest, dates, times and hours worked, statistics with regression, calculation notes (a calculation on each line, with names and totals)
-• Equations and systems; derivatives, integrals, limits, sums and differential equations in forms laid out like the math, with Undo and Redo
-• The expression in math notation (fractions, powers, roots, integrals) while you type
-• Matrices up to 30 × 30 in a grid (paste from a spreadsheet): determinant, inverse, rank, eigenvalues, linear systems
-• Shapes: area, lengths, volume and surface of 22 shapes with pictures and formulas; liquid in tanks; weight from a density; volume from measured sections
-• Complex numbers; binary, octal and hexadecimal; dates (today + 100 days); uncertainty ((5 ± 0.2) m × (3 ± 0.1) m)
-• Exact results with fractions and roots, up to 200,000 digits (above 1000 with QCalc Pro); fast special functions (zeta, gamma, erf, Bessel…)
-• 2D graphs: several functions, drag and pinch; derivatives, tangents, zeros and extrema; areas with edges you drag, lengths; "⟳ 3D" turns a region into a solid of revolution at once, with cross sections and Pappus's theorem; 17 samples
-• 3D graphs of z = f(x, y) with shadows, turned with a finger: partial derivatives, volume and surface over a rectangle, a disk, the part between two surfaces or a typed region; 14 samples (QCalc Pro)
-• Share a graph as a picture; a widget, a quick settings tile and shortcuts
-• A tap on a result: put it into the input field, keep it in the history or copy it. History search, pins, notes and sums; memory keys
-• Numbers written as 1,234.5, 1.234,5 or 1 234,5, following your region
-• Traditional Japanese units such as tsubo, shaku and kan (30 tsubo to m²)
-• Examples and tips in the app; lists of functions, units and constants; your own variables and functions
-• Suggestions while you type: units after "to", names of functions and units
-• Four pages of keys (123, Functions, Calculus, Matrix) or your phone's keyboard; three text sizes; light or dark
-• In English, Japanese, Spanish, German, French, Korean and Traditional Chinese
+■ For students and teachers
+• Graph functions, then pan and zoom with your fingers; derivatives, tangent lines, zeros, extrema and areas right on the graph
+• Turn the region between two curves into a solid of revolution with "⟳ 3D" and see its volume at once; tap an axis to change it. Disk and shell lines, Pappus's theorem, and solids with square, triangle or semicircle cross sections
+• Equations and systems, derivatives, integrals, limits, sums, matrices up to 30 × 30, complex numbers, binary, octal and hex
+• Mean, median, standard deviation, quartiles, and regression with a graph
+• Up to 200,000 digits (more than 1,000 digits with QCalc Pro)
 
-■ QCalc Pro
-A one-time purchase in the app unlocks a precision above 1000 digits, 3D graphs, color themes, exporting the history, tables as CSV files, the heads of tanks with quick-reference tables, solids from a measured profile (volume, capacity, weight), STL files for 3D printers, moving GIF pictures of 3D graphs and pictures without the mark, more calculation notes, and the Pro features of later versions. There is no subscription, and everything else is free.
+■ For work on site and in design
+• Areas and volumes of 22 shapes, liquid in tanks (level ⇄ volume), volume from measured cross sections, weight from density
+• Calculate with the units attached (12 ft × 9.5 ft to m², 3/4 in to mm) and with error propagation
+• QCalc Pro: shapes and tanks in 3D (drag the level); tank heads (hemispherical, semi-elliptical, dished) with quick-reference tables; volume, capacity and weight of a solid from a measured profile; STL files for 3D printing; tables saved as CSV
 
-■ Privacy
-QCalc collects no personal data and sends nothing to the developer. There are no ads. The internet is used only for exchange rates; Google Play handles the purchase of QCalc Pro. The history and the settings stay on your device.
+■ For shopping and the household budget
+• Price with a discount and sales tax, percentages, unit price comparison, splitting a bill, monthly loan payments with an amortization table, savings, dates (days from now, age), hours worked and pay
+• Currency conversion with exchange rates from the European Central Bank and others
+• Calculation notes: one calculation per line, with a total; give values names, such as rent = 1450 USD
 
-■ Open source
-QCalc is free software under the GNU GPL version 2 or later. The source code is on GitHub:
-https://github.com/HiroshiTsu/qcalc
+■ Easy to use
+• Every tool has examples: tap one and the result is there. Tap a result to put it in the input line, keep it in the history or copy it
+• Search, pin, note and add up lines of the history; memory keys
+• A home screen widget and a quick settings tile
+• Share a graph as a picture
+• Seven languages: English, Japanese, Spanish, German, French, Korean and Traditional Chinese. The user manual is inside the app and works offline: tap "?" on a screen to open its page
 
-libqalculate is open-source software developed by Hanna Knutsson and others (https://qalculate.github.io/). QCalc is not an official Qalculate! app and is made by an individual who is not related to the developers of Qalculate!.
+■ QCalc Pro (one in-app purchase)
+The 3D graph (volume and area of surfaces, solids of revolution, shapes and tanks in 3D, moving GIFs), more than 1,000 digits, tank heads, solids from a profile, STL, CSV of tables and of the history, color themes, and more than one calculation note. It is not a subscription. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
 
-■ Requirements
-Android 7.0 or later on a 64-bit ARM (arm64) device.
+■ Privacy and openness
+• There are no ads and no subscriptions.
+• All calculations run on your phone. The internet is used only to fetch exchange rates; calculations, graphs and the manual work offline.
+• QCalc collects no personal data and sends nothing to the developer. Your history and settings stay on your phone.
+• Open source (GNU GPL v2 or later): https://github.com/HiroshiTsu/qcalc
+• QCalc uses libqalculate, the open-source calculation engine of Qalculate!. QCalc is made independently by one person and is not affiliated with the Qalculate! developers.
 
-Results are for reference: do not use them for trade or certification, design and construction, or taxes; check important results by an official method.
+■ Please note
+Results are for reference. Do not use them for trade or certification, design and construction, or tax returns; check important results by an official method.
+
+■ Contact
+Bugs and ideas: hiroshitsu.apps@gmail.com
+User manual with photos, and as a PDF: https://hiroshitsu.github.io/qcalc/manual/
+Requires Android 7.0 or later on a 64-bit ARM (arm64) device.
+<!-- /listing -->
+
+<!-- listing: en-GB -->
+## English (United Kingdom, en-GB)
+
+### App name
+
+QCalc - Scientific Calculator
+
+### Short description
+
+Type maths as you write it: units, currency, prices, loans, graphs, 3D solids.
+
+### Full description
+
+A scientific calculator you type into the way you write maths on paper. Convert units and currencies, work out prices and loan repayments, solve equations, draw graphs and turn a region into a solid of revolution, all in one app.
+Try "70 mph to km/h", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can stay exact, with fractions, surds and π.
+
+■ For students and teachers
+• Graph functions, then pan and zoom with your fingers; derivatives, tangents, roots, turning points and areas right on the graph
+• Turn the region between two curves into a solid of revolution with "⟳ 3D" and see its volume at once; tap an axis to change it. Disc and shell lines, Pappus's theorem, and solids with square, triangle or semicircle cross-sections
+• Equations and simultaneous equations, differentiation, integration, limits, sums, matrices up to 30 × 30, complex numbers, binary, octal and hex
+• Mean, median, standard deviation, quartiles, and regression with a graph
+• Up to 200,000 digits (more than 1,000 digits with QCalc Pro)
+
+■ For work on site and in design
+• Areas and volumes of 22 shapes, liquid in tanks (level ⇄ volume), volume from measured cross-sections, weight from density
+• Calculate with the units attached (4.2 m × 3.6 m to ft², 2.4 m × 1.8 m × 0.15 m to L) and with error propagation
+• QCalc Pro: shapes and tanks in 3D (drag the level); tank heads (hemispherical, semi-elliptical, dished) with quick-reference tables; volume, capacity and weight of a solid from a measured profile; STL files for 3D printing; tables saved as CSV
+
+■ For shopping and the household budget
+• Price with a discount and 20 % VAT, percentages, unit price comparison, splitting a bill, monthly loan or mortgage repayments with a repayment table, savings, dates (days from today, age), hours worked and pay
+• Currency conversion with exchange rates from the European Central Bank and others
+• Calculation notes: one calculation per line, with a total; give values names, such as rent = 1250 GBP
+
+■ Easy to use
+• Every tool has examples: tap one and the result is there. Tap a result to put it in the input line, keep it in the history or copy it
+• Search, pin, note and add up lines of the history; memory keys
+• A home screen widget and a quick settings tile
+• Share a graph as a picture
+• Seven languages: English, Japanese, Spanish, German, French, Korean and Traditional Chinese. The user manual is inside the app and works offline: tap "?" on a screen to open its page
+
+■ QCalc Pro (one in-app purchase)
+The 3D graph (volume and area of surfaces, solids of revolution, shapes and tanks in 3D, moving GIFs), more than 1,000 digits, tank heads, solids from a profile, STL, CSV of tables and of the history, colour themes, and more than one calculation note. It is not a subscription. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
+
+■ Privacy and openness
+• There are no ads and no subscriptions.
+• All calculations run on your phone. The internet is used only to fetch exchange rates; calculations, graphs and the manual work offline.
+• QCalc collects no personal data and sends nothing to the developer. Your history and settings stay on your phone.
+• Open source (GNU GPL v2 or later): https://github.com/HiroshiTsu/qcalc
+• QCalc uses libqalculate, the open-source calculation engine of Qalculate!. QCalc is made independently by one person and is not affiliated with the Qalculate! developers.
+
+■ Please note
+Results are for reference. Do not use them for trade or certification, design and construction, or tax returns; check important results by an official method.
+
+■ Contact
+Bugs and ideas: hiroshitsu.apps@gmail.com
+User manual with photos, and as a PDF: https://hiroshitsu.github.io/qcalc/manual/
+Requires Android 7.0 or later on a 64-bit ARM (arm64) device.
+<!-- /listing -->
+
+<!-- listing: en-AU -->
+## English (Australia, en-AU)
+
+### App name
+
+QCalc - Scientific Calculator
+
+### Short description
+
+Type maths as you write it: units, currency, prices, loans, graphs, 3D solids.
+
+### Full description
+
+A scientific calculator you type into the way you write maths on paper. Convert units and currencies, work out prices and loan repayments, solve equations, draw graphs and turn a region into a solid of revolution, all in one app.
+Try "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can stay exact, with fractions, surds and π.
+
+■ For students and teachers
+• Graph functions, then pan and zoom with your fingers; derivatives, tangents, roots, turning points and areas right on the graph
+• Turn the region between two curves into a solid of revolution with "⟳ 3D" and see its volume at once; tap an axis to change it. Disc and shell lines, Pappus's theorem, and solids with square, triangle or semicircle cross-sections
+• Equations and simultaneous equations, differentiation, integration, limits, sums, matrices up to 30 × 30, complex numbers, binary, octal and hex
+• Mean, median, standard deviation, quartiles, and regression with a graph
+• Up to 200,000 digits (more than 1,000 digits with QCalc Pro)
+
+■ For work on site and in design
+• Areas and volumes of 22 shapes, liquid in tanks (level ⇄ volume), volume from measured cross-sections, weight from density
+• Calculate with the units attached (4.2 m × 3.6 m to m², 2.4 m × 1.8 m × 0.15 m to L) and with error propagation
+• QCalc Pro: shapes and tanks in 3D (drag the level); tank heads (hemispherical, semi-elliptical, dished) with quick-reference tables; volume, capacity and weight of a solid from a measured profile; STL files for 3D printing; tables saved as CSV
+
+■ For shopping and the household budget
+• Price with a discount and 10 % GST, percentages, unit price comparison, splitting a bill, monthly home loan repayments with a repayment table, savings, dates (days from today, age), hours worked and pay
+• Currency conversion with exchange rates from the European Central Bank and others
+• Calculation notes: one calculation per line, with a total; give values names, such as rent = 2400 AUD
+
+■ Easy to use
+• Every tool has examples: tap one and the result is there. Tap a result to put it in the input line, keep it in the history or copy it
+• Search, pin, note and add up lines of the history; memory keys
+• A home screen widget and a quick settings tile
+• Share a graph as a picture
+• Seven languages: English, Japanese, Spanish, German, French, Korean and Traditional Chinese. The user manual is inside the app and works offline: tap "?" on a screen to open its page
+
+■ QCalc Pro (one in-app purchase)
+The 3D graph (volume and area of surfaces, solids of revolution, shapes and tanks in 3D, moving GIFs), more than 1,000 digits, tank heads, solids from a profile, STL, CSV of tables and of the history, colour themes, and more than one calculation note. It is not a subscription. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
+
+■ Privacy and openness
+• There are no ads and no subscriptions.
+• All calculations run on your phone. The internet is used only to fetch exchange rates; calculations, graphs and the manual work offline.
+• QCalc collects no personal data and sends nothing to the developer. Your history and settings stay on your phone.
+• Open source (GNU GPL v2 or later): https://github.com/HiroshiTsu/qcalc
+• QCalc uses libqalculate, the open-source calculation engine of Qalculate!. QCalc is made independently by one person and is not affiliated with the Qalculate! developers.
+
+■ Please note
+Results are for reference. Do not use them for trade or certification, design and construction, or tax returns; check important results by an official method.
+
+■ Contact
+Bugs and ideas: hiroshitsu.apps@gmail.com
+User manual with photos, and as a PDF: https://hiroshitsu.github.io/qcalc/manual/
+Requires Android 7.0 or later on a 64-bit ARM (arm64) device.
+<!-- /listing -->
 
 ## Release notes
 
@@ -82,14 +215,14 @@ transport-backend-cct); 1.12.1 only uses it in the app too. So there is no new p
 1.12.0 (when 1.11.0 was already released):
 
 <en-US>
-• Easier: Tools with search, examples, 3 actions on a result
-• Everyday: price and tax, loan, savings, dates, times, split bill
-• Converter for units and currencies; statistics; calculation notes
-• 2D graph: ⟳ 3D turns a region into a solid with one tap; cross sections
-• Share a graph as a picture; widget, tile and shortcuts
-• History: search, pin, sum of rows
-• Decimal comma by region (1.234,5)
-• Pro: tank heads, solid from a profile, STL, GIF
+• Tools with search, examples, 3 actions on a result
+• Everyday: price, tax, loan, savings, dates, times, split bill
+• Unit and currency converter; statistics; notes
+• 2D graph: ⟳ 3D makes a solid with one tap; cross sections
+• Share graphs as pictures; widget, tile, shortcuts
+• History: search, pin, sum rows
+• Decimal comma by region; choose the digits of results
+• Pro: solids and tanks in 3D, drag the level; tank heads, profiles, STL, GIF
 • Fixes: 3D shadows while turning, jagged rims
 </en-US>
 <ja-JP>
@@ -100,40 +233,42 @@ transport-backend-cct); 1.12.1 only uses it in the app too. So there is no new p
 ・グラフを画像で共有。ウィジェット・タイル・ショートカット
 ・履歴：検索、上に固定、行を選んで合計
 ・地域に合わせた数の書き方（1.234,5 など）
+・結果の桁：小数点以下・有効数字・丸め方を選べる
+・立体と容器を 3D で（Pro）：寸法つきで回し、液面をドラッグ
 ・Pro：タンクの鏡板と早見表、輪郭から回転体、STL、GIF
 ・修正：3D を回すと影が消える、回転体の縁のぎざぎざ
 </ja-JP>
 <es-419>
-• Más fácil: herramientas con búsqueda, ejemplos, 3 acciones
-• Diario: precio e IVA, préstamo, ahorro, fechas, horas, dividir la cuenta
-• Conversor de unidades y monedas; estadística; notas de cálculo
+• Herramientas con búsqueda y ejemplos
+• Diario: precio e IVA, préstamo, ahorro, fechas, horas, dividir cuentas
+• Conversor de unidades y monedas; estadística; notas
 • Gráfico 2D: ⟳ 3D hace un sólido con un toque; secciones
-• Compartir un gráfico como imagen; widget, mosaico, accesos
+• Gráficos como imagen; widget, mosaico, accesos
 • Historial: buscar, fijar, sumar filas
-• Coma decimal por región
-• Pro: fondos de depósitos, sólido de un perfil, STL, GIF
+• Coma decimal por región; cifras de resultados a elegir
+• Pro: sólidos y depósitos en 3D, arrastrar el nivel; fondos, perfiles, STL, GIF
 • Arreglos: sombras 3D al girar, bordes dentados
 </es-419>
 <de-DE>
-• Einfacher: Werkzeuge mit Suche, Beispiele, 3 Aktionen pro Ergebnis
-• Alltag: Preis, Steuer, Kredit, Sparen, Datum, Zeiten, Rechnung teilen
-• Einheiten- und Währungsrechner; Statistik; Rechennotizen
-• 2D-Graph: ⟳ 3D macht mit einem Tipp einen Körper; Querschnitte
+• Werkzeuge mit Suche und Beispielen
+• Alltag: Preis, Steuer, Kredit, Sparen, Datum, Zeit, Rechnung teilen
+• Einheiten- und Währungsrechner; Statistik; Notizen
+• 2D-Graph: ⟳ 3D macht per Tipp einen Körper; Querschnitte
 • Graph als Bild teilen; Widget, Kachel, Verknüpfungen
-• Verlauf: suchen, anheften, Zeilen summieren
-• Dezimalkomma nach Region
-• Pro: Behälterböden, Körper aus Profil, STL, GIF
+• Verlauf: suchen, anheften, summieren
+• Dezimalkomma nach Region; Ergebnisstellen wählbar
+• Pro: Körper und Tanks in 3D, Füllstand ziehen; Tankböden, Profile, STL, GIF
 • Behoben: 3D-Schatten beim Drehen, gezackte Ränder
 </de-DE>
 <fr-FR>
-• Plus simple : outils avec recherche, exemples, 3 actions
+• Outils avec recherche et exemples
 • Quotidien : prix et TVA, prêt, épargne, dates, heures, addition
-• Conversion d’unités et de devises ; statistiques ; notes de calcul
+• Conversion d’unités et de devises ; statistiques ; notes
 • Graphique 2D : ⟳ 3D fait un solide en un geste ; sections
-• Graphique partagé en image ; widget, tuile, raccourcis
+• Partage en image ; widget, tuile, raccourcis
 • Historique : chercher, épingler, additionner
-• Virgule décimale selon la région
-• Pro : fonds de cuves, solide d’un profil, STL, GIF
+• Virgule décimale par région ; décimales au choix
+• Pro : solides et cuves en 3D, niveau à glisser ; fonds, profils, STL, GIF
 • Corrigé : ombres 3D en rotation, bords dentelés
 </fr-FR>
 <ko-KR>
@@ -144,6 +279,8 @@ transport-backend-cct); 1.12.1 only uses it in the app too. So there is no new p
 • 그래프를 이미지로 공유, 위젯·타일·바로가기
 • 기록: 검색, 고정, 줄을 골라 합계
 • 지역에 맞는 숫자 표기(1.234,5 등)
+• 결과의 자릿수: 소수점 아래, 유효숫자, 반올림 방법
+• 입체와 용기를 3D로(Pro): 치수 표시, 액면을 끌어서 확인
 • Pro: 탱크 경판과 조견표, 윤곽에서 회전체, STL, GIF
 • 수정: 3D를 돌리면 그림자가 사라짐, 회전체 가장자리의 톱니
 </ko-KR>
@@ -155,6 +292,8 @@ transport-backend-cct); 1.12.1 only uses it in the app too. So there is no new p
 • 把圖形分享成圖片；小工具、快捷設定方塊、捷徑
 • 記錄：搜尋、置頂、選幾列加總
 • 依地區的數字寫法（1.234,5 等）
+• 結果的位數：小數點後位數、有效數字、捨入方式
+• 以 3D 觀看立體與容器（Pro）：標示尺寸，拖曳液面
 • Pro：儲槽封頭與速查表、由輪廓做旋轉體、STL、GIF
 • 修正：旋轉 3D 時陰影消失、旋轉體邊緣鋸齒
 </zh-TW>

@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:07,288
+Type math the way you write it.
+
+2
+00:00:07,408 --> 00:00:13,509
+What is 60 mph in km/h?
+
+3
+00:00:13,629 --> 00:00:19,730
+Equations and integrals, as they are.
+

@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:06,597
+Tapez vos calculs comme sur papier.
+
+2
+00:00:06,717 --> 00:00:14,258
+Combien de mph font 100 km/h ?
+
+3
+00:00:14,378 --> 00:00:19,730
+Équations et intégrales, tels quels.
+

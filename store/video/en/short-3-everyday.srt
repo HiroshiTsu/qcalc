@@ -1,0 +1,16 @@
+1
+00:00:00,150 --> 00:00:03,921
+A price with tax?
+
+2
+00:00:04,041 --> 00:00:10,730
+Tap an example: the answer is there.
+
+3
+00:00:11,150 --> 00:00:15,310
+A monthly loan payment,
+
+4
+00:00:15,430 --> 00:00:21,730
+and the whole table at once.
+

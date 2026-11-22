@@ -1,0 +1,43 @@
+Una calculadora científica en la que escribes las operaciones igual que en papel. Convierte unidades y monedas, calcula precios con IVA y préstamos, resuelve ecuaciones, dibuja gráficas y convierte una región en un sólido de revolución, todo en una sola app.
+Prueba "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" o "3/8 + 1/6": el resultado puede quedar exacto, con fracciones, raíces y π.
+
+■ Para estudiantes y maestros
+• Grafica funciones y muévelas o haz zoom con los dedos; derivadas, tangentes, raíces, máximos y mínimos y áreas en la misma gráfica
+• Convierte la región entre dos curvas en un sólido de revolución con "⟳ 3D" y ve su volumen al instante; toca un eje para cambiarlo. Líneas de discos y capas, teorema de Pappus y sólidos con secciones cuadradas, triangulares o semicirculares
+• Ecuaciones y sistemas, derivadas, integrales, límites, sumatorias, matrices de hasta 30 × 30, complejos, binario, octal y hexadecimal
+• Media, mediana, desviación estándar, cuartiles y regresión con gráfica
+• Hasta 200,000 dígitos (más de 1,000 dígitos con QCalc Pro)
+
+■ Para la obra y el diseño
+• Áreas y volúmenes de 22 figuras, líquido en tanques (nivel ⇄ volumen), volumen a partir de secciones medidas, peso a partir de la densidad
+• Calcula con las unidades puestas (2.4 m × 1.8 m × 0.15 m to L) y con propagación de errores
+• QCalc Pro: figuras y tanques en 3D (nivel arrastrable); tapas de tanques (semiesféricas, semielípticas, toriesféricas) con tablas de consulta; volumen, capacidad y peso de un sólido a partir de un perfil medido; archivos STL para impresión 3D; tablas en CSV
+
+■ Para las compras y el presupuesto de la casa
+• Precio con descuento e IVA (16 % en México), porcentajes, comparar precio por unidad, dividir la cuenta, pago mensual de un préstamo con tabla de amortización, ahorro, fechas (días a partir de hoy, edad), horas trabajadas y sueldo
+• Conversión de monedas con tipos de cambio del Banco Central Europeo y otras fuentes
+• Notas de cálculo: una operación por línea, con total; ponle nombre a los valores, como renta = 12000 MXN
+
+■ Fácil de usar
+• Cada herramienta trae ejemplos: tocas uno y ya tienes el resultado. Toca un resultado para pasarlo a la entrada, guardarlo en el historial o copiarlo
+• Busca, fija, anota y suma líneas del historial; teclas de memoria
+• Widget para la pantalla de inicio, botón en la configuración rápida y gráficas para compartir como imagen
+• Siete idiomas, entre ellos el español. El manual viene dentro de la app y funciona sin conexión: toca "?" para abrir su página
+
+■ QCalc Pro (una compra dentro de la app)
+La gráfica 3D (volumen y área, sólidos de revolución, figuras y tanques en 3D, GIF animados), más de 1,000 dígitos, tapas de tanques, sólidos a partir de un perfil, STL, CSV de tablas y del historial, temas de color y más de una nota de cálculo. No es una suscripción. Todo lo necesario para estudiar y para el día a día funciona sin comprarlo. El precio aparece en la pantalla de compra de Google Play.
+
+■ Privacidad y código abierto
+• No hay anuncios ni suscripciones.
+• Todos los cálculos se hacen en tu celular. Internet solo se usa para los tipos de cambio; cálculos, gráficas y manual funcionan sin conexión.
+• QCalc no recopila datos personales ni envía nada al desarrollador. El historial y la configuración se quedan en tu celular.
+• Código abierto (GNU GPL v2 o posterior): https://github.com/HiroshiTsu/qcalc
+• QCalc usa libqalculate, el motor de cálculo de código abierto de Qalculate!. QCalc es un proyecto independiente de una sola persona, sin relación con los desarrolladores de Qalculate!.
+
+■ Toma en cuenta
+Los resultados son de referencia. No los uses para transacciones o certificaciones, proyectos y obras ni declaraciones de impuestos; verifica los resultados importantes con un método oficial.
+
+■ Contacto
+Errores e ideas: hiroshitsu.apps@gmail.com
+Manual con fotos y en PDF: https://hiroshitsu.github.io/qcalc/manual/
+Requiere Android 7.0 o posterior en un dispositivo ARM de 64 bits (arm64).

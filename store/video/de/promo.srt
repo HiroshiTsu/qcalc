@@ -1,0 +1,48 @@
+1
+00:00:00,150 --> 00:00:02,621
+Eine Fläche im Graphen drehen
+
+2
+00:00:02,741 --> 00:00:05,730
+und sofort Körper und Volumen sehen.
+
+3
+00:00:06,150 --> 00:00:10,768
+Rechnungen tippst du so, wie du sie aufschreibst.
+
+4
+00:00:10,888 --> 00:00:13,730
+Einheiten, Gleichungen und Integrale direkt.
+
+5
+00:00:14,150 --> 00:00:16,466
+Preis, Kredit und Datum:
+
+6
+00:00:16,586 --> 00:00:20,730
+Beispiel antippen, und das Ergebnis ist da.
+
+7
+00:00:21,150 --> 00:00:25,730
+Einheiten und Währungen sofort umrechnen.
+
+8
+00:00:26,150 --> 00:00:29,380
+Mit QCalc Pro: Volumen und Gewicht
+
+9
+00:00:29,500 --> 00:00:32,730
+aus einem gemessenen Profil, dazu STL-Dateien.
+
+10
+00:00:33,150 --> 00:00:36,139
+Alles wird auf deinem Handy berechnet.
+
+11
+00:00:36,259 --> 00:00:38,730
+QCalc sammelt keine persönlichen Daten.
+
+12
+00:00:39,150 --> 00:00:43,730
+Rechnen wie auf Papier, vom Graphen zum 3D-Körper. QCalc.
+

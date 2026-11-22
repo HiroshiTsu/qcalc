@@ -1,0 +1,48 @@
+1
+00:00:00,150 --> 00:00:02,661
+Faites tourner une région du graphique
+
+2
+00:00:02,781 --> 00:00:05,730
+et obtenez le solide et son volume.
+
+3
+00:00:06,150 --> 00:00:09,880
+Tapez vos calculs comme sur papier.
+
+4
+00:00:10,000 --> 00:00:13,730
+Unités, équations et intégrales, tels quels.
+
+5
+00:00:14,150 --> 00:00:17,075
+Prix, prêt et dates :
+
+6
+00:00:17,195 --> 00:00:20,730
+touchez un exemple, le résultat s’affiche.
+
+7
+00:00:21,150 --> 00:00:25,730
+Convertissez unités et devises aussitôt.
+
+8
+00:00:26,150 --> 00:00:29,638
+Avec QCalc Pro : volume et masse
+
+9
+00:00:29,758 --> 00:00:32,730
+d’un profil mesuré, et fichiers STL.
+
+10
+00:00:33,150 --> 00:00:35,880
+Tout est calculé sur votre téléphone.
+
+11
+00:00:36,000 --> 00:00:38,730
+QCalc ne collecte aucune donnée personnelle.
+
+12
+00:00:39,150 --> 00:00:43,730
+Vos calculs comme sur papier, du graphique au solide 3D. QCalc.
+

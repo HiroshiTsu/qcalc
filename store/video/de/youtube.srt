@@ -1,0 +1,120 @@
+1
+00:00:00,150 --> 00:00:02,955
+Im Taschenrechner sind Formeln mühsam einzutippen.
+
+2
+00:00:03,075 --> 00:00:08,318
+Für Einheiten braucht man eine andere App, für Graphen noch eine.
+
+3
+00:00:08,438 --> 00:00:11,730
+QCalc bringt alles in einem Taschenrechner zusammen.
+
+4
+00:00:12,150 --> 00:00:17,510
+Rechnungen tippst du so, wie du sie aufschreibst.
+
+5
+00:00:17,630 --> 00:00:22,305
+Mit Einheiten, etwa 100 km/h to mph,
+
+6
+00:00:22,425 --> 00:00:25,730
+oder als Gleichung und Integral.
+
+7
+00:00:26,150 --> 00:00:32,270
+Ergebnisse bleiben exakt, mit Brüchen, Wurzeln und π.
+
+8
+00:00:32,390 --> 00:00:37,730
+Mit höherer Genauigkeit bis zu 200.000 Stellen.
+
+9
+00:00:38,150 --> 00:00:41,930
+Alltagsrechnungen findest du unter Werkzeuge.
+
+10
+00:00:42,050 --> 00:00:49,730
+Der Preis mit oder ohne MwSt.: einfach ein Beispiel antippen.
+
+11
+00:00:50,150 --> 00:00:55,880
+Beim Kredit: Monatsrate, Zinsen und Tilgungsplan.
+
+12
+00:00:56,000 --> 00:01:01,730
+Dazu Rechnung teilen, Daten und Arbeitszeit.
+
+13
+00:01:02,150 --> 00:01:10,592
+Auf dem Umrechner eine Zahl eingeben, schon ist sie umgerechnet:
+
+14
+00:01:10,712 --> 00:01:15,730
+Länge, Gewicht, Temperatur, Verbrauch und Währungen.
+
+15
+00:01:16,150 --> 00:01:22,453
+Zwei Funktionen im 2D-Graphen zeichnen und ⟳ 3D antippen:
+
+16
+00:01:22,573 --> 00:01:27,448
+Die Fläche wird zum Rotationskörper, mit Volumen.
+
+17
+00:01:27,568 --> 00:01:31,730
+Die 3D-Ansicht gehört zu QCalc Pro.
+
+18
+00:01:32,150 --> 00:01:39,641
+Eine Achse antippen, um die Fläche um sie zu drehen,
+
+19
+00:01:39,761 --> 00:01:45,730
+und die Scheiben oder Schalen des Volumens zeigen.
+
+20
+00:01:46,150 --> 00:01:51,149
+QCalc Pro nimmt gemessene Positionen und Durchmesser,
+
+21
+00:01:51,269 --> 00:01:57,730
+berechnet Volumen, Inhalt und Gewicht und speichert eine STL-Datei.
+
+22
+00:01:58,150 --> 00:02:02,710
+Auch die Füllmenge eines Tanks aus der Füllhöhe.
+
+23
+00:02:02,830 --> 00:02:09,730
+Mit QCalc Pro den Füllstand in 3D ziehen und die Menge ablesen.
+
+24
+00:02:10,150 --> 00:02:14,808
+Rechennotizen rechnen Zeile für Zeile, mit Summe.
+
+25
+00:02:14,928 --> 00:02:20,269
+Werte bekommen Namen, etwa Miete = 980 EUR.
+
+26
+00:02:20,389 --> 00:02:25,730
+Den Verlauf kannst du durchsuchen, anheften und addieren.
+
+27
+00:02:26,150 --> 00:02:34,610
+Das ? auf jedem Bildschirm öffnet die passende Seite der Anleitung.
+
+28
+00:02:34,730 --> 00:02:37,730
+Die Anleitung funktioniert offline.
+
+29
+00:02:38,150 --> 00:02:42,880
+Alles wird auf deinem Handy berechnet, ohne persönliche Daten zu sammeln.
+
+30
+00:02:43,000 --> 00:02:47,730
+Rechnen wie auf Papier, vom Graphen zum 3D-Körper. Das ist QCalc.
+
