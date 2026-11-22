@@ -8188,7 +8188,113 @@
   // Coordinates: the box is u, v in [-1, 1] (x, y) and w in [-ZS, ZS] (z).
   const ZS = 0.72;
   const VIEW3D = { az: -0.62, el: 0.52, zoom: 1 };
-  const Q3 = Object.assign({ exprs: [], range: [], res: 41, data: null, mark: null, raf: 0, started: false }, VIEW3D);
+  // ---- the view of the 3D graph (feature/3d-view): a rotation, so that the graph turns any way (over the top
+  // and under the bottom too), not two angles. R is a 3 × 3 matrix by rows: the camera's axes (x to the right,
+  // y up, z away from the eye) in the box's axes (u, v, w), so that a point of the box is (R[0] u + R[1] v +
+  // R[2] w, R[3] u + …, R[6] u + …) in the camera's axes and the other way round with R's columns. Until
+  // 1.13.0 the view was az (turned about the box's z axis) and el (tilted toward looking from above, at most
+  // ±1.5): rotAzEl makes that rotation (the first view and the thumbnails are as before).
+  function rotAzEl(az, el) {
+    const ca = Math.cos(az), sa = Math.sin(az), ce = Math.cos(el), se = Math.sin(el);
+    return [ca, -sa, 0, sa * se, ca * se, ce, sa * ce, ca * ce, -se];
+  }
+  function rotMul(A, B) {
+    const C = new Array(9);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) C[3 * i + j] = A[3 * i] * B[j] + A[3 * i + 1] * B[3 + j] + A[3 * i + 2] * B[6 + j];
+    return C;
+  }
+  // a turn by a (radians) about the axis (x, y, z) of length 1 (Rodrigues)
+  function rotAxis(x, y, z, a) {
+    const c = Math.cos(a), s = Math.sin(a), t = 1 - c;
+    return [t * x * x + c, t * x * y - s * z, t * x * z + s * y, t * x * y + s * z, t * y * y + c, t * y * z - s * x, t * x * z - s * y, t * y * z + s * x, t * z * z + c];
+  }
+  // the rows made of length 1 and at right angles again (many small turns add up rounding errors)
+  function rotFix(R) {
+    const a = R.slice(0, 3), b = R.slice(3, 6);
+    const la = Math.hypot(a[0], a[1], a[2]) || 1; a[0] /= la; a[1] /= la; a[2] /= la;
+    const d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; b[0] -= d * a[0]; b[1] -= d * a[1]; b[2] -= d * a[2];
+    const lb = Math.hypot(b[0], b[1], b[2]) || 1; b[0] /= lb; b[1] /= lb; b[2] /= lb;
+    // (z = y × x: the camera's axes are left-handed, x right, y up, z away, as rotAzEl makes them)
+    return [a[0], a[1], a[2], b[0], b[1], b[2], b[1] * a[2] - b[2] * a[1], b[2] * a[0] - b[0] * a[2], b[0] * a[1] - b[1] * a[0]];
+  }
+  // quaternions (w, x, y, z) for the smooth turn to a set view, of a proper rotation: R with its last row
+  // turned round (flipZ), as the camera's axes are left-handed
+  const flipZ = (R) => [R[0], R[1], R[2], R[3], R[4], R[5], -R[6], -R[7], -R[8]];
+  function rotQuat(R) {
+    const t = R[0] + R[4] + R[8];
+    let q;
+    if (t > 0) { const s = Math.sqrt(t + 1) * 2; q = [s / 4, (R[7] - R[5]) / s, (R[2] - R[6]) / s, (R[3] - R[1]) / s]; }
+    else if (R[0] > R[4] && R[0] > R[8]) { const s = Math.sqrt(1 + R[0] - R[4] - R[8]) * 2; q = [(R[7] - R[5]) / s, s / 4, (R[1] + R[3]) / s, (R[2] + R[6]) / s]; }
+    else if (R[4] > R[8]) { const s = Math.sqrt(1 + R[4] - R[0] - R[8]) * 2; q = [(R[2] - R[6]) / s, (R[1] + R[3]) / s, s / 4, (R[5] + R[7]) / s]; }
+    else { const s = Math.sqrt(1 + R[8] - R[0] - R[4]) * 2; q = [(R[3] - R[1]) / s, (R[2] + R[6]) / s, (R[5] + R[7]) / s, s / 4]; }
+    return q;
+  }
+  function quatRot(q) {
+    const [w, x, y, z] = q;
+    return [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w), 2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w), 2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)];
+  }
+  function quatSlerp(a, b, t) {
+    let d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+    if (d < 0) { b = b.map((v) => -v); d = -d; }
+    if (d > 0.9995) { const q = a.map((v, i) => v + (b[i] - v) * t), l = Math.hypot(...q); return q.map((v) => v / l); }
+    const th = Math.acos(d), s = Math.sin(th), ka = Math.sin((1 - t) * th) / s, kb = Math.sin(t * th) / s;
+    return a.map((v, i) => v * ka + b[i] * kb);
+  }
+  // the set views (feature/3d-view): the first one (slanted), from the front (from −y: x to the right, z up),
+  // from above (x to the right, y up) and from the side (from +x: y to the right, z up)
+  const VIEWS3D = () => [
+    ['slant', tr('Slanted (first view)', '斜め（最初の向き）'), rotAzEl(VIEW3D.az, VIEW3D.el)],
+    ['front', tr('From the front', '正面'), rotAzEl(0, 0)],
+    ['top', tr('From above', '上'), rotAzEl(0, Math.PI / 2)],
+    ['side', tr('From the side', '横'), rotAzEl(-Math.PI / 2, 0)]
+  ];
+  // the first view: the slanted one, its size and no shift
+  function resetView3d() { Object.assign(Q3, VIEW3D); Q3.rot = rotAzEl(VIEW3D.az, VIEW3D.el); Q3.pan = [0, 0]; Q3.viewAnim = null; }
+  // the end of a turn (a finger lifted, a set view reached): the full drawing, with the lamp back at the upper
+  // left of the screen, fading in over 0.2 s (1.12.0, BG08, BG19)
+  function endTurn3d() {
+    if (!Q3.turning) return;
+    if (Q3.shLock) Q3.fadeInNext = true;
+    Q3.shLock = null;
+    Q3.turning = false; Q3.turnN = 0; Q3.turnMs = 0; Q3.turnList = []; requestDraw3d();
+  }
+  // a set view: turned to it smoothly in 0.35 s (at once with "reduce motion"), back to the middle
+  function setView3d(R) {
+    const from = rotQuat(flipZ(Q3.rot)), to = rotQuat(flipZ(R)), p0 = (Q3.pan || [0, 0]).slice();
+    clearMark3d();
+    const done = () => { Q3.rot = R.slice(); Q3.pan = [0, 0]; Q3.viewAnim = null; if (Q3.turning) endTurn3d(); else draw3d(); };
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { done(); return; }
+    const t0 = performance.now(), id = {};
+    Q3.viewAnim = id;
+    const step = (now) => {
+      if (Q3.viewAnim !== id) return;
+      const k = Math.min(1, (now - t0) / 350), e = 1 - Math.pow(1 - k, 3);
+      if (k >= 1) { done(); return; }
+      Q3.rot = flipZ(quatRot(quatSlerp(from, to, e))); Q3.pan = [p0[0] * (1 - e), p0[1] * (1 - e)];
+      Q3.turning = true; draw3d();
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  const VIEW_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>';
+  function closeViewMenu3d() {
+    if (Q3.viewMenu) { Q3.viewMenu.remove(); Q3.viewMenu = null; }
+    if (Q3.viewBtn) Q3.viewBtn.setAttribute('aria-expanded', 'false');
+  }
+  function toggleViewMenu3d() {
+    if (Q3.viewMenu) { closeViewMenu3d(); return; }
+    const b = Q3.viewBtn, wrap = b && b.closest('.plot-wrap');
+    if (!wrap) return;
+    const m = el('div', { class: 'view3d-menu', role: 'menu' }, ...VIEWS3D().map(([k, name, R]) =>
+      el('button', { role: 'menuitem', 'data-view': k, text: name, onclick: () => { closeViewMenu3d(); setView3d(R); } })));
+    const wr = wrap.getBoundingClientRect(), br = b.getBoundingClientRect();
+    m.style.top = Math.max(4, br.top - wr.top) + 'px';
+    m.style.right = Math.max(4, wr.right - br.left + 6) + 'px';
+    wrap.appendChild(m);
+    Q3.viewMenu = m;
+    b.setAttribute('aria-expanded', 'true');
+  }
+  const Q3 = Object.assign({ exprs: [], range: [], res: 41, data: null, mark: null, raf: 0, started: false, rot: rotAzEl(VIEW3D.az, VIEW3D.el), pan: [0, 0] }, VIEW3D);
   const VIRIDIS = [[68, 1, 84], [65, 68, 135], [42, 120, 142], [34, 168, 132], [122, 209, 81], [253, 231, 37]];
   function viridis(t) {
     t = Math.max(0, Math.min(1, t)) * (VIRIDIS.length - 1);
@@ -8212,7 +8318,9 @@
     const ctl = el('div', { class: 'plot-ctl' },
       el('button', { text: '+', 'aria-label': tr('Zoom in', '拡大'), onclick: () => zoom3d(1.25) }),
       el('button', { text: '−', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom3d(0.8) }),
-      el('button', { text: '⟲', 'aria-label': tr('Reset the view', '向きと大きさを戻す'), onclick: () => { Object.assign(Q3, VIEW3D); clearMark3d(); draw3d(); } }),
+      el('button', { text: '⟲', 'aria-label': tr('Reset the view', '向きと大きさを戻す'), onclick: () => { resetView3d(); closeViewMenu3d(); clearMark3d(); draw3d(); } }),
+      // (feature/3d-view) the set views: from the front, from above, from the side, or the first one
+      Q3.viewBtn = el('button', { class: 'views', 'aria-label': tr('Set views (front, top, side)', '決まった向き（正面・上・横）'), 'aria-haspopup': 'true', 'aria-expanded': 'false', onclick: () => toggleViewMenu3d(), html: VIEW_ICON }),
       Q3.eqBtn = el('button', { class: 'eq', text: '1:1', 'aria-label': tr('The same scale on the x, y and z axes', 'x・y・z の目盛りの間隔をそろえる'), onclick: () => { setEqual3d(!Q3.equalNow); clearMark3d(); draw3d(); } }),
       // 1.12.0 (D4): a picture or a moving picture of the graph to the share sheet
       el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share the graph', 'グラフを共有'), onclick: () => shareGraph3d() }));
@@ -8385,7 +8493,7 @@
       hint: link.hint || tr('The values found in "Shapes". Other formulas drawn here are measured as an ordinary 3D graph.', '「図形」で出した値です。ここで別の式を描くと、ふつうの 3D グラフとして測ります。'),
       values: link.rows };
     closeVolumeBox();
-    Object.assign(Q3, VIEW3D);
+    resetView3d();
     clearMark3d();
     Q3.data = null;
     store.set('qalc.plot.mode', '3d');
@@ -9302,7 +9410,7 @@
   // soft, as a shadow is: on a layer over the floor, every point of the floor keeps the height of the
   // lowest part of a surface above it along the light; the strength follows that height, and the
   // softness too, from three blurs of the shadow (about 2, 6 and 14 CSS pixels) blended by the height
-  // of the surfaces around the point. tb: the triangles; o: the turn of the camera (ca, sa, ce, se),
+  // of the surfaces around the point. tb: the triangles; o: the view of the camera (RV),
   // the half sizes of the box (EX, EY, EZ), cam ({ cx, cy, S }), dark, cache, lamp (the lamp in the
   // box's axes, or null: the one at the upper left of the screen), layer (a layer to draw again, or null),
   // k (the strength, 0 to 1). Returns what was drawn, or null when the lamp is not above the floor.
@@ -9311,11 +9419,11 @@
   // (1.12.0, BG19: the layer is the floor itself, in the box's axes, so that it is drawn again with only a
   // new projection while the graph is turned: the lamp then stays on the box, see draw3d)
   function floorShadow(g, tb, o) {
-    const { ca, sa, ce, se, EX, EY, EZ, cam } = o;
+    const { RV, EX, EY, EZ, cam } = o;
     // the direction of the lamp in the box's axes (u, v, w): the camera's axes turned back (camN)
-    const lp = o.lamp || lampInBox(ca, sa, ce, se), lw = lp[2];
+    const lp = o.lamp || lampInBox(RV), lw = lp[2];
     if (!(lw > 0.2)) return null;
-    const fadeIn = smoothStep(0.2, 0.35, lw) * smoothStep(0, 0.15, se);
+    const fadeIn = smoothStep(0.2, 0.35, lw) * smoothStep(0, 0.15, -RV[8]);
     if (!(fadeIn > 0.004)) return null;
     const Lr = o.layer || floorLayer(tb, o, lp);
     if (!Lr.px) return { px: 0, layer: Lr };
@@ -9324,7 +9432,7 @@
     // (a cell (i, j) of the layer is the point u = i / Ru − EX, v = j / Rv − EY of the floor, w = −EZ: the
     // projection is parallel, so the layer is laid on the floor by one affine map, and it covers the floor
     // and nothing else: no clip, which made every frame of a turn slower)
-    g.transform(S * ca / Ru, -S * se * sa / Ru, -S * sa / Rv, -S * se * ca / Rv, cam.cx + S * (sa * EY - ca * EX), cam.cy + S * (EZ * ce + se * (sa * EX + ca * EY)));
+    g.transform(S * RV[0] / Ru, -S * RV[3] / Ru, S * RV[1] / Rv, -S * RV[4] / Rv, cam.cx - S * (RV[0] * EX + RV[1] * EY + RV[2] * EZ), cam.cy + S * (RV[3] * EX + RV[4] * EY + RV[5] * EZ));
     g.globalAlpha = alpha;
     g.imageSmoothingEnabled = true;
     // (only the part of the layer with a shadow, BG19)
@@ -9333,16 +9441,16 @@
     g.restore();
     return { px: Lr.px, cells: [Lr.LW, Lr.LH], fade: Math.round(fadeIn * 1000) / 1000, alpha: Math.round(alpha * 1000) / 1000, kept: !!o.layer, layer: Lr };
   }
-  // the lamp (LAMP, in the camera's axes) in the box's axes for the camera turned by ca, sa, ce, se
-  function lampInBox(ca, sa, ce, se) {
+  // the lamp (LAMP, in the camera's axes) in the box's axes for the view RV (its columns)
+  function lampInBox(RV) {
     const lx = LAMP[0], ly = LAMP[1], lz = LAMP[2];
-    return [ca * lx + sa * se * ly + sa * ce * lz, -sa * lx + ca * se * ly + ca * ce * lz, ce * ly - se * lz];
+    return [RV[0] * lx + RV[3] * ly + RV[6] * lz, RV[1] * lx + RV[4] * ly + RV[7] * lz, RV[2] * lx + RV[5] * ly + RV[8] * lz];
   }
   // the layer of floorShadow: Ru and Rv cells for each unit of the box along u and v (a cell about 2 CSS pixels
   // wide; a whole number of cells across the floor), lp the lamp in the box's axes; the triangles are in the
   // camera's axes of o
   function floorLayer(tb, o, lp) {
-    const { ca, sa, ce, se, EX, EY, EZ, cam } = o, [lu, lv, lw] = lp;
+    const { RV, EX, EY, EZ, cam } = o, [lu, lv, lw] = lp;
     const T = tb.f, nt = tb.n, R = Math.max(8, cam.S / 2), LW = Math.ceil(2 * EX * R), LH = Math.ceil(2 * EY * R), n = LW * LH, Ru = LW / (2 * EX), Rv = LH / (2 * EY);
     const C = o.cache;
     if (!C.floorBuf || C.floorBuf.n < n) C.floorBuf = { n, h: new Float32Array(n), a: new Float32Array(n), m: new Float32Array(n), b1: new Float32Array(n), b2: new Float32Array(n), b3: new Float32Array(n), hb: new Float32Array(n), t: new Float32Array(n) };
@@ -9355,7 +9463,7 @@
       for (let m = 0; m < 3; m++) {
         const k = t * CT + m * CV;
         const xc = (T[k] - cam.cx) * iS, yc = (cam.cy - T[k + 1]) * iS, zc = T[k + 2];
-        const u = ca * xc + sa * se * yc + sa * ce * zc, v = -sa * xc + ca * se * yc + ca * ce * zc, w = ce * yc - se * zc;
+        const u = RV[0] * xc + RV[3] * yc + RV[6] * zc, v = RV[1] * xc + RV[4] * yc + RV[7] * zc, w = RV[2] * xc + RV[5] * yc + RV[8] * zc;
         // along the light down to the floor, on the layer
         const h = w + EZ > 0 ? w + EZ : 0, f = h / lw;
         fx[m] = (u - lu * f + EX) * Ru; fy[m] = (v - lv * f + EY) * Rv; fz[m] = h;
@@ -9941,7 +10049,7 @@
   // thick, and what comes through is that much less) and absorbs a little; at the end, what is drawn
   // behind, seen bent by the gelatin in front of it.
   function liquidPaint(g, c, M, mesh, opaque, vc, dark, q) {
-    const { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S } = M;
+    const { proj, T, U, V, dpr, W, H, RV, S } = M;
     const np = mesh.PX.length, none = { shown: 0, odd: 0, q, thick: 0 };
     if (!np) return none;
     const sx = new Float64Array(2 * np), sy = new Float64Array(2 * np), sd = new Float64Array(2 * np);
@@ -10001,7 +10109,7 @@
     // the eye): it is worked out once for a grid of normals (x and y from −1 to 1) for this view: the
     // light the skin mirrors, the share of the light that goes into it, how much of the skin the line of
     // sight goes through (1 looked at straight, more at a slant), and how much light falls on it.
-    const NL = q < 1 ? 128 : 256, lutKey = [NL, ce, se, dark, 'skin3'].join();
+    const NL = q < 1 ? 128 : 256, lutKey = [NL, RV[2], RV[5], RV[8], dark, 'skin3'].join();
     if (!Q3.liqLut || Q3.liqLut.key !== lutKey) {
       const lut = new Float32Array(NL * NL * 4);
       for (let iy = 0; iy < NL; iy++) {
@@ -10011,7 +10119,7 @@
           const cz = -Math.sqrt(1 - r2), cosT = -cz, om = 1 - cosT, fr = F0 + (1 - F0) * om * om * om * om * om;
           const rx = 2 * cosT * cx, ry = 2 * cosT * cy, rz = 2 * cosT * cz + 1;
           const rl = rx * Lx + ry * Ly + rz * Lz;
-          const env = groundI + (skyI - groundI) * sm(-0.3, 0.45, ry * ce - rz * se) + lampI * lampAt(rx, ry, rz) + (rl > 0.99 ? 60 * Math.pow(rl, 1500) : 0);
+          const env = groundI + (skyI - groundI) * sm(-0.3, 0.45, RV[2] * rx + RV[5] * ry + RV[8] * rz) + lampI * lampAt(rx, ry, rz) + (rl > 0.99 ? 60 * Math.pow(rl, 1500) : 0);
           const o = (iy * NL + ix) * 4;
           lut[o] = fr * env; lut[o + 1] = 1 - fr; lut[o + 2] = 1 / Math.max(cosT * cosT, 0.006);
           lut[o + 3] = 0.42 + 0.58 * Math.max(0, cx * Lx + cy * Ly + cz * Lz);
@@ -10044,7 +10152,7 @@
       // the normals of the corners in the camera's axes
       for (let m = 0; m < 3; m++) {
         const nu = TN[9 * t + 3 * m], nv = TN[9 * t + 3 * m + 1], nw = TN[9 * t + 3 * m + 2];
-        CN[3 * m] = nu * ca - nv * sa; CN[3 * m + 1] = nu * sa * se + nv * ca * se + nw * ce; CN[3 * m + 2] = nu * sa * ce + nv * ca * ce - nw * se;
+        CN[3 * m] = RV[0] * nu + RV[1] * nv + RV[2] * nw; CN[3 * m + 1] = RV[3] * nu + RV[4] * nv + RV[5] * nw; CN[3 * m + 2] = RV[6] * nu + RV[7] * nv + RV[8] * nw;
       }
       rasterTri(lx(sx[a]), ly(sy[a]), lx(sx[b]), ly(sy[b]), lx(sx[cc]), ly(sy[cc]), LW, LH, lpx);
     }
@@ -10856,7 +10964,9 @@
     const ink = css.getPropertyValue('--text').trim() || (dark ? '#e5e7eb' : '#111827'), bg = css.getPropertyValue('--plot-bg').trim() || (dark ? '#111' : '#fff');
     const P3 = (p) => { X.proj(X.U(p[0]), X.V(p[1]), X.Wz(p[2])); return [X.T[0], X.T[1], X.T[2]]; };
     // directions on the floor: to the right on the screen, and toward the eye
-    const rgt = [X.ca, -X.sa], twd = [-X.sa, -X.ca];
+    // (feature/3d-view: from the view's rotation; looking straight down, toward the eye is down the screen)
+    const unit2 = (a, b) => { const l = Math.hypot(a, b); return l > 1e-3 ? [a / l, b / l] : null; };
+    const rgt = unit2(X.RV[0], X.RV[1]) || unit2(-X.RV[3], -X.RV[4]) || [1, 0], twd = unit2(-X.RV[6], -X.RV[7]) || unit2(-X.RV[3], -X.RV[4]) || [0, -1];
     const T = Md.tank, growing = o.growing;
     if (T) glassPaint(g, Md, X, 'front', dark);
     // a label in a little box: an italic letter, then the rest (" = 15 cm")
@@ -10937,7 +11047,7 @@
       } else if (k === 'cyl' || k === 'cone' || k === 'frustum') {
         const H = Md.top, out2 = sR * 1.22;
         // the radius on the face toward the eye (the top seen from above, the bottom from below); a cone: its base
-        const zc = k === 'cone' ? 0 : X.se >= 0 ? H : 0, rr = k === 'frustum' && zc === H ? Md.s.r : k === 'frustum' ? Md.s.R : sR;
+        const zc = k === 'cone' ? 0 : -X.RV[8] >= 0 ? H : 0, rr = k === 'frustum' && zc === H ? Md.s.r : k === 'frustum' ? Md.s.R : sR;
         const d30 = [rgt[0] * 0.866 + twd[0] * 0.5, rgt[1] * 0.866 + twd[1] * 0.5];
         const tr2 = k === 'frustum' ? (zc === H ? L.r : L.R) : rad;
         if (dd) dim(at(d30, -rr, zc), at(d30, rr, zc), tr2, k === 'cone' || zc === 0 ? DOWN : UP);
@@ -10958,10 +11068,10 @@
         const s = Md.s;
         dim([0, 0, s.c], [s.a, 0, s.c], L.a, DOWN); dim([0, 0, s.c], [0, s.b, s.c], L.b, DOWN); dim([0, 0, s.c], [0, 0, 2 * s.c], L.c, LEFT);
       } else if (k === 'pipe') {
-        const s = Md.s, ex = sgn(X.ca) * s.L / 2;
-        dim([ex, 0, s.R], [ex, 0, 2 * s.R], L.R, sgn(X.ca) > 0 ? RIGHT : LEFT);
-        dim([ex, 0, s.R], [ex, 0, s.R - s.r], L.r, sgn(X.ca) > 0 ? RIGHT : LEFT);
-        const fy = -sgn(X.ca * X.ce) * s.R * 1.15;
+        const s = Md.s, ex = sgn(X.RV[0]) * s.L / 2;
+        dim([ex, 0, s.R], [ex, 0, 2 * s.R], L.R, sgn(X.RV[0]) > 0 ? RIGHT : LEFT);
+        dim([ex, 0, s.R], [ex, 0, s.R - s.r], L.r, sgn(X.RV[0]) > 0 ? RIGHT : LEFT);
+        const fy = -sgn(X.RV[7]) * s.R * 1.15;
         dim([-s.L / 2, fy, 0], [s.L / 2, fy, 0], L.L, DOWN);
       } else if (Md.grow === 'up') {
         const s = Md.s, H = Md.top, out2 = sR * 1.35;
@@ -10992,7 +11102,7 @@
       // where the scale is: lying, on the front of the shell toward the left end; standing, on the wall toward the
       // eye and a little to the left (the amount at the level goes to its right, away from the round buttons)
       let sv;
-      if (T.lying) sv = [-sgn(X.ca) * T.L * 0.22, -sgn(X.ca * X.ce || 1)];
+      if (T.lying) sv = [-sgn(X.RV[0]) * T.L * 0.22, -sgn(X.RV[7] || 1)];
       else { const c = Math.cos(0.6), s = Math.sin(0.6); sv = [twd[0] * c - rgt[0] * s, twd[1] * c - rgt[1] * s]; }
       const W3 = (z) => P3(T.wall(z, sv));
       // the line of the scale
@@ -11033,7 +11143,7 @@
       if (!growing) {
         const lab = L, lr = lab.dia ? lab.r : lab.r || lab.R;
         if (T.lying) {
-          const ex = T.L / 2 + T.a + R * 0.25, sx = sgn(X.ca);
+          const ex = T.L / 2 + T.a + R * 0.25, sx = sgn(X.RV[0]);
           if (lab.dia) dim([-sx * ex, 0, 0], [-sx * ex, 0, 2 * R], lr, sx > 0 ? LEFT : RIGHT); else dim([-sx * ex, 0, R], [-sx * ex, 0, 2 * R], lr, sx > 0 ? LEFT : RIGHT);
           if (h > 0) dim([sx * ex, 0, 0], [sx * ex, 0, h], lab.h, sx > 0 ? RIGHT : LEFT);
           const fy = sv[1] * R * 1.12;
@@ -11124,7 +11234,8 @@
     const GR = Q3.grow; // the solid growing (startGrow)
     const dark = document.documentElement.classList.contains('dark');
     const gridColor = css.getPropertyValue('--plot-grid').trim(), axisColor = css.getPropertyValue('--plot-axis').trim();
-    const ca = Math.cos(Q3.az), sa = Math.sin(Q3.az), ce = Math.cos(Q3.el), se = Math.sin(Q3.el);
+    // the view (feature/3d-view: a rotation, rotAzEl until 1.13.0) and the shift of the picture (two fingers)
+    const RV = Q3.rot || rotAzEl(VIEW3D.az, VIEW3D.el), PAN = Q3.pan || [0, 0];
     const xs = D.xs, ys = D.ys, x0 = xs[0], x1 = xs[D.nx - 1], y0 = ys[0], y1 = ys[D.ny - 1], z0 = D.z0, z1 = D.z1;
     // the half sizes of the box: x and y from −1 to 1 and z from −ZS to ZS, or (1:1:1) the same length
     // for one unit on all axes, the longest side from −1 to 1
@@ -11136,21 +11247,24 @@
       EX = (x1 - x0) / M; EY = (y1 - y0) / M; EZ = Math.max(0.03, (z1 - z0) / M);
     }
     const EH = Math.hypot(EX, EY);
-    const S = Math.min(W / (3.3 * EH / Math.SQRT2), H / (2 * (EZ * Math.abs(ce) + EH * Math.abs(se)) + 0.75)) * Q3.zoom;
-    const cx = W / 2, cy = H / 2;
+    // the scale: the box fits (across: its floor turned about z, as until 1.13.0; up: its height and floor as seen)
+    const hx = EZ * Math.abs(RV[2]) + EH * Math.hypot(RV[0], RV[1]), vy = EZ * Math.abs(RV[5]) + EH * Math.hypot(RV[3], RV[4]);
+    const S = Math.min(W / (3.3 * hx / Math.SQRT2), H / (2 * vy + 0.75)) * Q3.zoom;
+    const cx = W / 2 + PAN[0], cy = H / 2 + PAN[1];
     // (u, v, w) -> screen x, screen y and depth (larger is farther away)
     const T = [0, 0, 0];
     const proj = (u, v, w) => {
-      const xr = u * ca - v * sa, yr = u * sa + v * ca;
-      T[0] = cx + xr * S; T[1] = cy - (w * ce + yr * se) * S; T[2] = yr * ce - w * se;
+      T[0] = cx + (RV[0] * u + RV[1] * v + RV[2] * w) * S; T[1] = cy - (RV[3] * u + RV[4] * v + RV[5] * w) * S; T[2] = RV[6] * u + RV[7] * v + RV[8] * w;
       return T;
     };
     const U = (x) => ((x - x0) / (x1 - x0) * 2 - 1) * EX, V = (y) => ((y - y0) / (y1 - y0) * 2 - 1) * EY, Wz = (z) => ((z - z0) / (z1 - z0) * 2 - 1) * EZ;
     const line = (u1, v1, w1, u2, v2, w2) => { proj(u1, v1, w1); g.moveTo(T[0], T[1]); proj(u2, v2, w2); g.lineTo(T[0], T[1]); };
     // the three panes at the back of the box, with grid lines
-    const ub = proj(EX, 0, 0)[2] > proj(-EX, 0, 0)[2] ? EX : -EX;
-    const vb = proj(0, EY, 0)[2] > proj(0, -EY, 0)[2] ? EY : -EY;
-    const wb = proj(0, 0, EZ)[2] > proj(0, 0, -EZ)[2] ? EZ : -EZ;
+    // (feature/3d-view: a side seen edge-on, as in a set view, counts as at the back on the right, at the back, and
+    // at the bottom, so that the numbers are on the left, in front and at the bottom)
+    const ub = RV[6] > -1e-9 ? EX : -EX;
+    const vb = RV[7] > -1e-9 ? EY : -EY;
+    const wb = RV[8] > 1e-9 ? EZ : -EZ;
     const stx = niceStep(x1 - x0, 4), sty = niceStep(y1 - y0, 4), stz = niceStep(z1 - z0, 4);
     const gx = gridValues(x0, x1, stx, 40), gy = gridValues(y0, y1, sty, 40), gz = gridValues(z0, z1, stz, 40);
     // a path on the floor of the box (z at its bottom), from points (u, v)
@@ -11171,7 +11285,7 @@
     const cells = [];
     let cutLost = 0;  // (cells at the cut of a growing solid left out for want of a cut point, BG09)
     // a normal in the box's axes (u, v, w) in the camera's axes; grid coordinates of u and v
-    const camN = (nu, nv, nw) => [nu * ca - nv * sa, nu * sa * se + nv * ca * se + nw * ce, nu * sa * ce + nv * ca * ce - nw * se];
+    const camN = (nu, nv, nw) => [RV[0] * nu + RV[1] * nv + RV[2] * nw, RV[3] * nu + RV[4] * nv + RV[5] * nw, RV[6] * nu + RV[7] * nv + RV[8] * nw];
     const giOf = (u) => (u / EX + 1) / 2 * (D.nx - 1), gjOf = (v) => (v / EY + 1) / 2 * (D.ny - 1);
     // (1.12.0, BG19) while the graph is turned, the lamp stays where it was on the box when the turn began, so
     // that the shadows stay too: which points are in a shadow (the lamp's map of the drawing before the turn,
@@ -11188,9 +11302,8 @@
     const lockLit = (u, v, w, nu, nv, nw) => {
       const K = LKS, M = K.SM;
       if (!M) return 1;
-      const yr = u * K.sa + v * K.ca, x = u * K.ca - v * K.sa, y = w * K.ce + yr * K.se, z = yr * K.ce - w * K.se;
-      const myr = nu * K.sa + nv * K.ca;
-      let mx = nu * K.ca - nv * K.sa, my = nw * K.ce + myr * K.se, mz = myr * K.ce - nw * K.se;
+      const Q = K.RV, x = Q[0] * u + Q[1] * v + Q[2] * w, y = Q[3] * u + Q[4] * v + Q[5] * w, z = Q[6] * u + Q[7] * v + Q[8] * w;
+      let mx = Q[0] * nu + Q[1] * nv + Q[2] * nw, my = Q[3] * nu + Q[4] * nv + Q[5] * nw, mz = Q[6] * nu + Q[7] * nv + Q[8] * nw;
       const nl = Math.hypot(mx, my, mz) || 1;
       mx /= nl; my /= nl; mz /= nl;
       let dif = mx * LAMP[0] + my * LAMP[1] + mz * LAMP[2];
@@ -11201,7 +11314,7 @@
       return lit;
     };
     // the same for a normal in the camera's axes (a point of a cut cell), and for a grid point (kept)
-    const lockLitN = (u, v, w, n) => lockLit(u, v, w, ca * n[0] + sa * se * n[1] + sa * ce * n[2], -sa * n[0] + ca * se * n[1] + ca * ce * n[2], ce * n[1] - se * n[2]);
+    const lockLitN = (u, v, w, n) => lockLit(u, v, w, RV[0] * n[0] + RV[3] * n[1] + RV[6] * n[2], RV[1] * n[0] + RV[4] * n[1] + RV[7] * n[2], RV[2] * n[0] + RV[5] * n[1] + RV[8] * n[2]);
     const lockLitK = (s, k) => {
       let A = s.lockLit;
       if (!A || s.lockId !== LKS.id || A.length !== s.z.length) { A = s.lockLit = new Float32Array(s.z.length).fill(NaN); s.lockId = LKS.id; }
@@ -11220,7 +11333,7 @@
       const F = Q3.lastShade, same = (o) => o && o.D === D && o.dark === dark && o.EX === EX && o.EY === EY && o.EZ === EZ;
       if (!same(Q3.shLock)) {
         Q3.lockSeq = (Q3.lockSeq || 0) + 1;
-        Q3.shLock = same(F) ? Object.assign({}, F, { id: Q3.lockSeq }) : { D, dark, EX, EY, EZ, ca, sa, ce, se, SM: null, floor: null, lamp: lampInBox(ca, sa, ce, se), id: Q3.lockSeq, fresh: true };
+        Q3.shLock = same(F) ? Object.assign({}, F, { id: Q3.lockSeq }) : { D, dark, EX, EY, EZ, RV, SM: null, floor: null, lamp: lampInBox(RV), id: Q3.lockSeq, fresh: true };
       }
       LKS = Q3.shLock;
     }
@@ -11349,8 +11462,7 @@
               su += (p1.v - p2.v) * (p1.w + p2.w); sv += (p1.w - p2.w) * (p1.u + p2.u); sw += (p1.u - p2.u) * (p1.v + p2.v);
               dd += p1.d; ww += p1.w;
             }
-            const yr = su * sa + sv * ca;
-            const ncx = su * ca - sv * sa, ncy = sw * ce + yr * se, ncd = yr * ce - sw * se;
+            const ncx = RV[0] * su + RV[1] * sv + RV[2] * sw, ncy = RV[3] * su + RV[4] * sv + RV[5] * sw, ncd = RV[6] * su + RV[7] * sv + RV[8] * sw;
             const len = Math.hypot(ncx, ncy, ncd) || 1;
             cells.push({ s, poly, depth: dd * 4 / poly.length, shade: Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len, t: (ww / (poly.length * EZ) + 1) / 2, inR: chosen && inRegion(i, j) });
             continue;
@@ -11392,8 +11504,7 @@
             const e1 = [uu(P1) - uu(P0), vv(P1) - vv(P0), pw[P1] - pw[P0]], e2 = [uu(P2) - uu(P0), vv(P2) - vv(P0), pw[P2] - pw[P0]];
             nu = e1[1] * e2[2] - e1[2] * e2[1]; nv = e1[2] * e2[0] - e1[0] * e2[2]; nw = e1[0] * e2[1] - e1[1] * e2[0];
           }
-          const yr = nu * sa + nv * ca;
-          const ncx = nu * ca - nv * sa, ncy = nw * ce + yr * se, ncd = yr * ce - nw * se;
+          const ncx = RV[0] * nu + RV[1] * nv + RV[2] * nw, ncy = RV[3] * nu + RV[4] * nv + RV[5] * nw, ncd = RV[6] * nu + RV[7] * nv + RV[8] * nw;
           const len = Math.hypot(ncx, ncy, ncd) || 1;
           const shade = Math.abs(ncx * L[0] + ncy * L[1] + ncd * L[2]) / len;
           let dsum = 0, wsum = 0;
@@ -11493,7 +11604,7 @@
     // ending at once at 3°: turning the graph made it come and go)
     let shadowFaces = 0, shadowArea = 0;
     const outline = [];  // (the closed paths of the shadow, 1.11.0: drawn as a line too for the enclosed part)
-    const volFade = smoothStep(0.02, 0.3, se);
+    const volFade = smoothStep(0.02, 0.3, -RV[8]);
     if (vc && volFade > 0.004) {
       g.save();
       g.globalAlpha = volFade;
@@ -11623,7 +11734,7 @@
     // a solid or the liquid of a tank of "Shapes" (1.12.0, D6): its triangles with the surfaces' (so it is shaded
     // and has shadows as they do); while it grows, as far as it has grown
     const MD = D.model ? Q3.model : null;
-    const MX = MD ? { proj, T, U, V, Wz, camN, LKS, lockLitN, ca, sa, ce, se, nx: (x1 - x0) / (2 * EX), ny: (y1 - y0) / (2 * EY), nz: (z1 - z0) / (2 * EZ) } : null;
+    const MX = MD ? { proj, T, U, V, Wz, camN, LKS, lockLitN, RV, nx: (x1 - x0) / (2 * EX), ny: (y1 - y0) / (2 * EY), nz: (z1 - z0) / (2 * EZ) } : null;
     const mGrow = MD && GR && GR.ax === 'mesh' ? Math.max(0, Math.min(1, GR.theta / (2 * Math.PI))) : 1;
     const mt0 = performance.now(), mTris = MD ? meshToTris(MD.tank ? MD.tank.liquid(MD.tank.hShow) : MD.mesh(mGrow), tb, MX) : 0, mMs = { tris: performance.now() - mt0 };
     // shadows from the lamp of the highlight (1.11.0): on the floor of the box (while it is at the
@@ -11643,15 +11754,15 @@
       const F = tb.f, iS = 1 / S;
       for (let v = 0; v < tb.n * 3; v++) {
         const o = v * CV, xc = (F[o] - cx) * iS, yc = (cy - F[o + 1]) * iS, zc = F[o + 2];
-        F[o + 11] = lockLitN(ca * xc + sa * se * yc + sa * ce * zc, -sa * xc + ca * se * yc + ca * ce * zc, ce * yc - se * zc, [F[o + 3], F[o + 4], F[o + 5]]);
+        F[o + 11] = lockLitN(RV[0] * xc + RV[3] * yc + RV[6] * zc, RV[1] * xc + RV[4] * yc + RV[7] * zc, RV[2] * xc + RV[5] * yc + RV[8] * zc, [F[o + 3], F[o + 4], F[o + 5]]);
       }
     }
     const tf = performance.now();
-    const floorO = { ca, sa, ce, se, EX, EY, EZ, cam: { cx, cy, S }, dark, cache: Q3, k: shK, lamp: LKS ? LKS.lamp : null, layer: LKS && LKS.floor && LKS.floor.lampKey === String(LKS.lamp) ? LKS.floor : null };
+    const floorO = { RV, EX, EY, EZ, cam: { cx, cy, S }, dark, cache: Q3, k: shK, lamp: LKS ? LKS.lamp : null, layer: LKS && LKS.floor && LKS.floor.lampKey === String(LKS.lamp) ? LKS.floor : null };
     const floor = shadows && wb === -EZ ? floorShadow(g, tb, floorO) : null;
     // (the layer of the floor: kept for a turn, BG19)
     if (floor && floor.layer) {
-      floor.layer.lampKey = String(LKS ? LKS.lamp : lampInBox(ca, sa, ce, se));
+      floor.layer.lampKey = String(LKS ? LKS.lamp : lampInBox(RV));
       if (LKS) LKS.floor = floor.layer;
     }
     const floorLayerNow = floor ? floor.layer : null;
@@ -11661,7 +11772,7 @@
     const surf = surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite: !!Q3.turning, k: shK } : null,
       lock: LKS && shadows ? { L: camN(LKS.lamp[0], LKS.lamp[1], LKS.lamp[2]), map: LKS.SM ? [LKS.SM.MW, LKS.SM.MH] : null } : null });
     // (what the next turn keeps: the lamp's map and the floor's layer of this drawing, with its camera, BG19)
-    if (!Q3.turning && shadows && !Q3.captureQ) Q3.lastShade = { D, dark, EX, EY, EZ, ca, sa, ce, se, SM: surf.SM || null, floor: floorLayerNow, lamp: lampInBox(ca, sa, ce, se) };
+    if (!Q3.turning && shadows && !Q3.captureQ) Q3.lastShade = { D, dark, EX, EY, EZ, RV, SM: surf.SM || null, floor: floorLayerNow, lamp: lampInBox(RV) };
     else if (!Q3.turning && !shadows) Q3.lastShade = null;
     // (what was drawn, for the tests; shadow: the pixels in a shadow and at the soft edge of one, the
     // size of the lamp's map and the time to make it; floor: the cells of the floor's layer in a shadow)
@@ -11673,7 +11784,7 @@
       same: D.same || 0, seq: D.seq || 0, cut: GR ? { points: D.series.reduce((n, s) => n + (s.angP ? Object.keys(s.angP).length : 0), 0), dropped: cutLost } : null });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
-    if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, ca, sa, ce, se, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
+    if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, RV, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
     // the color of the solid in the box, and what was drawn (for the tests)
     const lg = Q3.volUI && Q3.volUI.legend;
     if (lg) { lg.hidden = !vc; if (vc) { lg.firstChild.style.background = vc.swatch; lg.firstChild.style.borderColor = vc.line; } }
@@ -11689,18 +11800,23 @@
     g.stroke();
     g.fillStyle = axisColor; g.font = '11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     const out = (e, d) => e + Math.sign(e) * d; // a little outside the edge of the box
-    if (!MD) for (const x of gx) { proj(U(x), out(vn, 0.17), wb); g.fillText(fmt(x, stx), T[0], T[1]); }
-    if (!MD) for (const y of gy) { proj(out(un, 0.17), V(y), wb); g.fillText(fmt(y, sty), T[0], T[1]); }
+    // (feature/3d-view: the labels stay upright however the graph is turned; an axis seen end-on, as from the
+    // front or from above, has none, as they would all fall on one point)
+    const onScreen = (a, b) => { proj(a[0], a[1], a[2]); const x = T[0], y = T[1]; proj(b[0], b[1], b[2]); return [T[0] - x, T[1] - y]; };
+    const zDir = onScreen([ze.u, ze.v, -EZ], [ze.u, ze.v, EZ]), zLen = Math.hypot(zDir[0], zDir[1]);
+    const seen = { x: Math.hypot(...onScreen([-EX, vn, wb], [EX, vn, wb])) > 36, y: Math.hypot(...onScreen([un, -EY, wb], [un, EY, wb])) > 36, z: zLen > 36 };
+    if (!MD && seen.x) for (const x of gx) { proj(U(x), out(vn, 0.17), wb); g.fillText(fmt(x, stx), T[0], T[1]); }
+    if (!MD && seen.y) for (const y of gy) { proj(out(un, 0.17), V(y), wb); g.fillText(fmt(y, sty), T[0], T[1]); }
     g.textAlign = 'right';
-    if (!MD) for (const z of gz) {
+    if (!MD && seen.z) for (const z of gz) {
       if (Math.abs(Wz(z) - wb) < 0.1) continue;  // at the floor the x or y labels are there
       proj(ze.u, ze.v, Wz(z)); g.fillText(fmt(z, stz), T[0] - 7, T[1]);
     }
     g.font = 'bold 13px system-ui, sans-serif'; g.textAlign = 'center';
     if (!MD) {
-      proj(0, out(vn, 0.4), wb); g.fillText('x', T[0], T[1]);
-      proj(out(un, 0.4), 0, wb); g.fillText('y', T[0], T[1]);
-      proj(ze.u, ze.v, EZ); g.fillText('z', T[0], T[1] - 14);
+      if (seen.x) { proj(0, out(vn, 0.4), wb); g.fillText('x', T[0], T[1]); }
+      if (seen.y) { proj(out(un, 0.4), 0, wb); g.fillText('y', T[0], T[1]); }
+      if (zLen > 12) { proj(ze.u, ze.v, EZ); g.fillText('z', T[0] + zDir[0] / zLen * 14, T[1] + zDir[1] / zLen * 14); }
     }
     // points (the rows of a matrix, the solution of a linear system), in front of the surfaces
     for (const p of Q3.points || []) {
@@ -11736,6 +11852,7 @@
     // fading out over the full drawing)
     Q3.lastDrawMs = performance.now() - t3;
     c.dataset.ms = String(Math.round(Q3.lastDrawMs));
+    c.dataset.view = JSON.stringify({ rot: RV.map((x) => Math.round(x * 1e4) / 1e4), pan: PAN.map(Math.round), zoom: Math.round(Q3.zoom * 1000) / 1000, labels: seen });
     if (crossFade) {
       c.dataset.fade = 'in';
       void getComputedStyle(crossFade).opacity;
@@ -11766,44 +11883,84 @@
     Q3.tip.style.display = 'block';
     draw3d();
   }
+  // (feature/3d-view) one finger turns the graph any way, as a ball under the finger: a drag to the right turns
+  // its front to the right, a drag down turns its front down, about an axis in the screen at right angles to the
+  // drag, 0.01 radian a CSS pixel, over the top and under the bottom too (until 1.13.0: about the z axis and a
+  // tilt of at most ±86°). Two fingers: pinch to zoom (about the point between them), move them together to
+  // shift the picture, twist them to turn it in the screen (after 7° of twist, so that a pinch does not turn it)
   function setup3dGestures(wrap) {
-    const pts = new Map();
-    let start = null, moved = false, lv = null;
-    const snapshot = () => ({ az: Q3.az, el: Q3.el, zoom: Q3.zoom, pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) });
+    const pts = new Map(), last = new Map();
+    let start = null, moved = false, lv = null, two = null;
+    const snapshot = () => ({ zoom: Q3.zoom, pts: new Map(Array.from(pts, ([k, p]) => [k, Object.assign({}, p)])) });
     wrap.addEventListener('pointerdown', (e) => {
-      if (e.target.tagName === 'BUTTON' || !Q3.data) return;
+      if (Q3.viewMenu && !e.target.closest('.view3d-menu') && !e.target.closest('button.views')) closeViewMenu3d();
+      if (e.target.closest('button') || !Q3.data) return;  // (a button, or the picture on one)
+      Q3.viewAnim = null;  // (a set view on its way: it stays where it is)
       try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* the pointer is already gone */ }
       // (D6) a tank of "Shapes": a drag that starts at the level of the liquid moves it (up and down), not the graph
       if (!pts.size && !lv && Q3.model && Q3.model.tank && nearLevel3d(e.clientX, e.clientY) && Q3.levelHit && Q3.levelHit.perH) {
         if (Q3.fill) { Q3.fill = null; Q3.model.tank.hShow = Q3.model.tank.h; }
-        lv = { id: e.pointerId, y: e.clientY, h: Q3.model.tank.h, per: Q3.levelHit.perH };
+        lv = { id: e.pointerId, y: e.clientY, h: Q3.model.tank.h, per: Q3.levelHit.perH, at: { x: e.clientX, y: e.clientY } };
         if (Q3.canvas) Q3.canvas.dataset.drag = 'level';
         return;
       }
+      // (feature/3d-view) a second finger while the level is moved: the level back where it was, and the two fingers
+      // zoom, shift and twist the graph
+      if (lv && e.pointerId !== lv.id) {
+        const L = lv; lv = null;
+        if (Q3.canvas) delete Q3.canvas.dataset.drag;
+        setLevel3d(L.h, true);
+        pts.set(L.id, Object.assign({}, L.at)); last.set(L.id, Object.assign({}, L.at));
+      }
       if (Q3.grow && !Q3.grow.still) { Q3.grow = null; showAngle3d(360); if (Q3.canvas) Q3.canvas.dataset.grow = 'stopped'; draw3d(); } // a touch shows the whole solid at once
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      last.set(e.pointerId, { x: e.clientX, y: e.clientY });
       start = snapshot();
-      if (pts.size > 1) moved = true; else moved = false;
+      if (pts.size > 1) { moved = true; two = { twist: 0, twisting: false, shift: [0, 0], shifting: false }; } else moved = false;
     });
     wrap.addEventListener('pointermove', (e) => {
-      if (lv && e.pointerId === lv.id) { setLevel3d(lv.h + (e.clientY - lv.y) / lv.per, false); return; }
+      if (lv && e.pointerId === lv.id) { lv.at = { x: e.clientX, y: e.clientY }; setLevel3d(lv.h + (e.clientY - lv.y) / lv.per, false); return; }
       if (!pts.has(e.pointerId) || !start) return;
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const ids = Array.from(pts.keys());
+      const keepLast = () => { for (const id of ids) last.set(id, Object.assign({}, pts.get(id))); };
       if (ids.length === 1) {
         const p0 = start.pts.get(ids[0]), p1 = pts.get(ids[0]);
         if (!p0) return;
-        const dx = p1.x - p0.x, dy = p1.y - p0.y;
-        if (!moved && Math.abs(dx) + Math.abs(dy) <= 6) return;
+        if (!moved && Math.abs(p1.x - p0.x) + Math.abs(p1.y - p0.y) <= 6) return;
         moved = true;
-        Q3.az = start.az + dx * 0.01;
-        Q3.el = Math.max(-1.5, Math.min(1.5, start.el + dy * 0.01));
+        const q = last.get(ids[0]) || p0, dx = p1.x - q.x, dy = p1.y - q.y, d = Math.hypot(dx, dy);
+        keepLast();
+        if (!(d > 0)) return;
+        // (the camera's y is up and the screen's down: the axis (−dy, −dx, 0) in the camera's axes)
+        Q3.rot = rotFix(rotMul(rotAxis(-dy / d, -dx / d, 0, d * 0.01), Q3.rot));
       } else {
-        const a0 = start.pts.get(ids[0]), b0 = start.pts.get(ids[1]), a1 = pts.get(ids[0]), b1 = pts.get(ids[1]);
-        if (!a0 || !b0) return;
+        const a0 = last.get(ids[0]), b0 = last.get(ids[1]), a1 = pts.get(ids[0]), b1 = pts.get(ids[1]);
+        if (!a0 || !b0) { keepLast(); return; }
         const d0 = Math.hypot(a0.x - b0.x, a0.y - b0.y), d1 = Math.hypot(a1.x - b1.x, a1.y - b1.y);
+        keepLast();
         if (d0 < 10 || d1 < 10) return;
-        Q3.zoom = Math.max(0.4, Math.min(6, start.zoom * d1 / d0));
+        const r = Q3.canvas ? Q3.canvas.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
+        const m0 = [(a0.x + b0.x) / 2 - r.left - r.width / 2, (a0.y + b0.y) / 2 - r.top - r.height / 2];
+        const m1 = [(a1.x + b1.x) / 2 - r.left - r.width / 2, (a1.y + b1.y) / 2 - r.top - r.height / 2];
+        const pan = (Q3.pan || [0, 0]).slice();
+        // pinch: the point between the fingers stays where it is
+        const z1 = Math.max(0.4, Math.min(6, Q3.zoom * d1 / d0)), f = z1 / Q3.zoom;
+        Q3.zoom = z1;
+        pan[0] = m0[0] * (1 - f) + pan[0] * f; pan[1] = m0[1] * (1 - f) + pan[1] * f;
+        // move: the picture follows (after 8 px)
+        if (!two) two = { twist: 0, twisting: false, shift: [0, 0], shifting: false };
+        const sx = m1[0] - m0[0], sy = m1[1] - m0[1];
+        if (two.shifting) { pan[0] += sx; pan[1] += sy; }
+        else { two.shift[0] += sx; two.shift[1] += sy; if (Math.hypot(two.shift[0], two.shift[1]) > 8) { two.shifting = true; pan[0] += two.shift[0]; pan[1] += two.shift[1]; } }
+        const lim = [Math.max(r.width, 100) * Q3.zoom, Math.max(r.height, 100) * Q3.zoom];
+        Q3.pan = [Math.max(-lim[0], Math.min(lim[0], pan[0])), Math.max(-lim[1], Math.min(lim[1], pan[1]))];
+        // twist: turned in the screen as the fingers turn (clockwise on the screen is a negative turn about the
+        // camera's z in its axes, x right and y up)
+        let t = Math.atan2(b1.y - a1.y, b1.x - a1.x) - Math.atan2(b0.y - a0.y, b0.x - a0.x);
+        if (t > Math.PI) t -= 2 * Math.PI; else if (t < -Math.PI) t += 2 * Math.PI;
+        if (!two.twisting) { two.twist += t; if (Math.abs(two.twist) > 0.12) { two.twisting = true; t = two.twist; } else t = 0; }
+        if (t) Q3.rot = rotFix(rotMul(rotAxis(0, 0, 1, -t), Q3.rot));
       }
       clearMark3d();
       // while the graph is turned, the surfaces and the liquid are drawn with fewer pixels; in full
@@ -11819,16 +11976,11 @@
         return;
       }
       if (!pts.has(e.pointerId)) return;
-      pts.delete(e.pointerId);
+      pts.delete(e.pointerId); last.delete(e.pointerId);
+      if (pts.size < 2) two = null;
       if (!moved && pts.size === 0 && e.type === 'pointerup') pick3d(e.clientX, e.clientY);
       start = pts.size ? snapshot() : null;
-      if (!pts.size && Q3.turning) {
-        // (1.12.0, BG08, BG19: the full drawing, with the lamp back at the upper left of the screen, fades in
-        // over 0.2 s)
-        if (Q3.shLock) Q3.fadeInNext = true;
-        Q3.shLock = null;
-        Q3.turning = false; Q3.turnN = 0; Q3.turnMs = 0; Q3.turnList = []; requestDraw3d();
-      }
+      if (!pts.size && Q3.turning) endTurn3d();
     };
     wrap.addEventListener('pointerup', end);
     wrap.addEventListener('pointercancel', end);
@@ -13059,13 +13211,13 @@
     if (!c || !Q3.data || Q3.gifBusy) return null;
     Q3.gifBusy = true;
     toast(tr('Making the moving picture…', '動く画像を作っています…'), 2500);
-    const keep = { az: Q3.az, grow: Q3.grow, gv: c.dataset.grow };
+    const keep = { rot: Q3.rot, grow: Q3.grow, gv: c.dataset.grow };
     try {
       let w = Math.min(GIF_W, c.width), out = null;
       const frames = [];
       for (let f = 0; f < GIF_FRAMES; f++) {
         if (Q3.revInfo) { const th = 2 * Math.PI * (f + 1) / GIF_FRAMES; Q3.grow = f === GIF_FRAMES - 1 ? null : { ax: Q3.revInfo, theta: th, still: true }; }
-        else Q3.az = keep.az + 2 * Math.PI * f / GIF_FRAMES;
+        else { const th = 2 * Math.PI * f / GIF_FRAMES, cs = Math.cos(th), sn = Math.sin(th); Q3.rot = rotMul(keep.rot, [cs, -sn, 0, sn, cs, 0, 0, 0, 1]); }
         Q3.captureQ = 1.5;
         draw3d();
         frames.push(await new Promise((r) => requestAnimationFrame(() => { const q = el('canvas'); q.width = c.width; q.height = c.height; q.getContext('2d').drawImage(c, 0, 0); r(q); })));
@@ -13084,7 +13236,7 @@
       }
       return out;
     } finally {
-      Q3.captureQ = null; Q3.az = keep.az; Q3.grow = keep.grow; if (keep.gv !== undefined) c.dataset.grow = keep.gv;
+      Q3.captureQ = null; Q3.rot = keep.rot; Q3.grow = keep.grow; if (keep.gv !== undefined) c.dataset.grow = keep.gv;
       Q3.gifBusy = false;
       draw3d();
     }
