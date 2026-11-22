@@ -9729,13 +9729,20 @@
   // edge-on and the lines stay strong, so the shape still reads. Materials (MATS): the metals mirror a bright room and
   // have a sharp highlight (GGX), wood and concrete are dull, the liquids clear and tinted. No WebGL 2 (or the context
   // lost): the 2D canvas as before, and no see-through.
+  // (the keys are those of DENSITIES; 1.14.0: stainless steel, aluminium, copper, brass, wood, and the resins PLA, ABS
+  // and acrylic in the list. Stainless steel a polished silver, sharper than iron; PLA and ABS a light glossy plastic
+  // (white, ivory: a base above 1 keeps them light on the side away from the lamp); acrylic a clear resin, see-through
+  // as water is)
   const MATS = {
     iron: { metal: 1, rough: 0.42, base: [0.56, 0.57, 0.58] },
-    aluminum: { metal: 1, rough: 0.3, base: [0.91, 0.92, 0.92] },
+    stainless: { metal: 1, rough: 0.16, base: [0.8, 0.8, 0.82] },
+    aluminium: { metal: 1, rough: 0.3, base: [0.91, 0.92, 0.92] },
     copper: { metal: 1, rough: 0.32, base: [0.95, 0.64, 0.54] },
     brass: { metal: 1, rough: 0.3, base: [0.91, 0.78, 0.42] },
     wood: { metal: 0, rough: 0.8, base: [0.55, 0.36, 0.2] },
-    plastic: { metal: 0, rough: 0.35, base: [0.85, 0.86, 0.88] },
+    pla: { metal: 0, rough: 0.24, base: [1.08, 1.09, 1.12] },
+    abs: { metal: 0, rough: 0.28, base: [1.1, 1.05, 0.92] },
+    acrylic: { metal: 0, rough: 0.05, base: [0.8, 0.9, 0.96], opacity: 0.72 },
     concrete: { metal: 0, rough: 0.92, base: [0.63, 0.62, 0.59] },
     water: { metal: 0, rough: 0.06, base: [0.16, 0.42, 0.85], opacity: 0.78 },
     sea: { metal: 0, rough: 0.06, base: [0.1, 0.44, 0.6], opacity: 0.8 },
@@ -9743,12 +9750,13 @@
     gasoline: { metal: 0, rough: 0.06, base: [0.96, 0.74, 0.34], opacity: 0.6 }
   };
   // the look of a material chosen in a tool: a key of DENSITIES (the same name), or for a density typed (g/cm³) the
-  // metal it is (aluminium 2.7, iron and steel 7.85, brass 8.5, copper 8.96); anything else: the colors of the app
+  // metal it is (aluminium 2.7, iron and steel 7.85, stainless steel 7.93, brass 8.5, copper 8.96); anything else: the
+  // colors of the app
   function matLook(key, typed) {
     if (MATS[key]) return Object.assign({ key }, MATS[key]);
     const d = Number(typed);
     if (key === 'own' && isFinite(d)) {
-      const k = d >= 2.6 && d <= 2.85 ? 'aluminum' : d >= 7.7 && d <= 8.05 ? 'iron' : d >= 8.3 && d <= 8.75 ? 'brass' : d >= 8.85 && d <= 9.0 ? 'copper' : '';
+      const k = d >= 2.6 && d <= 2.85 ? 'aluminium' : d >= 7.7 && d < 7.9 ? 'iron' : d >= 7.9 && d <= 8.05 ? 'stainless' : d >= 8.3 && d <= 8.75 ? 'brass' : d >= 8.85 && d <= 9.0 ? 'copper' : '';
       if (k) return Object.assign({ key: k }, MATS[k]);
     }
     return null;
@@ -9793,7 +9801,7 @@ uniform sampler2DShadow uSh; uniform float uShOn, uShTex;
 out vec4 o;
 vec3 room(vec3 r, float rough) {
   float t = clamp(r.y * 0.5 + 0.5, 0.0, 1.0);
-  vec3 top = vec3(1.0, 1.0, 1.02), hor = vec3(0.62, 0.66, 0.72), gnd = vec3(0.22, 0.22, 0.24);
+  vec3 top = vec3(1.0, 1.0, 1.02), hor = vec3(0.62, 0.66, 0.72), gnd = vec3(0.36, 0.36, 0.38);
   vec3 c = t > 0.5 ? mix(hor, top, smoothstep(0.5, 1.0, t)) : mix(gnd, hor, smoothstep(0.0, 0.5, t));
   float w = 0.08 + rough * 0.5;
   float b1 = smoothstep(w, 0.0, abs(r.x + 0.55) - 0.18) * smoothstep(w, 0.0, abs(r.y - 0.25) - 0.35);
@@ -12701,7 +12709,15 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['kerosene', tr('Kerosene about 0.80 g/cm³ (typical)', '灯油 約 0.80 g/cm³（目安）'), '0.80 g/cm^3'],
     ['gasoline', tr('Gasoline about 0.75 g/cm³ (typical)', 'ガソリン 約 0.75 g/cm³（目安）'), '0.75 g/cm^3'],
     ['concrete', tr('Concrete about 2.3 t/m³ (typical)', 'コンクリート 約 2.3 t/m³（目安）'), '2.3 t/m^3'],
-    ['iron', tr('Iron 7.85 g/cm³ (typical)', '鉄 7.85 g/cm³（目安）'), '7.85 g/cm^3']
+    ['wood', tr('Wood about 0.5 g/cm³ (typical; 0.3 to 0.9 by species and dryness)', '木 約 0.5 g/cm³（目安。種類と乾き具合で 0.3〜0.9）'), '0.5 g/cm^3'],
+    ['iron', tr('Iron 7.85 g/cm³ (typical)', '鉄 7.85 g/cm³（目安）'), '7.85 g/cm^3'],
+    ['stainless', tr('Stainless steel (SUS304) 7.93 g/cm³ (typical)', 'ステンレス（SUS304）7.93 g/cm³（目安）'), '7.93 g/cm^3'],
+    ['aluminium', tr('Aluminium 2.70 g/cm³ (typical)', 'アルミニウム 2.70 g/cm³（目安）'), '2.70 g/cm^3'],
+    ['copper', tr('Copper 8.96 g/cm³ (typical)', '銅 8.96 g/cm³（目安）'), '8.96 g/cm^3'],
+    ['brass', tr('Brass 8.5 g/cm³ (typical)', '真ちゅう 8.5 g/cm³（目安）'), '8.5 g/cm^3'],
+    ['pla', tr('PLA (3D printing) 1.24 g/cm³ (typical)', 'PLA（3D プリンター）1.24 g/cm³（目安）'), '1.24 g/cm^3'],
+    ['abs', tr('ABS 1.05 g/cm³ (typical)', 'ABS 1.05 g/cm³（目安）'), '1.05 g/cm^3'],
+    ['acrylic', tr('Acrylic 1.19 g/cm³ (typical)', 'アクリル 1.19 g/cm³（目安）'), '1.19 g/cm^3']
   ];
   // the units a volume or an area can be shown in
   const VOL_UNITS = [['L', 'L'], ['mL', 'mL'], ['m^3', 'm³'], ['cm^3', 'cm³'], ['gal', 'US gal'], ['ft^3', 'ft³']];
