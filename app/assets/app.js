@@ -11805,8 +11805,15 @@
     const onScreen = (a, b) => { proj(a[0], a[1], a[2]); const x = T[0], y = T[1]; proj(b[0], b[1], b[2]); return [T[0] - x, T[1] - y]; };
     const zDir = onScreen([ze.u, ze.v, -EZ], [ze.u, ze.v, EZ]), zLen = Math.hypot(zDir[0], zDir[1]);
     const seen = { x: Math.hypot(...onScreen([-EX, vn, wb], [EX, vn, wb])) > 36, y: Math.hypot(...onScreen([un, -EY, wb], [un, EY, wb])) > 36, z: zLen > 36 };
-    if (!MD && seen.x) for (const x of gx) { proj(U(x), out(vn, 0.17), wb); g.fillText(fmt(x, stx), T[0], T[1]); }
-    if (!MD && seen.y) for (const y of gy) { proj(out(un, 0.17), V(y), wb); g.fillText(fmt(y, sty), T[0], T[1]); }
+    // (a label put a little outside its edge in the box; when that is toward the eye, as from the front, it would sit on
+    // the edge: then it goes 14 px out from the middle of the picture instead)
+    const label = (txt, a, b, d, off) => {
+      proj(a[0], a[1], a[2]); const ex = T[0], ey = T[1]; proj(b[0], b[1], b[2]); let x = T[0], y = T[1];
+      if (Math.hypot(x - ex, y - ey) < d) { const dx = ex - cx, dy = ey - cy, l = Math.hypot(dx, dy) || 1; x = ex + dx / l * (off || 14); y = ey + dy / l * (off || 14); }
+      g.fillText(txt, x, y);
+    };
+    if (!MD && seen.x) for (const x of gx) label(fmt(x, stx), [U(x), vn, wb], [U(x), out(vn, 0.17), wb], 9);
+    if (!MD && seen.y) for (const y of gy) label(fmt(y, sty), [un, V(y), wb], [out(un, 0.17), V(y), wb], 9);
     g.textAlign = 'right';
     if (!MD && seen.z) for (const z of gz) {
       if (Math.abs(Wz(z) - wb) < 0.1) continue;  // at the floor the x or y labels are there
@@ -11814,8 +11821,8 @@
     }
     g.font = 'bold 13px system-ui, sans-serif'; g.textAlign = 'center';
     if (!MD) {
-      if (seen.x) { proj(0, out(vn, 0.4), wb); g.fillText('x', T[0], T[1]); }
-      if (seen.y) { proj(out(un, 0.4), 0, wb); g.fillText('y', T[0], T[1]); }
+      if (seen.x) label('x', [0, vn, wb], [0, out(vn, 0.4), wb], 20, 30);
+      if (seen.y) label('y', [un, 0, wb], [out(un, 0.4), 0, wb], 20, 30);
       if (zLen > 12) { proj(ze.u, ze.v, EZ); g.fillText('z', T[0] + zDir[0] / zLen * 14, T[1] + zDir[1] / zLen * 14); }
     }
     // points (the rows of a matrix, the solution of a linear system), in front of the surfaces
