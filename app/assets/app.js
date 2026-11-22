@@ -16707,17 +16707,18 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (window.QalcNative && QalcNative.setTestPro) QalcNative.setTestPro(box.checked);
         else if (window.QalcDev && QalcDev.setTestPro) QalcDev.setTestPro(box.checked);
       });
-      body.append(el('div', { class: 'section-title', text: tr('Test build', 'テスト版') }),
-        el('label', { class: 'setting' }, el('div', { class: 'lbl' }, el('div', { text: tr('Pro unlocked (for testing)', 'Pro を有効にする（テスト用）') })), box));
-      // (feature/3d-view) WebGL 2 for "Solid from a profile" on or off, and the time of each 3D drawing in a corner
+      // (feature/3d-view) WebGL 2 for "Solid from a profile" on or off, and the time of each 3D drawing in a corner; before
+      // the switch of Pro, which stays the last one
       const flag = (k, label, def) => {
         const b = el('input', { type: 'checkbox' });
         try { const v = localStorage.getItem('qalc.dev.' + k); b.checked = v === null ? def : v === 'true'; } catch (e) { b.checked = def; }
         b.addEventListener('change', () => { try { localStorage.setItem('qalc.dev.' + k, String(b.checked)); } catch (e) { } });
         return el('label', { class: 'setting' }, el('div', { class: 'lbl' }, el('div', { text: label })), b);
       };
-      body.append(flag('gl3d', tr('3D with WebGL (prototype: Solid from a profile)', '3D を WebGL で描く（試作：輪郭から回転体）'), true),
-        flag('ms3d', tr('Show the time of each 3D drawing (for testing)', '3D の描画時間を表示する（テスト用）'), false));
+      body.append(el('div', { class: 'section-title', text: tr('Test build', 'テスト版') }),
+        flag('gl3d', tr('3D with WebGL (prototype: Solid from a profile)', '3D を WebGL で描く（試作：輪郭から回転体）'), true),
+        flag('ms3d', tr('Show the time of each 3D drawing (for testing)', '3D の描画時間を表示する（テスト用）'), false),
+        el('label', { class: 'setting' }, el('div', { class: 'lbl' }, el('div', { text: tr('Pro unlocked (for testing)', 'Pro を有効にする（テスト用）') })), box));
     }
   }
   function buyPro() {
