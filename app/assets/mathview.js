@@ -17,7 +17,9 @@
       const c = s[i], rest = s.slice(i);
       if (/\s/.test(c)) { i++; continue; }
       let m;
-      if ((m = /^(?:\d+(?:\.\d*)?|\.\d+)(?:E[−-]?\d+)?/.exec(rest))) { t.push({ k: 'num', v: m[0] }); i += m[0].length; continue; }
+      // (1.15.0) a number of a result may have its digits in groups (a narrow space between them, as the engine writes
+      // them): one number, not numbers multiplied (that was drawn 0.583 · 333 · 333)
+      if ((m = /^(?:\d+(?:[\u202f\u2009]\d+)*(?:\.(?:\d+(?:[\u202f\u2009]\d+)*)?)?|\.\d+(?:[\u202f\u2009]\d+)*)(?:E[−-]?\d+)?/.exec(rest))) { t.push({ k: 'num', v: m[0] }); i += m[0].length; continue; }
       if ((m = SUP_RE.exec(rest))) { t.push({ k: 'sup', v: Array.from(m[0]).map((x) => SUP[x]).join('') }); i += m[0].length; continue; }
       // an unknown written \t or 't' (a letter that would otherwise be a unit or a constant)
       if ((m = /^\\([\p{L}_][\p{L}\p{Nd}_]*)/u.exec(rest)) || (m = /^'([\p{L}_][\p{L}\p{Nd}_]*)'/u.exec(rest))) { t.push({ k: 'id', v: m[1] }); i += m[0].length; continue; }
@@ -163,14 +165,27 @@
   const BIN = { '+': '+', '−': '-', '×': '\\times', '÷': '\\div', '±': '\\pm', mod: '\\bmod', and: '\\;\\text{and}\\;', or: '\\;\\text{or}\\;' };
   const REL = { '=': '=', '≠': '\\ne', '<': '<', '>': '>', '≤': '\\le', '≥': '\\ge', '≈': '\\approx' };
 
+  // (1.15.0) the signs of a number as shown (opts.nf of render: the decimal sign and the sign between groups of
+  // digits of the app's number format); the groups of the decimals are always narrow spaces (0.583 333 333)
+  let SEP = { dec: '.', group: '\\,' };
+  const SEP_TEX = { '.': '{.}', ',': '{,}', '\u202f': '\\,', '\u2009': '\\,', ' ': '\\,', '': '' };
+  function setSep(nf) {
+    SEP = nf ? { dec: nf.dec === ',' ? '{,}' : '.', group: Object.prototype.hasOwnProperty.call(SEP_TEX, nf.group) ? SEP_TEX[nf.group] : '\\,' } : { dec: '.', group: '\\,' };
+  }
+  function numTeX(v) {
+    const k = v.indexOf('.'), i = k < 0 ? v : v.slice(0, k), f = k < 0 ? null : v.slice(k + 1);
+    const g = (s, j) => s.split(/[\u202f\u2009]/).join(j);
+    return g(i, SEP.group) + (f === null ? '' : SEP.dec + g(f, '\\,'));
+  }
+
   function tex(n, rich) {
     const T = (x) => tex(x, rich);
     const arg = (x) => (simpleArg(x) ? T(x) : paren(T(strip(x))));
     switch (n.t) {
       case 'num': {
         const m = /^(.*)E([−-]?\d+)$/.exec(n.v);
-        if (m) { rich.v = true; return m[1] + '\\times 10^{' + m[2].replace('−', '-') + '}'; }
-        return n.v;
+        if (m) { rich.v = true; return numTeX(m[1]) + '\\times 10^{' + m[2].replace('−', '-') + '}'; }
+        return numTeX(n.v);
       }
       case 'id': return texId(n.v);
       case 'str': return '\\text{“' + esc(n.v) + '”}';
@@ -273,8 +288,9 @@
     return head + paren(a.map((x) => T(strip(x))).join(',\\, '));
   }
 
-  function toTeX(text) {
+  function toTeX(text, opts) {
     if (!text || !text.trim() || text.length > 2000) return null;
+    setSep(opts && opts.nf);
     try {
       let s = text, lead = '';
       // a result begins with "= " or "≈ "
@@ -296,7 +312,7 @@
 
   // Renders text into el with KaTeX; false (and nothing changed) when it cannot be read or KaTeX is missing.
   function render(el, text, opts) {
-    const r = toTeX(text);
+    const r = toTeX(text, opts);
     if (!r || !window.katex || (opts && opts.richOnly && !r.rich)) return false;
     try {
       window.katex.render('\\displaystyle ' + r.tex, el, { throwOnError: false, strict: 'ignore', output: opts && opts.mathml ? 'htmlAndMathml' : 'html' });

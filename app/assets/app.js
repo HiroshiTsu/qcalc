@@ -336,9 +336,9 @@
 
   // ----------------------------------------------------------- settings
   const DEFAULTS = {
-    angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1, time_limit: 20, math_view: true,
+    angle: 'rad', approx: 'auto', fraction: 'auto', precision: 15, max_decimals: -1, time_limit: 20, math_view: true,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
-    grouping: false, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
+    grouping: true, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
     text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
@@ -441,15 +441,31 @@
       return c;
     });
   }
-  // a result as shown → the engine's form, for the math notation (mathview.js reads the engine's syntax)
+  // a result as shown → the engine's form, for the math notation (mathview.js reads the engine's syntax). (1.15.0)
+  // The groups of digits are kept as narrow spaces, as the engine writes them: mathview.js draws them with the signs
+  // of the number format (render's opts.nf)
   function mathSource(t) {
+    if (NF.group !== '\u202f') {
+      const g = NF.group === '.' ? '\\.' : NF.group === ',' ? ',' : null;
+      if (g) t = t.replace(new RegExp('(\\d)' + g + '(?=\\d{3}(?!\\d))', 'g'), '$1\u202f');
+    }
     if (!commaMode) return t;
-    if (NF.group === '.') t = t.replace(/(\d)\.(?=\d{3})/g, '$1');
-    return toInternal(t.replace(/(\d)[\u202f\u2009](?=\d)/g, '$1'));
+    // (as toInternal, but the narrow spaces between groups stay)
+    return mapSeps(t, (c, i, inB) => {
+      if (c === ',') return (isDigit(t[i + 1] || '') && (isDigit(t[i - 1] || '') || !/[\p{L}\p{N}_)\]]/u.test(t[i - 1] || ''))) ? '.' : ',';
+      if (c === ';') return inB ? ';' : ',';
+      return c;
+    });
   }
   // the numbers drawn by KaTeX with a decimal comma (and ";" between arguments)
-  function commaMath(node) {
+  function commaMath(node, final) {
     if (!commaMode || !node) return;
+    // (1.15.0: the numbers drawn with their own signs by mathview.js) only "," between arguments becomes ";"
+    if (final) {
+      const w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+      for (let n = w.nextNode(); n; n = w.nextNode()) if (n.nodeValue === ',' && n.parentNode && n.parentNode.closest && n.parentNode.closest('.mpunct, mo[separator]')) n.nodeValue = ';';
+      return;
+    }
     // (BG11: the MathML read by TalkBack holds a number as one text node per digit and sign — KaTeX
     // joins its <mn> parts so — and a "." alone was not changed: one text node per number first)
     node.normalize();
@@ -668,7 +684,7 @@
   }
   function engineOpts() {
     return {
-      angle: S.angle, approx: S.approx, fraction: S.fraction, precision: Math.min(Number(S.precision) || 10, maxPrecision()),
+      angle: S.angle, approx: S.approx, fraction: S.fraction, precision: Math.min(Number(S.precision) || DEFAULTS.precision, maxPrecision()),
       max_decimals: Number(S.max_decimals), base: Number(S.base), notation: S.notation, units: S.units,
       mixed_units: !!S.mixed_units, complex: S.complex, grouping: !!S.grouping, structuring: S.structuring
     };
@@ -1407,13 +1423,107 @@
     if (from < n) parts.push(text.slice(from));
     return parts;
   }
+  // (1.15.0) How a result is shown (the owner's wishes of 11-23 07:21):
+  //   - an exact result with its approximation: "= exact" on one line and "≈ approximation" on the next, both on the right
+  //     (the line of ≈ a little smaller); one of them alone: one line
+  //   - the digits in math notation as in plain text: the same letters, and the groups of digits with narrow spaces
+  //     (mathview.js; 0.583 · 333 before)
+  //   - no ending zeros in an approximation (√2 ≈ 1.414 213 562 373 1, not …3 10)
+  //   - 2.6525E32 as 2.6525 × 10³² (a screen reader says "10 to the power of 32"); copying and inserting keep the
+  //     engine's text, which it reads again
+  //   - a result with units on one line (m/s, not a stacked fraction)
+  //   - a line too wide for its place gets smaller letters, down to 80 % (of the size set and the phone's), and only
+  //     then breaks, only between groups of digits: before "," or "." between groups (not after it, where it would look
+  //     like a list), after a narrow space; never after "=" or "≈" and never inside a group (fitLines, after drawing)
+  const SUP_DIGITS = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻', '−': '⁻', '+': '⁺' };
+  const supText = (s) => Array.from(String(s)).map((c) => SUP_DIGITS[c] || c).join('');
+  // the places of " ≈ " outside brackets and quotes
+  function topApprox(text) {
+    const at = [];
+    let depth = 0, q = '';
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) { if (c === q) q = ''; continue; }
+      if (c === '"') { q = c; continue; }
+      if ('([{'.indexOf(c) >= 0) depth++;
+      else if (')]}'.indexOf(c) >= 0) depth = Math.max(0, depth - 1);
+      else if (c === '≈' && depth === 0 && text[i - 1] === ' ' && text[i + 1] === ' ') at.push(i);
+    }
+    return at;
+  }
+  // "= exact ≈ approximation" (or "Volume V = exact ≈ approximation") → its two lines; anything else: one line
+  function resultLines(text) {
+    const at = topApprox(text);
+    if (at.length !== 1 || / \|\| | or /.test(text)) return [text];
+    const a = text.slice(0, at[0]).trimEnd(), b = text.slice(at[0]);
+    if (!/(^|\s)=\s/.test(a)) return [text];
+    return [a, b];
+  }
+  // a result that has units: a number, a space and a letter (17 636 684 142.857 m/s, 5 km)
+  const hasUnits = (t) => /\d[   ]+[\p{L}µΩ°℃℉$€£¥₩]/u.test(t);
+  // the numbers of a line of plain text: digits with their groups and decimals, and an exponent
+  const RES_NUM_RE = /\d(?:[\d  ,.]*\d)?(?:E[−-]?\d+)?/g;
+  // a number without its ending zeros (an approximation): 1.414 213 562 373 10 → 1.414 213 562 373 1, 2.50 → 2.5, 3.0 → 3
+  function noEndZeros(num) {
+    const k = num.indexOf(NF.dec);
+    if (k < 0) return num;
+    const f = num.slice(k + 1).replace(/[0  ]+$/, '');
+    return f ? num.slice(0, k + 1) + f : num.slice(0, k);
+  }
+  // a number as nodes: the groups with a place to break between them (before "," or ".", after a narrow space), and its
+  // exponent as × 10 with the power raised (and said as words to a screen reader)
+  function numberNodes(num) {
+    const out = [];
+    const m = /^(.*?)E([−-]?\d+)$/.exec(num), mant = m ? m[1] : num;
+    const k = mant.indexOf(NF.dec);
+    let s = '';
+    for (let i = 0; i < mant.length; i++) {
+      const c = mant[i];
+      const groupSign = (c === ' ' || c === ' ') || (c === NF.group && (k < 0 || i < k) && c !== NF.dec);
+      if (!groupSign) { s += c; continue; }
+      if (c === ' ' || c === ' ') { s += ' '; out.push(s, el('wbr')); s = ''; }
+      else { out.push(s, el('wbr')); s = c; }
+    }
+    out.push(s);
+    if (m) {
+      const p = m[2].replace('-', '−');
+      out.push(el('span', { class: 'r-exp', 'aria-hidden': 'true', text: ' × 10' + supText(p) }));
+      out.push(el('span', { class: 'sr-only', text: trf(' times 10 to the power of {0}', ' × 10 の {0} 乗', p) }));
+    }
+    return out;
+  }
+  // a line of plain text as nodes ("= " and "≈ " held to what follows)
+  function plainInto(line, t, approx) {
+    t = t.replace(/^([=≈]) /, '$1 ').replace(/ ([=≈]) /g, ' $1 ');
+    let at = 0;
+    for (const mm of t.matchAll(RES_NUM_RE)) {
+      if (mm.index > at) line.append(t.slice(at, mm.index));
+      // (not a part of a name or of a date such as 2026-11-23: only numbers that stand alone are changed)
+      const before = t[mm.index - 1] || '';
+      const num = /[\p{L}_]/u.test(before) ? mm[0] : (approx ? noEndZeros(mm[0]) : mm[0]);
+      line.append(...numberNodes(num));
+      at = mm.index + mm[0].length;
+    }
+    if (at < t.length) line.append(t.slice(at));
+  }
+  function resultLine(t, approx, second) {
+    const line = el('span', { class: 'r-line' + (second ? ' r-ap' : '') });
+    if (S.math_view && mathResult(t) && window.QMath && QMath.render(line, mathSource(t), { richOnly: true, mathml: true, nf: NF })) {
+      line.classList.add('math'); commaMath(line, true);
+      return line;
+    }
+    plainInto(line, t, approx);
+    return line;
+  }
   function showResult(node, text) {
-    const parts = splitMatrices(text); node.classList.toggle('brk', /\S{16,}/.test(text)); // a number longer than a line is cut at the end of the line (.brk in style.css); "≈" does not stand alone
-    node.classList.remove('math');
+    const parts = splitMatrices(text);
+    node.classList.remove('math', 'brk', 'two');
     if (parts.every((x) => typeof x === 'string')) {
-      // fractions, roots and powers in math notation (setting "math notation"): 1/6 as a stacked fraction
-      if (S.math_view && mathResult(text) && window.QMath && QMath.render(node, mathSource(text), { richOnly: true, mathml: true })) { node.classList.add('math'); commaMath(node); return; }
-      node.textContent = text;
+      node.textContent = '';
+      const lines = resultLines(text);
+      node.classList.toggle('two', lines.length > 1);
+      lines.forEach((l, i) => node.append(resultLine(l, i > 0 || /^\s*≈/.test(l), i > 0)));
+      if (node.isConnected) fitLines(node);
       return;
     }
     node.textContent = '';
@@ -1425,11 +1535,28 @@
       node.append(grid);
     }
   }
+  // the lines of results under root made to fit (after they are on the page): smaller letters down to 80 %, then a
+  // plain line may break (where numberNodes allows it); a line in math notation scrolls sideways instead
+  function fitLines(root) {
+    const lines = root.classList && root.classList.contains('r-line') ? [root] : root.querySelectorAll('.r-line');
+    for (const l of lines) {
+      const base = l.classList.contains('r-ap') ? 0.86 : 1;
+      l.style.fontSize = base === 1 ? '' : base + 'em';
+      l.classList.add('nw');
+      let k = 1;
+      for (let i = 0; i < 4 && k > 0.8 && l.clientWidth > 0 && l.scrollWidth > l.clientWidth + 1; i++) {
+        k = Math.max(0.8, k * (l.clientWidth - 1) / l.scrollWidth - 0.005);
+        l.style.fontSize = (base * k).toFixed(3) + 'em';
+      }
+      if (!l.classList.contains('math') && l.scrollWidth > l.clientWidth + 1) l.classList.remove('nw');
+    }
+  }
   // A result that reads well in math notation: numbers, x, π, √, fractions and powers, functions
-  // such as sin; not units (km, mph), dates, texts, matrices or very long numbers.
+  // such as sin; not units (km, mph, m/s: 1.15.0), dates, texts, matrices or very long numbers. A number with an
+  // exponent alone (1.2E32) is plain text since 1.15.0 (× 10³² in the same letters as the other results).
   const MATH_WORDS = /^(?:sin|cos|tan|sec|csc|cot|sinh|cosh|tanh|asin|acos|atan|arcsin|arccos|arctan|ln|log|log10|log2|sqrt|cbrt|abs|exp|or|and|where)$/;
   function mathResult(t) {
-    if (!t || t.length > 400 || /[[\]"…|]/.test(t) || !/[/^√∛⁰¹²³⁴⁵⁶⁷⁸⁹]|E[−-]?\d/.test(t)) return false;
+    if (!t || t.length > 400 || /[[\]"…|]/.test(t) || !/[/^√∛⁰¹²³⁴⁵⁶⁷⁸⁹]/.test(t) || hasUnits(t)) return false;
     const words = t.match(/[\p{L}_][\p{L}\p{Nd}_]+/gu) || [];
     return words.every((w) => MATH_WORDS.test(w));
   }
@@ -3191,11 +3318,25 @@
   }
   // all lines drawn now (to search them)
   function drawAllOlder() { while (olderLeft > 0) drawOlder(olderJob); }
+  // (1.15.0) the expression of a line of the history written as above the input field: × for *, √ for sqrt, π for pi,
+  // and a simple power raised (x^2 → x², 10^-3 → 10⁻³); what is in quotes stays. Only the display: touching the line
+  // puts back the expression as typed
+  function prettyExpr(s) {
+    if (!s || s.length > 2000) return s;
+    return s.split(/("[^"]*"|'[^']*')/).map((part, i) => (i % 2 ? part : part
+      .replace(/\*\*/g, '^')
+      .replace(/ *\* */g, ' × ')
+      .replace(/(^|[^\p{L}\p{N}_])sqrt\(/gu, '$1√(')
+      .replace(/(^|[^\p{L}\p{N}_])cbrt\(/gu, '$1∛(')
+      .replace(/(^|[^\p{L}\p{N}_])pi(?![\p{L}\p{N}_])/gu, '$1π')
+      .replace(/\^\(?([−-]?)(\d{1,4})\)?(?![\d.,(])/g, (m, sg, d) => ((m[1] === '(') !== (m.endsWith(')')) ? m : supText(sg + d)))
+    )).join('');
+  }
   // one line of the history: the expression, the result and its warnings
   function historyItem(h) {
     const res = el('div', { class: 'h-res' });
     showResult(res, displayResult(h));
-    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') }, el('div', { class: 'h-expr', text: toDisplay(h.expr) }), res);
+    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') }, el('div', { class: 'h-expr', text: prettyExpr(toDisplay(h.expr)) }), res);
     item._h = h;
     if (h.note) item.insertBefore(el('div', { class: 'h-note', text: h.note }), item.firstChild);
     for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
@@ -3223,6 +3364,7 @@
   // A matrix that is wider than the place it is shown in gets smaller characters (down to 60 %);
   // if it is still too wide it can be moved sideways.
   function fitMatrices(root) {
+    fitLines(root); // (1.15.0: and the lines of the results)
     for (const g of root.querySelectorAll('.mx')) {
       g.style.fontSize = '';
       let scale = 1;
@@ -16608,7 +16750,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   const ADV_SETTINGS = ['structuring', 'complex', 'units', 'mixed_units', 'time_limit', 'max_decimals', 'base', 'notation', 'grouping', 'math_view', 'auto_ans', 'haptics', 'memkeys'];
   // the settings that are numbers: smallest, largest (now, and with QCalc Pro) and default value
   const NUMBER_RANGE = {
-    precision: { min: 2, max: maxPrecision, limit: MAX_PRECISION, def: 10 },
+    precision: { min: 2, max: maxPrecision, limit: MAX_PRECISION, def: DEFAULTS.precision },
     time_limit: { min: MIN_TIME_LIMIT, max: () => MAX_TIME_LIMIT, limit: MAX_TIME_LIMIT, def: DEFAULT_TIME_LIMIT }
   };
   function openSettings() {
