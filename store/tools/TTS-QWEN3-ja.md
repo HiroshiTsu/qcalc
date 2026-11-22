@@ -194,27 +194,39 @@ start $HOME\qcalc-voice\tts\sample\listen.html
 
 書いたら、4 の `sample` のコマンドをもう一度実行します。読み方が変わった段落だけが作り直されます。
 
-声そのものを変えたいときは、`tts-voices.json` の説明文か seed を変えて、`design` のコマンドに `--redesign` を足して作り直し、`sample` をもう一度実行します。英語の訛りが日本語に出るときは、その声の `"anchor_lang"` を `"ja"` にして作り直すと良くなることがあります。`tts-readings.json` や `tts-voices.json` を変えたときは、変えた内容を Claude に伝えてください（リポジトリにも入れます）。
+声そのものを変えたいときは、`tts-voices.json` の説明文か seed を変えて、`design` のコマンドに `--redesign` を足して作り直し、`sample` をもう一度実行します。英語のなまりは、11 月 22 日から既定になった A（6 の説明）で出なくなります。`tts-readings.json` や `tts-voices.json` を変えたときは、変えた内容を Claude に伝えてください（リポジトリにも入れます）。
 
 ## 6. 決めた声で全部を作る
 
-女性にしたときは `qwen3:female`、男性にしたときは `qwen3:male` です。7 言語で約 175 段落あるので、先に日本語・英語・スペイン語を作り、そのあとで残りの 4 言語を作ります。
+声は女性（`qwen3:female`）に決まりました（11 月 22 日）。7 言語で約 175 段落あるので、先に日本語・英語・スペイン語を作り、そのあとで残りの 4 言語を作ります。
 
-### Ubuntu（女性の例）
+**英語なまりの直し方 A（11 月 22 日に決定、今は既定）**：見本の声からは声の特徴（x-vector）だけを使い、話し方はまねません。見本は英語で作った 1 つの声のままなので、7 言語とも同じ女性の声で、どの言語にも英語の話し方が移りません。コマンドに何も足さなくても A で作ります（`--qwen-clone xvector` と同じ）。
+
+2 の「端末を開くたびに」のあと、まず道具を新しくします（A は 11 月 22 日の版からです）。
+
+### Ubuntu
 
 ```sh
+git fetch --depth 1 origin feature/tts-engines
+git checkout -B feature/tts-engines FETCH_HEAD
 python store/tools/tts_engines.py all ~/qcalc-voice ja,en,es --use qwen3:female
 python store/tools/tts_engines.py all ~/qcalc-voice --use qwen3:female
 ```
 
-### Windows（女性の例）
+### Windows
 
 ```powershell
+git fetch --depth 1 origin feature/tts-engines
+git checkout -B feature/tts-engines FETCH_HEAD
 python store\tools\tts_engines.py all $HOME\qcalc-voice ja,en,es --use qwen3:female
 python store\tools\tts_engines.py all $HOME\qcalc-voice --use qwen3:female
 ```
 
-男性にしたときは、どちらの行も `qwen3:female` を `qwen3:male` にします。2 行目は 7 言語すべてを指定しますが、1 行目で作った日本語・英語・スペイン語の段落は作り直さず、残りの 4 言語だけを作ります。
+2 行目は 7 言語すべてを指定しますが、1 行目で作った日本語・英語・スペイン語の段落は作り直さず、残りの 4 言語だけを作ります。
+
+- **前に作った音声（英語なまりのもの）**：A の音声はファイル名に `-xvec-` が入る別のファイル（例：`qwen3-female-xvec-youtube-01-….wav`）なので、前の音声を使い回すことはありません。7 言語とも最初から作り直します。前の音声は消さなくてかまいません（zip には A の音声だけが入ります）。声の見本（`tts/voices/qwen3-female.wav`）は前のものをそのまま使います。
+- **サンプルで確かめたいとき**：4 の `sample` のコマンドも A で作ります（ファイル名は `ja-qwen3-female-xvec-p09-youtube-01.wav` のように `-xvec-` 付き。聞き比べの一覧には、前のサンプルと並んで「female-xvec」として出ます）。
+- **前の作り方（見本の話し方までまねる）に戻すとき**：コマンドに `--qwen-clone icl` を足します。ふだんは使いません。
 
 - **途中で止めたとき（Ctrl + C）**：同じコマンドで続きから作ります。
 - **「check ja:7 …」と出たとき**：その段落を聞いて、おかしければ `--redo ja:7` を足して同じコマンドを実行します（別の seed で作り直します）。

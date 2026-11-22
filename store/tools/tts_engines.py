@@ -18,12 +18,18 @@ is made once from its description and seed (tts-voices.json) as a short referenc
 voice, so that one engine sounds like the same person in all languages. No real person's voice is copied: the
 reference is itself synthetic.
 
+Qwen3 reads in the designed voice from its speaker embedding only (x-vector, --qwen-clone xvector, the default since
+11-22, the author's decision): the timbre of the voice without its way of speaking, so that the reference (in English)
+gives no English accent to the other languages, and every language is still the same woman's voice. --qwen-clone icl
+reads as before (the reference audio and its text continued, which copied the English way of speaking into every
+language). The mode is part of the names of the audio files, so audio made one way is never taken for the other.
+
 Usage:
   python store/tools/tts_engines.py design <work> --engine E [--voice female,male] [--redesign]
   python store/tools/tts_engines.py sample <work> [langs] --engine E [--voice female,male]
   python store/tools/tts_engines.py all <work> --use ja=irodori:female,en=qwen3:female,... [--redo ja:7]
   python store/tools/tts_engines.py listen <work>
-  options: --device auto|cpu|cuda  --dtype auto|fp16|fp32|bf16  --qwen-size 1.7b|0.6b  --seed S
+  options: --device auto|cpu|cuda  --dtype auto|fp16|fp32|bf16  --qwen-size 1.7b|0.6b  --qwen-clone xvector|icl  --seed S
            --ming-repo DIR  --irodori-model REPO[/subfolder]  --no-text-normalization (ming)
 
   design  makes the reference recording of each voice (when it is missing or its description or seed changed)
@@ -138,6 +144,10 @@ class Engine:
     def info(self):
         return {'engine': self.name, 'models': self.models_used(), 'device': self.device, 'dtype': self.dtype}
 
+    def file_tag(self):
+        # how this engine reads, when it is a choice (Qwen3: xvector), in the names of the audio files; '' for none
+        return ''
+
     def models_used(self):
         return dict(self.models)
 
@@ -152,7 +162,10 @@ class Engine:
 
 class Qwen3(Engine):
     """Qwen3-TTS (Alibaba Qwen, Apache-2.0): the voice designed from its description by the 1.7B VoiceDesign model, then
-    every paragraph read in that voice by the Base model (1.7B, or 0.6B on a small GPU) from the reference recording."""
+    every paragraph read in that voice by the Base model (1.7B, or 0.6B on a small GPU) from the reference recording:
+    from its speaker embedding only (x_vector_only_mode, clone 'xvector', the default) or, with clone 'icl', from the
+    reference audio and its text (in-context, which also copies the way the reference speaks)."""
+    CLONES = ('xvector', 'icl')
     name = 'qwen3'
     library = 'qwen_tts'
     LANG = {'ja': 'Japanese', 'en': 'English', 'de': 'German', 'es': 'Spanish', 'fr': 'French', 'ko': 'Korean', 'zh-TW': 'Chinese'}
@@ -163,7 +176,19 @@ class Qwen3(Engine):
         if size not in ('1.7B', '0.6B'):
             raise SystemExit('--qwen-size wants 1.7b or 0.6b')
         self.models = {'design': 'Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign', 'read': 'Qwen/Qwen3-TTS-12Hz-%s-Base' % size}
+        self.clone = (opt.get('qwen_clone') or 'xvector').lower()
+        if self.clone not in self.CLONES:
+            raise SystemExit('--qwen-clone wants xvector or icl')
         self.loaded, self.prompts = {}, {}
+
+    def file_tag(self):
+        # (in the names of the audio files: '' for the in-context reading, so that the files made before 11-22 keep their names)
+        return 'xvec' if self.clone == 'xvector' else ''
+
+    def info(self):
+        i = super().info()
+        i['clone'] = self.clone
+        return i
 
     def _model(self, kind):
         t = self._torch()
@@ -189,9 +214,13 @@ class Qwen3(Engine):
 
     def say(self, text, lang, ref, seed):
         m = self._model('read')
-        key = (ref['wav'], ref['text'])
+        key = (ref['wav'], ref['text'], self.clone)
         if key not in self.prompts:
-            self.prompts[key] = m.create_voice_clone_prompt(ref_audio=ref['wav'], ref_text=ref['text'], x_vector_only_mode=False)
+            if self.clone == 'xvector':
+                # the speaker embedding of the reference only: its voice, not its way of speaking (no ref_text then)
+                self.prompts[key] = m.create_voice_clone_prompt(ref_audio=ref['wav'], x_vector_only_mode=True)
+            else:
+                self.prompts[key] = m.create_voice_clone_prompt(ref_audio=ref['wav'], ref_text=ref['text'], x_vector_only_mode=False)
         self.seed_all(seed)
         wavs, sr = m.generate_voice_clone(text=text, language=self.LANG[lang], voice_clone_prompt=self.prompts[key])
         return self.pcm(wavs[0]), sr
@@ -438,6 +467,7 @@ def make_sample(work, langs, eng, voices_wanted, voices, opt, readings, log=prin
     mpath = os.path.join(base, 'manifest.json')
     man = read_json(mpath, {'rows': []})
     keep = {(r['lang'], r['engine'], r['voice'], r['n']): r for r in man['rows']}
+    vtag = ('-' + eng.file_tag()) if eng.file_tag() else ''
     seed = int(opt.get('seed') or C.DEFAULT_SEED)
     for voice in voices_wanted:
         ref = ensure_voice(work, eng, voice, voices, opt.get('redesign'), log)
@@ -447,17 +477,17 @@ def make_sample(work, langs, eng, voices_wanted, voices, opt, readings, log=prin
             os.makedirs(os.path.join(base, lang), exist_ok=True)
             for n, video, seg, start, room, text in tricky(lang):
                 said = spoken(eng.name, lang, text, readings)
-                name = sample_name(lang, eng.name, voice, n, video, seg)
+                name = sample_name(lang, eng.name, voice + vtag, n, video, seg)
                 path = os.path.join(base, lang, name)
-                old = keep.get((lang, eng.name, voice, n))
+                old = keep.get((lang, eng.name, voice + vtag, n))
                 if os.path.exists(path) and old and old.get('said') == said:
                     continue
                 pcm, sr, secs, vram = synth(eng, said, lang, ref, seed)
                 C.write_wav(path, C.trim(pcm, sr), sr)
-                row = {'lang': lang, 'engine': eng.name, 'voice': voice, 'n': n, 'video': video, 'seg': seg, 'text': text, 'said': said,
+                row = {'lang': lang, 'engine': eng.name, 'voice': voice + vtag, 'n': n, 'video': video, 'seg': seg, 'text': text, 'said': said,
                        'file': '%s/%s' % (lang, name), 'seconds': round(C.wav_seconds(path), 2), 'room': room, 'seed': seed,
                        'time_s': secs, 'vram_mb': vram, 'device': eng.device, 'dtype': eng.dtype}
-                keep[(lang, eng.name, voice, n)] = row
+                keep[(lang, eng.name, voice + vtag, n)] = row
                 log('%s: %.1f s of audio in %.1f s%s' % (name, row['seconds'], secs, vram_text(vram)))
                 man['rows'] = sorted(keep.values(), key=lambda r: (LANGS.index(r['lang']), r['n'], r['engine'], r['voice']))
                 write_json(mpath, man)
@@ -551,7 +581,8 @@ def make_all(work, use, engines, voices, opt, readings, log=print, clock=time.ti
             log('%s: %s is made in its own environment (skipped here)' % (lang, engine))
             continue
         ref = ensure_voice(work, eng, voice, voices, opt.get('redesign'), log)
-        old = {(e['video'], e['seg']): e for e in man['langs'].get(lang, []) if e.get('engine') == engine and e.get('voice') == voice}
+        old = {(e['video'], e['seg']): e for e in man['langs'].get(lang, []) if e.get('engine') == engine and e.get('voice') == voice
+               and e.get('clone') == (eng.info().get('clone') if eng.file_tag() else None)}
         d = os.path.join(base, lang)
         os.makedirs(d, exist_ok=True)
         rows, items = [], C.paragraphs_of(lang)
@@ -563,8 +594,10 @@ def make_all(work, use, engines, voices, opt, readings, log=print, clock=time.ti
             seed = prev['seed'] if prev and prev.get('said') == said and prev.get('seed') else seed0
             if n in redo.get(lang, ()):
                 seed += REDO_STEP
-            key = hashlib.sha1(json.dumps([engine, voice, said, seed, ref['id'] if ref else 'default'], ensure_ascii=False).encode('utf-8')).hexdigest()[:8]
-            plan.append((n, video, k, start, room, text, said, seed, '%s-%s-%s-%02d-%s.wav' % (engine, voice, video, k, key), prev))
+            tag = eng.file_tag()
+            parts = [engine, voice, said, seed, ref['id'] if ref else 'default'] + ([tag] if tag else [])
+            key = hashlib.sha1(json.dumps(parts, ensure_ascii=False).encode('utf-8')).hexdigest()[:8]
+            plan.append((n, video, k, start, room, text, said, seed, '%s-%s%s-%s-%02d-%s.wav' % (engine, voice, '-' + tag if tag else '', video, k, key), prev))
         missing = sum(1 for p in plan if not os.path.exists(os.path.join(d, p[8])))
         log('%s: %s %s, %d of %d paragraphs to make' % (lang, engine, voice, missing, len(plan)))
         for n, video, k, start, room, text, said, seed, name, prev in plan:
@@ -581,6 +614,8 @@ def make_all(work, use, engines, voices, opt, readings, log=print, clock=time.ti
             rows.append({'n': n, 'video': video, 'seg': k, 'start': start, 'room': room, 'text': text, 'said': said,
                          'file': '%s/%s' % (lang, name), 'seconds': s, 'seed': seed, 'fits': s <= room * (1.35 if lang == 'ja' else 1.5),
                          'engine': engine, 'voice': voice, 'time_s': secs, 'vram_mb': vram})
+            if eng.file_tag():
+                rows[-1]['clone'] = eng.info().get('clone')
         man['langs'][lang] = rows
         man['use'][lang] = '%s:%s' % (engine, voice)
         man.setdefault('engines', {})[engine] = eng.info()
@@ -607,7 +642,7 @@ def make_all(work, use, engines, voices, opt, readings, log=print, clock=time.ti
 
 # ---- the command line
 
-OPTS = {'engine': None, 'voice': None, 'use': None, 'redo': None, 'device': 'auto', 'dtype': 'auto', 'qwen_size': '1.7b', 'seed': str(C.DEFAULT_SEED),
+OPTS = {'engine': None, 'voice': None, 'use': None, 'redo': None, 'device': 'auto', 'dtype': 'auto', 'qwen_size': '1.7b', 'qwen_clone': 'xvector', 'seed': str(C.DEFAULT_SEED),
         'ming_repo': None, 'irodori_model': None}
 FLAGS = {'redesign', 'no_text_normalization'}
 

@@ -32,9 +32,9 @@ def read_json(path):
 class FakeEngine(T.Engine):
     """Speaks every character for 0.1 s (0.06 s in the Latin languages); remembers the calls; 'uses' 800 MB of GPU."""
 
-    def __init__(self, name='qwen3', langs=None, voices=('female', 'male')):
+    def __init__(self, name='qwen3', langs=None, voices=('female', 'male'), tag=''):
         super().__init__({})
-        self.name, self.voices = name, voices
+        self.name, self.voices, self.tag = name, voices, tag
         if langs:
             self.langs = set(langs)
         self.calls, self.designs = [], []
@@ -55,6 +55,15 @@ class FakeEngine(T.Engine):
 
     def peak_mb(self):
         return 800
+
+    def file_tag(self):
+        return self.tag
+
+    def info(self):
+        i = super().info()
+        if self.tag:
+            i['clone'] = 'xvector'
+        return i
 
 
 VOICES = T.load_voices()
@@ -154,6 +163,8 @@ class Basics(unittest.TestCase):
         cmd, work, langs, opt = T.options(['sample', '~/w', 'ja,en', '--engine', 'qwen3', '--qwen-size=0.6b', '--no-text-normalization'])
         self.assertEqual((cmd, langs, opt['engine'], opt['qwen_size'], opt['no_text_normalization']), ('sample', ['ja', 'en'], 'qwen3', '0.6b', True))
         self.assertTrue(work.endswith('/w') and not work.startswith('~'))
+        self.assertEqual(opt['qwen_clone'], 'xvector')            # A (11-22): the voice of the reference without its way of speaking
+        self.assertEqual(T.options(['all', '~/w', '--use', 'qwen3:female', '--qwen-clone', 'icl'])[3]['qwen_clone'], 'icl')
         for bad in (['say', '~/w'], ['sample'], ['sample', '~/w', 'xx'], ['sample', '~/w', '--colour', 'x']):
             with self.assertRaises(SystemExit):
                 T.options(bad)
@@ -255,6 +266,47 @@ class Runs(unittest.TestCase):
         T.make_all(self.dir, use, {'irodori': i2}, VOICES, {'redo': 'ja:3'}, {}, log=self.log.append)
         self.assertEqual(len(i2.calls), 1)
         self.assertEqual(i2.calls[0][3], C.DEFAULT_SEED + C.REDO_STEP)
+
+    def test_all_xvector_files_apart_from_the_old_ones(self):
+        langs = list(C.LANG_ID)
+        use = T.parse_use('qwen3:female', langs)
+        old = FakeEngine('qwen3')                                   # made before 11-22 (in-context reading)
+        T.make_all(self.dir, use, {'qwen3': old}, VOICES, {}, {}, log=self.log.append)
+        n = sum(len(C.paragraphs_of(l)) for l in langs)
+        self.assertEqual(len(old.calls), n)
+        a = FakeEngine('qwen3', tag='xvec')                         # A: every paragraph made again, none of the old files used
+        zips = T.make_all(self.dir, use, {'qwen3': a}, VOICES, {}, {}, log=self.log.append)
+        self.assertEqual(len(a.calls), n)
+        self.assertEqual(sorted(os.path.basename(z) for z in zips), sorted('voice-tts-%s.zip' % l for l in langs))
+        wav, meta = T.voice_paths(self.dir, 'qwen3', 'female')
+        self.assertEqual(set(c[2] for c in a.calls), {wav})           # one designed voice for the 7 languages
+        man = read_json(os.path.join(self.dir, 'voice-tts', 'manifest.json'))
+        self.assertEqual(man['use'], {l: 'qwen3:female' for l in langs})
+        self.assertEqual(man['engines']['qwen3']['clone'], 'xvector')
+        for l in langs:
+            rows = man['langs'][l]
+            self.assertEqual(len(rows), len(C.paragraphs_of(l)))
+            for r in rows:
+                self.assertTrue(r['file'].startswith('%s/qwen3-female-xvec-' % l), r['file'])
+                self.assertEqual(r['clone'], 'xvector')
+                self.assertTrue(os.path.exists(os.path.join(self.dir, 'voice-tts', r['file'])))
+            with zipfile.ZipFile(os.path.join(self.dir, 'voice-tts-%s.zip' % l)) as z:
+                names = [x for x in z.namelist() if x.startswith('voice-tts/%s/' % l)]
+            self.assertEqual(len(names), len(rows))
+            self.assertTrue(all('-xvec-' in x for x in names))       # the zip has only the files of A
+        # again with A: nothing to make
+        a2 = FakeEngine('qwen3', tag='xvec')
+        T.make_all(self.dir, use, {'qwen3': a2}, VOICES, {}, {}, log=self.log.append)
+        self.assertEqual(a2.calls, [])
+
+    def test_sample_xvector_beside_the_old(self):
+        T.make_sample(self.dir, ['ja'], FakeEngine('qwen3'), ['female'], VOICES, {}, {}, log=self.log.append)
+        a = FakeEngine('qwen3', tag='xvec')
+        T.make_sample(self.dir, ['ja'], a, ['female'], VOICES, {}, {}, log=self.log.append)
+        self.assertEqual(len(a.calls), len(T.tricky('ja')))         # not taken for the old samples
+        names = sorted(os.listdir(os.path.join(self.dir, 'tts', 'sample', 'ja')))
+        self.assertIn('ja-qwen3-female-p09-youtube-01.wav', names)
+        self.assertIn('ja-qwen3-female-xvec-p09-youtube-01.wav', names)
 
     def test_main_all_needs_an_engine_of_this_environment(self):
         with self.assertRaises(SystemExit) as cm:
@@ -384,11 +436,35 @@ class Adapters(unittest.TestCase):
         d = [c[1] for c in self.calls if c[0] == 'design'][0]
         self.assertEqual(d, {'text': 'Hello.', 'language': 'English', 'instruct': 'calm woman'})
         p = [c[1] for c in self.calls if c[0] == 'prompt']
-        self.assertEqual(p, [{'ref_audio': '/v/qwen3-female.wav', 'ref_text': 'Hello.', 'x_vector_only_mode': False}])  # once
+        # A (the default, 11-22): the speaker embedding (x-vector) of the reference only, once; no reference text
+        self.assertEqual(p, [{'ref_audio': '/v/qwen3-female.wav', 'x_vector_only_mode': True}])
+        self.assertEqual((e.clone, e.file_tag(), e.info()['clone']), ('xvector', 'xvec', 'xvector'))
         cl = [c[1] for c in self.calls if c[0] == 'clone']
         self.assertEqual([(c['text'], c['language']) for c in cl], [('こんにちは', 'Japanese'), ('Hola', 'Spanish')])
         self.assertIn(('seed', 9), self.calls)
         self.assertEqual(e.peak_mb(), 3072)
+
+    def test_qwen3_icl_as_before(self):
+        e = T.Qwen3({'qwen_clone': 'icl'})
+        ref = {'wav': '/v/qwen3-female.wav', 'text': 'Hello.'}
+        e.say('Hallo', 'de', ref, 3)
+        e.say('Bonjour', 'fr', ref, 3)
+        p = [c[1] for c in self.calls if c[0] == 'prompt']
+        self.assertEqual(p, [{'ref_audio': '/v/qwen3-female.wav', 'ref_text': 'Hello.', 'x_vector_only_mode': False}])  # once
+        self.assertEqual((e.file_tag(), e.info()['clone']), ('', 'icl'))
+        cl = [c[1] for c in self.calls if c[0] == 'clone']
+        self.assertEqual([(c['text'], c['language']) for c in cl], [('Hallo', 'German'), ('Bonjour', 'French')])
+        with self.assertRaises(SystemExit):
+            T.Qwen3({'qwen_clone': 'copy'})
+
+    def test_qwen3_one_prompt_per_mode(self):
+        # the same reference read both ways in one process (not done by the tool, but the prompts must not mix)
+        a, b = T.Qwen3({}), T.Qwen3({'qwen_clone': 'icl'})
+        ref = {'wav': '/v/qwen3-female.wav', 'text': 'Hello.'}
+        a.say('一', 'ja', ref, 1)
+        b.say('二', 'ja', ref, 1)
+        modes = [c[1]['x_vector_only_mode'] for c in self.calls if c[0] == 'prompt']
+        self.assertEqual(modes, [True, False])
 
     def test_available(self):
         self.assertTrue(T.Qwen3({}).available())            # (the made-up libraries of this test)
