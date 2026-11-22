@@ -10,8 +10,8 @@ store/tools/listing_check.py; the same texts are in store/play-import/<locale>/ 
 Written by Claude for each region (not checked by a native speaker yet; store/launch-plan-ja.md says what
 testers should look at).
 
-- Screenshots: store/screenshots-1.12/es/ (es-ES, decimal comma) and store/screenshots-1.12/es-419/ (es-MX,
-  decimal point). Feature graphic: store/feature-graphic-1.12-es.png.
+- Screenshots: store/screenshots-1.14/es/ (es-ES, decimal comma) and store/screenshots-1.14/es-419/ (es-MX,
+  decimal point). Feature graphic: store/feature-graphic-1.14-es.png.
 - App icon: store/icon-512.png.
 
 <!-- listing: es-ES -->
@@ -37,39 +37,46 @@ Prueba «100 km/h to mph», «solve(x^2 − 5x + 6 = 0)» o «3/8 + 1/6»: el re
 • Media, mediana, desviación típica, cuartiles y regresión con gráfica
 • Hasta 200 000 cifras (más de 1000 cifras con QCalc Pro)
 
+■ 3D con la GPU (QCalc Pro)
+• Luz y sombras reales; metales y líquidos con su aspecto
+• «Transparente» en toda vista 3D, también solo para una fórmula o el «Recipiente»
+• Gira el 3D en cualquier dirección con un dedo; «De frente», «Desde arriba», «De lado»
+• Sin QCalc Pro, el 3D se abre una vez gratis
+
 ■ Para la obra y el diseño
-• Áreas y volúmenes de 22 figuras, líquido en depósitos (nivel ⇄ volumen), volumen a partir de secciones medidas, peso a partir de la densidad
-• Calcula con las unidades puestas (2,4 m × 1,8 m × 0,15 m to L) y con propagación de errores
-• QCalc Pro: figuras y depósitos en 3D (nivel arrastrable); fondos de depósitos (semiesféricos, semielípticos, toriesféricos) con tablas de consulta; volumen, capacidad y peso de un sólido a partir de un perfil medido; archivos STL para impresión 3D; tablas en CSV
+• Áreas y volúmenes de 22 figuras, líquido en depósitos (nivel ⇄ volumen), volumen desde secciones medidas, peso desde la densidad (también acero inoxidable, aluminio, cobre, latón, madera, PLA, ABS, acrílico)
+• Calcula con las unidades puestas (2,4 m × 1,8 m × 0,15 m to L), con propagación de errores
+• QCalc Pro: figuras y depósitos en 3D, fondos de depósitos con tablas de consulta, sólidos desde un perfil medido (volumen, capacidad, peso), STL para impresión 3D, CSV
 
 ■ Para la compra y las cuentas de casa
-• Precio con descuento e IVA (21 %, 10 %, 4 %), porcentajes, comparar precio por unidad, dividir la cuenta, cuota mensual de un préstamo o hipoteca con cuadro de amortización, ahorro, fechas (días desde hoy, edad), horas trabajadas y sueldo
-• Conversión de divisas con tipos de cambio del Banco Central Europeo y otras fuentes
-• Notas de cálculo: una operación por línea, con total; pon nombre a los valores, como alquiler = 950 EUR
+• Precio con descuento e IVA, porcentajes, comparar precio por unidad, dividir la cuenta, cuota de préstamo o hipoteca con cuadro de amortización, ahorro, fechas (días desde hoy, edad), horas trabajadas y sueldo
+• Conversión de divisas (tipos de cambio del Banco Central Europeo y otros)
+• Notas de cálculo: una operación por línea, con total; valores con nombre, como alquiler = 950 EUR
 
 ■ Fácil de usar
-• Cada herramienta trae ejemplos: tocas uno y ya tienes el resultado. Toca un resultado para pasarlo a la entrada, guardarlo en el historial o copiarlo
+• Ejemplos en cada herramienta: toca uno y listo. Toca un resultado para pasarlo a la entrada, al historial o copiarlo
+• Cifras de cada herramienta: ⋯ junto al título → «Cifras mostradas…»
 • Busca, fija, anota y suma líneas del historial; teclas de memoria
-• Widget para la pantalla de inicio, botón en los ajustes rápidos y gráficas para compartir como imagen
+• Widget, botón en los ajustes rápidos, gráficas como imagen
 • Siete idiomas, entre ellos el español. El manual va dentro de la app y funciona sin conexión: toca «?» para abrir su página
 
 ■ QCalc Pro (una compra dentro de la app)
-La gráfica 3D (volumen y área, sólidos de revolución, figuras y depósitos en 3D, GIF animados), más de 1000 cifras, fondos de depósitos, sólidos a partir de un perfil, STL, CSV de tablas y del historial, temas de color y más de una nota de cálculo. No es una suscripción. Todo lo necesario para estudiar y para el día a día funciona sin comprarlo. El precio aparece en la pantalla de compra de Google Play.
+El 3D (arriba; volumen y área, GIF animados), las herramientas Pro para el trabajo (arriba), más de 1000 cifras, CSV del historial, temas de color y más de una nota de cálculo. Todo para estudiar y para el día a día funciona sin comprarlo. El precio aparece en la pantalla de compra de Google Play.
 
 ■ Privacidad y código abierto
 • No hay anuncios ni suscripciones.
-• Todos los cálculos se hacen en tu móvil. Internet solo se usa para los tipos de cambio; cálculos, gráficas y manual funcionan sin conexión.
+• Todos los cálculos se hacen en tu móvil; Internet solo se usa para los tipos de cambio.
 • QCalc no recoge datos personales ni envía nada al desarrollador. El historial y los ajustes se quedan en tu móvil.
 • Código abierto (GNU GPL v2 o posterior): https://github.com/HiroshiTsu/qcalc
 • QCalc usa libqalculate, el motor de cálculo de código abierto de Qalculate!. QCalc es un proyecto independiente de una sola persona, sin relación con los desarrolladores de Qalculate!.
 
 ■ Ten en cuenta
-Los resultados son orientativos. No los uses para transacciones o certificaciones, proyectos y obras ni declaraciones de impuestos; comprueba los resultados importantes por un método oficial.
+Los resultados son orientativos. No los uses para transacciones o certificaciones, proyectos y obras ni impuestos; comprueba los resultados importantes por un método oficial.
 
 ■ Contacto
 Errores e ideas: hiroshitsu.apps@gmail.com
-Manual con fotos y en PDF: https://hiroshitsu.github.io/qcalc/manual/
-Requiere Android 7.0 o posterior en un dispositivo ARM de 64 bits (arm64).
+Manual (fotos, PDF): https://hiroshitsu.github.io/qcalc/manual/
+Android 7.0 o posterior, ARM de 64 bits (arm64).
 <!-- /listing -->
 
 <!-- listing: es-419 -->
@@ -89,45 +96,52 @@ Una calculadora científica en la que escribes las operaciones igual que en pape
 Prueba "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" o "3/8 + 1/6": el resultado puede quedar exacto, con fracciones, raíces y π.
 
 ■ Para estudiantes y maestros
-• Grafica funciones y muévelas o haz zoom con los dedos; derivadas, tangentes, raíces, máximos y mínimos y áreas en la misma gráfica
+• Grafica funciones y muévelas o haz zoom con los dedos; derivadas, tangentes, raíces, extremos y áreas en la gráfica
 • Convierte la región entre dos curvas en un sólido de revolución con "⟳ 3D" y ve su volumen al instante; toca un eje para cambiarlo. Líneas de discos y capas, teorema de Pappus y sólidos con secciones cuadradas, triangulares o semicirculares
-• Ecuaciones y sistemas, derivadas, integrales, límites, sumatorias, matrices de hasta 30 × 30, complejos, binario, octal y hexadecimal
+• Ecuaciones y sistemas, derivadas, integrales, límites, sumatorias, matrices hasta 30 × 30, complejos, binario, octal y hexadecimal
 • Media, mediana, desviación estándar, cuartiles y regresión con gráfica
 • Hasta 200,000 dígitos (más de 1,000 dígitos con QCalc Pro)
 
+■ 3D con la GPU (QCalc Pro)
+• Luz y sombras reales; metales y líquidos con su aspecto
+• "Transparente" en toda vista 3D, también solo para una fórmula o el "Recipiente"
+• Gira el 3D en cualquier dirección con un dedo; "De frente", "Desde arriba", "De lado"
+• Sin QCalc Pro, el 3D se abre una vez gratis
+
 ■ Para la obra y el diseño
-• Áreas y volúmenes de 22 figuras, líquido en tanques (nivel ⇄ volumen), volumen a partir de secciones medidas, peso a partir de la densidad
-• Calcula con las unidades puestas (2.4 m × 1.8 m × 0.15 m to L) y con propagación de errores
-• QCalc Pro: figuras y tanques en 3D (nivel arrastrable); tapas de tanques (semiesféricas, semielípticas, toriesféricas) con tablas de consulta; volumen, capacidad y peso de un sólido a partir de un perfil medido; archivos STL para impresión 3D; tablas en CSV
+• Áreas y volúmenes de 22 figuras, líquido en tanques (nivel ⇄ volumen), volumen desde secciones medidas, peso desde la densidad (también acero inoxidable, aluminio, cobre, latón, madera, PLA, ABS, acrílico)
+• Calcula con las unidades puestas (2.4 m × 1.8 m × 0.15 m to L), con propagación de errores
+• QCalc Pro: figuras y tanques en 3D, tapas de tanques con tablas de consulta, sólidos desde un perfil medido (volumen, capacidad, peso), STL para impresión 3D, CSV
 
 ■ Para las compras y el presupuesto de la casa
-• Precio con descuento e IVA (16 % en México), porcentajes, comparar precio por unidad, dividir la cuenta, pago mensual de un préstamo con tabla de amortización, ahorro, fechas (días a partir de hoy, edad), horas trabajadas y sueldo
-• Conversión de monedas con tipos de cambio del Banco Central Europeo y otras fuentes
-• Notas de cálculo: una operación por línea, con total; ponle nombre a los valores, como renta = 12000 MXN
+• Precio con descuento e IVA, porcentajes, comparar precio por unidad, dividir la cuenta, pago de un préstamo con tabla de amortización, ahorro, fechas (días desde hoy, edad), horas trabajadas y sueldo
+• Conversión de monedas (tipos de cambio del Banco Central Europeo y otros)
+• Notas de cálculo: una operación por línea, con total; valores con nombre, como renta = 12000 MXN
 
 ■ Fácil de usar
-• Cada herramienta trae ejemplos: tocas uno y ya tienes el resultado. Toca un resultado para pasarlo a la entrada, guardarlo en el historial o copiarlo
+• Ejemplos en cada herramienta: toca uno y listo. Toca un resultado para pasarlo a la entrada, al historial o copiarlo
+• Cifras de cada herramienta: ⋯ junto al título → "Cifras mostradas…"
 • Busca, fija, anota y suma líneas del historial; teclas de memoria
-• Widget para la pantalla de inicio, botón en la configuración rápida y gráficas para compartir como imagen
-• Siete idiomas, entre ellos el español. El manual viene dentro de la app y funciona sin conexión: toca "?" para abrir su página
+• Widget, botón en la configuración rápida, gráficas como imagen
+• Siete idiomas, entre ellos el español. El manual va dentro de la app y funciona sin conexión: toca "?" para abrir su página
 
 ■ QCalc Pro (una compra dentro de la app)
-La gráfica 3D (volumen y área, sólidos de revolución, figuras y tanques en 3D, GIF animados), más de 1,000 dígitos, tapas de tanques, sólidos a partir de un perfil, STL, CSV de tablas y del historial, temas de color y más de una nota de cálculo. No es una suscripción. Todo lo necesario para estudiar y para el día a día funciona sin comprarlo. El precio aparece en la pantalla de compra de Google Play.
+El 3D (arriba; volumen y área, GIF animados), las herramientas Pro para el trabajo (arriba), más de 1,000 dígitos, CSV del historial, temas de color y más de una nota de cálculo. Todo para estudiar y para el día a día funciona sin comprarlo. El precio aparece en la pantalla de compra de Google Play.
 
 ■ Privacidad y código abierto
 • No hay anuncios ni suscripciones.
-• Todos los cálculos se hacen en tu celular. Internet solo se usa para los tipos de cambio; cálculos, gráficas y manual funcionan sin conexión.
+• Todos los cálculos se hacen en tu celular; Internet solo se usa para los tipos de cambio.
 • QCalc no recopila datos personales ni envía nada al desarrollador. El historial y la configuración se quedan en tu celular.
 • Código abierto (GNU GPL v2 o posterior): https://github.com/HiroshiTsu/qcalc
 • QCalc usa libqalculate, el motor de cálculo de código abierto de Qalculate!. QCalc es un proyecto independiente de una sola persona, sin relación con los desarrolladores de Qalculate!.
 
 ■ Toma en cuenta
-Los resultados son de referencia. No los uses para transacciones o certificaciones, proyectos y obras ni declaraciones de impuestos; verifica los resultados importantes con un método oficial.
+Los resultados son de referencia. No los uses para transacciones o certificaciones, proyectos y obras ni impuestos; verifica los resultados importantes con un método oficial.
 
 ■ Contacto
 Errores e ideas: hiroshitsu.apps@gmail.com
-Manual con fotos y en PDF: https://hiroshitsu.github.io/qcalc/manual/
-Requiere Android 7.0 o posterior en un dispositivo ARM de 64 bits (arm64).
+Manual (fotos, PDF): https://hiroshitsu.github.io/qcalc/manual/
+Android 7.0 o posterior, ARM de 64 bits (arm64).
 <!-- /listing -->
 
 ## Notas de la versión

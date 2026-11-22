@@ -8,7 +8,7 @@ Limits: app name 30 characters, short description 80, full description 4000; che
 store/tools/listing_check.py; the same texts are in store/play-import/de-DE/ (1.12.0, stage M).
 Written by Claude (not checked by a native speaker yet; store/launch-plan-ja.md says what testers should look at).
 
-- Screenshots: store/screenshots-1.12/de/. Feature graphic: store/feature-graphic-1.12-de.png.
+- Screenshots: store/screenshots-1.14/de/. Feature graphic: store/feature-graphic-1.14-de.png.
 - App icon: store/icon-512.png.
 
 <!-- listing: de-DE -->
@@ -34,28 +34,35 @@ Probier „100 km/h to mph“, „solve(x^2 − 5x + 6 = 0)“ oder „3/8 + 1/6
 • Mittelwert, Median, Standardabweichung, Quartile und Regression mit Graph
 • Bis zu 200.000 Stellen (mehr als 1.000 Stellen mit QCalc Pro)
 
+■ 3D mit der GPU (QCalc Pro)
+• Echtes Licht und Schatten; Metalle und Flüssigkeiten wie echt
+• „Durchsichtig“ in jeder 3D-Ansicht, auch nur für eine Formel oder den „Behälter“
+• 3D mit einem Finger in jede Richtung drehen; „Von vorn“, „Von oben“, „Von der Seite“
+• Ohne QCalc Pro 3D einmal kostenlos öffnen
+
 ■ Für Baustelle, Werkstatt und Konstruktion
-• Flächen und Volumen von 22 Formen, Füllmenge von Tanks (Füllhöhe ⇄ Volumen), Volumen aus gemessenen Querschnitten, Gewicht aus der Dichte
-• Mit Einheiten rechnen (2,4 m × 1,8 m × 0,15 m to L) und mit Fehlerfortpflanzung
-• QCalc Pro: Figuren und Tanks in 3D (Füllstand ziehen); Tankböden (Halbkugel, Halbellipse, Klöpperboden) mit Peiltabellen; Volumen, Fassungsvermögen und Gewicht eines Körpers aus einem gemessenen Profil; STL-Dateien für den 3D-Druck; Tabellen als CSV
+• Flächen und Volumen von 22 Formen, Füllmenge von Tanks (Höhe ⇄ Volumen), Volumen aus gemessenen Querschnitten, Gewicht aus der Dichte (auch Edelstahl, Aluminium, Kupfer, Messing, Holz, PLA, ABS, Acrylglas)
+• Mit Einheiten rechnen (2,4 m × 1,8 m × 0,15 m to L), mit Fehlerfortpflanzung
+• QCalc Pro: Figuren und Tanks in 3D, Tankböden mit Peiltabellen, Körper aus einem gemessenen Profil (Volumen, Inhalt, Gewicht), STL für den 3D-Druck, CSV
 
 ■ Für Einkauf und Haushaltskasse
-• Preis mit Rabatt und MwSt. (19 % oder 7 %), Prozentrechnung, Grundpreise vergleichen, Rechnung teilen, monatliche Kreditrate mit Tilgungsplan, Sparen mit Zinseszins, Daten (Tage ab heute, Alter), Arbeitszeit und Lohn
-• Währungsrechner mit Wechselkursen der Europäischen Zentralbank und anderer Quellen
+• Preis mit Rabatt und MwSt., Prozentrechnung, Grundpreise vergleichen, Rechnung teilen, Kreditrate mit Tilgungsplan, Sparen, Daten (Tage ab heute, Alter), Arbeitszeit und Lohn
+• Währungsrechner (Kurse u. a. der Europäischen Zentralbank)
 • Rechennotizen: eine Rechnung pro Zeile, mit Summe; Werte bekommen Namen, etwa Miete = 980 EUR
 
 ■ Einfach zu bedienen
-• Jedes Werkzeug hat Beispiele: antippen, und das Ergebnis ist da. Ein Ergebnis antippen: in die Eingabe, in den Verlauf oder kopieren
+• Beispiele in jedem Werkzeug: antippen, Ergebnis da. Ergebnis antippen: einfügen, in den Verlauf, kopieren
+• Stellen je Werkzeug wählbar: ⋯ neben dem Titel → „Angezeigte Stellen…“
 • Verlauf durchsuchen, Zeilen anheften, notieren und addieren; Speichertasten
-• Widget für den Startbildschirm, Kachel in den Schnelleinstellungen, Graphen als Bild teilen
+• Widget, Kachel in den Schnelleinstellungen, Graphen als Bild teilen
 • Sieben Sprachen, darunter Deutsch. Die Anleitung ist in der App und funktioniert offline: „?“ öffnet die passende Seite
 
 ■ QCalc Pro (ein In-App-Kauf)
-Der 3D-Graph (Volumen und Oberfläche, Rotationskörper, Figuren und Tanks in 3D, bewegte GIFs), mehr als 1.000 Stellen, Tankböden, Körper aus einem Profil, STL, CSV von Tabellen und Verlauf, Farbthemen und mehr als eine Rechennotiz. Kein Abo. Alles für Lernen und Alltag funktioniert auch ohne Kauf. Den Preis zeigt Google Play beim Kauf an.
+3D (oben; Volumen und Oberfläche, bewegte GIFs), die Pro-Werkzeuge für die Arbeit (oben), mehr als 1.000 Stellen, CSV des Verlaufs, Farbthemen und mehr als eine Rechennotiz. Alles für Lernen und Alltag funktioniert auch ohne Kauf. Den Preis zeigt Google Play beim Kauf an.
 
 ■ Datenschutz und offener Quellcode
 • Es gibt keine Werbung und kein Abo.
-• Alle Rechnungen laufen auf deinem Handy. Das Internet wird nur für die Wechselkurse genutzt; Rechnen, Graphen und die Anleitung funktionieren offline.
+• Alle Rechnungen laufen auf deinem Handy; das Internet dient nur den Wechselkursen.
 • QCalc sammelt keine persönlichen Daten und sendet nichts an den Entwickler. Verlauf und Einstellungen bleiben auf deinem Handy.
 • Open Source (GNU GPL v2 oder neuer): https://github.com/HiroshiTsu/qcalc
 • QCalc verwendet libqalculate, den quelloffenen Rechenkern von Qalculate!. QCalc ist ein unabhängiges Projekt einer Einzelperson, ohne Verbindung zu den Entwicklern von Qalculate!.
@@ -65,8 +72,8 @@ Die Ergebnisse sind Richtwerte. Nicht für Handel oder Eichung, Planung und Bau 
 
 ■ Kontakt
 Fehler und Wünsche: hiroshitsu.apps@gmail.com
-Anleitung mit Fotos und als PDF: https://hiroshitsu.github.io/qcalc/manual/
-Benötigt Android 7.0 oder neuer auf einem Gerät mit 64-Bit-ARM (arm64).
+Anleitung (Fotos, PDF): https://hiroshitsu.github.io/qcalc/manual/
+Android 7.0 oder neuer, 64-Bit-ARM (arm64).
 <!-- /listing -->
 
 ## Versionshinweise

@@ -1,10 +1,12 @@
-// Makes the pictures of the Google Play listing from the real app (QCalc 1.12.0, stage M2):
-//   store/screenshots-1.12/<set>/phone-1-…png … phone-8-…png   1080 × 1920 (8 phone pictures)
-//   store/screenshots-1.12/<set>/landscape-1-2d-to-3d.png      1920 × 1080
-//   store/screenshots-1.12/<set>/tablet7-1-…png … (5)          1200 × 1920
-//   store/screenshots-1.12/<set>/tablet10-1-…png … (5)         1600 × 2560
-//   store/screenshots-1.12/<set>/alt/phone-5-profile.png       1080 × 1920 (the earlier fifth phone picture, kind alt)
-//   store/feature-graphic-1.12-<set>.png                       1024 × 500 (for ja, en, de, es, fr, ko, zh-TW)
+// Makes the pictures of the Google Play listing from the real app (QCalc 1.12.0, stage M2; 1.14.0: the same set and
+// order from the screens of 1.14.0, the 3D drawn with WebGL 2, the tank in 3D with "See-through" on; into the folders of
+// 1.14, those of 1.12 kept):
+//   store/screenshots-1.14/<set>/phone-1-…png … phone-8-…png   1080 × 1920 (8 phone pictures)
+//   store/screenshots-1.14/<set>/landscape-1-2d-to-3d.png      1920 × 1080
+//   store/screenshots-1.14/<set>/tablet7-1-…png … (5)          1200 × 1920
+//   store/screenshots-1.14/<set>/tablet10-1-…png … (5)         1600 × 2560
+//   store/screenshots-1.14/<set>/alt/phone-5-profile.png       1080 × 1920 (the earlier fifth phone picture, kind alt)
+//   store/feature-graphic-1.14-<set>.png                       1024 × 500 (for ja, en, de, es, fr, ko, zh-TW)
 // Each picture is a screen of the app (Chromium showing app/assets with the real engine through the test
 // server) under a short headline (store/tools/captions.json). The pictures are put together in Chromium
 // too (an HTML page made here), so nothing but Node.js, Playwright and the test server is needed.
@@ -59,7 +61,8 @@ const SCENES = {
   solid2d: { dark: true, run: Q.solid2d },
   solid3d: { dark: true, run: async (page) => { await Q.solid2d(page); await Q.solid3d(page); } },
   profile: { dark: false, run: Q.profile },
-  'tank-3d': { dark: false, run: async (page, set) => { await Q.tank3d(page, set, 62); } },
+  // (1.14.0) the tank with "See-through" on: its container clear, the liquid seen through it
+  'tank-3d': { dark: false, run: async (page, set) => { await Q.tank3d(page, set, 62); await seeThrough(page); } },
   notes: { dark: true, run: async (page, set) => { await Q.tool(page, 'memo', 0); await sleep(1500); await Q.localNotes(page, set); } },
   exact: {
     // exact answers, then π with 100 digits (the precision setting goes up to 200,000)
@@ -72,6 +75,24 @@ const SCENES = {
   offline: { dark: true, run: Q.manualAbout },
   tools: { dark: true, run: async (page) => { await Q.menu(page, 1); } }
 };
+
+// (1.14.0) "See-through" on under the 3D view, and the drawing done (WebGL 2 is slow in this browser)
+async function seeThrough(page) {
+  const b = page.locator('.panel.open .see-btn').last();
+  if (!(await b.count()) || !(await b.isVisible())) { console.log('no See-through button'); return; }
+  await b.click();
+  await sleep(2500);
+  // (the switches of 1.14.0 are wider: on a phone "Box and axes" goes to the next line, so the panel is scrolled up as
+  // far as the chips of what is see-through, Container and Liquid, need to be seen whole)
+  await page.evaluate(() => {
+    const body = Array.from(document.querySelectorAll('.panel.open .panel-body')).pop();
+    const ch = body && body.querySelector('.see-chips:not([hidden])');
+    if (!ch) return;
+    const over = ch.getBoundingClientRect().bottom + 10 - body.getBoundingClientRect().bottom;
+    if (over > 0) body.scrollTop += over;
+  });
+  await sleep(600);
+}
 
 // ---- putting a picture together (HTML in Chromium)
 function frameHtml(set, k) {
@@ -117,7 +138,7 @@ const cap = (set, key) => (CAP[set] || CAP[Q.SETS[set].lang])[key];
 (async () => {
   const browser = await chromium.launch();
   for (const set of SETS) {
-    const dir = path.join(STORE, 'screenshots-1.12', set);
+    const dir = path.join(STORE, 'screenshots-1.14', set);
     // ---- 8 phone pictures, 1080 × 1920
     if (KINDS.indexOf('phone') >= 0) {
       const order = [['calc', 'p1', null], ['everyday', 'p2', null], ['convert', 'p3', null], ['2d-to-3d', 'p4', 'tag_3d'], ['tank-3d', 'p5', 'tag_pro'], ['notes', 'p6', null], ['exact', 'p7', 'tag_digits'], ['offline', 'p8', null]];
@@ -175,7 +196,7 @@ const cap = (set, key) => (CAP[set] || CAP[Q.SETS[set].lang])[key];
       const b = await screen(browser, set, Object.assign({ dpr: 1.6, dark: true }, PH), SCENES.solid3d.run, true);
       const k = { W: 1024, H: 500, hx: 56, hy: 92, hw: 470, fs: 40, align: 'left', brand: true, dark: true, lines: cap(set, 'fg'),
         imgs: [{ src: png(b), x: 560, y: 40, w: 420, h: 420, r: 28 }] };
-      await compose(browser, set, k, path.join(STORE, `feature-graphic-1.12-${set}.png`));
+      await compose(browser, set, k, path.join(STORE, `feature-graphic-1.14-${set}.png`));
     }
   }
   await browser.close();
