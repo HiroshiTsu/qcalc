@@ -1,5 +1,7 @@
 # ナレーションの声を選ぶ：Qwen3-TTS・Ming・Irodori のサンプルを自分のパソコンで作って聞き比べる
 
+**Qwen3-TTS だけで作ることにしました（2026-11-22）。その手順は `TTS-QWEN3-ja.md` にまとめてあります。** この手順書は、ほかのエンジンも並べて比べるときのものです。
+
 QCalc の動画のナレーションの声を選び直すための手順です。Chatterbox Multilingual の日本語は不自然で発音もおかしかったので（2026-11-21）、日本語には Chatterbox を使いません。ほかの言語も、もっと良い声があれば変えます。
 
 候補のエンジンで、同じ段落（今の `--sample tricky` と同じ、数字・単位・記号のある段落）を、女性と男性の「落ち着いた大人のナレーション」の声で作ります。聞き比べて、言語ごとにエンジンと声を決めます。決めたら、その声で全部の段落を作って、言語ごとの zip を Claude に渡します。
@@ -67,12 +69,13 @@ git checkout -B feature/tts-engines FETCH_HEAD
 ```sh
 uv venv --python 3.12 ~/tts-qwen3
 source ~/tts-qwen3/bin/activate
-uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
-uv pip install -U qwen-tts
+uv pip install qwen-tts torch torchaudio --torch-backend cu128
 python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 ```
 
 最後の行で `True` と GPU の名前が出れば準備ができています。
+
+`--torch-backend cu128` で、torch と torchaudio は GPU 用のものが入ります（前は torch を先に入れてから `uv pip install -U qwen-tts` としていましたが、`-U` で torch が入れ替わり、Windows では GPU を使わない版になることがあるので、1 つのコマンドにしました）。
 
 ### 2-2. 端末を開くたびに
 
@@ -295,8 +298,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 git clone --depth 1 -b feature/tts-engines https://github.com/HiroshiTsu/qcalc.git $HOME\qcalc-tts
 uv venv --python 3.12 $HOME\tts-qwen3
 & $HOME\tts-qwen3\Scripts\Activate.ps1
-uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
-uv pip install -U qwen-tts
+uv pip install qwen-tts torch torchaudio --torch-backend cu128
 cd $HOME\qcalc-tts
 python store\tools\tts_engines.py design $HOME\qcalc-voice --engine qwen3
 python store\tools\tts_engines.py sample $HOME\qcalc-voice ja,en,es --engine qwen3
