@@ -10049,6 +10049,8 @@ void main() {
     lit = sh / 9.0;
     if (dif < 0.12) lit = 1.0 - (1.0 - lit) * (dif - 0.04) / 0.08;
   }
+  // (for the tests only: how much of the lamp's light reaches the point)
+  if (uPass == 2) { o = vec4(lit, 0.0, 0.0, 1.0); return; }
   vec3 col;
   if (mt.w > 0.5) {
     vec3 V = vec3(0.0, 0.0, -1.0), R = reflect(vec3(0.0, 0.0, 1.0), n);
@@ -10153,7 +10155,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // pixel), cx, cy, S (the camera of draw3d: screen = (cx + x·S, cy − y·S)), ZR (the depth range), lamp (toward the lamp,
   // the camera's axes), dark, mesh (the lines), groups (GL3D_NG of { mat, see, cast }: the material (MATS), how opaque
   // when see-through (0: not), whether it casts the lamp's shadow), shadow, layers (of the depth peeling), fade
-  // ([r, g, b, amount], "Volume and surface"), finish. Returns what was drawn.
+  // ([r, g, b, amount], "Volume and surface"), finish, probe (the tests: the pixels in the lamp's shadow). Returns what was drawn.
   function gl3dPaint(g, tb, o) {
     const G = GL3D, gl = G.gl, t0 = performance.now();
     if (!gl || gl.isContextLost()) { G.state = 0; return null; }
@@ -10222,6 +10224,21 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     gl.uniform1f(P.u.uShOn, shadow ? 1 : 0); gl.uniform1f(P.u.uShTex, 1 / G.SH);
     gl.uniform2f(P.u.uFB, w, h);
     gl.bindVertexArray(G.vao);
+    // (for the tests only, data-sh-probe on the canvas: the pixels of the surfaces in the lamp's shadow and at the soft
+    // edge of one, as the 2D canvas reports them; one more drawing, read back before the real one)
+    let probe = null;
+    if (o.probe && shadow) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.uniform1i(P.u.uPass, 2);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, null); gl.uniform1i(P.u.uPrev, 0);
+      gl.drawArrays(gl.TRIANGLES, 0, nv);
+      const px = new Uint8Array(w * h * 4);
+      gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      let n = 0, inSh = 0, edge = 0;
+      for (let i = 0; i < px.length; i += 4) { if (px[i + 3] < 128) continue; n++; const l = px[i]; if (l < 128) inSh++; if (l > 12 && l < 243) edge++; }
+      probe = { px: inSh, edge, shown: n };
+    }
     let layers = 0;
     if (!peel) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h);
@@ -10269,7 +10286,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     g.save(); g.imageSmoothingEnabled = true; g.drawImage(G.cv, 0, 0, o.W, o.H); g.restore();
     const tGl = performance.now() - t0;
     G.lastMs = tGl;
-    return { gl: true, ms: Math.round(tGl * 10) / 10, layers, see: anySee, clear: anyClear, shadow, tris: tb.n, px: [w, h], q: o.q, groups: info,
+    return { gl: true, ms: Math.round(tGl * 10) / 10, layers, see: anySee, clear: anyClear, shadow, map: shadow ? [G.SH, G.SH] : null, probe, tris: tb.n, px: [w, h], q: o.q, groups: info,
       mat: info.filter((x) => x.mat).map((x) => x.mat).join(',') };
   }
   // the slope at p0 (value w0) from the points on its two sides, [place, value] (a: before, b: after;
@@ -12378,7 +12395,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       // (coarser while turning when a drawing is slow: fewer pixels, and fewer layers of the see-through)
       const q = Q3.captureQ || (Q3.turning && (GL3D.lastMs || 0) > 24 ? Math.min(dpr, 1.25) : Math.min(dpr, 3));
       glR = gl3dPaint(g, tb, { W, H, q, cx, cy, S, ZR: Math.hypot(EX, EY, EZ) * 1.3, lamp, dark, mesh: meshLines, groups: gl3dGroups(D, MD).groups, shadow: shadows,
-        layers: Q3.turning ? 4 : 6, fade: fadeTo ? [fadeTo[0], fadeTo[1], fadeTo[2], VOL_FADE] : null, finish: devFlag('ms3d') });
+        layers: Q3.turning ? 4 : 6, fade: fadeTo ? [fadeTo[0], fadeTo[1], fadeTo[2], VOL_FADE] : null, finish: devFlag('ms3d'), probe: !!c.dataset.shProbe });
       // (the glass out of the triangles again: what follows, as the sizes on a solid, is of the liquid only)
       tb.n -= nGlass;
     }
