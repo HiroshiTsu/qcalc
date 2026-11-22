@@ -9871,6 +9871,7 @@ uniform vec4 uFade;
 uniform int uPass;
 uniform sampler2D uPrev; uniform vec2 uFB;
 uniform sampler2DShadow uSh; uniform float uShOn, uShTex;
+uniform vec3 uLX, uLY, uLD;
 out vec4 o;
 vec3 room(vec3 r, float rough) {
   float t = clamp(r.y * 0.5 + 0.5, 0.0, 1.0);
@@ -9886,11 +9887,13 @@ void main() {
   vec4 mt = uGMat[vK]; vec3 base = uGBase[vK]; float see = uGSee[vK];
   vec3 n = normalize(vN); if (n.z > 0.0) n = -n;   // the side turned to the eye (z away from it)
   float dif = dot(n, uL), nh = dot(n, uH), fil = dot(n, uF);
-  // the lamp's shadow: 9 filtered looks around the point in the lamp's map
+  // the lamp's shadow: 9 filtered looks around the point in the lamp's map, the point moved 2 texels out along its
+  // normal toward the lamp first (no speckles of a surface shadowing itself where the light grazes it)
   float lit = 1.0;
   if (uShOn > 0.5 && dif > 0.04) {
-    float bias = 0.0012 + 0.004 * (1.0 - dif), sh = 0.0;
-    for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) sh += texture(uSh, vec3(vL.xy + vec2(float(i), float(j)) * 1.5 * uShTex, vL.z - bias));
+    vec3 q = vL + vec3(dot(n, uLX), dot(n, uLY), dot(n, uLD)) * 2.0 * uShTex;
+    float bias = 0.0006 + 0.0025 * (1.0 - dif), sh = 0.0;
+    for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) sh += texture(uSh, vec3(q.xy + vec2(float(i), float(j)) * uShTex, q.z - bias));
     lit = sh / 9.0;
     if (dif < 0.12) lit = 1.0 - (1.0 - lit) * (dif - 0.04) / 0.08;
   }
