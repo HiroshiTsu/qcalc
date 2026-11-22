@@ -1527,7 +1527,15 @@ body.hselect #history { padding-bottom: 150px; }
 .rev-angle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rev-angle-v, .rev-n-v { min-width: 3.2em; font-variant-numeric: tabular-nums; }
 /* (feature/3d-view) see-through and the box, for a solid of "Solid from a profile" (WebGL 2) */
-.see-row .btn.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+/* (1.14.0) "See-through" and "Box and axes" are switches: a track and a knob before the words (off: grey, the knob at the
+   left; on: the accent's color, the knob at the right, and the button's edge in the accent's color), so that on or off
+   is seen at a glance in every language, and that they are not taken for buttons that do something once */
+.see-row .see-btn, .see-row .box-btn { position: relative; padding-left: 50px; }
+.see-row .see-btn::before, .see-row .box-btn::before { content: ""; position: absolute; left: 12px; top: 50%; width: 30px; height: 18px; margin-top: -9px; border-radius: 9px; background: var(--muted); }
+.see-row .see-btn::after, .see-row .box-btn::after { content: ""; position: absolute; left: 14px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 7px; background: var(--surface); }
+.see-row .see-btn.on, .see-row .box-btn.on { border-color: var(--accent); }
+.see-row .see-btn.on::before, .see-row .box-btn.on::before { background: var(--accent); }
+.see-row .see-btn.on::after, .see-row .box-btn.on::after { left: 26px; background: var(--accent-text); }
 .see-row .btn:disabled { opacity: .45; }
 .see-row .see-note { flex-basis: 100%; font-size: 13px; color: var(--muted, #6b7280); }
 /* (feature/3d-view) what is see-through: a chip for each formula, the solid, the container and the liquid of a tank */
