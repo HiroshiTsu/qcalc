@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks the pictures (and, when a folder is given, the videos) of the QCalc store listing (stage M6):
 
-  - every set in store/screenshots-1.12/ has 8 phone pictures 1080 × 1920, one 1920 × 1080, and 5 each
+  - every set in store/screenshots-<version>/ (1.14, or the version given by QCALC_SHOTS, e.g. 1.12) has 8 phone pictures 1080 × 1920, one 1920 × 1080, and 5 each
     for 7-inch (1200 × 1920) and 10-inch tablets (1600 × 2560) (alt/: alternatives, not counted);
   - Google Play's rules for screenshots: PNG or JPEG, no transparency, sides 320-3840 px, the long side at
     most twice the short one, at most 8 MB; the feature graphics 1024 × 500 without transparency, at most
@@ -19,7 +19,8 @@ import subprocess
 import sys
 
 STORE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SHOTS = os.path.join(STORE, 'screenshots-1.12')
+VER = os.environ.get('QCALC_SHOTS', '1.14')
+SHOTS = os.path.join(STORE, 'screenshots-' + VER)
 
 
 def png_info(path):
@@ -67,7 +68,7 @@ def main():
                     problems.append('%s/%s: sides outside Google Play\'s limits' % (s, f))
         print('%-7s %s' % (s, ' '.join('%s %d' % (k, len([f for f in files if f.startswith(k + '-')])) for k in want)))
     for f in sorted(os.listdir(STORE)):
-        if re.match(r'feature-graphic-1\.12-.+\.png$', f):
+        if re.match(r'feature-graphic-' + re.escape(VER) + r'-.+\.png$', f):
             i = png_info(os.path.join(STORE, f))
             n += 1
             if not i or (i['w'], i['h']) != (1024, 500) or i['alpha'] or i['size'] > 15 * 1024 * 1024:
@@ -87,6 +88,8 @@ def main():
         os.makedirs(sheets, exist_ok=True)
         for s in sorted(os.listdir(SHOTS)):
             d = os.path.join(SHOTS, s)
+            if not os.path.isdir(d):
+                continue
             ph = sorted(f for f in os.listdir(d) if f.startswith('phone-'))
             if len(ph) != 8:
                 continue
