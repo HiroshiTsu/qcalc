@@ -46,6 +46,26 @@ async function turn3d(page, ms) {
   for (let i = 1; i <= steps; i++) { await page.mouse.move(x0 + r.width * 0.4 * i / steps, y0 - r.height * 0.06 * Math.sin(Math.PI * i / steps)); await sleep(33); }
   await page.mouse.up();
 }
+// a finger (the circle shown all along) drags the 3D graph by dx, dy CSS pixels in ms, easing out
+// (1 px turns the view 0.01: across, around the axis; down, toward looking from above)
+async function fingerDrag(page, x0, y0, dx, dy, ms) {
+  await page.evaluate(([x, y]) => {
+    const d = document.createElement('div'); d.id = 'finger';
+    d.style.cssText = 'position:fixed;left:' + (x - 22) + 'px;top:' + (y - 22) + 'px;width:44px;height:44px;border-radius:50%;background:rgba(58,96,238,.35);border:3px solid rgba(58,96,238,.9);z-index:99999;pointer-events:none;transition:opacity .4s';
+    document.body.appendChild(d);
+  }, [x0, y0]);
+  await sleep(350);
+  await page.mouse.move(x0, y0); await page.mouse.down();
+  const steps = Math.max(10, Math.round(ms / 40));
+  for (let i = 1; i <= steps; i++) {
+    const k = 1 - Math.pow(1 - i / steps, 2), x = x0 + dx * k, y = y0 + dy * k;
+    await page.mouse.move(x, y);
+    await page.evaluate(([x, y]) => { const d = document.getElementById('finger'); if (d) { d.style.left = (x - 22) + 'px'; d.style.top = (y - 22) + 'px'; } }, [x, y]);
+    await sleep(25);
+  }
+  await page.mouse.up();
+  await page.evaluate(() => { const d = document.getElementById('finger'); if (d) { d.style.opacity = '0'; setTimeout(() => d.remove(), 500); } });
+}
 async function view3d(page) {
   const v = page.locator('.panel.open button.btn').filter({ hasText: /3D/ }).filter({ hasNotText: /=/ });
   let b = null; for (let i = 0; i < await v.count(); i++) { const x = v.nth(i); if (await x.isVisible() && !(await x.evaluate((e) => e.classList.contains('rev3d')))) { b = x; break; } }
@@ -150,15 +170,23 @@ const SCENES = {
       await sleep(3000);
     }
   },
+  // (1.13.0) the stepped shaft (the first example) in 3D: it turns into being (the solid grows from 0° to 360°),
+  // then a finger tilts it toward the eye, so that the flat ring of the step, where the shaft gets thinner, is
+  // seen from above (the shadow of the thin part lies on its far side); the view held there
   profile: {
     prep: async () => {},
     run: async (page) => {
-      await sleep(300); await openTool(page, 'profile'); await tap(page, chip(page, 0)); await sleep(1800);
-      await smoothScroll(page, '.pf-pic', 4, 900); await sleep(2200);
+      await sleep(200); await openTool(page, 'profile'); await tap(page, chip(page, 0)); await sleep(1200);
+      await smoothScroll(page, '.pf-pic', 4, 900); await sleep(1500);
       const v = page.locator('.panel.open button.btn').filter({ hasText: /3D/ });
       let b = null; for (let i = 0; i < await v.count(); i++) if (await v.nth(i).isVisible()) { b = v.nth(i); break; }
-      if (b) { await b.scrollIntoViewIfNeeded(); await sleep(300); await tap(page, b); await sleep(5000); await smoothScroll(page, '.plot-wrap', 8); await turn3d(page, 1500); }
-      await sleep(1500);
+      if (b) {
+        await b.scrollIntoViewIfNeeded(); await sleep(300); await tap(page, b);
+        await Q.modelDone(page); await sleep(300); await smoothScroll(page, '.plot-wrap', 8); await sleep(400);
+        const r = await Q.graphRect(page);
+        await fingerDrag(page, r.x + r.width * 0.35, r.y + r.height * 0.5, 44, 46, 1800); // the view 0.44 around, 0.46 down
+      }
+      await sleep(2000);
     }
   },
   tank: {
