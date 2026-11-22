@@ -637,6 +637,12 @@ html.big-keys #expr::placeholder { font-size: .8em; }
 .plot-wrap canvas { width: 100%; height: 100%; display: block; }
 .plot-wrap canvas.plot-fade { position: absolute; left: 0; top: 0; pointer-events: none; }
 .plot-wrap canvas.plot-fade[hidden] { display: none; }
+/* (feature/3d-view) the solid drawn with WebGL 2, a layer over the 2D canvas; the time of a drawing (test builds) */
+.plot-wrap canvas.plot-gl { position: absolute; left: 0; top: 0; pointer-events: none; }
+.plot-wrap canvas.plot-gl[hidden] { display: none; }
+.plot-ms { position: absolute; left: 6px; top: 6px; padding: 2px 6px; border-radius: 6px; font: 600 11px system-ui, sans-serif; background: rgba(255, 255, 255, .85); color: #111827; pointer-events: none; }
+html.dark .plot-ms { background: rgba(0, 0, 0, .6); color: #e5e7eb; }
+.plot-ms[hidden] { display: none; }
 .plot-ctl { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .plot-ctl button {
   width: 40px; height: 40px;
@@ -1505,6 +1511,10 @@ body.hselect #history { padding-bottom: 150px; }
 .rev-pappus { font-size: 13px; color: var(--muted); margin: 4px 0; overflow-wrap: anywhere; }
 .rev-angle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rev-angle-v, .rev-n-v { min-width: 3.2em; font-variant-numeric: tabular-nums; }
+/* (feature/3d-view) see-through and the box, for a solid of "Solid from a profile" (WebGL 2) */
+.see-row .btn.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.see-row .btn:disabled { opacity: .45; }
+.see-row .see-note { flex-basis: 100%; font-size: 13px; color: var(--muted, #6b7280); }
 
 /* the everyday tools (1.12.0, C1) */
 .tool-choice .seg.mini { flex: 1 1 0; flex-wrap: wrap; }

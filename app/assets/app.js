@@ -8358,6 +8358,19 @@
     levelRange.addEventListener('change', () => { const T = Q3.model && Q3.model.tank; if (T) setLevel3d(Number(levelRange.value) * levelStep(T), true); });
     const levelRow = el('div', { class: 'plot-range rev-angle tank-level', hidden: true }, el('span', { text: tr('Level', '液面') }), levelRange, levelVal);
     Object.assign(Q3, { canvas, tip, legend, msg, ta, go, inputs: [xmin, xmax, ymin, ymax], resEl: res, angle, angleVal, angleRow, backRow, backVol, backBtn, levelRow, levelRange, levelVal });
+    // (feature/3d-view, a prototype for "Solid from a profile" drawn with WebGL 2) see-through and how opaque, and the
+    // box with its grid and axes; kept on this phone. Without WebGL 2 the see-through cannot be chosen, and says so
+    const sv = store.get('qalc.plot3d.see', null);
+    Q3.see = { on: !!(sv && sv.on === true), a: sv && sv.a >= 0.1 && sv.a <= 0.9 ? sv.a : 0.35, box: !(sv && sv.box === false) };
+    const saveSee = () => store.set('qalc.plot3d.see', Q3.see);
+    const seeBtn = tapButton({ class: 'btn see-btn', 'aria-pressed': 'false', text: tr('See-through', '透明') }, () => { if (!gl3dReady()) return; Q3.see.on = !Q3.see.on; saveSee(); syncSeeRow(); draw3d(); });
+    const seeRange = el('input', { type: 'range', min: '10', max: '90', step: '5', 'aria-label': tr('How opaque (%)', '濃さ（%）') });
+    const seeVal = el('span', { class: 'rev-angle-v' });
+    seeRange.addEventListener('input', () => { Q3.see.a = Number(seeRange.value) / 100; saveSee(); syncSeeRow(); requestDraw3d(); });
+    const boxBtn = tapButton({ class: 'btn box-btn', 'aria-pressed': 'true', text: tr('Box and axes', '箱と目盛り') }, () => { Q3.see.box = !Q3.see.box; saveSee(); syncSeeRow(); draw3d(); });
+    const seeNote = el('span', { class: 'see-note', id: 'see-note', hidden: true, text: tr('Not available on this device', 'この端末では使えません') });
+    const seeRow = el('div', { class: 'plot-range rev-angle see-row', hidden: true }, seeBtn, seeRange, seeVal, boxBtn, seeNote);
+    Object.assign(Q3, { seeRow, seeBtn, seeRange, seeVal, boxBtn, seeNote });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
@@ -8399,7 +8412,7 @@
           el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax),
           el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr(' to ', ' 〜 ').trim() }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
-      backRow, wrap, angleRow, levelRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
+      backRow, wrap, angleRow, levelRow, seeRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
@@ -8513,6 +8526,23 @@
     if (Q3.partialEl) Q3.partialEl.hidden = !!Md;
     if (Q3.levelRow) Q3.levelRow.hidden = !(Md && Md.tank);
     syncLevelRow();
+    syncSeeRow();
+  }
+  // the row of see-through and the box (feature/3d-view): shown for a solid of "Solid from a profile"; the see-through
+  // button cannot be pressed without WebGL 2 (or with the test switch "3D with WebGL" off), with a note
+  function syncSeeRow() {
+    if (!Q3.seeRow) return;
+    const Md = Q3.model, shown = !!Md && Md.k === 'profile' && !Md.tank;
+    Q3.seeRow.hidden = !shown;
+    if (!shown) return;
+    const ok = gl3dWanted() && gl3dReady(), on = ok && Q3.see.on, pc = Math.round(Q3.see.a * 100);
+    Q3.seeBtn.disabled = !ok; Q3.seeBtn.setAttribute('aria-pressed', String(on)); Q3.seeBtn.classList.toggle('on', on);
+    if (ok) Q3.seeBtn.removeAttribute('aria-describedby'); else Q3.seeBtn.setAttribute('aria-describedby', 'see-note');
+    Q3.seeNote.hidden = ok;
+    Q3.seeRange.disabled = !on; Q3.seeRange.hidden = !ok; Q3.seeRange.value = String(pc);
+    Q3.seeVal.hidden = !ok; Q3.seeVal.textContent = pc + '%';
+    const box = Q3.see.box !== false;
+    Q3.boxBtn.setAttribute('aria-pressed', String(box)); Q3.boxBtn.classList.toggle('on', box);
   }
   // a size written on a model ({ sym, val, unit } → "r = 15 cm"; D7: the digits of the 3D picture)
   const labText = (o) => (!o ? '' : typeof o === 'string' ? o : o.sym + ' = ' + digPic(o.val, 'dim') + (o.unit ? ' ' + o.unit : ''));
@@ -9687,6 +9717,303 @@
     g.drawImage(off, lx0 / q, ly0 / q, LW / q, LH / q);
     g.restore();
     return { shown, q, SM, zbuf: { zb, x0: lx0, y0: ly0, w: LW, h: LH, q }, shadow: LK && o.shadow ? { px: inShadow, edge, map: LK.map, lock: true } : SM ? { px: inShadow, edge, map: [SM.MW, SM.MH], ms: Math.round(tMap * 10) / 10 } : null };
+  }
+  // ---- (feature/3d-view, the owner's choice of 11-22 13:17) WebGL 2 for the solid of "Solid from a profile": a
+  // prototype, to be tried on a phone before the other 3D views. The model's triangles are drawn by the GPU into a
+  // canvas of their own and laid into the 2D canvas where the surfaces would be painted, so the box is behind them
+  // and the axes, labels and sizes over them as before. Opaque: a depth test with MSAA, the light of surfacePaint for
+  // each pixel (the lamp at the upper left, the sky, the floor, a highlight, Fresnel), the lines of the pieces, and the
+  // lamp's shadows (a shadow map, filtered: soft edges). See-through, and materials that let light through (water):
+  // depth peeling, the nearest faces, then the nearest behind them, and so on (6 layers, 4 while turning), added front
+  // to back, so faces behind one another are in their order whatever the order of the triangles; the faces seen
+  // edge-on and the lines stay strong, so the shape still reads. Materials (MATS): the metals mirror a bright room and
+  // have a sharp highlight (GGX), wood and concrete are dull, the liquids clear and tinted. No WebGL 2 (or the context
+  // lost): the 2D canvas as before, and no see-through.
+  const MATS = {
+    iron: { metal: 1, rough: 0.42, base: [0.56, 0.57, 0.58] },
+    aluminum: { metal: 1, rough: 0.3, base: [0.91, 0.92, 0.92] },
+    copper: { metal: 1, rough: 0.32, base: [0.95, 0.64, 0.54] },
+    brass: { metal: 1, rough: 0.3, base: [0.91, 0.78, 0.42] },
+    wood: { metal: 0, rough: 0.8, base: [0.55, 0.36, 0.2] },
+    plastic: { metal: 0, rough: 0.35, base: [0.85, 0.86, 0.88] },
+    concrete: { metal: 0, rough: 0.92, base: [0.63, 0.62, 0.59] },
+    water: { metal: 0, rough: 0.06, base: [0.16, 0.42, 0.85], opacity: 0.78 },
+    sea: { metal: 0, rough: 0.06, base: [0.1, 0.44, 0.6], opacity: 0.8 },
+    kerosene: { metal: 0, rough: 0.06, base: [0.93, 0.89, 0.62], opacity: 0.6 },
+    gasoline: { metal: 0, rough: 0.06, base: [0.96, 0.74, 0.34], opacity: 0.6 }
+  };
+  // the look of a material chosen in a tool: a key of DENSITIES (the same name), or for a density typed (g/cm³) the
+  // metal it is (aluminium 2.7, iron and steel 7.85, brass 8.5, copper 8.96); anything else: the colors of the app
+  function matLook(key, typed) {
+    if (MATS[key]) return Object.assign({ key }, MATS[key]);
+    const d = Number(typed);
+    if (key === 'own' && isFinite(d)) {
+      const k = d >= 2.6 && d <= 2.85 ? 'aluminum' : d >= 7.7 && d <= 8.05 ? 'iron' : d >= 8.3 && d <= 8.75 ? 'brass' : d >= 8.85 && d <= 9.0 ? 'copper' : '';
+      if (k) return Object.assign({ key: k }, MATS[k]);
+    }
+    return null;
+  }
+  const GL3D = { state: 0 };  // 0 not tried yet, 1 ready, -1 no WebGL 2 here
+  // the test switch "3D with WebGL" (test builds; on unless turned off)
+  function gl3dWanted() { try { return localStorage.getItem('qalc.dev.gl3d') !== 'false'; } catch (e) { return true; } }
+  // a switch of the test builds ("true"): ms3d, the time of each 3D drawing in a corner; pf200, the example of 200 rows on the test page
+  function devFlag(k) { try { return localStorage.getItem('qalc.dev.' + k) === 'true'; } catch (e) { return false; } }
+  function gl3dReady() { if (GL3D.state === 0) gl3dInit(); return GL3D.state === 1; }
+  // (the GPU's layer away, when the 3D view shows something drawn on the 2D canvas)
+  function gl3dHide() { if (GL3D.cv && !GL3D.cv.hidden) GL3D.cv.hidden = true; }
+  const GL3D_VS = `#version 300 es
+in vec3 aP; in vec3 aN; in vec3 aC; in vec2 aG;
+uniform vec3 uR0, uR1, uR2, uK, uB, uNs, uLX, uLY, uLD;
+uniform float uS, uZR; uniform vec2 uC, uSize;
+out vec3 vN; out vec3 vC; out vec2 vG; out vec3 vL;
+void main() {
+  vec3 b = aP * uK + uB, c = vec3(dot(uR0, b), dot(uR1, b), dot(uR2, b));
+  vec2 px = uC + vec2(c.x, -c.y) * uS;
+  gl_Position = vec4(px.x / uSize.x * 2.0 - 1.0, 1.0 - px.y / uSize.y * 2.0, c.z / uZR, 1.0);
+  vec3 nb = aN * uNs;
+  vN = vec3(dot(uR0, nb), dot(uR1, nb), dot(uR2, nb));
+  vC = aC / 255.0; vG = aG;
+  vL = vec3(dot(c, uLX), dot(c, uLY), dot(c, uLD)) / uZR * 0.5 + 0.5;
+}`;
+  const GL3D_SVS = `#version 300 es
+in vec3 aP;
+uniform vec3 uR0, uR1, uR2, uK, uB, uLX, uLY, uLD; uniform float uZR;
+void main() { vec3 b = aP * uK + uB, c = vec3(dot(uR0, b), dot(uR1, b), dot(uR2, b)); gl_Position = vec4(vec3(dot(c, uLX), dot(c, uLY), dot(c, uLD)) / uZR, 1.0); }`;
+  const GL3D_SFS = `#version 300 es
+precision mediump float; void main() {}`;
+  const GL3D_FS = `#version 300 es
+precision highp float; precision highp sampler2DShadow;
+in vec3 vN; in vec3 vC; in vec2 vG; in vec3 vL;
+uniform vec3 uL, uH, uF; uniform float uDark;
+uniform vec4 uMesh; uniform float uMeshW;
+uniform vec4 uMat; uniform vec3 uBase;
+uniform int uPass; uniform float uSee;
+uniform sampler2D uPrev; uniform vec2 uFB;
+uniform sampler2DShadow uSh; uniform float uShOn, uShTex;
+out vec4 o;
+vec3 room(vec3 r, float rough) {
+  float t = clamp(r.y * 0.5 + 0.5, 0.0, 1.0);
+  vec3 top = vec3(1.0, 1.0, 1.02), hor = vec3(0.62, 0.66, 0.72), gnd = vec3(0.22, 0.22, 0.24);
+  vec3 c = t > 0.5 ? mix(hor, top, smoothstep(0.5, 1.0, t)) : mix(gnd, hor, smoothstep(0.0, 0.5, t));
+  float w = 0.08 + rough * 0.5;
+  float b1 = smoothstep(w, 0.0, abs(r.x + 0.55) - 0.18) * smoothstep(w, 0.0, abs(r.y - 0.25) - 0.35);
+  float b2 = smoothstep(w, 0.0, abs(r.x - 0.75) - 0.08) * smoothstep(w, 0.0, abs(r.y) - 0.5);
+  return (c + vec3(1.6) * b1 + vec3(0.9) * b2) * (uDark > 0.5 ? 0.75 : 1.0);
+}
+void main() {
+  if (uPass == 1) { float prev = texture(uPrev, gl_FragCoord.xy / uFB).r; if (gl_FragCoord.z <= prev + 1e-6) discard; }
+  vec3 n = normalize(vN); if (n.z > 0.0) n = -n;   // the side turned to the eye (z away from it)
+  float dif = dot(n, uL), nh = dot(n, uH), fil = dot(n, uF);
+  // the lamp's shadow: 9 filtered looks around the point in the lamp's map
+  float lit = 1.0;
+  if (uShOn > 0.5 && dif > 0.04) {
+    float bias = 0.0012 + 0.004 * (1.0 - dif), s = 0.0;
+    for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) s += texture(uSh, vec3(vL.xy + vec2(float(i), float(j)) * 1.5 * uShTex, vL.z - bias));
+    lit = s / 9.0;
+    if (dif < 0.12) lit = 1.0 - (1.0 - lit) * (dif - 0.04) / 0.08;
+  }
+  vec3 col;
+  if (uMat.w > 0.5) {
+    vec3 V = vec3(0.0, 0.0, -1.0), R = reflect(vec3(0.0, 0.0, 1.0), n);
+    float rough = uMat.y, a = rough * rough, met = uMat.x;
+    vec3 F0 = mix(vec3(0.04), uBase, met), Fr = F0 + (1.0 - F0) * pow(1.0 - max(dot(n, V), 1e-3), 5.0);
+    vec3 H = normalize(uL + V); float NdH = max(dot(n, H), 0.0), NdL = max(dif, 0.0);
+    float D = a * a / (3.14159 * pow(NdH * NdH * (a * a - 1.0) + 1.0, 2.0));
+    vec3 spec = Fr * D * NdL * 0.9 * lit, env = room(R, rough) * Fr;
+    vec3 diff = uBase * (1.0 - met) * (0.32 + 0.12 * n.y + 0.62 * NdL * lit + 0.2 * max(fil, 0.0));
+    col = diff + env + spec;
+  } else {
+    float AMB = uDark > 0.5 ? 0.3 : 0.34, DIF = uDark > 0.5 ? 0.66 : 0.62, KS = uDark > 0.5 ? 0.42 : 0.38;
+    vec3 env = uDark > 0.5 ? vec3(150.0, 165.0, 190.0) / 255.0 : vec3(236.0, 241.0, 250.0) / 255.0;
+    float kd = AMB + 0.08 * n.y + DIF * max(dif, 0.0) * lit + 0.22 * max(fil, 0.0);
+    float sp = nh > 0.0 ? KS * pow(nh, 56.0) * lit : 0.0;
+    float om = 1.0 - max(-n.z, 0.0), fr = (uDark > 0.5 ? 0.42 : 0.5) * (0.04 + 0.96 * pow(om, 5.0));
+    col = vC * kd * (1.0 - fr) + env * fr + sp;
+  }
+  // the lines along the edges of the pieces (none on the axis: no lines where gi is below −1000)
+  float line = 0.0;
+  if (vG.x > -1000.0 && uMesh.a > 0.0) {
+    vec2 d = abs(vG - floor(vG + 0.5)), w = max(fwidth(vG), vec2(1e-6));
+    float dd = min(d.x / w.x, d.y / w.y) - uMeshW;
+    if (dd < 1.0) line = dd <= 0.0 ? 1.0 : 1.0 - dd;
+  }
+  col = mix(col, uMesh.rgb, line * uMesh.a);
+  float alpha = 1.0, edge = pow(1.0 - abs(n.z), 3.0);
+  if (uSee > 0.0) { alpha = max(uSee + (1.0 - uSee) * 0.75 * edge, line * 0.45); col = mix(col, col * 0.55, edge); }
+  else if (uMat.w > 0.5 && uMat.z < 1.0) alpha = uMat.z + (1.0 - uMat.z) * 0.6 * edge;
+  o = uPass == 1 ? vec4(col * alpha, alpha) : vec4(col, 1.0);
+}`;
+  const GL3D_QVS = `#version 300 es
+in vec2 aQ; out vec2 vT; void main() { vT = aQ * 0.5 + 0.5; gl_Position = vec4(aQ, 0.0, 1.0); }`;
+  const GL3D_QFS = `#version 300 es
+precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void main() { o = texture(uTex, vT); }`;
+  function gl3dInit() {
+    GL3D.state = -1;
+    try {
+      const cv = document.createElement('canvas');
+      const gl = cv.getContext('webgl2', { antialias: true, alpha: true, premultipliedAlpha: true, depth: true, preserveDrawingBuffer: false });
+      if (!gl) return;
+      const sh = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+      const prog = (vs, fs, attrs) => {
+        const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+        attrs.forEach((a, i) => gl.bindAttribLocation(p, i, a));
+        gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+        const u = {}, n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+        for (let i = 0; i < n; i++) { const a = gl.getActiveUniform(p, i); u[a.name] = gl.getUniformLocation(p, a.name); }
+        return { p, u };
+      };
+      Object.assign(GL3D, {
+        cv, gl, main: prog(GL3D_VS, GL3D_FS, ['aP', 'aN', 'aC', 'aG']), shadow: prog(GL3D_SVS, GL3D_SFS, ['aP']), quad: prog(GL3D_QVS, GL3D_QFS, ['aQ']),
+        vbo: gl.createBuffer(), ibo: gl.createBuffer(), qbo: gl.createBuffer(), vao: gl.createVertexArray(), qvao: gl.createVertexArray(), mesh: null, nIdx: 0, fb: null, w: 0, h: 0
+      });
+      gl.bindVertexArray(GL3D.vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, GL3D.vbo);
+      [[0, 3, 0], [1, 3, 3], [2, 3, 6], [3, 2, 9]].forEach(([l, n, off]) => { gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, n, gl.FLOAT, false, MV * 4, off * 4); });
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, GL3D.ibo);
+      gl.bindVertexArray(GL3D.qvao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, GL3D.qbo); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, 0);
+      gl.bindVertexArray(null);
+      // the lamp's map (2048 × 2048 depths, compared and filtered by the GPU)
+      const tex = (w, h, ifmt, fmt, type, cmp) => {
+        // (made on unit 0, so that the lamp's map on unit 1 stays bound)
+        const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, t);
+        const f = cmp ? gl.LINEAR : gl.NEAREST;
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        if (cmp) { gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_MODE, gl.COMPARE_REF_TO_TEXTURE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL); }
+        gl.texStorage2D(gl.TEXTURE_2D, 1, ifmt, w, h);
+        return t;
+      };
+      GL3D.tex = tex;
+      GL3D.SH = 2048; GL3D.shTex = tex(GL3D.SH, GL3D.SH, gl.DEPTH_COMPONENT24, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, true);
+      GL3D.shFb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, GL3D.shFb); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, GL3D.shTex, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      cv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); GL3D.state = 0; GL3D.gl = null; });
+      GL3D.renderer = (() => { const x = gl.getExtension('WEBGL_debug_renderer_info'); return x ? String(gl.getParameter(x.UNMASKED_RENDERER_WEBGL)) : String(gl.getParameter(gl.RENDERER)); })();
+      GL3D.state = 1;
+    } catch (e) { GL3D.state = -1; GL3D.error = String(e && e.message || e).slice(0, 200); }
+  }
+  // the textures of the depth peeling, for a size in pixels
+  function gl3dPeelTargets(w, h) {
+    const G = GL3D, gl = G.gl;
+    if (G.fb && G.w === w && G.h === h) return;
+    if (G.fb) { [G.colT, G.accT, G.dep[0], G.dep[1]].forEach((t) => gl.deleteTexture(t)); gl.deleteFramebuffer(G.fb); gl.deleteFramebuffer(G.accFb); }
+    G.colT = G.tex(w, h, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE); G.accT = G.tex(w, h, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
+    G.dep = [G.tex(w, h, gl.DEPTH_COMPONENT24, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT), G.tex(w, h, gl.DEPTH_COMPONENT24, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT)];
+    G.fb = gl.createFramebuffer(); G.accFb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, G.accFb); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, G.accT, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    G.w = w; G.h = h;
+  }
+  // a model (a mesh: MV numbers a corner, triangles M.t) drawn with WebGL 2 and laid on g; o: the view of draw3d (RV,
+  // U, V, Wz, the normals' scale, S, cx, cy, W, H, q), the lamp in the camera's axes, dark, mesh (the lines), see
+  // (how opaque when see-through, or 0), mat (MATS), shadow (the lamp's shadows), layers. Returns what was drawn.
+  function gl3dPaint(g, M, o) {
+    const G = GL3D, gl = G.gl, t0 = performance.now();
+    if (!gl || gl.isContextLost()) { G.state = 0; return null; }
+    const w = Math.max(1, Math.round(o.W * o.q)), h = Math.max(1, Math.round(o.H * o.q));
+    if (G.cv.width !== w || G.cv.height !== h) { G.cv.width = w; G.cv.height = h; }
+    // the corners (the lines' gi and gj: NaN, none, as −1e4) and the triangles, sent again only for a new mesh
+    if (G.mesh !== M || G.meshN !== M.v.length) {
+      const V = new Float32Array(M.v.length);
+      for (let i = 0; i < M.v.length; i++) { const x = M.v[i]; V[i] = x === x ? x : -1e4; }
+      gl.bindVertexArray(G.vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, G.vbo); gl.bufferData(gl.ARRAY_BUFFER, V, gl.DYNAMIC_DRAW);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.ibo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(M.t), gl.DYNAMIC_DRAW);
+      gl.bindVertexArray(null);
+      G.mesh = M; G.meshN = M.v.length; G.nIdx = M.t.length;
+    }
+    const R = o.RV, k = [o.U(1) - o.U(0), o.V(1) - o.V(0), o.Wz(1) - o.Wz(0)], b = [o.U(0), o.V(0), o.Wz(0)];
+    const ZR = o.ZR, L = o.lamp, ln = Math.hypot(L[0], L[1], L[2]) || 1, Lc = [L[0] / ln, L[1] / ln, L[2] / ln];
+    let H = [Lc[0], Lc[1], Lc[2] - 1]; const hn = Math.hypot(H[0], H[1], H[2]) || 1; H = H.map((x) => x / hn);
+    // the lamp's axes: depth along the light (away from the lamp), and two across it
+    const LD = [-Lc[0], -Lc[1], -Lc[2]], up = Math.abs(LD[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    let LX = [up[1] * LD[2] - up[2] * LD[1], up[2] * LD[0] - up[0] * LD[2], up[0] * LD[1] - up[1] * LD[0]]; const lx = Math.hypot(...LX); LX = LX.map((x) => x / lx);
+    const LY = [LD[1] * LX[2] - LD[2] * LX[1], LD[2] * LX[0] - LD[0] * LX[2], LD[0] * LX[1] - LD[1] * LX[0]];
+    const mat = o.mat, see = o.see || 0, clear = !see && mat && mat.opacity !== undefined && mat.opacity < 1;
+    const peel = see > 0 || clear, shadow = !!o.shadow && !peel;
+    if (peel) gl3dPeelTargets(w, h);
+    const common = (P) => {
+      gl.uniform3f(P.u.uR0, R[0], R[1], R[2]); gl.uniform3f(P.u.uR1, R[3], R[4], R[5]); gl.uniform3f(P.u.uR2, R[6], R[7], R[8]);
+      gl.uniform3fv(P.u.uK, k); gl.uniform3fv(P.u.uB, b); gl.uniform1f(P.u.uZR, ZR);
+      gl.uniform3fv(P.u.uLX, LX); gl.uniform3fv(P.u.uLY, LY); gl.uniform3fv(P.u.uLD, LD);
+    };
+    gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS); gl.disable(gl.CULL_FACE); gl.disable(gl.BLEND);
+    // the lamp's map
+    if (shadow) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, G.shFb); gl.viewport(0, 0, G.SH, G.SH);
+      gl.clear(gl.DEPTH_BUFFER_BIT);
+      gl.useProgram(G.shadow.p); common(G.shadow);
+      gl.bindVertexArray(G.vao); gl.drawElements(gl.TRIANGLES, G.nIdx, gl.UNSIGNED_INT, 0);
+    }
+    const P = G.main;
+    gl.useProgram(P.p); common(P);
+    gl.uniform3fv(P.u.uNs, [o.nx, o.ny, o.nz]); gl.uniform1f(P.u.uS, o.S); gl.uniform2f(P.u.uC, o.cx, o.cy); gl.uniform2f(P.u.uSize, o.W, o.H);
+    gl.uniform3fv(P.u.uL, Lc); gl.uniform3fv(P.u.uH, H); { const f = Math.hypot(0.45, 0.45, 0.77); gl.uniform3fv(P.u.uF, [0.45 / f, -0.45 / f, -0.77 / f]); }
+    gl.uniform1f(P.u.uDark, o.dark ? 1 : 0);
+    const ms = o.mesh;
+    gl.uniform4f(P.u.uMesh, ms ? ms[0] / 255 : 0, ms ? ms[1] / 255 : 0, ms ? ms[2] / 255 : 0, ms ? ms[3] : 0); gl.uniform1f(P.u.uMeshW, ms ? ms[4] * o.q / 2 : 0);
+    gl.uniform4f(P.u.uMat, mat ? mat.metal : 0, mat ? mat.rough : 0.5, mat && mat.opacity !== undefined ? mat.opacity : 1, mat ? 1 : 0);
+    gl.uniform3fv(P.u.uBase, mat ? mat.base : [0.5, 0.5, 0.5]);
+    gl.uniform1f(P.u.uSee, see);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, G.shTex); gl.uniform1i(P.u.uSh, 1);
+    gl.uniform1f(P.u.uShOn, shadow ? 1 : 0); gl.uniform1f(P.u.uShTex, 1 / G.SH);
+    gl.uniform2f(P.u.uFB, w, h);
+    gl.bindVertexArray(G.vao);
+    let layers = 0;
+    if (!peel) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.uniform1i(P.u.uPass, 0);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, null); gl.uniform1i(P.u.uPrev, 0);
+      gl.drawElements(gl.TRIANGLES, G.nIdx, gl.UNSIGNED_INT, 0);
+    } else {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, G.accFb); gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+      // (the first "last layer": depth 0, nothing peeled yet)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, G.fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, G.colT, 0);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, G.dep[1], 0);
+      gl.clearDepth(0); gl.clear(gl.DEPTH_BUFFER_BIT); gl.clearDepth(1);
+      const NL = o.layers || 6;
+      for (let l = 0; l < NL; l++) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, G.fb);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, G.dep[l % 2], 0);
+        gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.useProgram(P.p); gl.bindVertexArray(G.vao); gl.enable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, G.dep[(l + 1) % 2]); gl.uniform1i(P.u.uPrev, 0);
+        gl.uniform1i(P.u.uPass, 1);
+        gl.drawElements(gl.TRIANGLES, G.nIdx, gl.UNSIGNED_INT, 0);
+        // under what is there: C += (1 − A) C_layer (premultiplied)
+        gl.bindFramebuffer(gl.FRAMEBUFFER, G.accFb);
+        gl.useProgram(G.quad.p); gl.bindVertexArray(G.qvao); gl.disable(gl.DEPTH_TEST);
+        gl.enable(gl.BLEND); gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ONE);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, G.colT); gl.uniform1i(G.quad.u.uTex, 0);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        layers++;
+      }
+      gl.disable(gl.BLEND);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.useProgram(G.quad.p); gl.bindVertexArray(G.qvao); gl.disable(gl.DEPTH_TEST);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, G.accT); gl.uniform1i(G.quad.u.uTex, 0);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    gl.bindVertexArray(null);
+    // (for the time on the screen: the GPU finished, so that the time is that of the drawing)
+    if (o.finish) gl.finish();
+    const tGl = performance.now() - t0;
+    // the picture of the GPU: a layer over the 2D canvas (over the fading copy of the last frame too, BG19), under the
+    // buttons; for a picture or a GIF to share (o.composite) laid into the 2D canvas instead, at once
+    const wrap = o.canvas.parentElement;
+    if (o.composite || !wrap) { G.cv.hidden = true; g.save(); g.imageSmoothingEnabled = true; g.drawImage(G.cv, 0, 0, o.W, o.H); g.restore(); }
+    else {
+      if (!G.cv.classList.contains('plot-gl')) { G.cv.className = 'plot-gl'; G.cv.setAttribute('aria-hidden', 'true'); }
+      const after = Q3.fadeLayer && Q3.fadeLayer.parentElement === wrap ? Q3.fadeLayer : o.canvas;
+      if (G.cv.previousSibling !== after) after.after(G.cv);
+      G.cv.hidden = false;
+    }
+    return { gl: true, ms: Math.round(tGl * 10) / 10, layers, see: see > 0, clear, shadow, tris: G.nIdx / 3, px: [w, h], mat: mat ? mat.key : '' };
   }
   // the slope at p0 (value w0) from the points on its two sides, [place, value] (a: before, b: after;
   // null if none): the parabola through the three, or the line to the one there is
@@ -11230,7 +11557,7 @@
     g.fillStyle = css.getPropertyValue('--plot-bg').trim() || '#fff';
     g.fillRect(0, 0, W, H);
     const D = Q3.data;
-    if (!D) return;
+    if (!D) { gl3dHide(); return; }
     const GR = Q3.grow; // the solid growing (startGrow)
     const dark = document.documentElement.classList.contains('dark');
     const gridColor = css.getPropertyValue('--plot-grid').trim(), axisColor = css.getPropertyValue('--plot-axis').trim();
@@ -11270,6 +11597,9 @@
     // a path on the floor of the box (z at its bottom), from points (u, v)
     const pane0 = (pts) => { pts.forEach(([u, v], i) => { proj(u, v, -EZ); if (i) g.lineTo(T[0], T[1]); else g.moveTo(T[0], T[1]); }); g.closePath(); };
     const pane = (corners) => { g.beginPath(); corners.forEach(([u, v, w], i) => { proj(u, v, w); if (i) g.lineTo(T[0], T[1]); else g.moveTo(T[0], T[1]); }); g.closePath(); g.fill(); g.stroke(); };
+    // (feature/3d-view: the box, its grid and axes can be turned off for a solid of "Solid from a profile", "Box")
+    const boxOff = !!(D.model && Q3.model && Q3.model.k === 'profile' && Q3.see && Q3.see.box === false);
+    if (!boxOff) {
     g.fillStyle = dark ? 'rgba(255,255,255,0.035)' : 'rgba(30,50,90,0.035)';
     g.strokeStyle = axisColor; g.lineWidth = 1;
     pane([[-EX, -EY, wb], [EX, -EY, wb], [EX, EY, wb], [-EX, EY, wb]]);
@@ -11280,6 +11610,7 @@
     for (const y of gy) { line(-EX, V(y), wb, EX, V(y), wb); line(ub, V(y), -EZ, ub, V(y), EZ); }
     for (const z of gz) { line(ub, -EY, Wz(z), ub, EY, Wz(z)); line(-EX, vb, Wz(z), EX, vb, Wz(z)); }
     g.stroke();
+    }
     // the surfaces: project every grid point once, then lay the cells over the pixels with a depth
     // buffer (surfacePaint, 1.9.2)
     const cells = [];
@@ -11736,7 +12067,7 @@
     const MD = D.model ? Q3.model : null;
     const MX = MD ? { proj, T, U, V, Wz, camN, LKS, lockLitN, RV, nx: (x1 - x0) / (2 * EX), ny: (y1 - y0) / (2 * EY), nz: (z1 - z0) / (2 * EZ) } : null;
     const mGrow = MD && GR && GR.ax === 'mesh' ? Math.max(0, Math.min(1, GR.theta / (2 * Math.PI))) : 1;
-    const mt0 = performance.now(), mTris = MD ? meshToTris(MD.tank ? MD.tank.liquid(MD.tank.hShow) : MD.mesh(mGrow), tb, MX) : 0, mMs = { tris: performance.now() - mt0 };
+    const mt0 = performance.now(), mMesh = MD ? (MD.tank ? MD.tank.liquid(MD.tank.hShow) : MD.mesh(mGrow)) : null, mTris = MD ? meshToTris(mMesh, tb, MX) : 0, mMs = { tris: performance.now() - mt0 };
     // shadows from the lamp of the highlight (1.11.0): on the floor of the box (while it is at the
     // back, seen from above) and of the surfaces on themselves and on each other. Not while "Volume and
     // surface" shows the measured solid, which keeps its own look (the liquid casts no shadow from the
@@ -11769,7 +12100,19 @@
     if (floor) { delete floor.layer; floor.ms = Math.round((performance.now() - tf) * 10) / 10; }
     // (the back of the glass of a tank, behind the liquid)
     if (MD && MD.tank) { const t0 = performance.now(); glassPaint(g, MD, MX, 'back', dark); mMs.back = performance.now() - t0; }
-    const surf = surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite: !!Q3.turning, k: shK } : null,
+    // (feature/3d-view: the solid of "Solid from a profile" with WebGL 2 when it is there, a prototype; the 2D canvas
+    // otherwise. The lamp kept on the box while turning, as for the 2D canvas, BG19)
+    const meshLines = mesh ? (dark ? [0, 0, 0, 0.38, 0.7] : [20, 30, 50, 0.28, 0.7]) : null;
+    const glWant = !!MD && MD.k === 'profile' && !MD.tank && gl3dWanted(), glOn = glWant && tb.n === mTris && gl3dReady();
+    const seeA = glOn && Q3.see && Q3.see.on ? Q3.see.a : 0;
+    let glR = null;
+    if (glOn) {
+      const lamp = LKS && shadows ? camN(LKS.lamp[0], LKS.lamp[1], LKS.lamp[2]) : LAMP;
+      glR = gl3dPaint(g, mMesh, { canvas: c, composite: !!(Q3.captureQ || Q3.composite), RV, U, V, Wz, nx: MX.nx, ny: MX.ny, nz: MX.nz, S, cx, cy, W, H, q: Q3.captureQ || Math.min(dpr, 3), ZR: Math.hypot(EX, EY, EZ) * 1.3, lamp, dark, mesh: meshLines, see: seeA, mat: MD.mat || null, shadow: shadows, layers: Q3.turning ? 4 : 6, finish: devFlag('ms3d') });
+    }
+    if (!glR) gl3dHide();
+    c.dataset.gl = JSON.stringify(glR ? Object.assign({ on: true, renderer: GL3D.renderer }, glR) : { on: false, wanted: glWant, ready: GL3D.state === 1, error: GL3D.error || '' });
+    const surf = glR ? { shown: glR.tris, q: Q3.captureQ || Math.min(dpr, 3), SM: null, zbuf: null, shadow: null } : surfacePaint(g, tb, { W, H, q: Q3.captureQ || (Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 3)), dark, mesh: meshLines, fade: fadeTo, cache: Q3, shadow: shadows ? { cx, cy, S, lite: !!Q3.turning, k: shK } : null,
       lock: LKS && shadows ? { L: camN(LKS.lamp[0], LKS.lamp[1], LKS.lamp[2]), map: LKS.SM ? [LKS.SM.MW, LKS.SM.MH] : null } : null });
     // (what the next turn keeps: the lamp's map and the floor's layer of this drawing, with its camera, BG19)
     if (!Q3.turning && shadows && !Q3.captureQ) Q3.lastShade = { D, dark, EX, EY, EZ, RV, SM: surf.SM || null, floor: floorLayerNow, lamp: lampInBox(RV) };
@@ -11795,9 +12138,11 @@
     const un = -ub, vn = -vb;
     let ze = null;
     for (const [eu, ev] of [[-EX, -EY], [-EX, EY], [EX, -EY], [EX, EY]]) { proj(eu, ev, 0); if (!ze || T[0] < ze.x) ze = { u: eu, v: ev, x: T[0] }; }
-    g.strokeStyle = axisColor; g.lineWidth = 1.2; g.beginPath();
-    line(-EX, vn, wb, EX, vn, wb); line(un, -EY, wb, un, EY, wb); line(ze.u, ze.v, -EZ, ze.u, ze.v, EZ);
-    g.stroke();
+    if (!boxOff) {
+      g.strokeStyle = axisColor; g.lineWidth = 1.2; g.beginPath();
+      line(-EX, vn, wb, EX, vn, wb); line(un, -EY, wb, un, EY, wb); line(ze.u, ze.v, -EZ, ze.u, ze.v, EZ);
+      g.stroke();
+    }
     g.fillStyle = axisColor; g.font = '11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     const out = (e, d) => e + Math.sign(e) * d; // a little outside the edge of the box
     // (feature/3d-view: the labels stay upright however the graph is turned; an axis seen end-on, as from the
@@ -11859,6 +12204,18 @@
     // fading out over the full drawing)
     Q3.lastDrawMs = performance.now() - t3;
     c.dataset.ms = String(Math.round(Q3.lastDrawMs));
+    // (feature/3d-view, test builds: "Show the time of a 3D drawing": how it was drawn and how long it took, at the lower
+    // left; while turning, also the frames a second)
+    if (devFlag('ms3d')) {
+      const now = performance.now(), fps = Q3.turning && Q3.msPrev ? Math.round(1000 / Math.max(1, now - Q3.msPrev)) : 0;
+      Q3.msPrev = now;
+      const txt = (glR ? 'WebGL 2' + (glR.layers ? ' · ' + (glR.see ? 'see-through' : 'clear') + ' ' + glR.layers : '') + (glR.mat ? ' · ' + glR.mat : '') : 'canvas') + ' · ' + tb.n + ' tris · ' + Math.round(Q3.lastDrawMs) + ' ms' + (glR ? ' (GPU ' + Math.round(glR.ms) + ')' : '') + (fps ? ' · ' + fps + ' fps' : '');
+      let mo = Q3.msEl;
+      if (!mo) mo = Q3.msEl = el('div', { class: 'plot-ms', 'aria-hidden': 'true' });
+      if (c.parentElement && mo.parentElement !== c.parentElement) c.parentElement.appendChild(mo);
+      mo.textContent = txt; mo.hidden = false;
+      c.dataset.msText = txt;
+    } else { delete c.dataset.msText; if (Q3.msEl) Q3.msEl.hidden = true; }
     c.dataset.view = JSON.stringify({ rot: RV.map((x) => Math.round(x * 1e4) / 1e4), pan: PAN.map(Math.round), zoom: Math.round(Q3.zoom * 1000) / 1000, labels: seen });
     if (crossFade) {
       c.dataset.fade = 'in';
@@ -12880,7 +13237,9 @@
     [tr('Stepped shaft (iron)', '段付きの軸（鉄）'), { unit: 'mm', dia: true, rows: [[0, 20], [30, 20], [30, 12], [70, 12]], inner: [], dens: 'iron' }],
     [tr('Cup', 'コップ'), { unit: 'cm', dia: true, rows: [[0, 6], [10, 8]], inner: [[0.5, 5.4], [10, 7.6]], dens: '' }],
     [tr('Vase', '花瓶'), { unit: 'cm', dia: true, rows: [[0, 8], [6, 14], [14, 10], [20, 6], [24, 7]], inner: [], dens: '' }]
-  ];
+  ].concat(PRO.billing === 'debug' && (window.QalcNative || devFlag('pf200')) ? [[tr('200 rows (test)', '200 行（試験用）'), { unit: 'mm', dia: true, rows: PF_ROWS200(), inner: [], dens: '' }]] : []);
+  // (feature/3d-view, test builds: a long profile, 200 rows of a turned part with waves and grooves, to time the 3D)
+  const PF_ROWS200 = () => Array.from({ length: 200 }, (_, i) => [i, Math.round((44 + 14 * Math.sin(i / 17) + 5 * Math.sin(i / 4.3) - (i % 40 < 3 ? 6 : 0)) * 10) / 10]);
   // the points of a profile: [{ z, r, zs, rs (as typed, for the exact expression) }] or { error, row }
   function pfPoints(rows, dia) {
     const pts = [];
@@ -13018,6 +13377,8 @@
         const vals = (D.vals || []).slice(), T = D.three;
         const model = profileModel(T.o, T.i, T.smooth);
         if (!model) { toast(tr('These sizes cannot be drawn in 3D', 'この大きさでは 3D で描けません'), 2600); return; }
+        // (feature/3d-view: the look of the material chosen for the weight, with WebGL 2)
+        model.mat = matLook(D.dens, D.dens === 'own' ? pfDensity('own', D.dv) : null);
         // above the graph: the outer volume, and the capacity of a container or the surface area
         const line = (name) => { const v = vals.find((x) => x.name === name); return v ? v.name + ' ' + v.text : ''; };
         openSolid3d({ model, title: tr('Solid from a profile', '輪郭から回転体'),
@@ -13175,7 +13536,11 @@
     const g = c.getContext('2d'), cs = getComputedStyle(document.documentElement);
     g.fillStyle = cs.getPropertyValue('--plot-bg').trim() || '#fff'; g.fillRect(0, 0, W, H + band);
     g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    // (feature/3d-view: a solid drawn with WebGL 2 is a layer over the canvas: drawn once into the canvas for the picture)
+    const glLayer = canvas === Q3.canvas && GL3D.cv && !GL3D.cv.hidden;
+    if (glLayer) { Q3.composite = true; try { draw3d(); } finally { Q3.composite = false; } }
     g.drawImage(canvas, 0, 0, W, H);
+    if (glLayer) requestDraw3d();
     if (band) {
       g.fillStyle = cs.getPropertyValue('--surface').trim() || '#f4f6fa'; g.fillRect(0, H, W, band);
       g.textBaseline = 'middle'; g.font = Math.round(13 * s) + 'px system-ui, sans-serif';
@@ -16344,6 +16709,15 @@
       });
       body.append(el('div', { class: 'section-title', text: tr('Test build', 'テスト版') }),
         el('label', { class: 'setting' }, el('div', { class: 'lbl' }, el('div', { text: tr('Pro unlocked (for testing)', 'Pro を有効にする（テスト用）') })), box));
+      // (feature/3d-view) WebGL 2 for "Solid from a profile" on or off, and the time of each 3D drawing in a corner
+      const flag = (k, label, def) => {
+        const b = el('input', { type: 'checkbox' });
+        try { const v = localStorage.getItem('qalc.dev.' + k); b.checked = v === null ? def : v === 'true'; } catch (e) { b.checked = def; }
+        b.addEventListener('change', () => { try { localStorage.setItem('qalc.dev.' + k, String(b.checked)); } catch (e) { } });
+        return el('label', { class: 'setting' }, el('div', { class: 'lbl' }, el('div', { text: label })), b);
+      };
+      body.append(flag('gl3d', tr('3D with WebGL (prototype: Solid from a profile)', '3D を WebGL で描く（試作：輪郭から回転体）'), true),
+        flag('ms3d', tr('Show the time of each 3D drawing (for testing)', '3D の描画時間を表示する（テスト用）'), false));
     }
   }
   function buyPro() {
