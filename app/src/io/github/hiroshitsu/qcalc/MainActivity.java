@@ -1083,16 +1083,24 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public boolean reviewAvailable() {
-            return review.available();
+            try {
+                return review.available();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "reviewAvailable", e);
+                return false;
+            }
         }
 
         /**
          * Asks Google Play for the review sheet; the page has decided that the time is right (app.js). The end is
          * reported as {"event":"review","state":"done"|"unavailable"|"none"}: "done" says only that Google Play
-         * went through the request, not that the sheet was shown.
+         * went through the request, not that the sheet was shown. kind is what has just worked ("3d", a tool's
+         * result, "test" for the button of the test builds); it is not used here. (The page passes it, and WebView
+         * finds a method of this class by its name and its number of arguments: a call with one argument does not
+         * reach a method without one, and fails with "Method not found".)
          */
         @JavascriptInterface
-        public void requestReview() {
+        public void requestReview(String kind) {
             onUi("requestReview", new Runnable() {
                 @Override
                 public void run() {
