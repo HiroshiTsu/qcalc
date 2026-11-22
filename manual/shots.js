@@ -28,7 +28,7 @@ async function start(browser, lang, q) {
       localStorage.setItem('qalc.lang', JSON.stringify(l));
       localStorage.setItem('qalc.settings', JSON.stringify({ auto_rates: false }));
       localStorage.setItem('qalc.moved112', 'true');
-      localStorage.setItem('qalc.news', JSON.stringify('1.12'));
+      localStorage.setItem('qalc.news', JSON.stringify('1.14'));
     } catch (e) { }
   }, lang);
   const page = await ctx.newPage();
