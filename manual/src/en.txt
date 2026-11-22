@@ -25,6 +25,15 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :tip: Tap an answer in the history to put it into the input field or to copy it.
 :mistake: The letter x is a variable, not "times". Multiply with the × key (or *).
 
+## new-1-14 | What is new in 1.14.0
+- **3D close to real things**: 3D is drawn by the device's GPU (WebGL 2), with real light and shadows: the 3D graph, [[!⟳ 3D]] in the 2D graph, the solids and tanks of the shapes, and the solid from a profile ([3D graph](#graph-3d)).
+- **See-through**: [[See-through]] lets you see through surfaces and solids: their back and inner faces and where two surfaces meet. The slider sets how opaque; with two things or more, choose which are see-through (for example only a tank's [[Container]]).
+- **Turn it any way**: one finger turns 3D in any direction, over the top and under the bottom too. The cube button gives [[From the front]], [[From above]] or [[From the side]] at once.
+- **Materials**: a solid looks like the material chosen in [[Material (density)]], and a tank's liquid like water, seawater, kerosene or gasoline. New materials: stainless steel, aluminium, copper, brass, wood, PLA, ABS and acrylic.
+- **3D once for free**: without QCalc Pro, 3D can be opened once for free ([What is free](#pro-free)).
+- **Rate on Google Play**: [[Rate on Google Play]] in [[About this app]] opens QCalc's page in Google Play for your stars and review.
+- **The range of a graph**: a and b typed right after drawing a graph are no longer replaced by the range the app finds ([Area and length](#area-length)).
+
 ## new-1-13 | What is new in 1.13.0
 - **Digits shown by each tool**: each tool shows its results with its own number of digits. Open [[Digits shown…]] from ⋯ at the right of the tool's title ([Digits shown by each tool](#digits)).
 - **Three ways to choose**: [[Recommended (automatic)]], [[Significant digits]] or [[Decimals]]; set the number with + and −.

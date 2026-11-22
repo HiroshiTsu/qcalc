@@ -1,0 +1,90 @@
+<en-US>
+• 3D drawn by the GPU: real light and shadows, real-looking metals and liquids
+• "See-through" in every 3D view: set how opaque; choose which formula or part (a tank's "Container")
+• Turn 3D any way with one finger; "From the front", "From above", "From the side"
+• New materials: stainless steel, aluminium, copper, brass, wood, PLA, ABS, acrylic
+• Without QCalc Pro, open 3D once for free
+• "Rate on Google Play" in "About this app"
+• Graph: a and b typed right after drawing are kept
+</en-US>
+<en-GB>
+• 3D drawn by the GPU: real light and shadows, real-looking metals and liquids
+• "See-through" in every 3D view: set how opaque; choose which formula or part (a tank's "Container")
+• Turn 3D any way with one finger; "From the front", "From above", "From the side"
+• New materials: stainless steel, aluminium, copper, brass, wood, PLA, ABS, acrylic
+• Without QCalc Pro, open 3D once for free
+• "Rate on Google Play" in "About this app"
+• Graph: a and b typed right after drawing are kept
+</en-GB>
+<ja-JP>
+・3D を端末の GPU で描くようになり、光と影、金属や液体の見た目が本物に近くなりました
+・どの 3D でも「透明」が使えます。濃さを変え、どの式・どの部分を透明にするかも選べます（タンクの「容器」だけ、など）
+・3D を 1 本の指でどの方向にも回せます。「正面」「上」「横」の向きにもすぐ変えられます
+・材料に、ステンレス・アルミニウム・銅・真ちゅう・木・PLA・ABS・アクリルを足しました
+・QCalc Pro がなくても、3D を 1 回だけ無料で開けます
+・「このアプリについて」に「Google Play で評価」を足しました
+・グラフの「面積・長さ」と「立体にする」で、描いた直後に入れた範囲 a・b が、探した範囲に置き換わることがあったのを直しました
+</ja-JP>
+<de-DE>
+• 3D mit der GPU: echtes Licht, Schatten, Metalle und Flüssigkeiten wie echt
+• „Durchsichtig“ in jeder 3D-Ansicht: Deckkraft, und was durchsichtig ist (z. B. der „Behälter“)
+• 3D mit einem Finger in jede Richtung drehen; „Von vorn“, „Von oben“, „Von der Seite“
+• Neue Materialien: Edelstahl, Aluminium, Kupfer, Messing, Holz, PLA, ABS, Acrylglas
+• Ohne QCalc Pro 3D einmal kostenlos öffnen
+• „Bei Google Play bewerten“ in „Über diese App“
+• Graph: direkt nach dem Zeichnen eingegebene a, b bleiben
+</de-DE>
+<es-ES>
+• 3D con la GPU: luz y sombras reales, metales y líquidos con su aspecto
+• «Transparente» en toda vista 3D: opacidad y qué parte lo es (el «Recipiente» de un depósito)
+• Gira el 3D en cualquier dirección con un dedo; «De frente», «Desde arriba», «De lado»
+• Nuevos materiales: acero inoxidable, aluminio, cobre, latón, madera, PLA, ABS, acrílico
+• Sin QCalc Pro, el 3D se abre una vez gratis
+• «Valorar en Google Play» en «Acerca de esta app»
+• Gráfico: a y b escritos tras dibujar se mantienen
+</es-ES>
+<es-419>
+• 3D con la GPU: luz y sombras reales, metales y líquidos con su aspecto
+• «Transparente» en toda vista 3D: opacidad y qué parte lo es (el «Recipiente» de un depósito)
+• Gira el 3D en cualquier dirección con un dedo; «De frente», «Desde arriba», «De lado»
+• Nuevos materiales: acero inoxidable, aluminio, cobre, latón, madera, PLA, ABS, acrílico
+• Sin QCalc Pro, el 3D se abre una vez gratis
+• «Valorar en Google Play» en «Acerca de esta app»
+• Gráfico: a y b escritos tras dibujar se mantienen
+</es-419>
+<fr-FR>
+• 3D par le GPU : lumière et ombres réelles, métaux et liquides réalistes
+• « Transparent » dans toute vue 3D : opacité, et ce qui est transparent (le « Récipient »)
+• La 3D tourne dans tous les sens d’un doigt ; « De face », « De dessus », « De côté »
+• Nouveaux matériaux : inox, aluminium, cuivre, laiton, bois, PLA, ABS, acrylique
+• Sans QCalc Pro, la 3D s’ouvre une fois gratuitement
+• « Noter sur Google Play » dans « À propos de cette app »
+• Graphique : a et b saisis après le tracé restent
+</fr-FR>
+<fr-CA>
+• 3D par le GPU : lumière et ombres réelles, métaux et liquides réalistes
+• « Transparent » dans toute vue 3D : opacité, et ce qui est transparent (le « Récipient »)
+• La 3D tourne dans tous les sens d’un doigt ; « De face », « De dessus », « De côté »
+• Nouveaux matériaux : inox, aluminium, cuivre, laiton, bois, PLA, ABS, acrylique
+• Sans QCalc Pro, la 3D s’ouvre une fois gratuitement
+• « Noter sur Google Play » dans « À propos de cette app »
+• Graphique : a et b saisis après le tracé restent
+</fr-CA>
+<ko-KR>
+• 3D를 기기의 GPU로 그려 빛과 그림자, 금속과 액체가 실물에 가까워졌습니다
+• 모든 3D에서 ‘투명’을 쓸 수 있습니다. 불투명도를 바꾸고, 어느 식·어느 부분을 투명하게 할지 고를 수 있습니다(탱크의 ‘용기’만 등)
+• 3D를 손가락 하나로 어느 방향으로든 돌릴 수 있고, ‘정면’·‘위’·‘옆’으로 바로 바꿀 수 있습니다
+• 재료에 스테인리스강·알루미늄·구리·황동·나무·PLA·ABS·아크릴을 더했습니다
+• QCalc Pro가 없어도 3D를 한 번 무료로 열 수 있습니다
+• ‘앱 정보’에 ‘Google Play에서 평가하기’를 더했습니다
+• 그래프의 ‘넓이·길이’와 ‘입체 만들기’에서 그린 직후에 입력한 범위 a·b가 앱이 찾은 범위로 바뀌던 것을 고쳤습니다
+</ko-KR>
+<zh-TW>
+• 3D 改由裝置的 GPU 繪製，光線與陰影、金屬與液體的樣子更接近真實
+• 所有 3D 都能使用「透明」：可調整不透明度，並選擇哪個式子或哪個部分要透明（例如只有儲槽的「容器」）
+• 用一根手指就能往任何方向旋轉 3D，也能立即改為「正面」「上方」「側面」
+• 材料新增不鏽鋼、鋁、銅、黃銅、木、PLA、ABS、壓克力
+• 沒有 QCalc Pro 也能免費開啟一次 3D
+• 「關於這個 App」新增「到 Google Play 評分」
+• 修正「圖形」的「面積與長度」和「做成立體」中，畫完後馬上輸入的範圍 a、b 會被 App 找到的範圍取代的問題
+</zh-TW>

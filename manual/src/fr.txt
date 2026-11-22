@@ -25,6 +25,15 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :tip: Touchez un résultat de l'historique pour le mettre dans le champ de saisie ou le copier.
 :mistake: La lettre x est une variable, pas « fois ». Multipliez avec la touche × (ou *).
 
+## new-1-14 | Nouveautés de la 1.14.0
+- **Une 3D presque réelle** : la 3D est dessinée par le GPU de l’appareil (WebGL 2), avec une lumière et des ombres réelles : le graphique 3D, [[!⟳ 3D]] dans le graphique 2D, les solides et les cuves des formes, et le solide à partir d’un profil ([Graphique 3D](#graph-3d)).
+- **Transparent** : [[See-through]] permet de voir à travers les surfaces et les solides : leurs faces arrière et intérieures et l’intersection de deux surfaces. Le curseur règle l’opacité ; avec deux choses ou plus, choisissez ce qui est transparent (par exemple seulement le [[Container]] d’une cuve).
+- **Tourner dans tous les sens** : un doigt fait tourner la 3D dans tous les sens, y compris par-dessus et par-dessous. Le bouton au cube propose aussitôt [[From the front]], [[From above]] ou [[From the side]].
+- **Matériaux** : un solide a l’aspect du matériau choisi dans [[Material (density)]], et le liquide d’une cuve celui de l’eau, de l’eau de mer, du kérosène ou de l’essence. Nouveaux matériaux : acier inoxydable, aluminium, cuivre, laiton, bois, PLA, ABS et acrylique.
+- **La 3D une fois gratuitement** : sans QCalc Pro, la 3D peut s’ouvrir une fois gratuitement ([Ce qui est gratuit](#pro-free)).
+- **Noter sur Google Play** : [[Rate on Google Play]] dans [[About this app]] ouvre la page de QCalc sur Google Play pour vos étoiles et votre avis.
+- **L’intervalle d’un graphique** : a et b saisis juste après le tracé ne sont plus remplacés par l’intervalle que l’app trouve ([Aire et longueur](#area-length)).
+
 ## new-1-13 | Nouveautés de la 1.13.0
 - **Chiffres affichés par outil** : chaque outil affiche ses résultats avec son propre nombre de chiffres. Ouvrez [[Digits shown…]] par ⋯ à droite du titre de l'outil ([Chiffres affichés par outil](#digits)).
 - **Trois façons de choisir** : [[Recommended (automatic)]], [[Significant digits]] ou [[Decimals]] ; le nombre se règle avec + et −.

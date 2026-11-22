@@ -25,6 +25,15 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :tip: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu übernehmen oder zu kopieren.
 :mistake: Der Buchstabe x ist eine Variable, kein „mal“. Multiplizieren Sie mit der Taste × (oder *).
 
+## new-1-14 | Neu in 1.14.0
+- **3D fast wie echt**: 3D wird mit der GPU des Geräts (WebGL 2) gezeichnet, mit echtem Licht und Schatten: der 3D-Graph, [[!⟳ 3D]] im 2D-Graph, die Körper und Tanks der Formen und der Körper aus einem Profil ([3D-Graph](#graph-3d)).
+- **Durchsichtig**: Mit [[See-through]] sehen Sie durch Flächen und Körper: Rück- und Innenseiten und die Stellen, an denen sich zwei Flächen schneiden. Der Schieberegler stellt die Deckkraft ein; bei zwei oder mehr Dingen wählen Sie, was durchsichtig ist (zum Beispiel nur der [[Container]] eines Tanks).
+- **In jede Richtung drehen**: Ein Finger dreht 3D in jede Richtung, auch über oben und unten hinaus. Die Würfel-Schaltfläche wählt sofort [[From the front]], [[From above]] oder [[From the side]].
+- **Materialien**: Ein Körper sieht aus wie das in [[Material (density)]] gewählte Material, die Flüssigkeit eines Tanks wie Wasser, Meerwasser, Petroleum oder Benzin. Neue Materialien: Edelstahl, Aluminium, Kupfer, Messing, Holz, PLA, ABS und Acrylglas.
+- **3D einmal kostenlos**: Ohne QCalc Pro lässt sich 3D einmal kostenlos öffnen ([Was kostenlos ist](#pro-free)).
+- **Bei Google Play bewerten**: [[Rate on Google Play]] unter [[About this app]] öffnet die Seite von QCalc bei Google Play für Ihre Sterne und Rezension.
+- **Der Bereich eines Graphen**: Direkt nach dem Zeichnen eingegebene a und b werden nicht mehr durch den gefundenen Bereich ersetzt ([Fläche und Länge](#area-length)).
+
 ## new-1-13 | Neu in 1.13.0
 - **Angezeigte Stellen je Werkzeug**: Jedes Werkzeug zeigt seine Ergebnisse mit eigener Stellenzahl. Öffnen Sie [[Digits shown…]] über ⋯ rechts neben dem Titel des Werkzeugs ([Angezeigte Stellen je Werkzeug](#digits)).
 - **Drei Arten der Wahl**: [[Recommended (automatic)]], [[Significant digits]] oder [[Decimals]]; die Zahl stellen Sie mit + und − ein.

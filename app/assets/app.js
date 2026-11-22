@@ -14815,13 +14815,13 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // ------------------------------------------------------- what is new
   // On the first start of a new version, a card with what is new, once (1.12.0): to those who used
   // an earlier version, each with "Try it". Closed, it does not come again.
-  const NEWS_VERSION = '1.12';
+  // (1.14.0: a card again, as what is seen changes much: the 3D drawn by the GPU with see-through, and the free trial of
+  // 3D for those without QCalc Pro while it is left; 1.13.0 had none)
+  const NEWS_VERSION = '1.14';
   const NEWS = () => [
-    ['🧰', tr('Tools: find a tool by what you want to do', '道具：やりたいことで探せます'), () => openTools()],
-    ['🔢', tr('Number format: a decimal comma (1,5) if you like', '数の書き方：小数点を「,」にもできます'), () => openSettings()],
-    ['🕘', tr('History: search, pin with a star, notes, add up lines', '履歴：検索・星で固定・メモ・選んで合計'), () => historyActions()],
-    ['📈', tr('Graph: one switch for the area and the length', 'グラフ：面積と長さを切り替えて表示'), () => openAreaTool()]
-  ];
+    ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
+    try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
+  ].filter(Boolean);
   // the card is the last thing in the history, just above the field (it covers nothing); it goes
   // with the first calculation, its ×, or a "Try it"
   function closeNews() { if (newsCard) { newsCard.remove(); newsCard = null; } }
@@ -14837,7 +14837,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         el('button', { class: 'btn news-try', type: 'button', text: tr('Try it', '試す'), 'aria-label': tr('Try it', '試す') + ': ' + text, onclick: () => { closeNews(); run(); } })));
     }
     // (1.12.0, H) everything new, step by step: the section of the user manual
-    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.12.0 (user manual) ›', '1.12.0 の新しい機能（説明書）›') }, () => openManual('new-1-12'))));
+    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.14.0 (user manual) ›', '1.14.0 の新しい機能（説明書）›') }, () => openManual('new-1-14'))));
     newsCard = card;
     histEl.append(card);
     // its title and × in sight, also when the history is short (memory keys, a small screen)
