@@ -305,7 +305,8 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :what: The shape of [[Solids]] or [[Tanks]], with the sizes typed, in 3D to turn. Above it, the volume and the surface area of the tool (for a tank, the amount of liquid and the capacity), large.
 :step: In [[Solids]] or [[Tanks]] of the tools, choose a shape and type its sizes.
 :step: Press [[!⟳ 3D]] at the top left of the picture (read out as [[View in 3D]]). The shape grows into 3D.
-:step: Turn it with one finger, zoom with two. A solid of revolution shows its cut with [[Cut in half]].
+:step: Turn it any way with one finger (over the top and under the bottom too). With two fingers, pinch to zoom, move them together to shift the picture, and twist them to turn it in the screen. A solid of revolution shows its cut with [[Cut in half]].
+:step: The cube button gives [[From the front]], [[From above]] or [[From the side]] at once. [[!⟲]] gives the first view and size back.
 :step: [[← Back to the shape]] goes back to the tool with the same shape and sizes.
 :shot: shapes3d | A lying tank with heads in 3D
 :example: A cylinder of diameter 30 cm and height 50 cm → volume 11250π ≈ 35342.91735 cm³
@@ -407,7 +408,8 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :what: Draws surfaces z = f(x, y) and solids in 3D that you can turn with a finger.
 :step: Choose [[3D  z = f(x, y)]] in [[Graph]].
 :step: Type up to four functions and the ranges of x and y, then press [[Draw]].
-:step: Turn with one finger, zoom with two.
+:step: Turn it any way with one finger (over the top and under the bottom too). With two fingers, pinch to zoom, move them together to shift the picture, and twist them to turn it in the screen.
+:step: The cube button gives [[From the front]], [[From above]] or [[From the side]] at once. [[!⟲]] gives the first view and size back.
 :shot: graph3d | The 3D graph (the sample sphere)
 :tip: [[Partial derivatives ▾]] draws ∂f/∂x and ∂f/∂y.
 

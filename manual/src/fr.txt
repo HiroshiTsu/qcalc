@@ -305,7 +305,8 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :what: La forme de [[Solids]] ou de [[Tanks]], avec les dimensions saisies, en 3D à faire tourner. Au-dessus, en grand, le volume et l’aire de la surface de l’outil (pour une cuve, la quantité de liquide et la capacité).
 :step: Dans [[Solids]] ou [[Tanks]] des outils, choisissez une forme et saisissez ses dimensions.
 :step: Appuyez sur [[!⟳ 3D]] en haut à gauche du dessin (lu comme [[View in 3D]]). La forme grandit en 3D.
-:step: Faites-la tourner d’un doigt, zoomez à deux doigts. Un solide de révolution montre sa coupe avec [[Cut in half]].
+:step: Faites tourner dans tous les sens d’un doigt (y compris par-dessus et par-dessous). À deux doigts : pincez pour zoomer, faites-les glisser ensemble pour déplacer l’image, tournez-les pour la faire pivoter dans l’écran. Un solide de révolution montre sa coupe avec [[Cut in half]].
+:step: Le bouton au cube propose aussitôt [[From the front]], [[From above]] ou [[From the side]]. [[!⟲]] rétablit la vue et la taille de départ.
 :step: [[← Back to the shape]] revient à l’outil avec la même forme et les mêmes dimensions.
 :shot: shapes3d | Une cuve horizontale avec fonds en 3D
 :example: Un cylindre de 30 cm de diamètre et de 50 cm de hauteur → volume 11250π ≈ 35342,91735 cm³
@@ -407,7 +408,8 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :what: Trace des surfaces z = f(x, y) et des solides en 3D que vous faites tourner au doigt.
 :step: Choisissez [[!3D  z = f(x, y)]] dans [[Graph]].
 :step: Tapez jusqu'à quatre fonctions et les intervalles de x et de y, puis appuyez sur [[Draw]].
-:step: Faites tourner avec un doigt et zoomez avec deux.
+:step: Faites tourner dans tous les sens d’un doigt (y compris par-dessus et par-dessous). À deux doigts : pincez pour zoomer, faites-les glisser ensemble pour déplacer l’image, tournez-les pour la faire pivoter dans l’écran.
+:step: Le bouton au cube propose aussitôt [[From the front]], [[From above]] ou [[From the side]]. [[!⟲]] rétablit la vue et la taille de départ.
 :shot: graph3d | Le graphique 3D (la sphère de l'exemple)
 :tip: [[Partial derivatives ▾]] trace ∂f/∂x et ∂f/∂y.
 

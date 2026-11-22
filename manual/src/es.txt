@@ -305,7 +305,8 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :what: La figura de [[Solids]] o [[Tanks]], con las medidas escritas, en 3D para girarla. Encima, en grande, el volumen y el área superficial de la herramienta (en un depósito, la cantidad de líquido y la capacidad).
 :step: En [[Solids]] o [[Tanks]] de las herramientas, elija una figura y escriba sus medidas.
 :step: Pulse [[!⟳ 3D]] arriba a la izquierda del dibujo (se lee como [[View in 3D]]). La figura crece en 3D.
-:step: Gírela con un dedo y amplíe con dos. Un sólido de revolución muestra su corte con [[Cut in half]].
+:step: Gire en cualquier dirección con un dedo (también por encima y por debajo). Con dos dedos: pellizque para ampliar o reducir, deslícelos juntos para mover la imagen y gírelos para girarla en la pantalla. Un sólido de revolución muestra su corte con [[Cut in half]].
+:step: Con el botón del cubo elige al instante [[From the front]], [[From above]] o [[From the side]]. [[!⟲]] vuelve a la vista y el tamaño iniciales.
 :step: [[← Back to the shape]] vuelve a la herramienta con la misma figura y las mismas medidas.
 :shot: shapes3d | Un depósito horizontal con fondos en 3D
 :example: Un cilindro de 30 cm de diámetro y 50 cm de altura → volumen 11250π ≈ 35342,91735 cm³
@@ -407,7 +408,8 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :what: Dibuja superficies z = f(x, y) y sólidos en 3D que puedes girar con el dedo.
 :step: Elige [[!3D  z = f(x, y)]] en [[Graph]].
 :step: Escribe hasta cuatro funciones y los intervalos de x e y, y pulsa [[Draw]].
-:step: Gira con un dedo y amplía con dos.
+:step: Gire en cualquier dirección con un dedo (también por encima y por debajo). Con dos dedos: pellizque para ampliar o reducir, deslícelos juntos para mover la imagen y gírelos para girarla en la pantalla.
+:step: Con el botón del cubo elige al instante [[From the front]], [[From above]] o [[From the side]]. [[!⟲]] vuelve a la vista y el tamaño iniciales.
 :shot: graph3d | La gráfica 3D (la esfera de ejemplo)
 :tip: [[Partial derivatives ▾]] dibuja ∂f/∂x y ∂f/∂y.
 

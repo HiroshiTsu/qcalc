@@ -305,7 +305,8 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :what: Die Form aus [[Solids]] oder [[Tanks]] mit den eingegebenen Maßen in 3D zum Drehen. Darüber groß das Volumen und die Oberfläche des Werkzeugs (bei einem Tank die Füllmenge und das Fassungsvermögen).
 :step: Wählen Sie in [[Solids]] oder [[Tanks]] der Werkzeuge eine Form und geben Sie die Maße ein.
 :step: Tippen Sie oben links am Bild auf [[!⟳ 3D]] (vorgelesen als [[View in 3D]]). Die Form wächst in 3D.
-:step: Mit einem Finger drehen, mit zwei zoomen. Ein Rotationskörper zeigt mit [[Cut in half]] seinen Schnitt.
+:step: Mit einem Finger in jede Richtung drehen (auch über oben und unten hinaus). Mit zwei Fingern: auseinander oder zusammen zum Zoomen, gemeinsam ziehen zum Verschieben, verdrehen zum Drehen im Bild. Ein Rotationskörper zeigt mit [[Cut in half]] seinen Schnitt.
+:step: Mit der Würfel-Schaltfläche wählen Sie sofort [[From the front]], [[From above]] oder [[From the side]]. [[!⟲]] stellt die erste Ansicht und Größe wieder her.
 :step: [[← Back to the shape]] führt mit derselben Form und denselben Maßen zum Werkzeug zurück.
 :shot: shapes3d | Ein liegender Tank mit Böden in 3D
 :example: Ein Zylinder mit 30 cm Durchmesser und 50 cm Höhe → Volumen 11250π ≈ 35342,91735 cm³
@@ -407,7 +408,8 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :what: Zeichnet Flächen z = f(x, y) und Körper in 3D, die Sie mit dem Finger drehen können.
 :step: Wählen Sie [[!3D  z = f(x, y)]] unter [[Graph]].
 :step: Geben Sie bis zu vier Funktionen und die Bereiche von x und y ein und drücken Sie [[Draw]].
-:step: Mit einem Finger drehen, mit zwei zoomen.
+:step: Mit einem Finger in jede Richtung drehen (auch über oben und unten hinaus). Mit zwei Fingern: auseinander oder zusammen zum Zoomen, gemeinsam ziehen zum Verschieben, verdrehen zum Drehen im Bild.
+:step: Mit der Würfel-Schaltfläche wählen Sie sofort [[From the front]], [[From above]] oder [[From the side]]. [[!⟲]] stellt die erste Ansicht und Größe wieder her.
 :shot: graph3d | Der 3D-Graph (die Beispielkugel)
 :tip: [[Partial derivatives ▾]] zeichnet ∂f/∂x und ∂f/∂y.
 
