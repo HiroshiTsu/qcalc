@@ -11890,11 +11890,12 @@
     Q3.tip.style.display = 'block';
     draw3d();
   }
-  // (feature/3d-view) one finger turns the graph any way, as a ball under the finger: a drag to the right turns
-  // its front to the right, a drag down turns its front down, about an axis in the screen at right angles to the
-  // drag, 0.01 radian a CSS pixel, over the top and under the bottom too (until 1.13.0: about the z axis and a
-  // tilt of at most ±86°). Two fingers: pinch to zoom (about the point between them), move them together to
-  // shift the picture, twist them to turn it in the screen (after 7° of twist, so that a pinch does not turn it)
+  // (feature/3d-view) one finger: a drag to the side turns the graph about the z axis of the box, so the floor does
+  // not tip (the owner's choice, 11-22 13:17, instead of a ball under the finger); a drag up or down turns it up or
+  // down about the screen's horizontal axis, over the top and under the bottom too (until 1.13.0 at most ±86°);
+  // 0.01 radian a CSS pixel. Upside down, the turn about z goes the other way, so that the front still follows the
+  // finger. Two fingers: pinch to zoom (about the point between them), move them together to shift the picture,
+  // twist them to turn it in the screen (after 7° of twist, so that a pinch does not turn it)
   function setup3dGestures(wrap) {
     const pts = new Map(), last = new Map();
     let start = null, moved = false, lv = null, two = null;
@@ -11939,8 +11940,13 @@
         const q = last.get(ids[0]) || p0, dx = p1.x - q.x, dy = p1.y - q.y, d = Math.hypot(dx, dy);
         keepLast();
         if (!(d > 0)) return;
-        // (the camera's y is up and the screen's down: the axis (−dy, −dx, 0) in the camera's axes)
-        Q3.rot = rotFix(rotMul(rotAxis(-dy / d, -dx / d, 0, d * 0.01), Q3.rot));
+        let R = Q3.rot;
+        // across: about the box's z axis (on the right of R); the other way while upside down (the camera's up has a
+        // negative z)
+        if (dx) { const a = dx * 0.01 * (R[5] < 0 ? -1 : 1), c = Math.cos(a), s = Math.sin(a); R = rotMul(R, [c, -s, 0, s, c, 0, 0, 0, 1]); }
+        // up and down: about the camera's x axis (on the left; the camera's y is up and the screen's down)
+        if (dy) R = rotMul(rotAxis(-1, 0, 0, dy * 0.01), R);
+        Q3.rot = rotFix(R);
       } else {
         const a0 = last.get(ids[0]), b0 = last.get(ids[1]), a1 = pts.get(ids[0]), b1 = pts.get(ids[1]);
         if (!a0 || !b0) { keepLast(); return; }
