@@ -40,7 +40,7 @@ QCalc は Qalculate! の公式アプリではなく、Qalculate! の開発者と
 
 QCalc Pro は Google Play での買い切りの購入（1 回限りのアイテム `qcalc_pro`）で、1000 桁を超える有効桁数、3D グラフ、配色テーマ、履歴の書き出しと、今後のバージョンで増える Pro 機能が使えるようになります。そのほかの機能は無料のままです。版 1.12.0 からは、作者の決定により、学習と日常に使うものは無料、主に仕事に使うものを Pro にしています：表の CSV 保存、タンクの鏡板（半球・半楕円・皿形）と早見表、輪郭（測った位置と直径）から回転体（体積・容量・重さ・表面積）、3D プリンター用の STL ファイル、3D グラフの動く GIF と透かしのない最大解像度の画像、2 つ目以降の計算メモとファイルへの書き出し。どの機能を Pro にするかは 1 か所（`app/assets/app.js` の `PRO_GATES`）で決めていて、一度無料にした機能を Pro にすることはありません。
 
-- 購入は Google Play Billing Library で行います（`app/src-billing/PlayBilling.java`）。これは Gradle で `qcalc.billing=true` にしたときだけビルドに入ります（`app/build.gradle`）。`build-apk.sh`・`build-aab.sh` では入りません。
+- 購入は Google Play Billing Library で行います（`app/src-billing/PlayBilling.java`）。Google Play のアプリ内レビューのシートは Play In-App Review Library で頼みます（`app/src-billing/PlayReview.java`。いつ・どのくらいの間隔で頼むかは `app/assets/app.js` の「In-App Review」）。どちらも Gradle で `qcalc.billing=true` にしたときだけビルドに入ります（`app/build.gradle`）。`build-apk.sh`・`build-aab.sh` では入らず、そのビルドはレビューのシートを頼みません。
 - **ライブラリの入っていないビルドでは Pro を買えないため、何も制限しません**（Pro 以前と同じく、すべての機能を無料で使えます）。テスト版（`.debug`）は最初から Pro が有効で、Pro の画面で無効にして、無料版の見え方を確かめられます。
 - Pro が始まる前から QCalc を使っている人は、Pro の機能を無料のまま使えます（`Pro.java`）。
 
@@ -70,7 +70,7 @@ QCalc Pro は Google Play での買い切りの購入（1 回限りのアイテ�
 | --- | --- |
 | `bridge/qalc-engine.cc` | libqalculate を呼び出す小さなプログラム（1 行 1 件の JSON でアプリとやりとり） |
 | `app/AndroidManifest.xml`, `app/src/` | Android 側の Java コード（WebView、エンジンの起動と監視、為替レートの取得、履歴などの保存、QCalc Pro、言語、ウィジェット・クイック設定のタイル・ショートカット（`Widget`、`QuickTile`、`Quick`、`QuickText`）、グラフの画像の共有（`ShareFiles`、`ShareProvider`）） |
-| `app/src-billing/` | Google Play Billing Library を使う QCalc Pro の購入（Gradle で `qcalc.billing=true` のときだけ） |
+| `app/src-billing/` | Google Play Billing Library を使う QCalc Pro の購入と、Play In-App Review Library を使う Google Play のアプリ内レビューのシート（Gradle で `qcalc.billing=true` のときだけ） |
 | `app/res/`, `app/res-debug/` | アプリ名、テーマ、ランチャーのアイコン（`res-debug` はテスト版の名前「QCalc (debug)」） |
 | `app/assets/` | 画面（HTML / CSS / JavaScript）。`mathview.js` は式を数式の形に直し、KaTeX（`katex/`）で表示します。`licenses.js` はアプリに組み込んだソフトウェアのライセンス文 |
 | `app/jniLibs/arm64-v8a/libqalcengine.so` | ビルド済みの計算エンジン（arm64 の実行ファイル。`build-engine.sh` で作り直せます） |
@@ -155,7 +155,7 @@ QCalc は Google Play アプリ署名を使います。アプリに署名する�
 
 QCalc は GNU General Public License v2 以降（[LICENSE](LICENSE)）のフリーソフトウェアです。libqalculate も GPL v2 以降です。
 
-特別な例外として、QCalc 自身のコード（このリポジトリの `third_party/` 以外）の著作権者は、これを Google Play Billing Library とそれが必要とするライブラリにリンクし、その結果を配布することを、それらのライブラリに GPL を適用せずに許可します。libqalculate など、ほかの GPL のソフトウェアはこの例外の対象ではありません。QCalc のアプリのコードは libqalculate にリンクしておらず、libqalculate は別のプログラム（計算エンジン）として動きます。
+特別な例外として、QCalc 自身のコード（このリポジトリの `third_party/` 以外）の著作権者は、これを Google Play Billing Library と Play In-App Review Library（`com.google.android.play:review`）、およびそれらが必要とするライブラリにリンクし、その結果を配布することを、それらのライブラリに GPL を適用せずに許可します。libqalculate など、ほかの GPL のソフトウェアはこの例外の対象ではありません。QCalc のアプリのコードは libqalculate にリンクしておらず、libqalculate は別のプログラム（計算エンジン）として動きます。
 
 計算エンジンには、GMP（LGPL v3 以降 または GPL v2 以降）、MPFR（LGPL v3 以降）、FLINT（LGPL v3 以降）、libxml2（MIT）、zig に同梱の musl libc（MIT）、LLVM libc++ / libc++abi / libunwind（Apache License 2.0 with LLVM Exceptions）、compiler_rt（MIT）も組み込んでいます。MPFR と FLINT が LGPL v3 以降のため、エンジン全体は GNU GPL v3 以降の条件で配布しています。画面の数式表示には KaTeX 0.16.11（MIT、`app/assets/katex/`）を使っています。これらのソースは `third_party/` にあり、ライセンスの全文はアプリの「このアプリについて」→「オープンソースライセンス」で読めます。
 

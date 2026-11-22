@@ -16,6 +16,7 @@ python3 manual/build.py          # makes both forms and checks them (Python stan
 python3 manual/build.py --check  # only checks
 python3 manual/pdf.py            # the PDFs, printed from the web version by Chromium (give its path with CHROME=...)
 node manual/shots.js <url> [langs]   # (only when the screens change) the photos, with Node.js and Playwright
+node manual/pro-photos.js            # (after shots.js) the parts of the photos shown on the Pro sheet: app/assets/pro/<lang>/
 ```
 
 The check fails when a name of a button or a screen written as `[[...]]` is not a text of the app in that

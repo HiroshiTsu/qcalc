@@ -85,6 +85,8 @@ public class MainActivity extends Activity {
     };
     /** QCalc Pro (the purchase in Google Play, see Pro.java). */
     private Pro pro;
+    /** Google Play's in-app review sheet (only in the build for Google Play, see Review.java). */
+    private final Review review = new Review();
     /** The text of a file being saved, while the system's file picker is open. */
     private String pendingSave;
     /** The page's setting "Light or dark": "system" (the phone's setting), "light" or "dark". */
@@ -585,16 +587,27 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Opens web links in the browser and mailto: links in the mail app; other kinds of links are ignored. */
+    /** Opens web links in the browser, mailto: links in the mail app and the page of QCalc in the Play Store app; other kinds of links are ignored. */
     private void openExternal(String url) {
-        // a web page in the browser, or (1.12.0, "Send a bug report or an idea") a mail draft in the
-        // mail app; nothing else (Links)
+        // a web page in the browser, (1.12.0, "Send a bug report or an idea") a mail draft in the mail
+        // app, or (feature/ratings, "Rate on Google Play") the page of QCalc in the Play Store app, and
+        // the same page in the browser when no app opens it (a phone without the Play Store); nothing
+        // else (Links)
         String kind = Links.kind(url);
         if (kind == null) return;
         Uri u = Uri.parse(url);
         try {
-            startActivity(new Intent(Links.MAIL.equals(kind) ? Intent.ACTION_SENDTO : Intent.ACTION_VIEW, u));
-        } catch (Exception ignored) {
+            Intent i = new Intent(Links.MAIL.equals(kind) ? Intent.ACTION_SENDTO : Intent.ACTION_VIEW, u);
+            // the Play Store in a task of its own, so that Back comes back to QCalc
+            if (Links.STORE.equals(kind)) i.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_NEW_DOCUMENT | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+            startActivity(i);
+        } catch (Exception e) {
+            String other = Links.fallback(url);
+            if (other == null) return;
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(other)));
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -1061,6 +1074,53 @@ public class MainActivity extends Activity {
                 if (pro != null) pro.setTestUnlocked(unlocked);
             } catch (RuntimeException e) {
                 Log.e(TAG, "setTestPro", e);
+            }
+        }
+
+        /**
+         * Google Play's in-app review sheet (feature/ratings): whether this build can ask for it (the build for
+         * Google Play has the Play In-App Review Library; see Review.java).
+         */
+        @JavascriptInterface
+        public boolean reviewAvailable() {
+            try {
+                return review.available();
+            } catch (RuntimeException e) {
+                Log.e(TAG, "reviewAvailable", e);
+                return false;
+            }
+        }
+
+        /**
+         * Asks Google Play for the review sheet; the page has decided that the time is right (app.js). The end is
+         * reported as {"event":"review","state":"done"|"unavailable"|"none"}: "done" says only that Google Play
+         * went through the request, not that the sheet was shown. kind is what has just worked ("3d", a tool's
+         * result, "test" for the button of the test builds); it is not used here. (The page passes it, and WebView
+         * finds a method of this class by its name and its number of arguments: a call with one argument does not
+         * reach a method without one, and fails with "Method not found".)
+         */
+        @JavascriptInterface
+        public void requestReview(String kind) {
+            onUi("requestReview", new Runnable() {
+                @Override
+                public void run() {
+                    review.ask(MainActivity.this, new Review.Done() {
+                        @Override
+                        public void done(String state) {
+                            sendEvent("{\"event\":\"review\",\"state\":" + JSONObject.quote(state) + "}");
+                        }
+                    });
+                }
+            });
+        }
+
+        /** When the app was first installed on this phone (ms since 1970; an update keeps it), or 0. */
+        @JavascriptInterface
+        public double installTime() {
+            try {
+                return getPackageManager().getPackageInfo(getPackageName(), 0).firstInstallTime;
+            } catch (Exception e) {
+                return 0;
             }
         }
 

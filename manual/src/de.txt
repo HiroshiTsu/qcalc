@@ -502,6 +502,7 @@ Numerische Integration (Flächen, Längen und Volumen im Graphen) ist auf etwa 2
 
 ## about | Über diese App und Datenschutz
 :what: [[About this app]] zeigt die Version, den Datenschutz, die Lizenzen und Links zum Quellcode.
+- [[Rate on Google Play]] öffnet die Seite von QCalc bei Google Play; dort kannst du Sterne vergeben und eine Rezension schreiben.
 - [[Tell someone about QCalc]] teilt die Adresse von QCalc bei Google Play.
 - [[Send a bug report or an idea]] öffnet einen Entwurf in der Mail-App, nur mit Version, Gerät und Sprache; ob du ihn sendest, entscheidest du.
 - QCalc sammelt keine persönlichen Daten und sendet nichts.
@@ -512,6 +513,7 @@ Numerische Integration (Flächen, Längen und Volumen im Graphen) ist auf etwa 2
 
 ## pro-free | Was kostenlos ist
 :what: Rechnungen, 2D-Graphen, Flächen und Längen, Rotationskörper, Formen, Tanks (flache Böden), die Alltagswerkzeuge, Umrechnung, Statistik, die erste Rechennotiz, das Widget und diese Anleitung sind kostenlos, ohne Werbung.
+- Ohne Pro lässt sich 3D einmal kostenlos ausprobieren. Die 3D-Ansicht zeigt dann „Kostenloser 3D-Test, nur einmal“, und der Test endet, wenn die 3D-Ansicht geschlossen wird. GIF, STL und die anderen Exporte gehören nicht dazu.
 
 ## pro-features | Was QCalc Pro hinzufügt
 :what: Ein Kauf schaltet alle Pro-Funktionen frei, auch die späterer Updates. Kein Abo, keine Werbung.
@@ -544,7 +546,7 @@ Der Preis wird im Kaufbildschirm von Google Play angezeigt.
 - **x ergibt seltsame Ergebnisse**: x ist eine Variable; multiplizieren Sie mit der Taste ×.
 - **Die Wechselkurse sind alt**: Drücken Sie [[Update exchange rates now]] (mit Internet).
 - **Die obere Tastenreihe fehlt**: Bei großer Schrift ist sie ausgeblendet; ⌨ am rechten Ende der Reiter zeigt sie.
-- **Der 3D-Graph öffnet sich nicht**: Der 3D-Graph ist eine Funktion von QCalc Pro ([QCalc Pro](#pro)).
+- **Der 3D-Graph öffnet sich nicht**: Der 3D-Graph ist eine Funktion von QCalc Pro; ohne Pro lässt er sich einmal kostenlos ausprobieren ([QCalc Pro](#pro)).
 
 ## errors | Fehlermeldungen und ihre Behebung
 :what: Eine Fehlermeldung sagt, was falsch ist und wie es zu beheben ist. Die häufigsten:
