@@ -63,7 +63,8 @@ async function start(browser, base, set, o) {
       localStorage.setItem('qalc.lang', JSON.stringify(l));
       localStorage.setItem('qalc.settings', JSON.stringify(st));
       localStorage.setItem('qalc.moved112', 'true');
-      localStorage.setItem('qalc.news', JSON.stringify('1.14'));
+      localStorage.setItem('qalc.news', JSON.stringify('1.15'));
+      localStorage.setItem('qalc.defaults115', 'true'); // (1.15.0: the defaults of a new phone, 15 digits in groups)
     } catch (e) { }
   }, [S.lang, Object.assign({ auto_rates: false, appearance: o.dark ? 'dark' : 'light' }, o.settings || {})]);
   if (o.slowClock) await ctx.addInitScript(SLOW_CLOCK);

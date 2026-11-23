@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks the pictures (and, when a folder is given, the videos) of the QCalc store listing (stage M6):
 
-  - every set in store/screenshots-<version>/ (1.14, or the version given by QCALC_SHOTS, e.g. 1.12) has 8 phone pictures 1080 × 1920, one 1920 × 1080, and 5 each
+  - every set in store/screenshots-<version>/ (1.15, or the version given by QCALC_SHOTS, e.g. 1.14) has 8 phone pictures 1080 × 1920, one 1920 × 1080, and 5 each
     for 7-inch (1200 × 1920) and 10-inch tablets (1600 × 2560) (alt/: alternatives, not counted);
   - Google Play's rules for screenshots: PNG or JPEG, no transparency, sides 320-3840 px, the long side at
     most twice the short one, at most 8 MB; the feature graphics 1024 × 500 without transparency, at most
@@ -19,7 +19,7 @@ import subprocess
 import sys
 
 STORE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-VER = os.environ.get('QCALC_SHOTS', '1.14')
+VER = os.environ.get('QCALC_SHOTS', '1.15')
 SHOTS = os.path.join(STORE, 'screenshots-' + VER)
 
 

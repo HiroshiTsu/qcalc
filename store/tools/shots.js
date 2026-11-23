@@ -1,12 +1,13 @@
 // Makes the pictures of the Google Play listing from the real app (QCalc 1.12.0, stage M2; 1.14.0: the same set and
-// order from the screens of 1.14.0, the 3D drawn with WebGL 2, the tank in 3D with "See-through" on; into the folders of
-// 1.14, those of 1.12 kept):
-//   store/screenshots-1.14/<set>/phone-1-…png … phone-8-…png   1080 × 1920 (8 phone pictures)
-//   store/screenshots-1.14/<set>/landscape-1-2d-to-3d.png      1920 × 1080
-//   store/screenshots-1.14/<set>/tablet7-1-…png … (5)          1200 × 1920
-//   store/screenshots-1.14/<set>/tablet10-1-…png … (5)         1600 × 2560
-//   store/screenshots-1.14/<set>/alt/phone-5-profile.png       1080 × 1920 (the earlier fifth phone picture, kind alt)
-//   store/feature-graphic-1.14-<set>.png                       1024 × 500 (for ja, en, de, es, fr, ko, zh-TW)
+// order from the screens of 1.14.0, the 3D drawn with WebGL 2, the tank in 3D with "See-through" on; 1.15.0: the same
+// set again from the screens of 1.15.0, the answers in 15 digits in groups; into the folders of 1.15, those of 1.12
+// and 1.14 kept):
+//   store/screenshots-1.15/<set>/phone-1-…png … phone-8-…png   1080 × 1920 (8 phone pictures)
+//   store/screenshots-1.15/<set>/landscape-1-2d-to-3d.png      1920 × 1080
+//   store/screenshots-1.15/<set>/tablet7-1-…png … (5)          1200 × 1920
+//   store/screenshots-1.15/<set>/tablet10-1-…png … (5)         1600 × 2560
+//   store/screenshots-1.15/<set>/alt/phone-5-profile.png       1080 × 1920 (the earlier fifth phone picture, kind alt)
+//   store/feature-graphic-1.15-<set>.png                       1024 × 500 (for ja, en, de, es, fr, ko, zh-TW)
 // Each picture is a screen of the app (Chromium showing app/assets with the real engine through the test
 // server) under a short headline (store/tools/captions.json). The pictures are put together in Chromium
 // too (an HTML page made here), so nothing but Node.js, Playwright and the test server is needed.
@@ -138,7 +139,7 @@ const cap = (set, key) => (CAP[set] || CAP[Q.SETS[set].lang])[key];
 (async () => {
   const browser = await chromium.launch();
   for (const set of SETS) {
-    const dir = path.join(STORE, 'screenshots-1.14', set);
+    const dir = path.join(STORE, 'screenshots-1.15', set);
     // ---- 8 phone pictures, 1080 × 1920
     if (KINDS.indexOf('phone') >= 0) {
       const order = [['calc', 'p1', null], ['everyday', 'p2', null], ['convert', 'p3', null], ['2d-to-3d', 'p4', 'tag_3d'], ['tank-3d', 'p5', 'tag_pro'], ['notes', 'p6', null], ['exact', 'p7', 'tag_digits'], ['offline', 'p8', null]];
@@ -196,7 +197,7 @@ const cap = (set, key) => (CAP[set] || CAP[Q.SETS[set].lang])[key];
       const b = await screen(browser, set, Object.assign({ dpr: 1.6, dark: true }, PH), SCENES.solid3d.run, true);
       const k = { W: 1024, H: 500, hx: 56, hy: 92, hw: 470, fs: 40, align: 'left', brand: true, dark: true, lines: cap(set, 'fg'),
         imgs: [{ src: png(b), x: 560, y: 40, w: 420, h: 420, r: 28 }] };
-      await compose(browser, set, k, path.join(STORE, `feature-graphic-1.14-${set}.png`));
+      await compose(browser, set, k, path.join(STORE, `feature-graphic-1.15-${set}.png`));
     }
   }
   await browser.close();
