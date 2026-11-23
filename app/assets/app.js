@@ -367,13 +367,15 @@
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
   S.lang = LANG_AUTO ? 'auto' : LANG; // the language in use (qalc.lang, or 'auto'), whatever qalc.settings says
   // (1.15.0) the new defaults, 15 significant digits and digit groups, once, also on a phone whose saved settings still
-  // have the old ones together (10 digits and no groups: up to 1.14 every setting was saved whenever one changed, so a
-  // value as it was cannot be told from one chosen; the owner's choice A of 11-23). The card of what is new says that
-  // the precision can be set back in the settings
+  // have the old ones (up to 1.14 every setting was saved whenever one changed, so a value as it was cannot be told
+  // from one chosen): each on its own, 10 digits → 15 and no groups → groups (the owner's choice B of 11-23). What the
+  // user sets afterwards stays (qalc.defaults115). The card of what is new says that the precision can be set back
   if (!store.get('qalc.defaults115', false)) {
     const saved = store.get('qalc.settings', null);
-    if (saved && Number(saved.precision) === 10 && saved.grouping === false) {
-      S.precision = DEFAULTS.precision; S.grouping = DEFAULTS.grouping; store.set('qalc.settings', S);
+    if (saved && (Number(saved.precision) === 10 || saved.grouping === false)) {
+      if (Number(saved.precision) === 10) S.precision = DEFAULTS.precision;
+      if (saved.grouping === false) S.grouping = DEFAULTS.grouping;
+      store.set('qalc.settings', S);
     }
     store.set('qalc.defaults115', true);
   }
