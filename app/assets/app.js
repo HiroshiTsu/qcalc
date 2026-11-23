@@ -339,7 +339,7 @@
     angle: 'rad', approx: 'auto', fraction: 'auto', precision: 15, max_decimals: -1, time_limit: 20, math_view: true,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: true, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
-    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false, next_steps: true
+    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false, next_steps: true, arg_hints: true
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
   const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
@@ -4839,10 +4839,166 @@
     showSuggest([]);
     focusExpr();
   }
+  // ---- (1.16.0, feature/arg-hints, the owner's request of 11-23 11:16) the arguments of a function while it is typed:
+  // after a name of ARG_FUNCS and "(", a row where the suggestions are (above the keys) shows its arguments (the one
+  // the caret is in, bold), what it does and an example; ✕ hides it for this call; the setting "arg_hints" turns it
+  // off. It only reads the field (the caret and the text before it): nothing is typed, and the row takes no focus.
+  // The words of the arguments; the functions: [arguments ('?' optional, '…' more of the same), what it does, example]
+  const ARG_WORDS = () => ({
+    angle: tr('angle', '角度'),
+    value: tr('value', '値'),
+    base: tr('base', '底'),
+    exponent: tr('exponent', '指数'),
+    decimals: tr('decimals', '小数の桁数'),
+    dividend: tr('number', '割られる数'),
+    divisor: tr('divisor', '割る数'),
+    term: tr('term', '項の式'),
+    factorx: tr('factor', '因数の式'),
+    from: tr('from', '始め'),
+    to: tr('to', '終わり'),
+    variable: tr('variable', '変数'),
+    expr: tr('expression', '式'),
+    order: tr('order', '階数'),
+    lower: tr('lower limit', '下端'),
+    upper: tr('upper limit', '上端'),
+    approach: tr('value approached', '近づける値'),
+    direction: tr('direction', '向き'),
+    equation: tr('equation', '方程式'),
+    center: tr('center', '中心'),
+    degree: tr('degree', '次数'),
+    matrix: tr('matrix', '行列'),
+    vector1: tr('vector 1', 'ベクトル 1'),
+    vector2: tr('vector 2', 'ベクトル 2'),
+    data: tr('data', 'データ'),
+    mean: tr('mean μ', '平均 μ'),
+    sd: tr('standard deviation σ', '標準偏差 σ'),
+    cumulative: tr('cumulative (1)', '累積（1）'),
+    prob: tr('probability P', '確率 P'),
+    successes: tr('successes k', '成功の回数 k'),
+    trials: tr('trials n', '試行の回数 n'),
+    p: tr('probability p', '確率 p'),
+    rate: tr('mean number λ', '平均の回数 λ'),
+    dfv: tr('degrees of freedom ν', '自由度 ν'),
+    dfk: tr('degrees of freedom k', '自由度 k'),
+    percent: tr('percent', 'パーセント'),
+    sidea: tr('side a', '辺 a'),
+    sideb: tr('side b', '辺 b'),
+  });
+  const ARG_FUNCS = () => ({
+    sin: ['angle', tr('Sine of an angle (radians or degrees: the chip at the top)', '角度の正弦（ラジアンか度かは上のボタンのとおり）'), 'sin(π/6) = 1/2'],
+    cos: ['angle', tr('Cosine of an angle', '角度の余弦'), 'cos(π/3) = 1/2'],
+    tan: ['angle', tr('Tangent of an angle', '角度の正接'), 'tan(π/4) = 1'],
+    asin: ['value', tr('The angle whose sine is the value', '正弦がその値になる角度'), 'asin(1/2) = π/6'],
+    acos: ['value', tr('The angle whose cosine is the value', '余弦がその値になる角度'), 'acos(1/2) = π/3'],
+    atan: ['value', tr('The angle whose tangent is the value', '正接がその値になる角度'), 'atan(1) = π/4'],
+    atan2: ['y x', tr('The angle of the point (x, y) from the x axis', '点 (x, y) の x 軸からの角度'), 'atan2(1, 1) = π/4'],
+    sinh: ['value', tr('Hyperbolic sine', '双曲線正弦'), 'sinh(0) = 0'],
+    cosh: ['value', tr('Hyperbolic cosine', '双曲線余弦'), 'cosh(0) = 1'],
+    tanh: ['value', tr('Hyperbolic tangent', '双曲線正接'), 'tanh(0) = 0'],
+    ln: ['value', tr('Natural logarithm (base e)', '自然対数（底は e）'), 'ln(e^2) = 2'],
+    log: ['value base?', tr('Logarithm in a base (e when left out)', '底を決めた対数（省くと底は e）'), 'log(8, 2) = 3'],
+    log10: ['value', tr('Common logarithm (base 10)', '常用対数（底は 10）'), 'log10(1000) = 3'],
+    log2: ['value', tr('Logarithm in base 2', '底が 2 の対数'), 'log2(8) = 3'],
+    exp: ['exponent', tr('e to the power of the exponent', 'e の指数乗'), 'exp(1) = e'],
+    sqrt: ['value', tr('Square root', '平方根'), 'sqrt(16) = 4'],
+    cbrt: ['value', tr('Cube root (also of a negative number)', '立方根（負の数も）'), 'cbrt(−27) = −3'],
+    root: ['value n', tr('The n-th root', 'n 乗根'), 'root(32, 5) = 2'],
+    abs: ['value', tr('Absolute value (distance from 0)', '絶対値（0 からの距離）'), 'abs(−3) = 3'],
+    round: ['value decimals?', tr('Rounds to that many decimals (0 when left out)', 'その桁数の小数に四捨五入（省くと整数）'), 'round(3.14159, 2) = 3.14'],
+    floor: ['value', tr('Rounds down to a whole number', '小さいほうの整数に切り捨て'), 'floor(2.7) = 2'],
+    ceil: ['value', tr('Rounds up to a whole number', '大きいほうの整数に切り上げ'), 'ceil(2.1) = 3'],
+    trunc: ['value', tr('Drops the decimals (toward 0)', '小数を切り捨て（0 の向きへ）'), 'trunc(−2.7) = −2'],
+    mod: ['dividend divisor', tr('Remainder of a division (with the sign of the divisor)', '割り算の余り（符号は割る数と同じ）'), 'mod(17, 5) = 2'],
+    rem: ['dividend divisor', tr('Remainder of a division (with the sign of the number)', '割り算の余り（符号は割られる数と同じ）'), 'rem(−7, 3) = −1'],
+    gcd: ['a b …', tr('Greatest common divisor', '最大公約数'), 'gcd(12, 18) = 6'],
+    lcm: ['a b …', tr('Least common multiple', '最小公倍数'), 'lcm(4, 6) = 12'],
+    comb: ['n k', tr('Combinations: ways to choose k of n (nCk)', '組合せ：n 個から k 個を選ぶ数（nCk）'), 'comb(5, 2) = 10'],
+    binomial: ['n k', tr('Binomial coefficient (n choose k)', '二項係数（nCk）'), 'binomial(5, 2) = 10'],
+    perm: ['n k', tr('Permutations: ways to line up k of n (nPk)', '順列：n 個から k 個を並べる数（nPk）'), 'perm(5, 2) = 20'],
+    factorial: ['n', tr('Factorial n! = 1 × 2 × … × n', '階乗 n! = 1 × 2 × … × n'), 'factorial(5) = 120'],
+    sum: ['term from to variable?', tr('Sum of the term with the variable from … to … (x when left out)', '変数を始めから終わりまで変えた項の和（変数を省くと x）'), 'sum(x^2, 1, 10) = 385'],
+    product: ['factorx from to variable?', tr('Product of the factor with the variable from … to …', '変数を始めから終わりまで変えた因数の積'), 'product(x, 1, 5) = 120'],
+    diff: ['expr variable? order?', tr('Derivative (the order: 2 for the second derivative)', '導関数（階数を 2 にすると 2 階微分）'), 'diff(x^3, x) = 3x²'],
+    integrate: ['expr lower? upper? variable?', tr('Integral: with the limits a number, without them a function + C', '積分：上下端があれば定積分、なければ不定積分（+ C）'), 'integrate(x^2, 0, 1) = 1/3'],
+    limit: ['expr approach variable? direction?', tr('Limit as the variable approaches the value (direction 1: from above, −1: from below)', '変数を値に近づけたときの極限（向き 1 は上から、−1 は下から）'), 'limit(sin(x)/x, 0) = 1'],
+    solve: ['equation variable?', tr('Solves an equation (for x when the variable is left out)', '方程式を解く（変数を省くと x について）'), 'solve(2x + 1 = 7) = 3'],
+    dsolve: ['equation', tr('Solves a differential equation in y and x', 'y と x の微分方程式を解く'), 'dsolve(diff(y, x) = 2y) = C e^(2x)'],
+    factor: ['value', tr('Factors a number into primes, or a polynomial', '数を素因数に、多項式を因数に分解'), 'factor(x^2 − 1) = (x + 1)(x − 1)'],
+    taylor: ['expr variable? center? degree?', tr('Taylor polynomial (x, 0 and 5 when left out)', 'テイラー多項式（省くと x、中心 0、次数 5）'), 'taylor(sin(x), x, 0, 5) = x − x³/6 + x⁵/120'],
+    det: ['matrix', tr('Determinant of a square matrix', '正方行列の行列式'), 'det([1, 2; 3, 4]) = −2'],
+    inverse: ['matrix', tr('Inverse of a square matrix', '正方行列の逆行列'), 'inverse([1, 2; 3, 4]) = [−2, 1; 3/2, −1/2]'],
+    transpose: ['matrix', tr('Rows and columns swapped', '行と列を入れ替えた行列'), 'transpose([1, 2; 3, 4]) = [1, 3; 2, 4]'],
+    dot: ['vector1 vector2', tr('Dot product of two vectors', '2 つのベクトルの内積'), 'dot([1, 2, 3], [4, 5, 6]) = 32'],
+    cross: ['vector1 vector2', tr('Cross product of two 3D vectors', '2 つの 3 次元ベクトルの外積'), 'cross([1, 0, 0], [0, 1, 0]) = [0, 0, 1]'],
+    mean: ['data', tr('Mean (average) of the data', 'データの平均'), 'mean([1, 2, 3, 4]) = 2.5'],
+    median: ['data', tr('Median: the middle value', '中央値：真ん中の値'), 'median([3, 1, 2]) = 2'],
+    stdev: ['data', tr('Standard deviation of a sample (divided by n − 1)', '標本の標準偏差（n − 1 で割る）'), 'stdev([2, 4, 4, 4, 5, 5, 7, 9]) ≈ 2.138'],
+    var: ['data', tr('Variance of a sample (divided by n − 1)', '標本の分散（n − 1 で割る）'), 'var([1, 2, 3, 4]) = 5/3'],
+    min: ['data', tr('The smallest value', 'いちばん小さい値'), 'min([3, 1, 2]) = 1'],
+    max: ['data', tr('The largest value', 'いちばん大きい値'), 'max([3, 1, 2]) = 3'],
+    percentile: ['data percent', tr('The value below which that percent of the data lies', 'データのその割合（%）が下にある値'), 'percentile([1, 2, 3, 4, 5], 50) = 3'],
+    normdist: ['value mean? sd? cumulative?', tr('Normal distribution: the density, or P(X ≤ x) with 1 at the end', '正規分布：密度、最後を 1 にすると P(X ≤ x)'), 'normdist(1.96, 0, 1, 1) ≈ 0.975'],
+    normdistinv: ['prob mean? sd?', tr('The x with P(X ≤ x) = P in a normal distribution', '正規分布で P(X ≤ x) = P となる x'), 'normdistinv(0.975) ≈ 1.96'],
+    binomdist: ['successes trials p cumulative?', tr('Binomial distribution: P(X = k), or P(X ≤ k) with 1 at the end', '二項分布：P(X = k)、最後を 1 にすると P(X ≤ k)'), 'binomdist(3, 10, 0.5) ≈ 0.117'],
+    poisson: ['value rate cumulative?', tr('Poisson distribution: P(X = k), or P(X ≤ k) with 1 at the end', 'ポアソン分布：P(X = k)、最後を 1 にすると P(X ≤ k)'), 'poisson(2, 3) ≈ 0.224'],
+    tdist: ['value dfv cumulative?', tr('Student’s t distribution: the density, or P(X ≤ x) with 1 at the end', 't 分布：密度、最後を 1 にすると P(X ≤ x)'), 'tdist(2, 10, 1) ≈ 0.963'],
+    chisqdist: ['value dfk cumulative?', tr('χ² distribution: the density, or P(X ≤ x) with 1 at the end', 'χ² 分布：密度、最後を 1 にすると P(X ≤ x)'), 'chisqdist(7.81, 3, 1) ≈ 0.950'],
+    hypot: ['sidea sideb', tr('The hypotenuse √(a² + b²)', '斜辺 √(a² + b²)'), 'hypot(3, 4) = 5'],
+    isprime: ['n', tr('1 when the number is prime, else 0', '素数なら 1、そうでなければ 0'), 'isprime(97) = 1'],
+  });
+  const ARG_ALIAS = {'arcsin': 'asin', 'arccos': 'acos', 'arctan': 'atan', 'inv': 'inverse'};
+  const ahEl = $('#arghint');
+  let ahHidden = ''; // the call whose hint was closed with ✕ ("name@position of its parenthesis")
+  // the function call the caret is in: { name, open (the index of its "("), arg (which argument, from 0) } or null
+  function argContext() {
+    const v = exprEl.value, s = exprEl.selectionStart;
+    if (s === undefined || s === null || s !== exprEl.selectionEnd || s > 2000) return null;
+    const sep = commaMode ? ';' : ',';
+    let depth = 0, commas = 0;
+    for (let i = s - 1; i >= 0; i--) {
+      const c = v[i];
+      if (c === ')' || c === ']') depth++;
+      else if (c === '[') { if (depth) depth--; else commas = 0; } // (inside a vector: the argument it is)
+      else if (c === '(') {
+        if (depth) { depth--; continue; }
+        const m = /([\p{L}_][\p{L}\p{N}_]*)\s*$/u.exec(v.slice(Math.max(0, i - 40), i));
+        if (!m) { commas = 0; continue; } // (a plain parenthesis: the call around it)
+        return { name: m[1], open: i, arg: commas };
+      } else if (c === sep && !depth) commas++;
+    }
+    return null;
+  }
+  function updateArgHint() {
+    if (!ahEl) return;
+    const cx = S.arg_hints === false || CF.id || histSel ? null : argContext();
+    const F = cx ? ARG_FUNCS() : null;
+    const key = cx ? (own(F, cx.name) ? cx.name : own(ARG_ALIAS, cx.name) ? ARG_ALIAS[cx.name] : '') : '';
+    const id = cx ? cx.name + '@' + cx.open : '';
+    if (ahHidden && id !== ahHidden) ahHidden = ''; // (closed for that call only: once the caret leaves it, it shows again)
+    if (!key || id === ahHidden) { if (!ahEl.hidden) { ahEl.hidden = true; ahEl.textContent = ''; } return; }
+    const [args, desc, ex] = F[key], W = ARG_WORDS();
+    const parts = args.split(' '), more = parts[parts.length - 1] === '…';
+    const at = more && cx.arg >= parts.length - 1 ? parts.length - 2 : cx.arg;
+    const sig = el('div', { class: 'ah-sig' }, el('span', { class: 'ah-name', text: cx.name }), '(');
+    parts.forEach((p, i) => {
+      if (i) sig.append(commaMode ? '; ' : ', ');
+      const opt = /\?$/.test(p), w = p.replace(/\?$/, ''), word = p === '…' ? '…' : own(W, w) ? W[w] : w;
+      const t = opt ? '[' + word + ']' : word;
+      sig.append(i === at ? el('b', { text: t }) : t);
+    });
+    sig.append(')');
+    const close = tapButton({ class: 'ah-x', type: 'button', text: '✕', 'aria-label': tr('Close the hint', 'ヒントを閉じる') }, () => { ahHidden = id; ahEl.hidden = true; ahEl.textContent = ''; });
+    ahEl.textContent = '';
+    ahEl.append(el('div', { class: 'ah-top' }, sig, close), el('div', { class: 'ah-desc', text: desc }), el('div', { class: 'ah-ex', text: tr('e.g. ', '例：') + toDisplay(ex) }));
+    ahEl.hidden = false;
+  }
+  // (a touch on the row keeps the caret in the field)
+  if (ahEl) ahEl.addEventListener('pointerdown', (e) => { if (!e.target.closest('.ah-x')) e.preventDefault(); });
   // typed: the last change was typed with the phone's keyboard. The on-screen keys write whole
   // names, so for them only the conversions after "to" are offered.
   function updateSuggest(typed) {
     const seq = ++sugSeq;
+    updateArgHint(); // (1.16.0: the arguments of the function the caret is in)
     const cx = sugContext();
     if (!cx || /^to$/i.test(cx.word) || (!cx.conv && (!typed || cx.word.length < 2))) { showSuggest([]); return; }
     if (!sugData) {
@@ -18432,7 +18588,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       ['haptics', tr('Vibrate when a key is pressed', 'キーを押したときに振動'), 'bool'],
       ['memkeys', tr('Show the memory keys (M+ M− MR MC)', 'メモリーキー（M+ M− MR MC）を出す'), 'bool'],
       ['next_steps', tr('Suggest the next steps under the newest answer', '次の操作の候補を出す'), 'bool',
-        tr('Buttons under the newest answer for what is often done next: details, graph, factor, derivative and the like', 'いちばん新しい答えの下に、次によく使う操作（詳しく・グラフ・因数分解・微分など）のボタンを出します')]
+        tr('Buttons under the newest answer for what is often done next: details, graph, factor, derivative and the like', 'いちばん新しい答えの下に、次によく使う操作（詳しく・グラフ・因数分解・微分など）のボタンを出します')],
+      ['arg_hints', tr('Show the arguments of a function while typing', '関数の引数のヒントを出す'), 'bool',
+        tr('After a function name and "(", above the keys: its arguments (the one being typed in bold), what it does and an example', '関数の名前と「(」のあとに、キーの上に引数（入力中の引数は太字）・説明・例を出します')]
     ]],
     // 1.12.0: updating the rates was an item of the menu until 1.11.0
     [tr('Exchange rates', '為替レート'), [

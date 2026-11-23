@@ -25,6 +25,9 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :tip: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu übernehmen oder zu kopieren.
 :mistake: Der Buchstabe x ist eine Variable, kein „mal“. Multiplizieren Sie mit der Taste × (oder *).
 
+## new-1-16 | Neu in 1.16.0
+- **Hinweise zu den Argumenten**: Nach einem Funktionsnamen und „(“ erscheinen unter dem Eingabefeld die Argumente (das aktuelle fett), was die Funktion tut und ein Beispiel. Für etwa 60 Funktionen; ✕ schließt den Hinweis ([Hinweise zu den Argumenten](#arg-hints)).
+
 ## new-1-15 | Neu in 1.15.0
 - **Besser lesbare Ergebnisse**: Ergebnisse mit 15 gültigen Stellen, in Dreiergruppen. Geräte, die noch die bisherigen Standardwerte hatten (10 Stellen, ohne Gruppen), wechseln mit dieser Version einmal. [[Precision (significant digits)]] und [[Digit grouping (1,000)]] in den [[Settings]] stellen es zurück ([Das Ergebnis lesen](#results)).
 - **Einlesen in die Rechennotizen**: [[More ▾]] → [[Open a file]] in den Notizen liest eine .txt- oder .csv-Datei, und Text oder eine Datei, die eine andere App mit „Teilen“ → QCalc sendet, wird ebenfalls übernommen ([Rechennotizen](#notes)).
@@ -195,6 +198,14 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :what: Beim Tippen erscheinen Vorschläge unter dem Eingabefeld: nach „to“ die Zieleinheiten, mit der Tastatur die Namen von Funktionen und Einheiten.
 :step: Tippen Sie `5 km to`: mi, m, ft und andere werden vorgeschlagen.
 :step: Tippen Sie auf einen Vorschlag, um ihn einzufügen.
+
+### arg-hints | Hinweise zu den Argumenten
+:what: Nach einem Funktionsnamen und „(“ erscheinen dort, wo die Vorschläge stehen (unter dem Eingabefeld, über den Tasten), die Argumente, was die Funktion tut und ein Beispiel. Das Argument, das Sie gerade eingeben, ist fett.
+:step: Tippen Sie `round(`: „round(Wert, [Nachkommastellen])“ erscheint, der Wert fett.
+:step: Nach dem Trennzeichen ist das nächste Argument (die Nachkommastellen) fett. Ein Argument in [ ] kann wegfallen.
+:step: ✕ rechts schließt den Hinweis dieser Funktion. [[Show the arguments of a function while typing]] in den [[Settings]] schaltet die Hinweise aus.
+:example: `round(3.14159, 2)` → 3,14 (wie im Beispiel des Hinweises)
+:tip: Etwa 60 Funktionen haben Hinweise: Trigonometrie, Logarithmen, Wurzeln, Runden, Reste, größter gemeinsamer Teiler, Summen, Ableitungen, Integrale, Grenzwerte, Gleichungen, Taylorreihen, Matrizen, Statistik und Verteilungen. Ein Hinweis liest nur das Eingabefeld und ändert den Ausdruck nie.
 
 ## writing | Funktionen, Einheiten und Währungen schreiben
 :what: Ausdrücke werden wie in Qalculate! geschrieben. Die üblichen Schreibweisen:

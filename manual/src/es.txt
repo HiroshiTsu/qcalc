@@ -25,6 +25,9 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :tip: Toca un resultado del historial para ponerlo en el campo de entrada o copiarlo.
 :mistake: La letra x es una variable, no «por». Multiplica con la tecla × (o *).
 
+## new-1-16 | Novedades de 1.16.0
+- **Ayuda de los argumentos**: tras el nombre de una función y «(», bajo el campo aparecen sus argumentos (el actual en negrita), qué hace y un ejemplo. Para unas 60 funciones; ✕ la cierra ([Ayuda de los argumentos](#arg-hints)).
+
 ## new-1-15 | Novedades de 1.15.0
 - **Resultados más claros**: los resultados tienen 15 cifras significativas, en grupos de tres. Los teléfonos que aún tenían los valores anteriores (10 cifras, sin grupos) cambian una vez con esta versión. [[Precision (significant digits)]] y [[Digit grouping (1,000)]] en [[Settings]] lo devuelven ([Leer el resultado](#results)).
 - **Leer en las notas de cálculo**: [[More ▾]] → [[Open a file]] en las notas lee un archivo .txt o .csv, y también se recibe el texto o el archivo que otra app envía con «Compartir» → QCalc ([Notas de cálculo](#notes)).
@@ -195,6 +198,14 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :what: Mientras escribes, aparecen sugerencias bajo el campo: después de «to», las unidades de destino; con el teclado, nombres de funciones y unidades.
 :step: Escribe `5 km to`: se sugieren mi, m, ft y otras.
 :step: Toca una para escribirla.
+
+### arg-hints | Ayuda de los argumentos
+:what: Tras el nombre de una función y «(», donde salen las sugerencias (bajo el campo de entrada, encima de las teclas) aparecen sus argumentos, qué hace y un ejemplo. El argumento que escribes está en negrita.
+:step: Escribe `round(`: aparece «round(valor, [decimales])», con el valor en negrita.
+:step: Tras el separador, el argumento siguiente (los decimales) va en negrita. Un argumento entre [ ] se puede omitir.
+:step: ✕ a la derecha cierra la ayuda de esa función. [[Show the arguments of a function while typing]] en [[Settings]] la desactiva.
+:example: `round(3.14159, 2)` → 3,14 (como en el ejemplo de la ayuda)
+:tip: Unas 60 funciones tienen ayuda: trigonometría, logaritmos, raíces, redondeo, restos, máximo común divisor, sumas, derivadas, integrales, límites, ecuaciones, series de Taylor, matrices, estadística y distribuciones. La ayuda solo lee el campo de entrada: nunca cambia la expresión.
 
 ## writing | Escribir funciones, unidades y monedas
 :what: Las expresiones se escriben como en Qalculate!. Las formas habituales:
