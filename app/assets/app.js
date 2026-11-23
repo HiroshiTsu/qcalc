@@ -9804,9 +9804,9 @@
     { t: tr('Egg carton', '波（卵パック）'), e: ['sin(x@) cos(y@)'], r: ['-5', '5', '-5', '5'], f: [(x, y) => Math.sin(x) * Math.cos(y)] },
     { t: tr('Ripple', '波紋'), e: ['cos(√(x^2 + y^2)@) e^(−(x^2 + y^2) / 60)'], r: ['-10', '10', '-10', '10'], res: '61', n: 29,
       f: [(x, y) => Math.cos(hyp(x, y)) * Math.exp(-(x * x + y * y) / 60)] },
-    { t: tr('Sphere', '球'), e: ['√(4 − x^2 − y^2)', '−√(4 − x^2 − y^2)'], r: ['-2.2', '2.2', '-2.2', '2.2'], res: '61', eq: true, disk: '2', n: 41, one: true,
+    { t: tr('Sphere', '球'), e: ['√(4 − x^2 − y^2)', '−√(4 − x^2 − y^2)'], r: ['-2.2', '2.2', '-2.2', '2.2'], res: '61', eq: true, disk: '2', n: 41, one: true, rims: { kind: 'ring', c: 0, R: 2, groups: [[0, 1]] },
       f: [(x, y) => Math.sqrt(4 - x * x - y * y), (x, y) => -Math.sqrt(4 - x * x - y * y)] },
-    { t: tr('Doughnut', 'ドーナツ'), e: ['√(1 − (√(x^2 + y^2) − 2)^2)', '−√(1 − (√(x^2 + y^2) − 2)^2)'], r: ['-3.3', '3.3', '-3.3', '3.3'], res: '61', eq: true, n: 45, one: true,
+    { t: tr('Doughnut', 'ドーナツ'), e: ['√(1 − (√(x^2 + y^2) − 2)^2)', '−√(1 − (√(x^2 + y^2) − 2)^2)'], r: ['-3.3', '3.3', '-3.3', '3.3'], res: '61', eq: true, n: 45, one: true, rims: { kind: 'ring', c: 2, R: 1, groups: [[0, 1]] },
       f: [(x, y) => Math.sqrt(1 - (hyp(x, y) - 2) ** 2), (x, y) => -Math.sqrt(1 - (hyp(x, y) - 2) ** 2)] },
     { t: tr('Saddle', '鞍（くら）'), e: ['x^2 − y^2'], r: ['-2', '2', '-2', '2'], f: [(x, y) => x * x - y * y] },
     { t: tr('Bowl and lid', 'おわんとふた'), e: ['x^2 + y^2', '4'], r: ['-2', '2', '-2', '2'], disk: '2', f: [(x, y) => x * x + y * y, () => 4] },
@@ -9979,6 +9979,9 @@
     Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(d.r[i])); });
     if (Q3.resEl) Q3.resEl.value = d.res || '41';
     Q3.points = null; Q3.pending = null;
+    // (fix/3d-first-colors: the sphere and the doughnut have their edges from their shape, as a solid of revolution, and are
+    // one solid from the first drawing; for the expressions as the graph reads them from the box, while they are drawn)
+    Q3.sampleRims = d.rims ? Object.assign({ exprs: plotExprs(Q3.ta.value, 4).join('\n') }, d.rims) : null;
     Q3.equalOnce = !!d.eq; // round for this drawing; the 1:1 setting itself stays as it was
     // "Volume and surface" measures over the region that fits the sample (a disk for a sphere)
     const U = Q3.volUI;
@@ -10818,14 +10821,21 @@
     // does not appear torn first and whole a moment later; if that takes more than 2.5 seconds, it is
     // shown as it is and drawn again afterwards. (Until 1.11.0 every surface with an edge waited for
     // refineRims, up to 2.5 seconds, and was then shown with saw teeth, in two colors.)
-    const spec = Q3.rimSpec && Q3.rimSpec.exprs === Q3.exprs.join('\n') ? Q3.rimSpec : null;
+    const spec = [Q3.rimSpec, Q3.sampleRims].find((q) => q && q.exprs === Q3.exprs.join('\n')) || null;
     let refined = !!spec && specRims(series, r.x, r.y, spec);
     const guessed = refined ? null : guessRims(series, r.x, r.y);
     function rimsReady() { return refined || !guessed || !guessed.length; }
-    const settle = () => {
+    // (fix/3d-first-colors) surfaces that differ only in their sign, f and −f, with an edge: one solid from the first
+    // drawing, their first guesses of the edge meeting at the middle; until then they were two surfaces in two colors
+    // until the engine had found their edges, and their guesses, a little apart, left saw teeth along the edge
+    const mirrors = spec && spec.groups ? [] : mirroredPairs(series, z0, z1);
+    if (guessed && mirrors.length) meetMirrored(series, mirrors, z0, z1);
+    const settle = (final) => {
       // (surfaces that close up into one solid are known when their edges are, 1.9.3; those of a solid
-      // of revolution from its shape)
+      // of revolution from its shape; f and −f are taken as one until their edges are found, and are two
+      // only when the edges found do not meet)
       data.groups = spec && spec.groups ? spec.groups : joinedSolid(series, r.x, r.y, z0, z1);
+      if (!final) data.groups = withPairs(data.groups, mirrors);
       solidColors(data);
       // the range of z reaches the edges (half a sphere alone: its rim at z = 0 lies below the lowest
       // grid value, and was cut off; 1.9.3), unless that would widen it by more than half
@@ -10833,7 +10843,7 @@
       for (const s of series) for (const key in s.rim || {}) { const v = s.rim[key].z; if (v === v && v !== undefined) { if (v < lo) lo = v; if (v > hi) hi = v; } }
       if ((lo < data.z0 || hi > data.z1) && hi - lo <= 1.5 * (data.z1 - data.z0)) { data.z0 = lo; data.z1 = hi; }
     };
-    settle();
+    settle(false);
     if (quick) { if (Q3.slZ) { data.z0 = Math.min(data.z0, Q3.slZ[0]); data.z1 = Math.max(data.z1, Q3.slZ[1]); Q3.slZ = [data.z0, data.z1]; } show(); return; }
     const tolZ = (data.z1 - data.z0) * 4e-5, leaves = series.some((q) => q.z.some((v) => v === v && (v < data.z0 - tolZ || v > data.z1 + tolZ)));
     if (!leaves) show();
@@ -10841,7 +10851,7 @@
     const tR = Date.now();
     if (!refined && !devFlag('norefine')) refined = await refineRims(series, r.x, r.y, seq, guessed);
     if (seq !== Q3.seq) { clearTimeout(late); return; }
-    if (!spec) settle();
+    if (!spec) settle(true);
     // where the surfaces leave the box at its top or bottom (1.9.5)
     const tC = Date.now();
     const clipped = devFlag('norefine') ? false : await refineClips(series, r.x, r.y, data.z0, data.z1, seq);
@@ -10910,6 +10920,53 @@
     const groups = new Map();
     series.forEach((s, i) => { const r = find(i); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(i); });
     return [...groups.values()].filter((g) => g.length >= 2 && g.every((i) => whole[i]));
+  }
+  // (fix/3d-first-colors) The pairs of surfaces that differ only in their sign, as f and −f (the two halves of a sphere or
+  // of a doughnut typed as two formulas): no value at the same grid points, and opposite values at all the others, some
+  // not 0. Only surfaces with an edge (grid points without a value next to ones with: refineRims has edges to find) count:
+  // the two halves of a double cone, which have none, stay two surfaces. Gives [[i, j], …].
+  function mirroredPairs(series, z0, z1) {
+    const pairs = [], used = new Set(), big = Math.max(Math.abs(z0), Math.abs(z1), 1e-300);
+    const edged = (s) => Object.keys(s.rim || {}).length >= 4;
+    for (let a = 0; a < series.length; a++) {
+      for (let b = a + 1; b < series.length && !used.has(a); b++) {
+        if (used.has(b) || !edged(series[a]) || !edged(series[b])) continue;
+        const za = series[a].z, zb = series[b].z;
+        let ok = za.length === zb.length, some = false;
+        for (let k = 0; ok && k < za.length; k++) {
+          const p = za[k] === za[k], q = zb[k] === zb[k];
+          if (p !== q) ok = false;
+          else if (p) { if (Math.abs(za[k] + zb[k]) > 1e-9 * big) ok = false; else if (Math.abs(za[k]) > 1e-9 * big) some = true; }
+        }
+        if (ok && some) { pairs.push([a, b]); used.add(a); used.add(b); }
+      }
+    }
+    return pairs;
+  }
+  // The first guesses of the edges of f and −f (guessRims), the same places at opposite heights, made to meet at the middle
+  // (0) where they are near it (within 15 % of the range of z): a surface that ends as a square root there is near its edge
+  // at the last grid point. Two that end apart (±(√(1 − x² − y²) + 1)) keep their guesses.
+  function meetMirrored(series, pairs, z0, z1) {
+    const near = 0.3 * (z1 - z0);
+    for (const [a, b] of pairs) {
+      const ra = series[a].rim || {}, rb = series[b].rim || {};
+      for (const key in ra) {
+        const e = ra[key], o = rb[key];
+        if (!o || !isFinite(e.z) || !isFinite(o.z) || Math.abs(e.x - o.x) + Math.abs(e.y - o.y) > 1e-12 * (1 + Math.abs(e.x) + Math.abs(e.y)) || Math.abs(e.z - o.z) > near) continue;
+        e.z = o.z = (e.z + o.z) / 2;
+      }
+    }
+  }
+  // the solids found, with the pairs f and −f not in one yet
+  function withPairs(groups, pairs) {
+    const out = groups.map((g) => g.slice());
+    for (const [a, b] of pairs) {
+      const ga = out.find((g) => g.includes(a)), gb = out.find((g) => g.includes(b));
+      if (!ga && !gb) out.push([a, b]);
+      else if (ga && !gb) ga.push(b);
+      else if (gb && !ga) gb.push(a);
+    }
+    return out;
   }
   // The colors of the surfaces (1.9.5): one surface alone, or surfaces that all make one solid, are
   // colored by height (oneSolid); the surfaces of a solid drawn with others share the color of its
@@ -11014,6 +11071,10 @@
   //   present where ρ = √(x² + y²) is in its intervals: its edges are the circles ρ = a and ρ = b,
   //   crossed by the grid lines where the circle is, at the heights given (from the engine, at the ends
   //   of the region)
+  // - { kind: 'ring', c, R } (fix/3d-first-colors) a sphere (c = 0) or a doughnut about the z axis, the samples: the
+  //   surfaces ±√(R² − (ρ − c)²), whose edges are the circles ρ = c − R (when above 0) and ρ = c + R, at z = 0, where
+  //   they stand upright. Until then the samples' edges were guessed first and found with the engine (refineRims): the
+  //   sphere and the doughnut were first drawn with saw teeth along their edges, and in two colors.
   // Sets s.rim as refineRims does; returns false when it could not (another kind of surface).
   function specRims(series, xs, ys, spec) {
     const nx = xs.length, ny = ys.length, jobs = rimJobs(series, nx, ny);
@@ -11056,6 +11117,18 @@
         s.rim[jb.key] = { x: xa + (xb - xa) * f, y: ya, z: sg * Math.sqrt(Math.max(0, (qx === qx ? qx * qx : 0) - yy * yy)) };
         continue;
       }
+      if (spec.kind === 'ring') {
+        // (the circle that the line leaves through: the inner one into the hole of a doughnut, else the outer one)
+        const lo = spec.c - spec.R, hi = spec.c + spec.R, rb = Math.hypot(xb, yb);
+        const edge = rb <= lo ? lo : rb >= hi ? hi : NaN;
+        if (!(edge > 0)) continue;
+        const dx = xb - xa, dy = yb - ya, A = dx * dx + dy * dy, B = 2 * (xa * dx + ya * dy), C = xa * xa + ya * ya - edge * edge, D = B * B - 4 * A * C;
+        let t = 0;
+        if (A > 0 && D >= 0) { const r1 = (-B - Math.sqrt(D)) / (2 * A), r2 = (-B + Math.sqrt(D)) / (2 * A); t = r1 >= -1e-9 && r1 <= 1 + 1e-9 ? r1 : r2; }
+        t = Math.max(0, Math.min(1, t));
+        s.rim[jb.key] = { x: xa + dx * t, y: ya + dy * t, z: 0 };
+        continue;
+      }
       if (spec.kind === 'v') {
         const sp = spec.surf && spec.surf[jb.si];
         if (!sp) continue;
@@ -11074,7 +11147,7 @@
         s.rim[jb.key] = { x: xa + dx * t, y: ya + dy * t, z: zk === undefined || !(zk === zk) ? zin : zk, slant: true };
       }
     }
-    return spec.kind === 'h' || spec.kind === 'v';
+    return spec.kind === 'h' || spec.kind === 'v' || spec.kind === 'ring';
   }
   // First guesses of the edges of other surfaces (1.12.0, BG09), without the engine, so that a surface
   // with an edge (a sphere) is not shown with saw teeth while refineRims looks for it: near its edge z²
@@ -12172,6 +12245,24 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const c3 = camN(nu / l, nv / l, nw / l);
       CN[3 * k] = c3[0]; CN[3 * k + 1] = c3[1]; CN[3 * k + 2] = c3[2];
     }
+    // (fix/3d-first-colors) How much of the rounding a grid point has: 1 where all the grid points around it have G on the
+    // same side of the edge (every cell there is cut into rounded triangles), 0 at the last of them, next to cells drawn
+    // flat. The rounded triangles lift the middle of their sides above the straight line between the corners, and
+    // where such a side was also the side of a flat cell, a crack opened between the two, a pixel wide: with WebGL 2 it
+    // showed as dark specks in short rows, three cells from the edge (the 2D canvas filled such cracks)
+    const LAM = new Float32Array(n);
+    for (let k = 0; k < n; k++) {
+      if (!(G[k] >= 0)) continue;
+      const i = k % nx, j = (k / nx) | 0;
+      let all = 1;
+      for (let jj = Math.max(0, j - 1); jj <= Math.min(ny - 1, j + 1) && all; jj++) {
+        for (let ii = Math.max(0, i - 1); ii <= Math.min(nx - 1, i + 1); ii++) {
+          const q = jj * nx + ii;
+          if (st[q] === 1 ? !(G[q] >= 0) || SG[q] !== SG[k] : st[q] !== 0) { all = 0; break; }
+        }
+      }
+      LAM[k] = all;
+    }
     // the edge points: G = 0, and the level part from the slopes of G, carried on in a straight line
     // from the two grid points inside on the same grid line (G changes smoothly; on a sphere its slopes
     // change in a straight line, so this is exact), or from the one there is
@@ -12185,10 +12276,10 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (t >= 0 && t < 1.5) { gu += t * (GU[kin] - GU[k2]); gv += t * (GV[kin] - GV[k2]); }
       }
       const h = Math.hypot(gu, gv);
-      e.G = 0; e.sg = SG[kin]; e.L = camN(gu, gv, 0); e.zr = e.w;
+      e.G = 0; e.sg = SG[kin]; e.L = camN(gu, gv, 0); e.zr = e.w; e.lam = LAM[kin];
       if (h > 1e-9) e.n = camN(gu / h, gv / h, 0);
     }
-    return (s.rm = { G, SG, ZR, L: (k) => camN(GU[k], GV[k], 0) });
+    return (s.rm = { G, SG, ZR, LAM, L: (k) => camN(GU[k], GV[k], 0) });
   }
 
   // ---- the measured solid as a real liquid (1.9.1), a pale gelatin in a deep-colored skin (1.9.2)
@@ -13987,14 +14078,23 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     // where two surfaces end at the same place (the two halves of a sphere at its rim), their edges are
     // made to meet exactly: the edges found for each surface differ a little in height (a square root
     // near 0), which left a hair-thin gap through which the far side of the solid showed (1.9.2)
+    // (fix/3d-first-colors) The surfaces of one solid meet also a little farther apart, up to 12 % of the half height of
+    // the box: the engine finds the last point with a value within 1/256 of a grid step of the edge, where a surface that
+    // ends as a square root is still some way above it (the doughnut of the samples: ±0.022 of ±1 at 16 places, 4.5 %
+    // apart), and the gaps left showed the inside of the solid as dark dots along its equator. (rimGaps: those left apart,
+    // for the tests.)
+    let rimGaps = 0;
     if (D.series.length > 1) {
+      const grp = new Map();
+      (D.groups || []).forEach((gr, n) => gr.forEach((i) => grp.set(D.series[i], n)));
       const byKey = new Map();
-      for (const s of D.series) if (s.rimP) for (const key in s.rimP) { const a = byKey.get(key); if (a) a.push(s.rimP[key]); else byKey.set(key, [s.rimP[key]]); }
+      for (const s of D.series) if (s.rimP) for (const key in s.rimP) { const a = byKey.get(key), it = { p: s.rimP[key], g: grp.has(s) ? grp.get(s) : -1 - D.series.indexOf(s) }; if (a) a.push(it); else byKey.set(key, [it]); }
       for (const ps of byKey.values()) {
         for (let a = 0; a < ps.length; a++) {
           for (let b = a + 1; b < ps.length; b++) {
-            const p = ps[a], r = ps[b];
-            if (!(Math.abs(p.u - r.u) + Math.abs(p.v - r.v) < 2e-3 && Math.abs(p.w - r.w) < 0.04 * EZ)) continue;
+            const p = ps[a].p, r = ps[b].p, one = ps[a].g === ps[b].g;
+            if (!(Math.abs(p.u - r.u) + Math.abs(p.v - r.v) < 2e-3)) continue;
+            if (!(Math.abs(p.w - r.w) < (one ? 0.12 : 0.04) * EZ)) { if (one) rimGaps++; continue; }
             const u = (p.u + r.u) / 2, v = (p.v + r.v) / 2, w = (p.w + r.w) / 2;
             proj(u, v, w);
             for (const o of [p, r]) { o.u = u; o.v = v; o.w = w; o.x = T[0]; o.y = T[1]; o.d = T[2]; o.gi = giOf(u); o.gj = gjOf(v); }
@@ -14095,12 +14195,12 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const vtxK = (s, k) => {
       const P = s.proj, N = s.cnrm, c3 = colorAt(s, P.pw[k]), rm = s.rm;
       const v = [P.px[k], P.py[k], P.pd[k], N[3 * k], N[3 * k + 1], N[3 * k + 2], c3[0], c3[1], c3[2], k % D.nx, (k / D.nx) | 0, LKS ? lockLitK(s, k) : 1];
-      if (rm && rm.G[k] >= 0) { v.G = rm.G[k]; v.sg = rm.SG[k]; v.L = rm.L(k); v.zr = rm.ZR[k]; v.u = U(xs[k % D.nx]); v.v = V(ys[(k / D.nx) | 0]); }
+      if (rm && rm.G[k] >= 0) { v.G = rm.G[k]; v.sg = rm.SG[k]; v.L = rm.L(k); v.zr = rm.ZR[k]; v.lam = rm.LAM[k]; v.u = U(xs[k % D.nx]); v.v = V(ys[(k / D.nx) | 0]); }
       return v;
     };
     const vtxP = (s, p) => {
       const c3 = colorAt(s, p.w), v = [p.x, p.y, p.d, p.n[0], p.n[1], p.n[2], c3[0], c3[1], c3[2], p.gi, p.gj, LKS ? (p.k !== undefined ? lockLitK(s, p.k) : lockLitN(p.u, p.v, p.w, p.n)) : 1];
-      if (p.G >= 0 && p.L) { v.G = p.G; v.sg = p.sg; v.L = p.L; v.zr = p.zr; v.u = p.u; v.v = p.v; }
+      if (p.G >= 0 && p.L) { v.G = p.G; v.sg = p.sg; v.L = p.L; v.zr = p.zr; v.lam = p.lam === undefined ? 1 : p.lam; v.u = p.u; v.v = p.v; }
       return v;
     };
     // a triangle near the edge of a surface (rimModel), cut into RS × RS smaller ones whose corners lie
@@ -14111,16 +14211,29 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     // stays smooth across the rim, where the two halves meet.
     // (fewer while the graph is turned)
     const RS = Q3.turning ? 2 : 3, rsub = new Array((RS + 1) * (RS + 2) / 2), upN = camN(0, 0, 2);
+    // (fix/3d-first-colors) A side whose two corners are not rounded (LAM 0 in rimModel: the last grid points with G, next
+    // to cells drawn flat) is not cut either: it is also the side of a flat cell, and points in the middle of a side of
+    // one triangle only (T-junctions) left cracks a pixel wide, through which the inside of the solid showed as dark
+    // specks with WebGL 2. Such a triangle is cut into strips between its other two sides instead.
     const rimTri = (s, A, B, C) => {
+      const flat = (P, Q) => !(P.lam > 0) && !(Q.lam > 0);
+      const fAB = flat(A, B), fBC = flat(B, C), fCA = flat(C, A);
+      if (fAB && fBC && fCA) { tb.add(rimPt(s, A, B, C, 1, 0, 0), rimPt(s, A, B, C, 0, 1, 0), rimPt(s, A, B, C, 0, 0, 1)); return; }
+      if (fBC) { rimTri(s, B, C, A); return; }
+      if (fCA) { rimTri(s, C, A, B); return; }
+      if (fAB) {
+        // (strips from the whole side AB toward C: the points on AC and on BC, as the triangles beside them have them)
+        for (let i = 0; i < RS; i++) {
+          const c0 = i / RS, c1 = (i + 1) / RS;
+          const P0 = rimPt(s, A, B, C, 1 - c0, 0, c0), Q0 = rimPt(s, A, B, C, 0, 1 - c0, c0), P1 = rimPt(s, A, B, C, 1 - c1, 0, c1), Q1 = rimPt(s, A, B, C, 0, 1 - c1, c1);
+          tb.add(P0, Q0, Q1);
+          if (i + 1 < RS) tb.add(P0, Q1, P1);
+        }
+        return;
+      }
       let m = 0;
       for (let j = 0; j <= RS; j++) {
-        for (let i = 0; i + j <= RS; i++) {
-          const b = i / RS, c = j / RS, a = 1 - b - c, L3 = (o) => a * A[o] + b * B[o] + c * C[o];
-          const G = a * A.G + b * B.G + c * C.G, w = a * A.zr + b * B.zr + c * C.zr + A.sg * Math.sqrt(G > 0 ? G : 0);
-          proj(a * A.u + b * B.u + c * C.u, a * A.v + b * B.v + c * C.v, w);
-          const c3 = colorAt(s, w), h = Math.sqrt(G > 0 ? G : 0);
-          rsub[m++] = [T[0], T[1], T[2], a * A.L[0] + b * B.L[0] + c * C.L[0] + h * upN[0], a * A.L[1] + b * B.L[1] + c * C.L[1] + h * upN[1], a * A.L[2] + b * B.L[2] + c * C.L[2] + h * upN[2], c3[0], c3[1], c3[2], L3(9), L3(10), L3(11)];
-        }
+        for (let i = 0; i + j <= RS; i++) { const b = i / RS, c = j / RS; rsub[m++] = rimPt(s, A, B, C, 1 - b - c, b, c); }
       }
       // (the point (i, j) is number j·(RS + 1) − j·(j − 1)/2 + i)
       const at = (i, j) => rsub[j * (RS + 1) - (j * (j - 1)) / 2 + i];
@@ -14130,6 +14243,16 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           if (i + j + 1 < RS) tb.add(at(i + 1, j), at(i + 1, j + 1), at(i, j + 1));
         }
       }
+    };
+    // a point of such a triangle, by its weights a, b, c of the corners
+    const rimPt = (s, A, B, C, a, b, c) => {
+      const L3 = (o) => a * A[o] + b * B[o] + c * C[o];
+      // (rounded as much as its corners are: straight, as the flat cell beside it, where they are not, LAM in rimModel)
+      const G = a * A.G + b * B.G + c * C.G, lam = a * A.lam + b * B.lam + c * C.lam, rt = (x) => Math.sqrt(x > 0 ? x : 0);
+      const w = a * A.zr + b * B.zr + c * C.zr + A.sg * (lam * rt(G) + (1 - lam) * (a * rt(A.G) + b * rt(B.G) + c * rt(C.G)));
+      proj(a * A.u + b * B.u + c * C.u, a * A.v + b * B.v + c * C.v, w);
+      const c3 = colorAt(s, w), h = rt(G);
+      return [T[0], T[1], T[2], a * A.L[0] + b * B.L[0] + c * C.L[0] + h * upN[0], a * A.L[1] + b * B.L[1] + c * C.L[1] + h * upN[1], a * A.L[2] + b * B.L[2] + c * C.L[2] + h * upN[2], c3[0], c3[1], c3[2], L3(9), L3(10), L3(11)];
     };
     let jelly = 0, faded = 0, rimTris = 0;
     // (the group of each triangle: the number of its surface, for the see-through of each with WebGL 2)
@@ -14222,7 +14345,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       // (1.12.0, BG09: for each surface, the grid lines across its edge without an edge point; and the
       // most grid points at which two surfaces have the same value)
       rimMiss: (D.series || []).map((s) => { let m = 0; const z = s.z, nx = D.nx; for (let k = 0; k < z.length; k++) { const a = z[k] === z[k]; if ((k + 1) % nx && a !== (z[k + 1] === z[k + 1]) && !(s.rim && s.rim['h' + k])) m++; if (k + nx < z.length && a !== (z[k + nx] === z[k + nx]) && !(s.rim && s.rim['v' + k])) m++; } return m; }),
-      same: D.same || 0, seq: D.seq || 0, cut: GR ? { points: D.series.reduce((n, s) => n + (s.angP ? Object.keys(s.angP).length : 0), 0), dropped: cutLost } : null });
+      same: D.same || 0, seq: D.seq || 0, rimGaps, cut: GR ? { points: D.series.reduce((n, s) => n + (s.angP ? Object.keys(s.angP).length : 0), 0), dropped: cutLost } : null });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
     if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, RV, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
