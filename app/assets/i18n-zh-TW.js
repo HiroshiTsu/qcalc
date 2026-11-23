@@ -2,6 +2,13 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "這是主值（複數）。實數立方根請用 cbrt(−{0})（∛）",
+    "This is the principal value (a complex number). The real root is root(−{0}, {1})": "這是主值（複數）。實數方根請用 root(−{0}, {1})",
+    "\"{0}\" was taken as the unit {1}; for an unknown, use x, y or z": "「{0}」被當作單位「{1}」計算。未知數請用 x、y、z",
+    "Could not calculate: the vectors or matrices are not the same size": "無法計算（向量或矩陣的大小不同）",
+    "Could not calculate: the factorial of a negative integer is not defined": "無法計算（負整數的階乘沒有定義）",
+    "Birthday": "生日",
+    "Age on this date (empty: today)": "這一天的年齡（空白則為今天）",
     "Touching an expression edits its line: = puts the new result in its place. For a new line, press \"As a new line\".": "點按算式會修改那一行：按 = 會以新結果取代那一行。若要新增一行，請按「改為新的一列」。",
     "This line was worked out in {0}: it is worked out in {0} again": "這一行是以{0}計算的，仍以{0}計算",
     "The angle unit of this line was not kept: it is worked out in {0}, as set now": "這一行沒有保留角度單位，因此以目前的設定（{0}）計算",

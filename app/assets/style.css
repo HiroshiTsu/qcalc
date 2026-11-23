@@ -1,3 +1,6 @@
+/* (1.16.0, the review of 11-24, T1) an element with "hidden" is never shown, whatever display its class gives it (until then .geo-size {
+   display: flex } kept the fields of other choices of the tools in sight: "Days" with an age, the discount with a price with tax) */
+[hidden] { display: none !important; }
 :root {
   --bg: #f6f7f9;
   --surface: #ffffff;
