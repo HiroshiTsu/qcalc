@@ -366,7 +366,26 @@
   }
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
   S.lang = LANG_AUTO ? 'auto' : LANG; // the language in use (qalc.lang, or 'auto'), whatever qalc.settings says
-  function saveSettings() { store.set('qalc.settings', S); }
+  // (1.15.0) the new defaults, 15 significant digits and digit groups, once, also on a phone whose saved settings still
+  // have the old ones together (10 digits and no groups: up to 1.14 every setting was saved whenever one changed, so a
+  // value as it was cannot be told from one chosen; the owner's choice A of 11-23). The card of what is new says that
+  // the precision can be set back in the settings
+  if (!store.get('qalc.defaults115', false)) {
+    const saved = store.get('qalc.settings', null);
+    if (saved && Number(saved.precision) === 10 && saved.grouping === false) {
+      S.precision = DEFAULTS.precision; S.grouping = DEFAULTS.grouping; store.set('qalc.settings', S);
+    }
+    store.set('qalc.defaults115', true);
+  }
+  // (1.15.0) the settings the user has changed (qalc.touched): a later change of a default can leave those alone
+  const touched = new Set(store.get('qalc.touched', []));
+  let lastSaved = Object.assign({}, S);
+  function saveSettings() {
+    for (const k of Object.keys(DEFAULTS)) if (k !== 'lang' && S[k] !== lastSaved[k]) touched.add(k);
+    lastSaved = Object.assign({}, S);
+    store.set('qalc.settings', S);
+    if (touched.size) store.set('qalc.touched', Array.from(touched));
+  }
 
   // ------------------------------------------------------- number format
   // 1.12.0: how numbers are written, setting "Number format": 1,234.5, 1.234,5 or 1 234,5, or
@@ -1433,8 +1452,8 @@
   //     engine's text, which it reads again
   //   - a result with units on one line (m/s, not a stacked fraction)
   //   - a line too wide for its place gets smaller letters, down to 80 % (of the size set and the phone's), and only
-  //     then breaks, only between groups of digits: before "," or "." between groups (not after it, where it would look
-  //     like a list), after a narrow space; never after "=" or "≈" and never inside a group (fitLines, after drawing)
+  //     then breaks, only between groups of digits, after the sign between them ("1,569,275," and then "433,…"; after a
+  //     narrow space in the decimals); never after "=" or "≈" and never inside a group (fitLines, after drawing)
   const SUP_DIGITS = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻', '−': '⁻', '+': '⁺' };
   const supText = (s) => Array.from(String(s)).map((c) => SUP_DIGITS[c] || c).join('');
   // the places of " ≈ " outside brackets and quotes
@@ -1470,7 +1489,8 @@
     const f = num.slice(k + 1).replace(/[0  ]+$/, '');
     return f ? num.slice(0, k + 1) + f : num.slice(0, k);
   }
-  // a number as nodes: the groups with a place to break between them (before "," or ".", after a narrow space), and its
+  // a number as nodes: the groups with a place to break after the sign between them (",", "." or a narrow space: the
+  // owner's choice of 11-23, a line may end with "," but not begin with it), and its
   // exponent as × 10 with the power raised (and said as words to a screen reader)
   function numberNodes(num) {
     const out = [];
@@ -1482,7 +1502,7 @@
       const groupSign = (c === ' ' || c === ' ') || (c === NF.group && (k < 0 || i < k) && c !== NF.dec);
       if (!groupSign) { s += c; continue; }
       if (c === ' ' || c === ' ') { s += ' '; out.push(s, el('wbr')); s = ''; }
-      else { out.push(s, el('wbr')); s = c; }
+      else { out.push(s + c, el('wbr')); s = ''; }
     }
     out.push(s);
     if (m) {
@@ -16854,7 +16874,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       p.body.append(el('div', { class: 'section-title', text: '' }),
         el('button', { class: 'btn', text: tr('Reset all settings', '設定を初期値に戻す'), onclick: async () => {
           if (!(await confirmSheet(tr('Reset the settings and the digits shown by each tool to their defaults?', '設定と画面ごとの表示桁数を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
-          S = Object.assign({}, DEFAULTS, { lang: LANG_AUTO ? 'auto' : LANG }); settingsChanged(); // the language stays
+          S = Object.assign({}, DEFAULTS, { lang: LANG_AUTO ? 'auto' : LANG }); touched.clear(); store.del('qalc.touched'); lastSaved = Object.assign({}, S); settingsChanged(); // the language stays (1.15.0: and nothing counts as changed)
           digitsClearAll(); // (feature/screen-digits: the digits of each tool too, and the shared digits of D7)
           for (const k of Object.keys(p.inputs)) { const i = p.inputs[k]; if (i.type === 'checkbox') i.checked = !!S[k]; else i.value = String(S[k]); }
           if (p.precisionBack) p.precisionBack();

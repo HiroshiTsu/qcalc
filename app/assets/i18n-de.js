@@ -628,6 +628,7 @@
     "Every tool shows its default digits; precision {0}, no limit on decimal places": "Alle Werkzeuge zeigen ihre Standardstellen; Genauigkeit {0}, Nachkommastellen ohne Grenze",
     "changed": "geändert",
     "Back to the default ({0})": "Zurück zum Standard ({0})",
+    " times 10 to the power of {0}": " mal 10 hoch {0}",
     "Put the digits of every tool, the precision and the maximum decimal places back to their defaults?": "Die angezeigten Stellen aller Werkzeuge, die Genauigkeit und die maximalen Nachkommastellen auf den Standard zurücksetzen?",
     "Reset the settings and the digits shown by each tool to their defaults?": "Einstellungen und angezeigte Stellen je Werkzeug auf den Standard zurücksetzen?",
     "Update now": "Jetzt aktualisieren",

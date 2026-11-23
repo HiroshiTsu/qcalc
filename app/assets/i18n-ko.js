@@ -631,6 +631,7 @@
     "Every tool shows its default digits; precision {0}, no limit on decimal places": "모든 화면을 기본 자릿수로 되돌렸습니다(유효 자릿수 {0}, 소수점 아래는 제한 없음)",
     "changed": "변경됨",
     "Back to the default ({0})": "기본값({0})으로 되돌리기",
+    " times 10 to the power of {0}": " 곱하기 10의 {0}제곱",
     "Put the digits of every tool, the precision and the maximum decimal places back to their defaults?": "모든 화면의 표시 자릿수와 정밀도, 소수점 아래 최대 자릿수를 기본값으로 되돌릴까요?",
     "Reset the settings and the digits shown by each tool to their defaults?": "설정과 화면별 표시 자릿수를 기본값으로 되돌릴까요?",
     "Update now": "지금 업데이트",
