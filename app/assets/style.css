@@ -1776,7 +1776,7 @@ body.hselect #history { padding-bottom: 150px; }
 /* (1.15.0) the kinds of lines of the 2D graph, and the length and area of a parametric or polar line */
 /* (one row when the labels fit, each as wide as it needs and the rest shared; two rows rather than a label cut) */
 .seg.mini.plot-kinds { display: flex; width: 100%; margin: 0 0 8px; flex-wrap: wrap; }
-.seg.mini.plot-kinds button { flex: 1 1 auto; min-width: 48px; font-size: 13px; padding: 7px 6px; min-height: 40px; white-space: nowrap; }
+.seg.mini.plot-kinds button { flex: 1 1 auto; min-width: 48px; font-size: 13px; padding: 7px 6px; min-height: 48px; white-space: nowrap; } /* (a touch area of 48 dp: UX01) */
 .curve-tools:empty { display: none; }
 .curve-tools { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 8px; }
 .ct-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13.5px; }
