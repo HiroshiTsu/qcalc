@@ -13,6 +13,9 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    // (1.16.0) the card of what is new: the stocks and the notes
+    "Stocks and investing: profit and loss with tax, average cost, the margin-call price, yield and more": "Acciones e inversión: ganancias y pérdidas con impuestos, precio medio, precio de llamada de margen, rentabilidad y más",
+    "Calculation notes: line numbers and #3, and tables with a formula column and totals": "Notas de cálculo: números de línea y #3, y tablas con una columna con fórmula y totales",
     // (1.16.0) the calculation notes: the numbers of the lines, "#3", and tables (feature/notes-table)
     "Item": "Artículo",
     "Qty": "Cantidad",

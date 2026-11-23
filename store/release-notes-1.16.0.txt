@@ -1,60 +1,70 @@
 <en-US>
-• Your variables and functions on one screen: "Variables" above the input field. Tap to insert; ⋯ to change, rename or delete (with Undo)
-• Argument hints for about 60 functions as you type them
-• Distributions: normal, binomial, Poisson, t and χ² (probability, density, quantiles), the range shaded in a graph
-• Statistics: histogram and box plot; regression curves of degree 2 to 4, exponential, power, log (QCalc Pro except the line); columns read from CSV files
+• New stock tools: profit and loss with tax, average cost, margin ratio and margin-call price, position size, yield/PER/PBR (margin tools: QCalc Pro)
+• Calculation notes: line numbers and #3; tables with formula columns, totals and CSV (QCalc Pro)
+• Your variables and functions on one screen; argument hints as you type
+• Statistics: distributions, histogram, box plot, regression curves (other than the line: QCalc Pro)
+• Fixes: weight row in Shapes; 3D sphere and doughnut drawn whole at once
 </en-US>
 <en-GB>
-• Your variables and functions on one screen: "Variables" above the input field. Tap to insert; ⋯ to change, rename or delete (with Undo)
-• Argument hints for about 60 functions as you type them
-• Distributions: normal, binomial, Poisson, t and χ² (probability, density, quantiles), the range shaded in a graph
-• Statistics: histogram and box plot; regression curves of degree 2 to 4, exponential, power, log (QCalc Pro except the line); columns read from CSV files
+• New stock tools: profit and loss with tax, average cost, margin ratio and margin-call price, position size, yield/PER/PBR (margin tools: QCalc Pro)
+• Calculation notes: line numbers and #3; tables with formula columns, totals and CSV (QCalc Pro)
+• Your variables and functions on one screen; argument hints as you type
+• Statistics: distributions, histogram, box plot, regression curves (other than the line: QCalc Pro)
+• Fixes: weight row in Shapes; 3D sphere and doughnut drawn whole at once
 </en-GB>
 <ja-JP>
-・自分の変数と関数の一覧：入力欄の上の「変数」から。名前をタップで入力、⋯ で値・名前の変更や削除（元に戻せます）
-・関数の引数のヒント：約 60 の関数で、入力中の引数を太字で表示
-・確率分布：正規・二項・ポアソン・t・χ² の確率・密度・分位点。範囲をグラフに色で表示
-・統計：ヒストグラムと箱ひげ図、2〜4 次・指数・累乗・対数の回帰曲線（直線以外は QCalc Pro）、CSV ファイルの列の読み込み
+・株・投資の道具：損益と税（NISA も）、平均取得単価、信用取引の維持率と追証の株価、損切りから株数、利回り・PER・PBR（信用取引の計算は QCalc Pro）
+・計算メモ：行の番号と #3。式の列・合計・CSV のある表（QCalc Pro）
+・自分の変数と関数の一覧、関数の引数のヒント
+・統計：確率分布、ヒストグラムと箱ひげ図、回帰曲線（直線以外は QCalc Pro）
+・図形の重さを結果の行に。3D の球とドーナツが最初からきれいに
 </ja-JP>
 <de-DE>
-• Eigene Variablen und Funktionen auf einem Bildschirm: „Variablen“ über dem Eingabefeld. Tippen fügt ein; ⋯ ändert, benennt um, löscht (rückgängig möglich)
-• Argumenthilfe für etwa 60 Funktionen beim Tippen
-• Verteilungen: Normal, Binomial, Poisson, t, χ² (Wahrscheinlichkeit, Dichte, Quantile), Bereich farbig
-• Statistik: Histogramm, Boxplot; Regressionskurven Grad 2–4, exponentiell, Potenz, log (QCalc Pro außer der Geraden); Spalten aus CSV-Dateien
+• Neue Aktien-Werkzeuge: Gewinn/Verlust mit Steuer, Einstandskurs, Margin-Quote und Nachschusskurs, Positionsgröße, Rendite/KGV/KBV (Margin: QCalc Pro)
+• Rechennotizen: Zeilennummern und #3; Tabellen mit Formelspalten, Summen, CSV (QCalc Pro)
+• Eigene Variablen und Funktionen auf einem Bildschirm; Argumenthilfe
+• Statistik: Verteilungen, Histogramm, Boxplot, Regressionskurven (außer Gerade: QCalc Pro)
+• Gewicht als Ergebniszeile; 3D-Kugel und -Torus sofort ganz
 </de-DE>
 <es-ES>
-• Tus variables y funciones en una pantalla: «Variables» sobre el campo de entrada. Toca para insertar; ⋯ cambia, renombra o borra (con Deshacer)
-• Ayuda de argumentos para unas 60 funciones al escribir
-• Distribuciones: normal, binomial, Poisson, t y χ² (probabilidad, densidad, cuantiles), intervalo sombreado
-• Estadística: histograma, diagrama de caja; curvas de regresión de grado 2 a 4, exponencial, potencial, log (QCalc Pro salvo la recta); columnas de CSV
+• Nuevas herramientas de acciones: ganancias con impuestos, precio medio, ratio de margen y precio de llamada, tamaño de posición, PER/P/VC (margen: QCalc Pro)
+• Notas de cálculo: números de línea y #3; tablas con fórmulas, totales y CSV (QCalc Pro)
+• Tus variables y funciones en una pantalla; ayuda de argumentos
+• Estadística: distribuciones, histograma, caja, regresión (salvo la recta: QCalc Pro)
+• Peso como fila de resultados; esfera y toro 3D enteros al instante
 </es-ES>
 <es-419>
-• Tus variables y funciones en una pantalla: «Variables» sobre el campo de entrada. Toca para insertar; ⋯ cambia, renombra o borra (con Deshacer)
-• Ayuda de argumentos para unas 60 funciones al escribir
-• Distribuciones: normal, binomial, Poisson, t y χ² (probabilidad, densidad, cuantiles), intervalo sombreado
-• Estadística: histograma, diagrama de caja; curvas de regresión de grado 2 a 4, exponencial, potencial, log (QCalc Pro salvo la recta); columnas de CSV
+• Nuevas herramientas de acciones: ganancias con impuestos, precio medio, ratio de margen y precio de llamada, tamaño de posición, PER/P/VC (margen: QCalc Pro)
+• Notas de cálculo: números de línea y #3; tablas con fórmulas, totales y CSV (QCalc Pro)
+• Tus variables y funciones en una pantalla; ayuda de argumentos
+• Estadística: distribuciones, histograma, caja, regresión (salvo la recta: QCalc Pro)
+• Peso como fila de resultados; esfera y toro 3D enteros al instante
 </es-419>
 <fr-FR>
-• Vos variables et fonctions sur un écran : « Variables » au-dessus du champ de saisie. Appuyez pour insérer ; ⋯ modifie, renomme ou supprime (annulable)
-• Aide des arguments pour environ 60 fonctions pendant la saisie
-• Lois : normale, binomiale, Poisson, t et χ² (probabilité, densité, quantiles), intervalle coloré
-• Statistiques : histogramme, boîte à moustaches ; régression de degré 2 à 4, exponentielle, puissance, log (QCalc Pro sauf la droite) ; colonnes CSV
+• Nouveaux outils boursiers : gain avec impôt, prix de revient, ratio de marge et prix d’appel, taille de position, rendement/PER/PBR (marge : QCalc Pro)
+• Notes de calcul : numéros de ligne et #3 ; tableaux avec formules, totaux et CSV (QCalc Pro)
+• Vos variables et fonctions sur un écran ; aide des arguments
+• Statistiques : lois, histogramme, boîte, régression (sauf la droite : QCalc Pro)
+• Poids en ligne de résultat ; sphère et tore 3D entiers d’emblée
 </fr-FR>
 <fr-CA>
-• Vos variables et fonctions sur un écran : « Variables » au-dessus du champ de saisie. Appuyez pour insérer ; ⋯ modifie, renomme ou supprime (annulable)
-• Aide des arguments pour environ 60 fonctions pendant la saisie
-• Lois : normale, binomiale, Poisson, t et χ² (probabilité, densité, quantiles), intervalle coloré
-• Statistiques : histogramme, boîte à moustaches ; régression de degré 2 à 4, exponentielle, puissance, log (QCalc Pro sauf la droite) ; colonnes CSV
+• Nouveaux outils boursiers : gain avec impôt, prix de revient, ratio de marge et prix d’appel, taille de position, rendement/PER/PBR (marge : QCalc Pro)
+• Notes de calcul : numéros de ligne et #3 ; tableaux avec formules, totaux et CSV (QCalc Pro)
+• Vos variables et fonctions sur un écran ; aide des arguments
+• Statistiques : lois, histogramme, boîte, régression (sauf la droite : QCalc Pro)
+• Poids en ligne de résultat ; sphère et tore 3D entiers d’emblée
 </fr-CA>
 <ko-KR>
-• 내 변수와 함수를 한 화면에서: 입력란 위의 ‘변수’. 이름을 누르면 입력, ⋯로 값·이름 변경과 삭제(되돌리기 가능)
-• 함수 인수 도움말: 약 60개 함수에서 입력 중인 인수를 굵게 표시
-• 확률분포: 정규·이항·푸아송·t·χ²의 확률·밀도·분위수, 범위를 그래프에 색으로 표시
-• 통계: 히스토그램과 상자그림, 2~4차·지수·거듭제곱·로그 회귀곡선(직선 외에는 QCalc Pro), CSV 파일의 열 읽기
+• 주식·투자 도구: 세금 포함 손익, 평균 매입 단가, 신용거래 유지율과 추가 증거금 주가, 손절가로 주식 수, 수익률·PER·PBR(신용거래 계산은 QCalc Pro)
+• 계산 메모: 줄 번호와 #3, 식의 열·합계·CSV가 있는 표(QCalc Pro)
+• 내 변수와 함수 목록, 함수 인수 도움말
+• 통계: 확률분포, 히스토그램, 상자그림, 회귀곡선(직선 외에는 QCalc Pro)
+• 도형의 무게를 결과 행에, 3D 구와 도넛을 처음부터 깔끔하게
 </ko-KR>
 <zh-TW>
-• 在一個畫面查看自己的變數與函數：輸入欄上方的「變數」。點名稱即可輸入，⋯ 可修改值、重新命名或刪除（可復原）
-• 函數引數提示：約 60 個函數，輸入時以粗體顯示目前的引數
-• 機率分佈：常態、二項、卜瓦松、t 與 χ² 的機率、密度與分位數，範圍以顏色顯示在圖形上
-• 統計：直方圖與盒鬚圖；2～4 次、指數、冪次與對數的迴歸曲線（直線以外為 QCalc Pro）；讀取 CSV 檔的欄
+• 股票與投資工具：含稅損益、平均成本、信用交易維持率與追繳價、由停損算股數、殖利率／本益比／股價淨值比（信用交易計算為 QCalc Pro）
+• 計算筆記：行號與 #3；有算式欄、合計與 CSV 的表格（QCalc Pro）
+• 我的變數與函數一覽、函數引數提示
+• 統計：機率分佈、直方圖、盒鬚圖、迴歸曲線（直線以外為 QCalc Pro）
+• 圖形重量顯示在結果列；3D 球與甜甜圈一開始就完整
 </zh-TW>

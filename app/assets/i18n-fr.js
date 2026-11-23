@@ -1,6 +1,9 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    // (1.16.0) the card of what is new: the stocks and the notes
+    "Stocks and investing: profit and loss with tax, average cost, the margin-call price, yield and more": "Actions et placements : gain ou perte avec impôt, prix de revient moyen, prix d’appel de marge, rendement et plus",
+    "Calculation notes: line numbers and #3, and tables with a formula column and totals": "Notes de calcul : numéros de ligne et #3, et tableaux avec colonne à formule et totaux",
     // (1.16.0) the calculation notes: the numbers of the lines, "#3", and tables (feature/notes-table)
     "Item": "Article",
     "Qty": "Quantité",

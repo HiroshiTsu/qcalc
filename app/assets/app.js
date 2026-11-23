@@ -16980,7 +16980,11 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // with Try it: the list (k := 2 first when there is nothing in it), a function typed with its hint, the statistics
   // tool on its distributions, on one column (histogram) and on two (the curves))
   const statsWith = (o) => { const s = store.get('qalc.stats', null) || {}; store.set('qalc.stats', Object.assign(s, o)); openStatsTool(); };
+  // (1.16.0, 11-24: first the tools of stocks and investing, and the notes with "#3" and tables: Try it opens "Stock profit
+  // and loss", and the notes (as a table with QCalc Pro))
   const NEWS = () => [
+    ['💹', tr('Stocks and investing: profit and loss with tax, average cost, the margin-call price, yield and more', '株・投資の道具：損益と税、平均取得単価、追証の株価、利回りなど'), () => { const t = TOOLS.find((x) => x[0] === 'pnl'); if (t) useTool(t); }],
+    ['▦', tr('Calculation notes: line numbers and #3, and tables with a formula column and totals', '計算メモ：行の番号と #3、式の列と合計のある表'), () => { const p = openNotesTool(); if (hasPro() && p.showTable) p.showTable(); }],
     ['🔤', tr('Your variables and functions on one screen: the button "Variables" above the input field', '自分の変数と関数を 1 つの画面で：入力欄の上の「変数」のボタン'), () => { if (defCount) { store.set('qalc.lists.tab', 'defs'); openDefs(); return; } setExpr('k := 2'); Promise.resolve(commit()).then(() => { store.set('qalc.lists.tab', 'defs'); openDefs(); }); }],
     ['💡', tr('The arguments of a function shown as you type it, under the input field', '入力中の関数の引数を、入力欄の下に表示'), () => { setExpr('normdist('); focusExpr(); }],
     ['🎲', tr('Probability distributions: normal, binomial, Poisson, t and χ², the range shaded in a graph', '確率分布：正規・二項・ポアソン・t・χ²（範囲をグラフに色で表示）'), () => statsWith({ mode: 'dist' })],
@@ -19124,6 +19128,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         save(); fillPick(); titleIn.value = memo().title; build(); run(empty ? 0 : end);
         toast(trf('Added to “{0}”: {1} lines', '「{0}」に {1} 行を足しました', memo().title, n), 2500);
       };
+      // (1.16.0) the card of what is new: the memo as a table
+      p.showTable = () => { if (!isTable()) setMode('table'); };
       // (1.16.0) from the list of variables: a memo shown at one of its lines
       p.showMemo = (id, line) => {
         if (!N.memos.some((m) => m.id === id)) return;
