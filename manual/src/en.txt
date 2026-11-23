@@ -30,6 +30,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - **Probability distributions**: [[Distributions]] in [[Statistics]] gives the probability of a range, the density and the quantiles of the normal, binomial, Poisson, t and χ² distributions, with the range shaded in a graph ([Probability distributions](#distributions)).
 - **Histogram and box plot**: for one column of data, a histogram (with a bin width you can change) and a box plot (outliers as points) ([Statistics](#stats)).
 - **Regression curves and CSV**: for two columns, choose a curve of degree 2 to 4, an exponential, a logarithmic or a power curve (other than the line: QCalc Pro). [[Read a CSV file]] reads a column of a CSV file ([Statistics](#stats)).
+- **Hints for the arguments of functions**: after a function name and "(", its arguments (the current one in bold), what it does and an example show under the input field. For about 60 functions; ✕ closes it ([Hints for the arguments](#arg-hints)).
 
 ## new-1-15 | What is new in 1.15.0
 - **Easier results**: results have 15 significant digits, in groups of three. Phones that still had the earlier defaults (10 digits, no groups) change once with this version. [[Precision (significant digits)]] and [[Digit grouping (1,000)]] in the [[Settings]] set them back ([Reading the answer](#results)).
@@ -201,6 +202,14 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :what: While you type, suggestions show under the input field: after "to" the units to convert to; with the keyboard, the names of functions and units.
 :step: Type `5 km to`: mi, m, ft and others are suggested.
 :step: Tap one to type it.
+
+### arg-hints | Hints for the arguments
+:what: After a function name and "(", its arguments, what it does and an example show where the suggestions are (under the input field, above the keys). The argument you are typing is in bold.
+:step: Type `round(`: "round(value, [decimals])" shows, with the value in bold.
+:step: After ",", the next argument (the decimals) is in bold. An argument in [ ] can be left out.
+:step: ✕ on the right closes the hint of that function. [[Show the arguments of a function while typing]] in [[Settings]] turns the hints off.
+:example: `round(3.14159, 2)` → 3.14 (as in the example of the hint)
+:tip: About 60 functions have hints: trigonometry, logarithms, roots, rounding, remainders, the greatest common divisor, sums, derivatives, integrals, limits, equations, Taylor series, matrices, statistics and distributions. A hint only reads the input field: it never changes the expression.
 
 ## writing | Writing functions, units and currencies
 :what: Expressions are written as in Qalculate!. The common ways:

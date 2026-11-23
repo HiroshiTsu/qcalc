@@ -30,6 +30,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 - **Distribuciones de probabilidad**: [[Distributions]] en [[Statistics]] da la probabilidad de un rango, la densidad y los cuantiles de las distribuciones normal, binomial, de Poisson, t y χ², con el rango coloreado en una gráfica ([Distribuciones de probabilidad](#distributions)).
 - **Histograma y diagrama de caja**: para una columna, un histograma (con un ancho de clase que puedes cambiar) y un diagrama de caja (los atípicos como puntos) ([Estadística](#stats)).
 - **Curvas de regresión y CSV**: para dos columnas, elige una curva de grado 2 a 4, exponencial, logarítmica o potencial (salvo la recta: QCalc Pro). [[Read a CSV file]] lee una columna de un archivo CSV ([Estadística](#stats)).
+- **Ayuda de los argumentos**: tras el nombre de una función y «(», bajo el campo aparecen sus argumentos (el actual en negrita), qué hace y un ejemplo. Para unas 60 funciones; ✕ la cierra ([Ayuda de los argumentos](#arg-hints)).
 
 ## new-1-15 | Novedades de 1.15.0
 - **Resultados más claros**: los resultados tienen 15 cifras significativas, en grupos de tres. Los teléfonos que aún tenían los valores anteriores (10 cifras, sin grupos) cambian una vez con esta versión. [[Precision (significant digits)]] y [[Digit grouping (1,000)]] en [[Settings]] lo devuelven ([Leer el resultado](#results)).
@@ -201,6 +202,14 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :what: Mientras escribes, aparecen sugerencias bajo el campo: después de «to», las unidades de destino; con el teclado, nombres de funciones y unidades.
 :step: Escribe `5 km to`: se sugieren mi, m, ft y otras.
 :step: Toca una para escribirla.
+
+### arg-hints | Ayuda de los argumentos
+:what: Tras el nombre de una función y «(», donde salen las sugerencias (bajo el campo de entrada, encima de las teclas) aparecen sus argumentos, qué hace y un ejemplo. El argumento que escribes está en negrita.
+:step: Escribe `round(`: aparece «round(valor, [decimales])», con el valor en negrita.
+:step: Tras el separador, el argumento siguiente (los decimales) va en negrita. Un argumento entre [ ] se puede omitir.
+:step: ✕ a la derecha cierra la ayuda de esa función. [[Show the arguments of a function while typing]] en [[Settings]] la desactiva.
+:example: `round(3.14159, 2)` → 3,14 (como en el ejemplo de la ayuda)
+:tip: Unas 60 funciones tienen ayuda: trigonometría, logaritmos, raíces, redondeo, restos, máximo común divisor, sumas, derivadas, integrales, límites, ecuaciones, series de Taylor, matrices, estadística y distribuciones. La ayuda solo lee el campo de entrada: nunca cambia la expresión.
 
 ## writing | Escribir funciones, unidades y monedas
 :what: Las expresiones se escriben como en Qalculate!. Las formas habituales:

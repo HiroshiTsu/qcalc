@@ -30,6 +30,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 - **Lois de probabilité** : [[Distributions]] dans [[Statistics]] donne la probabilité d’un intervalle, la densité et les quantiles des lois normale, binomiale, de Poisson, t et χ², avec l’intervalle coloré sur un graphique ([Lois de probabilité](#distributions)).
 - **Histogramme et boîte à moustaches** : pour une colonne, un histogramme (largeur des classes modifiable) et une boîte à moustaches (valeurs aberrantes en points) ([Statistiques](#stats)).
 - **Courbes de régression et CSV** : pour deux colonnes, choisissez une courbe de degré 2 à 4, exponentielle, logarithmique ou puissance (sauf la droite : QCalc Pro). [[Read a CSV file]] lit une colonne d’un fichier CSV ([Statistiques](#stats)).
+- **Aide sur les arguments** : après le nom d’une fonction et « ( », ses arguments (l’actuel en gras), ce qu’elle fait et un exemple s’affichent sous le champ. Pour environ 60 fonctions ; ✕ ferme l’aide ([Aide sur les arguments](#arg-hints)).
 
 ## new-1-15 | Nouveautés de la 1.15.0
 - **Résultats plus lisibles** : les résultats ont 15 chiffres significatifs, par groupes de trois. Les téléphones qui avaient encore les anciennes valeurs par défaut (10 chiffres, sans groupes) changent une fois avec cette version. [[Precision (significant digits)]] et [[Digit grouping (1,000)]] dans les [[Settings]] permettent de revenir ([Lire le résultat](#results)).
@@ -201,6 +202,14 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :what: Pendant la saisie, des suggestions s'affichent sous le champ : après « to », les unités cibles ; avec le clavier, des noms de fonctions et d'unités.
 :step: Tapez `5 km to` : mi, m, ft et d'autres sont proposés.
 :step: Touchez-en une pour l'écrire.
+
+### arg-hints | Aide sur les arguments
+:what: Après le nom d'une fonction et « ( », ses arguments, ce qu'elle fait et un exemple s'affichent là où sont les suggestions (sous le champ de saisie, au-dessus des touches). L'argument en cours de saisie est en gras.
+:step: Tapez `round(` : « round(valeur, [décimales]) » s'affiche, la valeur en gras.
+:step: Après le séparateur, l'argument suivant (les décimales) est en gras. Un argument entre [ ] peut être omis.
+:step: ✕ à droite ferme l'aide de cette fonction. [[Show the arguments of a function while typing]] dans [[Settings]] désactive l'aide.
+:example: `round(3.14159, 2)` → 3,14 (comme dans l'exemple de l'aide)
+:tip: Environ 60 fonctions ont une aide : trigonométrie, logarithmes, racines, arrondis, restes, plus grand commun diviseur, sommes, dérivées, intégrales, limites, équations, séries de Taylor, matrices, statistiques et lois. L'aide ne fait que lire le champ de saisie : elle ne change jamais l'expression.
 
 ## writing | Écrire des fonctions, des unités et des devises
 :what: Les calculs s'écrivent comme dans Qalculate!. Les formes courantes :
