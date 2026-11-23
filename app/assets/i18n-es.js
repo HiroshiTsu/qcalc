@@ -581,6 +581,7 @@
     "Print the solids you made on a 3D printer": "Imprime tus sólidos en una impresora 3D",
     "Send the turning 3D graph as a GIF": "Envía el gráfico 3D girando como GIF",
     "Move the letters of a 3D graph with sliders, and watch it change": "Mueve las letras de un gráfico 3D con deslizadores y mira cómo cambia",
+    "Fit a curve of degree 2 to 4, exponential, power or logarithmic to your data, with its graph": "Ajusta a tus datos una curva de grado 2 a 4, exponencial, potencial o logarítmica, con su gráfica",
     "Keep several memos and save them as files": "Crea varias notas y guárdalas como archivos",
     "Gamma function (special functions such as zeta, erf and besselj too)": "Función gamma (también funciones especiales como zeta, erf y besselj)",
     "Gradians": "Gradianes",

@@ -573,6 +573,7 @@
     "Print the solids you made on a 3D printer": "做好的立體可以用 3D 印表機印出來",
     "Send the turning 3D graph as a GIF": "旋轉的 3D 圖形可以存成 GIF 傳送",
     "Move the letters of a 3D graph with sliders, and watch it change": "用滑桿移動 3D 圖形中的字母，觀察形狀如何變化",
+    "Fit a curve of degree 2 to 4, exponential, power or logarithmic to your data, with its graph": "為資料擬合 2～4 次、指數、冪次或對數曲線，並以圖形查看",
     "Keep several memos and save them as files": "可以建立多則筆記並存成檔案",
     "Gamma function (special functions such as zeta, erf and besselj too)": "伽瑪函數（也可使用 zeta、erf、besselj 等特殊函數）",
     "Gradians": "百分度",

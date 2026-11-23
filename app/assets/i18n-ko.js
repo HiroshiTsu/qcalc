@@ -572,6 +572,7 @@
     "Print the solids you made on a 3D printer": "만든 입체를 3D 프린터로 출력할 수 있습니다",
     "Send the turning 3D graph as a GIF": "도는 3D 그래프를 GIF로 보낼 수 있습니다",
     "Move the letters of a 3D graph with sliders, and watch it change": "3D 그래프의 문자를 슬라이더로 움직여 모양이 바뀌는 것을 볼 수 있습니다",
+    "Fit a curve of degree 2 to 4, exponential, power or logarithmic to your data, with its graph": "데이터에 2~4차·지수·거듭제곱·로그 곡선을 맞추고 그래프로 볼 수 있습니다",
     "Keep several memos and save them as files": "메모를 여러 개 만들고 파일로 저장할 수 있습니다",
     "Gamma function (special functions such as zeta, erf and besselj too)": "감마 함수(zeta, erf, besselj 같은 특수 함수도 쓸 수 있습니다)",
     "Gradians": "그라디안",

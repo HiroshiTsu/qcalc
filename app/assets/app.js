@@ -19644,7 +19644,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     stl: tr('Print the solids you made on a 3D printer', '作った立体を 3D プリンターで印刷できます'),
     share_pro: tr('Send the turning 3D graph as a GIF', '回る 3D グラフを GIF で送れます'),
     notes: tr('Keep several memos and save them as files', 'メモをいくつも作って、ファイルに保存できます'),
-    sliders3d: tr('Move the letters of a 3D graph with sliders, and watch it change', '3D グラフの文字をスライダーで動かして、形の変わり方を見られます')
+    sliders3d: tr('Move the letters of a 3D graph with sliders, and watch it change', '3D グラフの文字をスライダーで動かして、形の変わり方を見られます'),
+    stats_fit: tr('Fit a curve of degree 2 to 4, exponential, power or logarithmic to your data, with its graph', 'データに 2〜4 次・指数・累乗・対数の曲線を当てはめ、グラフで見られます')
   });
   // the features that PRO_GATES can make Pro: icon, name, what it gives
   const PRO_INFO = () => ({
