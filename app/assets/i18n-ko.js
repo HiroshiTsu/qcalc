@@ -110,7 +110,7 @@
     "For two columns, choose a polynomial of degree 2 to 4, an exponential, a power or a logarithmic curve: its formula, R², prediction and graph (the line stays free)": "2열 데이터에서 2~4차 다항식, 지수·거듭제곱·로그 곡선을 골라 식·결정계수·예측·그래프를 냅니다(직선은 무료)",
     // (1.16.0) the hints of the arguments of the functions: the words of the arguments, what each function does
     "Show the arguments of a function while typing": "함수의 인수 도움말 보이기",
-    "After a function name and \"(\", above the keys: its arguments (the one being typed in bold), what it does and an example": "함수 이름과 「(」 뒤에, 키 위에 인수(입력 중인 인수는 굵게), 설명, 예를 보입니다",
+    "After a function name and \"(\", above the keys: its arguments (the one being typed in bold), what it does and an example": "함수 이름과 ‘(’ 뒤에, 키 위에 인수(입력 중인 인수는 굵게), 설명, 예를 보입니다",
     "Close the hint": "도움말 닫기",
     "e.g. ": "예: ",
     "angle": "각도",
