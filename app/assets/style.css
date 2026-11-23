@@ -1757,3 +1757,14 @@ body.hselect #history { padding-bottom: 150px; }
 .hedit .hedit-new { min-height: 44px; padding: 6px 12px; background: var(--surface); }
 .hedit .hedit-x { width: 48px; height: 48px; border: 0; border-radius: 24px; background: transparent; color: inherit; font-size: 18px; }
 .h-item.editing { box-shadow: inset 3px 0 0 var(--accent); background: var(--accent-soft); border-radius: 8px; }
+
+/* (1.15.0) the chip of the precision; on a narrow phone the title gives way first, then the chips get narrower */
+.bar.notitle .title { visibility: hidden; min-width: 0; overflow: hidden; }
+.bar.tight .chips { gap: 4px; }
+.bar.tight .chip { padding: 4px 6px; min-width: 40px; }
+.bar.tighter { gap: 2px; padding-right: 4px; }
+.bar.tighter .chips { gap: 2px; }
+.bar.tighter .chip { padding: 4px 4px; min-width: 36px; font-size: 12px; }
+.bar.tightest .chip { padding: 4px 3px; min-width: 32px; font-size: 11px; letter-spacing: -.2px; }
+.bar.tightest .icon-btn { width: 40px; }
+.chip { white-space: nowrap; }

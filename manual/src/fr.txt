@@ -32,6 +32,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 - **Résultats longs et unités** : un résultat trop long pour une ligne s’affiche un peu plus petit, et seulement ensuite passe à la ligne entre des groupes de trois chiffres ; un résultat avec des unités reste sur une ligne (m/s).
 - **L’historique** : ses expressions s’écrivent avec ×, √, π et des exposants (2^10 → 2¹⁰).
 - **Modifier une ligne de l’historique** : touchez l’expression d’une ligne pour la modifier sur place ; = y met le nouveau résultat, et les lignes en dessous peuvent être recalculées ([Modifier une ligne de l’historique](#edit-line)).
+- **La précision sous la main** : la rangée du haut affiche la précision (p. ex. 15 ch.) ; en appuyant dessus, on choisit 10, 15, 20, 30, 50, 100 ou Autre…, et l’expression en cours de saisie est recalculée aussitôt. ⋯ → [[Work it out with other digits]] dans l’historique montre une ligne avec un autre nombre de chiffres ([Lire le résultat](#results)).
 - **Une 3D presque réelle** : la 3D est dessinée par le GPU de l’appareil (WebGL 2), avec une lumière et des ombres réelles : le graphique 3D, [[!⟳ 3D]] dans le graphique 2D, les solides et les cuves des formes, et le solide à partir d’un profil ([Graphique 3D](#graph-3d)).
 - **Transparent** : [[See-through]] permet de voir à travers les surfaces et les solides : leurs faces arrière et intérieures et l’intersection de deux surfaces. Le curseur règle l’opacité et, déplacé quand [[See-through]] est désactivé, l’active ; avec deux choses ou plus, choisissez ce qui est transparent (par exemple seulement le [[Container]] d’une cuve).
 - **Tourner dans tous les sens** : un doigt fait tourner la 3D dans tous les sens, y compris par-dessus et par-dessous. Le bouton au cube propose aussitôt [[From the front]], [[From above]] ou [[From the side]].
@@ -101,7 +102,8 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 - `30!` → `= 265 252 859 812 191 058 636 308 480 000 000` (les entiers en entier jusqu’à 60 chiffres)
 - `2^200` → `≈ 1,606 938 044 258 99 × 10⁶⁰` (un très grand nombre)
 :step: Le bouton du haut passe d'exact à approché ou automatique.
-:step: Le nombre de chiffres est [[Precision (significant digits)]] dans [[Settings]] (15 par défaut). Les résultats s’affichent avec leurs chiffres par groupes de trois ([[Digit grouping (1,000)]] le désactive).
+:step: La précision (15 chiffres par défaut) se change avec le bouton « 15 ch. » de la rangée du haut. Il propose 10, 15, 20, 30, 50, 100 et Autre… (saisir un nombre) ; le résultat de l’expression en cours de saisie est recalculé aussitôt, et les résultats de l’historique ne changent pas. [[Precision (significant digits)]] dans [[Settings]] la change aussi. Les résultats s’affichent avec leurs chiffres par groupes de trois ([[Digit grouping (1,000)]] le désactive).
+:step: Pour voir une ligne de l’historique avec plus de chiffres, choisissez 30, 50, 100 ou Autre… dans son ⋯ → [[Work it out with other digits]]. Le résultat s’affiche dans une feuille avec [[Put the expression into the input field]], [[Keep it in the history]] et [[Copy the result]]. La précision des réglages et la ligne ne changent pas.
 :pro: Jusqu'à 1000 chiffres, c'est gratuit. Au-delà de 1000, jusqu'à 200000 chiffres, c'est une fonction de QCalc Pro.
 :tip: Un résultat très long défile dans l'historique pour lire tous les chiffres ; le copier copie tous les chiffres.
 

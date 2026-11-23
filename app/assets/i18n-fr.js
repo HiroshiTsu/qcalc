@@ -1690,7 +1690,20 @@
     "← Back to the shape": "← Retour à la forme",
     "Values from \"Solid from a profile\"": "Valeurs de « Solide à partir d’un profil »",
     "← Back to the profile": "← Retour au profil",
-    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "Dans le graphique 3D, « Volume et surface » affiche dès son ouverture le volume sous la surface tracée (ou entre deux surfaces) et l’aire de la surface, au-dessus du rectangle ou d’un disque x² + y² ≤ R². Pour un solide fait dans le graphique 2D (⟳ 3D), dans « Solide à partir d’un profil » ou dans « Formes » (⟳ 3D), il affiche les valeurs trouvées là. Sous « Exemple », en bas, chaque solide de Formes peut être dessiné en 3D avec ses valeurs (« Changer les nombres » ouvre Formes)."
+    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "Dans le graphique 3D, « Volume et surface » affiche dès son ouverture le volume sous la surface tracée (ou entre deux surfaces) et l’aire de la surface, au-dessus du rectangle ou d’un disque x² + y² ≤ R². Pour un solide fait dans le graphique 2D (⟳ 3D), dans « Solide à partir d’un profil » ou dans « Formes » (⟳ 3D), il affiche les valeurs trouvées là. Sous « Exemple », en bas, chaque solide de Formes peut être dessiné en 3D avec ses valeurs (« Changer les nombres » ouvre Formes).",
+    // (1.15.0) the precision at the top, "Work it out with other digits", the default 15
+    "The precision at the top: press its chip to choose 10 to 100 digits or another": "La précision en haut : appuyez sur son bouton pour choisir de 10 à 100 chiffres ou une autre",
+    "{0} dig": "{0} ch.",
+    "Precision: {0} significant digits": "Précision : {0} chiffres significatifs",
+    "{0} digits": "{0} chiffres",
+    "Other…": "Autre…",
+    "{0} to {1}": "{0} à {1}",
+    "Precision: {0} digits": "Précision : {0} chiffres",
+    "Work it out with other digits": "Recalculer avec un autre nombre de chiffres",
+    "{0} digits:": "{0} chiffres :",
+    "This line changes something: it is not worked out again here": "Cette ligne modifie quelque chose : elle n’est pas recalculée ici",
+    "2 to 200000 digits (default 15; above 1000 with QCalc Pro). Higher values take longer to calculate": "De 2 à 200000 chiffres (15 par défaut ; plus de 1000 avec QCalc Pro). Les valeurs élevées prennent plus de temps à calculer",
+    "2 to 200000 digits (default 15). Higher values take longer to calculate": "De 2 à 200000 chiffres (15 par défaut). Les valeurs élevées prennent plus de temps à calculer",
   },
   messages: {
     "rates-old": (p1) => "Les taux de change n’ont pas été mis à jour depuis " + p1 + " " + (p1 === '1' ? "jour" : "jours") + " (Paramètres → « Mettre à jour les taux de change maintenant »)",

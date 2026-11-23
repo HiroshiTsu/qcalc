@@ -1693,7 +1693,20 @@
     "← Back to the shape": "← 도형으로 돌아가기",
     "Values from \"Solid from a profile\"": "‘윤곽에서 회전체’의 값",
     "← Back to the profile": "← 윤곽으로 돌아가기",
-    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "3D 그래프의 ‘부피·겉넓이’를 열면 지금 그린 곡면 아래(곡면이 둘이면 그 사이)의 부피와 겉넓이가 바로 나옵니다. 범위는 직사각형이나 원 x² + y² ≤ R²입니다. 2D 그래프(⟳ 3D), ‘윤곽에서 회전체’, ‘도형’(⟳ 3D)에서 만든 입체에서는 거기서 구한 값이 나옵니다. 아래의 ‘도형 예시’에서는 ‘도형’의 모든 입체를 그 값 그대로 3D로 그릴 수 있습니다(‘수 바꾸기’로 ‘도형’이 열립니다)."
+    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "3D 그래프의 ‘부피·겉넓이’를 열면 지금 그린 곡면 아래(곡면이 둘이면 그 사이)의 부피와 겉넓이가 바로 나옵니다. 범위는 직사각형이나 원 x² + y² ≤ R²입니다. 2D 그래프(⟳ 3D), ‘윤곽에서 회전체’, ‘도형’(⟳ 3D)에서 만든 입체에서는 거기서 구한 값이 나옵니다. 아래의 ‘도형 예시’에서는 ‘도형’의 모든 입체를 그 값 그대로 3D로 그릴 수 있습니다(‘수 바꾸기’로 ‘도형’이 열립니다).",
+    // (1.15.0) the precision at the top, "Work it out with other digits", the default 15
+    "The precision at the top: press its chip to choose 10 to 100 digits or another": "유효 자릿수를 위쪽 버튼으로 바로 바꿀 수 있습니다(10~100자리 등)",
+    "{0} dig": "{0}자리",
+    "Precision: {0} significant digits": "유효 자릿수 {0}자리",
+    "{0} digits": "{0}자리",
+    "Other…": "기타…",
+    "{0} to {1}": "{0}~{1}",
+    "Precision: {0} digits": "유효 자릿수: {0}자리",
+    "Work it out with other digits": "자릿수를 바꿔 다시 계산",
+    "{0} digits:": "{0}자리:",
+    "This line changes something: it is not worked out again here": "이 줄은 무언가를 바꾸는 식이라 여기서는 다시 계산하지 않습니다",
+    "2 to 200000 digits (default 15; above 1000 with QCalc Pro). Higher values take longer to calculate": "계산 정밀도(2~200000자리, 기본 15. 1000자리를 넘으려면 QCalc Pro). 클수록 계산에 시간이 걸립니다",
+    "2 to 200000 digits (default 15). Higher values take longer to calculate": "계산 정밀도(2~200000자리, 기본 15). 클수록 계산에 시간이 걸립니다",
   },
   messages: {
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",

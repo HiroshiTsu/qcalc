@@ -1817,6 +1817,8 @@
       showPreview(null);
       autosize();
       updateSuggest(false);
+      updateMathView(); // (1.15.0) the expression in math notation above the field goes with it (it stayed after Enter on a keyboard)
+      plotBtnEl.hidden = true;
     } else {
       previewEl.textContent = '';
       exprChanged(); // something was typed while the calculation ran: keep it
@@ -3467,6 +3469,7 @@
     else if (mcols === 3) more.push(['m-plot', tr('Draw the rows as points (3D graph)', '各行を点としてグラフに描く（3D）')]);
     const a = await sheet((h.t ? fmtTime(h.t / 1000) + (h.edited ? trf(' (edited {0})', '（直した時刻 {0}）', fmtTime(h.edited / 1000)) : '') + '\n' : '') + clip(toDisplay(h.expr), 300) + '\n' + clip(displayText(h.result), 300), more.concat([
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
+      ['digits', tr('Work it out with other digits', '桁数を変えて計算し直す')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')],
       ['star', h.star ? tr('★ Unpin', '★ 固定を外す') : tr('☆ Pin at the top', '☆ 上に固定')],
       ['note', h.note ? tr('Change the note', 'メモを変える') : tr('Add a short note', 'ひとことメモ')],
@@ -3483,6 +3486,7 @@
     else if (a === 'copy-res') copyText(shownText(h));
     else if (a === 'copy-expr') copyText(h.expr);
     else if (a === 'edit') startHistEdit(h);
+    else if (a === 'digits') recalcWithDigits(h);
     else if (a === 'ins-ans') insertResult(h);
     else if (a === 'del') {
       const i = history.indexOf(h);
@@ -15132,16 +15136,17 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     copyText(list.map((h) => toDisplay(h.expr) + ' ' + displayResult(h)).join('\n'));
   }
   // a dialog with one line of text: the text, or null when cancelled
-  function promptSheet(title, value, placeholder) {
+  function promptSheet(title, value, placeholder, okText, numeric) {
     if (sheetResolve) closeSheet(null);
     return new Promise((resolve) => {
       const sh = $('#sheet');
       sh.textContent = '';
       const inp = el('input', { type: 'text', class: 'sheet-input', value: value || '', placeholder: placeholder || '', 'aria-label': title, maxlength: '120' });
+      if (numeric) inp.setAttribute('inputmode', 'numeric'); // (1.15.0: a number of digits)
       const done = (v) => { sheetResolve = null; closeSheet(null); resolve(v); };
       inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); done(inp.value); } });
       sh.append(el('div', { class: 'stitle', text: title }), inp,
-        el('button', { class: 'accent', text: tr('Save', '保存'), onclick: () => done(inp.value) }),
+        el('button', { class: 'accent', text: okText || tr('Save', '保存'), onclick: () => done(inp.value) }),
         el('button', { text: tr('Cancel', 'キャンセル'), onclick: () => done(null) }));
       sheetResolve = () => resolve(null);
       $('#scrim').classList.add('show', 'over-panels');
@@ -15200,6 +15205,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   const NEWS = () => [
     ['🔢', tr('Easier results: 15 digits in groups of 3 (Settings → Precision to change)', '答えが見やすく：15 桁、3 桁ごとに区切り（設定の「有効桁数」で戻せます）'), () => { setExpr('exp(pi*sqrt(163))'); commit(); }],
     history.length ? ['✏️', tr('Edit a line of the history in place (touch its expression)', '履歴の行をその場で直せます（式の行をタップ）'), () => startHistEdit(history[history.length - 1])] : null,
+    ['🎚️', tr('The precision at the top: press its chip to choose 10 to 100 digits or another', '有効桁数を上のボタンですぐ変えられます（10〜100 桁ほか）'), () => precisionSheet()],
     ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
     try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
   ].filter(Boolean);
@@ -16858,6 +16864,40 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     return tab === 'defs' ? openDefs() : openCatalog(tab);
   }
 
+  // (1.15.0) ⋯ "Work it out with other digits": the expression of the line worked out again with 30, 50, 100 or another
+  // number of digits, shown in the sheet of the tools' results (into the field, keep it in the history, copy); the
+  // precision of the settings and the line stay as they are
+  async function recalcWithDigits(h) {
+    const i = history.indexOf(h);
+    if (i < 0) return;
+    const k = await sheet(tr('Work it out with other digits', '桁数を変えて計算し直す'), [30, 50, 100].map((n) => [String(n), trf('{0} digits', '{0} 桁', n)]).concat([['other', tr('Other…', 'その他…')]]));
+    if (!k) return;
+    let n = Number(k);
+    if (k === 'other') {
+      const v = await promptSheet(tr('Work it out with other digits', '桁数を変えて計算し直す'), String(Math.max(30, Number(S.precision))), trf('{0} to {1}', '{0}〜{1}', 2, hasPro() ? MAX_PRECISION : FREE_MAX_PRECISION), tr('Calculate', '計算する'), true);
+      if (v === null) return;
+      n = parseInt(String(v).replace(/[^\d]/g, ''), 10);
+    }
+    if (!Number.isFinite(n)) return;
+    n = Math.max(2, Math.min(MAX_PRECISION, Math.round(n)));
+    if (n > maxPrecision()) { proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'), 'precision'); return; }
+    // the settings of now with the digits chosen (as a line edited in place); nothing is defined or kept: a line that
+    // defines a value ("a := 2/3") gives its value, a line that defines a function or changes something else is not worked out
+    let expr = h.expr;
+    const calc = (e) => Bridge.send('calc', { expr: withAns(e, i), opts: Object.assign(engineOpts(), { precision: n }), timeout: timeLimit() * 1000, max_chars: MAX_RESULT });
+    let r = await calc(expr);
+    const vd = /^\s*[\p{L}_][\p{L}\p{N}_]*\s*:?=(?!=)\s*(.+)$/su.exec(expr);
+    if (r.ok && r.deferred && vd && defName(expr)) { expr = vd[1].trim(); r = await calc(expr); }
+    if (!r.ok || r.timeout || !r.result || r.deferred) {
+      const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
+      toast(r.deferred ? tr('This line changes something: it is not worked out again here', 'この行は何かを変える式なので、ここでは計算し直せません') : r.timeout ? tr('The time limit was reached', '制限時間を過ぎました') : (localMessage(err ? err.text : r.error) || tr('Could not calculate', '計算できませんでした')), 3500);
+      return;
+    }
+    const plain = displayResult({ result: r.result, approx: r.approx, cmp: r.comparison });
+    // (the long number breaks only after a group of digits, as the answers do: a zero-width space after each separator)
+    const sep = new RegExp('([' + (NF.group === '.' ? '\\.' : NF.group) + '\u202f])(?=\\d)', 'g');
+    await resultSheet(trf('{0} digits:', '{0} 桁：', n), expr, groupText(plain).replace(sep, '$1\u200b'), plain.replace(/^[=≈]\s*/, ''), 600, plain);
+  }
   // ------------------------------------------------------- result actions
   // A tap on a result of a tool offers the same three things in every tool (1.12.0): put its
   // expression into the input field, keep it in the history (staying in the tool), copy it.
@@ -16866,13 +16906,13 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // the "= " or "≈ " in front when not given, like a result copied from the history). 1.12.0 (BG12): until the fix, some tools gave their text as shown and others in the
   // engine's form, and "Keep it in the history" put the shown text into the history, where it was taken for
   // the engine's: with a decimal comma 1.458 (yen) came back as 1,458 and 84.685,71 as 84,685;71.
-  async function resultSheet(title, expr, result, copy) {
+  async function resultSheet(title, expr, result, copy, max, plain) {
     const shown = String(result || '');
     if (copy === undefined) copy = shown.replace(/^[=≈]\s*/, '');
-    const k = await sheet(title + '  ' + clip(shown, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'],
+    const k = await sheet(title + (max ? '\n' : '  ') + clip(shown, max || 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'],
       ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy the result', '結果をコピー')]]);
     if (k === 'use') useExample(expr);
-    else if (k === 'keep') { keepResult(expr, shownToEngine(shown)); reviewMoment('tool'); }
+    else if (k === 'keep') { keepResult(expr, shownToEngine(plain || shown)); reviewMoment('tool'); }
     else if (k === 'copy') { copyText(copy || shown); reviewMoment('tool'); }
   }
   // a text as shown (the number format) → the engine's form, as the history keeps its results: the digit
@@ -16924,8 +16964,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         tr('The decimal sign of the numbers you type and see. With 1,5 the arguments are separated by ";": max(1,5; 2)', '入力・表示する数の小数点。1,5 の書き方では、引数を「;」で区切ります：max(1,5; 2)')],
       ['fraction', tr('Fractions', '分数の表示'), [['auto', tr('Automatic', '自動')], ['decimal', tr('Decimal', '小数')], ['exact', tr('Decimal (when exact)', '小数（厳密なときだけ）')], ['fraction', tr('Fraction', '分数')], ['combined', tr('Mixed fraction', '帯分数')]]],
       ['precision', tr('Precision (significant digits)', '有効桁数'), 'number', proOffered()
-        ? tr('2 to 200000 digits (default 10; above 1000 with QCalc Pro). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 10。1000 桁を超えるには QCalc Pro）。大きくするほど計算に時間がかかります')
-        : tr('2 to 200000 digits (default 10). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 10）。大きくするほど計算に時間がかかります')],
+        ? tr('2 to 200000 digits (default 15; above 1000 with QCalc Pro). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 15。1000 桁を超えるには QCalc Pro）。大きくするほど計算に時間がかかります')
+        : tr('2 to 200000 digits (default 15). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 15）。大きくするほど計算に時間がかかります')],
       ['max_decimals', tr('Maximum decimal places', '小数点以下の最大桁数'), [['-1', tr('No limit', '制限なし')], ['0', '0'], ['2', '2'], ['4', '4'], ['6', '6'], ['8', '8'], ['10', '10']]],
       ['base', tr('Number base of results', '結果の進数'), [['10', tr('Decimal', '10進数')], ['16', tr('Hexadecimal', '16進数')], ['2', tr('Binary', '2進数')], ['8', tr('Octal', '8進数')], ['12', tr('Duodecimal', '12進数')], ['-1', tr('Roman numerals', 'ローマ数字')]]],
       ['notation', tr('Exponential notation', '指数表記'), [['auto', tr('Automatic', '自動')], ['sci', tr('Scientific (exponent from about 1000)', '科学表記（1000 以上などで指数）')], ['eng', tr('Engineering (exponent a multiple of 3)', '工学表記（指数は 3 の倍数）')], ['pure', tr('Always', '常に指数表記')], ['none', tr('Never (all digits)', '使わない（全桁を表示）')]],
@@ -17086,13 +17126,57 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     applyTheme();
     exprChanged();
     if (CF.id) formChanged();
-    if (mathShown !== S.math_view) { mathShown = S.math_view; renderHistory(false); }
+    if (mathShown !== S.math_view || groupShown !== S.grouping) { mathShown = S.math_view; groupShown = S.grouping; renderHistory(false); }
   }
-  let mathShown = S.math_view;
+  let mathShown = S.math_view, groupShown = S.grouping; // (1.15.0: the groups of digits are made when shown, groupText)
   function updateChips() {
     $('#chip-angle').textContent = ANGLE_LABEL[S.angle] || 'RAD';
     $('#chip-approx').textContent = APPROX_LABEL[S.approx] || APPROX_LABEL.auto;
     $('#chip-base').textContent = BASE_LABEL[String(S.base)] || String(S.base);
+    // (1.15.0) the precision at once: "15 dig" (short in every language), said "Precision: 15 significant digits"
+    const pc = $('#chip-prec');
+    pc.textContent = trf('{0} dig', '{0}桁', S.precision);
+    pc.setAttribute('aria-label', trf('Precision: {0} significant digits', '有効桁数 {0} 桁', S.precision));
+    fitBar();
+  }
+  // (1.15.0) the bar at the top on a narrow phone: with the four chips the title "QCalc" gives way first, then the chips
+  // get narrower in steps (less space inside and between them, then a smaller letter); the words of the chips are never cut
+  const BAR_STEPS = ['notitle', 'tight', 'tighter', 'tightest'];
+  function fitBar() {
+    const bar = $('.bar');
+    if (!bar) return;
+    bar.classList.remove(...BAR_STEPS);
+    const title = bar.querySelector('.title');
+    if (title && title.scrollWidth > title.clientWidth) bar.classList.add('notitle'); // "Q…" is not shown: the space stays empty
+    for (const c of BAR_STEPS) { if (bar.scrollWidth <= bar.clientWidth) break; bar.classList.add(c); }
+  }
+  window.addEventListener('resize', () => fitBar());
+  // (1.15.0) the precision chosen at the top: 10, 15, 20, 30, 50, 100 or another; the expression being typed is worked out
+  // again at once, the history stays as it is; above 1000 digits it is QCalc Pro, as in the settings
+  async function setPrecisionNow(n) {
+    if (!Number.isFinite(n)) return;
+    n = Math.max(NUMBER_RANGE.precision.min, Math.min(MAX_PRECISION, Math.round(n)));
+    if (n > maxPrecision()) { proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'), 'precision'); return; }
+    S.precision = n;
+    settingsChanged();
+    const sp = panels.settings;
+    if (sp && sp.inputs && sp.inputs.precision) { sp.inputs.precision.value = String(n); if (sp.precisionBack) sp.precisionBack(); }
+    toast(trf('Precision: {0} digits', '有効桁数：{0} 桁', n), 1400);
+  }
+  const PREC_CHOICES = [10, 15, 20, 30, 50, 100];
+  async function precisionSheet() {
+    const cur = Number(S.precision);
+    const k = await sheet(tr('Precision (significant digits)', '有効桁数'), PREC_CHOICES.map((n) => [String(n), (n === cur ? '✓ ' : '') + trf('{0} digits', '{0} 桁', n)])
+      .concat([['other', (PREC_CHOICES.indexOf(cur) < 0 ? '✓ ' + trf('{0} digits', '{0} 桁', cur) + ' · ' : '') + tr('Other…', 'その他…')]]));
+    if (!k) return;
+    if (k === 'other') {
+      const v = await promptSheet(tr('Precision (significant digits)', '有効桁数'), String(cur), trf('{0} to {1}', '{0}〜{1}', 2, hasPro() ? MAX_PRECISION : FREE_MAX_PRECISION), null, true);
+      if (v === null) return;
+      const n = parseInt(String(v).replace(/[^\d]/g, ''), 10);
+      if (Number.isFinite(n)) await setPrecisionNow(n);
+      return;
+    }
+    await setPrecisionNow(Number(k));
   }
   function cycle(key, values) {
     const i = values.indexOf(String(S[key]));
@@ -17101,7 +17185,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     settingsChanged();
     if (panels.settings && panels.settings.inputs) panels.settings.inputs[key].value = String(S[key]);
   }
-  for (const id of ['#chip-angle', '#chip-approx', '#chip-base']) $(id).addEventListener('pointerdown', (e) => e.preventDefault());
+  for (const id of ['#chip-angle', '#chip-approx', '#chip-base', '#chip-prec']) $(id).addEventListener('pointerdown', (e) => e.preventDefault());
+  $('#chip-prec').addEventListener('click', () => { vibrate(); precisionSheet(); });
   $('#chip-angle').addEventListener('click', () => { vibrate(); cycle('angle', ['rad', 'deg', 'gra']); toast(tr('Angle: ', '角度：') + { rad: tr('radians', 'ラジアン'), deg: tr('degrees', '度'), gra: tr('gradians', 'グラード') }[S.angle], 1200); });
   $('#chip-approx').addEventListener('click', () => { vibrate(); cycle('approx', ['auto', 'exact', 'approx']); toast({ auto: tr('Exact and approximate values, automatically', '厳密値と近似値を自動で表示'), exact: tr('Always exact', '常に厳密に計算'), approx: tr('Always approximate (decimals)', '常に近似（小数）で計算') }[S.approx], 1400); });
   $('#chip-base').addEventListener('click', () => { vibrate(); cycle('base', ['10', '16', '2', '8']); toast(trf('Results in {0}', '結果を {0}で表示', BASE_NAME[String(S.base)]), 1200); });
@@ -17718,6 +17803,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     set('#chip-angle', 'title', 'Angle unit', '角度の単位');
     set('#chip-approx', 'title', 'Exact or approximate', '厳密計算・近似');
     set('#chip-base', 'title', 'Number base of results', '結果の進数');
+    set('#chip-prec', 'title', 'Precision (significant digits)', '有効桁数');
     set('#history', 'aria-label', 'History', '計算の履歴');
     set('#expr', 'placeholder', 'Enter an expression', '式を入力');
     set('#pages', 'aria-label', 'Keys', 'キーの種類');
