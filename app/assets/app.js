@@ -3450,7 +3450,16 @@
     return legacyInsertText(h);
   }
   function wrapValue(t) {
-    return /^[−-]?(?:\d[\d.]*(?:E[−-]?\d+)?|[\p{L}_][\p{L}\p{N}_]*|\[[^\]]*\]|"[^"]*")$/u.test(t) ? t : '(' + t + ')';
+    if (/^[−-]?(?:\d[\d.]*(?:E[−-]?\d+)?|[\p{L}_][\p{L}\p{N}_]*|\[[^\]]*\]|"[^"]*")$/u.test(t)) return t;
+    // (1.16.0, fix/insert-exact) one call of a function, as the exact form of an answer often is (cbrt(2), ln(2), sin(1 rad)):
+    // without more parentheses around it
+    const f = /^[\p{L}_][\p{L}\p{N}_]*\(/u.exec(t);
+    if (f && t[t.length - 1] === ')') {
+      let d = 0, i = f[0].length - 1;
+      for (; i < t.length; i++) { if (t[i] === '(') d++; else if (t[i] === ')' && --d === 0) break; }
+      if (i === t.length - 1) return t;
+    }
+    return '(' + t + ')';
   }
   // for history saved by older versions, which has only the displayed text
   function legacyInsertText(h) {

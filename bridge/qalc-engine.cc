@@ -602,6 +602,30 @@ static bool is_equation_solutions(const MathStructure &m) {
 static bool g_ans_changed = false;
 
 // same as qalc's "update ans variables"
+// (1.16.0, fix/insert-exact) The text to insert a result: from its exact form when the value shown was approximated
+// (√(8): "2 × √(2)", not "2.82842712474619", which the engine would then read as an exact decimal: (…)^2 gave
+// "= 7.999 999 999 999 999 447…"), else from the value with all the digits of the precision set (print_input). The
+// solutions of an equation are taken as values, as ans has them (store_ans).
+static MathStructure as_answer(MathStructure m) {
+	if(!is_equation_solutions(m)) return m;
+	if(m.isLogicalAnd()) {
+		for(size_t i = 0; i < m.size(); i++) if(m[i].comparisonType() == COMPARISON_EQUALS) return m[i][1];
+		return m;
+	}
+	if(m.isLogicalOr()) {
+		m.setType(STRUCT_VECTOR);
+		for(size_t i = 0; i < m.size(); i++) {
+			if(m[i].isLogicalAnd()) {
+				for(size_t i2 = 0; i2 < m[i].size(); i2++) if(m[i][i2].comparisonType() == COMPARISON_EQUALS) {m[i].setToChild(i2 + 1); break;}
+			}
+			m[i].setToChild(2);
+		}
+		return m;
+	}
+	return m[1];
+}
+static bool g_ans_exact_set = false;
+static MathStructure g_ans_exact;
 static void store_ans(MathStructure m) {
 	g_ans_changed = true;
 	MathStructure m4(vans[3]->get()); m4.replace(vans[4], vans[4]->get()); vans[4]->set(m4);
@@ -767,11 +791,43 @@ static string taylor_ascending(const PrintOptions &po, const EvaluationOptions &
 	return out;
 }
 
+// Functions that change something (definitions, files) instead of only computing a value.
+static bool changes_something(const MathStructure &m, int depth = 0) {
+	if(depth > 200) return false;
+	if(m.isFunction() && m.function()) {
+		switch(m.function()->id()) {
+			case FUNCTION_ID_SAVE: case FUNCTION_ID_EXPORT: case FUNCTION_ID_COMMAND:
+			case FUNCTION_ID_REGISTER: case FUNCTION_ID_STACK: case FUNCTION_ID_PLOT:
+				return true;
+		}
+		if(m.function()->subtype() == SUBTYPE_USER_FUNCTION) {
+			const string formula = ((UserFunction*) m.function())->formula();
+			if(formula.find("save") != string::npos || formula.find("export") != string::npos || formula.find(":=") != string::npos) return true;
+		}
+	}
+	for(size_t i = 0; i < m.size(); i++) if(changes_something(m[i], depth + 1)) return true;
+	return false;
+}
+
+// (libqalculate, Calculator-calculate.cc, not in its headers) an expression that must not be worked out a second time
+// (save, plot, random numbers, time, …): used for the exact form of the text to insert a result (exact_again)
+bool contains_no_recalculate_exact_object(const MathStructure &m, int dual_approx);
+
 struct CalcResult {
 	string result, parsed;
-	bool approx = false, comparison = false, timed_out = false, forced = false, have_value = false;
+	bool approx = false, comparison = false, timed_out = false, forced = false, have_value = false, have_exact = false;
 	MathStructure value;
+	// (1.16.0, fix/insert-exact) the exact form of an approximate value (2 × √(2) for 2.828…, π, sin(1)), when the
+	// automatic approximation found one: the text to insert the result is made from it (exact_input)
+	MathStructure exact;
+	// (the expression as it was evaluated, without "to …", and whether it may be worked out again exactly: nothing that
+	// changes something, no random numbers or time, no "to …", bases or factors; exact_again)
+	string evaluated;
+	bool recalc_ok = false;
 };
+static string exact_input(const CalcResult &r) {
+	return print_input(r.have_exact ? as_answer(r.exact) : as_answer(r.value));
+}
 
 // The same steps as Calculator::calculateAndPrint(), but the expression is evaluated only once,
 // in libqalculate's calculation thread (so that the time limit and abort() work), and the
@@ -822,6 +878,9 @@ static void calculate_once(string str, int msecs, EvaluationOptions evalops, Pri
 	MathStructure mstruct, parsed_struct;
 	g_taylor_last.valid = false;
 	bool finished = CALCULATOR->calculate(&mstruct, str, msecs, evalops, &parsed_struct);
+	r.evaluated = str;
+	r.recalc_ok = finished && !had_to && !do_bases && !do_calendars && !do_factors && !do_expand && !do_pfe && evalops.approximation != APPROXIMATION_EXACT
+	              && !contains_no_recalculate_exact_object(parsed_struct, -1) && !parsed_struct.containsInterval(true, false, false, false, true) && !changes_something(parsed_struct);
 	if(!finished) {
 		r.timed_out = true;
 		r.forced = mstruct.isAborted();  // the calculation thread had to be cancelled
@@ -857,6 +916,7 @@ static void calculate_once(string str, int msecs, EvaluationOptions evalops, Pri
 			}
 			r.value = mstruct;
 			r.have_value = true;
+			if(!mexact.isUndefined() && !CALCULATOR->aborted() && mstruct.isApproximate() && !mexact.isApproximate()) {r.exact = mexact; r.have_exact = true;}
 			adaptive_interval_display(printops, str, parsed_struct);
 			printops.allow_factorization = printops.allow_factorization || evalops.structuring == STRUCTURING_FACTORIZE || do_factors;
 			vector<string> alt_results;
@@ -1004,22 +1064,24 @@ static bool too_deeply_nested(const string &s, int max_depth = 300) {
 
 static bool restart_after_reply = false;
 
-// Functions that change something (definitions, files) instead of only computing a value.
-static bool changes_something(const MathStructure &m, int depth = 0) {
-	if(depth > 200) return false;
-	if(m.isFunction() && m.function()) {
-		switch(m.function()->id()) {
-			case FUNCTION_ID_SAVE: case FUNCTION_ID_EXPORT: case FUNCTION_ID_COMMAND:
-			case FUNCTION_ID_REGISTER: case FUNCTION_ID_STACK: case FUNCTION_ID_PLOT:
-				return true;
-		}
-		if(m.function()->subtype() == SUBTYPE_USER_FUNCTION) {
-			const string formula = ((UserFunction*) m.function())->formula();
-			if(formula.find("save") != string::npos || formula.find("export") != string::npos || formula.find(":=") != string::npos) return true;
-		}
-	}
-	for(size_t i = 0; i < m.size(); i++) if(changes_something(m[i], depth + 1)) return true;
-	return false;
+
+// (1.16.0, fix/insert-exact) An approximate result whose exact form the automatic approximation did not give (π, e,
+// 2^(1/3), ln(2), 1/3 + √(2), a matrix with √(2): the exact form is the expression itself, or it was not shown): worked out
+// again exactly, briefly (400 ms), for the text to insert it. Kept only when it is exact, not long (60 parts, 2000
+// characters) and not a calculation left undone (an integral, a solution or a limit the engine could only approximate).
+static void exact_again(CalcResult &r, EvaluationOptions eo) {
+	if(!r.recalc_ok || !r.value.isApproximate()) return;
+	eo.approximation = APPROXIMATION_EXACT;
+	MathStructure mx;
+	CALCULATOR->beginTemporaryStopMessages();
+	bool ok = CALCULATOR->calculate(&mx, r.evaluated, 400, eo);
+	CALCULATOR->endTemporaryStopMessages();
+	if(!ok || mx.isAborted() || mx.isApproximate() || mx.isUndefined() || mx.countTotalChildren(false) > 60) return;
+	static const int undone[] = {FUNCTION_ID_INTEGRATE, FUNCTION_ID_ROMBERG, FUNCTION_ID_MONTE_CARLO, FUNCTION_ID_DIFFERENTIATE, FUNCTION_ID_SOLVE,
+	                             FUNCTION_ID_SOLVE_MULTIPLE, FUNCTION_ID_D_SOLVE, FUNCTION_ID_LIMIT, FUNCTION_ID_NEWTON_RAPHSON, FUNCTION_ID_SECANT_METHOD};
+	for(int id : undone) if(mx.containsFunctionId(id, true, true, true)) return;
+	if(print_input(as_answer(mx)).size() > 2000) return;
+	r.exact = mx; r.have_exact = true;
 }
 
 static string cmd_calc(const JVal &req, JOut &out) {
@@ -1059,7 +1121,12 @@ static string cmd_calc(const JVal &req, JOut &out) {
 	CalcResult r;
 	calculate_once(uexpr, timeout, op.eo, op.po, op.af, op.aa, r);
 	string msgs = collect_messages();
-	if(store && r.have_value && !r.timed_out) store_ans(r.value);
+	if((store || req.boolean("input", false)) && r.have_value && !r.timed_out && !r.have_exact) exact_again(r, op.eo);
+	if(store && r.have_value && !r.timed_out) {
+		store_ans(r.value);
+		// (1.16.0) the event "ans" gives the text to insert from the exact form, when there is one
+		if(r.have_exact) {g_ans_exact = as_answer(r.exact); g_ans_exact_set = true;}
+	}
 	if(r.forced) restart_after_reply = true;  // libqalculate state is not safe after a forced thread cancel
 	string tail;
 	size_t full_chars = 0, full_digits = 0, head_bytes = (size_t) max_chars;
@@ -1082,7 +1149,7 @@ static string cmd_calc(const JVal &req, JOut &out) {
 	out.raw("messages", msgs);
 	// (1.15.0) a line of the history worked out again in place ("input":true, without "store", so that ans stays): the
 	// text to insert its result, as the event "ans" gives it after a calculation that is stored
-	if(req.boolean("input", false) && r.have_value && !r.timed_out) out.str("input", print_input(r.value));
+	if(req.boolean("input", false) && r.have_value && !r.timed_out) out.str("input", exact_input(r));
 	return "";
 }
 
@@ -1829,7 +1896,8 @@ int main() {
 			// into an expression; the id is that of the calculation that produced it
 			g_ans_changed = false;
 			string ev = "{\"event\":\"ans\",\"id\":" + id_json + ",\"value\":" + jstr(vans[0]->get().print(CALCULATOR->save_printoptions))
-			            + ",\"input\":" + jstr(print_input(vans[0]->get())) + "}";
+			            + ",\"input\":" + jstr(print_input(g_ans_exact_set ? g_ans_exact : vans[0]->get())) + "}";
+			g_ans_exact_set = false;
 			write_line(ev);
 		}
 		if(restart_after_reply) _exit(4);
