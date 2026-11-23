@@ -1,6 +1,13 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "Das ist der Hauptwert (eine komplexe Zahl). Die reelle Kubikwurzel ist cbrt(−{0}) (∛)",
+    "This is the principal value (a complex number). The real root is root(−{0}, {1})": "Das ist der Hauptwert (eine komplexe Zahl). Die reelle Wurzel ist root(−{0}, {1})",
+    "\"{0}\" was taken as the unit {1}; for an unknown, use x, y or z": "„{0}“ wurde als Einheit {1} gelesen; für eine Unbekannte x, y oder z verwenden",
+    "Could not calculate: the vectors or matrices are not the same size": "Nicht berechenbar: Die Vektoren oder Matrizen sind nicht gleich groß",
+    "Could not calculate: the factorial of a negative integer is not defined": "Nicht berechenbar: Die Fakultät einer negativen ganzen Zahl ist nicht definiert",
+    "Birthday": "Geburtstag",
+    "Age on this date (empty: today)": "Alter an diesem Tag (leer: heute)",
     "Touching an expression edits its line: = puts the new result in its place. For a new line, press \"As a new line\".": "Ein Tippen auf einen Ausdruck bearbeitet seine Zeile: = ersetzt sie durch das neue Ergebnis. Für eine neue Zeile „Als neue Zeile“ drücken.",
     "This line was worked out in {0}: it is worked out in {0} again": "Diese Zeile wurde in {0} berechnet: Sie wird wieder in {0} berechnet",
     "The angle unit of this line was not kept: it is worked out in {0}, as set now": "Die Winkeleinheit dieser Zeile ist nicht gespeichert: Sie wird wie jetzt eingestellt in {0} berechnet",

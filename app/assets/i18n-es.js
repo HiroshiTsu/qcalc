@@ -13,6 +13,13 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "Este es el valor principal (un número complejo). La raíz cúbica real es cbrt(−{0}) (∛)",
+    "This is the principal value (a complex number). The real root is root(−{0}, {1})": "Este es el valor principal (un número complejo). La raíz real es root(−{0}, {1})",
+    "\"{0}\" was taken as the unit {1}; for an unknown, use x, y or z": "«{0}» se tomó como la unidad {1}; para una incógnita, usa x, y o z",
+    "Could not calculate: the vectors or matrices are not the same size": "No se pudo calcular: los vectores o matrices no tienen el mismo tamaño",
+    "Could not calculate: the factorial of a negative integer is not defined": "No se pudo calcular: el factorial de un entero negativo no está definido",
+    "Birthday": "Fecha de nacimiento",
+    "Age on this date (empty: today)": "Edad en esta fecha (vacío: hoy)",
     "Touching an expression edits its line: = puts the new result in its place. For a new line, press \"As a new line\".": "Tocar una expresión edita su línea: = la sustituye por el nuevo resultado. Para una línea nueva, pulsa «Como línea nueva».",
     "This line was worked out in {0}: it is worked out in {0} again": "Esta línea se calculó en {0}: se vuelve a calcular en {0}",
     "The angle unit of this line was not kept: it is worked out in {0}, as set now": "No se guardó la unidad de ángulo de esta línea: se calcula en {0}, como está ajustado ahora",

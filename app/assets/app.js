@@ -708,6 +708,10 @@
       : ev.state === 'none' ? tr('This build has no in-app review (the build for Google Play has it)', 'このビルドにはアプリ内レビューがありません（Google Play 版にあります）')
         : tr('Google Play did not take the request (as when the app is not installed from Google Play)', 'Google Play は要求を受けませんでした（Google Play から入れていないときなど）'), 6000);
   }
+  // (1.16.0, the review of 11-24, C3) "… to mi" with one unit: the result in that unit as a decimal (≈ 3.106 86 mi), not split into
+  // mixed units (3 mi + 188 yd + 2.39 in), as the converter gives it
+  const TO_ONE = /(?:\bto|→|->)\s*[\p{L}°µΩ'"][\p{L}\p{N}°µΩ²³⁴/·⋅^_'"]*\s*$/u;
+  const optsFor = (expr, base) => (TO_ONE.test(String(expr || '')) ? Object.assign(base || engineOpts(), { mixed_units: false }) : base || engineOpts());
   function engineOpts() {
     return {
       angle: S.angle, approx: S.approx, fraction: S.fraction, precision: Math.min(Number(S.precision) || DEFAULTS.precision, maxPrecision()),
@@ -1266,7 +1270,9 @@
       .replace(/(^|[\d)\s])ー(?=[\d(\s]|$)/g, '$1−');
   }
   function normalizeExpr(s) {
-    return toInternal(normalizeJa(s)).trim();
+    // (1.16.0, the review of 11-24, C1: nPr(5, 2) and nCr(5, 2), the names of the calculators, as perm and comb; until then nPr was
+    // read as n·P·r (units and constants) and nCr as an unknown r)
+    return toInternal(normalizeJa(s)).trim().replace(/(^|[^\p{L}\p{N}_])n([PC])r\s*\(/gu, (m, p, k) => p + (k === 'P' ? 'perm(' : 'comb('));
   }
   function normalizeField() {
     const v = exprEl.value, n = normalizeJa(v);
@@ -1365,6 +1371,25 @@
       }
       if (!callKind.get(n)) notes.push(trf('"{0}" is not a function: it was read as letters multiplied (units and constants). Check the spelling', '「{0}」という関数はありません（文字ごとの掛け算＝単位や定数として計算しました）。つづりを確認してください', n));
     }
+    // (1.16.0, the review of 11-24, C2) a negative number to the power 1/odd: its principal value is complex ((−8)^(1/3) = 1 + 1.73…i);
+    // the real root is cbrt or root
+    const neg = /\(\s*[−-]\s*(\d+(?:\.\d+)?)\s*\)\s*\^\s*\(\s*1\s*\/\s*(\d*[13579])\s*\)/.exec(expr);
+    if (neg) notes.push(neg[2] === '3' ? trf('This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)', 'これは主値（複素数）です。実数の立方根は cbrt(−{0})（∛）で求められます', neg[1])
+      : trf('This is the principal value (a complex number). The real root is root(−{0}, {1})', 'これは主値（複素数）です。実数の {1} 乗根は root(−{0}, {1}) で求められます', neg[1], neg[2]));
+    // (C4) in solve, diff, integrate …, a single letter that the engine reads as a unit (a: are, m: metre, g: gram, s: second, h: hour,
+    // t: tonne …), probably meant as a variable: said, with the unit it was taken for
+    if (/(^|[^\p{L}])(solve|diff|integrate|dsolve|limit|taylor|newtonsolve|secantsolve|multisolve)\s*\(/u.test(expr)) {
+      const seen = new Set();
+      for (const m of expr.matchAll(/(^|[^\p{L}\p{N}_°])([a-wA-WΩ])(?![\p{L}\p{N}_(])/gu)) {
+        const c = m[2];
+        if (seen.has(c) || 'ei'.indexOf(c) >= 0) continue;
+        seen.add(c);
+        try { if (!sugData) await loadSugData(); } catch (e) { }
+        const u = sugData && sugData.byText.get(c);
+        if (u && !definedVars.has(c)) notes.push(trf('"{0}" was taken as the unit {1}; for an unknown, use x, y or z', '「{0}」は単位の「{1}」として計算しました。未知数には x、y、z を使ってください', c, u.title || u.name));
+        if (notes.length > 4) break;
+      }
+    }
     return notes;
   }
   // the notes go with the messages of the engine, in front of them
@@ -1392,7 +1417,7 @@
     const rx = expandHistRefs(expr, histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h.n : histNo + 1);
     if (rx.error) { showPreview(null); msgEl.textContent = rx.error; msgEl.className = 'msg error'; return; }
     previewBusy = true;
-    const r = await withNotes(await Bridge.send('calc', { expr: rx.expr, opts: engineOpts(), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), rx.expr);
+    const r = await withNotes(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), rx.expr);
     previewBusy = false;
     if (exprEl.value.trim() === raw && !committing) showPreview(r);
     if (previewAgain) { previewAgain = false; runPreview(); }
@@ -1615,11 +1640,13 @@
   function groupText(t) {
     if (!S.grouping || Number(S.base) !== 10 || !t || t.length > 20000) return t;
     const re = new RegExp('\\d+(?:' + (NF.dec === '.' ? '\\.' : ',') + '\\d+)?', 'g');
+    // (1.16.0, the review of 11-24, N1: an amount of money from 4 digits, ¥6,200 as ¥85,000 beside it in the notes)
+    const minG = /[¥$€£₩₹]|(?:^|[\s\d])(?:JPY|USD|EUR|GBP|KRW|TWD|CNY|MXN|CHF|INR|CAD|AUD)\b/.test(t) ? 4 : 5;
     return t.replace(re, (num, at, all) => {
       const b = all[at - 1] || '';
       if (/[\p{L}_\d]/u.test(b) || (b === NF.dec || b === NF.group) || ((b === '-' || b === '−' || b === '+') && all[at - 2] === 'E')) return num;
       const k = num.indexOf(NF.dec), i = k < 0 ? num : num.slice(0, k), f = k < 0 ? '' : num.slice(k + 1);
-      const gi = i.length >= 5 ? i.replace(/\B(?=(\d{3})+$)/g, NF.group) : i;
+      const gi = i.length >= minG ? i.replace(/\B(?=(\d{3})+$)/g, NF.group) : i;
       const gf = f.length >= 5 ? f.replace(/(\d{3})(?=\d)/g, '$1\u202f') : f;
       return k < 0 ? gi : gi + NF.dec + gf;
     });
@@ -1778,6 +1805,14 @@
     }
     return text;
   }
+  // (1.16.0, the review of 11-24, C5) a result that is the calculation itself, left undone by the engine without a message: said
+  // instead of "= [1  2] + [1  2  3]" or "= factorial(−1)"
+  function undoneMessage(result) {
+    const t = String(result || '').split(' ≈ ')[0];
+    if (/\]\s*[+−-]\s*\[/.test(t)) return tr('Could not calculate: the vectors or matrices are not the same size', '計算できませんでした（ベクトルや行列の大きさが違います）');
+    if (/^factorial\(\s*[−-]\s*\d+\s*\)$|^\(\s*[−-]\s*\d+\s*\)!$/.test(t)) return tr('Could not calculate: the factorial of a negative integer is not defined', '計算できませんでした（負の整数の階乗は定義されていません）');
+    return '';
+  }
   function showPreview(r) {
     msgEl.textContent = '';
     msgEl.className = 'msg';
@@ -1788,6 +1823,7 @@
     if (r.deferred) previewEl.textContent = tr('Press = to run it (definitions are not previewed)', '＝ を押すと実行します（定義など）');
     else if (r.timeout) previewEl.textContent = '…';
     else if (err) { previewEl.textContent = ''; msgEl.textContent = localMessage(err.text); msgEl.className = 'msg error'; }
+    else if (undoneMessage(r.result)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result); msgEl.className = 'msg error'; }
     else {
       showResult(previewEl, resultText(r));
       fitMatrices(previewEl);
@@ -1844,7 +1880,7 @@
     const rx = editing ? null : expandHistRefs(expr, histNo + 1);
     if (rx && rx.error) { committing = false; clearInterval(busyTimer); previewEl.textContent = ''; msgEl.textContent = rx.error; msgEl.className = 'msg error'; return; }
     const r = editing ? Object.assign(await recalcLine(history.indexOf(editing), expr), { editRun: true })
-      : await Bridge.send('calc', { expr: rx.expr, opts: engineOpts(), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+      : await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
     if (editing) {
       committing = false; clearInterval(busyTimer); clearInterval(cancelTimer);
       if (r.error) { previewEl.textContent = ''; msgEl.textContent = r.error; msgEl.className = 'msg error'; return; }
@@ -1879,6 +1915,7 @@
       msgEl.className = 'msg error';
       return;
     }
+    if (undoneMessage(r.result)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result); msgEl.className = 'msg error'; return; } // (C5)
     const entry = {
       expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), angle: S.angle, // (angle: 1.16.0, R3)
       msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3), t: Date.now()
@@ -4188,7 +4225,7 @@
   async function recalcLine(i, expr) {
     const rx = refsAt(expr, i);
     if (rx.error) return { error: rx.error };
-    const r = await Bridge.send('calc', { expr: withAns(expr, i), opts: lineOpts(history[i]), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    const r = await Bridge.send('calc', { expr: withAns(expr, i), opts: optsFor(expr, lineOpts(history[i])), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
     if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
     if (!r.ok || r.timeout || !r.result) {
       const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
@@ -17777,7 +17814,15 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   function boxNum(t) {
     let s = String(t || '').trim().replace(/[\s ]/g, '').replace(/[，]/g, ',').replace(/[．]/g, '.').replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[−–]/g, '-');
     let scale = 1;
-    if (/割$/.test(s)) { s = s.slice(0, -1); scale = 10; } else if (/%$/.test(s)) s = s.slice(0, -1);
+    // (1.16.0, the review of 11-24, T3: also 3割引, 3割引き; 3000万, 1億, 1億2000万, 5千 and 円 after a sum)
+    s = s.replace(/円$/, '');
+    if (/割(?:引き?)?$/.test(s)) { s = s.replace(/割(?:引き?)?$/, ''); scale = 10; } else if (/%$/.test(s)) s = s.slice(0, -1);
+    const big = /^(?:([\d.,]+)億)?(?:([\d.,]+)万)?(?:([\d.,]+)千)?([\d.,]*)$/.exec(s);
+    if (big && /[億万千]/.test(s)) {
+      const part = (t) => (t ? boxNum(t) : 0);
+      const v = part(big[1]) * 1e8 + part(big[2]) * 1e4 + part(big[3]) * 1e3 + part(big[4]);
+      return isFinite(v) ? v * scale : NaN;
+    }
     if (commaMode) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, '');
     return /^-?\d+(\.\d+)?$|^-?\.\d+$/.test(s) ? Number(s) * scale : NaN;
   }
@@ -17837,7 +17882,14 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const tableBox = el('div', { class: 'tool-table' });
       const caution = spec.invest ? investLine(spec.caution) : spec.caution ? cautionLine(spec.caution) : null;
       // fields shown only for some choices (when: values → boolean)
-      const showFields = () => { const v = values(); for (const r of rows) if (r._f.when) r.hidden = !r._f.when(v); };
+      // (labelFor, 1.16.0 T5: a name that follows the choices, as the dates of an age: "Birthday")
+      const showFields = () => {
+        const v = values();
+        for (const r of rows) {
+          if (r._f.when) r.hidden = !r._f.when(v);
+          if (r._f.labelFor) { const t = r._f.labelFor(v), l = r.querySelector('.geo-lbl'), i = r.querySelector('input'); if (l) l.textContent = t; if (i) i.setAttribute('aria-label', t); }
+        }
+      };
       const values = () => { const v = {}; for (const f of spec.fields) v[f.k] = f.opts ? chosen[f.k] : inputs[f.k].value; return v; };
       let seq = 0;
       const run = debounce(async () => {
@@ -17895,7 +17947,13 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     fileSaved({ ok: true });
   }
-  const roundBy = (x, mode, u) => { const q = x / u; const r = mode === 'down' ? Math.floor(q + 1e-9) : mode === 'up' ? Math.ceil(q - 1e-9) : Math.round(q); return r * u; };
+  // (1.16.0, the review of 11-24, T2) the quotient read as a decimal of 12 significant digits first: 1,234.50 × 1.19 / 0.01 was
+  // 146905.49999999997 and was rounded down to 1,469.05 (1,212 prices up to 2,000.00 with the usual tax rates were one cent off);
+  // half rounded away from zero; the result again without the error of the binary fractions
+  const roundBy = (x, mode, u) => {
+    const q = Number((x / u).toPrecision(12)), r = mode === 'down' ? Math.floor(q) : mode === 'up' ? Math.ceil(q) : Math.sign(q) * Math.round(Math.abs(q));
+    return Number((r * u).toPrecision(15));
+  };
   const roundFn = (mode) => (mode === 'down' ? 'floor' : mode === 'up' ? 'ceil' : 'round');
   const ROUNDING = () => [['down', tr('Down', '切り捨て')], ['near', tr('Nearest', '四捨五入')], ['up', tr('Up', '切り上げ')]];
   const unitWord = () => (MONEY().cur === 'JPY' ? tr('', '円') : '');
@@ -18569,9 +18627,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       chips: [[tr('100 days from today', '今日から 100 日後'), { mode: 'after', d1: today(), n: '100' }], [tr('Days to 2027-01-01', '2027 年 1 月 1 日までの日数'), { mode: 'between', d1: today(), d2: '2027-01-01' }]].concat(JA ? [['昭和64年1月7日', { mode: 'era', d1: '1989-01-07' }]] : []),
       fields: [
         { k: 'mode', label: tr('Find', '求めるもの'), opts: modes, def: 'after' },
-        { k: 'd1', label: tr('Date', '日付'), def: today, ph: JA ? '2026-11-19、令和8年11月19日' : '2026-11-19', kind: 'date', chips: () => [tr('today', '今日')] },
+        { k: 'd1', label: tr('Date', '日付'), labelFor: (v) => (v.mode === 'age' ? tr('Birthday', '誕生日') : tr('Date', '日付')), def: today, ph: JA ? '2026-11-19、令和8年11月19日' : '2026-11-19', kind: 'date', chips: () => [tr('today', '今日')] },
         { k: 'n', label: tr('Days', '日数'), def: '100', ph: tr('e.g. 100 or −30', '例：100、−30'), when: (v) => v.mode === 'after' },
-        { k: 'd2', label: tr('Second date', 'もう 1 つの日付'), def: '', ph: '2027-01-01', kind: 'date', when: (v) => v.mode === 'between' || v.mode === 'age' }
+        { k: 'd2', label: tr('Second date', 'もう 1 つの日付'), labelFor: (v) => (v.mode === 'age' ? tr('Age on this date (empty: today)', 'この日の年齢（空なら今日）') : tr('Second date', 'もう 1 つの日付')), def: '', ph: '2027-01-01', kind: 'date', when: (v) => v.mode === 'between' || v.mode === 'age' }
       ],
       hint: tr('Dates as 2026-11-19 (or "today"). Days between counts the days from the first date to the second; an age is in full years on the second date (today if empty).', '日付は 2026-11-19 か「今日」（日本語では 令和8年11月19日 も）。日数の差は 1 つめから 2 つめまでの日数、年齢は 2 つめの日（空なら今日）の満年齢です。'),
       run: async (v) => {
@@ -18593,7 +18651,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (!b || b.bad) return { msg: tr('Write the second date as 2027-01-01', 'もう 1 つの日付は 2027-01-01 のように書いてください'), bad: 'd2' };
         if (v.mode === 'between') {
           const n = dayNum(b) - dayNum(a);
-          return { rows: [{ name: tr('Days', '日数'), small: tr('from the first date to the second', '1 つめから 2 つめまで'), value: fmtNum(n) + tr(' days', ' 日'), expr: '' }, { name: tr('Weeks', '週'), value: trf('{0} weeks {1} days', '{0} 週 {1} 日', fmtNum(Math.trunc(n / 7)), Math.abs(n % 7)), expr: '' }] };
+          return { rows: [{ name: tr('Days', '日数'), small: tr('from the first date to the second', '1 つめから 2 つめまで'), value: fmtNum(n) + tr(' days', ' 日'), expr: '' }, { name: tr('Weeks', '週'), value: trf('{0} weeks {1} days', '{0} 週 {1} 日', (n < 0 ? '−' : '') + fmtNum(Math.trunc(Math.abs(n) / 7)), (n < 0 && n % 7 ? '−' : '') + Math.abs(n % 7)), expr: '' }] };
         }
         let age = b.y - a.y;
         if (b.m < a.m || (b.m === a.m && b.d < a.d)) age--;
@@ -18609,8 +18667,13 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const s = String(t || '').trim().replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[：]/g, ':');
     let m = s.match(/^(\d{1,3}):(\d{1,2})$/);
     if (m && +m[2] < 60) return +m[1] * 60 + +m[2];
-    m = s.match(/^(\d{1,3})\s*(h|時間?)\s*(?:(\d{1,2})\s*(m|min|分)?)?$/i);
-    if (m && (!m[3] || +m[3] < 60)) return +m[1] * 60 + (m[3] ? +m[3] : 0);
+    // (1.16.0, T3: 17時半, 午後5時, 午前9時30分 as times)
+    const pm = /^午後/.test(s) ? 12 * 60 : 0;
+    const s2 = s.replace(/^午[前後]\s*/, '');
+    m = s2.match(/^(\d{1,2})\s*時半$/);
+    if (m) return +m[1] * 60 + 30 + (+m[1] < 12 ? pm : 0);
+    m = s2.match(/^(\d{1,3})\s*(h|時間?)\s*(?:(\d{1,2})\s*(m|min|分)?)?$/i);
+    if (m && (!m[3] || +m[3] < 60)) return +m[1] * 60 + (m[3] ? +m[3] : 0) + (+m[1] < 12 ? pm : 0);
     m = s.match(/^(\d{1,4})\s*(m|min|分)$/i);
     if (m) return +m[1];
     return NaN;
