@@ -1749,7 +1749,17 @@
       const s = Math.floor((Date.now() - started) / 1000);
       if (s >= 1) previewEl.textContent = trf('Calculating… {0} s (tap here to stop)', '計算中… {0} 秒（ここをタップで中止）', s);
     }, 1000);
-    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    // (1.15.0) a line of the history being edited: worked out in its place (ans of the lines above it, not stored)
+    const editing = histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
+    if (histEdit && !editing) endHistEdit(true); // (the line was deleted meanwhile: a new line)
+    const r = editing ? Object.assign(await recalcLine(history.indexOf(editing), expr), { editRun: true })
+      : await Bridge.send('calc', { expr, opts: engineOpts(), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    if (editing) {
+      committing = false; clearInterval(busyTimer); clearInterval(cancelTimer);
+      if (r.error) { previewEl.textContent = ''; msgEl.textContent = r.error; msgEl.className = 'msg error'; return; }
+      await applyHistEdit(editing, r);
+      return;
+    }
     if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
     committing = false;
     clearInterval(busyTimer);
@@ -3374,7 +3384,7 @@
   function historyItem(h) {
     const res = el('div', { class: 'h-res' });
     showResult(res, displayResult(h));
-    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') }, el('div', { class: 'h-expr', text: prettyExpr(toDisplay(h.expr)) }), res);
+    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: prettyExpr(toDisplay(h.expr)) }), res);
     item._h = h;
     if (h.note) item.insertBefore(el('div', { class: 'h-note', text: h.note }), item.firstChild);
     for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
@@ -3384,7 +3394,7 @@
     bindLongPress(item, () => { if (!histSel) historyMenu(h); }, (target) => {
       if (histSel) { toggleSelected(item); return; }
       if (target.closest('.h-more')) { historyMenu(h); return; }
-      if (target.closest('.h-expr')) setExpr(h.expr);
+      if (target.closest('.h-expr')) startHistEdit(h); // (1.15.0: the line edited in place)
       else insertResult(h);
       focusExpr();
     });
@@ -3453,7 +3463,7 @@
     const mcols = mat ? parseMatrix(mat).rows[0].length : 0;
     if (mcols === 2) more.push(['m-plot', tr('Draw the rows as points (2D graph)', '各行を点としてグラフに描く（2D）')]);
     else if (mcols === 3) more.push(['m-plot', tr('Draw the rows as points (3D graph)', '各行を点としてグラフに描く（3D）')]);
-    const a = await sheet((h.t ? fmtTime(h.t / 1000) + '\n' : '') + clip(toDisplay(h.expr), 300) + '\n' + clip(displayText(h.result), 300), more.concat([
+    const a = await sheet((h.t ? fmtTime(h.t / 1000) + (h.edited ? trf(' (edited {0})', '（直した時刻 {0}）', fmtTime(h.edited / 1000)) : '') + '\n' : '') + clip(toDisplay(h.expr), 300) + '\n' + clip(displayText(h.result), 300), more.concat([
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')],
       ['star', h.star ? tr('★ Unpin', '★ 固定を外す') : tr('☆ Pin at the top', '☆ 上に固定')],
@@ -3470,7 +3480,7 @@
     else if (a === 'f-subst') openForm('subst', { f: fx, focus: 'a' });
     else if (a === 'copy-res') copyText(shownText(h));
     else if (a === 'copy-expr') copyText(h.expr);
-    else if (a === 'edit') setExpr(h.expr);
+    else if (a === 'edit') startHistEdit(h);
     else if (a === 'ins-ans') insertResult(h);
     else if (a === 'del') {
       const i = history.indexOf(h);
@@ -3517,6 +3527,155 @@
     fitHistory();
     saveHistory();
     renderHistory(false);
+  }
+  // ------------------------------------------------- a line of the history edited in place (1.15.0)
+  // The owner's design of 11-23 09:12: touching the expression of a line (or ⋯ "Edit expression") puts it into the field
+  // with a band above it, "Editing a line of the history", with "As a new line" and ✕. "=" then puts the new expression
+  // and its result in that place: ★ and the note stay, the time of the change is kept beside the time of the line, and
+  // "Edited" with "Undo" shows for a few seconds. The lines below that went on from it (ans, ans2 … of the lines above, or
+  // a variable it defines) can be worked out again too, after one question; Undo takes them back as well. A line is worked
+  // out with the settings of now, as a new line would be (a line of another base gets the base of now: the band says so).
+  // The engine keeps its ans and its variables as the history now has them (set_ans; the newest definition of a name is
+  // worked out again when an older one was).
+  let histEdit = null; // { h, keep: what the field held before }
+  const editBand = el('div', { id: 'hist-edit', class: 'hedit', role: 'region', hidden: true, 'aria-label': tr('Editing a line of the history', '履歴の行を直しています') });
+  editBand.append(el('span', { class: 'hedit-t', text: tr('Editing a line of the history', '履歴の行を直しています') }),
+    el('span', { class: 'hedit-n', hidden: true }),
+    tapButton({ class: 'btn hedit-new', type: 'button', text: tr('As a new line', '新しい行にする') }, () => endHistEdit(true)),
+    tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Stop editing (nothing changes)', '直すのをやめる（何も変わりません）') }, () => endHistEdit(false)));
+  $('.entry').insertBefore(editBand, $('.entry').firstChild);
+  function startHistEdit(h) {
+    if (history.indexOf(h) < 0) return;
+    if (histSel) closeHistSelect();
+    if (!histEdit) histEdit = { h, keep: exprEl.value };
+    else histEdit.h = h;
+    const n = editBand.querySelector('.hedit-n'), b = Number(h.base || 10), now = Number(S.base);
+    n.textContent = b !== now ? trf('This line was in {0}; it is worked out in {1}, as set now', 'この行は {0} でした。今の設定の {1} で計算します', BASE_NAME[b] || String(b), BASE_NAME[now] || String(now)) : '';
+    n.hidden = !n.textContent;
+    editBand.hidden = false;
+    exprEl.value = toDisplay(h.expr);
+    exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length);
+    exprChanged();
+    markEditing();
+    const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === h);
+    if (it) it.scrollIntoView({ block: 'nearest' });
+    $('#status').textContent = tr('Editing a line of the history: = puts the new result in its place', '履歴の行を直しています。= で、その行を新しい式と答えに置き換えます');
+    focusExpr();
+  }
+  function markEditing() { for (const it of histEl.querySelectorAll('.h-item')) it.classList.toggle('editing', !!histEdit && it._h === histEdit.h); }
+  // asNew: "As a new line" (the expression stays in the field, = adds a line); otherwise ✕ or back: nothing changes, the
+  // field gets back what it held
+  function endHistEdit(asNew) {
+    if (!histEdit) return false;
+    const keep = histEdit.keep;
+    histEdit = null;
+    editBand.hidden = true;
+    markEditing();
+    if (!asNew) { exprEl.value = keep || ''; exprChanged(); }
+    $('#status').textContent = asNew ? tr('= adds a new line', '= で新しい行になります') : tr('Editing stopped, nothing changed', '直すのをやめました（何も変わりません）');
+    return true;
+  }
+  // the names an expression defines ("x = 5", "x := 5", "f(x) := x^2") and whether it uses a name or ans
+  const defName = (e) => { const m = /^\s*([\p{L}_][\p{L}\p{N}_]*)\s*(?:\([^()]*\))?\s*:?=(?!=)/u.exec(e || ''); return m && !/^ans\d?$/.test(m[1]) ? m[1] : null; };
+  const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const usesName = (e, name) => new RegExp('(^|[^\\p{L}\\p{N}_])' + escRe(name) + '(?![\\p{L}\\p{N}_])', 'u').test(e || '');
+  const ansUses = (e) => Array.from(String(e || '').matchAll(/(^|[^\p{L}\p{N}_])ans(\d?)(?![\p{L}\p{N}_])/gu)).map((m) => (m[2] ? Number(m[2]) : 1));
+  // the expression of line i with ans (ans2 …) as the results of the lines above it then (not the newest ans)
+  function withAns(expr, i) {
+    return String(expr).replace(/(^|[^\p{L}\p{N}_])ans(\d?)(?![\p{L}\p{N}_])/gu, (m, pre, d) => {
+      const p = history[i - (d ? Number(d) : 1)], v = p ? insertText(p) : null;
+      return v ? pre + '(' + v + ')' : m;
+    });
+  }
+  const ENTRY_KEYS = ['expr', 'result', 'approx', 'cmp', 'base', 'msgs', 'cut', 'tail', 'input', 'big', 'edited'];
+  const snapEntry = (h) => { const s = {}; for (const k of ENTRY_KEYS) if (k in h) s[k] = h[k]; return s; };
+  function putEntry(h, s) { for (const k of ENTRY_KEYS) delete h[k]; Object.assign(h, s); }
+  // a line worked out again in place (the settings of now): its new fields, or { error }
+  async function recalcLine(i, expr) {
+    const r = await Bridge.send('calc', { expr: withAns(expr, i), opts: engineOpts(), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
+    if (!r.ok || r.timeout || !r.result) {
+      const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
+      return { error: r.timeout ? tr('The time limit was reached', '制限時間を過ぎました') : localMessage(err ? err.text : r.error) || tr('Check the expression', '式を確認してください') };
+    }
+    const s = { expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3) };
+    if (r.truncated) { s.cut = true; if (typeof r.tail === 'string' && r.tail) s.tail = r.tail; s.msgs.push({ type: 'warning', text: cutMessage(r) }); }
+    if (typeof r.input === 'string' && r.input) { if (r.input.length > MAX_INPUT) s.big = true; else s.input = r.input; }
+    return s;
+  }
+  // the lines below line i that go on from it (or from a line that does): ans of a changed line above, or a name that a
+  // changed line defines (until a line defines it again)
+  function editDependents(i, names) {
+    const changed = new Set([i]), list = [];
+    for (let j = i + 1; j < history.length; j++) {
+      const e = history[j].expr, dn = defName(e), body = dn ? String(e).replace(/^[^=]*=/, '') : e;
+      const dep = ansUses(e).some((n) => changed.has(j - n)) || Array.from(names).some((nm) => usesName(body, nm));
+      if (dep) { changed.add(j); list.push(j); if (dn) names.add(dn); } else if (dn) names.delete(dn);
+    }
+    return list;
+  }
+  // the engine as the history now has it: ans the newest line, and each name its newest definition
+  async function engineAsHistory(lastChanged, names) {
+    if (lastChanged && history.length) { const v = insertText(history[history.length - 1]); if (v) await Bridge.send('set_ans', { expr: v }); }
+    for (const nm of names) {
+      let k = -1;
+      for (let j = history.length - 1; j >= 0; j--) if (defName(history[j].expr) === nm) { k = j; break; }
+      if (k >= 0) await Bridge.send('calc', { expr: withAns(history[k].expr, k), opts: engineOpts(), timeout: timeLimit() * 1000, store: false, preview: false });
+    }
+    if (names.size) { invalidateCatalogs(); await refreshDefined(); }
+  }
+  function redrawEntries(set) {
+    for (const it of Array.from(histEl.querySelectorAll('.h-item'))) {
+      if (!set.has(it._h)) continue;
+      const n = historyItem(it._h);
+      it.replaceWith(n); fitMatrices(n);
+    }
+    markEditing();
+    if (histFiltered()) filterHistory();
+  }
+  // "=" while a line is edited: that line gets the new expression and result (s: the fields of recalcLine)
+  async function applyHistEdit(h, s) {
+    const i = history.indexOf(h);
+    const before = new Map([[h, snapEntry(h)]]);
+    const names = new Set([defName(h.expr), defName(s.expr)].filter(Boolean));
+    const touched = new Set(names);
+    putEntry(h, Object.assign(s, { edited: Date.now() }));
+    histEdit = null; editBand.hidden = true;
+    exprEl.value = ''; showPreview(null); autosize(); updateSuggest(false); saveDraft();
+    saveHistory();
+    redrawEntries(new Set([h]));
+    // the lines below that went on from it
+    const deps = editDependents(i, new Set(names));
+    let done = 0;
+    if (deps.length) {
+      const a = await sheet(trf('{0} lines below go on from this line (its ans or its variable). Work them out again too?', '下の {0} 行は、この行の答え（ans）や変数を使っています。計算し直しますか？', deps.length),
+        [['all', trf('Also the {0} lines below', '下の {0} 行も計算し直す', deps.length)], ['one', tr('Only this line', 'この行だけ')]]);
+      if (a === 'all') {
+        for (const j of deps) {
+          const d = history[j];
+          if (!d) continue;
+          const n = await recalcLine(j, d.expr);
+          if (!before.has(d)) before.set(d, snapEntry(d));
+          if (n.error) { d.msgs = [{ type: 'error', text: trf('Not worked out again: {0}', '計算し直せませんでした：{0}', n.error) }]; continue; }
+          const dn = defName(d.expr); if (dn) touched.add(dn);
+          putEntry(d, Object.assign(n, { edited: Date.now() }));
+          done++;
+        }
+        saveHistory();
+        redrawEntries(new Set(before.keys()));
+      }
+    }
+    const lastIdx = history.length - 1, lastChanged = Array.from(before.keys()).some((x) => history.indexOf(x) === lastIdx);
+    await engineAsHistory(lastChanged, touched);
+    announce(h);
+    toast(done ? trf('Edited, and {0} lines below worked out again', '直しました（下の {0} 行も計算し直しました）', done) : tr('Edited', '直しました'), 7000,
+      [tr('Undo', '元に戻す'), async () => {
+        for (const [x, snap] of before) if (history.indexOf(x) >= 0) putEntry(x, snap);
+        saveHistory();
+        redrawEntries(new Set(before.keys()));
+        await engineAsHistory(Array.from(before.keys()).some((x) => history.indexOf(x) === history.length - 1), touched);
+        toast(tr('Back as it was', '元に戻しました'), 1800);
+      }]);
   }
   // a button that does not take the focus (and with it the caret) away from the expression field
   function tapButton(attrs, run) {
@@ -14912,6 +15071,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   function openHistSelect() {
     if (!proGate('history_tools')) return;
     closeHistSearch();
+    endHistEdit(true); // (1.15.0: selecting lines ends the editing of one; its expression stays in the field)
     drawAllOlder();
     histSel = new Set();
     document.body.classList.add('hselect');
@@ -17479,6 +17639,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   window.qalcBack = function () {
     if (!varPopEl.hidden) { closeVarPop(); return true; }
     if ($('#sheet').classList.contains('open')) { closeSheet(null); return true; }
+    if (endHistEdit(false)) return true; // (1.15.0: a line being edited: nothing changes)
     if (closeHistSelect() || closeHistSearch()) return true;
     if ($('#drawer').classList.contains('open')) { closeDrawer(); return true; }
     if (panelStack.length) { closePanel(); return true; }
