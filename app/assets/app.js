@@ -18304,8 +18304,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['norm', tr('Normal', '正規'), [['mu', 'μ', '0', tr('mean', '平均')], ['sd', 'σ', '1', tr('standard deviation', '標準偏差')]], false],
     ['binom', tr('Binomial', '二項'), [['n', 'n', '10', tr('trials', '試行の回数')], ['p', 'p', '0.5', tr('probability of success', '成功の確率')]], true],
     ['pois', tr('Poisson', 'ポアソン'), [['lam', 'λ', '3', tr('mean number', '平均の回数')]], true],
-    ['t', tr('t', 't'), [['df', 'ν', '10', tr('degrees of freedom', '自由度')]], false],
-    ['chisq', tr('χ²', 'χ²'), [['df', 'k', '3', tr('degrees of freedom', '自由度')]], false]
+    ['t', 't', [['df', 'ν', '10', tr('degrees of freedom', '自由度')]], false],
+    ['chisq', 'χ²', [['df', 'k', '3', tr('degrees of freedom', '自由度')]], false]
   ];
   const DIST_DEF = { norm: { a: '-1.96', b: '1.96', q: '0.975' }, binom: { a: '3', b: '7', q: '0.5' }, pois: { a: '0', b: '2', q: '0.9' }, t: { a: '-2', b: '2', q: '0.975' }, chisq: { a: '0', b: '7.81', q: '0.95' } };
   // the parameters checked: '' or why not
