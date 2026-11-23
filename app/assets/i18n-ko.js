@@ -571,6 +571,7 @@
     "Volume, weight and surface from the diameters you measured": "잰 지름으로 부피·무게·겉넓이를 알 수 있습니다",
     "Print the solids you made on a 3D printer": "만든 입체를 3D 프린터로 출력할 수 있습니다",
     "Send the turning 3D graph as a GIF": "도는 3D 그래프를 GIF로 보낼 수 있습니다",
+    "Move the letters of a 3D graph with sliders, and watch it change": "3D 그래프의 문자를 슬라이더로 움직여 모양이 바뀌는 것을 볼 수 있습니다",
     "Keep several memos and save them as files": "메모를 여러 개 만들고 파일로 저장할 수 있습니다",
     "Gamma function (special functions such as zeta, erf and besselj too)": "감마 함수(zeta, erf, besselj 같은 특수 함수도 쓸 수 있습니다)",
     "Gradians": "그라디안",

@@ -568,6 +568,7 @@
     "Volume, weight and surface from the diameters you measured": "Volumen, Gewicht und Oberfläche aus gemessenen Durchmessern",
     "Print the solids you made on a 3D printer": "Deine Körper auf einem 3D-Drucker ausdrucken",
     "Send the turning 3D graph as a GIF": "Den sich drehenden 3D-Graphen als GIF senden",
+    "Move the letters of a 3D graph with sliders, and watch it change": "Die Buchstaben eines 3D-Graphen mit Schiebereglern bewegen und zusehen, wie er sich ändert",
     "Keep several memos and save them as files": "Mehrere Notizen anlegen und als Dateien speichern",
     "Gamma function (special functions such as zeta, erf and besselj too)": "Gammafunktion (auch spezielle Funktionen wie zeta, erf und besselj)",
     "Gradians": "Gon",
