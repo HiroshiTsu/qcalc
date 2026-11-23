@@ -2,6 +2,9 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    // (1.15.0) the box "center" of the Taylor series, and the colon after a function in the tip of the graph
+    "center x =": "中心 x =",
+    ":  ": "：",
     // (1.15.0) the next steps under the newest answer and the sheet of details
     "As a decimal": "小數",
     "As a fraction": "分數",
@@ -109,8 +112,6 @@
     "1 to 3600 seconds (default 20). A calculation with = is stopped after this time; tap \"Calculating…\" to stop it sooner": "1～3600 秒（預設 20）。按「=」的計算超過這段時間就會停止；點一下「計算中…」可提早停止",
     "100 USD to EUR": "100 USD to TWD",
     "1:1 in the graph makes one unit as long on every axis, so a circle or a sphere looks round. In 3D it turns on by itself when the ranges are about the same.": "圖形中的「1:1」會讓每個軸上的一個單位一樣長，圓或球看起來就是圓的。在 3D 中，範圍長度差不多時會自動開啟。",
-    "2 to 200000 digits (default 10). Higher values take longer to calculate": "計算精確度（2～200000 位，預設 10）。數值越大，計算越久",
-    "2 to 200000 digits (default 10; above 1000 with QCalc Pro). Higher values take longer to calculate": "計算精確度（2～200000 位，預設 10；超過 1000 位需要 QCalc Pro）。數值越大，計算越久",
     "2D graph": "2D 圖形",
     "3D graph": "3D 圖形",
     "3D graphs": "3D 圖形",
@@ -787,7 +788,6 @@
     "lower": "下限",
     "max": "極大",
     "max ": "極大 ",
-    "max/min": "極值",
     "min": "極小",
     "min ": "極小 ",
     "more…": "更多…",
@@ -1618,7 +1618,6 @@
     "Making the moving picture…": "正在製作動態圖片…",
     "Could not share the image": "無法分享圖片",
     "GIF and pictures without the mark": "GIF 與無浮水印分享",
-    "The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "以動態圖片（GIF）分享 3D 圖形，並以高解析度、無「QCalc」浮水印分享圖形圖片",
     "Rent and bills": "房租與水電",
     "rent": "房租",
     "electricity": "電費",
