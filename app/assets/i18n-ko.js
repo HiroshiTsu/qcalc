@@ -1,6 +1,13 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    // (1.16.0) the card of what is new
+    "Your variables and functions on one screen: the button \"Variables\" above the input field": "내 변수와 함수를 한 화면에서: 입력란 위의 ‘변수’ 버튼",
+    "The arguments of a function shown as you type it, under the input field": "입력 중인 함수의 인수를 입력란 아래에 표시",
+    "Probability distributions: normal, binomial, Poisson, t and χ², the range shaded in a graph": "확률분포: 정규·이항·푸아송·t·χ², 범위를 그래프에 색으로 표시",
+    "Statistics: a histogram and a box plot of one column; a column read from a CSV file": "통계: 1열 데이터의 히스토그램과 상자그림, CSV 파일의 열 읽기",
+    "Regression curves for two columns: degree 2 to 4, exponential, power and logarithmic": "2열 데이터의 회귀곡선: 2~4차·지수·거듭제곱·로그",
+    "What is new in 1.16.0 (user manual) ›": "1.16.0의 새 기능(사용 설명서) ›",
     // (1.15.0) the box "center" of the Taylor series, and the colon after a function in the tip of the graph
     "center x =": "중심 x =",
     ":  ": ":  ",
@@ -275,11 +282,6 @@
     "Lissajous": "리사주 곡선",
     "Folium of Descartes": "데카르트의 엽선",
     // (1.15.0) the Taylor series
-    "Taylor series: taylor on the Calculus page, with a graph to compare": "‘미적분’ 페이지의 taylor로 테일러 전개(그래프로 비교 가능)",
-    "2D graph: parametric, polar and implicit curves": "2D 그래프: 매개변수·극좌표·음함수 곡선",
-    "Sliders: letters such as a in a sin(b x) get sliders in the graph": "슬라이더: 그래프 식의 a, b 같은 문자를 슬라이더로 움직일 수 있습니다",
-    "Next steps under the newest answer: details, graph, factor and more": "최신 답 아래에 다음 작업 후보(자세히, 그래프, 인수분해 등)",
-    "Details: the other forms of an answer on one sheet": "‘자세히’로 답의 여러 형태를 한 화면에",
     "Area: the line crosses itself, so no area is given": "면적: 선이 자기 자신과 교차하므로 내지 않습니다",
     "Taylor series": "테일러 전개",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "중심 x = a 주변에서 n차(최대 20)까지의 다항식을 가능한 한 정확한 계수로 보여 줍니다",
@@ -648,7 +650,6 @@
     "Edited": "고쳤습니다",
     "Back as it was": "원래대로 되돌렸습니다",
     " (edited {0})": " (고친 시각 {0})",
-    "Edit a line of the history in place (touch its expression)": "기록의 줄을 그 자리에서 고칠 수 있습니다(식을 탭)",
     "Linear system Ax = b": "연립방정식 Ax = b",
     "Loading…": "불러오는 중…",
     "Math notation for expressions and results": "식과 결과를 수식 형태로 표시",
@@ -1869,10 +1870,6 @@
     "How to use ›": "사용법 ›",
     "How to use the Pro features ›": "Pro 기능 사용법 ›",
     "How to use the Pro features": "Pro 기능 사용법",
-    "3D: real light and shadows, and See-through": "3D: 실물 같은 빛과 그림자, 그리고 ‘투명’",
-    "Without QCalc Pro, open 3D once for free": "QCalc Pro 없이도 3D를 한 번 무료로",
-    "What is new in 1.15.0 (user manual) ›": "1.15.0의 새 기능(사용 설명서) ›",
-    "Easier results: 15 digits in groups of 3 (Settings → Precision to change)": "결과가 보기 쉬워졌습니다: 15자리, 세 자리마다 구분(설정의 ‘정밀도’에서 되돌릴 수 있음)",
     "User manual": "사용 설명서",
     "Every feature step by step, on the web and as a PDF": "모든 기능을 단계별로, 웹과 PDF로",
     "How to use this form ›": "이 양식의 사용법 ›",
@@ -1981,7 +1978,6 @@
     "← Back to the profile": "← 윤곽으로 돌아가기",
     "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "3D 그래프의 ‘부피·겉넓이’를 열면 지금 그린 곡면 아래(곡면이 둘이면 그 사이)의 부피와 겉넓이가 바로 나옵니다. 범위는 직사각형이나 원 x² + y² ≤ R²입니다. 2D 그래프(⟳ 3D), ‘윤곽에서 회전체’, ‘도형’(⟳ 3D)에서 만든 입체에서는 거기서 구한 값이 나옵니다. 아래의 ‘도형 예시’에서는 ‘도형’의 모든 입체를 그 값 그대로 3D로 그릴 수 있습니다(‘수 바꾸기’로 ‘도형’이 열립니다).",
     // (1.15.0) calculation notes read in (a file opened, text or a file shared to QCalc)
-    "Calculation notes: open a .txt or .csv file, or share text to QCalc": "계산 메모에 .txt·.csv 파일이나 다른 앱에서 공유한 텍스트를 읽어 들일 수 있습니다",
     "This file is too large to read (up to 1 MB)": "파일이 너무 커서 읽지 않았습니다(1MB까지)",
     "A memo holds up to {0} lines: this has {1}": "메모 하나는 {0}줄까지입니다. 읽으려는 내용은 {1}줄입니다",
     "A line is too long to read": "너무 긴 줄이 있어서 읽지 않았습니다",
@@ -2000,7 +1996,6 @@
     "Added to “{0}”: {1} lines": "‘{0}’에 {1}줄을 추가했습니다",
     "Open a file": "파일 열기",
     // (1.15.0) the precision at the top, "Work it out with other digits", the default 15
-    "The precision at the top: press its chip to choose 10 to 100 digits or another": "유효 자릿수를 위쪽 버튼으로 바로 바꿀 수 있습니다(10~100자리 등)",
     "{0} dig": "{0}자리",
     "Precision: {0} significant digits": "유효 자릿수 {0}자리",
     "{0} digits": "{0}자리",

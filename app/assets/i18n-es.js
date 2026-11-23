@@ -13,6 +13,13 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    // (1.16.0) the card of what is new
+    "Your variables and functions on one screen: the button \"Variables\" above the input field": "Tus variables y funciones en una pantalla: el botón «Variables» sobre el campo de entrada",
+    "The arguments of a function shown as you type it, under the input field": "Los argumentos de una función mientras la escribes, bajo el campo de entrada",
+    "Probability distributions: normal, binomial, Poisson, t and χ², the range shaded in a graph": "Distribuciones de probabilidad: normal, binomial, Poisson, t y χ², con el intervalo sombreado en una gráfica",
+    "Statistics: a histogram and a box plot of one column; a column read from a CSV file": "Estadística: histograma y diagrama de caja de una columna; una columna leída de un archivo CSV",
+    "Regression curves for two columns: degree 2 to 4, exponential, power and logarithmic": "Curvas de regresión para dos columnas: grado 2 a 4, exponencial, potencial y logarítmica",
+    "What is new in 1.16.0 (user manual) ›": "Novedades de 1.16.0 (manual de uso) ›",
     // (1.15.0) the box "center" of the Taylor series, and the colon after a function in the tip of the graph
     "center x =": "centro x =",
     ":  ": ":  ",
@@ -287,11 +294,6 @@
     "Lissajous": "Lissajous",
     "Folium of Descartes": "Folium de Descartes",
     // (1.15.0) the Taylor series
-    "Taylor series: taylor on the Calculus page, with a graph to compare": "Serie de Taylor: taylor en la página «Cálculo», con una gráfica para comparar",
-    "2D graph: parametric, polar and implicit curves": "Gráfica 2D: curvas paramétricas, polares e implícitas",
-    "Sliders: letters such as a in a sin(b x) get sliders in the graph": "Deslizadores: letras como a en a sin(b x) tienen deslizadores en la gráfica",
-    "Next steps under the newest answer: details, graph, factor and more": "Siguientes pasos bajo la última respuesta: detalles, gráfica, factorizar y más",
-    "Details: the other forms of an answer on one sheet": "Detalles: las otras formas de una respuesta en una hoja",
     "Area: the line crosses itself, so no area is given": "Área: la línea se corta a sí misma, así que no se da el área",
     "Taylor series": "Serie de Taylor",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "El polinomio hasta el grado n (20 como máximo) en torno a x = a, con coeficientes exactos cuando se puede",
@@ -657,7 +659,6 @@
     "Edited": "Editada",
     "Back as it was": "Como estaba",
     " (edited {0})": " (editada {0})",
-    "Edit a line of the history in place (touch its expression)": "Edita una línea del historial en su sitio (toca la expresión)",
     "Linear system Ax = b": "Sistema lineal Ax = b",
     "Loading…": "Cargando…",
     "Math notation for expressions and results": "Notación matemática para expresiones y resultados",
@@ -1878,10 +1879,6 @@
     "How to use ›": "Cómo se usa ›",
     "How to use the Pro features ›": "Cómo usar las funciones Pro ›",
     "How to use the Pro features": "Cómo usar las funciones Pro",
-    "3D: real light and shadows, and See-through": "3D: luz y sombras reales, y «Transparente»",
-    "Without QCalc Pro, open 3D once for free": "Sin QCalc Pro, abre el 3D una vez gratis",
-    "What is new in 1.15.0 (user manual) ›": "Novedades de 1.15.0 (manual de uso) ›",
-    "Easier results: 15 digits in groups of 3 (Settings → Precision to change)": "Resultados más claros: 15 cifras en grupos de 3 (se cambia en Ajustes → «Precisión»)",
     "User manual": "Manual de uso",
     "Every feature step by step, on the web and as a PDF": "Todas las funciones paso a paso, en la web y en PDF",
     "How to use this form ›": "Cómo usar este formulario ›",
@@ -1990,7 +1987,6 @@
     "← Back to the profile": "← Volver al perfil",
     "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "En el gráfico 3D, \"Volumen y superficie\" muestra el volumen bajo la superficie dibujada (o entre dos superficies) y el área superficial apenas se abre, sobre el rectángulo o sobre un disco x² + y² ≤ R². Para un sólido hecho en el gráfico 2D (⟳ 3D), en \"Sólido a partir de un perfil\" o en \"Figuras\" (⟳ 3D), muestra los valores hallados allí. En \"Ejemplo\", abajo, cualquier sólido de Figuras se puede dibujar en 3D con sus valores (\"Cambiar los números\" abre Figuras).",
     // (1.15.0) calculation notes read in (a file opened, text or a file shared to QCalc)
-    "Calculation notes: open a .txt or .csv file, or share text to QCalc": "Notas de cálculo: abre un archivo .txt o .csv, o comparte texto con QCalc",
     "This file is too large to read (up to 1 MB)": "Este archivo es demasiado grande para leerlo (hasta 1 MB)",
     "A memo holds up to {0} lines: this has {1}": "Una nota admite hasta {0} líneas; esto tiene {1}",
     "A line is too long to read": "Hay una línea demasiado larga para leerla",
@@ -2009,7 +2005,6 @@
     "Added to “{0}”: {1} lines": "Añadidas a «{0}»: {1} líneas",
     "Open a file": "Abrir un archivo",
     // (1.15.0) the precision at the top, "Work it out with other digits", the default 15
-    "The precision at the top: press its chip to choose 10 to 100 digits or another": "La precisión arriba: pulsa su botón para elegir de 10 a 100 cifras u otra",
     "{0} dig": "{0} cif.",
     "Precision: {0} significant digits": "Precisión: {0} cifras significativas",
     "{0} digits": "{0} cifras",

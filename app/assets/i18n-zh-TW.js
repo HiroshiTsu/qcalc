@@ -2,6 +2,13 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    // (1.16.0) the card of what is new
+    "Your variables and functions on one screen: the button \"Variables\" above the input field": "在一個畫面查看自己的變數與函數：輸入欄上方的「變數」按鈕",
+    "The arguments of a function shown as you type it, under the input field": "輸入函數時，在輸入欄下方顯示其引數",
+    "Probability distributions: normal, binomial, Poisson, t and χ², the range shaded in a graph": "機率分佈：常態、二項、卜瓦松、t 與 χ²，範圍以顏色顯示在圖形上",
+    "Statistics: a histogram and a box plot of one column; a column read from a CSV file": "統計：1 欄資料的直方圖與盒鬚圖；也能讀取 CSV 檔的欄",
+    "Regression curves for two columns: degree 2 to 4, exponential, power and logarithmic": "2 欄資料的迴歸曲線：2～4 次、指數、冪次與對數",
+    "What is new in 1.16.0 (user manual) ›": "1.16.0 的新功能（使用說明書）›",
     // (1.15.0) the box "center" of the Taylor series, and the colon after a function in the tip of the graph
     "center x =": "中心 x =",
     ":  ": "：",
@@ -276,11 +283,6 @@
     "Lissajous": "利薩茹曲線",
     "Folium of Descartes": "笛卡兒葉形線",
     // (1.15.0) the Taylor series
-    "Taylor series: taylor on the Calculus page, with a graph to compare": "「微積分」頁的 taylor 可做泰勒展開（可用圖形比較）",
-    "2D graph: parametric, polar and implicit curves": "2D 圖形：參數式、極座標與隱函數曲線",
-    "Sliders: letters such as a in a sin(b x) get sliders in the graph": "滑桿：圖形算式中的 a、b 等字母可以用滑桿移動",
-    "Next steps under the newest answer: details, graph, factor and more": "最新答案下方的下一步建議（詳細、圖形、因式分解等）",
-    "Details: the other forms of an answer on one sheet": "「詳細」可在一個畫面查看答案的各種形式",
     "Area: the line crosses itself, so no area is given": "面積：線與自身相交，因此不計算面積",
     "Taylor series": "泰勒展開",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "以 x = a 為中心、到 n 次（最多 20）的多項式，係數盡量以精確值表示",
@@ -649,7 +651,6 @@
     "Edited": "已修改",
     "Back as it was": "已恢復原狀",
     " (edited {0})": "（修改時間 {0}）",
-    "Edit a line of the history in place (touch its expression)": "可直接修改歷史紀錄的一列（點一下算式）",
     "Linear system Ax = b": "線性方程組 Ax = b",
     "Loading…": "載入中…",
     "Math notation for expressions and results": "以數學式顯示運算式與結果",
@@ -1870,10 +1871,6 @@
     "How to use ›": "使用方法 ›",
     "How to use the Pro features ›": "Pro 功能的使用方法 ›",
     "How to use the Pro features": "Pro 功能的使用方法",
-    "3D: real light and shadows, and See-through": "3D：接近真實的光線與陰影，還有「透明」",
-    "Without QCalc Pro, open 3D once for free": "沒有 QCalc Pro 也能免費開啟一次 3D",
-    "What is new in 1.15.0 (user manual) ›": "1.15.0 的新功能（使用說明書）›",
-    "Easier results: 15 digits in groups of 3 (Settings → Precision to change)": "結果更易讀：15 位數、每三位分隔（可在設定的「精確度」改回）",
     "User manual": "使用說明書",
     "Every feature step by step, on the web and as a PDF": "所有功能逐步說明，網頁版與 PDF",
     "How to use this form ›": "這個表單的使用方法 ›",
@@ -1982,7 +1979,6 @@
     "← Back to the profile": "← 回到輪廓",
     "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "在 3D 圖形中，開啟「體積與表面積」就會立即顯示所畫曲面下方（或兩個曲面之間）的體積與表面積，範圍是長方形或圓盤 x² + y² ≤ R²。在 2D 圖形（⟳ 3D）、「由輪廓求旋轉體」或「幾何圖形」（⟳ 3D）中做出的立體，會顯示在那裡求出的值。下方的「圖形範例」可以用幾何圖形的值，以 3D 繪製任何立體（「更改數值」會開啟幾何圖形）。",
     // (1.15.0) calculation notes read in (a file opened, text or a file shared to QCalc)
-    "Calculation notes: open a .txt or .csv file, or share text to QCalc": "計算筆記可讀取 .txt、.csv 檔，或從其他 App 分享來的文字",
     "This file is too large to read (up to 1 MB)": "檔案太大，因此未讀取（上限 1 MB）",
     "A memo holds up to {0} lines: this has {1}": "一則筆記最多 {0} 行，要讀取的內容有 {1} 行",
     "A line is too long to read": "有一行太長，因此未讀取",
@@ -2001,7 +1997,6 @@
     "Added to “{0}”: {1} lines": "已在「{0}」加上 {1} 行",
     "Open a file": "開啟檔案",
     // (1.15.0) the precision at the top, "Work it out with other digits", the default 15
-    "The precision at the top: press its chip to choose 10 to 100 digits or another": "有效位數可用上方按鈕立即變更（10～100 位等）",
     "{0} dig": "{0}位",
     "Precision: {0} significant digits": "有效位數 {0} 位",
     "{0} digits": "{0} 位",

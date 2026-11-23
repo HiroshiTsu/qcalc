@@ -16809,19 +16809,17 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // 3D for those without QCalc Pro while it is left; 1.13.0 had none. 1.15.0: 1.14.0 was not given out, so the card
   // has both: the results easier to read, with the precision of the settings to set them back, a line of the history
   // edited in place (Try it: the newest line), and the 3D)
-  const NEWS_VERSION = '1.15';
+  const NEWS_VERSION = '1.16';
+  // (1.16.0) the card of what is new: the list of variables, the hints of the arguments, and more statistics (each row
+  // with Try it: the list (k := 2 first when there is nothing in it), a function typed with its hint, the statistics
+  // tool on its distributions, on one column (histogram) and on two (the curves))
+  const statsWith = (o) => { const s = store.get('qalc.stats', null) || {}; store.set('qalc.stats', Object.assign(s, o)); openStatsTool(); };
   const NEWS = () => [
-    ['🔢', tr('Easier results: 15 digits in groups of 3 (Settings → Precision to change)', '答えが見やすく：15 桁、3 桁ごとに区切り（設定の「有効桁数」で戻せます）'), () => { setExpr('exp(pi*sqrt(163))'); commit(); }],
-    history.length ? ['✏️', tr('Edit a line of the history in place (touch its expression)', '履歴の行をその場で直せます（式の行をタップ）'), () => startHistEdit(history[history.length - 1])] : null,
-    ['🎚️', tr('The precision at the top: press its chip to choose 10 to 100 digits or another', '有効桁数を上のボタンですぐ変えられます（10〜100 桁ほか）'), () => precisionSheet()],
-    ['📥', tr('Calculation notes: open a .txt or .csv file, or share text to QCalc', '計算メモに .txt・.csv のファイルや、ほかのアプリから共有した文字を読み込めます'), () => { const p = openNotesTool(); const d = p.body.querySelector('.note-more'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ block: 'center' }), 350); } }],
-    ['📐', tr('Taylor series: taylor on the Calculus page, with a graph to compare', '「解析」のページの taylor でテイラー展開（グラフで比べられます）'), () => openForm('taylor', { f: 'sin(x)' })],
-    ['🌀', tr('2D graph: parametric, polar and implicit curves', '2D グラフで媒介変数・極座標・陰関数の曲線'), () => openPlotWith(['r = 1 + cos(θ)'])],
-    ['🎛️', tr('Sliders: letters such as a in a sin(b x) get sliders in the graph', 'グラフの式の a・b などの文字をスライダーで動かせます'), () => openPlotWith(['a sin(b x)'])],
-    ['⏭️', tr('Next steps under the newest answer: details, graph, factor and more', '答えの下に次の操作の候補（詳しく・グラフ・因数分解など）'), () => { setExpr('x^2 - 1'); commit(); }],
-    ['🔍', tr('Details: the other forms of an answer on one sheet', '「詳しく見る」で答えのいろいろな形を 1 画面に'), () => { setExpr('x^3 - x'); Promise.resolve(commit()).then(() => { const h = history[history.length - 1]; if (h) openDetails(h); }); }],
-    ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
-    try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
+    ['🔤', tr('Your variables and functions on one screen: the button "Variables" above the input field', '自分の変数と関数を 1 つの画面で：入力欄の上の「変数」のボタン'), () => { if (defCount) { store.set('qalc.lists.tab', 'defs'); openDefs(); return; } setExpr('k := 2'); Promise.resolve(commit()).then(() => { store.set('qalc.lists.tab', 'defs'); openDefs(); }); }],
+    ['💡', tr('The arguments of a function shown as you type it, under the input field', '入力中の関数の引数を、入力欄の下に表示'), () => { setExpr('normdist('); focusExpr(); }],
+    ['🎲', tr('Probability distributions: normal, binomial, Poisson, t and χ², the range shaded in a graph', '確率分布：正規・二項・ポアソン・t・χ²（範囲をグラフに色で表示）'), () => statsWith({ mode: 'dist' })],
+    ['📊', tr('Statistics: a histogram and a box plot of one column; a column read from a CSV file', '統計：1 列のデータのヒストグラムと箱ひげ図。CSV ファイルの列も読み込めます'), () => statsWith({ mode: 'data', cols: 1, chart: 'hist', rows: STAT_EX()[0][2] })],
+    ['📈', tr('Regression curves for two columns: degree 2 to 4, exponential, power and logarithmic', '2 列のデータの回帰曲線：2〜4 次・指数・累乗・対数'), () => statsWith({ mode: 'data', cols: 2, model: 'linear', rows: STAT_EX()[1][2] })]
   ].filter(Boolean);
   // the card is the last thing in the history, just above the field (it covers nothing); it goes
   // with the first calculation, its ×, or a "Try it"
@@ -16838,7 +16836,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         el('button', { class: 'btn news-try', type: 'button', text: tr('Try it', '試す'), 'aria-label': tr('Try it', '試す') + ': ' + text, onclick: () => { closeNews(); run(); } })));
     }
     // (1.12.0, H) everything new, step by step: the section of the user manual
-    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.15.0 (user manual) ›', '1.15.0 の新しい機能（説明書）›') }, () => openManual('new-1-15'))));
+    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.16.0 (user manual) ›', '1.16.0 の新しい機能（説明書）›') }, () => openManual('new-1-16'))));
     newsCard = card;
     histEl.append(card);
     // its title and × in sight, also when the history is short (memory keys, a small screen)

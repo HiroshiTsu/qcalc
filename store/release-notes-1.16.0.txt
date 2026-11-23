@@ -1,0 +1,60 @@
+<en-US>
+• Your variables and functions on one screen: "Variables" above the input field. Tap to insert; ⋯ to change, rename or delete (with Undo)
+• Argument hints for about 60 functions as you type them
+• Distributions: normal, binomial, Poisson, t and χ² (probability, density, quantiles), the range shaded in a graph
+• Statistics: histogram and box plot; regression curves of degree 2 to 4, exponential, power, log (QCalc Pro except the line); columns read from CSV files
+</en-US>
+<en-GB>
+• Your variables and functions on one screen: "Variables" above the input field. Tap to insert; ⋯ to change, rename or delete (with Undo)
+• Argument hints for about 60 functions as you type them
+• Distributions: normal, binomial, Poisson, t and χ² (probability, density, quantiles), the range shaded in a graph
+• Statistics: histogram and box plot; regression curves of degree 2 to 4, exponential, power, log (QCalc Pro except the line); columns read from CSV files
+</en-GB>
+<ja-JP>
+・自分の変数と関数の一覧：入力欄の上の「変数」から。名前をタップで入力、⋯ で値・名前の変更や削除（元に戻せます）
+・関数の引数のヒント：約 60 の関数で、入力中の引数を太字で表示
+・確率分布：正規・二項・ポアソン・t・χ² の確率・密度・分位点。範囲をグラフに色で表示
+・統計：ヒストグラムと箱ひげ図、2〜4 次・指数・累乗・対数の回帰曲線（直線以外は QCalc Pro）、CSV ファイルの列の読み込み
+</ja-JP>
+<de-DE>
+• Eigene Variablen und Funktionen auf einem Bildschirm: „Variablen“ über dem Eingabefeld. Tippen fügt ein; ⋯ ändert, benennt um, löscht (rückgängig möglich)
+• Argumenthilfe für etwa 60 Funktionen beim Tippen
+• Verteilungen: Normal, Binomial, Poisson, t, χ² (Wahrscheinlichkeit, Dichte, Quantile), Bereich farbig
+• Statistik: Histogramm, Boxplot; Regressionskurven Grad 2–4, exponentiell, Potenz, log (QCalc Pro außer der Geraden); Spalten aus CSV-Dateien
+</de-DE>
+<es-ES>
+• Tus variables y funciones en una pantalla: «Variables» sobre el campo de entrada. Toca para insertar; ⋯ cambia, renombra o borra (con Deshacer)
+• Ayuda de argumentos para unas 60 funciones al escribir
+• Distribuciones: normal, binomial, Poisson, t y χ² (probabilidad, densidad, cuantiles), intervalo sombreado
+• Estadística: histograma, diagrama de caja; curvas de regresión de grado 2 a 4, exponencial, potencial, log (QCalc Pro salvo la recta); columnas de CSV
+</es-ES>
+<es-419>
+• Tus variables y funciones en una pantalla: «Variables» sobre el campo de entrada. Toca para insertar; ⋯ cambia, renombra o borra (con Deshacer)
+• Ayuda de argumentos para unas 60 funciones al escribir
+• Distribuciones: normal, binomial, Poisson, t y χ² (probabilidad, densidad, cuantiles), intervalo sombreado
+• Estadística: histograma, diagrama de caja; curvas de regresión de grado 2 a 4, exponencial, potencial, log (QCalc Pro salvo la recta); columnas de CSV
+</es-419>
+<fr-FR>
+• Vos variables et fonctions sur un écran : « Variables » au-dessus du champ de saisie. Appuyez pour insérer ; ⋯ modifie, renomme ou supprime (annulable)
+• Aide des arguments pour environ 60 fonctions pendant la saisie
+• Lois : normale, binomiale, Poisson, t et χ² (probabilité, densité, quantiles), intervalle coloré
+• Statistiques : histogramme, boîte à moustaches ; régression de degré 2 à 4, exponentielle, puissance, log (QCalc Pro sauf la droite) ; colonnes CSV
+</fr-FR>
+<fr-CA>
+• Vos variables et fonctions sur un écran : « Variables » au-dessus du champ de saisie. Appuyez pour insérer ; ⋯ modifie, renomme ou supprime (annulable)
+• Aide des arguments pour environ 60 fonctions pendant la saisie
+• Lois : normale, binomiale, Poisson, t et χ² (probabilité, densité, quantiles), intervalle coloré
+• Statistiques : histogramme, boîte à moustaches ; régression de degré 2 à 4, exponentielle, puissance, log (QCalc Pro sauf la droite) ; colonnes CSV
+</fr-CA>
+<ko-KR>
+• 내 변수와 함수를 한 화면에서: 입력란 위의 ‘변수’. 이름을 누르면 입력, ⋯로 값·이름 변경과 삭제(되돌리기 가능)
+• 함수 인수 도움말: 약 60개 함수에서 입력 중인 인수를 굵게 표시
+• 확률분포: 정규·이항·푸아송·t·χ²의 확률·밀도·분위수, 범위를 그래프에 색으로 표시
+• 통계: 히스토그램과 상자그림, 2~4차·지수·거듭제곱·로그 회귀곡선(직선 외에는 QCalc Pro), CSV 파일의 열 읽기
+</ko-KR>
+<zh-TW>
+• 在一個畫面查看自己的變數與函數：輸入欄上方的「變數」。點名稱即可輸入，⋯ 可修改值、重新命名或刪除（可復原）
+• 函數引數提示：約 60 個函數，輸入時以粗體顯示目前的引數
+• 機率分佈：常態、二項、卜瓦松、t 與 χ² 的機率、密度與分位數，範圍以顏色顯示在圖形上
+• 統計：直方圖與盒鬚圖；2～4 次、指數、冪次與對數的迴歸曲線（直線以外為 QCalc Pro）；讀取 CSV 檔的欄
+</zh-TW>
