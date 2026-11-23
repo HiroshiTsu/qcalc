@@ -570,7 +570,8 @@
     profile: 'pro',        // a solid from a measured profile: volume, capacity, weight, surface, its table (1.12 D2): Pro (work)
     stl: 'pro',            // the solids saved as STL files for 3D printers (1.12 D3): Pro (work)
     share: 'free',         // sharing a picture of a graph, with a small "QCalc" in the corner (1.12 D4)
-    share_pro: 'pro',      // the moving picture (GIF) of the 3D graph, and pictures without the mark at full resolution (1.12 D4): Pro
+    share_pro: 'pro',      // the moving picture (GIF) of the 3D graph and of a slider, and pictures without the mark at full resolution (1.12 D4; sliders 1.15): Pro
+    sliders3d: 'pro',      // the sliders of the letters in the 3D graph (1.15; in 2D free): Pro
     notes: 'pro'           // calculation notes: the second memo and more, and saving them as text or CSV (1.12 D5): Pro; the first memo, copying and sharing it are free
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
@@ -1842,6 +1843,8 @@
       histPinned = true;
     }
     announce(entry);
+    // (1.15.0) a variable defined: the names of the user's variables again (a letter with a value of its own gets no slider)
+    if (/^save\(/.test(r.parsed || '')) refreshDefined();
     definitionMade(r, expr);
     startupMark('first');
   }
@@ -4602,7 +4605,7 @@
     }
     return at;
   }
-  const POLAR_VAR = /θ|theta/g;
+  const POLAR_VAR = /θ|theta/g; // (put in as " t ": kθ is k times t, not kt, the kilotonne)
   // one line of the box: [{ kind, text (as typed), f (y = f(x)) | x, y (in t) | r (in t) | F (in x and y) }]
   function lineItems(raw) {
     const line = raw.trim();
@@ -4620,10 +4623,10 @@
     if (parts.length > 1) return parts.flatMap((p) => lineItems(p));
     const s = parts[0];
     const mr = /^r\s*=\s*([\s\S]+)$/.exec(s);
-    if (mr) return [{ kind: 'polar', text: line, r: N(mr[1]).replace(POLAR_VAR, 't') }];
+    if (mr) return [{ kind: 'polar', text: line, r: N(mr[1]).replace(POLAR_VAR, ' t ') }];
     const q = topEquals(s);
     if (q < 0) {
-      if (/θ|theta/.test(s) && !hasVar(s, 'x') && !hasVar(s, 'y')) return [{ kind: 'polar', text: 'r = ' + line, r: N(s).replace(POLAR_VAR, 't') }];
+      if (/θ|theta/.test(s) && !hasVar(s, 'x') && !hasVar(s, 'y')) return [{ kind: 'polar', text: 'r = ' + line, r: N(s).replace(POLAR_VAR, ' t ') }];
       return [{ kind: 'fx', text: line, f: N(s) }];
     }
     const L = s.slice(0, q).trim(), R = s.slice(q + 1).trim();
@@ -4724,7 +4727,7 @@
   }
   const gridAxis = (lo, hi, n) => { const a = []; for (let i = 0; i < n; i++) a.push(i === n - 1 ? hi : lo + (hi - lo) * i / (n - 1)); return a; };
   // the implicit lines over a window: a grid over it, then a finer grid in the blocks the curves cross (busy ones first)
-  async function computeImplicit(items, win) {
+  async function computeImplicit(items, win, quick) {
     if (!items.length) return;
     const t0 = Date.now();
     const W = Math.max(1, (P.canvas && P.canvas.clientWidth) || 360), H = Math.max(1, (P.canvas && P.canvas.clientHeight) || 300);
@@ -4747,7 +4750,7 @@
     const list = Array.from(blocks.values()).sort((p, q) => q.busy - p.busy);
     const fine = [];
     for (const o of list) {
-      if (Date.now() - t0 > 650 || fine.length >= 40) break;
+      if (quick || Date.now() - t0 > 650 || fine.length >= 40) break; // (not while a slider moves)
       const i0 = o.bi * B, j0 = o.bj * B, i1 = Math.min(nx - 1, i0 + B), j1 = Math.min(ny - 1, j0 + B);
       const m = (i1 - i0) * 4 + 1, n2 = (j1 - j0) * 4 + 1;
       const rr = await Bridge.send('plot3d', { exprs: items.map((C) => C.F), xmin: engineNum(xs[i0]), xmax: engineNum(xs[i1]), ymin: engineNum(ys[j0]), ymax: engineNum(ys[j1]), nx: m, ny: n2, opts: engineOpts(), timeout: 1500 });
@@ -4780,15 +4783,297 @@
   }
   // the lines of the box: the functions (P.exprs, for the engine's plot and the tools) and the other lines (P.curves);
   // the colors in the order of the lines
+  // a formula of the 2D graph as written (with its letters, not the values of their sliders)
+  const shownExpr = (e) => (P.slLabels && P.slLabels.get(e)) || e;
   function setItems(text) {
+    P.itemsText = text;
     const items = plotItems(text, 6);
     items.forEach((q, n) => { q.color = COLORS[n % COLORS.length]; });
+    // (1.15.0) the letters with a slider, and their values put in their place (in this graph only); the formulas as
+    // written stay for what is shown (P.slLabels: the formula with the values → as written)
+    const letters = sliderLetters(items.flatMap((q) => [q.f, q.x, q.y, q.r, q.F].filter(Boolean)), false);
+    const vals = letters.length ? sliderValues(SL_KEY2D, letters) : null;
+    P.slLabels = new Map();
+    if (vals) {
+      for (const q of items) {
+        const raw = q.f;
+        for (const k of ['f', 'x', 'y', 'r', 'F']) if (q[k]) q[k] = withSliders(q[k], vals);
+        if (q.kind === 'fx') P.slLabels.set(q.f, raw);
+      }
+    }
+    P.slVals = vals;
+    if (P.sl) P.sl.set(letters);
     P.items = items;
     const fx = items.filter((q) => q.kind === 'fx');
     P.exprs = fx.map((q) => q.f);
     P.exprs.more = items.more;
     P.exprColors = fx.map((q) => q.color);
     P.curves = items.filter((q) => q.kind !== 'fx');
+  }
+  // ------------------------------------------------------------------ sliders (1.15.0)
+  // A letter in the formulas of a graph that is not one of its variables gets a slider below the graph: a to z and A to Z
+  // but e and i (Euler's number, the imaginary unit), t, x and y (the variables; z too in 3D), E and I, X and Y, a letter
+  // with a value of its own (a user variable, which keeps its value), and a letter used as a function, as f in f(x).
+  // At most 6. Its value is put in the place of the letter in this graph only: in the calculator a, c and g stay the
+  // are, the speed of light and the gram. Each slider goes from −5 to 5 in steps of 0.1 at first, starting at 1 (⋯ to
+  // change them); its value can be typed (tap it), and ▶ moves it to and fro. Free in the 2D graph; in the 3D graph a
+  // QCalc Pro feature (PRO_GATES.sliders3d), as is the moving picture (GIF) of a slider (share_pro). A letter is one
+  // name: "a x" or "a*x", not "ax" (one name of two letters).
+  const SL_KEY2D = 'qalc.plot.sliders', SL_KEY3D = 'qalc.plot3d.sliders', SL_MAX = 6;
+  const SL_NOT = new Set(['e', 'i', 't', 'x', 'y', 'E', 'I', 'X', 'Y']);
+  const SL_TOKEN = /(?:(?![θπ])[\p{L}_])(?:(?![θπ])[\p{L}\p{N}_])*/gu; // (θ and π end a name: kθ is k times θ)
+  const slIsLetter = (w) => w.length === 1 && /^[a-zA-Z]$/.test(w) && !SL_NOT.has(w);
+  // the letters of formulas (in their order), for sliders
+  function sliderLetters(texts, three) {
+    const out = [];
+    for (const t of texts) {
+      const s = String(t || '');
+      for (const m of s.matchAll(SL_TOKEN)) {
+        const w = m[0];
+        if (!slIsLetter(w) || (three && w === 'z') || definedVars.has(w) || out.includes(w)) continue;
+        if (/^\s*\(/.test(s.slice(m.index + 1))) continue; // (f(x): a function)
+        out.push(w);
+      }
+    }
+    return out.slice(0, SL_MAX);
+  }
+  // a formula with the values of the letters put in (vals: letter → the number for the engine)
+  function withSliders(s, vals) {
+    if (!vals) return s;
+    return String(s).replace(SL_TOKEN, (w, off, all) => (w.length === 1 && Object.prototype.hasOwnProperty.call(vals, w) && !/^\s*\(/.test(all.slice(off + 1)) ? '(' + vals[w] + ')' : w));
+  }
+  // the settings of the sliders: in memory while they move, kept in the store when they stop (key → letter → {min, max, step, v})
+  const SL_DEF = { min: -5, max: 5, step: 0.1, v: 1 };
+  const SLV = {};
+  function sliderOf(key, l) {
+    if (!SLV[key]) { const all = store.get(key, null); SLV[key] = all && typeof all === 'object' ? all : {}; }
+    const o = Object.assign({}, SL_DEF, SLV[key][l] || {});
+    for (const k of ['min', 'max', 'step', 'v']) if (typeof o[k] !== 'number' || !isFinite(o[k])) o[k] = SL_DEF[k];
+    if (!(o.max > o.min)) { o.min = SL_DEF.min; o.max = SL_DEF.max; }
+    if (!(o.step > 0) || (o.max - o.min) / o.step > 1e5) o.step = SL_DEF.step;
+    o.v = Math.min(o.max, Math.max(o.min, o.v));
+    return o;
+  }
+  function sliderSet(key, l, o, keep) {
+    if (!SLV[key]) sliderOf(key, l);
+    SLV[key][l] = { min: o.min, max: o.max, step: o.step, v: o.v };
+    if (keep) store.set(key, SLV[key]);
+  }
+  // a value with the digits of the step (no more), as plain digits
+  function sliderNum(v, step) {
+    const d = Math.max(0, Math.min(12, Math.ceil(-Math.log10(step) - 1e-9)));
+    const r = Number(v.toFixed(d));
+    return Object.is(r, -0) ? '0' : r.toFixed(d).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+  }
+  function sliderValues(key, letters) {
+    const vals = {};
+    for (const l of letters) { const o = sliderOf(key, l); vals[l] = engineNum(sliderNum(o.v, o.step)); }
+    return vals;
+  }
+  const sliderShown = (o) => decSign(sliderNum(o.v, o.step)).replace(/^-/, '−');
+  // The box of sliders under a graph. cfg: key (the store), redraw(final) → a promise of the drawing (final: when a slider
+  // stops, everything is worked out again, the tools too), locked() (3D without Pro: a line instead of the sliders), gif(l)
+  function sliderBox(cfg) {
+    const box = el('div', { class: 'sliders', role: 'group', 'aria-label': tr('Sliders', 'スライダー'), hidden: true });
+    const S = { box, letters: [], rows: {}, anim: null, lockedNow: null };
+    const cur = (l) => sliderOf(cfg.key, l);
+    const show = (l) => {
+      const R = S.rows[l]; if (!R) return;
+      const o = cur(l);
+      R.rng.min = String(o.min); R.rng.max = String(o.max); R.rng.step = cfg.anyStep ? 'any' : String(o.step);
+      if (Number(R.rng.value) !== o.v) R.rng.value = String(o.v);
+      R.val.textContent = sliderShown(o);
+      R.val.setAttribute('aria-label', trf('{0} = {1} (tap to type a value)', '{0} = {1}（タップで値を入力）', l, sliderShown(o)));
+      R.rng.setAttribute('aria-valuetext', l + ' = ' + sliderShown(o));
+    };
+    const setV = (l, v, final, snap) => {
+      const o = cur(l);
+      if (snap) v = o.min + Math.round((v - o.min) / o.step) * o.step;
+      o.v = Math.min(o.max, Math.max(o.min, v));
+      sliderSet(cfg.key, l, o, final);
+      show(l);
+      return cfg.redraw(final);
+    };
+    const playShown = () => {
+      for (const l of S.letters) {
+        const R = S.rows[l]; if (!R) continue;
+        const on = !!(S.anim && S.anim.l === l);
+        R.play.textContent = on ? '■' : '▶';
+        R.play.setAttribute('aria-pressed', String(on));
+        R.play.setAttribute('aria-label', on ? trf('Stop {0}', '{0} を止める', l) : trf('Move {0} to and fro', '{0} を動かす', l));
+      }
+    };
+    S.stop = (noDraw) => {
+      if (!S.anim) return;
+      const l = S.anim.l;
+      S.anim = null;
+      playShown();
+      sliderSet(cfg.key, l, cur(l), true);
+      if (!noDraw) cfg.redraw(true);
+    };
+    const play = async (l) => {
+      if (S.anim && S.anim.l === l) { S.stop(); return; }
+      S.stop(true);
+      const a = S.anim = { l, dir: 1 };
+      playShown();
+      while (S.anim === a) {
+        if (!box.isConnected || !box.closest('.panel.open') || box.offsetParent === null || document.hidden) { S.stop(true); break; }
+        const o = cur(l), span = o.max - o.min;
+        let v = o.v + a.dir * span / 60;
+        if (v >= o.max - span * 1e-9) { v = o.max; a.dir = -1; } else if (v <= o.min + span * 1e-9) { v = o.min; a.dir = 1; }
+        const t0 = Date.now();
+        await setV(l, v, false, false);
+        await new Promise((r) => setTimeout(r, Math.max(16, 60 - (Date.now() - t0))));
+      }
+    };
+    const typeValue = async (l) => {
+      const o = cur(l);
+      const v = await promptSheet(trf('Value of {0}', '{0} の値', l), decSign(sliderNum(o.v, o.step)), '', tr('OK', 'OK'));
+      if (v === null || !String(v).trim()) return;
+      const n = await numValue(normalizeExpr(String(v)));
+      if (!isFinite(n)) { toast(tr('Enter a number', '数を入れてください'), 1800); return; }
+      S.stop(true);
+      // (a value outside the range widens it)
+      if (n < o.min) o.min = n; if (n > o.max) o.max = n;
+      sliderSet(cfg.key, l, o, false);
+      setV(l, n, true, false);
+    };
+    const settings = async (l) => {
+      if (sheetResolve) closeSheet(null);
+      const o = cur(l);
+      const sh = $('#sheet');
+      sh.textContent = '';
+      const field = (label, v) => { const i = el('input', { type: 'text', class: 'sheet-input', value: decSign(String(v)), inputmode: 'text', autocapitalize: 'off', 'aria-label': label }); return [i, el('label', { class: 'sl-field' }, el('span', { text: label }), i)]; };
+      const [a, fa] = field(tr('From', '最小'), o.min), [b, fb] = field(tr('To', '最大'), o.max), [st, fs] = field(tr('Step', '刻み'), o.step);
+      const gifLocked = PRO_GATES.share_pro === 'pro' && !hasPro();
+      sh.append(el('div', { class: 'stitle', text: trf('Slider of {0}', '{0} のスライダー', l) }), el('div', { class: 'sl-fields' }, fa, fb, fs),
+        el('button', { class: 'accent', text: tr('OK', 'OK'), onclick: () => closeSheet('ok') }),
+        cfg.gif ? el('button', { text: tr('Moving picture (GIF)', '動く画像（GIF）') + (gifLocked ? '  ⭐ Pro' : ''), onclick: () => closeSheet('gif') }) : '',
+        el('button', { text: tr('Back to −5 to 5, step 0.1', '−5〜5・刻み 0.1 に戻す'), onclick: () => closeSheet('reset') }),
+        el('button', { text: tr('Cancel', 'キャンセル'), onclick: () => closeSheet(null) }));
+      const k = await new Promise((resolve) => { sheetResolve = resolve; $('#scrim').classList.add('show', 'over-panels'); sh.classList.add('open'); sh.inert = false; });
+      if (k === 'gif') { if (proGate('share_pro')) { S.stop(true); cfg.gif(l); } return; }
+      if (k === 'reset') { S.stop(true); Object.assign(o, { min: SL_DEF.min, max: SL_DEF.max, step: SL_DEF.step }); o.v = Math.min(o.max, Math.max(o.min, o.v)); sliderSet(cfg.key, l, o, true); show(l); cfg.redraw(true); return; }
+      if (k !== 'ok') return;
+      const [n0, n1, ns] = await Promise.all([a, b, st].map((i) => numValue(normalizeExpr(i.value || ''))));
+      if (!isFinite(n0) || !isFinite(n1) || !(n1 > n0)) { toast(tr('The end must be larger than the start', '最大は最小より大きくしてください'), 2200); return; }
+      if (!(ns > 0) || (n1 - n0) / ns > 1e5) { toast(tr('Check the step (more than 0, at most 100 000 steps)', '刻みを確認してください（0 より大きく、10 万段まで）'), 2600); return; }
+      S.stop(true);
+      Object.assign(o, { min: n0, max: n1, step: ns });
+      o.v = Math.min(o.max, Math.max(o.min, o.v));
+      sliderSet(cfg.key, l, o, true);
+      show(l);
+      cfg.redraw(true);
+    };
+    const row = (l) => {
+      const o = cur(l);
+      const rng = el('input', { type: 'range', class: 'sl-range', min: String(o.min), max: String(o.max), step: String(o.step), 'aria-label': trf('Value of {0}', '{0} の値', l) });
+      rng.value = String(o.v);
+      const val = tapButton({ class: 'sl-val' }, () => typeValue(l));
+      const pl = tapButton({ class: 'sl-play', text: '▶' }, () => play(l));
+      const more = tapButton({ class: 'sl-more', text: '⋯', 'aria-label': trf('Slider of {0}: range and step', '{0} のスライダー：範囲と刻み', l) }, () => settings(l));
+      rng.addEventListener('input', () => { if (S.anim) S.stop(true); setV(l, Number(rng.value), false, true); });
+      rng.addEventListener('change', () => setV(l, Number(rng.value), true, true));
+      S.rows[l] = { rng, val, play: pl };
+      return el('div', { class: 'sl-row' }, el('span', { class: 'sl-name', text: l, 'aria-hidden': 'true' }), rng, val, pl, more);
+    };
+    // the rows for these letters (the same letters: the rows stay, with their values)
+    S.set = (letters) => {
+      const locked = !!(cfg.locked && cfg.locked());
+      if (letters.join() === S.letters.join() && locked === S.lockedNow) { for (const l of letters) show(l); return; }
+      S.stop(true);
+      S.letters = letters.slice(); S.rows = {}; S.lockedNow = locked;
+      box.textContent = '';
+      box.hidden = !letters.length;
+      if (!letters.length) return;
+      if (locked) {
+        box.append(el('div', { class: 'sl-lock' }, el('span', { text: letters.map((l) => l + ' = ' + sliderShown(cur(l))).join(tr(', ', '、')) }),
+          el('span', { text: tr('Sliders in 3D are a QCalc Pro feature', '3D のスライダーは QCalc Pro の機能です') }),
+          tapButton({ class: 'btn sl-pro', text: tr('About QCalc Pro', 'QCalc Pro について') }, () => proGate('sliders3d'))));
+        return;
+      }
+      for (const l of letters) { box.append(row(l)); show(l); }
+      playShown();
+    };
+    S.refresh = () => { const l = S.letters; S.letters = []; S.set(l); };
+    return S;
+  }
+  // 2D: one drawing at a time; values moved while one is drawn are drawn after it (the newest)
+  function sliderRedraw2d(final) {
+    P.slFinal = P.slFinal || final;
+    if (P.slJob) { P.slAgain = true; return P.slJob; }
+    P.slJob = (async () => {
+      try {
+        do {
+          P.slAgain = false;
+          const fin = P.slFinal; P.slFinal = false;
+          P.mark = null; if (P.tip) P.tip.style.display = 'none';
+          setItems(P.itemsText !== undefined ? P.itemsText : P.ta.value);
+          P.slDraws = (P.slDraws || 0) + 1;
+          // (what is shown: the view stays while a slider moves; when it stops, the graph fits the view to itself again
+          // unless the view was moved or zoomed by hand)
+          const v = P.view;
+          if (fin && !P.viewByUser) await compute(...P.xr(), false, false);
+          else if (v && P.exprs.length) { const pad = (v.x1 - v.x0) * 0.5; await compute(engineNum(v.x0 - pad), engineNum(v.x1 + pad), true, !fin); }
+          else await compute(...P.xr(), !!v, !fin);
+        } while (P.slAgain);
+      } finally { P.slJob = null; }
+    })();
+    return P.slJob;
+  }
+  // The moving picture (GIF) of a slider (QCalc Pro): its value from the start to the end of its range and back, drawn
+  // frame by frame with the value under the graph; at most GIF_W pixels wide and 2 MB.
+  async function sliderGif(l, cfg) {
+    if (cfg.busy()) return;
+    cfg.busy(true);
+    toast(tr('Making the moving picture…', '動く画像を作っています…'), 3000);
+    const key = cfg.key, o0 = sliderOf(key, l), keep = o0.v;
+    const N = 20, frames = [];
+    try {
+      for (let f = 0; f <= N; f++) {
+        const o = sliderOf(key, l);
+        o.v = o.min + (o.max - o.min) * f / N;
+        sliderSet(key, l, o, false);
+        await cfg.redraw(false);
+        await new Promise((r) => requestAnimationFrame(() => r()));
+        frames.push(cfg.capture(l + ' = ' + sliderShown(o)));
+      }
+      const all = frames.concat(frames.slice(1, -1).reverse());
+      const c0 = all[0];
+      let out = null;
+      for (let w = Math.min(GIF_W, c0.width); w >= 160 && !out; w = Math.round(w * 0.75)) {
+        const h = Math.round(c0.height * w / c0.width), small = el('canvas'); small.width = w; small.height = h;
+        const g = small.getContext('2d'), data = [];
+        for (const q of all) { g.drawImage(q, 0, 0, w, h); data.push(g.getImageData(0, 0, w, h).data); }
+        const bytes = gifEncode(data, w, h, 8);
+        if (bytes.length <= GIF_MAX) {
+          let bin = '';
+          for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+          out = 'data:image/gif;base64,' + btoa(bin);
+          cfg.canvas().dataset.gif = JSON.stringify({ w, h, frames: data.length, bytes: bytes.length, letter: l });
+        }
+      }
+      if (out) shareData(out, 'image/gif', cfg.words() + ' — QCalc');
+      else toast(tr('The moving picture would be too large', '動く画像が大きくなりすぎます'), 2500);
+    } finally {
+      const o = sliderOf(key, l); o.v = keep; sliderSet(key, l, o, true);
+      cfg.busy(false);
+      cfg.box().set(cfg.box().letters);
+      cfg.redraw(true);
+    }
+  }
+  // a frame of the 2D graph: the canvas with a band under it for the value of the slider
+  function frameWithBand(canvas, text) {
+    const W = canvas.width, H = canvas.height, s = W / (canvas.clientWidth || W), band = Math.round(28 * s);
+    const c = el('canvas'); c.width = W; c.height = H + band;
+    const g = c.getContext('2d'), cs = getComputedStyle(document.documentElement);
+    g.fillStyle = cs.getPropertyValue('--plot-bg').trim() || '#fff'; g.fillRect(0, 0, W, H + band);
+    g.drawImage(canvas, 0, 0);
+    g.fillStyle = cs.getPropertyValue('--surface').trim() || '#f4f6fa'; g.fillRect(0, H, W, band);
+    g.fillStyle = cs.getPropertyValue('--text').trim() || '#111'; g.textBaseline = 'middle'; g.textAlign = 'left';
+    g.font = '600 ' + Math.round(14 * s) + 'px system-ui, sans-serif';
+    g.fillText(text, 10 * s, H + band / 2);
+    return c;
   }
   // the length (and the area: polar, or a parametric line that closes) of a parametric or polar line, by the engine:
   // polar area ½∫r² dθ, length ∫√(r² + r′²) dθ; parametric length ∫√(x′² + y′²) dt, area |½∫(x y′ − y x′) dt|
@@ -4876,13 +5161,13 @@
       box.append(row, outs);
     }
   }
-  async function computeCurves(min, max) {
+  async function computeCurves(min, max, quick) {
     const C = P.curves || [];
     for (const c of C) { c.error = ''; if (c.kind === 'param' || c.kind === 'polar') await sampleCurve(c); }
     const imp = C.filter((c) => c.kind === 'implicit');
     if (imp.length) {
-      const a = await numValue(min), b = await numValue(max);
-      await computeImplicit(imp, implicitWindow(a, b));
+      const win = P.view ? implicitWindow() : implicitWindow(await numValue(min), await numValue(max));
+      await computeImplicit(imp, win, quick);
     }
   }
   // the box of the parametric and polar lines, and the windows of the implicit ones
@@ -5041,18 +5326,22 @@
         el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share a picture of the graph', 'グラフの画像を共有'), onclick: () => shareGraph2d() }));
       P.equal = P.equal || store.get('qalc.plot.equal', false) === true;
       const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
+      // (1.15.0) the sliders of the letters, under the graph
+      P.sl = sliderBox({ key: SL_KEY2D, redraw: sliderRedraw2d,
+        gif: (l) => sliderGif(l, { key: SL_KEY2D, redraw: sliderRedraw2d, busy: (b) => (b === undefined ? !!P.gifBusy : (P.gifBusy = b)), capture: (t) => frameWithBand(P.canvas, t), canvas: () => P.canvas, words: () => legendWords(P.legend), box: () => P.sl }) });
       const legend = el('div', { class: 'legend' });
       const msg = el('div', { class: 'form-hint' });
       P.curveTools = el('div', { class: 'curve-tools' });
       P.toolsNote = el('div', { class: 'form-hint tools-note', hidden: true });
       f2.append(el('div', { class: 'plot-form' }, kindSeg, ta,
         el('div', { class: 'plot-range' }, rangeLbl, xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax, go)),
-      wrap, legend, msg, P.curveTools, P.toolsNote, el('div', { class: 'tools' }, buildCalc2d(), buildArea2d()), P.samples = buildSamples(SAMPLES2D, false, drawSample2d),
+      wrap, P.sl.box, legend, msg, P.curveTools, P.toolsNote, el('div', { class: 'tools' }, buildCalc2d(), buildArea2d()), P.samples = buildSamples(SAMPLES2D, false, drawSample2d),
       el('div', { class: 'form-hint', text: tr('Drag to move, pinch to zoom, tap to show the coordinates. The functions are the same as on the calculator.', 'ドラッグで移動、2本指で拡大・縮小、タップで座標を表示します。式に使える関数は計算画面と同じです。') }));
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Type of graph', 'グラフの種類') }, b2, b3), f2, f3);
       P.canvas = canvas; P.tip = tip; P.legend = legend; P.msg = msg; P.wrap = wrap;
       P.ta = ta; P.go = go; P.setMode = setMode; P.xmin = xmin; P.xmax = xmax;
       go.addEventListener('click', () => {
+        if (P.sl) P.sl.stop(true);
         store.set('qalc.plot.exprs', ta.value);
         if (rangeVar === 'x') { store.set('qalc.plot.min', xmin.value); store.set('qalc.plot.max', xmax.value); }
         else { store.set('qalc.plot.' + rangeVar + '.min', xmin.value); store.set('qalc.plot.' + rangeVar + '.max', xmax.value); }
@@ -5169,7 +5458,7 @@
     }
     draw();
   }
-  async function compute(min, max, keepView) {
+  async function compute(min, max, keepView, quick) {
     if (!P.exprs.length && !(P.curves && P.curves.length)) {
       // only points (the rows of a matrix)
       if (P.points && P.points.length) {
@@ -5186,7 +5475,7 @@
       } else P.msg.textContent = tr('Enter a function (for example sin(x)), or tap a sample', '関数を入れてください（例：sin(x)）。下のサンプルもタップで描けます');
       return;
     }
-    P.msg.textContent = tr('Calculating…', '計算中…');
+    if (!quick) P.msg.textContent = tr('Calculating…', '計算中…');
     // (feature/ratings, VR01) what a and b had been changed by the person when this graph was asked for: typed after it, they stay
     const typedAtDraw = P.areaUI ? Object.assign({ a: 0, b: 0 }, P.areaUI.typed) : null;
     const r = P.exprs.length ? await Bridge.send('plot', { exprs: P.exprs, min: String(min), max: String(max), steps: 600, var: 'x', opts: engineOpts(), timeout: 12000 }) : { ok: true, series: [], messages: [] };
@@ -5207,8 +5496,8 @@
     const kept = keepView && P.area ? [P.series.indexOf(P.area.f), P.area.g ? P.series.indexOf(P.area.g) : -1] : null;
     P.series = r.series.map((s, i) => ({ expr: P.exprs[i], x: s.x, y: s.y, color: (P.exprColors && P.exprColors[i]) || COLORS[i % COLORS.length] }));
     // (1.15.0) the parametric, polar and implicit lines
-    if (!keepView) P.view = null;
-    if (P.curves && P.curves.length) await computeCurves(min, max);
+    if (!keepView) { P.view = null; P.viewByUser = false; }
+    if (P.curves && P.curves.length) await computeCurves(min, max, quick);
     const err = (r.messages || []).find((m) => m.type === 'error');
     const curveNotes = (P.curves || []).map((C) => (C.error ? C.error : C.kind === 'implicit' && C.empty ? trf('No curve of {0} in the view: try another range', '{0}の曲線は表示範囲にありません（範囲を変えてみてください）', JA ? '「' + clip(C.text, 18) + '」' : '"' + clip(C.text, 18) + '" ') : (C.kind !== 'implicit' && !(C.xs || []).some((x) => x !== null)) ? trf('No values for {0}: check the expression and the range', '{0}は値が出ません。式と範囲を確認してください', JA ? '「' + clip(C.text, 18) + '」' : '"' + clip(C.text, 18) + '" ') : '')).filter(Boolean);
     P.msg.textContent = [plotNote(err, P.exprs, P.series.filter((q) => !q.y.some((v) => v !== null)).map((q) => q.expr), 6, false)].concat(curveNotes).filter(Boolean).join(' ');
@@ -5222,8 +5511,10 @@
       const s = q.kind === 'fx' ? P.series[P.exprs.indexOf(q.f)] : null;
       if (q.kind === 'fx' && !s) continue;
       const noVals = s ? !s.y.some((v) => v !== null) : q.kind === 'implicit' ? !!q.empty : !(q.xs || []).some((x) => x !== null);
-      P.legend.append(el('span', { style: '--c:' + q.color, text: toDisplay(q.kind === 'fx' ? s.expr : q.text) + (noVals ? tr(' (no values)', '（値なし）') : '') }));
+      P.legend.append(el('span', { style: '--c:' + q.color, text: toDisplay(q.kind === 'fx' ? shownExpr(s.expr) : q.text) + (noVals ? tr(' (no values)', '（値なし）') : '') }));
     }
+    // (while a slider moves, only the lines: the tools are worked out again when it stops)
+    if (quick) { if (kept && P.series[kept[0]] && (kept[1] < 0 || P.series[kept[1]])) { P.area.f = P.series[kept[0]]; P.area.g = kept[1] < 0 ? null : P.series[kept[1]]; } draw(); return; }
     curveToolsChanged();
     // (1.12.0, C4: the points of the statistics with their regression line)
     if (P.points && P.points.length) P.legend.append(el('span', { class: 'legend-points', style: '--c:' + COLORS[0], text: tr('Points: ', '点：') + P.points.length }));
@@ -5388,6 +5679,8 @@
       g.stroke();
     }
     drawCurves(g, sx, sy);
+    if (P.slVals) c.dataset.sliders = Object.keys(P.slVals).map((l) => l + '=' + P.slVals[l]).join(','); else delete c.dataset.sliders; // (the values drawn, for the tests)
+    if (P.slDraws) c.dataset.slDraws = String(P.slDraws);
     if (P.curves && P.curves.length) c.dataset.lines = P.curves.map((C) => C.kind + ':' + (C.kind === 'implicit' ? (C.segs || []).length / 4 : (C.xs || []).filter((x) => x !== null).length)).join(','); else delete c.dataset.lines; // (what is drawn, for the tests)
     // points (the rows of a matrix) and marks (crossing points, extrema, the point of a tangent)
     g.font = '12px system-ui, sans-serif'; g.textBaseline = 'bottom'; g.textAlign = 'left';
@@ -5462,6 +5755,7 @@
     refetchIfNeeded();
   }
   const refetchIfNeeded = debounce(() => {
+    P.viewByUser = true; // (moved or zoomed: a slider that stops keeps this view)
     if (!P.view || !P.dataX) return;
     const v = P.view, d = P.dataX;
     const w = v.x1 - v.x0;
@@ -5630,7 +5924,7 @@
     if (!best || best.dist > 0.02) { P.mark = null; P.tip.style.display = 'none'; draw(); return; }
     P.mark = best;
     const tv = best.t !== undefined ? (best.kind === 'polar' ? 'θ = ' : 't = ') + decSign(String(Number(best.t.toPrecision(6)))) + ', ' : '';
-    P.tip.textContent = toDisplay(best.expr) + tr(':  ', '：') + tv + 'x = ' + decSign(String(Number(best.x.toPrecision(10)))) + ', y = ' + decSign(String(Number(best.y.toPrecision(10))));
+    P.tip.textContent = toDisplay(shownExpr(best.expr)) + tr(':  ', '：') + tv + 'x = ' + decSign(String(Number(best.x.toPrecision(10)))) + ', y = ' + decSign(String(Number(best.y.toPrecision(10))));
     P.tip.style.display = 'block';
     draw();
   }
@@ -5670,7 +5964,7 @@
   function calcFunctionsChanged() {
     const U = P.calcUI, keep = U.f.value;
     U.f.textContent = '';
-    P.series.forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(toDisplay(s1.expr), 34) })));
+    P.series.forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(toDisplay(shownExpr(s1.expr)), 34) })));
     U.f.value = keep !== '' && P.series[Number(keep)] ? keep : '0';
   }
   // the tangent of f at x = a: its line as an expression (to draw), the point marked, the equation shown
@@ -6387,8 +6681,8 @@
     const U = P.areaUI, keep1 = U.f1.value, keep2 = U.f2.value;
     U.f1.textContent = ''; U.f2.textContent = '';
     P.series.forEach((s, i) => {
-      U.f1.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) }));
-      U.f2.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) }));
+      U.f1.append(el('option', { value: String(i), text: clip(toDisplay(shownExpr(s.expr)), 30) }));
+      U.f2.append(el('option', { value: String(i), text: clip(toDisplay(shownExpr(s.expr)), 30) }));
     });
     U.f2.prepend(el('option', { value: 'axis', text: tr('the x axis', 'x 軸') }));
     // the same choice as before while the number of functions stays the same; else the first
@@ -7880,7 +8174,7 @@
     const k1 = U.s1.value, k2 = U.s2.value, D = Q3.data;
     U.s1.textContent = ''; U.s2.textContent = '';
     const series = D ? D.series : [];
-    series.forEach((s, i) => { U.s1.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) })); U.s2.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) })); });
+    series.forEach((s, i) => { U.s1.append(el('option', { value: String(i), text: clip(toDisplay(s.label || s.expr), 30) })); U.s2.append(el('option', { value: String(i), text: clip(toDisplay(s.label || s.expr), 30) })); });
     U.s2.prepend(el('option', { value: 'plane', text: tr('the plane z = 0', '平面 z = 0') }));
     const same = U.count === series.length;
     U.count = series.length;
@@ -9339,6 +9633,9 @@
     const eq = store.get('qalc.plot3d.equal', 'auto');
     Q3.equal = eq && typeof eq === 'object' && typeof eq.on === 'boolean' && typeof eq.exprs === 'string' ? eq : 'auto';
     const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
+    // (1.15.0) the sliders of the letters (QCalc Pro in 3D)
+    Q3.sl = sliderBox({ key: SL_KEY3D, redraw: sliderRedraw3d, locked: () => PRO_GATES.sliders3d === 'pro' && !hasPro(), anyStep: false,
+      gif: (l) => sliderGif(l, { key: SL_KEY3D, redraw: sliderRedraw3d, busy: (b) => (b === undefined ? !!Q3.gifBusy : (Q3.gifBusy = b)), capture: (t) => frame3d(t), canvas: () => Q3.canvas, words: () => legendWords(Q3.legend), box: () => Q3.sl }) });
     const legend = el('div', { class: 'legend' });
     const msg = el('div', { class: 'form-hint' });
     // 1.12.0 (B2): for a solid of revolution, how far it is turned (0–360°; 180° is the solid cut in
@@ -9445,7 +9742,7 @@
           el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax),
           el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr(' to ', ' 〜 ').trim() }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
-      tryRow, backRow, wrap, angleRow, levelRow, seeRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
+      tryRow, backRow, wrap, Q3.sl.box, angleRow, levelRow, seeRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
@@ -9867,7 +10164,32 @@
     const [x0, x1] = pad(lo('x'), hi('x')), [y0, y1] = pad(lo('y'), hi('y')), [z0, z1] = pad(lo('z'), hi('z'));
     return { xs: [x0, x1], ys: [y0, y1], nx: 2, ny: 2, series: [], z0, z1 };
   }
-  async function compute3d() {
+  // 3D: one drawing at a time, as in 2D (sliderRedraw2d); while a slider moves, the range of z only grows and the edges
+  // are not worked out again
+  function sliderRedraw3d(final) {
+    Q3.slFinal = Q3.slFinal || final;
+    if (Q3.slJob) { Q3.slAgain = true; return Q3.slJob; }
+    Q3.slJob = (async () => {
+      try {
+        do {
+          Q3.slAgain = false;
+          const fin = Q3.slFinal; Q3.slFinal = false;
+          Q3.slDraws = (Q3.slDraws || 0) + 1;
+          await compute3d(!fin);
+        } while (Q3.slAgain);
+      } finally { Q3.slJob = null; }
+    })();
+    return Q3.slJob;
+  }
+  // a frame of the 3D graph for a moving picture (the solid drawn with WebGL 2 into the canvas), with the value under it
+  function frame3d(text) {
+    const c = Q3.canvas, glLayer = GL3D.cv && !GL3D.cv.hidden;
+    if (glLayer) { Q3.composite = true; try { draw3d(); } finally { Q3.composite = false; } }
+    const out = frameWithBand(c, text);
+    if (glLayer) requestDraw3d();
+    return out;
+  }
+  async function compute3d(quick) {
     // (D6) a solid or a tank of "Shapes": drawn from its own triangles, no engine
     if (Q3.model) {
       const Md = Q3.model;
@@ -9897,14 +10219,21 @@
       draw3d();
       return;
     }
-    if (!Q3.exprs.length) { Q3.msg.textContent = tr('Enter a function (for example sin(x) cos(y)), or tap a sample', '関数を入れてください（例：sin(x) cos(y)）。下のサンプルもタップで描けます'); return; }
-    Q3.msg.textContent = tr('Calculating…', '計算中…');
+    if (!Q3.exprs.length) { Q3.sl.set([]); Q3.msg.textContent = tr('Enter a function (for example sin(x) cos(y)), or tap a sample', '関数を入れてください（例：sin(x) cos(y)）。下のサンプルもタップで描けます'); return; }
+    // (1.15.0) the letters with a slider: their values put in for the engine (the formulas as written stay in Q3.exprs)
+    const slLetters = sliderLetters(Q3.exprs, true);
+    const slVals = slLetters.length ? sliderValues(SL_KEY3D, slLetters) : null;
+    const exprs = Q3.exprs.map((e) => withSliders(e, slVals));
+    Q3.sl.set(slLetters);
+    Q3.canvas.dataset.sliders = slVals ? Object.keys(slVals).map((l) => l + '=' + slVals[l]).join(',') : '';
+    if (Q3.slDraws) Q3.canvas.dataset.slDraws = String(Q3.slDraws);
+    if (!quick) Q3.msg.textContent = tr('Calculating…', '計算中…');
     // (the 1:1 chosen for other functions is dropped: these are automatic until 1:1 is pressed, 1.9.3)
     if (Q3.equal && Q3.equal.exprs !== undefined && Q3.equal.exprs !== Q3.exprs.join('\n')) { Q3.equal = 'auto'; store.set('qalc.plot3d.equal', 'auto'); }
     clearVolume();
     const seq = Q3.seq = (Q3.seq || 0) + 1;
     const [x0, x1, y0, y1] = Q3.range;
-    const r = await Bridge.send('plot3d', { exprs: Q3.exprs, xmin: x0 || '-5', xmax: x1 || '5', ymin: y0 || '-5', ymax: y1 || '5', nx: Q3.res, ny: Q3.res, opts: engineOpts(), timeout: 15000 });
+    const r = await Bridge.send('plot3d', { exprs, xmin: x0 || '-5', xmax: x1 || '5', ymin: y0 || '-5', ymax: y1 || '5', nx: Q3.res, ny: Q3.res, opts: engineOpts(), timeout: 15000 });
     if (!r.ok && /^invalid [xy] range$/.test(r.error || '') && !Q3.swapped) {
       const k = r.error === 'invalid x range' ? 0 : 2;
       const a = await numValue(Q3.range[k] || '-5'), b = await numValue(Q3.range[k + 1] || '5');
@@ -9931,10 +10260,13 @@
         if (z[k] === z[k]) vals.push(z[k]);
       }
       const color = COLORS[i % COLORS.length];
-      return { expr: Q3.exprs[i], z, complete: s.complete !== false, color, rgb: hexRgb(color) };
+      return { expr: exprs[i], label: Q3.exprs[i], z, complete: s.complete !== false, color, rgb: hexRgb(color) };
     });
     for (const p of Q3.points || []) vals.push(p.z);
-    const [z0, z1] = zRange3d(vals);
+    let [z0, z1] = zRange3d(vals);
+    // (while a slider moves the range of z only grows: the picture does not jump; when it stops, the range fits again)
+    if (quick && Q3.slZ) { z0 = Math.min(z0, Q3.slZ[0]); z1 = Math.max(z1, Q3.slZ[1]); }
+    Q3.slZ = quick ? [z0, z1] : null;
     const data = { xs: r.x, ys: r.y, nx, ny, series, z0, z1, seq };
     // (for the tests, 1.12.0 BG09: the most grid points at which two surfaces have the same value)
     { const tz = (z1 - z0) * 1e-9 || 1e-12; let most = 0; for (let a = 0; a < series.length; a++) for (let b = a + 1; b < series.length; b++) { let n = 0; const za = series[a].z, zb = series[b].z; for (let k = 0; k < za.length; k++) if (za[k] === za[k] && Math.abs(za[k] - zb[k]) <= tz) n++; most = Math.max(most, n); } data.same = most; }
@@ -9943,7 +10275,7 @@
     const note = err ? localMessage(err.text)
       : series.some((s) => !s.complete) ? tr('The calculation took too long: only part of the graph was calculated', '時間がかかりすぎたため、途中までしか計算できませんでした')
       : !vals.length ? tr('There are no real values (check the expression and the ranges of x and y)', '実数の値がありません（式と、x と y の範囲を確認してください）')
-      : plotNote(null, Q3.exprs, series.filter((q) => !q.z.some((v) => v === v)).map((q) => q.expr), 4, true);
+      : plotNote(null, Q3.exprs, series.filter((q) => !q.z.some((v) => v === v)).map((q) => q.label), 4, true);
     let shown = false;
     const show = () => {
       if (shown || seq !== Q3.seq) return;
@@ -9955,8 +10287,8 @@
       if (Q3.growNext && rimsReady()) { const ax = Q3.growNext; Q3.growNext = null; startGrow(ax); }
       Q3.msg.textContent = Q3.growNext ? tr('Calculating…', '計算中…') : note;
       legend3d(data, vals.length > 0);
-      if (Q3.volUI && !Q3.volUI.box.hidden) volumeSurfacesChanged();
-      if (Q3.partUI && !Q3.partUI.box.hidden) partialSurfacesChanged();
+      if (!quick && Q3.volUI && !Q3.volUI.box.hidden) volumeSurfacesChanged();
+      if (!quick && Q3.partUI && !Q3.partUI.box.hidden) partialSurfacesChanged();
       store.set('qalc.plot3d.ok', false);
       draw3d();
       store.set('qalc.plot3d.ok', true);
@@ -9984,6 +10316,7 @@
       if ((lo < data.z0 || hi > data.z1) && hi - lo <= 1.5 * (data.z1 - data.z0)) { data.z0 = lo; data.z1 = hi; }
     };
     settle();
+    if (quick) { if (Q3.slZ) { data.z0 = Math.min(data.z0, Q3.slZ[0]); data.z1 = Math.max(data.z1, Q3.slZ[1]); Q3.slZ = [data.z0, data.z1]; } show(); return; }
     const tolZ = (data.z1 - data.z0) * 4e-5, leaves = series.some((q) => q.z.some((v) => v === v && (v < data.z0 - tolZ || v > data.z1 + tolZ)));
     if (!leaves) show();
     const late = setTimeout(show, 2500);
@@ -10008,7 +10341,7 @@
     Q3.legend.textContent = '';
     if (data.oneSolid && any) {
       const step = niceStep(data.z1 - data.z0, 4);
-      Q3.legend.append(el('span', { class: 'zbar' }, series.map((s) => toDisplay(s.expr)).join(tr(', ', '、')) + tr('   z: ', '　z：') + fmt(data.z0, step / 10), el('i'), fmt(data.z1, step / 10)));
+      Q3.legend.append(el('span', { class: 'zbar' }, series.map((s) => toDisplay(s.label || s.expr)).join(tr(', ', '、')) + tr('   z: ', '　z：') + fmt(data.z0, step / 10), el('i'), fmt(data.z1, step / 10)));
       return;
     }
     const done = new Set();
@@ -10017,9 +10350,9 @@
       const g = (data.groups || []).find((m) => m.includes(i));
       if (g) {
         g.forEach((m) => done.add(m));
-        Q3.legend.append(el('span', { style: '--c:' + s.color, text: g.map((m) => toDisplay(series[m].expr)).join(tr(', ', '、')) }));
+        Q3.legend.append(el('span', { style: '--c:' + s.color, text: g.map((m) => toDisplay(series[m].label || series[m].expr)).join(tr(', ', '、')) }));
       } else {
-        Q3.legend.append(el('span', { style: '--c:' + s.color, text: toDisplay(s.expr) + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
+        Q3.legend.append(el('span', { style: '--c:' + s.color, text: toDisplay(s.label || s.expr) + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
       }
     });
   }
@@ -10838,8 +11171,8 @@
     const rgbCss = (c) => (c ? 'rgb(' + c.map((x) => Math.round(x)).join(',') + ')' : '');
     (D && D.series || []).forEach((sr, i) => {
       if (i > 7) return;
-      const key = 's:' + (sr.expr || i);
-      if (!list.some((x) => x.key === key)) list.push({ key, k: i, label: toDisplay(sr.expr || ''), color: rgbCss(sr.drawRgb || sr.rgb) });
+      const key = 's:' + (sr.label || sr.expr || i); // (the formula as written: the same with another value of a slider)
+      if (!list.some((x) => x.key === key)) list.push({ key, k: i, label: toDisplay(sr.label || sr.expr || ''), color: rgbCss(sr.drawRgb || sr.rgb) });
       groups[i].see = chosen(key, true) ? a : 0;
       groups[i].cast = !groups[i].see;  // (what is see-through casts no shadow)
     });
@@ -13412,7 +13745,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (!best) { clearMark3d(); draw3d(); return; }
     Q3.mark = best;
     const i = best.k % D.nx, j = Math.floor(best.k / D.nx), num = (v) => Number(v.toPrecision(10));
-    Q3.tip.textContent = best.s.expr + tr(':  x = ', '：x = ') + num(D.xs[i]) + ', y = ' + num(D.ys[j]) + ', z = ' + num(best.s.z[best.k]);
+    Q3.tip.textContent = toDisplay(best.s.label || best.s.expr) + tr(':  x = ', '：x = ') + num(D.xs[i]) + ', y = ' + num(D.ys[j]) + ', z = ' + num(best.s.z[best.k]);
     Q3.tip.style.display = 'block';
     draw3d();
   }
@@ -15726,6 +16059,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['📥', tr('Calculation notes: open a .txt or .csv file, or share text to QCalc', '計算メモに .txt・.csv のファイルや、ほかのアプリから共有した文字を読み込めます'), () => { const p = openNotesTool(); const d = p.body.querySelector('.note-more'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ block: 'center' }), 350); } }],
     ['📐', tr('Taylor series: taylor on the Calculus page, with a graph to compare', '「解析」のページの taylor でテイラー展開（グラフで比べられます）'), () => openForm('taylor', { f: 'sin(x)' })],
     ['🌀', tr('2D graph: parametric, polar and implicit curves', '2D グラフで媒介変数・極座標・陰関数の曲線'), () => openPlotWith(['r = 1 + cos(θ)'])],
+    ['🎛️', tr('Sliders: letters such as a in a sin(b x) get sliders in the graph', 'グラフの式の a・b などの文字をスライダーで動かせます'), () => openPlotWith(['a sin(b x)'])],
     ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
     try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
   ].filter(Boolean);
@@ -18123,7 +18457,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     profile: ['🏺', tr('Solid from a profile', '輪郭から回転体'), tr('Volume, capacity, weight and surface from positions and diameters (turned parts, pottery)', '位置と直径から体積・容量・重さ・表面積（旋盤の部品・陶芸）')],
     stl: ['🖨', tr('STL files for 3D printers', 'STL ファイル（3D プリンター）'), tr('Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres', '回転体・断面の立体・輪郭から回転体を、閉じた立体の面（mm）として保存')],
     notes: ['📝', tr('More calculation notes, saved as files', '計算メモの 2 つ目以降と書き出し'), tr('Several memos of calculations, and saving them as text or CSV (the first memo is free)', '計算メモをいくつも作り、テキストや CSV で保存（1 つ目のメモは無料）')],
-    share_pro: ['🎞', tr('GIF and pictures without the mark', 'GIF と透かしなしの共有'), tr('The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without "QCalc" in the corner', '3D グラフを動く画像（GIF）で、グラフの画像を高い解像度・透かしなしで共有')]
+    share_pro: ['🎞', tr('GIF and pictures without the mark', 'GIF と透かしなしの共有'), tr('The 3D graph and a slider moving as a moving picture (GIF), and pictures of the graphs at full resolution without "QCalc" in the corner', '3D グラフやスライダーの動きを動く画像（GIF）で、グラフの画像を高い解像度・透かしなしで共有')],
+    sliders3d: ['🎛', tr('Sliders in 3D', '3D のスライダー'), tr('Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)', '3D グラフで a sin(x) cos(y) の a などをスライダーで動かす（2D は無料）')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {

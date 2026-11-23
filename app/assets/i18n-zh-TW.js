@@ -2,6 +2,24 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    // (1.15.0) the sliders of the letters of the graphs
+    "Sliders": "滑桿",
+    "Value of {0}": "{0} 的值",
+    "{0} = {1} (tap to type a value)": "{0} = {1}（點一下輸入數值）",
+    "Move {0} to and fro": "來回移動 {0}",
+    "Stop {0}": "停止 {0}",
+    "Slider of {0}": "{0} 的滑桿",
+    "Slider of {0}: range and step": "{0} 的滑桿：範圍與間隔",
+    "From": "最小",
+    "To": "最大",
+    "Back to −5 to 5, step 0.1": "恢復為 −5～5、間隔 0.1",
+    "The end must be larger than the start": "最大值必須大於最小值",
+    "Check the step (more than 0, at most 100 000 steps)": "請檢查間隔（大於 0，最多 10 萬段）",
+    "Sliders in 3D are a QCalc Pro feature": "3D 滑桿是 QCalc Pro 的功能",
+    "The moving picture would be too large": "動態圖片會太大",
+    "Sliders in 3D": "3D 滑桿",
+    "Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)": "在 3D 圖形中用滑桿改變 a sin(x) cos(y) 的 a 等字母（2D 免費）",
+    "The 3D graph and a slider moving as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "以動態圖片（GIF）分享 3D 圖形與滑桿的變化，並以高解析度、無浮水印分享圖形圖片",
     // (1.15.0) the kinds of lines of the 2D graph
     "Polar (graph)": "極座標",
     "Parametric": "參數式",
@@ -30,6 +48,7 @@
     // (1.15.0) the Taylor series
     "Taylor series: taylor on the Calculus page, with a graph to compare": "「微積分」頁的 taylor 可做泰勒展開（可用圖形比較）",
     "2D graph: parametric, polar and implicit curves": "2D 圖形：參數式、極座標與隱函數曲線",
+    "Sliders: letters such as a in a sin(b x) get sliders in the graph": "滑桿：圖形算式中的 a、b 等字母可以用滑桿移動",
     "Area: the line crosses itself, so no area is given": "面積：線與自身相交，因此不計算面積",
     "Taylor series": "泰勒展開",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "以 x = a 為中心、到 n 次（最多 20）的多項式，係數盡量以精確值表示",

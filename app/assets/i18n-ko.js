@@ -1,6 +1,24 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    // (1.15.0) the sliders of the letters of the graphs
+    "Sliders": "슬라이더",
+    "Value of {0}": "{0}의 값",
+    "{0} = {1} (tap to type a value)": "{0} = {1}(탭하여 값 입력)",
+    "Move {0} to and fro": "{0}을(를) 왕복으로 움직이기",
+    "Stop {0}": "{0} 멈추기",
+    "Slider of {0}": "{0}의 슬라이더",
+    "Slider of {0}: range and step": "{0}의 슬라이더: 범위와 간격",
+    "From": "최소",
+    "To": "최대",
+    "Back to −5 to 5, step 0.1": "−5~5, 간격 0.1로 되돌리기",
+    "The end must be larger than the start": "최대는 최소보다 커야 합니다",
+    "Check the step (more than 0, at most 100 000 steps)": "간격을 확인하세요(0보다 크고, 최대 10만 단계)",
+    "Sliders in 3D are a QCalc Pro feature": "3D 슬라이더는 QCalc Pro 기능입니다",
+    "The moving picture would be too large": "움직이는 이미지가 너무 커집니다",
+    "Sliders in 3D": "3D 슬라이더",
+    "Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)": "3D 그래프에서 a sin(x) cos(y)의 a 등을 슬라이더로 움직이기(2D는 무료)",
+    "The 3D graph and a slider moving as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "3D 그래프와 슬라이더의 움직임을 움직이는 이미지(GIF)로, 그래프 이미지를 높은 해상도·워터마크 없이 공유",
     // (1.15.0) the kinds of lines of the 2D graph
     "Polar (graph)": "극좌표",
     "Parametric": "매개변수",
@@ -29,6 +47,7 @@
     // (1.15.0) the Taylor series
     "Taylor series: taylor on the Calculus page, with a graph to compare": "‘미적분’ 페이지의 taylor로 테일러 전개(그래프로 비교 가능)",
     "2D graph: parametric, polar and implicit curves": "2D 그래프: 매개변수・극좌표・음함수 곡선",
+    "Sliders: letters such as a in a sin(b x) get sliders in the graph": "슬라이더: 그래프 식의 a, b 같은 문자를 슬라이더로 움직일 수 있습니다",
     "Area: the line crosses itself, so no area is given": "면적: 선이 자기 자신과 교차하므로 내지 않습니다",
     "Taylor series": "테일러 전개",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "중심 x = a 주변에서 n차(최대 20)까지의 다항식을 가능한 한 정확한 계수로 보여 줍니다",
