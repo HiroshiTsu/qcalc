@@ -628,6 +628,7 @@
     "Every tool shows its default digits; precision {0}, no limit on decimal places": "Tous les outils affichent leurs chiffres par défaut ; précision {0}, décimales sans limite",
     "changed": "modifié",
     "Back to the default ({0})": "Revenir à la valeur par défaut ({0})",
+    " times 10 to the power of {0}": " fois 10 puissance {0}",
     "Put the digits of every tool, the precision and the maximum decimal places back to their defaults?": "Remettre par défaut les chiffres de tous les outils, la précision et le nombre maximal de décimales ?",
     "Reset the settings and the digits shown by each tool to their defaults?": "Réinitialiser les paramètres et les chiffres affichés par outil ?",
     "Update now": "Mettre à jour maintenant",

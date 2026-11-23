@@ -1731,3 +1731,19 @@ body.hselect #history { padding-bottom: 150px; }
 .dig-kinds[hidden], .dig-warn[hidden], .dig-sel option[hidden], .dig-nw[hidden] { display: none; }
 .dig-setting + .dig-more { padding: 0 12px 8px; }
 .dig-body .btn { align-self: flex-start; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: start; height: auto; }
+
+/* (1.15.0) the lines of a result (app.js showResult): "= exact" and "≈ approximation" each on its own line, on the right;
+   a line that does not fit gets smaller letters (fitLines, down to 80 %), then breaks only between groups of digits */
+.r-line { display: block; overflow-wrap: normal; word-break: normal; white-space: normal; }
+.r-line.nw { white-space: nowrap; }
+.r-line.nw wbr { display: none; } /* (Chromium breaks at <wbr> even in nowrap: no place to break until the line may) */
+.r-line.r-ap { font-size: .86em; margin-top: 1px; }
+.r-line .r-exp { white-space: nowrap; }
+/* math notation in the same letters as the other results: the digits, signs and names of KaTeX in the app's font, its
+   weight and size (KaTeX's own fonts only for the big signs: roots, brackets, fraction bars) */
+.r-line.math { overflow-x: auto; overflow-y: hidden; white-space: nowrap; padding: .22em 0 .12em; } /* (room for the app's letters, a little taller than KaTeX's) */
+.r-line.math .katex { font: inherit; line-height: 1.25; }
+.r-line.math .katex .mord, .r-line.math .katex .mbin, .r-line.math .katex .mrel, .r-line.math .katex .mpunct,
+.r-line.math .katex .mopen, .r-line.math .katex .mclose, .r-line.math .katex .mop, .r-line.math .katex .mathrm { font-family: inherit; }
+.r-line.math .katex .mathnormal { font-family: inherit; font-style: italic; }
+.h-res.two, .preview.two { white-space: normal; }

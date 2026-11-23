@@ -632,6 +632,7 @@
     "Every tool shows its default digits; precision {0}, no limit on decimal places": "所有畫面已恢復為預設的位數（有效位數 {0}，小數點後不限制）",
     "changed": "已變更",
     "Back to the default ({0})": "恢復為預設值（{0}）",
+    " times 10 to the power of {0}": " 乘以 10 的 {0} 次方",
     "Put the digits of every tool, the precision and the maximum decimal places back to their defaults?": "要將所有畫面的顯示位數、精確度和小數點後的最大位數恢復為預設值嗎？",
     "Reset the settings and the digits shown by each tool to their defaults?": "要將設定和各畫面的顯示位數恢復為預設值嗎？",
     "Update now": "立即更新",
