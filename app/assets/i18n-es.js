@@ -13,6 +13,7 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "Historial: toca un resultado para insertarlo (otro toque lo sustituye), números de línea y #12, elegir y sumar",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "Este es el valor principal (un número complejo). La raíz cúbica real es cbrt(−{0}) (∛)",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "Este es el valor principal (un número complejo). La raíz real es root(−{0}, {1})",
     "\"{0}\" was taken as the unit {1}; for an unknown, use x, y or z": "«{0}» se tomó como la unidad {1}; para una incógnita, usa x, y o z",

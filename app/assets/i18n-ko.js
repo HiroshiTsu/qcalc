@@ -1,6 +1,7 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "기록: 결과를 탭해서 넣기(다시 탭하면 바뀜), 줄 번호와 #12, 골라서 합계",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "이것은 주값(복소수)입니다. 실수 세제곱근은 cbrt(−{0})(∛)로 구합니다",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "이것은 주값(복소수)입니다. 실수 거듭제곱근은 root(−{0}, {1})로 구합니다",
     "\"{0}\" was taken as the unit {1}; for an unknown, use x, y or z": "\"{0}\"은(는) 단위 {1}(으)로 계산했습니다. 미지수에는 x, y, z를 쓰세요",

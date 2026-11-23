@@ -2,6 +2,7 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "歷史紀錄：點一下結果即可插入（再點會替換）、行號與 #12、選取後加總",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "這是主值（複數）。實數立方根請用 cbrt(−{0})（∛）",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "這是主值（複數）。實數方根請用 root(−{0}, {1})",
     "\"{0}\" was taken as the unit {1}; for an unknown, use x, y or z": "「{0}」被當作單位「{1}」計算。未知數請用 x、y、z",

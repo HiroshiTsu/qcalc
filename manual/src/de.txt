@@ -22,7 +22,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Tippen Sie nun `60 mph to km/h` („to“ liegt auf der Taste →). Es erscheint „= 96,560 64 km/h“.
 :step: Die dritte Rechnung ist `sqrt(8)`, auch über die Taste √: „= 2√2“ und darunter „≈ 2,828 427 124 746 19“, der exakte Wert und die Näherung in zwei Zeilen.
 :example: `1/3 + 1/4` → `= 7/12`, darunter `≈ 0,583 333 333 333 333`
-:tip: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu übernehmen oder zu kopieren.
+:tip: Tippen Sie auf ein Ergebnis im Verlauf: Es kommt an der Cursorposition ins Eingabefeld ([Ergebnis durch Tippen einfügen](#tap-insert)).
 :mistake: Der Buchstabe x ist eine Variable, kein „mal“. Multiplizieren Sie mit der Taste × (oder *).
 
 ## new-1-16 | Neu in 1.16.0
@@ -34,6 +34,10 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 - **Histogramm und Boxplot**: für eine Spalte ein Histogramm (mit änderbarer Klassenbreite) und ein Boxplot (Ausreißer als Punkte) ([Statistik](#stats)).
 - **Regressionskurven und CSV**: für zwei Spalten eine Kurve vom Grad 2 bis 4, eine Exponential-, Logarithmus- oder Potenzkurve wählen (außer der Geraden: QCalc Pro). [[Read a CSV file]] liest eine Spalte einer CSV-Datei ([Statistik](#stats)).
 - **Hinweise zu den Argumenten**: Nach einem Funktionsnamen und „(“ erscheinen unter dem Eingabefeld die Argumente (das aktuelle fett), was die Funktion tut und ein Beispiel. Für etwa 60 Funktionen; ✕ schließt den Hinweis ([Hinweise zu den Argumenten](#arg-hints)).
+- **Ergebnis durch Tippen einfügen**: Ein Tippen auf ein Ergebnis im Verlauf setzt es an der Cursorposition ein, wie ein Klick auf eine Zelle in einer Tabellenkalkulation. Ein weiteres Tippen, bevor Sie etwas eingeben, ersetzt es, und direkt nach einer Zahl kommt zuerst ein sichtbares × dazu. Die verwendeten Zeilen bekommen farbige Markierungen. Ergebnisse mit √ oder π kommen in ihrer exakten Form, nicht als gerundete Dezimalzahl ([Ergebnis durch Tippen einfügen](#tap-insert)).
+- **Zeilennummern und #12 im Verlauf**: Die Zeilen des Verlaufs haben Nummern, und `#12` in einem Ausdruck ist das Ergebnis von Zeile 12; wird Zeile 12 bearbeitet, können die Zeilen mit #12 neu berechnet werden. [[Select: sum and average]] im ⋯ beginnt mit dieser Zeile und zeigt sofort die Summe; langes Drücken auf eine Zeile wählt einen Bereich. [[Copy as a table]] (QCalc Pro) kopiert Ausdrücke und Ergebnisse als zwei Spalten für eine Tabellenkalkulation ([Zeilennummern und #12](#hist-refs), [Zeilen addieren](#select-sum)).
+- **Eine Zeile bearbeiten**: Die Zeile und ihr Ergebnis bleiben sichtbar, neu berechnete Zeilen leuchten kurz auf. Eine Zeile behält die Winkeleinheit, mit der sie berechnet wurde, und wird damit bearbeitet. Auch AC beendet das Bearbeiten, und [[Cancel]] bei der Frage nach den Zeilen darunter kehrt zum Bearbeiten zurück ([Eine Zeile des Verlaufs bearbeiten](#edit-line)).
+- **Weitere Korrekturen**: Solange „Volumen und Oberfläche“ im 3D-Graphen offen ist, zeigt die Legende die Farbe des gemessenen Körpers. Geldbeträge runden einen halben Cent richtig auf (manche Summen waren einen Cent zu klein). Ergebnisse werden ohne Zifferngruppierung kopiert. `nPr(5, 2)` und `nCr(5, 2)` funktionieren. Weitere Meldungen der Rechen-Engine (der Hinweis zu 6/2(1+2) und andere) erscheinen auf Deutsch. Der Umrechner lässt selten genutzte Einheiten weg (eingeben lassen sie sich weiterhin).
 
 ## new-1-15 | Neu in 1.15.0
 - **Besser lesbare Ergebnisse**: Ergebnisse mit 15 gültigen Stellen, in Dreiergruppen. Geräte, die noch die bisherigen Standardwerte hatten (10 Stellen, ohne Gruppen), wechseln mit dieser Version einmal. [[Precision (significant digits)]] und [[Digit grouping (1,000)]] in den [[Settings]] stellen es zurück ([Das Ergebnis lesen](#results)).
@@ -121,7 +125,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Die Genauigkeit (Standard 15 Stellen) lässt sich mit dem Feld „15 St.“ in der Zeile oben ändern. Es bietet 10, 15, 20, 30, 50, 100 und Andere … (eine Zahl eingeben); das Ergebnis des Ausdrucks in der Eingabe wird sofort neu berechnet, die Ergebnisse im Verlauf bleiben, wie sie sind. Auch [[Precision (significant digits)]] in den [[Settings]] ändert sie. Ergebnisse erscheinen mit Dreiergruppen ([[Digit grouping (1,000)]] schaltet es aus).
 :step: Um eine Zeile des Verlaufs mit mehr Stellen zu sehen, wählen Sie in ihrem ⋯ → [[Work it out with other digits]] 30, 50, 100 oder Andere …. Das Ergebnis erscheint in einem Blatt mit [[Put the expression into the input field]], [[Keep it in the history]] und [[Copy the result]]. Die Genauigkeit der Einstellungen und die Zeile bleiben, wie sie sind.
 :pro: Bis 1000 Stellen kostenlos. Mehr als 1000, bis 200000 Stellen, ist eine Funktion von QCalc Pro.
-:tip: Ein sehr langes Ergebnis lässt sich im Verlauf scrollen, sodass jede Stelle lesbar ist; beim Kopieren wird jede Stelle kopiert.
+:tip: Ein sehr langes Ergebnis lässt sich im Verlauf scrollen, sodass jede Stelle lesbar ist; beim Kopieren wird jede Stelle kopiert, ohne Zifferngruppierung.
 :step: Unter der neuesten Antwort erscheinen Schaltflächen für das, was oft als Nächstes kommt (höchstens 6): bei einem Ausdruck in x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]; bei einer Zahl [[Details]], [[As a fraction]], [[Scientific]] (bei einer ganzen Zahl [[Prime factors]], [[In hex]]); mit Einheit [[Convert…]]; bei einer Matrix [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. Die Rechnung einer Schaltfläche wird eine neue Zeile im Verlauf.
 :step: [[Details]] (oder ⋯ → [[Details]]) zeigt die anderen Formen der Antwort zusammen: bei einer Zahl den exakten Wert, die Dezimalzahl, den Bruch, den gemischten Bruch und die wissenschaftliche Schreibweise (ganze Zahlen in den Basen 2, 8 und 16 und ihre Primfaktoren; mit Einheit andere Einheiten); bei einem Ausdruck in x einen kleinen Graphen, die Nullstellen, die Ableitung, das Integral, die Taylorreihe und die faktorisierte Form. Eine Zeile antippen für [[Put the expression in the field]], [[Keep it in the history]] oder [[Copy result]].
 :tip: Ohne diese Schaltflächen: [[Settings]] → [[Suggest the next steps under the newest answer]] aus.
@@ -144,20 +148,42 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 
 # history | Verlauf und Speicher
 :what: Ausdrücke und Ergebnisse bleiben im Verlauf, bis zu 300 Zeilen. 🕘 oben rechts sucht, summiert ausgewählte Zeilen, exportiert und löscht.
-:step: Tippen Sie auf ein Ergebnis im Verlauf, um [[Put the expression into the input field]], [[Copy the result]] und Ähnliches zu wählen.
-:step: ⋯ rechts an einer Zeile bietet [[☆ Pin at the top]] und [[Add a short note]].
+:step: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu setzen ([Ergebnis durch Tippen einfügen](#tap-insert)); ein Tippen auf den Ausdruck bearbeitet die Zeile ([Eine Zeile des Verlaufs bearbeiten](#edit-line)).
+:step: ⋯ links an einer Zeile bietet [[☆ Pin at the top]] und [[Add a short note]].
 :step: 🕘 bietet [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] und [[Clear the whole history]].
 :shot: history | Das Verlaufsmenü von 🕘
 :tip: Mit Stern angeheftete Zeilen bleiben erhalten, wenn der Verlauf voll ist.
 
+## tap-insert | Ergebnis durch Tippen einfügen
+:what: Ein Tippen auf ein Ergebnis im Verlauf setzt es an der Cursorposition ins Eingabefeld, so wie ein Klick auf eine Zelle, während Sie in einer Tabellenkalkulation eine Formel eingeben.
+:step: Ist das Feld leer oder wurde gerade gerechnet, kommt das Ergebnis einfach hinein.
+:step: Ein weiteres Tippen auf ein Ergebnis, bevor Sie etwas eingeben, ersetzt das zuvor angetippte.
+:step: Nach einem Operator wie + oder × kommt das Ergebnis dahinter. Direkt nach einer Zahl, einem Buchstaben oder „)“ kommt zuerst ein sichtbares × dazu.
+:step: Die im Ausdruck verwendeten Zeilen bekommen farbige Markierungen; wird das Ergebnis aus dem Feld gelöscht, verschwindet seine Markierung.
+:example: Tippen Sie auf die Zeile `120`, drücken Sie ×, tippen Sie auf die Zeile `3` → im Feld steht `120 × 3`, das Ergebnis ist `= 360`
+:tip: Ergebnisse mit √ oder π kommen in ihrer exakten Form, nicht als gerundete Dezimalzahl: Das Ergebnis von `sqrt(8)` kommt als `(2 × √(2))`, sein Quadrat ist also `= 8`. Ein Ergebnis ohne exakte Form kommt mit allen Stellen der eingestellten Genauigkeit.
+:tip: Um eine Zeile über ihre Nummer zu verwenden, wählen Sie „#12 einfügen“ in ihrem ⋯; zum Kopieren eines Ergebnisses [[Copy result]] im ⋯ (ohne Zifferngruppierung kopiert).
+
 ## edit-line | Eine Zeile des Verlaufs bearbeiten
-:what: Tippen Sie auf den Ausdruck einer Zeile (den kleinen über dem Ergebnis) oder auf [[Edit expression]] in ihrem ⋯, um die Zeile zu bearbeiten. Der Ausdruck kommt ins Eingabefeld, darüber erscheint das Band „[[Editing a line of the history]]“.
+:what: Tippen Sie auf den Ausdruck einer Zeile (den kleinen über dem Ergebnis) oder auf [[Edit expression]] in ihrem ⋯, um die Zeile zu bearbeiten. Der Ausdruck kommt ins Eingabefeld, darüber erscheint das Band „[[Editing a line of the history]]“. Der Verlauf scrollt so, dass die Zeile und ihr Ergebnis sichtbar bleiben.
 :step: Ändern Sie den Ausdruck und drücken Sie [[!=]]. Die Zeile bekommt an derselben Stelle den neuen Ausdruck und das neue Ergebnis. ★ und die kurze Notiz bleiben; das Menü ⋯ zeigt neben der Zeit der Zeile die Zeit der Änderung.
 :step: Einige Sekunden lang erscheinen „[[Edited]]“ und [[Undo]]. [[Undo]] stellt Ausdruck und Ergebnis wieder her.
-:step: Wenn Zeilen darunter das Ergebnis dieser Zeile (ans) oder eine hier definierte Variable verwenden, fragt die App, ob sie neu berechnet werden sollen („Auch die 2 Zeilen darunter“) oder [[Only this line]]. [[Undo]] nimmt auch diese Zeilen zurück.
-:step: Um stattdessen eine neue Zeile darunter zu rechnen, drücken Sie [[As a new line]] im Band und dann [[!=]]. ✕ im Band oder die Zurück-Taste beendet das Bearbeiten, ohne etwas zu ändern.
-:tip: Gerechnet wird mit den Einstellungen von jetzt (Winkeleinheit, Zahlensystem und die anderen). Eine Zeile aus einem anderen Zahlensystem sagt das im Band und bekommt das Zahlensystem von jetzt.
-:tip: Ein Tippen auf das Ergebnis einer Zeile setzt es wie bisher in den Ausdruck ein oder kopiert es.
+:step: Wenn Zeilen darunter das Ergebnis dieser Zeile (ans oder #12) oder eine hier definierte Variable verwenden, fragt die App, ob sie neu berechnet werden sollen („Auch die 2 Zeilen darunter“) oder [[Only this line]]. Neu berechnete Zeilen leuchten kurz auf, und [[Undo]] nimmt auch sie zurück. Bei [[Only this line]] bekommen die Zeilen darunter einen Hinweis, dass ihr Ergebnis veraltet sein kann. [[Cancel]] ändert nichts: Der neue Ausdruck bleibt im Feld, und Sie bearbeiten weiter.
+:step: Um stattdessen eine neue Zeile darunter zu rechnen, drücken Sie [[As a new line]] im Band und dann [[!=]]. ✕ im Band, AC oder die Zurück-Taste beendet das Bearbeiten, ohne etwas zu ändern.
+:tip: Eine Zeile behält die Winkeleinheit (Grad, Bogenmaß), mit der sie berechnet wurde. Beim Bearbeiten, beim Neuberechnen der Zeilen darunter und mit anderen Stellen wird diese Einheit verwendet, und das Band sagt es. Zeilen von vor 1.16 verwenden die jetzt eingestellte Einheit; bei einer Winkelfunktion sagt das Band es.
+:tip: Die anderen Einstellungen (Zahlensystem und Ähnliches) sind die von jetzt. Eine Zeile aus einem anderen Zahlensystem sagt das im Band und bekommt das Zahlensystem von jetzt.
+:tip: Wird die bearbeitete Zeile gelöscht oder der ganze Verlauf geleert, endet das Bearbeiten; der Ausdruck im Feld wird dann als neue Zeile gerechnet.
+:tip: Ein Tippen auf das Ergebnis einer Zeile setzt es ins Eingabefeld ([Ergebnis durch Tippen einfügen](#tap-insert)).
+
+## hist-refs | Zeilennummern und #12
+:what: Jede Zeile des Verlaufs hat eine Nummer (das kleine „#12“ unter ihrem ⋯). `#12` in einem Ausdruck ist das Ergebnis von Zeile 12, wie ein Bezug auf eine Zelle in einer Tabellenkalkulation.
+:step: Wählen Sie „#12 einfügen (diese Zeile über ihre Nummer)“ im ⋯ einer Zeile: `#12` kommt ins Eingabefeld. `#` und die Nummer einzutippen geht auch.
+:step: Während Sie tippen, erscheint das Ergebnis mit `#12` unter dem Eingabefeld.
+:step: Eine Nummer gehört zu ihrer Zeile: Das Löschen anderer Zeilen ändert sie nicht, und keine Nummer wird zweimal vergeben.
+:step: Wird Zeile 12 bearbeitet, fragt die App, ob die Zeilen darunter, die `#12` verwenden, neu berechnet werden sollen ([Eine Zeile des Verlaufs bearbeiten](#edit-line)).
+:example: Zeile 12 ist `= 250` und Zeile 13 ist `= 3`: `#12 × #13` → `= 750`
+:mistake: Die Nummer einer gelöschten Zeile oder einer Zeile unter der gerade bearbeiteten lässt sich nicht verwenden; eine Meldung sagt es. Wird eine verwendete Zeile gelöscht, sagt es ein Hinweis unter der Zeile.
+:tip: Es ist dieselbe Schreibweise wie #3 in den Notizen ([Zeilennummern und #3](#notes-refs)).
 
 ## pins-notes | Anheften, Notizen und Suche
 :step: Wählen Sie [[☆ Pin at the top]] im ⋯ einer Zeile: Sie rückt zu den anderen angehefteten Zeilen nach oben.
@@ -166,9 +192,11 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :example: Eine Zeile mit der Notiz „Miete“ findet die Suche nach „Miete“.
 
 ## select-sum | Zeilen addieren
-:step: Wählen Sie [[Select lines: sum, average, copy]] in 🕘.
-:step: Tippen Sie auf die Zeilen, die addiert werden sollen.
-:step: Summe und Mittelwert erscheinen unten, mit Einheit, wenn die Einheiten passen. [[Copy]] kopiert die Zeilen.
+:step: Wählen Sie [[Select lines: sum, average, copy]] in 🕘. [[Select: sum and average]] im ⋯ einer Zeile beginnt mit dieser Zeile ausgewählt und zeigt sofort die Summe.
+:step: Tippen Sie auf die Zeilen, die addiert werden sollen. Langes Drücken auf eine Zeile wählt alle Zeilen von der zuletzt gewählten bis zu ihr.
+:step: Summe und Mittelwert erscheinen unten, mit Einheit, wenn die Einheiten passen. Als Dezimalzahl angezeigte Zeilen ergeben eine Dezimalzahl. [[Copy]] kopiert die Zeilen (ohne Zifferngruppierung).
+:step: [[Copy as a table]] kopiert Ausdrücke und Ergebnisse der gewählten Zeilen in zwei Spalten mit einem Tabulator dazwischen: In eine Tabellenkalkulation eingefügt, ergeben sie eine Spalte der Ausdrücke und eine Spalte der Ergebnisse.
+:pro: [[Copy as a table]] ist eine Funktion von QCalc Pro, zusammen mit dem Export des Verlaufs (CSV). Nummern, #12, das Auswählen, Summe, Mittelwert und das einfache Kopieren sind kostenlos.
 :mistake: Zeilen mit verschiedenen Einheiten (m und kg) lassen sich nicht addieren; der Grund wird angezeigt.
 
 ## export | Den Verlauf exportieren (CSV)
@@ -176,6 +204,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :what: Speichert den Verlauf als CSV-Datei, die Tabellenkalkulationen öffnen können.
 :step: Wählen Sie [[Export the history (CSV file)]] in 🕘.
 :step: Wählen Sie im Speichern-Bildschirm von Android den Ort.
+:tip: Um nur die gewählten Zeilen in eine Tabellenkalkulation einzufügen, verwenden Sie [[Copy as a table]] ([Zeilen addieren](#select-sum)).
 
 ## memory-keys | Speichertasten (M+ M− MR MC)
 :what: Die Speichertasten eines Taschenrechners. Der Wert wird in seiner exakten Form gespeichert.
@@ -406,6 +435,7 @@ Die Formeln:
 :shot: convert | Der Umrechnungsbildschirm
 :example: 5 km → 3,106856 mi
 :tip: Tippen Sie auf die Ergebniszeile, um „5 km to mi“ ins Eingabefeld zu setzen oder im Verlauf abzulegen.
+:tip: Selten genutzte Einheiten (Planck-Einheiten, atomare Einheiten, alte französische Maße und Ähnliches) stehen nicht in den Listen; im Eingabefeld getippt, funktionieren sie weiterhin.
 
 ## shapes | Formen: Fläche, Volumen, Länge
 :what: Wählen Sie eine Form nach ihrem Bild und geben Sie die Maße ein: Fläche, Umfang, Volumen und Oberfläche erscheinen.
@@ -714,7 +744,7 @@ Numerische Integration (Flächen, Längen und Volumen im Graphen) ist auf etwa 2
 | Mehr als 1000 signifikante Stellen (bis 200000) | [Das Ergebnis lesen](#results) |
 | 3D-Graphen, in 3D ansehen | [3D-Graph](#graph-3d) |
 | Farbthemen (7 Farben) | [Einstellungen](#settings) |
-| Verlauf exportieren (CSV) | [Den Verlauf exportieren](#export) |
+| Verlauf exportieren (CSV), als Tabelle kopieren | [Den Verlauf exportieren](#export), [Zeilen addieren](#select-sum) |
 | Tabellen als CSV (Kredit, Sparen) | [Kredit](#loan) |
 | Tankböden und Tabellen | [Tankböden](#tank-heads) |
 | Körper aus einem Profil | [Körper aus einem Profil](#profile) |

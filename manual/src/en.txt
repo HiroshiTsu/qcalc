@@ -22,7 +22,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Next type `60 mph to km/h` ("to" is on the → key). "= 96.560 64 km/h" shows.
 :step: The third one is `sqrt(8)`, also on the √ key: "= 2√2" and under it "≈ 2.828 427 124 746 19", the exact value and the approximation on two lines.
 :example: `1/3 + 1/4` → `= 7/12`, then `≈ 0.583 333 333 333 333`
-:tip: Tap an answer in the history to put it into the input field or to copy it.
+:tip: Tap an answer in the history: it goes into the input field at the cursor ([Tap to insert a result](#tap-insert)).
 :mistake: The letter x is a variable, not "times". Multiply with the × key (or *).
 
 ## new-1-16 | New in 1.16.0
@@ -34,6 +34,10 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - **Histogram and box plot**: for one column of data, a histogram (with a bin width you can change) and a box plot (outliers as points) ([Statistics](#stats)).
 - **Regression curves and CSV**: for two columns, choose a curve of degree 2 to 4, an exponential, a logarithmic or a power curve (other than the line: QCalc Pro). [[Read a CSV file]] reads a column of a CSV file ([Statistics](#stats)).
 - **Hints for the arguments of functions**: after a function name and "(", its arguments (the current one in bold), what it does and an example show under the input field. For about 60 functions; ✕ closes it ([Hints for the arguments](#arg-hints)).
+- **Tap to insert a result**: a tap on an answer in the history puts it at the cursor, as a click on a cell does in a spreadsheet. Another tap before you type anything replaces it, and right after a number a visible × goes in first. The lines used get colored marks. Answers with √ or π go in in their exact form, not as rounded decimals ([Tap to insert a result](#tap-insert)).
+- **Line numbers and #12 in the history**: the lines of the history have numbers, and `#12` in an expression is the answer of line 12; editing line 12 can work out again the lines that use #12. [[Select: sum and average]] in ⋯ starts with that line and shows the sum at once, and touching and holding a line chooses a range. [[Copy as a table]] (QCalc Pro) copies the expressions and answers as two columns for a spreadsheet ([Line numbers and #12](#hist-refs), [Adding up lines](#select-sum)).
+- **Editing a line**: the line and its answer stay in sight, and the lines worked out again flash for a moment. A line keeps the angle unit it was worked out with and is edited with it. AC stops editing too, and [[Cancel]] in the question about the lines below goes back to editing ([Editing a line of the history](#edit-line)).
+- **Other fixes**: while "Volume and surface" is open in the 3D graph, the legend shows the color of the solid being measured. Money rounds a half cent up correctly (some sums were one cent short). Results are copied without digit grouping. `nPr(5, 2)` and `nCr(5, 2)` work. More messages of the engine (the note on 6/2(1+2) and others) are in your language. The converter leaves out rarely used units (they can still be typed).
 
 ## new-1-15 | What is new in 1.15.0
 - **Easier results**: results have 15 significant digits, in groups of three. Phones that still had the earlier defaults (10 digits, no groups) change once with this version. [[Precision (significant digits)]] and [[Digit grouping (1,000)]] in the [[Settings]] set them back ([Reading the answer](#results)).
@@ -121,7 +125,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: The precision (15 digits by default) can be changed with the chip “15 dig” in the row at the top. It offers 10, 15, 20, 30, 50, 100 and Other… (type a number); the answer of the expression being typed is worked out again at once, and the answers in the history stay as they are. [[Precision (significant digits)]] in [[Settings]] changes it too. Results are shown with their digits in groups of three ([[Digit grouping (1,000)]] turns it off).
 :step: To see one line of the history with more digits, choose 30, 50, 100 or Other… in its ⋯ → [[Work it out with other digits]]. The answer shows in a sheet with [[Put the expression into the input field]], [[Keep it in the history]] and [[Copy the result]]. The precision of the settings and the line stay as they are.
 :pro: Up to 1000 digits are free. More than 1000, up to 200000 digits, is a QCalc Pro feature.
-:tip: A very long answer scrolls in the history so that every digit can be read; copying it copies every digit.
+:tip: A very long answer scrolls in the history so that every digit can be read; copying it copies every digit, without digit grouping.
 :step: Under the newest answer, buttons for what is often done next (6 at most): for an expression in x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]; for a number [[Details]], [[As a fraction]], [[Scientific]] (an integer: [[Prime factors]], [[In hex]]); with a unit [[Convert…]]; for a matrix [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. A button's calculation becomes a new line of the history.
 :step: [[Details]] (or ⋯ → [[Details]]) shows the other forms of the answer together: for a number the exact value, the decimal, the fraction, the mixed fraction and the scientific notation (an integer in bases 2, 8 and 16 and its prime factors; with a unit, other units); for an expression in x a small graph, the zeros, the derivative, the integral, the Taylor series and the factored form. Tap a row for [[Put the expression in the field]], [[Keep it in the history]] or [[Copy result]].
 :tip: Without these buttons: [[Settings]] → [[Suggest the next steps under the newest answer]] off.
@@ -144,20 +148,42 @@ QCalc is a calculator where you type an expression as you would write it on pape
 
 # history | History and memory
 :what: The expressions and answers stay in the history, up to 300 lines. 🕘 at the top right searches, adds up chosen lines, exports and clears.
-:step: Tap an answer in the history to choose [[Put the expression into the input field]], [[Copy the result]] and the like.
-:step: ⋯ at the right of a line offers [[☆ Pin at the top]] and [[Add a short note]].
+:step: Tap an answer in the history to put it into the input field ([Tap to insert a result](#tap-insert)); tap its expression to edit the line ([Editing a line of the history](#edit-line)).
+:step: ⋯ at the left of a line offers [[☆ Pin at the top]] and [[Add a short note]].
 :step: 🕘 offers [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] and [[Clear the whole history]].
 :shot: history | The history menu of 🕘
 :tip: Lines pinned with a star stay when the history is full.
 
+## tap-insert | Tap to insert a result
+:what: A tap on an answer in the history puts it into the input field at the cursor, as a click on a cell does while you type a formula in a spreadsheet.
+:step: When the field is empty, or right after a calculation, the answer simply goes in.
+:step: Another tap on an answer before you type anything replaces the one tapped before.
+:step: After an operator such as + or ×, the answer goes in after it. Right after a number, a letter or ")", a visible × goes in first.
+:step: The lines used in the expression get colored marks; deleting the answer from the field removes its mark.
+:example: Tap the line `120`, press ×, tap the line `3` → the field holds `120 × 3`, and the answer is `= 360`
+:tip: Answers with √ or π go in in their exact form, not as rounded decimals: the answer of `sqrt(8)` goes in as `(2 × √(2))`, so its square is `= 8`. An answer without an exact form goes in with all the digits of the precision.
+:tip: To use a line by its number, choose "Insert #12" in its ⋯; to copy an answer, [[Copy result]] in ⋯ (copied without digit grouping).
+
 ## edit-line | Editing a line of the history
-:what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "[[Editing a line of the history]]" above it.
+:what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "[[Editing a line of the history]]" above it. The history scrolls so that the line and its answer stay in sight.
 :step: Change the expression and press [[!=]]. The line gets the new expression and answer in the same place. ★ and the short note stay, and the menu ⋯ shows the time of the change beside the time of the line.
 :step: "[[Edited]]" and [[Undo]] show for a few seconds. [[Undo]] brings back the expression and answer as they were.
-:step: When the lines below use the answer of this line (ans) or a variable it defines, the app asks whether to work them out again ("Also the 2 lines below") or [[Only this line]]. [[Undo]] takes those lines back too.
-:step: To work it out as a new line below instead, press [[As a new line]] in the band, then [[!=]]. ✕ in the band, or the back button, stops editing and changes nothing.
-:tip: The line is worked out with the settings of now (angle unit, base and the others). A line worked out in another base says so in the band and gets the base of now.
-:tip: Tapping the answer of a line still puts the answer into the expression or copies it, as before.
+:step: When the lines below use the answer of this line (ans or #12) or a variable it defines, the app asks whether to work them out again ("Also the 2 lines below") or [[Only this line]]. The lines worked out again flash for a moment, and [[Undo]] takes them back too. With [[Only this line]], the lines below get a note that their answer may be out of date. [[Cancel]] changes nothing: the new expression stays in the field and you go on editing.
+:step: To work it out as a new line below instead, press [[As a new line]] in the band, then [[!=]]. ✕ in the band, AC or the back button stops editing and changes nothing.
+:tip: A line keeps the angle unit (degrees, radians) it was worked out with. Editing it, working out the lines below again and other digits use that unit, and the band says so. Lines worked out before 1.16 use the unit set now; with a function of angles the band says so.
+:tip: The other settings (base and the like) are those of now. A line worked out in another base says so in the band and gets the base of now.
+:tip: Deleting the line being edited, or clearing the history, ends the editing; the expression in the field is then worked out as a new line.
+:tip: A tap on the answer of a line puts it into the input field ([Tap to insert a result](#tap-insert)).
+
+## hist-refs | Line numbers and #12
+:what: Every line of the history has a number (the small "#12" under its ⋯). `#12` in an expression is the answer of line 12, as a reference to a cell in a spreadsheet.
+:step: Choose "Insert #12 (this line by its number)" in the ⋯ of a line: `#12` goes into the input field. Typing `#` and the number works too.
+:step: The answer with `#12` shows under the input field while you type.
+:step: A number belongs to its line: deleting other lines does not change it, and no number is given twice.
+:step: When line 12 is edited, the app asks whether to work out again the lines below that use `#12` ([Editing a line of the history](#edit-line)).
+:example: Line 12 is `= 250` and line 13 is `= 3`: `#12 × #13` → `= 750`
+:mistake: The number of a deleted line, or of a line below the one being edited, cannot be used; a message says so. When a line used is deleted, a note under the line says so.
+:tip: It is written as #3 is in the notes ([Line numbers and #3](#notes-refs)).
 
 ## pins-notes | Pins, notes and search
 :step: Choose [[☆ Pin at the top]] in the ⋯ of a line: it moves up with the other pinned lines.
@@ -166,9 +192,11 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :example: A line noted "rent" is found by searching for "rent".
 
 ## select-sum | Adding up lines
-:step: Choose [[Select lines: sum, average, copy]] in 🕘.
-:step: Tap the lines to add up.
-:step: The sum and the average show below, with their unit when the units agree. [[Copy]] copies the lines.
+:step: Choose [[Select lines: sum, average, copy]] in 🕘. [[Select: sum and average]] in the ⋯ of a line starts with that line chosen and shows the sum at once.
+:step: Tap the lines to add up. Touching and holding a line chooses all the lines from the one chosen last to it.
+:step: The sum and the average show below, with their unit when the units agree. Lines shown as decimals add up to a decimal. [[Copy]] copies the lines (without digit grouping).
+:step: [[Copy as a table]] copies the expressions and answers of the chosen lines in two columns, with a tab between them: pasted into a spreadsheet, they make a column of expressions and a column of answers.
+:pro: [[Copy as a table]] is a QCalc Pro feature, with exporting the history (CSV). The numbers, #12, choosing, the sum, the average and plain copying are free.
 :mistake: Lines in different units (m and kg) cannot be added; the reason is shown.
 
 ## export | Exporting the history (CSV)
@@ -176,6 +204,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :what: Saves the history as a CSV file that spreadsheets can open.
 :step: Choose [[Export the history (CSV file)]] in 🕘.
 :step: Choose where to save it on Android's save screen.
+:tip: To paste only the chosen lines into a spreadsheet, use [[Copy as a table]] ([Adding up lines](#select-sum)).
 
 ## memory-keys | Memory keys (M+ M− MR MC)
 :what: The memory keys of a pocket calculator. The value is kept in its exact form.
@@ -406,6 +435,7 @@ The formulas:
 :shot: convert | The conversion screen
 :example: 5 km → 3.106856 mi
 :tip: Tap the result row to put "5 km to mi" into the input field or keep it in the history.
+:tip: Rarely used units (Planck units, atomic units, old French measures and the like) are left out of the lists; typed in the input field, they still work.
 
 ## shapes | Shapes: area, volume, length
 :what: Choose a shape from its picture and type its sizes: the area, the perimeter, the volume and the surface area appear.
@@ -714,7 +744,7 @@ Numeric integration (areas, lengths and volumes of the graph) is certain to abou
 | More than 1000 significant digits (up to 200000) | [Reading the answer](#results) |
 | 3D graphs, View in 3D | [3D graph](#graph-3d) |
 | Color themes (7 colors) | [Settings](#settings) |
-| Exporting the history (CSV) | [Exporting the history](#export) |
+| Exporting the history (CSV), Copy as a table | [Exporting the history](#export), [Adding up lines](#select-sum) |
 | Tables as CSV files (loan, savings) | [Loan](#loan) |
 | Tank heads and quick-reference tables | [Tank heads](#tank-heads) |
 | Solid from a profile | [Solid from a profile](#profile) |

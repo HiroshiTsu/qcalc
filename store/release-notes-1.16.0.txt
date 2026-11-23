@@ -1,70 +1,80 @@
 <en-US>
-• New stock tools: profit and loss with tax, average cost, margin ratio and margin-call price, position size, yield/PER/PBR (margin tools: QCalc Pro)
-• Calculation notes: line numbers and #3; tables with formula columns, totals and CSV (QCalc Pro)
-• Your variables and functions on one screen; argument hints as you type
-• Statistics: distributions, histogram, box plot, regression curves (other than the line: QCalc Pro)
-• Fixes: weight row in Shapes; 3D sphere and doughnut drawn whole at once
+• Tap history answers to insert them, as cells; line numbers and #12; select to add up; copy as a table (QCalc Pro)
+• Stock tools: P&L with tax, average cost, margin-call price, position size, yield/PER/PBR (margin: QCalc Pro)
+• Notes: line numbers and #3; tables with formulas, totals, CSV (QCalc Pro)
+• Variables on one screen; argument hints
+• Statistics: distributions, histogram, box plot, curves (non-linear: QCalc Pro)
+• Fixes: exact values inserted, money rounding, line editing
 </en-US>
 <en-GB>
-• New stock tools: profit and loss with tax, average cost, margin ratio and margin-call price, position size, yield/PER/PBR (margin tools: QCalc Pro)
-• Calculation notes: line numbers and #3; tables with formula columns, totals and CSV (QCalc Pro)
-• Your variables and functions on one screen; argument hints as you type
-• Statistics: distributions, histogram, box plot, regression curves (other than the line: QCalc Pro)
-• Fixes: weight row in Shapes; 3D sphere and doughnut drawn whole at once
+• Tap history answers to insert them, as cells; line numbers and #12; select to add up; copy as a table (QCalc Pro)
+• Stock tools: P&L with tax, average cost, margin-call price, position size, yield/PER/PBR (margin: QCalc Pro)
+• Notes: line numbers and #3; tables with formulas, totals, CSV (QCalc Pro)
+• Variables on one screen; argument hints
+• Statistics: distributions, histogram, box plot, curves (non-linear: QCalc Pro)
+• Fixes: exact values inserted, money rounding, line editing
 </en-GB>
 <ja-JP>
+・履歴の答えをタップで挿入（表計算のセルのように）、行の番号と #12、選んで合計、表でコピー（QCalc Pro）
 ・株・投資の道具：損益と税（NISA も）、平均取得単価、信用取引の維持率と追証の株価、損切りから株数、利回り・PER・PBR（信用取引の計算は QCalc Pro）
 ・計算メモ：行の番号と #3。式の列・合計・CSV のある表（QCalc Pro）
 ・自分の変数と関数の一覧、関数の引数のヒント
 ・統計：確率分布、ヒストグラムと箱ひげ図、回帰曲線（直線以外は QCalc Pro）
-・図形の重さを結果の行に。3D の球とドーナツが最初からきれいに
+・直したこと：√ や π の答えを厳密な形で挿入、お金の端数、履歴の行を直すとき、図形の重さ、3D の球とドーナツ
 </ja-JP>
 <de-DE>
-• Neue Aktien-Werkzeuge: Gewinn/Verlust mit Steuer, Einstandskurs, Margin-Quote und Nachschusskurs, Positionsgröße, Rendite/KGV/KBV (Margin: QCalc Pro)
-• Rechennotizen: Zeilennummern und #3; Tabellen mit Formelspalten, Summen, CSV (QCalc Pro)
-• Eigene Variablen und Funktionen auf einem Bildschirm; Argumenthilfe
-• Statistik: Verteilungen, Histogramm, Boxplot, Regressionskurven (außer Gerade: QCalc Pro)
-• Gewicht als Ergebniszeile; 3D-Kugel und -Torus sofort ganz
+• Ergebnisse im Verlauf antippen und einfügen, wie Zellen; Zeilennummern und #12; addieren; als Tabelle kopieren (QCalc Pro)
+• Aktien: Gewinn mit Steuer, Einstandskurs, Nachschusskurs, Positionsgröße, Rendite/KGV/KBV (Margin: QCalc Pro)
+• Notizen: Zeilennummern und #3; Tabellen mit Formeln, Summen, CSV (Pro)
+• Variablen auf einem Bildschirm; Argumenthilfe
+• Statistik: Verteilungen, Histogramm, Boxplot, Kurven (nicht linear: Pro)
+• Korrekturen: exakte Werte, Geld runden, Zeilen bearbeiten
 </de-DE>
 <es-ES>
-• Nuevas herramientas de acciones: ganancias con impuestos, precio medio, ratio de margen y precio de llamada, tamaño de posición, PER/P/VC (margen: QCalc Pro)
-• Notas de cálculo: números de línea y #3; tablas con fórmulas, totales y CSV (QCalc Pro)
-• Tus variables y funciones en una pantalla; ayuda de argumentos
-• Estadística: distribuciones, histograma, caja, regresión (salvo la recta: QCalc Pro)
-• Peso como fila de resultados; esfera y toro 3D enteros al instante
+• Toca resultados del historial para insertarlos, como celdas; números de línea y #12; sumar; copiar como tabla (QCalc Pro)
+• Acciones: ganancias con impuestos, precio medio, precio de llamada, tamaño de posición, PER/P/VC (margen: Pro)
+• Notas: números de línea y #3; tablas con fórmulas, totales, CSV (Pro)
+• Variables en una pantalla; ayuda de argumentos
+• Estadística: distribuciones, histograma, caja, curvas (no lineales: Pro)
+• Correcciones: valores exactos, redondeo de dinero, editar líneas
 </es-ES>
 <es-419>
-• Nuevas herramientas de acciones: ganancias con impuestos, precio medio, ratio de margen y precio de llamada, tamaño de posición, PER/P/VC (margen: QCalc Pro)
-• Notas de cálculo: números de línea y #3; tablas con fórmulas, totales y CSV (QCalc Pro)
-• Tus variables y funciones en una pantalla; ayuda de argumentos
-• Estadística: distribuciones, histograma, caja, regresión (salvo la recta: QCalc Pro)
-• Peso como fila de resultados; esfera y toro 3D enteros al instante
+• Toca resultados del historial para insertarlos, como celdas; números de línea y #12; sumar; copiar como tabla (QCalc Pro)
+• Acciones: ganancias con impuestos, precio medio, precio de llamada, tamaño de posición, PER/P/VC (margen: Pro)
+• Notas: números de línea y #3; tablas con fórmulas, totales, CSV (Pro)
+• Variables en una pantalla; ayuda de argumentos
+• Estadística: distribuciones, histograma, caja, curvas (no lineales: Pro)
+• Correcciones: valores exactos, redondeo de dinero, editar líneas
 </es-419>
 <fr-FR>
-• Nouveaux outils boursiers : gain avec impôt, prix de revient, ratio de marge et prix d’appel, taille de position, rendement/PER/PBR (marge : QCalc Pro)
-• Notes de calcul : numéros de ligne et #3 ; tableaux avec formules, totaux et CSV (QCalc Pro)
-• Vos variables et fonctions sur un écran ; aide des arguments
-• Statistiques : lois, histogramme, boîte, régression (sauf la droite : QCalc Pro)
-• Poids en ligne de résultat ; sphère et tore 3D entiers d’emblée
+• Résultats de l’historique insérés d’un toucher, comme une cellule ; numéros de ligne et #12 ; additionner ; copier en tableau (Pro)
+• Bourse : gain avec impôt, prix de revient, prix d’appel, taille de position, rendement/PER/PBR (marge : Pro)
+• Notes : lignes numérotées et #3 ; tableaux à formules, totaux, CSV (Pro)
+• Variables sur un écran ; aide des arguments
+• Statistiques : lois, histogramme, boîte, courbes (non linéaires : Pro)
+• Corrections : valeurs exactes, arrondi, édition des lignes
 </fr-FR>
 <fr-CA>
-• Nouveaux outils boursiers : gain avec impôt, prix de revient, ratio de marge et prix d’appel, taille de position, rendement/PER/PBR (marge : QCalc Pro)
-• Notes de calcul : numéros de ligne et #3 ; tableaux avec formules, totaux et CSV (QCalc Pro)
-• Vos variables et fonctions sur un écran ; aide des arguments
-• Statistiques : lois, histogramme, boîte, régression (sauf la droite : QCalc Pro)
-• Poids en ligne de résultat ; sphère et tore 3D entiers d’emblée
+• Résultats de l’historique insérés d’un toucher, comme une cellule ; numéros de ligne et #12 ; additionner ; copier en tableau (Pro)
+• Bourse : gain avec impôt, prix de revient, prix d’appel, taille de position, rendement/PER/PBR (marge : Pro)
+• Notes : lignes numérotées et #3 ; tableaux à formules, totaux, CSV (Pro)
+• Variables sur un écran ; aide des arguments
+• Statistiques : lois, histogramme, boîte, courbes (non linéaires : Pro)
+• Corrections : valeurs exactes, arrondi, édition des lignes
 </fr-CA>
 <ko-KR>
+• 기록의 결과를 탭해서 넣기(스프레드시트의 셀처럼), 줄 번호와 #12, 골라서 합계, 표로 복사(QCalc Pro)
 • 주식·투자 도구: 세금 포함 손익, 평균 매입 단가, 신용거래 유지율과 추가 증거금 주가, 손절가로 주식 수, 수익률·PER·PBR(신용거래 계산은 QCalc Pro)
 • 계산 메모: 줄 번호와 #3, 식의 열·합계·CSV가 있는 표(QCalc Pro)
 • 내 변수와 함수 목록, 함수 인수 도움말
 • 통계: 확률분포, 히스토그램, 상자그림, 회귀곡선(직선 외에는 QCalc Pro)
-• 도형의 무게를 결과 행에, 3D 구와 도넛을 처음부터 깔끔하게
+• 고친 것: √·π 결과를 정확한 형태로 넣기, 돈의 끝자리, 줄 고치기, 도형의 무게, 3D 구와 도넛
 </ko-KR>
 <zh-TW>
+• 點一下歷史紀錄的結果即可插入（像試算表的儲存格）、行號與 #12、選取後加總、以表格複製（QCalc Pro）
 • 股票與投資工具：含稅損益、平均成本、信用交易維持率與追繳價、由停損算股數、殖利率／本益比／股價淨值比（信用交易計算為 QCalc Pro）
 • 計算筆記：行號與 #3；有算式欄、合計與 CSV 的表格（QCalc Pro）
 • 我的變數與函數一覽、函數引數提示
 • 統計：機率分佈、直方圖、盒鬚圖、迴歸曲線（直線以外為 QCalc Pro）
-• 圖形重量顯示在結果列；3D 球與甜甜圈一開始就完整
+• 修正：√、π 的結果以精確形式插入、金額尾數、修改歷史紀錄的行、圖形重量、3D 球與甜甜圈
 </zh-TW>

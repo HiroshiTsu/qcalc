@@ -1,6 +1,7 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "Verlauf: Ergebnisse durch Tippen einfügen (erneutes Tippen ersetzt), Zeilennummern und #12, auswählen und addieren",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "Das ist der Hauptwert (eine komplexe Zahl). Die reelle Kubikwurzel ist cbrt(−{0}) (∛)",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "Das ist der Hauptwert (eine komplexe Zahl). Die reelle Wurzel ist root(−{0}, {1})",
     "\"{0}\" was taken as the unit {1}; for an unknown, use x, y or z": "„{0}“ wurde als Einheit {1} gelesen; für eine Unbekannte x, y oder z verwenden",

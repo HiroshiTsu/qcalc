@@ -22,7 +22,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :step: Ahora escribe `60 mph to km/h` («to» está en la tecla →). Aparece «= 96.560 64 km/h».
 :step: El tercero es `sqrt(8)`, también con la tecla √: «= 2√2» y debajo «≈ 2.828 427 124 746 19», el valor exacto y la aproximación en dos líneas.
 :example: `1/3 + 1/4` → `= 7/12`, debajo `≈ 0.583 333 333 333 333`
-:tip: Toca un resultado del historial para ponerlo en el campo de entrada o copiarlo.
+:tip: Toca un resultado del historial: entra en el campo de entrada, en la posición del cursor ([Insertar un resultado con un toque](#tap-insert)).
 :mistake: La letra x es una variable, no «por». Multiplica con la tecla × (o *).
 
 ## new-1-16 | Novedades de 1.16.0
@@ -34,6 +34,10 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 - **Histograma y diagrama de caja**: para una columna, un histograma (con un ancho de clase que puedes cambiar) y un diagrama de caja (los atípicos como puntos) ([Estadística](#stats)).
 - **Curvas de regresión y CSV**: para dos columnas, elige una curva de grado 2 a 4, exponencial, logarítmica o potencial (salvo la recta: QCalc Pro). [[Read a CSV file]] lee una columna de un archivo CSV ([Estadística](#stats)).
 - **Ayuda de los argumentos**: tras el nombre de una función y «(», bajo el campo aparecen sus argumentos (el actual en negrita), qué hace y un ejemplo. Para unas 60 funciones; ✕ la cierra ([Ayuda de los argumentos](#arg-hints)).
+- **Insertar un resultado con un toque**: tocar un resultado del historial lo pone en la posición del cursor, como un clic en una celda de una hoja de cálculo. Otro toque antes de escribir nada lo sustituye, y justo después de un número entra primero un × visible. Las líneas usadas reciben marcas de color. Los resultados con √ o π entran en su forma exacta, no como decimales redondeados ([Insertar un resultado con un toque](#tap-insert)).
+- **Números de línea y #12 en el historial**: las líneas del historial tienen números, y `#12` en una expresión es el resultado de la línea 12; al editar la línea 12 se pueden recalcular las líneas que usan #12. [[Select: sum and average]] en ⋯ empieza con esa línea y muestra la suma al instante; mantener pulsada una línea elige un rango. [[Copy as a table]] (QCalc Pro) copia expresiones y resultados en dos columnas para una hoja de cálculo ([Números de línea y #12](#hist-refs), [Sumar líneas](#select-sum)).
+- **Editar una línea**: la línea y su resultado siguen a la vista, y las líneas recalculadas se iluminan un momento. Una línea guarda la unidad de ángulo con que se calculó y se edita con ella. AC también deja de editar, y [[Cancel]] en la pregunta sobre las líneas de abajo vuelve a la edición ([Editar una línea del historial](#edit-line)).
+- **Otras correcciones**: mientras «Volumen y superficie» está abierto en la gráfica 3D, la leyenda muestra el color del sólido medido. El dinero redondea bien medio céntimo hacia arriba (algunas sumas quedaban un céntimo cortas). Los resultados se copian sin separadores de miles. `nPr(5, 2)` y `nCr(5, 2)` funcionan. Más mensajes del motor de cálculo (la nota sobre 6/2(1+2) y otros) aparecen en español. El conversor deja fuera las unidades poco usadas (se pueden seguir escribiendo).
 
 ## new-1-15 | Novedades de 1.15.0
 - **Resultados más claros**: los resultados tienen 15 cifras significativas, en grupos de tres. Los teléfonos que aún tenían los valores anteriores (10 cifras, sin grupos) cambian una vez con esta versión. [[Precision (significant digits)]] y [[Digit grouping (1,000)]] en [[Settings]] lo devuelven ([Leer el resultado](#results)).
@@ -121,7 +125,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :step: La precisión (15 cifras por defecto) se cambia con el botón «15 cif.» de la fila de arriba. Ofrece 10, 15, 20, 30, 50, 100 y Otro… (escribir un número); el resultado de la expresión que se escribe se calcula de nuevo al instante y los resultados del historial no cambian. [[Precision (significant digits)]] en [[Settings]] también la cambia. Los resultados se muestran con las cifras en grupos de tres ([[Digit grouping (1,000)]] lo desactiva).
 :step: Para ver una línea del historial con más cifras, elige 30, 50, 100 u Otro… en su ⋯ → [[Work it out with other digits]]. El resultado aparece en una hoja con [[Put the expression into the input field]], [[Keep it in the history]] y [[Copy the result]]. La precisión de los ajustes y la línea no cambian.
 :pro: Hasta 1000 cifras es gratis. Más de 1000, hasta 200000 cifras, es una función de QCalc Pro.
-:tip: Un resultado muy largo se desplaza en el historial para leer todas las cifras; al copiarlo se copian todas.
+:tip: Un resultado muy largo se desplaza en el historial para leer todas las cifras; al copiarlo se copian todas, sin separadores de miles.
 :step: Bajo la última respuesta aparecen botones para lo que suele hacerse después (6 como mucho): para una expresión en x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]; para un número [[Details]], [[As a fraction]], [[Scientific]] (un entero: [[Prime factors]], [[In hex]]); con unidad [[Convert…]]; para una matriz [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. El cálculo de un botón se convierte en una nueva línea del historial.
 :step: [[Details]] (o ⋯ → [[Details]]) muestra juntas las otras formas de la respuesta: para un número el valor exacto, el decimal, la fracción, la fracción mixta y la notación científica (un entero en bases 2, 8 y 16 y sus factores primos; con unidad, otras unidades); para una expresión en x una gráfica pequeña, los ceros, la derivada, la integral, la serie de Taylor y la forma factorizada. Toca una fila para [[Put the expression in the field]], [[Keep it in the history]] o [[Copy result]].
 :tip: Sin estos botones: [[Settings]] → [[Suggest the next steps under the newest answer]] desactivado.
@@ -144,20 +148,42 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 
 # history | Historial y memoria
 :what: Las expresiones y los resultados quedan en el historial, hasta 300 líneas. 🕘 arriba a la derecha busca, suma las líneas elegidas, exporta y borra.
-:step: Toca un resultado del historial para elegir [[Put the expression into the input field]], [[Copy the result]] y similares.
-:step: ⋯ a la derecha de una línea ofrece [[☆ Pin at the top]] y [[Add a short note]].
+:step: Toca un resultado del historial para ponerlo en el campo de entrada ([Insertar un resultado con un toque](#tap-insert)); toca su expresión para editar la línea ([Editar una línea del historial](#edit-line)).
+:step: ⋯ a la izquierda de una línea ofrece [[☆ Pin at the top]] y [[Add a short note]].
 :step: 🕘 ofrece [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] y [[Clear the whole history]].
 :shot: history | El menú del historial de 🕘
 :tip: Las líneas fijadas con estrella se quedan aunque el historial esté lleno.
 
+## tap-insert | Insertar un resultado con un toque
+:what: Tocar un resultado del historial lo pone en el campo de entrada, en la posición del cursor, como un clic en una celda mientras escribes una fórmula en una hoja de cálculo.
+:step: Si el campo está vacío, o justo después de un cálculo, el resultado entra tal cual.
+:step: Otro toque en un resultado antes de escribir nada sustituye al tocado antes.
+:step: Después de un operador como + o ×, el resultado entra detrás. Justo después de un número, una letra o «)», entra primero un × visible.
+:step: Las líneas usadas en la expresión reciben marcas de color; al borrar el resultado del campo desaparece su marca.
+:example: Toca la línea `120`, pulsa ×, toca la línea `3` → el campo tiene `120 × 3` y el resultado es `= 360`
+:tip: Los resultados con √ o π entran en su forma exacta, no como decimales redondeados: el resultado de `sqrt(8)` entra como `(2 × √(2))`, así que su cuadrado es `= 8`. Un resultado sin forma exacta entra con todas las cifras de la precisión.
+:tip: Para usar una línea por su número, elige «Insertar #12» en su ⋯; para copiar un resultado, [[Copy result]] en ⋯ (se copia sin separadores de miles).
+
 ## edit-line | Editar una línea del historial
-:what: Toca la expresión de una línea (la pequeña sobre su resultado), o [[Edit expression]] en su ⋯, para editarla. La expresión pasa al campo de entrada, con la banda «[[Editing a line of the history]]» encima.
+:what: Toca la expresión de una línea (la pequeña sobre su resultado), o [[Edit expression]] en su ⋯, para editarla. La expresión pasa al campo de entrada, con la banda «[[Editing a line of the history]]» encima. El historial se desplaza para que la línea y su resultado sigan a la vista.
 :step: Cambia la expresión y pulsa [[!=]]. La línea recibe la nueva expresión y el nuevo resultado en el mismo lugar. ★ y la nota corta se mantienen, y el menú ⋯ muestra la hora del cambio junto a la hora de la línea.
 :step: Durante unos segundos aparecen «[[Edited]]» y [[Undo]]. [[Undo]] devuelve la expresión y el resultado de antes.
-:step: Si las líneas de abajo usan el resultado de esta línea (ans) o una variable que define, la app pregunta si calcularlas de nuevo («También las 2 líneas de abajo») o [[Only this line]]. [[Undo]] devuelve también esas líneas.
-:step: Para calcularla como una línea nueva abajo, pulsa [[As a new line]] en la banda y luego [[!=]]. La ✕ de la banda o el botón Atrás dejan de editar sin cambiar nada.
-:tip: La línea se calcula con los ajustes de ahora (unidad de ángulo, base y los demás). Una línea calculada en otra base lo indica en la banda y recibe la base de ahora.
-:tip: Tocar el resultado de una línea sigue poniéndolo en la expresión o copiándolo, como antes.
+:step: Si las líneas de abajo usan el resultado de esta línea (ans o #12) o una variable que define, la app pregunta si calcularlas de nuevo («También las 2 líneas de abajo») o [[Only this line]]. Las líneas recalculadas se iluminan un momento, y [[Undo]] las devuelve también. Con [[Only this line]], las líneas de abajo reciben una nota de que su resultado puede estar desactualizado. [[Cancel]] no cambia nada: la nueva expresión se queda en el campo y sigues editando.
+:step: Para calcularla como una línea nueva abajo, pulsa [[As a new line]] en la banda y luego [[!=]]. La ✕ de la banda, AC o el botón Atrás dejan de editar sin cambiar nada.
+:tip: Una línea guarda la unidad de ángulo (grados, radianes) con que se calculó. Al editarla, al recalcular las líneas de abajo y con otras cifras se usa esa unidad, y la banda lo indica. Las líneas calculadas antes de la 1.16 usan la unidad de ahora; con una función de ángulos la banda lo indica.
+:tip: Los demás ajustes (base y similares) son los de ahora. Una línea calculada en otra base lo indica en la banda y recibe la base de ahora.
+:tip: Al borrar la línea que se edita, o el historial entero, se deja de editar; la expresión del campo se calcula entonces como una línea nueva.
+:tip: Tocar el resultado de una línea lo pone en el campo de entrada ([Insertar un resultado con un toque](#tap-insert)).
+
+## hist-refs | Números de línea y #12
+:what: Cada línea del historial tiene un número (el pequeño «#12» bajo su ⋯). `#12` en una expresión es el resultado de la línea 12, como una referencia a una celda en una hoja de cálculo.
+:step: Elige «Insertar #12 (esta línea por su número)» en el ⋯ de una línea: `#12` entra en el campo de entrada. También puedes escribir `#` y el número.
+:step: Mientras escribes, el resultado con `#12` aparece bajo el campo de entrada.
+:step: Un número pertenece a su línea: borrar otras líneas no lo cambia, y ningún número se da dos veces.
+:step: Al editar la línea 12, la app pregunta si recalcular las líneas de abajo que usan `#12` ([Editar una línea del historial](#edit-line)).
+:example: La línea 12 es `= 250` y la línea 13 es `= 3`: `#12 × #13` → `= 750`
+:mistake: No se puede usar el número de una línea borrada ni el de una línea debajo de la que se edita; un mensaje lo dice. Si se borra una línea usada, una nota bajo la línea lo dice.
+:tip: Se escribe igual que el #3 de las notas ([Números de línea y #3](#notes-refs)).
 
 ## pins-notes | Fijar, notas y búsqueda
 :step: Elige [[☆ Pin at the top]] en el ⋯ de una línea: sube junto a las otras líneas fijadas.
@@ -166,9 +192,11 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :example: Una línea con la nota «alquiler» aparece al buscar «alquiler».
 
 ## select-sum | Sumar líneas
-:step: Elige [[Select lines: sum, average, copy]] en 🕘.
-:step: Toca las líneas que quieres sumar.
-:step: La suma y el promedio aparecen abajo, con su unidad si las unidades coinciden. [[Copy]] copia las líneas.
+:step: Elige [[Select lines: sum, average, copy]] en 🕘. [[Select: sum and average]] en el ⋯ de una línea empieza con esa línea elegida y muestra la suma al instante.
+:step: Toca las líneas que quieres sumar. Mantener pulsada una línea elige todas las líneas desde la última elegida hasta ella.
+:step: La suma y el promedio aparecen abajo, con su unidad si las unidades coinciden. Las líneas mostradas como decimales suman un decimal. [[Copy]] copia las líneas (sin separadores de miles).
+:step: [[Copy as a table]] copia las expresiones y los resultados de las líneas elegidas en dos columnas, separadas por un tabulador: pegadas en una hoja de cálculo, forman una columna de expresiones y otra de resultados.
+:pro: [[Copy as a table]] es una función de QCalc Pro, junto con exportar el historial (CSV). Los números, #12, elegir, la suma, el promedio y la copia normal son gratis.
 :mistake: No se pueden sumar líneas con unidades distintas (m y kg); se muestra el motivo.
 
 ## export | Exportar el historial (CSV)
@@ -176,6 +204,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :what: Guarda el historial como archivo CSV que abren las hojas de cálculo.
 :step: Elige [[Export the history (CSV file)]] en 🕘.
 :step: Elige dónde guardarlo en la pantalla de guardar de Android.
+:tip: Para pegar solo las líneas elegidas en una hoja de cálculo, usa [[Copy as a table]] ([Sumar líneas](#select-sum)).
 
 ## memory-keys | Teclas de memoria (M+ M− MR MC)
 :what: Las teclas de memoria de una calculadora de bolsillo. El valor se guarda en su forma exacta.
@@ -406,6 +435,7 @@ Las fórmulas:
 :shot: convert | La pantalla de conversión
 :example: 5 km → 3.106856 mi
 :tip: Toca la fila del resultado para poner «5 km to mi» en el campo de entrada o guardarlo en el historial.
+:tip: Las unidades poco usadas (unidades de Planck, unidades atómicas, antiguas medidas francesas y similares) no están en las listas; escritas en el campo de entrada, siguen funcionando.
 
 ## shapes | Figuras: área, volumen, longitud
 :what: Elige una figura por su dibujo y escribe sus medidas: aparecen el área, el perímetro, el volumen y la superficie.
@@ -714,7 +744,7 @@ La integración numérica (áreas, longitudes y volúmenes del gráfico) es segu
 | Más de 1000 cifras significativas (hasta 200000) | [Leer el resultado](#results) |
 | Gráficas 3D, ver en 3D | [Gráfica 3D](#graph-3d) |
 | Temas de color (7 colores) | [Ajustes](#settings) |
-| Exportar el historial (CSV) | [Exportar el historial](#export) |
+| Exportar el historial (CSV), copiar como tabla | [Exportar el historial](#export), [Sumar líneas](#select-sum) |
 | Tablas como CSV (préstamo, ahorro) | [Préstamo](#loan) |
 | Fondos de tanques y tablas de consulta | [Fondos de tanques](#tank-heads) |
 | Sólido a partir de un perfil | [Sólido a partir de un perfil](#profile) |

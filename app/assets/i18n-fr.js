@@ -1,6 +1,7 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "Historique : touchez un résultat pour l’insérer (un autre toucher le remplace), numéros de ligne et #12, choisir et additionner",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "C’est la valeur principale (un nombre complexe). La racine cubique réelle est cbrt(−{0}) (∛)",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "C’est la valeur principale (un nombre complexe). La racine réelle est root(−{0}, {1})",
     "\"{0}\" was taken as the unit {1}; for an unknown, use x, y or z": "« {0} » a été lu comme l’unité {1} ; pour une inconnue, utilisez x, y ou z",
