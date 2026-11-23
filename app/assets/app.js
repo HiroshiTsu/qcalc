@@ -16806,7 +16806,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // On the first start of a new version, a card with what is new, once (1.12.0): to those who used
   // an earlier version, each with "Try it". Closed, it does not come again.
   // (1.14.0: a card again, as what is seen changes much: the 3D drawn by the GPU with see-through, and the free trial of
-  // 3D for those without QCalc Pro while it is left; 1.13.0 had none. 1.15.0: 1.14.0 was not given out, so the card
+  // 3D for those without QCalc Pro while it is left; 1.13.0 had none. 1.15.0: 1.14.0 went to the selected testers only on 11-23, before the fix of See-through, so the card
   // has both: the results easier to read, with the precision of the settings to set them back, a line of the history
   // edited in place (Try it: the newest line), and the 3D)
   const NEWS_VERSION = '1.16';
