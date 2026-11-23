@@ -2,6 +2,16 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "#{0}: that line is no longer in the history": "#{0}：該行已不在歷史紀錄中（已刪除）",
+    "The answer of #{0} cannot be used in a calculation (too long, or text)": "#{0} 的結果無法用於計算（太長或為文字）",
+    "#{0} is no longer in the history: this answer is the one from before": "#{0} 這一行已刪除（此結果為刪除前的值）",
+    "Insert #{0} (this line by its number)": "將 #{0} 插入運算式（以編號使用這一行）",
+    "Select: sum and average": "選取（合計、平均）",
+    "{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?": "下方 {0} 行使用了這一行的結果（ans 或 #{1}）或變數。要一併重新計算嗎？",
+    "Copy as a table": "以表格複製",
+    "Copying lines as a table is a QCalc Pro feature, as exporting the history": "以表格複製與匯出歷史紀錄一樣，是 QCalc Pro 的功能",
+    "{0} lines copied as a table: paste them into a spreadsheet": "已將 {0} 行以表格複製（可貼到試算表）",
+    "Save the history as a CSV file, or copy the lines you choose as a table, for a spreadsheet": "將歷史紀錄存成 CSV 檔，或將選取的行以表格複製，在試算表中使用",
     "The solid whose volume is measured": "正在測量體積的立體",
     "(its answer is in the expression)": "（此結果已用在算式中）",
     // (1.16.0) the card of what is new: the stocks and the notes
@@ -966,7 +976,6 @@
     "= adds a new line": "按 = 會新增一列",
     "Editing stopped, nothing changed": "已停止修改（沒有任何改變）",
     "The time limit was reached": "已超過時間限制",
-    "{0} lines below go on from this line (its ans or its variable). Work them out again too?": "下方 {0} 列使用了這一列的結果（ans）或變數。要一併重新計算嗎？",
     "Also the {0} lines below": "下方 {0} 列也重新計算",
     "Only this line": "只有這一列",
     "Not worked out again: {0}": "未能重新計算：{0}",
@@ -1096,7 +1105,6 @@
     "Samples": "範例",
     "Samples (tap one to draw it)": "範例（點一下即可畫出）",
     "Save function": "儲存函數",
-    "Save the history as a CSV file that spreadsheets can open": "將歷史紀錄存成試算表可開啟的 CSV 檔",
     "Save variable": "儲存變數",
     "Saved": "已儲存",
     "Scientific (exponent from about 1000)": "科學記數法（約 1000 以上用指數）",

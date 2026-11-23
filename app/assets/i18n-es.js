@@ -13,6 +13,16 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "#{0}: that line is no longer in the history": "#{0}: esa línea ya no está en el historial (se borró)",
+    "The answer of #{0} cannot be used in a calculation (too long, or text)": "El resultado de #{0} no se puede usar en un cálculo (demasiado largo o texto)",
+    "#{0} is no longer in the history: this answer is the one from before": "#{0} se borró: este resultado es el de antes",
+    "Insert #{0} (this line by its number)": "Insertar #{0} (esta línea por su número)",
+    "Select: sum and average": "Elegir: suma y media",
+    "{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?": "{0} líneas de abajo siguen de esta (su ans, #{1} o su variable). ¿Calcularlas también de nuevo?",
+    "Copy as a table": "Copiar como tabla",
+    "Copying lines as a table is a QCalc Pro feature, as exporting the history": "Copiar líneas como tabla es, como exportar el historial, una función de QCalc Pro",
+    "{0} lines copied as a table: paste them into a spreadsheet": "{0} líneas copiadas como tabla: pégalas en una hoja de cálculo",
+    "Save the history as a CSV file, or copy the lines you choose as a table, for a spreadsheet": "Guarda el historial como archivo CSV o copia como tabla las líneas que elijas, para una hoja de cálculo",
     "The solid whose volume is measured": "Sólido cuyo volumen se mide",
     "(its answer is in the expression)": "(su resultado está en la expresión)",
     // (1.16.0) the card of what is new: the stocks and the notes
@@ -974,7 +984,6 @@
     "= adds a new line": "= añade una línea nueva",
     "Editing stopped, nothing changed": "Edición terminada, no cambió nada",
     "The time limit was reached": "Se alcanzó el tiempo límite",
-    "{0} lines below go on from this line (its ans or its variable). Work them out again too?": "{0} líneas de abajo siguen de esta (su ans o su variable). ¿Calcularlas también de nuevo?",
     "Also the {0} lines below": "También las {0} líneas de abajo",
     "Only this line": "Solo esta línea",
     "Not worked out again: {0}": "No se calculó de nuevo: {0}",
@@ -1104,7 +1113,6 @@
     "Samples": "Muestras",
     "Samples (tap one to draw it)": "Muestras (toca una para dibujarla)",
     "Save function": "Guardar función",
-    "Save the history as a CSV file that spreadsheets can open": "Guarda el historial como un archivo CSV que las hojas de cálculo pueden abrir",
     "Save variable": "Guardar variable",
     "Saved": "Guardado",
     "Scientific (exponent from about 1000)": "Científica (exponente desde unos 1000)",

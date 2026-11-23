@@ -1,6 +1,16 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "#{0}: that line is no longer in the history": "#{0}: 그 줄은 기록에 없습니다(삭제됨)",
+    "The answer of #{0} cannot be used in a calculation (too long, or text)": "#{0}의 결과는 계산에 쓸 수 없습니다(너무 길거나 문자)",
+    "#{0} is no longer in the history: this answer is the one from before": "#{0} 줄이 삭제되었습니다(이 결과는 삭제 전의 값입니다)",
+    "Insert #{0} (this line by its number)": "#{0}을(를) 식에 넣기(번호로 이 줄을 사용)",
+    "Select: sum and average": "선택(합계·평균)",
+    "{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?": "아래 {0}줄은 이 줄의 결과(ans나 #{1})나 변수를 씁니다. 다시 계산할까요?",
+    "Copy as a table": "표로 복사",
+    "Copying lines as a table is a QCalc Pro feature, as exporting the history": "표로 복사는 기록 내보내기와 같이 QCalc Pro 기능입니다",
+    "{0} lines copied as a table: paste them into a spreadsheet": "{0}줄을 표로 복사했습니다(스프레드시트에 붙여 넣을 수 있습니다)",
+    "Save the history as a CSV file, or copy the lines you choose as a table, for a spreadsheet": "기록을 CSV 파일로 저장하거나 고른 줄을 표로 복사해 스프레드시트에서 쓸 수 있습니다",
     "The solid whose volume is measured": "부피를 재고 있는 입체",
     "(its answer is in the expression)": "(이 결과를 식에서 쓰고 있습니다)",
     // (1.16.0) the card of what is new: the stocks and the notes
@@ -965,7 +975,6 @@
     "= adds a new line": "=로 새 줄을 더합니다",
     "Editing stopped, nothing changed": "고치기를 그만두었습니다(바뀐 것 없음)",
     "The time limit was reached": "제한 시간이 지났습니다",
-    "{0} lines below go on from this line (its ans or its variable). Work them out again too?": "아래 {0}줄은 이 줄의 결과(ans)나 변수를 씁니다. 다시 계산할까요?",
     "Also the {0} lines below": "아래 {0}줄도 다시 계산",
     "Only this line": "이 줄만",
     "Not worked out again: {0}": "다시 계산하지 못했습니다: {0}",
@@ -1095,7 +1104,6 @@
     "Samples": "예시",
     "Samples (tap one to draw it)": "예시(탭하면 그립니다)",
     "Save function": "함수 저장",
-    "Save the history as a CSV file that spreadsheets can open": "기록을 CSV 파일로 저장(스프레드시트에서 열 수 있습니다)",
     "Save variable": "변수 저장",
     "Saved": "저장됨",
     "Scientific (exponent from about 1000)": "과학 표기(1000 이상 등에서 지수)",

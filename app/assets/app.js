@@ -754,12 +754,24 @@
   let history = store.get('qalc.history', []);
   if (!Array.isArray(history)) history = [];
   fitHistory();
+  // (1.16.0, feature/hist-excel, the owner's request of 11-24 05:50) Every line has a number of its own, h.n, shown beside it
+  // and written "#12" in an expression for its answer (expandHistRefs). A number is never given twice: when old lines go
+  // (deleted, or past 300 lines), the others keep theirs (qalc.histno: the last number given). Lines of earlier versions
+  // get theirs in order at the first start.
+  let histNo = Math.max(Number(store.get('qalc.histno', 0)) || 0, ...history.map((h) => (h && Number(h.n)) || 0));
+  function numberLines() {
+    let changed = false;
+    for (const h of history) if (h && typeof h === 'object' && !h.n) { h.n = ++histNo; changed = true; }
+    if (changed) store.set('qalc.histno', histNo);
+    return changed;
+  }
+  if (numberLines()) store.set('qalc.history', history);
   // the page was used before this start (a history or settings were saved): the notes on what moved
   // in 1.12.0 are for those users only; a new user is marked as having seen them
   const usedBefore = history.length > 0 || store.get('qalc.settings', null) !== null;
   if (!usedBefore && !store.get('qalc.moved112', false)) store.set('qalc.moved112', true);
   // (1.12.0) and the widget on the home screen shows the newest line (syncWidget)
-  const saveHistory = debounce(() => { store.set('qalc.history', trimHistory(history)); syncWidget(); }, 300);
+  const saveHistory = debounce(() => { numberLines(); store.set('qalc.history', trimHistory(history)); syncWidget(); }, 300);
   // the history cut to 300 lines: the oldest lines go, but not those pinned with a star (1.12.0)
   function trimHistory(list) {
     const extra = list.length - 300;
@@ -1373,8 +1385,11 @@
       msgEl.textContent = tr('Fill in the boxes □ ("Next box ▶" goes to the next one)', '□ の欄を埋めてください（「次の欄 ▶」で次の欄へ）');
       return;
     }
+    // (1.16.0, feature/hist-excel: "#12" as the answer of line 12; the line being edited sees only the lines above it)
+    const rx = expandHistRefs(expr, histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h.n : histNo + 1);
+    if (rx.error) { showPreview(null); msgEl.textContent = rx.error; msgEl.className = 'msg error'; return; }
     previewBusy = true;
-    const r = await withNotes(await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), expr);
+    const r = await withNotes(await Bridge.send('calc', { expr: rx.expr, opts: engineOpts(), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), rx.expr);
     previewBusy = false;
     if (exprEl.value.trim() === raw && !committing) showPreview(r);
     if (previewAgain) { previewAgain = false; runPreview(); }
@@ -1801,15 +1816,18 @@
     // (1.15.0) a line of the history being edited: worked out in its place (ans of the lines above it, not stored)
     const editing = histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
     if (histEdit && !editing) endHistEdit(true); // (the line was deleted meanwhile: a new line)
+    // (1.16.0, feature/hist-excel: "#12", the answer of line 12, for the engine)
+    const rx = editing ? null : expandHistRefs(expr, histNo + 1);
+    if (rx && rx.error) { committing = false; clearInterval(busyTimer); previewEl.textContent = ''; msgEl.textContent = rx.error; msgEl.className = 'msg error'; return; }
     const r = editing ? Object.assign(await recalcLine(history.indexOf(editing), expr), { editRun: true })
-      : await Bridge.send('calc', { expr, opts: engineOpts(), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+      : await Bridge.send('calc', { expr: rx.expr, opts: engineOpts(), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
     if (editing) {
       committing = false; clearInterval(busyTimer); clearInterval(cancelTimer);
       if (r.error) { previewEl.textContent = ''; msgEl.textContent = r.error; msgEl.className = 'msg error'; return; }
       await applyHistEdit(editing, r);
       return;
     }
-    if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
+    if (r.ok && r.result && !r.timeout) await withNotes(r, rx.expr);
     committing = false;
     clearInterval(busyTimer);
     clearInterval(cancelTimer);
@@ -3396,6 +3414,32 @@
     const cut = result.split(/ [≈=] /)[0];
     return cut || result;
   }
+  // (1.16.0) "#n" in an expression: the answer of line n, in the calculation notes (n: the line's place, feature/notes-table)
+  // and in the history (n: the line's own number, feature/hist-excel). get(n) gives the value in the engine's form, or
+  // { error } (n is "?" for a line of the notes that was deleted). The engine itself reads "#" as the start of a comment, so
+  // every expression with a reference is expanded before it goes to the engine.
+  const LINE_REF = /#(\d{1,6}|\?)(?!\d)/g;
+  const lineRefs = (e) => Array.from(String(e || '').matchAll(LINE_REF)).map((m) => (m[1] === '?' ? '?' : Number(m[1])));
+  function expandLineRefs(expr, get) {
+    let error = '';
+    const out = String(expr).replace(LINE_REF, (all, k) => {
+      if (error) return '0';
+      const v = get(k === '?' ? '?' : Number(k));
+      if (v && typeof v === 'object') { error = v.error; return '0'; }
+      return '(' + v + ')';
+    });
+    return { expr: out, error };
+  }
+  // in the history: the line with that number, above the line own (the number of the line being worked out)
+  function expandHistRefs(expr, own) {
+    return expandLineRefs(expr, (n) => {
+      const line = n === '?' ? null : history.find((x) => x && x.n === n);
+      if (!line) return { error: trf('#{0}: that line is no longer in the history', '#{0}：その行は履歴にありません（消されました）', n === '?' ? '?' : n) };
+      if (own && n >= own) return { error: trf('#{0} is not a line above this one', '#{0} はこの行より上の行ではありません', n) };
+      const v = insertText(line);
+      return v ? v.replace(/^\((.*)\)$/, '$1') : { error: trf('The answer of #{0} cannot be used in a calculation (too long, or text)', '#{0} の答えは計算に使えません（長すぎる・文字）', n) };
+    });
+  }
   // Text to insert when a history result is reused. Normally the engine's exact text ("7/3"
   // where the screen shows "2 + 1/3 ≈ 2.333333333", "255" for a result shown as 0xFF), in
   // parentheses unless it is a single number or name. Returns null when it cannot be reused.
@@ -3460,10 +3504,11 @@
     if (own(ARG_FUNCS(), n) || own(ARG_ALIAS, n)) return true;
     return !!(catalogs.functions && catalogs.functions.some((it) => it.name === n));
   }
-  function insertResult(h) {
-    const t = insertText(h);
+  // (asRef, 1.16.0 feature/hist-excel: "#12", the line by its number, instead of its value; the same taps and marks)
+  function insertResult(h, asRef) {
+    const t = asRef ? '#' + h.n : insertText(h);
     if (t === null) { toast(tr('This result is too long to insert (use the ans key)', 'この結果はそのまま挿入できません（ans キーで使えます）'), 2600); return; }
-    const f = tgt(), text = toDisplay(t);
+    const f = tgt(), text = asRef ? t : toDisplay(t);
     if (f === exprEl) dropUndo();
     // the value of the tap before, with nothing typed and the caret not moved since: the field as it was before it
     let replaced = null;
@@ -3476,7 +3521,7 @@
     let s = f.selectionStart, e = f.selectionEnd;
     if (s === undefined || s === null) { s = e = before.length; }
     const pre = before.trim() && endsWithValue(before.slice(0, s)) ? '×' : '', post = startsWithValue(before.slice(e)) ? '×' : '';
-    const fn = /([\p{L}_][\p{L}\p{N}_]*)$/u.exec(before.slice(0, s)), arg = fn && isFunctionName(fn[1]) && !/^\(/.test(text) ? '(' + text + ')' : text;
+    const fn = /([\p{L}_][\p{L}\p{N}_]*)$/u.exec(before.slice(0, s)), arg = fn && isFunctionName(fn[1]) && !/^[(#]/.test(text) ? '(' + text + ')' : fn && isFunctionName(fn[1]) ? '(' + text + ')' : text;
     // (a selection is replaced; the caret ends right after the value, before the × that may follow it)
     f.value = before.slice(0, s) + pre + arg + post + before.slice(e);
     const pos = s + pre.length + arg.length;
@@ -3599,6 +3644,11 @@
     showResult(res, displayResult(h));
     const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: prettyExpr(toDisplay(h.expr)) }), res);
     item._h = h;
+    // (1.16.0, feature/hist-excel) its number, and a line it refers to (#12) that is no longer in the history
+    if (!h.n) numberLines();
+    item.append(el('span', { class: 'h-no', text: '#' + h.n }));
+    const gone = lineRefs(h.expr).filter((n) => n === '?' || !history.some((x) => x && x.n === n));
+    if (gone.length) item.append(el('div', { class: 'h-msg warning h-gone', text: trf('#{0} is no longer in the history: this answer is the one from before', '#{0} の行は消されました（この答えは消える前の値です）', gone[0]) }));
     if (tapMarks.length) paintTapMark(item);
     if (histFlash.size && histFlash.get(h) > Date.now()) item.classList.add('h-flash');
     if (h.note) item.insertBefore(el('div', { class: 'h-note', text: h.note }), item.firstChild);
@@ -3606,7 +3656,9 @@
     // ⋯ opens the same menu as touching and holding the line (1.12.0: nothing only by a long touch);
     // the dots are drawn by style.css, so that the text of the line stays the expression and the result
     item.append(el('button', { class: 'h-more', type: 'button', 'aria-label': tr('Menu of this result', 'この結果のメニュー') }));
-    bindLongPress(item, () => { if (!histSel) historyMenu(h); }, (target) => {
+    // (1.16.0, feature/hist-excel: while choosing lines, touching and holding one chooses all the lines from the one chosen
+    // last to it, as a range of cells)
+    bindLongPress(item, () => { if (!histSel) historyMenu(h); else selectRange(item); }, (target) => {
       if (histSel) { toggleSelected(item); return; }
       if (target.closest('.h-more')) { historyMenu(h); return; }
       if (target.closest('.h-expr')) startHistEdit(h); // (1.15.0: the line edited in place)
@@ -3683,6 +3735,8 @@
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['digits', tr('Work it out with other digits', '桁数を変えて計算し直す')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')],
+      ['ins-ref', trf('Insert #{0} (this line by its number)', '#{0} を式に入れる（番号でこの行を使う）', h.n)],
+      ['select', tr('Select: sum and average', '選ぶ（合計・平均）')],
       ['star', h.star ? tr('★ Unpin', '★ 固定を外す') : tr('☆ Pin at the top', '☆ 上に固定')],
       ['note', h.note ? tr('Change the note', 'メモを変える') : tr('Add a short note', 'ひとことメモ')],
       ['del', tr('Delete this line', 'この行を削除'), 'danger']
@@ -3701,6 +3755,8 @@
     else if (a === 'edit') startHistEdit(h);
     else if (a === 'digits') recalcWithDigits(h);
     else if (a === 'ins-ans') insertResult(h);
+    else if (a === 'ins-ref') { insertResult(h, true); focusExpr(); }
+    else if (a === 'select') openHistSelect(h);
     else if (a === 'del') {
       const i = history.indexOf(h);
       if (i < 0) return; // the history changed while the menu was open
@@ -4057,7 +4113,12 @@
   const usesName = (e, name) => new RegExp('(^|[^\\p{L}\\p{N}_])' + escRe(name) + '(?![\\p{L}\\p{N}_])', 'u').test(e || '');
   const ansUses = (e) => Array.from(String(e || '').matchAll(/(^|[^\p{L}\p{N}_])ans(\d?)(?![\p{L}\p{N}_])/gu)).map((m) => (m[2] ? Number(m[2]) : 1));
   // the expression of line i with ans (ans2 …) as the results of the lines above it then (not the newest ans)
+  // (1.16.0, feature/hist-excel) "#12" in the expression of line i: the answer of line 12 as the history has it now, or the
+  // error (a line that is gone, or not above line i)
+  const refsAt = (expr, i) => expandHistRefs(expr, history[i] ? history[i].n : histNo + 1);
   function withAns(expr, i) {
+    const rx = refsAt(expr, i);
+    if (!rx.error) expr = rx.expr;
     return String(expr).replace(/(^|[^\p{L}\p{N}_])ans(\d?)(?![\p{L}\p{N}_])/gu, (m, pre, d) => {
       const p = history[i - (d ? Number(d) : 1)], v = p ? insertText(p) : null;
       return v ? pre + '(' + v + ')' : m;
@@ -4068,6 +4129,8 @@
   function putEntry(h, s) { for (const k of ENTRY_KEYS) delete h[k]; Object.assign(h, s); }
   // a line worked out again in place (the settings of now): its new fields, or { error }
   async function recalcLine(i, expr) {
+    const rx = refsAt(expr, i);
+    if (rx.error) return { error: rx.error };
     const r = await Bridge.send('calc', { expr: withAns(expr, i), opts: engineOpts(), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
     if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
     if (!r.ok || r.timeout || !r.result) {
@@ -4083,9 +4146,12 @@
   // changed line defines (until a line defines it again)
   function editDependents(i, names) {
     const changed = new Set([i]), list = [];
+    // (1.16.0, feature/hist-excel: and "#12" of a changed line, by its number)
+    const changedNo = new Set([history[i] && history[i].n]);
     for (let j = i + 1; j < history.length; j++) {
       const e = history[j].expr, dn = defName(e), body = dn ? String(e).replace(/^[^=]*=/, '') : e;
-      const dep = ansUses(e).some((n) => changed.has(j - n)) || Array.from(names).some((nm) => usesName(body, nm));
+      const dep = ansUses(e).some((n) => changed.has(j - n)) || Array.from(names).some((nm) => usesName(body, nm)) || lineRefs(e).some((n) => changedNo.has(n));
+      if (dep) changedNo.add(history[j].n);
       if (dep) { changed.add(j); list.push(j); if (dn) names.add(dn); } else if (dn) names.delete(dn);
     }
     return list;
@@ -4164,7 +4230,7 @@
     const deps = editDependents(i, new Set(names));
     let done = 0;
     if (deps.length) {
-      const a = await sheet(trf('{0} lines below go on from this line (its ans or its variable). Work them out again too?', '下の {0} 行は、この行の答え（ans）や変数を使っています。計算し直しますか？', deps.length),
+      const a = await sheet(trf('{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?', '下の {0} 行は、この行の答え（ans や #{1}）や変数を使っています。計算し直しますか？', deps.length, h.n),
         [['all', trf('Also the {0} lines below', '下の {0} 行も計算し直す', deps.length)], ['one', tr('Only this line', 'この行だけ')]]);
       if (a === 'all') {
         for (const j of deps) {
@@ -17002,12 +17068,20 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   }
   const selBar = el('div', { class: 'hselbar', hidden: true, role: 'region', 'aria-label': tr('Selected lines', '選んだ行') });
   const selInfo = el('div', { class: 'hs-info', 'aria-live': 'polite' });
+  // (1.16.0, feature/hist-excel) "Copy as a table": the expression and the answer of each line in two columns (tab between),
+  // to paste into a spreadsheet (Excel, Google Sheets); with exporting the history, a QCalc Pro feature
+  const tblBtn = el('button', { class: 'btn', type: 'button', text: tr('Copy as a table', '表でコピー'), onclick: () => copySelectedTable() });
   selBar.append(selInfo, el('div', { class: 'hs-btns' },
     el('button', { class: 'btn', type: 'button', text: tr('Copy', 'コピー'), onclick: () => copySelected() }),
+    tblBtn,
     el('button', { class: 'btn primary', type: 'button', text: tr('Done', '終わる'), onclick: () => closeHistSelect() })));
   document.body.append(selBar);
-  function openHistSelect() {
+  // first: a line to choose at once (1.16.0, feature/hist-excel: ⋯ "Select" of a line: its sum and average at once)
+  let selLast = null;
+  function openHistSelect(first) {
     if (!proGate('history_tools')) return;
+    selLast = null;
+    tblBtn.textContent = tr('Copy as a table', '表でコピー') + (hasPro() ? '' : ' ⭐');
     closeHistSearch();
     endHistEdit(true); // (1.15.0: selecting lines ends the editing of one; its expression stays in the field)
     drawAllOlder();
@@ -17016,7 +17090,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     selBar.hidden = false;
     for (const it of histEl.querySelectorAll('.h-item')) it.classList.remove('sel');
     refreshSteps();
-    updateSelected();
+    const it0 = first ? Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === first) : null;
+    if (it0) toggleSelected(it0); else updateSelected();
   }
   function closeHistSelect() {
     if (!histSel) return false;
@@ -17035,7 +17110,19 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (histSel.has(h)) histSel.delete(h); else histSel.add(h);
     item.classList.toggle('sel', histSel.has(h));
     item.setAttribute('aria-selected', String(histSel.has(h)));
+    selLast = h;
     vibrate();
+    updateSelected();
+  }
+  // all the lines from the one chosen last to this one (in the order of the history)
+  function selectRange(item) {
+    const h = item._h;
+    if (!h || !histSel) return;
+    const a = selLast ? history.indexOf(selLast) : -1, b = history.indexOf(h);
+    if (a < 0 || b < 0) { toggleSelected(item); return; }
+    for (let k = Math.min(a, b); k <= Math.max(a, b); k++) histSel.add(history[k]);
+    for (const it of histEl.querySelectorAll('.h-item')) { const on = histSel.has(it._h); it.classList.toggle('sel', on); it.setAttribute('aria-selected', String(on)); }
+    selLast = h;
     updateSelected();
   }
   async function updateSelected() {
@@ -17048,7 +17135,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const vals = list.map((h) => insertText(h));
     if (vals.some((v) => !v)) { selInfo.append(el('div', { class: 'form-hint warn', text: tr('A result that cannot be used in a calculation is selected (too long, or text)', '計算に使えない結果（長すぎる・文字）が選ばれています') })); return; }
     const sum = vals.map((v) => '(' + v + ')').join(' + ');
-    const r = await Bridge.send('calc', { expr: sum, opts: engineOpts(), timeout: 3000 });
+    // (1.16.0, feature/hist-excel: lines shown as decimals add up to a decimal, as in a spreadsheet: 52.8, not 52 + 4/5)
+    const dec = list.every((h) => !/\//.test(String(h.result || '')));
+    const r = await Bridge.send('calc', { expr: sum, opts: Object.assign(engineOpts(), dec ? { fraction: 'decimal' } : {}), timeout: 3000 });
     if (seq !== selSeq) return;
     if (!r.ok || !r.result || r.timeout) { selInfo.append(el('div', { class: 'form-hint warn', text: localMessage(r.error) || tr('Could not add them up', '合計を計算できませんでした') })); return; }
     // a sum of different kinds of units stays a sum ("5 km + 3 kg"): said, not given as a total
@@ -17068,6 +17157,23 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const list = history.filter((h) => histSel && histSel.has(h));
     if (!list.length) { toast(tr('Nothing is selected', '何も選ばれていません'), 1500); return; }
     copyText(list.map((h) => toDisplay(h.expr) + ' ' + displayResult(h)).join('\n'));
+  }
+  // the answer of a line as a cell of a spreadsheet: the decimal value when there is one (1/5523 ≈ 0.000181… → 0.000181…, as
+  // a spreadsheet would read 1/5523 as a date), without the groups of digits, with the decimal sign of the number format
+  function tableAnswer(h) {
+    let t = h.cut ? shownText(h) : String(h.result || '');
+    const parts = t.split(' ≈ ');
+    t = parts[parts.length - 1].replace(/(\d)[\u202f\u2009](?=\d)/g, '$1');
+    return displayText(t).replace(/[\t\n]+/g, ' ');
+  }
+  // the expression as a cell: not read as a formula by the spreadsheet (a minus sign first as −, "=" or "+" first with ')
+  const tableExpr = (h) => { const t = toDisplay(String(h.expr || '')).replace(/[\t\n]+/g, ' '); return /^-/.test(t) ? '−' + t.slice(1) : /^[=+@]/.test(t) ? "'" + t : t; };
+  function copySelectedTable() {
+    const list = history.filter((h) => histSel && histSel.has(h));
+    if (!list.length) { toast(tr('Nothing is selected', '何も選ばれていません'), 1500); return; }
+    if (!hasPro()) { proPrompt(tr('Copying lines as a table is a QCalc Pro feature, as exporting the history', '表でコピーは、履歴の書き出しと同じく QCalc Pro の機能です'), 'export'); return; }
+    copyText(list.map((h) => tableExpr(h) + '\t' + tableAnswer(h)).join('\n'));
+    toast(trf('{0} lines copied as a table: paste them into a spreadsheet', '{0} 行を表としてコピーしました（表計算ソフトに貼れます）', list.length), 2500);
   }
   // a dialog with one line of text: the text, or null when cancelled
   function promptSheet(title, value, placeholder, okText, numeric) {
@@ -18826,7 +18932,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // the numbers of the lines are shown beside them. When a line is inserted, deleted or moved, the numbers written in
   // the lines follow (noteRenumber: map(n) gives the new number of line n, or 0 when it is gone: "#?", which says so).
   // A line that starts with "#" and a digit is a reference, not a note (a note: "#" and anything else, or "//").
-  const NOTE_REF = /#(\d{1,3}|\?)(?!\d)/g;
+  const NOTE_REF = LINE_REF; // (the same "#n" as in the history, expandLineRefs)
   const noteRenumber = (lines, map) => lines.map((l) => String(l).replace(NOTE_REF, (all, k) => { if (k === '?') return all; const n = map(Number(k)); return n ? '#' + n : '#?'; }));
   const NOTE_COMMENT = /^\s*(#(?![\d?])|\/\/)/;
   // A memo as a table (QCalc Pro, 'notes_table'): columns with names, the cells typed (numbers with units or currencies,
@@ -18977,14 +19083,16 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           let ex = c.total ? { expr: body } : noteExpand(normalizeExpr(body), names, prev);
           // (#n: the result of line n, a line above this one)
           let refErr = '';
-          if (!c.total) ex = { expr: ex.expr.replace(NOTE_REF, (all, k) => {
-            if (refErr) return '0';
-            if (k === '?') { refErr = tr('#?: the line it referred to was deleted', '#?：参照していた行は消されました'); return '0'; }
-            const n = Number(k), q = N.cache[n - 1];
-            if (!(n >= 1 && n <= i)) { refErr = trf('#{0} is not a line above this one', '#{0} はこの行より上の行ではありません', n); return '0'; }
-            if (!q || !q.ok) { refErr = trf('Line {0} has no result', '{0} 行目に結果がありません', n); return '0'; }
-            return '(' + q.expr + ')';
-          }) };
+          if (!c.total) {
+            const rx = expandLineRefs(ex.expr, (n) => {
+              if (n === '?') return { error: tr('#?: the line it referred to was deleted', '#?：参照していた行は消されました') };
+              const q = N.cache[n - 1];
+              if (!(n >= 1 && n <= i)) return { error: trf('#{0} is not a line above this one', '#{0} はこの行より上の行ではありません', n) };
+              if (!q || !q.ok) return { error: trf('Line {0} has no result', '{0} 行目に結果がありません', n) };
+              return q.expr;
+            });
+            ex = { expr: rx.expr }; refErr = rx.error;
+          }
           if (refErr) {
             c.done = true; c.ok = false; c.err = refErr;
             if (res) { res.textContent = refErr; res.classList.add('bad'); }
@@ -20219,6 +20327,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     // the settings of now with the digits chosen (as a line edited in place); nothing is defined or kept: a line that
     // defines a value ("a := 2/3") gives its value, a line that defines a function or changes something else is not worked out
     let expr = h.expr;
+    const rx0 = refsAt(expr, i);
+    if (rx0.error) { toast(rx0.error, 3500); return; } // (1.16.0: "#12" of a line that is gone)
     const calc = (e) => Bridge.send('calc', { expr: withAns(e, i), opts: Object.assign(engineOpts(), { precision: n }), timeout: timeLimit() * 1000, max_chars: MAX_RESULT });
     let r = await calc(expr);
     const vd = /^\s*[\p{L}_][\p{L}\p{N}_]*\s*:?=(?!=)\s*(.+)$/su.exec(expr);
@@ -20711,7 +20821,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['🎯', tr('High precision', '高精度'), tr('Up to 200000 significant digits (free: up to 1000)', '有効桁数は最大 200000 桁（無料版は 1000 桁まで）'), 'precision'],
     ['🧊', tr('3D graphs', '3D グラフ'), tr('Surfaces z = f(x, y) and solids that you can turn with a finger, also a solid of revolution growing in 3D', '指で回せる曲面 z = f(x, y) と立体（回転体が 3D でできていく様子も）'), '3d'],
     ['🎨', tr('Color themes', '配色テーマ'), tr('Seven colors for the keys and the highlights, in the light and the dark theme', 'キーや強調表示を 7 色から選べます（ライト・ダークの両方）'), 'themes'],
-    ['📤', tr('Export the history', '履歴の書き出し'), tr('Save the history as a CSV file that spreadsheets can open', '履歴を CSV ファイルに保存（表計算ソフトで開けます）'), 'export']
+    ['📤', tr('Export the history', '履歴の書き出し'), tr('Save the history as a CSV file, or copy the lines you choose as a table, for a spreadsheet', '履歴を CSV ファイルに保存したり、選んだ行を表としてコピーしたりして、表計算ソフトで使えます'), 'export']
   ];
   // (feature/ratings) The photos of the Pro sheet: parts of the photos of the user manual, cut by manual/pro-photos.js
   // into app/assets/pro/<language>/<name>.webp (about 50 KB a language; the manual inside the app has no photos).
