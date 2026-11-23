@@ -787,6 +787,9 @@
   // Keep the newest result in view when the history area gets smaller (a long preview, a taller
   // input box, the phone keyboard), unless the history has been scrolled up to read older results.
   let histPinned = true;
+  // (1.16.0, fix/hist-tap: the last value put in by a tap on an answer { f, before, at, after, end, h }, and the lines whose
+  // answers are in the expression { h, text, color }: insertResult, tapMarks)
+  let tapRef = null, tapMarks = [];
   histEl.addEventListener('scroll', () => { histPinned = histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight < 24; }, { passive: true });
   if (window.ResizeObserver) new ResizeObserver(() => { fitMatrices(histEl); if (histPinned) histEl.scrollTop = histEl.scrollHeight; }).observe(histEl);
 
@@ -1278,6 +1281,7 @@
     return true;
   }
   function exprChanged(typed) {
+    pruneTapMarks(); // (1.16.0, fix/hist-tap)
     noteField();
     saveDraft();
     autosize();
@@ -1852,6 +1856,7 @@
       updateSuggest(false);
       updateMathView(); // (1.15.0) the expression in math notation above the field goes with it (it stayed after Enter on a keyboard)
       plotBtnEl.hidden = true;
+      pruneTapMarks();
     } else {
       previewEl.textContent = '';
       exprChanged(); // something was typed while the calculation ran: keep it
@@ -3410,11 +3415,97 @@
     }
     return wrapValue(t.replace(/[\u202f\u2009]/g, ''));
   }
+  // (1.16.0, fix/hist-tap, the owner's report of 11-24 05:50) A tap on an answer works as a click on a cell while a formula
+  // is typed in a spreadsheet:
+  //  - the answer's value goes in at the caret; a tap on another answer with nothing typed since takes the place of the
+  //    value the tap before put in (until 1.15.0 each tap was added after the last: [7 15; 10 22](1/5523)[7 15; 10 22] …,
+  //    hidden multiplications);
+  //  - after an operator (+, ×, "(", ",", "to" …) it goes after it; right after a number, a name, ")" or "]" a × is put in
+  //    first, as it is seen in the field (and before a number, a name or "(" right after the caret, a × after it);
+  //  - into an empty field (and so right after "=") as before;
+  //  - the lines whose answers are in the expression are marked in color, as the cells a formula refers to (tapMarks).
+  // (tapRef, the last value put in by a tap, and tapMarks are declared with histPinned, above)
+  const TAP_OPS = /^(?:to|mod|rem|per|and|or|xor|not)$/i; // (the words that are operators; "in" is the inch)
+  // the expression up to the caret ends with a value (so a value put after it would be multiplied without a sign)
+  function endsWithValue(t) {
+    const b = t.replace(/\s+$/, '');
+    if (!b) return false;
+    const w = /([\p{L}_][\p{L}\p{N}_]*)$/u.exec(b);
+    if (w) {
+      if (TAP_OPS.test(w[1]) && (b.length === w[1].length || /\s$/.test(b.slice(0, -w[1].length)))) return false;
+      if (isFunctionName(w[1])) return false; // "sqrt" typed: the value is its argument, in parentheses (insertResult)
+      return true;
+    }
+    return /[\p{N})\]}!%‰°′″'"π∞⁰¹²³⁴⁵⁶⁷⁸⁹]$/u.test(b);
+  }
+  // the text after the caret begins with a value (so a value put before it would be multiplied without a sign)
+  function startsWithValue(t) {
+    if (!t || /^\s/.test(t)) return false;
+    const w = /^([\p{L}_][\p{L}\p{N}_]*)/u.exec(t);
+    if (w) return !TAP_OPS.test(w[1]);
+    return /^[\p{N}(\[√∛∜π∞]/u.test(t);
+  }
+  function isFunctionName(n) {
+    if (own(ARG_FUNCS(), n) || own(ARG_ALIAS, n)) return true;
+    return !!(catalogs.functions && catalogs.functions.some((it) => it.name === n));
+  }
   function insertResult(h) {
     const t = insertText(h);
     if (t === null) { toast(tr('This result is too long to insert (use the ans key)', 'この結果はそのまま挿入できません（ans キーで使えます）'), 2600); return; }
-    insert(toDisplay(t), 0, false);
+    const f = tgt(), text = toDisplay(t);
+    if (f === exprEl) dropUndo();
+    // the value of the tap before, with nothing typed and the caret not moved since: the field as it was before it
+    let replaced = null;
+    if (tapRef && tapRef.f === f && f.value === tapRef.after && f.selectionStart === tapRef.end && f.selectionEnd === tapRef.end) {
+      replaced = tapRef.h;
+      f.value = tapRef.before;
+      f.setSelectionRange(tapRef.at, tapRef.at);
+    } else if (boxSelected(f)) f.value = ''; // (a box of a form chosen as a whole: the value takes its place, as insert does)
+    const before = f.value;
+    let s = f.selectionStart, e = f.selectionEnd;
+    if (s === undefined || s === null) { s = e = before.length; }
+    const pre = before.trim() && endsWithValue(before.slice(0, s)) ? '×' : '', post = startsWithValue(before.slice(e)) ? '×' : '';
+    const fn = /([\p{L}_][\p{L}\p{N}_]*)$/u.exec(before.slice(0, s)), arg = fn && isFunctionName(fn[1]) && !/^\(/.test(text) ? '(' + text + ')' : text;
+    // (a selection is replaced; the caret ends right after the value, before the × that may follow it)
+    f.value = before.slice(0, s) + pre + arg + post + before.slice(e);
+    const pos = s + pre.length + arg.length;
+    f.setSelectionRange(pos, pos);
+    tapRef = { f, before, at: s, after: f.value, end: pos, h };
+    targetChanged();
+    if (f === exprEl) {
+      if (replaced && replaced !== h) dropTapMark(replaced);
+      addTapMark(h, text);
+    }
   }
+  // ---- the marks in color of the lines whose answers are in the expression (tapMarks)
+  const TAP_COLORS = ['#2563eb', '#dc2626', '#7c3aed', '#059669', '#d97706', '#db2777'];
+  function addTapMark(h, text) {
+    const m = tapMarks.find((x) => x.h === h);
+    if (m) m.text = text;
+    else {
+      const used = new Set(tapMarks.map((x) => x.color));
+      tapMarks.push({ h, text, color: TAP_COLORS.find((c) => !used.has(c)) || TAP_COLORS[tapMarks.length % TAP_COLORS.length] });
+    }
+    paintTapMarks();
+  }
+  function dropTapMark(h) { tapMarks = tapMarks.filter((x) => x.h !== h); paintTapMarks(); }
+  // (after each change of the field: a value that is no longer in it, or a line no longer in the history, loses its mark)
+  function pruneTapMarks() {
+    if (!tapMarks.length) return;
+    const v = exprEl.value;
+    const keep = tapMarks.filter((x) => v.indexOf(x.text) >= 0 && history.indexOf(x.h) >= 0);
+    if (keep.length !== tapMarks.length) { tapMarks = keep; paintTapMarks(); }
+  }
+  function tapMarkOf(h) { return tapMarks.find((x) => x.h === h) || null; }
+  function paintTapMark(it) {
+    const m = tapMarkOf(it._h);
+    it.classList.toggle('h-ref', !!m);
+    if (m) it.style.setProperty('--ref', m.color); else it.style.removeProperty('--ref');
+    let tag = it.querySelector(':scope > .h-ref-tag');
+    if (m && !tag) { tag = el('span', { class: 'sr-only h-ref-tag', text: tr('(its answer is in the expression)', '（この答えを式で使っています）') }); it.append(tag); }
+    else if (!m && tag) tag.remove();
+  }
+  function paintTapMarks() { for (const it of histEl.querySelectorAll('.h-item')) paintTapMark(it); }
   // The history is drawn in chunks (1.12.0): the newest HIST_CHUNK lines at once, then the older
   // ones a chunk at a time, at the top, when the page is idle, keeping what is on the screen in
   // place. Drawing all 300 lines (fractions and roots in math notation) took about a second on a
@@ -3497,6 +3588,7 @@
     showResult(res, displayResult(h));
     const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: prettyExpr(toDisplay(h.expr)) }), res);
     item._h = h;
+    if (tapMarks.length) paintTapMark(item);
     if (h.note) item.insertBefore(el('div', { class: 'h-note', text: h.note }), item.firstChild);
     for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
     // ⋯ opens the same menu as touching and holding the line (1.12.0: nothing only by a long touch);
@@ -4013,7 +4105,7 @@
     const touched = new Set(names);
     putEntry(h, Object.assign(s, { edited: Date.now() }));
     histEdit = null; editBand.hidden = true;
-    exprEl.value = ''; showPreview(null); autosize(); updateSuggest(false); saveDraft();
+    exprEl.value = ''; showPreview(null); autosize(); updateSuggest(false); saveDraft(); pruneTapMarks();
     saveHistory();
     redrawEntries(new Set([h]));
     // the lines below that went on from it

@@ -2,6 +2,7 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "(its answer is in the expression)": "（此結果已用在算式中）",
     // (1.16.0) the card of what is new: the stocks and the notes
     "Stocks and investing: profit and loss with tax, average cost, the margin-call price, yield and more": "股票與投資工具：含稅損益、平均成本、追繳價、殖利率等",
     "Calculation notes: line numbers and #3, and tables with a formula column and totals": "計算筆記：行號與 #3，以及有算式欄與合計的表格",
