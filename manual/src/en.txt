@@ -27,6 +27,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 
 ## new-1-15 | What is new in 1.15.0
 - **Easier results**: results have 15 significant digits, in groups of three. Phones that still had the earlier defaults (10 digits, no groups) change once with this version. [[Precision (significant digits)]] and [[Digit grouping (1,000)]] in the [[Settings]] set them back ([Reading the answer](#results)).
+- **Reading into the calculation notes**: [[More ▾]] → [[Open a file]] in the notes reads a .txt or .csv file, and text or a file sent with “Share” → QCalc from another app is taken in too ([Calculation notes](#notes)).
 - **Two lines**: an exact result with its approximation shows "= exact" on one line and "≈ approximation" on the next. Fractions and roots are drawn in the same letters as the other results.
 - **Numbers**: no ending zeros in approximations; very large or small numbers as 1.606 938 × 10⁶⁰ (copied as 1.606938E60); whole numbers and decimals that end are shown in full up to 60 digits, even beyond the precision (for example 30!).
 - **Long results and units**: a result too long for one line gets smaller letters, and only then breaks between groups of three digits; a result with units stays on one line (m/s).
@@ -389,8 +390,12 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: A line "total" adds up the answers above it.
 :shot: notes | [[Calculation notes]] with an example
 :example: rent 85000, electricity 6200, water 3100 (JPY) → the line "total" shows "total = ¥94300"
-:pro: The first memo is free. More memos, and saving as text or CSV, are QCalc Pro features.
+:pro: The first memo is free, and so is reading a file or a share into it (into an empty memo, or at its end). More memos (also reading in as a new memo), and saving as text or CSV, are QCalc Pro features.
 :tip: A line that begins with # or // is a note (it is not calculated).
+:step: To read a file, press [[Open a file]] under [[More ▾]] and choose a .txt or .csv file. A .txt gives one line for each line; a .csv saved by QCalc gives its column “Calculation”, another .csv its first column. UTF-8 and Shift_JIS (a Japanese CSV made by Excel) can be read.
+:step: In another app (a notes app, mail …), choose some text or a .txt or .csv file, then QCalc in that app’s “Share”: the calculation notes open.
+:step: Then choose [[As a new memo]] or [[At the end of this memo]]; for a single line, [[Put it into the input field]] too. A new memo is named after the file (without its extension).
+:tip: What is read is only text, worked out by the same rules as typed lines. A file over 1 MB, or more than 300 lines (what a memo holds), is not read, and the app says so.
 
 # graphs | Graphs
 

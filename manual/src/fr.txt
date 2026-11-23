@@ -27,6 +27,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 
 ## new-1-15 | Nouveautés de la 1.15.0
 - **Résultats plus lisibles** : les résultats ont 15 chiffres significatifs, par groupes de trois. Les téléphones qui avaient encore les anciennes valeurs par défaut (10 chiffres, sans groupes) changent une fois avec cette version. [[Precision (significant digits)]] et [[Digit grouping (1,000)]] dans les [[Settings]] permettent de revenir ([Lire le résultat](#results)).
+- **Lire dans les notes de calcul** : [[More ▾]] → [[Open a file]] dans les notes lit un fichier .txt ou .csv, et le texte ou le fichier qu’une autre application envoie avec « Partager » → QCalc est aussi reçu ([Notes de calcul](#notes)).
 - **Deux lignes** : un résultat exact avec sa valeur approchée affiche « = exact » sur une ligne et « ≈ valeur approchée » sur la suivante. Les fractions et les racines sont dessinées dans la même écriture que les autres résultats.
 - **Nombres** : pas de zéros finaux dans les valeurs approchées ; les très grands ou très petits nombres s’affichent comme 1,606 938 × 10⁶⁰ (copiés sous la forme 1.606938E60) ; les entiers et les décimaux exacts s’affichent en entier jusqu’à 60 chiffres, même au-delà de la précision (par exemple 30!).
 - **Résultats longs et unités** : un résultat trop long pour une ligne s’affiche un peu plus petit, et seulement ensuite passe à la ligne entre des groupes de trois chiffres ; un résultat avec des unités reste sur une ligne (m/s).
@@ -389,8 +390,12 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Une ligne avec le mot du total additionne les résultats du dessus.
 :shot: notes | [[Calculation notes]] avec un exemple
 :example: loyer 85000, électricité 6200, eau 3100 (JPY) → la ligne du total affiche ¥94300
-:pro: La première note est gratuite. Plus de notes et leur enregistrement en texte ou CSV sont des fonctions de QCalc Pro.
+:pro: La première note est gratuite, de même qu’y lire un fichier ou un partage (dans une note vide ou à la fin). Plus de notes (y compris lire comme nouvelle note) et leur enregistrement en texte ou CSV sont des fonctions de QCalc Pro.
 :tip: Une ligne qui commence par # ou // est un commentaire (non calculée).
+:step: Pour lire un fichier, appuyez sur [[Open a file]] sous [[More ▾]] et choisissez un fichier .txt ou .csv. Un .txt donne une ligne par ligne ; un .csv enregistré par QCalc donne sa colonne « Calcul », un autre .csv sa première colonne. L’UTF-8 et le Shift_JIS (un CSV japonais fait avec Excel) peuvent être lus.
+:step: Dans une autre application (notes, e-mail…), choisissez du texte ou un fichier .txt ou .csv, puis QCalc dans « Partager » de cette application : les notes de calcul s’ouvrent.
+:step: Choisissez ensuite [[As a new memo]] ou [[At the end of this memo]] ; pour une seule ligne, aussi [[Put it into the input field]]. Une nouvelle note prend le nom du fichier (sans extension).
+:tip: Ce qui est lu n’est que du texte, calculé selon les mêmes règles que les lignes saisies. Un fichier de plus de 1 Mo, ou de plus de 300 lignes (ce que contient une note), n’est pas lu, et l’application le signale.
 
 # graphs | Graphiques
 

@@ -27,6 +27,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 
 ## new-1-15 | Neu in 1.15.0
 - **Besser lesbare Ergebnisse**: Ergebnisse mit 15 gültigen Stellen, in Dreiergruppen. Geräte, die noch die bisherigen Standardwerte hatten (10 Stellen, ohne Gruppen), wechseln mit dieser Version einmal. [[Precision (significant digits)]] und [[Digit grouping (1,000)]] in den [[Settings]] stellen es zurück ([Das Ergebnis lesen](#results)).
+- **Einlesen in die Rechennotizen**: [[More ▾]] → [[Open a file]] in den Notizen liest eine .txt- oder .csv-Datei, und Text oder eine Datei, die eine andere App mit „Teilen“ → QCalc sendet, wird ebenfalls übernommen ([Rechennotizen](#notes)).
 - **Zwei Zeilen**: Ein exaktes Ergebnis mit Näherung zeigt „= exakt“ in einer Zeile und „≈ Näherung“ in der nächsten. Brüche und Wurzeln erscheinen in derselben Schrift wie die anderen Ergebnisse.
 - **Zahlen**: keine Endnullen bei Näherungen; sehr große oder kleine Zahlen als 1,606 938 × 10⁶⁰ (kopiert als 1.606938E60); ganze Zahlen und abbrechende Dezimalzahlen erscheinen bis 60 Stellen vollständig, auch über die Genauigkeit hinaus (zum Beispiel 30!).
 - **Lange Ergebnisse und Einheiten**: Ein Ergebnis, das nicht in eine Zeile passt, wird etwas kleiner und erst dann zwischen Dreiergruppen umbrochen; ein Ergebnis mit Einheiten bleibt in einer Zeile (m/s).
@@ -389,8 +390,12 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Eine Zeile mit dem Summenwort addiert die Ergebnisse darüber.
 :shot: notes | [[Calculation notes]] mit einem Beispiel
 :example: Miete 85000, Strom 6200, Wasser 3100 (JPY) → die Summenzeile zeigt ¥94300
-:pro: Die erste Notiz ist kostenlos. Weitere Notizen und das Speichern als Text oder CSV sind Funktionen von QCalc Pro.
+:pro: Die erste Notiz ist kostenlos, ebenso das Einlesen einer Datei oder einer Freigabe in sie (in eine leere Notiz oder an ihr Ende). Weitere Notizen (auch als neue Notiz einlesen) und das Speichern als Text oder CSV sind Funktionen von QCalc Pro.
 :tip: Eine Zeile, die mit # oder // beginnt, ist eine Bemerkung (sie wird nicht berechnet).
+:step: Um eine Datei einzulesen, drücken Sie [[Open a file]] unter [[More ▾]] und wählen eine .txt- oder .csv-Datei. Eine .txt gibt eine Zeile je Zeile; eine von QCalc gespeicherte .csv ihre Spalte „Rechnung“, eine andere .csv ihre erste Spalte. UTF-8 und Shift_JIS (eine japanische CSV aus Excel) können gelesen werden.
+:step: Wählen Sie in einer anderen App (Notizen, E-Mail …) Text oder eine .txt- oder .csv-Datei und dann QCalc unter „Teilen“ dieser App: Die Rechennotizen öffnen sich.
+:step: Wählen Sie dann [[As a new memo]] oder [[At the end of this memo]]; bei einer einzigen Zeile auch [[Put it into the input field]]. Eine neue Notiz bekommt den Namen der Datei (ohne Endung).
+:tip: Eingelesenes ist nur Text und wird nach denselben Regeln wie getippte Zeilen berechnet. Eine Datei über 1 MB oder mit mehr als 300 Zeilen (so viel fasst eine Notiz) wird nicht eingelesen, und die App sagt es.
 
 # graphs | Graphen
 
