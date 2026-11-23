@@ -310,6 +310,78 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Open [[Savings and compound interest]] and type the monthly amount (or the starting sum), the yearly rate and the years.
 :example: 30,000 a month, 3 %, 20 years → 9,849,059.94 (put in 7,200,000; interest 2,649,059.94)
 
+## invest | Stocks and investing
+:what: Profit and loss with the tax, the average cost, the maintenance ratio of a margin account and its margin call, the position size from a stop, yields, PER, PBR and compound growth, margin interest and lending fees, and foreign stocks in your money. No prices are fetched: everything comes from the numbers you type.
+:step: In [[Tools]], choose a tool under [[Stocks and investing]].
+:step: Tap an example or type the numbers. The results come at once.
+:step: Tap a result to put its expression into the input field, keep it in the history or copy it. ⋯ at the top right changes the digits shown.
+:note: A calculation for reference, not investment advice. Brokers may count tax and margin differently.
+:pro: The maintenance ratio and margin call, the position size from a stop and the interest and lending fee by the day are QCalc Pro features. Profit and loss, average cost, yield/PER/PBR/growth and foreign stocks are free.
+
+### pnl | Stock profit and loss
+:what: From the prices bought and sold, the shares and the fees of buying and selling: the profit or loss, in %, the tax, after tax, what the sale brings in, and the break-even price.
+:step: Open [[Stock profit and loss]] and type the prices and the shares.
+:step: A fee can be an amount (500) or a share of the trade (0.1%).
+:step: Choose [[Taxed]] or [[Tax-free account]]. The tax rate is 20.315 % (Japan's) unless you type another.
+:example: Bought at 1000, sold at 1200, 100 shares, no fees → +20,000.00, tax 4,063.00, after tax +15,937.00
+:tip: The % is of what was paid, with the fee. The break-even price is where selling leaves no loss after the fees.
+:note: The tax is worked out on this trade alone and rounded down; offsetting losses in the year and a broker's way of rounding are not taken into account.
+
+### avg-cost | Average cost
+:what: The average cost of shares bought in several buys, and how many shares at what price bring the average to a target.
+:step: Open [[Average cost]] and choose [[The average of the buys]] or [[How to reach an average]].
+:step: The average of the buys: one buy to a line, "price shares" (for example 1000 100).
+:step: To reach an average: type the shares held, their average and the target, then the price or the shares to buy.
+:example: 100 at 1000 and 200 at 900 → average 933.33 (300 shares, 280,000.00)
+:example: 100 at an average of 1200 → buying at 900, 200 shares bring the average to 1000
+- Average = (price × shares + …) / all the shares
+- Shares to reach a target T = N × (A − T) / (T − P) (N: shares held, A: their average, P: the price; rounded up to the trading unit)
+:tip: The trading unit is 100 shares unless you type another; for stocks traded one by one, type 1.
+
+### margin | Margin: maintenance ratio
+:what: From the margin and the position: the maintenance ratio, and the price at which it falls to the margin call.
+:step: Open [[Margin: maintenance ratio]] and type the cash and, if any, the stocks as margin (after the haircut).
+:step: Choose [[Bought]] or [[Sold short]], and type the entry price, the shares and the price now. Costs (interest, fees) can be typed too.
+:step: The line of the margin call is 20 % unless you type another.
+:example: 1,000,000 cash, 3,000 shares bought at 1000, now 900 → 23.33 %, margin call at 866.67 (−3.70 % from now)
+The formulas:
+- Ratio = (cash + stocks as margin + profit or loss − costs) / value of the positions × 100
+- Value of the positions = entry price × shares (under [[More ▾]], other positions can be added with their profit or loss)
+- Profit or loss: bought (now − entry) × shares, sold short (entry − now) × shares. A gain is not counted unless chosen under [[More ▾]], [[Unrealized gains]]
+- Margin-call price: bought, entry − (cash + stocks as margin − costs − line × value) / shares; sold short, entry + (the same) / shares
+:note: Brokers count gains, haircuts and costs differently, and check at different times (usually the close).
+:pro:
+
+### position-size | Position size from a stop
+:what: From the capital, the loss you allow in one trade (% of the capital), the entry and the stop: the shares (rounded down to the trading unit) and the loss at the stop. With a take-profit price, the risk:reward ratio.
+:step: Open [[Position size from a stop]] and type the capital, the risk, the entry and the stop.
+:step: A stop below the entry is a buy; above it, a short.
+:example: 3,000,000 capital, 1 %, buy at 1000, stop at 950 (unit 100) → 600 shares, loss at the stop 30,000.00; take profit at 1150: risk:reward 1 : 3.00
+- Shares = capital × risk % / |entry − stop| (rounded down to the trading unit)
+- Risk:reward = 1 : |take profit − entry| / |entry − stop|
+:pro:
+
+### yield | Yield, PER, PBR, growth
+:what: The dividend yield, PER, PBR and ROE; compound growth with a monthly saving; the growth a year between two values.
+:step: Open [[Yield, PER, PBR, growth]], choose what to find and type the numbers.
+:example: Price 2000, dividend 60, EPS 150, BPS 1600 → yield 3.00 %, PER 13.33 ×, PBR 1.25 ×, ROE 9.38 %
+:example: 1,000,000 → 1,800,000 in 6 years → +10.29 % a year
+:tip: Growth can be compounded once a year or monthly; once a year, a month grows by (1 + the yearly return)^(1/12).
+
+### carry | Margin interest and lending fee
+:what: The interest on a margin buy, or the lending fee of a short, by the day.
+:step: Open [[Margin interest and lending fee]] and type the value of the position, the yearly rate and the days.
+:step: Choose the days in a year (365 or 360).
+:example: 3,000,000 at 2.8 % for 30 days → 6,904.10 (230.14 a day)
+- Cost = value × yearly rate × days / days in a year (rounded down)
+:pro:
+
+### fx-stock | Foreign stocks in your money
+:what: The value of a foreign stock in your money, with the exchange rates of the app or a rate you type; with the price and the rate when bought, the profit or loss split into the part of the price and the part of the exchange rate.
+:step: Open [[Foreign stocks in your money]] and type the currency (EUR, for example), the price now and the shares.
+:step: With the rate left empty, the app's exchange rates are used (as in [[Convert units and currencies]]).
+:example: 10 shares at 150, rate 155; bought at 120 at a rate of 140 → value 232,500.00, profit +64,500.00 (+42,000.00 from the price, +22,500.00 from the rate)
+
 ## dates | Dates
 :what: The days between two dates, n days after or before, an age, the weekday.
 :step: Open [[Dates]] and choose what to work out.
@@ -629,6 +701,7 @@ Numeric integration (areas, lengths and volumes of the graph) is certain to abou
 | GIF and pictures without the mark | [Sharing](#share) |
 | More calculation notes, saved as files | [Calculation notes](#notes) |
 | Regression curves (other than the line) | [Statistics](#stats) |
+| Margin and position sizing (maintenance ratio and margin call, position size from a stop, interest and lending fee) | [Margin: maintenance ratio](#margin) |
 :tip: [[How to use ›]] on a row of the Pro features opens its section of this manual.
 
 ## pro-buy | Buying and restoring

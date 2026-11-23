@@ -254,13 +254,14 @@
     rates: 'currencies', plot: 'graph-2d', shapes: 'shapes', profile: 'profile', sections: 'measured', notes: 'notes',
     stats: 'stats', convert: 'convert', tools: 'find-tools', settings: 'settings', about: 'about', licenses: 'about',
     pro: 'pro', price: 'price', percent: 'percent', unitprice: 'unit-price', split: 'split', loan: 'loan',
-    savings: 'savings', date: 'dates', time: 'times'
+    savings: 'savings', date: 'dates', time: 'times',
+    pnl: 'pnl', avgcost: 'avg-cost', margin: 'margin', possize: 'position-size', yield: 'yield', carry: 'carry', fxstock: 'fx-stock'
   };
   const PRO_HELP = {
     precision: 'results', '3d': 'graph-3d', themes: 'settings', export: 'history', tables: 'loan', tank_heads: 'tank-heads',
     profile: 'profile', stl: 'stl', share_pro: 'share', notes: 'notes', enclosed: 'area-length', tanks: 'tanks',
     revolution: 'solid', regions: 'volume-3d', sections: 'measured', history_tools: 'history', memkeys: 'memory-keys',
-    cross_sections: 'cross-sections', rev_lines: 'solid', everyday: 'price', convert: 'convert', quick: 'widget', stats: 'stats', stats_fit: 'stats'
+    cross_sections: 'cross-sections', rev_lines: 'solid', everyday: 'price', convert: 'convert', quick: 'widget', stats: 'stats', stats_fit: 'stats', trading: 'margin'
   };
   const FORM_HELP = { int: 'calculus', diff: 'calculus', lim: 'calculus', sum: 'calculus', prod: 'calculus', dsolve: 'calculus', subst: 'calculus', solve: 'equations', mat: 'matrices' };
   // every id the app links to (for the test of the links; '' is the top of the manual)
@@ -572,6 +573,7 @@
     share: 'free',         // sharing a picture of a graph, with a small "QCalc" in the corner (1.12 D4)
     share_pro: 'pro',      // the moving picture (GIF) of the 3D graph and of a slider, and pictures without the mark at full resolution (1.12 D4; sliders 1.15): Pro
     sliders3d: 'pro',      // the sliders of the letters in the 3D graph (1.15; in 2D free): Pro
+    trading: 'pro',        // stocks: the maintenance ratio of a margin account, the position size from a stop, the margin interest and lending fees by the day (1.16; the profit and loss, the average cost, the yields and growth, the foreign stocks are free): Pro, the tools of a trader on margin
     stats_fit: 'pro',      // statistics: choosing a curve other than the line for two columns (degree 2 to 4, exponential, power, log) with its prediction and graph (1.16; the line, the distributions, the histogram, the box plot, reading a CSV file, and the formulas and R² of the curves under "More" as in 1.15 are free): Pro
     notes: 'pro'           // calculation notes: the second memo and more, and saving them as text or CSV (1.12 D5): Pro; the first memo, copying and sharing it are free
   };
@@ -16904,6 +16906,13 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['split', tr('Split the bill', '割り勘'), 'js'],
     ['loan', tr('Loan', 'ローン'), 'js'],
     ['savings', tr('Savings and compound interest', '積立と複利'), 'js'],
+    ['pnl', tr('Stock profit and loss', '株の損益と税'), 'js'],
+    ['avgcost', tr('Average cost', '平均取得単価'), 'js'],
+    ['margin', tr('Margin: maintenance ratio', '信用取引：維持率と追証'), 'js'],
+    ['possize', tr('Position size from a stop', '損切りから株数'), 'js'],
+    ['yield', tr('Yield, PER, PBR, growth', '利回り・PER・PBR・複利'), 'js'],
+    ['carry', tr('Margin interest and lending fee', '金利・貸株料（日割り）'), 'js'],
+    ['fxstock', tr('Foreign stocks in your money', '外国株を自国通貨で'), 'js'],
     ['stats', tr('Statistics', '統計'), 'js'],
     ['convert', tr('Convert units and currencies', '単位・通貨の換算'), 'engine'],
     ['sections', tr('Volume from measured values', '測った値から体積'), 'engine'],
@@ -17128,6 +17137,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         return { m: 'dec', n: M.dec, zeros: true, why: trf('{0} decimals: the smallest unit of {1} (the calculation is exact in it)', '小数 {0} 桁：{1} の最小の単位（計算はこの単位で正確）', M.dec, M.cur) };
       case 'unitprice': return { m: 'dec', n: M.dec + 1, zeros: true, why: trf('{0} decimals: one more than the smallest unit of {1} (two more below 1)', '小数 {0} 桁：{1} の最小の単位より 1 桁多め（1 より小さい単価は 2 桁）', M.dec + 1, M.cur) };
       case 'percent': return { m: 'dec', n: 3, why: tr('3 decimals (without the zeros at the end)', '小数 3 桁（末尾の 0 は出さない）') };
+      case 'pnl': case 'avgcost': case 'margin': case 'possize': case 'yield': case 'carry': case 'fxstock':
+        return { m: 'dec', n: M.dec, zeros: true, why: trf('Money: {0} decimals, the smallest unit of {1}; prices and averages: {2}; % and ratios: 2', '金額は小数 {0} 桁（{1} の最小の単位）、株価と平均は {2} 桁、% と倍率は 2 桁', M.dec, M.cur, Math.max(2, M.dec)) };
       case 'stats': return { m: 'dec', n: 2, zeros: true, why: tr('The decimals of the data + 2 (the smallest, the largest and the sum: as the data; r and R²: 4)', 'データの小数の桁 ＋ 2 桁（最小・最大・合計はデータと同じ、r と R² は 4 桁）') };
       case 'convert': return { m: 'sig', n: 8, why: tr('8 significant digits (all of an exact answer); currencies: the smallest unit + 2 decimals; fuel economy: 2 decimals', '有効 8 桁（ぴったりの答えは全部）、通貨は最小の単位 ＋ 2 桁、燃費は小数 2 桁') };
       default: return { m: 'sig', n: 6, why: tr('6 significant digits', '有効 6 桁') };
@@ -17311,20 +17322,22 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (f.opts) {
           // a choice of a few: a switch (aria-pressed)
           chosen[f.k] = f.opts.some((o) => o[0] === saved[f.k]) ? saved[f.k] : f.def;
-          const btns = f.opts.map(([v, label]) => tapButton({ text: decSign(label), 'aria-pressed': String(v === chosen[f.k]), class: v === chosen[f.k] ? 'on' : '' }, () => {
+          const btns = f.opts.map(([v, label]) => tapButton({ text: decSign(label), 'aria-pressed': String(v === chosen[f.k]), class: v === chosen[f.k] ? 'on' : '', 'data-v': v }, () => {
             chosen[f.k] = v;
             btns.forEach((b, i) => { const on = f.opts[i][0] === v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
             save(); showFields(); run();
           }));
-          const row = el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: f.label }), el('span', { class: 'seg mini', role: 'group', 'aria-label': f.label }, ...btns));
+          const row = el('div', { class: 'geo-size tool-choice', 'data-k': f.k }, el('span', { class: 'geo-lbl', text: f.label }), el('span', { class: 'seg mini', role: 'group', 'aria-label': f.label }, ...btns));
           row._f = f;
           return row;
         }
-        const inp = el('input', { inputmode: f.kind === 'date' || f.kind === 'time' ? 'text' : 'decimal', type: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), value: typeof saved[f.k] === 'string' ? saved[f.k] : (typeof f.def === 'function' ? f.def() : f.def || ''), 'aria-label': f.label });
+        // (1.16.0: f.area, a box of several lines, as the buys of "Average cost")
+        const inp = f.area ? el('textarea', { rows: 4, inputmode: 'decimal', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), 'aria-label': f.label }) : el('input', { inputmode: f.kind === 'date' || f.kind === 'time' ? 'text' : 'decimal', type: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), value: typeof saved[f.k] === 'string' ? saved[f.k] : (typeof f.def === 'function' ? f.def() : f.def || ''), 'aria-label': f.label });
+        if (f.area) inp.value = typeof saved[f.k] === 'string' ? saved[f.k] : f.def || '';
         inp.addEventListener('input', () => { inp.removeAttribute('aria-invalid'); save(); run(); });
         inp.addEventListener('focus', () => inp.select()); // (F, task 3: a value is replaced by typing, as in the shapes)
         inputs[f.k] = inp;
-        const row = el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: f.label }), inp);
+        const row = el('label', { class: 'geo-size' + (f.area ? ' tool-area' : ''), 'data-k': f.k }, el('span', { class: 'geo-lbl', text: f.label }), inp);
         if (f.chips) row.append(el('span', { class: 'tool-mini-chips' }, ...f.chips().map((c) => tapButton({ class: 'area-chip', text: c }, () => { inp.value = c; save(); run(); }))));
         row._f = f;
         return row;
@@ -17344,7 +17357,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const msg = el('div', { class: 'geo-msg', role: 'alert' });
       const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
       const tableBox = el('div', { class: 'tool-table' });
-      const caution = spec.caution ? cautionLine(spec.caution) : null;
+      const caution = spec.invest ? investLine(spec.caution) : spec.caution ? cautionLine(spec.caution) : null;
       // fields shown only for some choices (when: values → boolean)
       const showFields = () => { const v = values(); for (const r of rows) if (r._f.when) r.hidden = !r._f.when(v); };
       const values = () => { const v = {}; for (const f of spec.fields) v[f.k] = f.opts ? chosen[f.k] : inputs[f.k].value; return v; };
@@ -17621,6 +17634,420 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         return { rows: [{ name: tr('At the end', '最後の額'), value: fmtDigits('savings', bal) + unitWord(), expr },
           { name: tr('Put in', '入れた額'), value: fmtDigits('savings', paid) + unitWord(), expr: '' }, { name: tr('Interest', '増えた額（利息）'), value: fmtDigits('savings', bal - paid) + unitWord(), expr: '' }],
           table: { title: tr('Year by year', '年ごと'), name: 'savings', head: [tr('Year', '年'), tr('Put in', '入れた額'), tr('Interest', '利息'), tr('Amount', '額')], rows: rowsT } };
+      }
+    });
+  }
+  // ---- Stocks and investing (1.16.0, feature/trading-tools; the owner's request of 11-24): calculations with what is
+  // typed only. No prices are fetched, nothing is advised, no permission or library is needed. Each tool has the note
+  // "A calculation for reference, not investment advice" (investLine) with what it assumes. The money is that of the
+  // region (MONEY), the shares whole numbers. QCalc Pro ('trading'): the maintenance ratio of a margin account, the
+  // position size from a stop and the interest and lending fees by the day (the tools of a trader who trades on margin);
+  // the profit and loss, the average cost, the yields and growth and the foreign stocks stay free.
+  function investLine(premise) {
+    return el('div', { class: 'caution invest-note', role: 'note' }, el('span', { class: 'caution-i', 'aria-hidden': 'true', text: 'ⓘ' }),
+      el('span', { class: 'caution-t', text: joinSentences(tr('A calculation for reference, not investment advice.', '計算の目安で、投資の助言ではありません。'), premise) }));
+  }
+  // the digits of the investing screens: money in the smallest unit of the currency, prices and averages with 2 decimals
+  // (or those of the currency), % and ratios with 2
+  const INVEST = ['pnl', 'avgcost', 'margin', 'possize', 'yield', 'carry', 'fxstock'];
+  const priceAuto = () => ({ m: 'dec', n: Math.max(2, MONEY().dec), zeros: MONEY().dec > 0 });
+  const pctAuto = { m: 'dec', n: 2, zeros: true };
+  const money = (id, v) => fmtDigits(id, v) + unitWord();
+  const signed = (s, v) => (v > 0 ? '+' : '') + s;
+  const shares = (n) => fmtNum(n) + tr('', ' 株');
+  // a money amount rounded down to the smallest unit of the currency, as an expression
+  const floorMoneyE = (e) => (MONEY().dec ? `floor((${e}) × ${Math.pow(10, MONEY().dec)}) / ${Math.pow(10, MONEY().dec)}` : `floor(${e})`);
+  const floorMoney = (x) => Math.floor(x * Math.pow(10, MONEY().dec) + 1e-7) / Math.pow(10, MONEY().dec);
+  // a fee: an amount (500) or a share of the trade ("0.1%"); { amt, rate } or null when it is not a number
+  function feeOf(t) {
+    const s = String(t || '').trim();
+    if (!s) return { amt: 0, rate: 0 };
+    const v = boxNum(s);
+    if (!(v >= 0)) return null;
+    return /[%％]$/.test(s) ? { amt: 0, rate: v / 100 } : { amt: v, rate: 0 };
+  }
+  const shareCount = (v) => v > 0 && Math.abs(v - Math.round(v)) < 1e-9;
+
+  // (1) profit and loss with the fees of buying and selling, the tax (20.315 %: Japan's income tax, the special income
+  // tax for reconstruction and the resident tax on gains from listed stocks; another rate can be typed) or none (NISA)
+  function openPnlTool() {
+    return simpleTool('pnl', tr('Stock profit and loss', '株の損益と税'), {
+      invest: true,
+      chips: [[tr('1000 → 1200, 100 shares', '1000 円で買い 1200 円で売る・100 株'), { buy: '1000', sell: '1200', n: '100', feeBuy: '', feeSell: '', account: 'taxed' }],
+        [tr('Fees 0.1 %, tax-free', '手数料 0.1%・NISA'), { buy: '2500', sell: '2350', n: '200', feeBuy: '0.1%', feeSell: '0.1%', account: 'nisa' }]],
+      fields: [
+        { k: 'buy', label: tr('Bought at (a share)', '買値（1 株）'), def: '', ph: tr('e.g. 1000', '例：1000') },
+        { k: 'sell', label: tr('Sold at (a share)', '売値（1 株）'), def: '', ph: tr('e.g. 1200', '例：1200') },
+        { k: 'n', label: tr('Shares', '株数'), def: '', ph: tr('e.g. 100', '例：100') },
+        { k: 'feeBuy', label: tr('Fee when buying', '買うときの手数料'), def: '', ph: tr('0, 500 or 0.1%', '0、500、0.1%') },
+        { k: 'feeSell', label: tr('Fee when selling', '売るときの手数料'), def: '', ph: tr('0, 500 or 0.1%', '0、500、0.1%') },
+        { k: 'account', label: tr('Tax', '税'), opts: [['taxed', tr('Taxed', '課税')], ['nisa', tr('Tax-free account', '非課税（NISA）')]], def: 'taxed' },
+        { k: 'tax', label: tr('Tax rate (%)', '税率（%）'), def: '20.315', ph: '20.315', when: (v) => v.account === 'taxed' }
+      ],
+      hint: tr('Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down; "Break-even" is the price at which selling leaves no loss after the fees.', '損益 ＝（売値 − 買値）× 株数 − 手数料。手数料は額でも、売買代金の % でも入れられます。税は利益にだけかかり、1 円未満は切り捨てです。「損益ゼロの売値」は、手数料を引いても損が出ない売値です。'),
+      caution: tr('The tax is worked out on this trade alone (20.315 %: Japan\'s rate for listed stocks); losses offset in the year and the way a broker rounds are not taken into account.', '前提：税はこの取引だけで計算します（20.315 % は上場株式の税率）。年間の損益通算や、証券会社の端数の扱いは考えません。'),
+      run: async (v) => {
+        if (!v.buy || !v.sell || !v.n) return { msg: tr('Enter the prices and the shares', '買値・売値・株数を入れてください') };
+        const b = boxNum(v.buy), s = boxNum(v.sell), n = boxNum(v.n), fb = feeOf(v.feeBuy), fs = feeOf(v.feeSell), rate = v.account === 'taxed' ? (v.tax === '' ? NaN : boxNum(v.tax)) : 0;
+        if (!(b > 0)) return { msg: tr('The price bought at must be a number above 0', '買値は 0 より大きい数にしてください'), bad: 'buy' };
+        if (!(s >= 0)) return { msg: tr('The price sold at must be a number', '売値は数にしてください'), bad: 'sell' };
+        if (!shareCount(n)) return { msg: tr('The shares must be a whole number above 0', '株数は 1 以上の整数にしてください'), bad: 'n' };
+        if (!fb) return { msg: tr('A fee is an amount (500) or a % (0.1%)', '手数料は 500 のような額か、0.1% のような割合にしてください'), bad: 'feeBuy' };
+        if (!fs) return { msg: tr('A fee is an amount (500) or a % (0.1%)', '手数料は 500 のような額か、0.1% のような割合にしてください'), bad: 'feeSell' };
+        if (!(rate >= 0 && rate < 100)) return { msg: tr('The tax rate must be from 0 to 100 %', '税率は 0〜100 % にしてください'), bad: 'tax' };
+        const feeB = fb.amt + fb.rate * b * n, feeS = fs.amt + fs.rate * s * n;
+        const pl = (s - b) * n - feeB - feeS, cost = b * n + feeB;
+        const tax = v.account === 'taxed' && pl > 0 ? floorMoney(pl * rate / 100) : 0;
+        const net = pl - tax, got = s * n - feeS - tax;
+        const plE = `(${exprNum(s)} − ${exprNum(b)}) × ${exprNum(n)}${feeB ? ' − ' + exprNum(feeB) : ''}${feeS ? ' − ' + exprNum(feeS) : ''}`;
+        const be = (b * n + feeB + fs.amt) / (n * (1 - fs.rate));
+        const rows = [
+          { name: tr('Profit or loss', '損益'), small: tr('before tax, after the fees', '税引前・手数料を引いたあと'), value: signed(money('pnl', pl), pl), expr: plE },
+          { name: tr('Profit or loss in %', '損益率'), small: tr('of what was paid (with the fee)', '買った額（手数料込み）に対して'), value: signed(fmtDigits('pnl', pl / cost * 100, pctAuto) + ' %', pl), expr: `(${plE}) / (${exprNum(b)} × ${exprNum(n)}${feeB ? ' + ' + exprNum(feeB) : ''}) to %` }];
+        if (v.account === 'taxed') rows.push({ name: tr('Tax', '税'), small: pl > 0 ? trf('{0} % of the profit, rounded down', '利益の {0} %（切り捨て）', fmtNum(rate, 4)) : tr('none on a loss', '損失のため 0'), value: money('pnl', tax), expr: pl > 0 ? floorMoneyE(`(${plE}) × ${exprNum(rate)}%`) : '' });
+        rows.push({ name: tr('After tax', '税引後の損益（手取り）'), value: signed(money('pnl', net), net), expr: tax ? `${exprNum(pl)} − ${exprNum(tax)}` : plE },
+          { name: tr('Received from the sale', '売って受け取る額'), small: tr('after the fee and the tax', '手数料と税を引いたあと'), value: money('pnl', got), expr: `${exprNum(s)} × ${exprNum(n)}${feeS ? ' − ' + exprNum(feeS) : ''}${tax ? ' − ' + exprNum(tax) : ''}` },
+          { name: tr('Break-even price', '損益ゼロの売値'), small: tr('the fees paid back', '手数料の分を取り戻す売値'), value: fmtDigits('pnl', be, priceAuto()), expr: `(${exprNum(b)} × ${exprNum(n)}${feeB ? ' + ' + exprNum(feeB) : ''}${fs.amt ? ' + ' + exprNum(fs.amt) : ''}) / (${exprNum(n)}${fs.rate ? ' × (1 − ' + exprNum(fs.rate * 100) + '%)' : ''})` });
+        return { rows };
+      }
+    });
+  }
+  // the buys typed one to a line ("1000 100", "1000 × 100", "1000円 100株"): [{ p, n }] or the number of the line that is wrong
+  function buyLines(t) {
+    const out = [], lines = String(t || '').split(/\r?\n|;/).map((s) => s.trim()).filter(Boolean);
+    for (let i = 0; i < lines.length; i++) {
+      const s = lines[i].replace(/[円株$€£¥]|shares?|Aktien|acciones|actions|주|股/gi, ' ').trim();
+      let parts = s.split(/\s*[×xX*@]\s*|\s+|\t/).filter(Boolean);
+      if (parts.length === 1 && !commaMode && /,/.test(s)) parts = s.split(/\s*,\s*/);
+      const p = parts.length === 2 ? boxNum(parts[0]) : NaN, n = parts.length === 2 ? boxNum(parts[1]) : NaN;
+      if (!(p > 0) || !shareCount(n)) return { bad: i + 1 };
+      out.push({ p, n });
+    }
+    return { buys: out };
+  }
+  // (2) the average cost of several buys, and the other way round: how many shares at which price make a target average
+  function openAvgCostTool() {
+    return simpleTool('avgcost', tr('Average cost', '平均取得単価'), {
+      invest: true,
+      chips: [[tr('1000 × 100, 900 × 200', '1000 円 100 株・900 円 200 株'), { mode: 'avg', buys: '1000 100\n900 200', fees: '' }],
+        [tr('100 at 1200 → average 1000 by buying at 900', '1200 円 100 株 → 900 円で買って平均 1000 円'), { mode: 'target', n0: '100', a0: '1200', goal: '1000', find: 'n', p: '900', lot: '100' }]],
+      fields: [
+        { k: 'mode', label: tr('Find', '求めるもの'), opts: [['avg', tr('The average of the buys', '買いの平均')], ['target', tr('How to reach an average', '目標の平均にするには')]], def: 'avg' },
+        { k: 'buys', area: true, label: tr('Buys: price and shares, one to a line', '買い：株価と株数（1 行に 1 回）'), def: '', ph: tr('1000 100\n900 200', '1000 100\n900 200'), when: (v) => v.mode === 'avg' },
+        { k: 'fees', label: tr('Fees in all', '手数料の合計'), def: '', ph: '0', more: true, when: (v) => v.mode === 'avg' },
+        { k: 'n0', label: tr('Shares held', '持っている株数'), def: '', ph: tr('e.g. 100', '例：100'), when: (v) => v.mode === 'target' },
+        { k: 'a0', label: tr('Their average cost', '今の平均取得単価'), def: '', ph: tr('e.g. 1200', '例：1200'), when: (v) => v.mode === 'target' },
+        { k: 'goal', label: tr('Target average', '目標の平均'), def: '', ph: tr('e.g. 1000', '例：1000'), when: (v) => v.mode === 'target' },
+        { k: 'find', label: tr('Given', '決めるもの'), opts: [['n', tr('Price → shares', '買値 → 株数')], ['p', tr('Shares → price', '株数 → 買値')]], def: 'n', when: (v) => v.mode === 'target' },
+        { k: 'p', label: tr('Buy at (a share)', '買値（1 株）'), def: '', ph: tr('e.g. 900', '例：900'), when: (v) => v.mode === 'target' && v.find === 'n' },
+        { k: 'x', label: tr('Shares to buy', '買う株数'), def: '', ph: tr('e.g. 200', '例：200'), when: (v) => v.mode === 'target' && v.find === 'p' },
+        { k: 'lot', label: tr('Trading unit (shares)', '単元（株）'), def: '100', ph: '100', chips: () => ['1', '100'], when: (v) => v.mode === 'target' && v.find === 'n' }
+      ],
+      hint: tr('Average = (price × shares + …) / all the shares. To reach a target T from N shares at A, buying at P: N × (A − T) / (T − P) shares, rounded up to the trading unit.', '平均 ＝（株価 × 株数 ＋ …）÷ 株数の合計。N 株・平均 A から目標 T にするには、買値 P で N ×（A − T）÷（T − P）株（単元で切り上げ）。'),
+      caution: tr('The average here is what was paid a share (with the fees typed); a broker\'s average for tax may be worked out another way.', '前提：ここでの平均は 1 株あたりに払った額（入れた手数料を含む）です。税のための取得価額の計算は、証券会社で違うことがあります。'),
+      run: async (v) => {
+        if (v.mode === 'avg') {
+          if (!v.buys.trim()) return { msg: tr('Enter the buys: a price and the shares on each line', '買いを、1 行に株価と株数で入れてください') };
+          const L = buyLines(v.buys), fees = v.fees === '' ? 0 : boxNum(v.fees);
+          if (L.bad) return { msg: trf('Line {0}: write a price and the shares, such as 1000 100', '{0} 行目：1000 100 のように、株価と株数を書いてください', L.bad), bad: 'buys' };
+          if (!(fees >= 0)) return { msg: tr('The fees must be a number', '手数料は数にしてください'), bad: 'fees' };
+          let sum = 0, cnt = 0;
+          for (const q of L.buys) { sum += q.p * q.n; cnt += q.n; }
+          const avg = (sum + fees) / cnt;
+          const e = `(${L.buys.map((q) => exprNum(q.p) + ' × ' + exprNum(q.n)).join(' + ')}${fees ? ' + ' + exprNum(fees) : ''}) / (${L.buys.map((q) => exprNum(q.n)).join(' + ')})`;
+          return { rows: [{ name: tr('Average cost', '平均取得単価'), small: trf('{0} buys', '{0} 回の買い', L.buys.length), value: fmtDigits('avgcost', avg, priceAuto()), expr: e },
+            { name: tr('Shares in all', '株数の合計'), value: shares(cnt), expr: L.buys.map((q) => exprNum(q.n)).join(' + ') },
+            { name: tr('Paid in all', '取得額の合計'), small: fees ? tr('with the fees', '手数料を含む') : '', value: money('avgcost', sum + fees), expr: `${L.buys.map((q) => exprNum(q.p) + ' × ' + exprNum(q.n)).join(' + ')}${fees ? ' + ' + exprNum(fees) : ''}` }] };
+        }
+        if (!v.n0 || !v.a0 || !v.goal) return { msg: tr('Enter the shares held, their average and the target', '持っている株数、今の平均、目標の平均を入れてください') };
+        const N = boxNum(v.n0), A = boxNum(v.a0), Tg = boxNum(v.goal);
+        if (!shareCount(N)) return { msg: tr('The shares must be a whole number above 0', '株数は 1 以上の整数にしてください'), bad: 'n0' };
+        if (!(A > 0)) return { msg: tr('The average must be a number above 0', '平均は 0 より大きい数にしてください'), bad: 'a0' };
+        if (!(Tg > 0) || Tg === A) return { msg: tr('The target must be a number above 0, other than the average now', '目標は 0 より大きく、今の平均と違う数にしてください'), bad: 'goal' };
+        const down = Tg < A;
+        if (v.find === 'n') {
+          if (!v.p) return { msg: tr('Enter the price to buy at', '買値を入れてください') };
+          const P = boxNum(v.p), lot = v.lot === '' ? 1 : boxNum(v.lot);
+          if (!(P > 0)) return { msg: tr('The price must be a number above 0', '買値は 0 より大きい数にしてください'), bad: 'p' };
+          if (!shareCount(lot)) return { msg: tr('The trading unit must be a whole number, such as 100', '単元は 100 のような整数にしてください'), bad: 'lot' };
+          if (down ? !(P < Tg) : !(P > Tg)) return { msg: down ? tr('To bring the average down to the target, buy below the target', '平均を目標まで下げるには、目標より安い買値にしてください') : tr('To bring the average up to the target, buy above the target', '平均を目標まで上げるには、目標より高い買値にしてください'), bad: 'p' };
+          const x = N * (A - Tg) / (Tg - P), xr = Math.ceil(x / lot - 1e-9) * lot, after = (N * A + xr * P) / (N + xr);
+          return { rows: [{ name: tr('Shares to buy', '買う株数'), small: lot > 1 ? trf('rounded up to {0} shares', '{0} 株単位で切り上げ', fmtNum(lot)) : '', value: shares(xr), expr: `ceil(${exprNum(N)} × (${exprNum(A)} − ${exprNum(Tg)}) / (${exprNum(Tg)} − ${exprNum(P)}) / ${exprNum(lot)}) × ${exprNum(lot)}` },
+            { name: tr('Cost of the buy', '買う額'), value: money('avgcost', xr * P), expr: `${exprNum(xr)} × ${exprNum(P)}` },
+            { name: tr('Average after it', '買ったあとの平均'), value: fmtDigits('avgcost', after, priceAuto()), expr: `(${exprNum(N)} × ${exprNum(A)} + ${exprNum(xr)} × ${exprNum(P)}) / (${exprNum(N)} + ${exprNum(xr)})` },
+            { name: tr('Shares after it', '買ったあとの株数'), value: shares(N + xr), expr: '' }] };
+        }
+        if (!v.x) return { msg: tr('Enter the shares to buy', '買う株数を入れてください') };
+        const X = boxNum(v.x);
+        if (!shareCount(X)) return { msg: tr('The shares must be a whole number above 0', '株数は 1 以上の整数にしてください'), bad: 'x' };
+        const P = Tg - N * (A - Tg) / X;
+        if (!(P > 0)) return { msg: tr('With these shares no price above 0 reaches the target: buy more shares', 'この株数では、0 より大きい買値で目標に届きません。株数を増やしてください'), bad: 'x' };
+        return { rows: [{ name: down ? tr('Buy at or below', 'この株価以下で買う') : tr('Buy at or above', 'この株価以上で買う'), value: fmtDigits('avgcost', P, priceAuto()), expr: `${exprNum(Tg)} − ${exprNum(N)} × (${exprNum(A)} − ${exprNum(Tg)}) / ${exprNum(X)}` },
+          { name: tr('Cost of the buy', '買う額'), value: money('avgcost', X * P), expr: '' },
+          { name: tr('Shares after it', '買ったあとの株数'), value: shares(N + X), expr: '' }] };
+      }
+    });
+  }
+  // (3) the maintenance ratio of a margin account (Japan's 委託保証金維持率) and the price at which it falls to the
+  // margin call (20 % unless another is typed):
+  //   ratio = (cash + collateral + profit or loss counted − costs) / (entry price × shares) × 100
+  //   the margin-call price c: entry − s × (M − t × C) / n, with s = 1 bought (the price falls), −1 sold short (it rises),
+  //   M = cash + collateral − costs (+ the other positions' profit or loss), C the value of the positions at entry, t the
+  //   ratio of the margin call. Unrealized gains count only when chosen (many brokers leave them out).
+  function openMarginTool() {
+    return simpleTool('margin', tr('Margin: maintenance ratio', '信用取引：維持率と追証'), {
+      invest: true,
+      chips: [[tr('1,000,000 cash, bought 3,000 shares at 1000', '保証金 100 万円・1000 円で 3000 株買建'), { cash: '1000000', coll: '', side: 'long', entry: '1000', n: '3000', now: '900', cost: '', th: '20' }],
+        [tr('Sold short 1000 at 2500', '2500 円で 1000 株売建'), { cash: '800000', coll: '', side: 'short', entry: '2500', n: '1000', now: '2700', cost: '5000', th: '20' }]],
+      fields: [
+        { k: 'cash', label: tr('Cash as margin', '保証金（現金）'), def: '', ph: tr('e.g. 1000000', '例：1000000') },
+        { k: 'coll', label: tr('Stocks as margin (after the haircut)', '代用有価証券（掛目をかけた額）'), def: '', ph: '0' },
+        { k: 'side', label: tr('Position', '建玉'), opts: [['long', tr('Bought', '買建')], ['short', tr('Sold short', '売建')]], def: 'long' },
+        { k: 'entry', label: tr('Price at entry', '建値（1 株）'), def: '', ph: tr('e.g. 1000', '例：1000') },
+        { k: 'n', label: tr('Shares', '株数'), def: '', ph: tr('e.g. 3000', '例：3000') },
+        { k: 'now', label: tr('Price now', '現在値'), def: '', ph: tr('e.g. 900', '例：900') },
+        { k: 'cost', label: tr('Costs (interest, fees…)', '諸経費（金利・手数料など）'), def: '', ph: '0' },
+        { k: 'th', label: tr('Margin call below (%)', '追証のライン（%）'), def: '20', ph: '20', chips: () => ['20', '25', '30'] },
+        { k: 'gains', label: tr('Unrealized gains', '評価益'), opts: [['no', tr('Not counted', '含めない')], ['yes', tr('Counted', '含める')]], def: 'no', more: true },
+        { k: 'oPl', label: tr('Other positions: profit or loss', 'ほかの建玉の評価損益'), def: '', ph: '0', more: true },
+        { k: 'oAmt', label: tr('Other positions: value at entry', 'ほかの建玉の建玉金額'), def: '', ph: '0', more: true }
+      ],
+      hint: tr('Ratio = (cash + stocks as margin ± profit or loss − costs) / (entry price × shares). The margin-call price is where the ratio reaches the line: below the entry for a buy, above it for a short.', '維持率 ＝（保証金 ＋ 代用有価証券 ± 評価損益 − 諸経費）÷（建値 × 株数）。追証の株価は維持率がラインになる株価で、買建は建値より下、売建は上です。'),
+      caution: tr('The way a broker counts gains, the haircut and the costs, and the time of the check (the close), differ; check with your broker.', '前提：評価益や掛目、諸経費の扱いと判定の時刻（大引け）は証券会社で違います。証券会社の画面で確かめてください。'),
+      run: async (v) => {
+        if (!v.cash || !v.entry || !v.n || !v.now) return { msg: tr('Enter the cash, the entry price, the shares and the price now', '保証金、建値、株数、現在値を入れてください') };
+        const num0 = (t) => (t === '' ? 0 : boxNum(t));
+        const cash = boxNum(v.cash), coll = num0(v.coll), e = boxNum(v.entry), n = boxNum(v.n), now = boxNum(v.now), cost = num0(v.cost), th = v.th === '' ? 20 : boxNum(v.th), oPl = num0(v.oPl), oAmt = num0(v.oAmt);
+        if (!(cash >= 0)) return { msg: tr('The cash must be a number', '保証金は数にしてください'), bad: 'cash' };
+        if (!(coll >= 0)) return { msg: tr('The stocks as margin must be a number', '代用有価証券は数にしてください'), bad: 'coll' };
+        if (!(e > 0)) return { msg: tr('The entry price must be a number above 0', '建値は 0 より大きい数にしてください'), bad: 'entry' };
+        if (!shareCount(n)) return { msg: tr('The shares must be a whole number above 0', '株数は 1 以上の整数にしてください'), bad: 'n' };
+        if (!(now >= 0)) return { msg: tr('The price now must be a number', '現在値は数にしてください'), bad: 'now' };
+        if (!(cost >= 0)) return { msg: tr('The costs must be a number', '諸経費は数にしてください'), bad: 'cost' };
+        if (!(th > 0 && th < 100)) return { msg: tr('The line of the margin call must be from 0 to 100 %', '追証のラインは 0〜100 % にしてください'), bad: 'th' };
+        if (!isFinite(oPl)) return { msg: tr('The profit or loss must be a number', '評価損益は数にしてください'), bad: 'oPl' };
+        if (!(oAmt >= 0)) return { msg: tr('The value must be a number', '建玉金額は数にしてください'), bad: 'oAmt' };
+        const sg = v.side === 'short' ? -1 : 1, gains = v.gains === 'yes';
+        const pl = sg * (now - e) * n, counted = (x) => (gains ? x : Math.min(0, x));
+        const C = e * n + oAmt, base = cash + coll - cost + counted(oPl), M = base + counted(pl), ratio = M / C * 100;
+        const sE = (x) => (x ? (x > 0 ? ' + ' : ' − ') + exprNum(Math.abs(x)) : '');
+        const ratioE = `(${exprNum(cash)}${coll ? ' + ' + exprNum(coll) : ''}${sE(counted(pl))}${cost ? ' − ' + exprNum(cost) : ''}${sE(counted(oPl))}) / (${exprNum(e)} × ${exprNum(n)}${oAmt ? ' + ' + exprNum(oAmt) : ''}) to %`;
+        const rows = [{ name: tr('Maintenance ratio', '委託保証金維持率'), small: ratio < th ? tr('below the line: a margin call', 'ラインを下回っています（追証）') : trf('the line: {0} %', 'ライン {0} %', fmtNum(th, 3)), value: fmtDigits('margin', ratio, pctAuto) + ' %', expr: ratioE },
+          { name: tr('Profit or loss of the position', '建玉の評価損益'), small: !gains && pl > 0 ? tr('the gain is not counted', '評価益は維持率に含めない') : '', value: signed(money('margin', pl), pl), expr: `${sg > 0 ? `(${exprNum(now)} − ${exprNum(e)})` : `(${exprNum(e)} − ${exprNum(now)})`} × ${exprNum(n)}` }];
+        // the price of the margin call: on the side of a loss (with gains counted, a gain may also hold the ratio up)
+        const room = base - th / 100 * C;
+        if (room <= 0 && !gains) rows.push({ name: tr('Margin-call price', '追証の株価'), small: tr('below the line whatever the price (the costs and losses are larger than the margin allows)', '株価によらずラインを下回ります（諸経費と損失が保証金を超えています）'), value: '—', expr: '' });
+        else {
+          const c = e - sg * room / n;
+          if (sg > 0 && c <= 0) rows.push({ name: tr('Margin-call price', '追証の株価'), small: tr('none: even at 0 the ratio stays above the line', 'なし：株価が 0 でもラインを下回りません'), value: '—', expr: '' });
+          else {
+            const move = (c - now) / now * 100;
+            rows.push({ name: tr('Margin-call price', '追証の株価'), small: now > 0 ? trf('{0} % from now', '現在値から {0} %', (move > 0 ? '+' : '') + fmtDigits('margin', move, pctAuto)) : '', value: fmtDigits('margin', c, priceAuto()), expr: `${exprNum(e)} ${sg > 0 ? '−' : '+'} (${exprNum(cash)}${coll ? ' + ' + exprNum(coll) : ''}${cost ? ' − ' + exprNum(cost) : ''}${sE(counted(oPl))} − ${exprNum(th)}% × (${exprNum(e)} × ${exprNum(n)}${oAmt ? ' + ' + exprNum(oAmt) : ''})) / ${exprNum(n)}` });
+          }
+          rows.push({ name: tr('Loss it can still take', '追証まで耐えられる損失'), small: tr('from the price now', '現在値から'), value: money('margin', Math.max(0, M - th / 100 * C)), expr: '' });
+        }
+        rows.push({ name: tr('Value of the positions', '建玉金額'), small: tr('at the entry price', '建値で'), value: money('margin', C), expr: `${exprNum(e)} × ${exprNum(n)}${oAmt ? ' + ' + exprNum(oAmt) : ''}` });
+        return { rows };
+      }
+    });
+  }
+  // (4) the position size from the capital, the risk of a trade (% of the capital), the entry and the stop: the shares
+  // in whole trading units, the loss at the stop; with a take-profit price, the risk:reward ratio
+  function openPosSizeTool() {
+    return simpleTool('possize', tr('Position size from a stop', '損切りから株数'), {
+      invest: true,
+      chips: [[tr('3,000,000, 1 %, 1000 → stop 950', '資金 300 万円・1%・1000 円で買い 950 円で損切り'), { capital: '3000000', risk: '1', entry: '1000', stop: '950', tp: '1150', lot: '100' }],
+        [tr('Short at 2000, stop 2080', '2000 円で売り・2080 円で損切り'), { capital: '1000000', risk: '2', entry: '2000', stop: '2080', tp: '1800', lot: '100' }]],
+      fields: [
+        { k: 'capital', label: tr('Capital', '資金'), def: '', ph: tr('e.g. 3000000', '例：3000000') },
+        { k: 'risk', label: tr('Risk of a trade (%)', '1 回で許す損失（資金の %）'), def: '1', ph: '1', chips: () => ['0.5', '1', '2'] },
+        { k: 'entry', label: tr('Entry price', 'エントリーの株価'), def: '', ph: tr('e.g. 1000', '例：1000') },
+        { k: 'stop', label: tr('Stop (loss cut)', '損切りの株価'), def: '', ph: tr('e.g. 950', '例：950') },
+        { k: 'tp', label: tr('Take profit (optional)', '利確の株価（なくても可）'), def: '', ph: tr('e.g. 1150', '例：1150') },
+        { k: 'lot', label: tr('Trading unit (shares)', '単元（株）'), def: '100', ph: '100', chips: () => ['1', '100'] }
+      ],
+      hint: tr('Shares = capital × risk % / |entry − stop|, rounded down to the trading unit. A stop below the entry is a buy, above it a short. Risk:reward = 1 : |take profit − entry| / |entry − stop|.', '株数 ＝ 資金 × 許す損失 % ÷｜エントリー − 損切り｜（単元で切り捨て）。損切りがエントリーより下なら買い、上なら売りです。リスクリワード ＝ 1 :｜利確 − エントリー｜÷｜エントリー − 損切り｜。'),
+      caution: tr('Without the fees, and with the stop filled at its price (a gap can make the loss larger).', '前提：手数料は考えず、損切りはその株価で約定するとします（窓をあけると損失は大きくなります）。'),
+      run: async (v) => {
+        if (!v.capital || !v.entry || !v.stop) return { msg: tr('Enter the capital, the entry and the stop', '資金、エントリー、損切りを入れてください') };
+        const cap = boxNum(v.capital), r = v.risk === '' ? NaN : boxNum(v.risk), e = boxNum(v.entry), st = boxNum(v.stop), tp = v.tp === '' ? NaN : boxNum(v.tp), lot = v.lot === '' ? 1 : boxNum(v.lot);
+        if (!(cap > 0)) return { msg: tr('The capital must be a number above 0', '資金は 0 より大きい数にしてください'), bad: 'capital' };
+        if (!(r > 0 && r <= 100)) return { msg: tr('The risk must be from 0 to 100 %', '許す損失は 0〜100 % にしてください'), bad: 'risk' };
+        if (!(e > 0)) return { msg: tr('The entry price must be a number above 0', 'エントリーの株価は 0 より大きい数にしてください'), bad: 'entry' };
+        if (!(st >= 0) || st === e) return { msg: tr('The stop must be a price other than the entry', '損切りは、エントリーと違う株価にしてください'), bad: 'stop' };
+        if (!shareCount(lot)) return { msg: tr('The trading unit must be a whole number, such as 100', '単元は 100 のような整数にしてください'), bad: 'lot' };
+        const long = st < e, per = Math.abs(e - st), riskAmt = cap * r / 100;
+        if (v.tp !== '' && (!(tp > 0) || (long ? tp <= e : tp >= e))) return { msg: long ? tr('For a buy the take-profit price must be above the entry', '買いの利確の株価は、エントリーより上にしてください') : tr('For a short the take-profit price must be below the entry', '売りの利確の株価は、エントリーより下にしてください'), bad: 'tp' };
+        const sh = Math.floor(riskAmt / per / lot + 1e-9) * lot;
+        if (!sh) return { msg: trf('One trading unit already loses {0} at the stop, more than the {1} allowed', '1 単元でも損切りで {0} の損失になり、許す損失 {1} を超えます', money('possize', per * lot), money('possize', riskAmt)) };
+        const pos = sh * e;
+        const rows = [{ name: tr('Shares', '株数'), small: long ? tr('a buy (the stop below)', '買い（損切りは下）') : tr('a short (the stop above)', '売り（損切りは上）'), value: shares(sh), expr: `floor(${exprNum(cap)} × ${exprNum(r)}% / ${exprNum(per)} / ${exprNum(lot)}) × ${exprNum(lot)}` },
+          { name: tr('Loss at the stop', '損切りでの損失'), small: trf('allowed: {0}', '許す損失 {0}', money('possize', riskAmt)), value: money('possize', sh * per), expr: `${exprNum(sh)} × ${exprNum(per)}` },
+          { name: tr('Value of the position', '建てる額'), small: pos > cap ? trf('{0} times the capital (margin)', '資金の {0} 倍（信用取引）', fmtDigits('possize', pos / cap, pctAuto)) : trf('{0} % of the capital', '資金の {0} %', fmtDigits('possize', pos / cap * 100, { m: 'dec', n: 1, zeros: true })), value: money('possize', pos), expr: `${exprNum(sh)} × ${exprNum(e)}` }];
+        if (v.tp !== '') {
+          const rew = Math.abs(tp - e);
+          rows.push({ name: tr('Risk : reward', 'リスクリワード'), value: '1 : ' + fmtDigits('possize', rew / per, pctAuto), expr: `${exprNum(rew)} / ${exprNum(per)}` },
+            { name: tr('Profit at the take profit', '利確での利益'), value: '+' + money('possize', sh * rew), expr: `${exprNum(sh)} × ${exprNum(rew)}` });
+        }
+        return { rows };
+      }
+    });
+  }
+  // (5) the dividend yield, PER and PBR (and ROE) from the price, the dividend, EPS and BPS; compound growth with a monthly
+  // saving; the growth a year between two values
+  function openYieldTool() {
+    return simpleTool('yield', tr('Yield, PER, PBR, growth', '利回り・PER・PBR・複利'), {
+      invest: true,
+      chips: [[tr('Price 2000, dividend 60, EPS 150, BPS 1600', '株価 2000 円・配当 60 円・EPS 150・BPS 1600'), { mode: 'value', price: '2000', div: '60', eps: '150', bps: '1600' }],
+        [tr('1,000,000 + 30,000 a month, 5 %, 20 years', '100 万円＋月 3 万円・年 5%・20 年'), { mode: 'grow', start: '1000000', monthly: '30000', rate: '5', years: '20', comp: 'year' }],
+        [tr('1,000,000 → 1,800,000 in 6 years', '100 万円が 6 年で 180 万円'), { mode: 'cagr', from: '1000000', to: '1800000', years: '6' }]],
+      fields: [
+        { k: 'mode', label: tr('Find', '求めるもの'), opts: [['value', tr('Yield, PER, PBR', '利回り・PER・PBR')], ['grow', tr('Compound and saving', '複利・積立')], ['cagr', tr('Growth a year', '年平均の伸び率')]], def: 'value' },
+        { k: 'price', label: tr('Price (a share)', '株価'), def: '', ph: tr('e.g. 2000', '例：2000'), when: (v) => v.mode === 'value' },
+        { k: 'div', label: tr('Dividend a year (a share)', '年間配当（1 株）'), def: '', ph: tr('e.g. 60', '例：60'), when: (v) => v.mode === 'value' },
+        { k: 'eps', label: tr('EPS (earnings a share)', 'EPS（1 株あたり利益）'), def: '', ph: tr('e.g. 150', '例：150'), when: (v) => v.mode === 'value' },
+        { k: 'bps', label: tr('BPS (book value a share)', 'BPS（1 株あたり純資産）'), def: '', ph: tr('e.g. 1600', '例：1600'), when: (v) => v.mode === 'value' },
+        { k: 'start', label: tr('At the start', '最初の額'), def: '', ph: '0', when: (v) => v.mode === 'grow' },
+        { k: 'monthly', label: tr('Each month', '毎月の積立'), def: '', ph: '0', when: (v) => v.mode === 'grow' },
+        { k: 'rate', label: tr('Return a year (%)', '年利回り（%）'), def: '', ph: tr('e.g. 5', '例：5'), when: (v) => v.mode === 'grow' },
+        { k: 'years', label: tr('Years', '年数'), def: '', ph: tr('e.g. 20', '例：20'), when: (v) => v.mode === 'grow' || v.mode === 'cagr' },
+        { k: 'comp', label: tr('Compounded', '複利の回数'), opts: [['year', tr('Once a year', '年 1 回')], ['month', tr('Monthly', '毎月')]], def: 'year', when: (v) => v.mode === 'grow' },
+        { k: 'from', label: tr('Value at the start', '最初の値'), def: '', ph: tr('e.g. 1000000', '例：1000000'), when: (v) => v.mode === 'cagr' },
+        { k: 'to', label: tr('Value at the end', '最後の値'), def: '', ph: tr('e.g. 1800000', '例：1800000'), when: (v) => v.mode === 'cagr' }
+      ],
+      hint: tr('Yield = dividend / price; PER = price / EPS; PBR = price / BPS; ROE = EPS / BPS. Compounded once a year, a month grows by (1 + r)^(1/12); monthly, by 1 + r/12. Growth a year = (end / start)^(1 / years) − 1.', '配当利回り ＝ 配当 ÷ 株価、PER ＝ 株価 ÷ EPS、PBR ＝ 株価 ÷ BPS、ROE ＝ EPS ÷ BPS。年 1 回の複利では 1 か月に (1 + r)^(1/12) 倍、毎月の複利では 1 + r/12 倍とします。年平均の伸び率 ＝（最後 ÷ 最初）^(1 ÷ 年数) − 1。'),
+      caution: tr('Before tax and costs; the return is taken as the same every year, which real prices are not.', '前提：税と費用は引いていません。利回りは毎年同じとしますが、実際の値動きはそうなりません。'),
+      run: async (v) => {
+        if (v.mode === 'value') {
+          if (!v.price) return { msg: tr('Enter the price, and the dividend, EPS or BPS', '株価と、配当・EPS・BPS のどれかを入れてください') };
+          const P = boxNum(v.price);
+          if (!(P > 0)) return { msg: tr('The price must be a number above 0', '株価は 0 より大きい数にしてください'), bad: 'price' };
+          const rows = [], get = (k) => (v[k] === '' ? null : boxNum(v[k]));
+          const dv = get('div'), eps = get('eps'), bps = get('bps');
+          if (dv !== null && !(dv >= 0)) return { msg: tr('The dividend must be a number', '配当は数にしてください'), bad: 'div' };
+          if (eps !== null && !isFinite(eps)) return { msg: tr('EPS must be a number', 'EPS は数にしてください'), bad: 'eps' };
+          if (bps !== null && !isFinite(bps)) return { msg: tr('BPS must be a number', 'BPS は数にしてください'), bad: 'bps' };
+          if (dv !== null) rows.push({ name: tr('Dividend yield', '配当利回り'), value: fmtDigits('yield', dv / P * 100, pctAuto) + ' %', expr: `${exprNum(dv)} / ${exprNum(P)} to %` });
+          if (eps !== null) rows.push({ name: 'PER', small: eps <= 0 ? tr('no meaning with a loss', '赤字のため意味がありません') : tr('times the earnings', '利益の何倍か'), value: eps > 0 ? fmtDigits('yield', P / eps, pctAuto) + tr(' ×', ' 倍') : '—', expr: eps > 0 ? `${exprNum(P)} / ${exprNum(eps)}` : '' });
+          if (bps !== null) rows.push({ name: 'PBR', small: tr('times the book value', '純資産の何倍か'), value: bps > 0 ? fmtDigits('yield', P / bps, pctAuto) + tr(' ×', ' 倍') : '—', expr: bps > 0 ? `${exprNum(P)} / ${exprNum(bps)}` : '' });
+          if (eps !== null && bps !== null && bps > 0) rows.push({ name: 'ROE', small: 'EPS / BPS', value: fmtDigits('yield', eps / bps * 100, pctAuto) + ' %', expr: `${exprNum(eps)} / ${exprNum(bps)} to %` });
+          if (!rows.length) return { msg: tr('Enter the dividend, EPS or BPS too', '配当・EPS・BPS のどれかも入れてください') };
+          return { rows };
+        }
+        if (v.mode === 'cagr') {
+          if (!v.from || !v.to || !v.years) return { msg: tr('Enter the two values and the years', '最初の値、最後の値、年数を入れてください') };
+          const a = boxNum(v.from), b = boxNum(v.to), y = boxNum(v.years);
+          if (!(a > 0)) return { msg: tr('The value at the start must be above 0', '最初の値は 0 より大きくしてください'), bad: 'from' };
+          if (!(b >= 0)) return { msg: tr('The value at the end must be a number', '最後の値は数にしてください'), bad: 'to' };
+          if (!(y > 0)) return { msg: tr('The years must be above 0', '年数は 0 より大きくしてください'), bad: 'years' };
+          const g = (Math.pow(b / a, 1 / y) - 1) * 100;
+          return { rows: [{ name: tr('Growth a year', '年平均の伸び率'), small: 'CAGR', value: signed(fmtDigits('yield', g, pctAuto) + ' %', g), expr: `((${exprNum(b)} / ${exprNum(a)})^(1 / ${exprNum(y)}) − 1) to %` },
+            { name: tr('Growth in all', '全体の伸び'), value: signed(fmtDigits('yield', (b / a - 1) * 100, pctAuto) + ' %', b - a), expr: `(${exprNum(b)} / ${exprNum(a)} − 1) to %` }] };
+        }
+        const s0 = v.start === '' ? 0 : boxNum(v.start), m = v.monthly === '' ? 0 : boxNum(v.monthly), R = v.rate === '' ? NaN : boxNum(v.rate), y = boxNum(v.years);
+        if (v.rate === '' || !v.years || (v.start === '' && v.monthly === '')) return { msg: tr('Enter the amount at the start or each month, the return and the years', '最初の額か毎月の積立、年利回り、年数を入れてください') };
+        if (!(s0 >= 0)) return { msg: tr('The amount at the start must be a number', '最初の額は数にしてください'), bad: 'start' };
+        if (!(m >= 0)) return { msg: tr('The amount each month must be a number', '毎月の積立は数にしてください'), bad: 'monthly' };
+        if (!(R > -100 && R < 100)) return { msg: tr('The return must be from −100 to 100 %', '年利回りは −100〜100 % にしてください'), bad: 'rate' };
+        if (!(y > 0 && y <= 100) || Math.round(y * 12) !== y * 12) return { msg: tr('The years must be a number of months: 20, or 2.5', '年数は 20 や 2.5 のように、月の数になる値にしてください'), bad: 'years' };
+        const n = Math.round(y * 12), i = v.comp === 'month' ? R / 100 / 12 : Math.pow(1 + R / 100, 1 / 12) - 1;
+        let bal = s0, paid = s0;
+        const rowsT = [];
+        for (let k = 1; k <= n; k++) { bal = bal * (1 + i) + m; paid += m; if (k % 12 === 0 || k === n) rowsT.push([String(Math.ceil(k / 12)), fmtDigits('yield', paid), fmtDigits('yield', bal - paid), fmtDigits('yield', bal)]); }
+        const iE = v.comp === 'month' ? `${exprNum(R)}% / 12` : `(1 + ${exprNum(R)}%)^(1/12) − 1`;
+        const expr = i ? `${exprNum(s0)} × (1 + ${iE})^${n} + ${exprNum(m)} × ((1 + ${iE})^${n} − 1) / (${iE})` : `${exprNum(s0)} + ${exprNum(m)} × ${n}`;
+        return { rows: [{ name: tr('At the end', '最後の額'), value: money('yield', bal), expr },
+          { name: tr('Put in', '入れた額'), value: money('yield', paid), expr: m ? `${exprNum(s0)} + ${exprNum(m)} × ${n}` : '' },
+          { name: tr('Gain', '増えた額'), value: signed(money('yield', bal - paid), bal - paid), expr: '' }],
+          table: { title: tr('Year by year', '年ごと'), name: 'growth', head: [tr('Year', '年'), tr('Put in', '入れた額'), tr('Gain', '増えた額'), tr('Amount', '額')], rows: rowsT } };
+      }
+    });
+  }
+  // (6) the interest on a margin buy, or the lending fee of a short, by the day: amount × rate a year × days / 365 (or 360)
+  function openCarryTool() {
+    return simpleTool('carry', tr('Margin interest and lending fee', '金利・貸株料（日割り）'), {
+      invest: true,
+      chips: [[tr('3,000,000 at 2.8 % for 30 days', '300 万円・年 2.8%・30 日'), { kind: 'interest', amount: '3000000', rate: '2.8', days: '30', basis: '365' }],
+        [tr('Lending fee 1.1 %, 2,500,000, 14 days', '貸株料 年 1.1%・250 万円・14 日'), { kind: 'lend', amount: '2500000', rate: '1.1', days: '14', basis: '365' }]],
+      fields: [
+        { k: 'kind', label: tr('For', '種類'), opts: [['interest', tr('Interest (bought)', '買方金利')], ['lend', tr('Lending fee (short)', '貸株料（売建）')]], def: 'interest' },
+        { k: 'amount', label: tr('Value of the position', '建玉金額'), def: '', ph: tr('e.g. 3000000', '例：3000000') },
+        { k: 'rate', label: tr('Rate a year (%)', '年率（%）'), def: '', ph: tr('e.g. 2.8', '例：2.8') },
+        { k: 'days', label: tr('Days', '日数'), def: '', ph: tr('e.g. 30', '例：30') },
+        { k: 'basis', label: tr('Days in a year', '1 年の日数'), opts: [['365', '365'], ['360', '360']], def: '365' },
+        { k: 'n', label: tr('Shares (for a share)', '株数（1 株あたりを出す）'), def: '', ph: tr('e.g. 3000', '例：3000'), more: true }
+      ],
+      hint: tr('Cost = value × rate a year × days / days in a year, rounded down. The days are those your broker counts (often from the settlement day of the opening to that of the closing).', '費用 ＝ 建玉金額 × 年率 × 日数 ÷ 1 年の日数（切り捨て）。日数は証券会社の数え方によります（建てた日と返した日の受渡日の間など）。'),
+      caution: tr('Rates and the way days are counted differ by broker and change.', '前提：金利・貸株料の率と日数の数え方は、証券会社や時期で違います。'),
+      run: async (v) => {
+        if (!v.amount || v.rate === '' || !v.days) return { msg: tr('Enter the value, the rate and the days', '建玉金額、年率、日数を入れてください') };
+        const A = boxNum(v.amount), R = boxNum(v.rate), d = boxNum(v.days), B = Number(v.basis) || 365, n = v.n === '' ? 0 : boxNum(v.n);
+        if (!(A > 0)) return { msg: tr('The value must be a number above 0', '建玉金額は 0 より大きい数にしてください'), bad: 'amount' };
+        if (!(R >= 0 && R < 100)) return { msg: tr('The rate must be from 0 to 100 %', '年率は 0〜100 % にしてください'), bad: 'rate' };
+        if (!(d > 0) || d !== Math.floor(d)) return { msg: tr('The days must be a whole number above 0', '日数は 1 以上の整数にしてください'), bad: 'days' };
+        if (v.n !== '' && !shareCount(n)) return { msg: tr('The shares must be a whole number above 0', '株数は 1 以上の整数にしてください'), bad: 'n' };
+        const raw = A * R / 100 * d / B, cost = floorMoney(raw);
+        const e = `${exprNum(A)} × ${exprNum(R)}% × ${exprNum(d)} / ${B}`;
+        const rows = [{ name: v.kind === 'lend' ? tr('Lending fee', '貸株料') : tr('Interest', '金利'), small: trf('{0} days, rounded down', '{0} 日分（切り捨て）', fmtNum(d)), value: money('carry', cost), expr: floorMoneyE(e) },
+          { name: tr('A day', '1 日あたり'), value: fmtDigits('carry', A * R / 100 / B, priceAuto()) + unitWord(), expr: `${exprNum(A)} × ${exprNum(R)}% / ${B}` }];
+        if (n) rows.push({ name: tr('A share', '1 株あたり'), small: v.kind === 'lend' ? tr('the price must fall this much more to break even', '損益ゼロにはこの分さらに下がる必要') : tr('the price must rise this much more to break even', '損益ゼロにはこの分さらに上がる必要'), value: fmtDigits('carry', cost / n, priceAuto()) + unitWord(), expr: `${exprNum(cost)} / ${exprNum(n)}` });
+        return { rows };
+      }
+    });
+  }
+  // (7) a foreign stock in the money of the region, with the exchange rates of the app (the converter's, updated as set
+  // in the settings) or a rate typed: its value now, and with the price and the rate when it was bought, the profit or
+  // loss split into the part of the price and the part of the exchange rate
+  const FX_CURS = ['USD', 'EUR', 'GBP', 'CNY', 'HKD', 'KRW', 'TWD', 'AUD', 'CAD', 'CHF', 'SGD', 'INR', 'JPY'];
+  async function fxRate(cur, home) {
+    const r = await Bridge.send('calc', { expr: `(1 (${cur})) / (1 (${home}))`, opts: Object.assign(engineOpts(), { approx: 'approx', grouping: false, base: 10, notation: 'auto', fraction: 'decimal', units: 'none', precision: 16 }), timeout: 3000 });
+    const t = r.ok && r.result ? r.result.split(' ≈ ').pop().replace(/^[≈=]\s*/, '').replace(/−/g, '-') : '';
+    const v = /^-?[\d.]+(E[-+]?\d+)?$/.test(t) ? Number(t) : NaN;
+    return v > 0 ? v : NaN;
+  }
+  function openFxStockTool() {
+    // (the money of the region by its code, the yen as 円 in Japanese)
+    const home = MONEY().cur, def = home === 'USD' ? 'EUR' : 'USD', homeName = JA && home === 'JPY' ? '円' : home;
+    return simpleTool('fxstock', tr('Foreign stocks in your money', '外国株を自国通貨で'), {
+      invest: true,
+      chips: [[tr('10 shares at 150 USD', '150 ドルの株を 10 株'), { cur: def, price: '150', n: '10', rate: '', bought: '', boughtRate: '' }],
+        [tr('Bought at 120 (rate 140), now 150 (rate 155)', '120 ドル（140 円）で買い、今 150 ドル（155 円）'), { cur: def, price: '150', n: '10', rate: '155', bought: '120', boughtRate: '140' }]],
+      fields: [
+        { k: 'cur', label: tr('Currency of the stock', '株の通貨'), def, ph: 'USD', chips: () => FX_CURS.filter((c) => c !== home).slice(0, 3) },
+        { k: 'price', label: tr('Price now (in it)', '現在の株価（外貨）'), def: '', ph: tr('e.g. 150', '例：150') },
+        { k: 'n', label: tr('Shares', '株数'), def: '', ph: tr('e.g. 10', '例：10') },
+        { k: 'rate', label: trf('Rate now (1 = … {0})', '今のレート（1 = … {0}）', homeName), def: '', ph: tr('the app\'s rate', 'アプリのレート') },
+        { k: 'bought', label: tr('Bought at (in it)', '買値（外貨）'), def: '', ph: tr('e.g. 120', '例：120'), more: true },
+        { k: 'boughtRate', label: tr('Rate when bought', '買ったときのレート'), def: '', ph: tr('e.g. 140', '例：140'), more: true }
+      ],
+      hint: tr('Value = price × shares × rate. With the price and the rate when bought: profit = shares × (price × rate − bought × rate then), of which the price gives shares × (price − bought) × rate then, and the rate the rest.', '評価額 ＝ 株価 × 株数 × レート。買値と買ったときのレートを入れると、損益 ＝ 株数 ×（株価 × レート − 買値 × 当時のレート）。うち株価の分は 株数 ×（株価 − 買値）× 当時のレート、残りが為替の分です。'),
+      caution: tr('With the exchange rates of the app (not a broker\'s, which adds a spread), without fees or tax.', '前提：アプリの為替レート（証券会社の為替手数料は含みません）で、手数料と税は考えません。'),
+      run: async (v) => {
+        const cur = String(v.cur || '').trim().toUpperCase();
+        if (!/^[A-Z]{3}$/.test(cur)) return { msg: tr('Write the currency as its code, such as USD', '通貨は USD のようなコードで書いてください'), bad: 'cur' };
+        if (cur === home) return { msg: tr('Choose a currency other than your own', '自国通貨と違う通貨を選んでください'), bad: 'cur' };
+        if (!v.price || !v.n) return { msg: tr('Enter the price and the shares', '株価と株数を入れてください') };
+        const p = boxNum(v.price), n = boxNum(v.n);
+        if (!(p >= 0)) return { msg: tr('The price must be a number', '株価は数にしてください'), bad: 'price' };
+        if (!(n > 0)) return { msg: tr('The shares must be a number above 0', '株数は 0 より大きい数にしてください'), bad: 'n' };
+        let r = v.rate === '' ? NaN : boxNum(v.rate);
+        const typed = v.rate !== '';
+        if (typed && !(r > 0)) return { msg: tr('The rate must be a number above 0', 'レートは 0 より大きい数にしてください'), bad: 'rate' };
+        if (!typed) { r = await fxRate(cur, home); if (!(r > 0)) return { msg: trf('No exchange rate for {0}: type the rate', '{0} の為替レートがありません。レートを入れてください', cur), bad: 'cur' }; }
+        const homeDec = { m: 'dec', n: MONEY().dec, zeros: true };
+        const rows = [{ name: tr('Value now', '評価額'), small: typed ? trf('at the rate typed: 1 {0} = {1} {2}', '入れたレート：1 {0} = {1} {2}', cur, fmtNum(r, 4), homeName) : trf('1 {0} = {1} {2} (the app\'s rate, {3})', '1 {0} = {1} {2}（アプリのレート、{3}）', cur, fmtNum(r, 4), homeName, fmtTime(ratesTime)),
+          value: fmtDigits('fxstock', p * n * r, homeDec) + unitWord(), expr: typed ? `${exprNum(p)} × ${exprNum(n)} × ${exprNum(r)}` : `${exprNum(p)} ${cur} × ${exprNum(n)} to ${home}` },
+          { name: trf('In {0}', '{0} で', cur), value: fmtNum(p * n, 4) + ' ' + cur, expr: `${exprNum(p)} × ${exprNum(n)}` }];
+        if (v.bought !== '' || v.boughtRate !== '') {
+          const b = boxNum(v.bought), rb = boxNum(v.boughtRate);
+          if (!(b >= 0)) return { msg: tr('The price bought at must be a number', '買値は数にしてください'), bad: 'bought' };
+          if (!(rb > 0)) return { msg: tr('Enter the rate when bought too', '買ったときのレートも入れてください'), bad: 'boughtRate' };
+          const pl = n * (p * r - b * rb), byPrice = n * (p - b) * rb, byRate = n * p * (r - rb);
+          rows.push({ name: trf('Profit or loss in {0}', '損益（{0}）', homeName), value: signed(fmtDigits('fxstock', pl, homeDec) + unitWord(), pl), expr: `${exprNum(n)} × (${exprNum(p)} × ${exprNum(r)} − ${exprNum(b)} × ${exprNum(rb)})` },
+            { name: tr('From the price', 'うち株価の分'), value: signed(fmtDigits('fxstock', byPrice, homeDec) + unitWord(), byPrice), expr: `${exprNum(n)} × (${exprNum(p)} − ${exprNum(b)}) × ${exprNum(rb)}` },
+            { name: tr('From the exchange rate', 'うち為替の分'), value: signed(fmtDigits('fxstock', byRate, homeDec) + unitWord(), byRate), expr: `${exprNum(n)} × ${exprNum(p)} × (${exprNum(r)} − ${exprNum(rb)})` });
+        }
+        return { rows };
       }
     });
   }
@@ -18995,7 +19422,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // Mehrwertsteuer, IVA …), the tools used last, then the tools by purpose. A group without tools
   // yet is not shown. Each tool: [id, group, icon, name, what it does (one line), words to find it by,
   // how to open it]. Graph tools are listed too, so that "volume" also finds the solid of revolution.
-  const TOOL_GROUPS = [['shop', tr('Shopping', '買い物')], ['money', tr('Money', 'お金')], ['time', tr('Dates and times', '日付と時間')],
+  const TOOL_GROUPS = [['shop', tr('Shopping', '買い物')], ['money', tr('Money', 'お金')], ['invest', tr('Stocks and investing', '株・投資')], ['time', tr('Dates and times', '日付と時間')],
     ['convert', tr('Conversion', '換算')], ['geo', tr('Shapes and volumes', '図形と体積')], ['data', tr('Data', 'データ')]];
   const TOOLS = [
     // 1.12.0 (C2): conversion
@@ -19029,6 +19456,28 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['savings', 'money', '🐷', tr('Savings and compound interest', '積立と複利'), tr('What a monthly saving grows to', '毎月の積立がいくらになるか'),
       'savings compound interest deposit invest grow 積立 複利 貯金 預金 利息 つみたて Sparen Zinseszins ahorro interés compuesto épargne intérêts composés 적금 복리 저축 儲蓄 複利 存款',
       () => openSavingsTool()],
+    // 1.16.0 (feature/trading-tools): stocks and investing; [7]: the key of QCalc Pro when it is not the tool's own
+    ['pnl', 'invest', '💹', tr('Stock profit and loss', '株の損益と税'), tr('Profit or loss with the fees and the tax (tax-free too)', '手数料と税（NISA も）を入れた損益'),
+      'stock stocks share shares profit loss gain trade fee commission tax nisa capital gains break even 株 損益 利益 損失 売買 手数料 税 譲渡益 nisa ニーサ 損益分岐 かぶ そんえき Aktie Gewinn Verlust Gebühr Steuer Abgeltungsteuer acción ganancia pérdida comisión impuesto action gain perte frais impôt plus-value 주식 손익 수익 수수료 세금 股票 損益 獲利 手續費 稅',
+      () => openPnlTool()],
+    ['avgcost', 'invest', '➗', tr('Average cost', '平均取得単価'), tr('The average of several buys, and how to reach a target average', '何回かの買いの平均と、目標の平均にする買い方'),
+      'average cost price shares buys dollar cost averaging down up target 平均取得単価 取得単価 平均 買い増し ナンピン 難平 目標 へいきん なんぴん Durchschnittskurs Einstandskurs Nachkauf precio medio promedio compra coût moyen prix de revient 평단가 평균단가 물타기 平均成本 均價 攤平',
+      () => openAvgCostTool()],
+    ['margin', 'invest', '🛡', tr('Margin: maintenance ratio', '信用取引：維持率と追証'), tr('The maintenance ratio and the price of a margin call', '委託保証金維持率と、追証になる株価'),
+      'margin trading account maintenance ratio call collateral short long leverage 信用取引 信用 維持率 委託保証金 保証金 追証 追加保証金 代用 建玉 買建 売建 空売り しんよう ついしょう Margin Nachschuss Sicherheiten Leerverkauf margen llamada de margen garantía venta en corto marge appel de marge garantie vente à découvert 신용거래 증거금 유지율 마진콜 반대매매 融資 融券 保證金 維持率 追繳',
+      () => openMarginTool(), 'trading'],
+    ['possize', 'invest', '🎯', tr('Position size from a stop', '損切りから株数'), tr('Shares for the loss you allow, and risk:reward', '許す損失からの株数とリスクリワード'),
+      'position size sizing risk stop loss cut reward ratio shares lot trading 損切り ロスカット 株数 資金管理 リスク リスクリワード 利確 単元 そんぎり Positionsgröße Risiko Stop-Loss tamaño de posición riesgo stop taille de position risque stop 손절 포지션 리스크 손익비 停損 部位 風險 報酬',
+      () => openPosSizeTool(), 'trading'],
+    ['yield', 'invest', '📈', tr('Yield, PER, PBR, growth', '利回り・PER・PBR・複利'), tr('Dividend yield, PER, PBR, compound growth and saving', '配当利回り・PER・PBR、複利と積立の伸び'),
+      'dividend yield per pbr pe ratio p/e p/b roe eps bps book value compound growth cagr invest saving 配当 利回り 株価収益率 株価純資産倍率 自己資本利益率 複利 積立 年平均成長率 はいとう りまわり Dividende Rendite KGV KBV Zinseszins Wachstum dividendo rentabilidad crecimiento interés compuesto dividende rendement croissance intérêts composés 배당 수익률 복리 성장률 股利 殖利率 本益比 股價淨值比 複利 成長率',
+      () => openYieldTool()],
+    ['carry', 'invest', '📆', tr('Margin interest and lending fee', '金利・貸株料（日割り）'), tr('The cost of holding a margin position, by the day', '信用取引の建玉を持つ費用を日割りで'),
+      'margin interest lending fee borrow short cost days daily carry 金利 買方金利 貸株料 日歩 日割り 信用 費用 きんり かしかぶりょう Sollzins Leihgebühr Zinsen interés préstamo de valores comisión intérêts frais d\'emprunt 이자 대주 수수료 融資利息 借券費 利息',
+      () => openCarryTool(), 'trading'],
+    ['fxstock', 'invest', '💱', tr('Foreign stocks in your money', '外国株を自国通貨で'), tr('Value and profit with the exchange rate, split into price and rate', '為替レートで評価額と損益（株価と為替の分）'),
+      'foreign stock us stocks exchange rate currency dollar profit fx 外国株 米国株 海外株 為替 円 ドル 為替差益 為替差損 がいこくかぶ かわせ ausländische Aktien Wechselkurs acciones extranjeras tipo de cambio actions étrangères taux de change 해외주식 미국주식 환율 外國股票 美股 匯率',
+      () => openFxStockTool()],
     ['date', 'time', '📅', tr('Dates', '日付'), JA ? '日数の差、○日後、年齢、和暦・干支' : tr('Days between, n days after, age', '日数の差、○日後、年齢'),
       'date days between after before age birthday calendar weekday 日付 日数 何日後 何日前 年齢 誕生日 曜日 和暦 西暦 元号 干支 ひづけ Datum Tage Alter fecha días edad date jours âge 날짜 일수 나이 日期 天數 年齡',
       () => openDateTool()],
@@ -19068,7 +19517,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     return words.every((w) => hay.indexOf(w) >= 0);
   }
   function useTool(t) {
-    if (PRO_GATES[t[0]] && !proGate(t[0])) return; // a tool made a Pro feature asks first (1.12.0)
+    const gate = t[7] || t[0];
+    if (PRO_GATES[gate] && !proGate(gate)) return; // a tool made a Pro feature asks first (1.12.0; 1.16.0: by the key t[7] when it has one)
     if ((t[1] === 'shop' || t[1] === 'money' || t[1] === 'time') && !proGate('everyday')) return;
     const recent = (store.get('qalc.tools.recent', []) || []).filter((id) => id !== t[0] && TOOLS.some((x) => x[0] === id));
     recent.unshift(t[0]);
@@ -19685,7 +20135,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     share_pro: tr('Send the turning 3D graph as a GIF', '回る 3D グラフを GIF で送れます'),
     notes: tr('Keep several memos and save them as files', 'メモをいくつも作って、ファイルに保存できます'),
     sliders3d: tr('Move the letters of a 3D graph with sliders, and watch it change', '3D グラフの文字をスライダーで動かして、形の変わり方を見られます'),
-    stats_fit: tr('Fit a curve of degree 2 to 4, exponential, power or logarithmic to your data, with its graph', 'データに 2〜4 次・指数・累乗・対数の曲線を当てはめ、グラフで見られます')
+    stats_fit: tr('Fit a curve of degree 2 to 4, exponential, power or logarithmic to your data, with its graph', 'データに 2〜4 次・指数・累乗・対数の曲線を当てはめ、グラフで見られます'),
+    trading: tr('See the price of a margin call before it comes, and size a trade to the loss you allow', '追証になる株価を前もって知り、許す損失に合わせて株数を決められます')
   });
   // the features that PRO_GATES can make Pro: icon, name, what it gives
   const PRO_INFO = () => ({
@@ -19709,6 +20160,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     notes: ['📝', tr('More calculation notes, saved as files', '計算メモの 2 つ目以降と書き出し'), tr('Several memos of calculations, and saving them as text or CSV (the first memo is free)', '計算メモをいくつも作り、テキストや CSV で保存（1 つ目のメモは無料）')],
     share_pro: ['🎞', tr('GIF and pictures without the mark', 'GIF と透かしなしの共有'), tr('The 3D graph and a slider moving as a moving picture (GIF), and pictures of the graphs at full resolution without "QCalc" in the corner', '3D グラフやスライダーの動きを動く画像（GIF）で、グラフの画像を高い解像度・透かしなしで共有')],
     sliders3d: ['🎛', tr('Sliders in 3D', '3D のスライダー'), tr('Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)', '3D グラフで a sin(x) cos(y) の a などをスライダーで動かす（2D は無料）')],
+    trading: ['🛡', tr('Margin and position sizing', '信用取引と建玉の計算'), tr('The maintenance ratio and the margin-call price, the shares from a stop with risk:reward, the interest and lending fee by the day', '委託保証金維持率と追証の株価、損切りからの株数とリスクリワード、金利・貸株料の日割り')],
     stats_fit: ['📈', tr('Regression curves', '回帰曲線'), tr('For two columns, choose a polynomial of degree 2 to 4, an exponential, a power or a logarithmic curve: its formula, R², prediction and graph (the line stays free)', '2 列のデータで、2〜4 次の多項式・指数・累乗・対数の曲線を選び、式・決定係数・予測・グラフを出す（直線は無料）')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
@@ -19733,6 +20185,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     share_pro: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.2l5 2.8-5 2.8z"/><path d="M3 8.5h2M3 15.5h2M19 8.5h2M19 15.5h2"/>',
     notes: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
     future: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>',
+    trading: '<path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M8.5 14l2.5-2.5 2 2 3-3.5"/>',
     stats_fit: '<path d="M3.5 3.5v17h17"/><circle cx="7.5" cy="15" r="1.1"/><circle cx="11" cy="12.5" r="1.1"/><circle cx="14.5" cy="12" r="1.1"/><circle cx="18" cy="7" r="1.1"/><path d="M5.5 17c4-6 8-5 13.5-12"/>'
   };
   // the picture of a feature: its line picture, or its symbol

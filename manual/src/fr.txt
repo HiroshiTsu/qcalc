@@ -310,6 +310,78 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Ouvrez [[Savings and compound interest]] et tapez le montant mensuel (ou la somme de départ), le taux annuel et les années.
 :example: 30 000 par mois, 3 %, 20 ans → 9 849 059,94 (versé 7 200 000 ; intérêts 2 649 059,94)
 
+## invest | Actions et placements
+:what: Gain ou perte avec l’impôt, prix de revient moyen, ratio de maintien d’un compte sur marge et appel de marge, taille de position depuis le stop, rendement, PER, PBR et intérêts composés, intérêts de marge et frais d’emprunt, et actions étrangères dans votre monnaie. Aucun cours n’est téléchargé : tout vient des nombres que vous tapez.
+:step: Dans [[Tools]], choisissez un outil sous [[Stocks and investing]].
+:step: Touchez un exemple ou tapez les nombres. Les résultats s’affichent aussitôt.
+:step: Touchez un résultat pour mettre son expression dans le champ de saisie, le garder dans l’historique ou le copier. ⋯ en haut à droite change les chiffres affichés.
+:note: Un calcul indicatif, pas un conseil en investissement. Les courtiers peuvent compter l’impôt et la marge autrement.
+:pro: Le ratio de maintien et l’appel de marge, la taille de position depuis le stop et les intérêts et frais d’emprunt par jour sont des fonctions de QCalc Pro. Gain et perte, prix moyen, rendement/PER/PBR/croissance et actions étrangères sont gratuits.
+
+### pnl | Plus-value et moins-value d’actions
+:what: À partir des prix d’achat et de vente, des actions et des frais d’achat et de vente : le gain ou la perte, en %, l’impôt, après impôt, ce que rapporte la vente et le prix du point mort.
+:step: Ouvrez [[Stock profit and loss]] et tapez les prix et les actions.
+:step: Des frais peuvent être un montant (500) ou une part de l’opération (0,1%).
+:step: Choisissez [[Taxed]] ou [[Tax-free account]]. Le taux d’imposition est 20,315 % (celui du Japon) si vous n’en tapez pas d’autre.
+:example: Achetée à 1000, vendue à 1200, 100 actions, sans frais → +20 000,00, impôt 4 063,00, après impôt +15 937,00
+:tip: Le % porte sur ce qui a été payé, frais compris. Le point mort est le prix auquel vendre ne laisse aucune perte après les frais.
+:note: L’impôt est calculé pour cette seule opération et arrondi vers le bas ; la compensation des pertes de l’année et l’arrondi du courtier ne sont pas pris en compte.
+
+### avg-cost | Prix de revient moyen
+:what: Le prix moyen d’actions achetées en plusieurs fois, et combien d’actions à quel prix amènent la moyenne à une cible.
+:step: Ouvrez [[Average cost]] et choisissez [[The average of the buys]] ou [[How to reach an average]].
+:step: Moyenne des achats : un achat par ligne, « prix actions » (par exemple 1000 100).
+:step: Atteindre une moyenne : tapez les actions détenues, leur moyenne et la cible, puis le prix ou les actions à acheter.
+:example: 100 à 1000 et 200 à 900 → moyenne 933,33 (300 actions, 280 000,00)
+:example: 100 à une moyenne de 1200 → en achetant à 900, 200 actions amènent la moyenne à 1000
+- Moyenne = (prix × actions + …) / toutes les actions
+- Actions pour une cible T = N × (A − T) / (T − P) (N : actions détenues, A : leur moyenne, P : le prix ; arrondi à la quotité supérieure)
+:tip: La quotité est de 100 actions si vous n’en tapez pas d’autre ; pour des actions négociées à l’unité, tapez 1.
+
+### margin | Marge : ratio de maintien
+:what: À partir de la garantie et de la position : le ratio de maintien, et le prix auquel il tombe à l’appel de marge.
+:step: Ouvrez [[Margin: maintenance ratio]] et tapez les espèces et, s’il y en a, les titres en garantie (après décote).
+:step: Choisissez [[Bought]] ou [[Sold short]], puis tapez le prix d’entrée, les actions et le cours actuel. Les coûts (intérêts, frais) peuvent aussi être tapés.
+:step: La ligne d’appel de marge est 20 % si vous n’en tapez pas d’autre.
+:example: 1 000 000 en espèces, 3 000 actions achetées à 1000, maintenant 900 → 23,33 %, appel de marge à 866,67 (−3,70 % depuis maintenant)
+Les formules :
+- Ratio = (espèces + titres en garantie + gain ou perte − coûts) / valeur des positions × 100
+- Valeur des positions = prix d’entrée × actions (sous [[More ▾]], d’autres positions peuvent être ajoutées avec leur gain ou perte)
+- Gain ou perte : achat (actuel − entrée) × actions, vente à découvert (entrée − actuel) × actions. Un gain n’est compté que s’il est choisi sous [[More ▾]], [[Unrealized gains]]
+- Prix d’appel de marge : achat, entrée − (espèces + titres en garantie − coûts − ligne × valeur) / actions ; vente à découvert, entrée + (la même chose) / actions
+:note: Les courtiers comptent différemment les gains, les décotes et les coûts, et contrôlent à des heures différentes (en général à la clôture).
+:pro:
+
+### position-size | Taille de position depuis le stop
+:what: À partir du capital, de la perte admise par opération (% du capital), de l’entrée et du stop : les actions (arrondies à la quotité inférieure) et la perte au stop. Avec une prise de bénéfice, le ratio risque:rendement.
+:step: Ouvrez [[Position size from a stop]] et tapez le capital, le risque, l’entrée et le stop.
+:step: Un stop sous l’entrée est un achat ; au-dessus, une vente à découvert.
+:example: Capital 3 000 000, 1 %, achat à 1000, stop à 950 (quotité 100) → 600 actions, perte au stop 30 000,00 ; prise de bénéfice à 1150 : risque:rendement 1 : 3,00
+- Actions = capital × risque % / |entrée − stop| (arrondi à la quotité inférieure)
+- Risque:rendement = 1 : |prise de bénéfice − entrée| / |entrée − stop|
+:pro:
+
+### yield | Rendement, PER, PBR, croissance
+:what: Le rendement du dividende, le PER, le PBR et le ROE ; les intérêts composés avec une épargne mensuelle ; la croissance par an entre deux valeurs.
+:step: Ouvrez [[Yield, PER, PBR, growth]], choisissez ce que vous cherchez et tapez les nombres.
+:example: Cours 2000, dividende 60, BPA 150, ANPA 1600 → rendement 3,00 %, PER 13,33 ×, PBR 1,25 ×, ROE 9,38 %
+:example: 1 000 000 → 1 800 000 en 6 ans → +10,29 % par an
+:tip: La croissance peut être capitalisée une fois par an ou chaque mois ; une fois par an, un mois croît de (1 + rendement annuel)^(1/12).
+
+### carry | Intérêts de marge et frais d’emprunt
+:what: Les intérêts d’un achat sur marge, ou les frais d’emprunt d’une vente à découvert, par jour.
+:step: Ouvrez [[Margin interest and lending fee]] et tapez la valeur de la position, le taux annuel et les jours.
+:step: Choisissez les jours dans l’année (365 ou 360).
+:example: 3 000 000 à 2,8 % pendant 30 jours → 6 904,10 (230,14 par jour)
+- Coût = valeur × taux annuel × jours / jours dans l’année (arrondi vers le bas)
+:pro:
+
+### fx-stock | Actions étrangères dans votre monnaie
+:what: La valeur d’une action étrangère dans votre monnaie, avec les taux de change de l’app ou un taux que vous tapez ; avec le prix et le taux à l’achat, le gain ou la perte séparé entre la part du cours et celle du taux de change.
+:step: Ouvrez [[Foreign stocks in your money]] et tapez la monnaie (USD, par exemple), le cours actuel et les actions.
+:step: Si le taux est laissé vide, les taux de change de l’app sont utilisés (comme dans [[Convert units and currencies]]).
+:example: 10 actions à 150, taux 155 ; achetées à 120 à un taux de 140 → valeur 232 500,00, gain +64 500,00 (+42 000,00 dû au cours, +22 500,00 dû au taux)
+
 ## dates | Dates
 :what: Les jours entre deux dates, n jours après ou avant, un âge, le jour de la semaine.
 :step: Ouvrez [[Dates]] et choisissez quoi calculer.
@@ -629,6 +701,7 @@ L'intégration numérique (aires, longueurs et volumes du graphique) est sûre �
 | GIF et images sans la marque | [Partager](#share) |
 | Plus de notes de calcul, enregistrées en fichier | [Notes de calcul](#notes) |
 | Courbes de régression (sauf la droite) | [Statistiques](#stats) |
+| Marge et taille de position (ratio de maintien et appel de marge, taille de position depuis le stop, intérêts et frais d’emprunt) | [Marge : ratio de maintien](#margin) |
 :tip: [[How to use ›]] sur une ligne des fonctions Pro ouvre sa section de ce manuel.
 
 ## pro-buy | Acheter et restaurer

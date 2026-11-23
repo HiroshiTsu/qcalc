@@ -1865,3 +1865,11 @@ body.hselect #history { padding-bottom: 150px; }
 .ah-x { flex: 0 0 auto; width: 40px; height: 36px; margin: -4px 0; border: 0; border-radius: 18px; background: transparent; color: var(--muted); font-size: 16px; }
 .ah-desc { color: var(--text); }
 .ah-ex { color: var(--muted); font-family: ui-monospace, "Roboto Mono", "Noto Sans Mono", monospace; font-size: 12.5px; overflow-wrap: anywhere; }
+/* 1.16.0 (feature/trading-tools): a box of several lines in a tool (the buys of "Average cost"), under its label */
+.geo-size.tool-area { flex-direction: column; align-items: stretch; }
+.geo-size.tool-area textarea { width: 100%; min-height: 104px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 16px; font-family: inherit; line-height: 1.45; resize: vertical; box-sizing: border-box; }
+.geo-size.tool-area textarea::placeholder { color: var(--muted); opacity: 1; font-style: italic; }
+.geo-size.tool-area textarea[aria-invalid="true"] { border-color: var(--danger, #dc2626); }
+/* (1.16.0) a box of a tool shown only for some choices (when): hidden really hides it. Since 1.12.0 .geo-size's display: flex
+   kept such boxes on the screen (the discount of "Price: discount and tax" with "with tax" chosen) */
+.geo-size[hidden] { display: none; }
