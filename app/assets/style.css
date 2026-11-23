@@ -1232,6 +1232,10 @@ body.cform-open #history, body.cform-open .entry { display: none; }
   body.cform-open header.bar { display: none; }
   body.cform-open .cf-body { padding-top: 6px; gap: 6px; }
   body.cform-open .cf-hint:not(.cf-note) { display: none; }
+  /* (1.15.0) = and ≈ side by side when they fit in the width, as up to 1.14.0: on two lines the ≈ line was behind
+     the buttons (360 × 640, the integral of x^2 from 0 to 1); a long one still goes on to the next line */
+  body.cform-open .cf-res.two .r-line { display: inline-block; max-width: 100%; vertical-align: middle; }
+  body.cform-open .cf-res.two .r-line + .r-line { margin-left: .4em; }
 }
 
 
