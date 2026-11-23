@@ -339,7 +339,7 @@
     angle: 'rad', approx: 'auto', fraction: 'auto', precision: 15, max_decimals: -1, time_limit: 20, math_view: true,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: true, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
-    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false
+    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false, next_steps: true
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
   const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
@@ -1838,6 +1838,7 @@
     else {
       const item = historyItem(entry);
       histEl.append(item);
+      refreshSteps();
       fitMatrices(item);
       histEl.scrollTop = histEl.scrollHeight;
       histPinned = true;
@@ -1897,7 +1898,7 @@
     if (ev.event === 'import') { importArrived(ev); return; } // (1.15.0: calculation notes read in)
     if (ev.event !== 'ans') return;
     const h = sessionEntries.get(ev.id);
-    if (h) { sessionEntries.delete(ev.id); setInput(h, ev.input); saveHistory(); return; }
+    if (h) { sessionEntries.delete(ev.id); setInput(h, ev.input); saveHistory(); if (h === history[history.length - 1]) refreshSteps(); return; }
     earlyInputs.set(ev.id, ev.input);
     if (earlyInputs.size > 20) earlyInputs.delete(earlyInputs.keys().next().value);
   });
@@ -3387,6 +3388,7 @@
     for (let i = first; i < history.length; i++) if (!history[i].star) frag.append(historyItem(history[i]));
     histEl.append(frag);
     if (newsCard) histEl.append(newsCard);
+    refreshSteps(); // (1.15.0: the next steps under the newest answer)
     fitMatrices(histEl);
     if (scroll) { histEl.scrollTop = histEl.scrollHeight; histPinned = true; }
     olderLeft = first;
@@ -3510,6 +3512,7 @@
     if (mcols === 2) more.push(['m-plot', tr('Draw the rows as points (2D graph)', '各行を点としてグラフに描く（2D）')]);
     else if (mcols === 3) more.push(['m-plot', tr('Draw the rows as points (3D graph)', '各行を点としてグラフに描く（3D）')]);
     const a = await sheet((h.t ? fmtTime(h.t / 1000) + (h.edited ? trf(' (edited {0})', '（直した時刻 {0}）', fmtTime(h.edited / 1000)) : '') + '\n' : '') + clip(toDisplay(h.expr), 300) + '\n' + clip(displayText(h.result), 300), more.concat([
+      ['details', tr('Details', '詳しく見る')],
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['digits', tr('Work it out with other digits', '桁数を変えて計算し直す')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')],
@@ -3525,6 +3528,7 @@
     else if (a === 'g-plot') graphOf(gsrc);
     else if (a === 'f-solve') openForm('solve', { eqs: [fx + ' = 0'] });
     else if (a === 'f-subst') openForm('subst', { f: fx, focus: 'a' });
+    else if (a === 'details') openDetails(h);
     else if (a === 'copy-res') copyText(shownText(h));
     else if (a === 'copy-expr') copyText(h.expr);
     else if (a === 'edit') startHistEdit(h);
@@ -3571,6 +3575,261 @@
     }
     return false;
   }
+  // ------------------------------------------------- next steps and details (1.15.0)
+  // The owner's design of 11-23 10:46. Under the newest answer, a row of buttons for what is often done next with it
+  // (setting "Suggest the next steps", on at first): by the kind of the answer, at most 6, in a row that scrolls
+  // sideways. A button that calculates puts its expression into the field and calculates it as a new line of the
+  // history (factor: "(x^2 − 1) to factors"); Graph opens the graph, Details the sheet of details, Convert… the
+  // conversion of units. What the engine has no function or conversion for here (expand; a fraction, a decimal, the
+  // scientific notation: "to sci" and the like give way to the settings of the display) is worked out with those
+  // settings for once, and kept as a line with a note ("Expanded", "As a fraction").
+  const POLY_X = /^[\dx\s+\-−×*/^().·⁰¹²³⁴⁵⁶⁷⁸⁹]+$/u; // (a polynomial or a quotient of them in x)
+  const UNIT_RES = /^\(?[−-]?\d[\d.]*(?:E[−-]?\d+)?\)?\s+[^\d\s()[\]][^()[\]]*$/u; // ("5 m", "27.78 m/s", "3 mi + 188 yd")
+  function nextSteps(h) {
+    if (!h || h.cut || h.big || h.cmp || typeof h.result !== 'string' || Number(h.base) !== 10) return [];
+    let t = insertText(h);
+    if (!t) return [];
+    const D = { id: 'details', label: tr('Details', '詳しく') };
+    const mat = parseMatrix(t);
+    if (mat) {
+      const n = mat.rows.length, m = mat.rows[0].length, out = [];
+      if (n === m && n > 1) {
+        out.push({ id: 'det', label: tr('Determinant', '行列式'), expr: `det(${t})` }, { id: 'inv', label: tr('Inverse', '逆行列'), expr: `inverse(${t})` });
+        if (n <= 6) out.push({ id: 'eig', label: tr('Eigenvalues', '固有値'), expr: `solve(det(${t} − x × identity(${n})) = 0)` });
+      }
+      out.push({ id: 'tr', label: tr('Transpose', '転置'), expr: `transpose(${t})` });
+      return out;
+    }
+    const fx = functionOfX(h);
+    if (fx) {
+      const out = [D, { id: 'graph', label: tr('Graph', 'グラフ') }];
+      const poly = POLY_X.test(fx);
+      if (poly) out.push(/\)\s*(?:[(\^×*·²³⁴⁵⁶⁷⁸⁹]|$)/u.test(fx) ? { id: 'expand', label: tr('Expand', '展開'), expr: fx, opts: { structuring: 'expand' }, note: tr('Expanded', '展開') } : { id: 'factor', label: tr('Factor', '因数分解'), expr: `(${fx}) to factors` });
+      else out.push({ id: 'taylor', label: tr('Taylor', 'テイラー展開'), expr: `taylor(${fx}, x, 0, 5)` });
+      out.push({ id: 'diff', label: tr('Derivative', '微分'), expr: `diff(${fx})` }, { id: 'int', label: tr('Integral', '積分'), expr: `integrate(${fx})` },
+        { id: 'solve', label: tr('Solve = 0', '= 0 を解く'), expr: `solve(${fx} = 0)` });
+      return out.slice(0, 6);
+    }
+    if (outerParens(t) && UNIT_RES.test(t.slice(1, -1))) t = t.slice(1, -1);
+    if (UNIT_RES.test(t) && !/[πℯ]/u.test(t)) return [D, { id: 'convert', label: tr('Convert…', 'ほかの単位に換算…') }];
+    const num = plainNumber(h);
+    const SCI = { id: 'sci', label: tr('Scientific', '指数表記'), expr: t, opts: { notation: 'pure', approx: 'approx', fraction: 'decimal' }, note: tr('Scientific', '指数表記') };
+    if (num) {
+      if (/^-?\d+$/.test(num) && !h.approx) {
+        const out = [D];
+        if (Math.abs(Number(num)) > 1) out.push({ id: 'factors', label: tr('Prime factors', '素因数分解'), expr: `${t} to factors` });
+        out.push({ id: 'hex', label: tr('In hex', '16進で'), expr: `${t} to hex` });
+        return out;
+      }
+      const out = [D];
+      if (!/ ≈ /.test(h.result) && !h.approx) out.push({ id: 'frac', label: tr('As a fraction', '分数で'), expr: t, opts: { fraction: 'fraction', approx: 'exact' }, note: tr('As a fraction', '分数で') });
+      // (the scientific notation only where it changes something: from 10 000, and below 0.001)
+      const v = Math.abs(Number(num));
+      if (v >= 1e4 || (v > 0 && v < 1e-3)) out.push(SCI);
+      return out;
+    }
+    // an exact value without a decimal shown (1/3 with "Always exact", √2, 2π): the decimal
+    if (/^[\d\s+\-−×*/^().·√∛πℯ⁰¹²³⁴⁵⁶⁷⁸⁹=]+$/u.test(h.result) && /\d|π|ℯ/u.test(h.result)) return [D, { id: 'dec', label: tr('As a decimal', '小数で'), expr: t, opts: { approx: 'approx', fraction: 'decimal' }, note: tr('As a decimal', '小数で') }];
+    return [];
+  }
+  async function runStep(h, s) {
+    if (s.id === 'details') { openDetails(h); return; }
+    if (s.id === 'graph') { const fx = functionOfX(h); if (fx && !(await graphOf(fx))) openPlotWith(fx); return; }
+    if (s.id === 'convert') { openConverter(); return; }
+    if (s.opts) { await keepWithOpts(s.expr, s.opts, s.note); return; }
+    setExpr(s.expr);
+    commit();
+  }
+  // a value worked out with other settings of the display, kept as a line of the history with a note
+  async function keepWithOpts(expr, opts, note) {
+    const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), opts), timeout: timeLimit() * 1000 });
+    const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
+    if (!r.ok || !r.result || r.timeout || err) { toast(tr('Could not calculate', '計算できませんでした'), 2000); return; }
+    keepResult(expr, resultText(r));
+    const k = history[history.length - 1];
+    if (k && note) { k.note = note; historyChanged(); }
+  }
+  // the row under the newest answer (drawn again with the history, after a result, and when its value comes)
+  function refreshSteps() {
+    for (const n of histEl.querySelectorAll('.h-steps')) n.remove();
+    if (S.next_steps === false || histSel || histFiltered() || histEdit) return;
+    const items = histEl.querySelectorAll(':scope > .h-item');
+    const item = items[items.length - 1];
+    const h = item && item._h;
+    if (!h || h !== history[history.length - 1]) return;
+    const steps = nextSteps(h);
+    if (!steps.length) return;
+    const row = el('div', { class: 'h-steps', role: 'group', 'aria-label': tr('Next steps', '次の操作') });
+    for (const s of steps) row.append(tapButton({ class: 'step-chip', text: s.label, 'data-step': s.id }, () => runStep(h, s)));
+    item.after(row);
+  }
+  // ---- the sheet of details (from "Details" and ⋯ "Details"): rows worked out one after another after it opens
+  // ("Calculating…"), each with a short time limit; a row that cannot be had is left out, and closing the sheet stops
+  // the rest. A tap on a row: put its expression into the field, keep it in the history, or copy its result.
+  let detailSeq = 0;
+  const UNIT_FAMILIES = [
+    ['m', 'km', 'cm', 'mm', 'in', 'ft', 'yd', 'mi'], ['kg', 'g', 'lb', 'oz'], ['s', 'min', 'h', 'd'], ['L', 'mL', 'm³', 'gal'],
+    ['m²', 'km²', 'ha', 'ft²', 'acre'], ['m/s', 'km/h', 'mph', 'kn'], ['J', 'kJ', 'kWh', 'kcal'], ['°C', '°F', 'K'],
+    ['Pa', 'kPa', 'bar', 'atm', 'psi'], ['W', 'kW', 'hp']];
+  function detailRows(h, t, fx) {
+    const rows = [];
+    const R = (id, label, expr, opts) => rows.push({ id, label, expr, opts });
+    if (fx) {
+      rows.push({ id: 'graph', label: tr('Graph', 'グラフ'), graph: fx });
+      R('zeros', tr('Zeros (= 0)', '零点（= 0 の解）'), `solve(${fx} = 0)`);
+      R('diff', tr('Derivative', '導関数'), `diff(${fx})`);
+      R('int', tr('Integral', '不定積分'), `integrate(${fx})`);
+      R('taylor', tr('Taylor series (x = 0, degree 5)', 'テイラー展開（x = 0、5 次）'), `taylor(${fx}, x, 0, 5)`);
+      if (POLY_X.test(fx)) { R('factor', tr('Factored', '因数分解'), `(${fx}) to factors`); R('expand', tr('Expanded', '展開'), fx, { structuring: 'expand' }); rows[rows.length - 1].note = tr('Expanded', '展開'); }
+      return rows;
+    }
+    let v = t;
+    if (outerParens(v) && UNIT_RES.test(v.slice(1, -1))) v = v.slice(1, -1);
+    if (UNIT_RES.test(v)) {
+      R('dec', tr('Decimal', '小数'), v, { approx: 'approx', fraction: 'decimal' });
+      R('sci', tr('Scientific', '指数表記'), v, { notation: 'pure', approx: 'approx', fraction: 'decimal' });
+      rows.push({ id: 'units', label: tr('Other units', 'ほかの単位'), units: v });
+      return rows;
+    }
+    R('exact', tr('Exact', '厳密な値'), h.expr, { approx: 'exact', fraction: 'fraction' });
+    R('dec', tr('Decimal', '小数'), t, { approx: 'approx', fraction: 'decimal' });
+    const num = plainNumber(h);
+    const isInt = !!num && /^-?\d+$/.test(num) && !h.approx;
+    if (!isInt) {
+      R('frac', tr('Fraction', '分数'), t, { fraction: 'fraction', approx: 'exact' });
+      R('mixed', tr('Mixed fraction', '帯分数'), t, { fraction: 'combined', approx: 'exact' });
+      R('sci', tr('Scientific', '指数表記'), t, { notation: 'pure', approx: 'approx', fraction: 'decimal' });
+    } else {
+      R('bin', tr('Binary', '2 進数'), t, { base: 2 }); R('oct', tr('Octal', '8 進数'), t, { base: 8 }); R('hex', tr('Hexadecimal', '16 進数'), t, { base: 16 });
+      if (Math.abs(Number(num)) > 1) R('factors', tr('Prime factors', '素因数分解'), `${t} to factors`);
+    }
+    for (const r of rows) if (r.opts && !r.note) r.note = r.label;
+    return rows;
+  }
+  async function openDetails(h) {
+    const t = insertText(h);
+    if (!t) { toast(tr('This result is too long for details', 'この結果は長すぎて詳しく見られません'), 2200); return; }
+    const fx = functionOfX(h);
+    const rows = detailRows(h, t, fx);
+    if (sheetResolve) closeSheet(null);
+    const seq = ++detailSeq;
+    const sh = $('#sheet');
+    sh.textContent = '';
+    const list = el('div', { class: 'dt-list', 'aria-live': 'polite' });
+    const head = el('div', { class: 'dt-head' }, el('div', { class: 'dt-expr', text: clip(prettyExpr(toDisplay(h.expr)), 160) }), el('div', { class: 'dt-res' }));
+    showResult(head.lastChild, displayResult(h));
+    sh.append(el('div', { class: 'stitle', text: tr('Details', '詳しく見る') }), head, list, el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
+    const done = new Promise((resolve) => { sheetResolve = resolve; $('#scrim').classList.add('show', 'over-panels'); sh.classList.add('open'); sh.inert = false; });
+    done.then(() => { if (detailSeq === seq) detailSeq++; });
+    const live = () => seq === detailSeq;
+    const shownOf = (r) => resultText(r).replace(/^= /, '');
+    const same = (a, b) => toDisplay(String(a || '')).replace(/\s+/g, '') === toDisplay(String(b || '')).replace(/\s+/g, '');
+    const nodes = rows.map((row) => {
+      const val = el('div', { class: 'dt-val', text: tr('Calculating…', '計算中…') });
+      const n = tapButton({ class: 'dt-row', 'data-row': row.id }, () => rowActions(row));
+      n.append(el('div', { class: 'dt-lbl', text: row.label }), val);
+      list.append(n);
+      return { row, n, val };
+    });
+    for (const it of nodes) {
+      if (!live()) return;
+      const { row, n, val } = it;
+      try {
+        if (row.graph) {
+          const ok = await detailGraph(val, row.graph, live);
+          if (!ok) n.remove(); else { n.setAttribute('aria-label', tr('Graph (opens the 2D graph)', 'グラフ（2D グラフを開く）')); n.onclick = null; }
+          continue;
+        }
+        if (row.units) {
+          const lines = await unitRows(row.units, live);
+          if (!live()) return;
+          if (!lines.length) { n.remove(); continue; }
+          n.remove();
+          for (const L of lines) {
+            const m = tapButton({ class: 'dt-row', 'data-row': 'unit' }, () => rowActions(L));
+            m.append(el('div', { class: 'dt-lbl', text: L.label }), el('div', { class: 'dt-val', text: L.shown }));
+            list.append(m);
+          }
+          continue;
+        }
+        const r = await Bridge.send('calc', { expr: row.expr, opts: Object.assign(engineOpts(), row.opts || {}), timeout: 3000 });
+        if (!live()) return;
+        const err = r.ok ? (r.messages || []).find((x) => x.type === 'error') : null;
+        const shown = r.ok && r.result && !r.timeout && !err ? shownOf(r) : '';
+        // (left out: what could not be had, what says nothing new, and a value of the engine that is not a value)
+        const prev = nodes.slice(0, nodes.indexOf(it)).map((q) => q.row.shown).filter(Boolean);
+        if (!shown || /\b(?:diff|integrate|solve|taylor)\(/.test(r.result) || prev.some((q) => same(q, shown))
+          || (row.id === 'exact' && (r.approx || same(r.result, plainNumber(h)))) || (row.id === 'mixed' && !/ \+ /.test(r.result)) || (row.id === 'frac' && !/\//.test(r.result))
+          || (row.id === 'sci' && !/E[−-]?\d/.test(r.result)) || ((row.id === 'factor' || row.id === 'expand') && same(r.result, fx))
+          || (row.id === 'dec' && same(r.result, h.result))) { n.remove(); continue; }
+        row.shown = shown;
+        val.textContent = '';
+        showResult(val, resultText(r));
+        n.setAttribute('aria-label', row.label + ': ' + shown);
+      } catch (e) { n.remove(); }
+    }
+    if (live() && !list.children.length) list.append(el('div', { class: 'dt-none', text: tr('Nothing more to show for this result', 'この結果について出せるものはありません') }));
+  }
+  // a small graph of f(x) from −10 to 10 (the engine's values); a tap opens the 2D graph
+  async function detailGraph(box, fx, live) {
+    const r = await Bridge.send('plot', { exprs: [fx], min: '-10', max: '10', steps: 160, var: 'x', opts: engineOpts(), timeout: 3000 });
+    if (!live() || !r.ok || !Array.isArray(r.series) || !r.series[0]) return false;
+    const s = r.series[0], ys = s.y.filter((y) => y !== null && isFinite(y)).sort((a, b) => a - b);
+    if (ys.length < 10) return false;
+    let y0 = ys[Math.floor(ys.length * 0.02)], y1 = ys[Math.ceil(ys.length * 0.98) - 1];
+    if (!(y1 > y0)) { y0 -= 1; y1 += 1; }
+    const pad = (y1 - y0) * 0.1; y0 -= pad; y1 += pad;
+    const c = el('canvas', { class: 'dt-graph', 'aria-hidden': 'true' });
+    box.textContent = '';
+    box.append(c);
+    const W = c.clientWidth || 260, H = 110, dpr = window.devicePixelRatio || 1;
+    c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+    const g = c.getContext('2d'), cs = getComputedStyle(document.documentElement);
+    g.scale(dpr, dpr);
+    const X = (x) => (x + 10) / 20 * W, Y = (y) => H - (y - y0) / (y1 - y0) * H;
+    g.strokeStyle = cs.getPropertyValue('--line').trim() || '#ccc'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(X(0), 0); g.lineTo(X(0), H); if (y0 < 0 && y1 > 0) { g.moveTo(0, Y(0)); g.lineTo(W, Y(0)); } g.stroke();
+    g.strokeStyle = cs.getPropertyValue('--accent').trim() || '#2563eb'; g.lineWidth = 2;
+    g.beginPath();
+    let pen = false;
+    for (let i = 0; i < s.x.length; i++) {
+      const y = s.y[i];
+      if (y === null || !isFinite(y) || y < y0 - (y1 - y0) || y > y1 + (y1 - y0)) { pen = false; continue; }
+      if (pen) g.lineTo(X(s.x[i]), Y(y)); else g.moveTo(X(s.x[i]), Y(y));
+      pen = true;
+    }
+    g.stroke();
+    c.addEventListener('click', (e) => { e.stopPropagation(); closeSheet(null); graphOf(fx).then((ok) => { if (!ok) openPlotWith(fx); }); });
+    return true;
+  }
+  // the value in the other units of its kind (the first unit of a kind it converts to cleanly tells the kind)
+  async function unitRows(v, live) {
+    const opts = Object.assign(engineOpts(), { mixed_units: false, approx: 'approx' });
+    const to = async (u) => { const r = await Bridge.send('calc', { expr: `(${v}) to ${u}`, opts, timeout: 1500 }); return r.ok && r.result && !r.timeout ? r.result.split(' ≈ ').pop() : ''; };
+    const ends = (res, u) => new RegExp('^[−-]?[\\d.\\s\\u202f\\u2009]+(?:E[−-]?\\d+)?\\s*' + u.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '$').test(res);
+    const own = v.replace(UNIT_RES, (m) => m).replace(/^\(?[−-]?\d[\d.]*(?:E[−-]?\d+)?\)?\s+/, '').trim();
+    for (const fam of UNIT_FAMILIES) {
+      if (!live()) return [];
+      const first = await to(fam[0]);
+      if (!ends(first, fam[0])) continue;
+      const out = [];
+      for (const u of fam) {
+        if (u === own || out.length >= 5) continue;
+        const res = u === fam[0] ? first : await to(u);
+        if (!live()) return [];
+        if (ends(res, u)) out.push({ label: u, expr: `(${v}) to ${u}`, shown: toDisplay(res), opts });
+      }
+      return out;
+    }
+    return [];
+  }
+  async function rowActions(row) {
+    if (!row || !row.expr || !row.shown) return;
+    const a = await sheet(row.label + '\n' + clip(row.shown, 200), [['ins', tr('Put the expression in the field', '式を入力欄に入れる')], ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy result', '結果をコピー')]]);
+    if (a === 'ins') { setExpr(row.expr); focusExpr(); }
+    else if (a === 'keep') { if (row.opts) await keepWithOpts(row.expr, row.opts, row.note); else { setExpr(row.expr); commit(); } }
+    else if (a === 'copy') copyText(row.shown);
+  }
   function historyChanged() {
     fitHistory();
     saveHistory();
@@ -3605,6 +3864,7 @@
     exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length);
     exprChanged();
     markEditing();
+    refreshSteps();
     const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === h);
     if (it) it.scrollIntoView({ block: 'nearest' });
     $('#status').textContent = tr('Editing a line of the history: = puts the new result in its place', '履歴の行を直しています。= で、その行を新しい式と答えに置き換えます');
@@ -3619,6 +3879,7 @@
     histEdit = null;
     editBand.hidden = true;
     markEditing();
+    refreshSteps();
     if (!asNew) { exprEl.value = keep || ''; exprChanged(); }
     $('#status').textContent = asNew ? tr('= adds a new line', '= で新しい行になります') : tr('Editing stopped, nothing changed', '直すのをやめました（何も変わりません）');
     return true;
@@ -16033,6 +16294,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const sec = histEl.querySelector('.h-pinned');
     if (sec) sec.hidden = !Array.from(sec.querySelectorAll('.h-item')).some((x) => !x.hidden);
     hsCount.textContent = words.length ? trf('{0} found', '{0} 件', n) : '';
+    refreshSteps(); // (1.15.0: no next steps while searching)
   }
   const selBar = el('div', { class: 'hselbar', hidden: true, role: 'region', 'aria-label': tr('Selected lines', '選んだ行') });
   const selInfo = el('div', { class: 'hs-info', 'aria-live': 'polite' });
@@ -16049,6 +16311,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     document.body.classList.add('hselect');
     selBar.hidden = false;
     for (const it of histEl.querySelectorAll('.h-item')) it.classList.remove('sel');
+    refreshSteps();
     updateSelected();
   }
   function closeHistSelect() {
@@ -16058,6 +16321,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     document.body.classList.remove('hselect');
     selBar.hidden = true;
     for (const it of histEl.querySelectorAll('.h-item.sel')) { it.classList.remove('sel'); it.removeAttribute('aria-selected'); }
+    refreshSteps();
     focusExpr();
     return true;
   }
@@ -16176,6 +16440,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['📐', tr('Taylor series: taylor on the Calculus page, with a graph to compare', '「解析」のページの taylor でテイラー展開（グラフで比べられます）'), () => openForm('taylor', { f: 'sin(x)' })],
     ['🌀', tr('2D graph: parametric, polar and implicit curves', '2D グラフで媒介変数・極座標・陰関数の曲線'), () => openPlotWith(['r = 1 + cos(θ)'])],
     ['🎛️', tr('Sliders: letters such as a in a sin(b x) get sliders in the graph', 'グラフの式の a・b などの文字をスライダーで動かせます'), () => openPlotWith(['a sin(b x)'])],
+    ['⏭️', tr('Next steps under the newest answer: details, graph, factor and more', '答えの下に次の操作の候補（詳しく・グラフ・因数分解など）'), () => { setExpr('x^2 - 1'); commit(); }],
+    ['🔍', tr('Details: the other forms of an answer on one sheet', '「詳しく見る」で答えのいろいろな形を 1 画面に'), () => { setExpr('x^3 - x'); Promise.resolve(commit()).then(() => { const h = history[history.length - 1]; if (h) openDetails(h); }); }],
     ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
     try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
   ].filter(Boolean);
@@ -18143,7 +18409,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       ['preview', tr('Show the result while typing', '入力中に結果を表示'), 'bool'],
       ['auto_ans', tr('An operator in an empty field continues from ans', '空欄で演算子を押すと ans から続ける'), 'bool'],
       ['haptics', tr('Vibrate when a key is pressed', 'キーを押したときに振動'), 'bool'],
-      ['memkeys', tr('Show the memory keys (M+ M− MR MC)', 'メモリーキー（M+ M− MR MC）を出す'), 'bool']
+      ['memkeys', tr('Show the memory keys (M+ M− MR MC)', 'メモリーキー（M+ M− MR MC）を出す'), 'bool'],
+      ['next_steps', tr('Suggest the next steps under the newest answer', '次の操作の候補を出す'), 'bool',
+        tr('Buttons under the newest answer for what is often done next: details, graph, factor, derivative and the like', 'いちばん新しい答えの下に、次によく使う操作（詳しく・グラフ・因数分解・微分など）のボタンを出します')]
     ]],
     // 1.12.0: updating the rates was an item of the menu until 1.11.0
     [tr('Exchange rates', '為替レート'), [
@@ -18288,6 +18556,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     exprChanged();
     if (CF.id) formChanged();
     if (mathShown !== S.math_view || groupShown !== S.grouping) { mathShown = S.math_view; groupShown = S.grouping; renderHistory(false); }
+    refreshSteps(); // (1.15.0: "Suggest the next steps")
   }
   let mathShown = S.math_view, groupShown = S.grouping; // (1.15.0: the groups of digits are made when shown, groupText)
   function updateChips() {

@@ -2,6 +2,30 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    // (1.15.0) the next steps under the newest answer and the sheet of details
+    "As a decimal": "小數",
+    "As a fraction": "分數",
+    "Buttons under the newest answer for what is often done next: details, graph, factor, derivative and the like": "在最新答案下方顯示接下來常用操作（詳細、圖形、因式分解、微分等）的按鈕",
+    "Convert…": "換算…",
+    "Details": "詳細",
+    "Exact": "精確值",
+    "Expanded": "展開",
+    "Factor": "因式分解",
+    "Factored": "因式分解",
+    "Graph (opens the 2D graph)": "圖形（開啟 2D 圖形）",
+    "In hex": "16 進位",
+    "Next steps": "下一步",
+    "Nothing more to show for this result": "此結果沒有更多可顯示的內容",
+    "Other units": "其他單位",
+    "Prime factors": "質因數分解",
+    "Put the expression in the field": "將算式放入輸入欄",
+    "Scientific": "科學記號",
+    "Solve = 0": "解 = 0",
+    "Suggest the next steps under the newest answer": "在最新答案下方顯示下一步的建議",
+    "Taylor": "泰勒展開",
+    "Taylor series (x = 0, degree 5)": "泰勒展開（x = 0，5 次）",
+    "This result is too long for details": "此結果太長，無法查看詳細",
+    "Zeros (= 0)": "零點（= 0 的解）",
     // (1.15.0) the 3D graph: a surface waiting for its edges
     "Working out where a surface leaves the box…": "正在計算曲面離開方框的位置…",
     // (1.15.0) the sliders of the letters of the graphs
@@ -51,6 +75,8 @@
     "Taylor series: taylor on the Calculus page, with a graph to compare": "「微積分」頁的 taylor 可做泰勒展開（可用圖形比較）",
     "2D graph: parametric, polar and implicit curves": "2D 圖形：參數式、極座標與隱函數曲線",
     "Sliders: letters such as a in a sin(b x) get sliders in the graph": "滑桿：圖形算式中的 a、b 等字母可以用滑桿移動",
+    "Next steps under the newest answer: details, graph, factor and more": "最新答案下方的下一步建議（詳細、圖形、因式分解等）",
+    "Details: the other forms of an answer on one sheet": "「詳細」可在一個畫面查看答案的各種形式",
     "Area: the line crosses itself, so no area is given": "面積：線與自身相交，因此不計算面積",
     "Taylor series": "泰勒展開",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "以 x = a 為中心、到 n 次（最多 20）的多項式，係數盡量以精確值表示",

@@ -1,6 +1,30 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    // (1.15.0) the next steps under the newest answer and the sheet of details
+    "As a decimal": "Als Dezimalzahl",
+    "As a fraction": "Als Bruch",
+    "Buttons under the newest answer for what is often done next: details, graph, factor, derivative and the like": "Schaltflächen unter der neuesten Antwort für das, was oft als Nächstes kommt: Details, Graph, Faktorisieren, Ableitung usw.",
+    "Convert…": "Umrechnen…",
+    "Details": "Details",
+    "Exact": "Exakt",
+    "Expanded": "Ausmultipliziert",
+    "Factor": "Faktorisieren",
+    "Factored": "Faktorisiert",
+    "Graph (opens the 2D graph)": "Graph (öffnet den 2D-Graphen)",
+    "In hex": "Hexadezimal",
+    "Next steps": "Nächste Schritte",
+    "Nothing more to show for this result": "Zu diesem Ergebnis gibt es nichts weiter zu zeigen",
+    "Other units": "Andere Einheiten",
+    "Prime factors": "Primfaktoren",
+    "Put the expression in the field": "Ausdruck ins Eingabefeld",
+    "Scientific": "Wissenschaftlich",
+    "Solve = 0": "= 0 lösen",
+    "Suggest the next steps under the newest answer": "Nächste Schritte unter der neuesten Antwort vorschlagen",
+    "Taylor": "Taylor",
+    "Taylor series (x = 0, degree 5)": "Taylorreihe (x = 0, Grad 5)",
+    "This result is too long for details": "Dieses Ergebnis ist für Details zu lang",
+    "Zeros (= 0)": "Nullstellen (= 0)",
     // (1.15.0) the 3D graph: a surface waiting for its edges
     "Working out where a surface leaves the box…": "Es wird berechnet, wo eine Fläche die Box verlässt …",
     // (1.15.0) the sliders of the letters of the graphs
@@ -50,6 +74,8 @@
     "Taylor series: taylor on the Calculus page, with a graph to compare": "Taylorreihe: taylor auf der Seite „Analysis“, mit einem Graphen zum Vergleich",
     "2D graph: parametric, polar and implicit curves": "2D-Graph: Parameter-, Polar- und implizite Kurven",
     "Sliders: letters such as a in a sin(b x) get sliders in the graph": "Schieberegler: Buchstaben wie a in a sin(b x) bekommen im Graphen Schieberegler",
+    "Next steps under the newest answer: details, graph, factor and more": "Nächste Schritte unter der neuesten Antwort: Details, Graph, Faktorisieren und mehr",
+    "Details: the other forms of an answer on one sheet": "Details: die anderen Formen einer Antwort auf einem Blatt",
     "Area: the line crosses itself, so no area is given": "Fläche: die Linie schneidet sich selbst, daher keine Fläche",
     "Taylor series": "Taylorreihe",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "Das Polynom bis zum Grad n (höchstens 20) um x = a, mit exakten Koeffizienten, wo möglich",

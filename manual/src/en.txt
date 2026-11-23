@@ -31,6 +31,8 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - **Taylor series**: taylor on the [[Calculus]] page gives the Taylor polynomial about a center up to a degree (exact coefficients; `taylor(sin(x), x, 0, 5)` can be typed too). [[Compare in a graph]] draws it with the function ([Derivatives, integrals, limits, sums](#calculus)).
 - **Three new kinds of 2D graph**: parametric (`x = cos(t), y = sin(2t)`), polar (`r = 1 + cos(θ)`) and implicit (`x^2 + y^2 = 1`) lines, told from their form or chosen at the top; their length and area (polar), and new samples: a cardioid, a rose, a Lissajous curve and more ([2D graph](#graph-2d)).
 - **Sliders**: letters such as a and b in the formulas of a graph get sliders, and moving one changes the graph at once; ▶ keeps it moving. Free in 2D; the sliders in 3D and the GIF of a slider are QCalc Pro ([2D graph](#graph-2d)).
+- **Next steps**: buttons under the newest answer for details, a graph, factoring, the derivative and more; a button's calculation becomes a new line ([Reading answers](#results)).
+- **Details**: the exact value, decimal, fraction, bases and prime factors of an answer, or the graph, zeros, derivative, integral and Taylor series of an expression, on one sheet ([Reading answers](#results)).
 - **Two lines**: an exact result with its approximation shows "= exact" on one line and "≈ approximation" on the next. Fractions and roots are drawn in the same letters as the other results.
 - **Numbers**: no ending zeros in approximations; very large or small numbers as 1.606 938 × 10⁶⁰ (copied as 1.606938E60); whole numbers and decimals that end are shown in full up to 60 digits, even beyond the precision (for example 30!).
 - **Long results and units**: a result too long for one line gets smaller letters, and only then breaks between groups of three digits; a result with units stays on one line (m/s).
@@ -110,6 +112,9 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: To see one line of the history with more digits, choose 30, 50, 100 or Other… in its ⋯ → [[Work it out with other digits]]. The answer shows in a sheet with [[Put the expression into the input field]], [[Keep it in the history]] and [[Copy the result]]. The precision of the settings and the line stay as they are.
 :pro: Up to 1000 digits are free. More than 1000, up to 200000 digits, is a QCalc Pro feature.
 :tip: A very long answer scrolls in the history so that every digit can be read; copying it copies every digit.
+:step: Under the newest answer, buttons for what is often done next (6 at most): for an expression in x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]; for a number [[Details]], [[As a fraction]], [[Scientific]] (an integer: [[Prime factors]], [[In hex]]); with a unit [[Convert…]]; for a matrix [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. A button's calculation becomes a new line of the history.
+:step: [[Details]] (or ⋯ → [[Details]]) shows the other forms of the answer together: for a number the exact value, the decimal, the fraction, the mixed fraction and the scientific notation (an integer in bases 2, 8 and 16 and its prime factors; with a unit, other units); for an expression in x a small graph, the zeros, the derivative, the integral, the Taylor series and the factored form. Tap a row for [[Put the expression in the field]], [[Keep it in the history]] or [[Copy result]].
+:tip: Without these buttons: [[Settings]] → [[Suggest the next steps under the newest answer]] off.
 
 ## undo | Deleting and undoing
 :what: ⌫ deletes one character, AC empties the input field. Right after that, [[Undo]] above the input field brings it back.

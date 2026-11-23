@@ -1,6 +1,30 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    // (1.15.0) the next steps under the newest answer and the sheet of details
+    "As a decimal": "En décimal",
+    "As a fraction": "En fraction",
+    "Buttons under the newest answer for what is often done next: details, graph, factor, derivative and the like": "Des boutons sous la dernière réponse pour ce qu’on fait souvent ensuite : détails, graphique, factoriser, dérivée, etc.",
+    "Convert…": "Convertir…",
+    "Details": "Détails",
+    "Exact": "Exact",
+    "Expanded": "Développé",
+    "Factor": "Factoriser",
+    "Factored": "Factorisé",
+    "Graph (opens the 2D graph)": "Graphique (ouvre le graphique 2D)",
+    "In hex": "En hexadécimal",
+    "Next steps": "Étapes suivantes",
+    "Nothing more to show for this result": "Rien de plus à montrer pour ce résultat",
+    "Other units": "Autres unités",
+    "Prime factors": "Facteurs premiers",
+    "Put the expression in the field": "Mettre l’expression dans le champ",
+    "Scientific": "Scientifique",
+    "Solve = 0": "Résoudre = 0",
+    "Suggest the next steps under the newest answer": "Proposer les étapes suivantes sous la dernière réponse",
+    "Taylor": "Taylor",
+    "Taylor series (x = 0, degree 5)": "Série de Taylor (x = 0, degré 5)",
+    "This result is too long for details": "Ce résultat est trop long pour les détails",
+    "Zeros (= 0)": "Zéros (= 0)",
     // (1.15.0) the 3D graph: a surface waiting for its edges
     "Working out where a surface leaves the box…": "Calcul de l’endroit où une surface sort de la boîte…",
     // (1.15.0) the sliders of the letters of the graphs
@@ -50,6 +74,8 @@
     "Taylor series: taylor on the Calculus page, with a graph to compare": "Série de Taylor : taylor sur la page « Analyse », avec un graphique pour comparer",
     "2D graph: parametric, polar and implicit curves": "Graphe 2D : courbes paramétriques, polaires et implicites",
     "Sliders: letters such as a in a sin(b x) get sliders in the graph": "Curseurs : les lettres comme a dans a sin(b x) ont des curseurs dans le graphique",
+    "Next steps under the newest answer: details, graph, factor and more": "Étapes suivantes sous la dernière réponse : détails, graphique, factoriser et plus",
+    "Details: the other forms of an answer on one sheet": "Détails : les autres formes d’une réponse sur une feuille",
     "Area: the line crosses itself, so no area is given": "Aire : la ligne se coupe elle-même, l’aire n’est donc pas donnée",
     "Taylor series": "Série de Taylor",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "Le polynôme jusqu’au degré n (20 au plus) autour de x = a, avec des coefficients exacts si possible",
