@@ -13,6 +13,24 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    // (1.15.0) the sliders of the letters of the graphs
+    "Sliders": "Deslizadores",
+    "Value of {0}": "Valor de {0}",
+    "{0} = {1} (tap to type a value)": "{0} = {1} (toca para escribir un valor)",
+    "Move {0} to and fro": "Mover {0} de un lado a otro",
+    "Stop {0}": "Detener {0}",
+    "Slider of {0}": "Deslizador de {0}",
+    "Slider of {0}: range and step": "Deslizador de {0}: rango y paso",
+    "From": "Desde",
+    "To": "Hasta",
+    "Back to −5 to 5, step 0.1": "Volver a −5 a 5, paso 0,1",
+    "The end must be larger than the start": "El final debe ser mayor que el inicio",
+    "Check the step (more than 0, at most 100 000 steps)": "Revisa el paso (mayor que 0, como mucho 100 000 pasos)",
+    "Sliders in 3D are a QCalc Pro feature": "Los deslizadores en 3D son una función de QCalc Pro",
+    "The moving picture would be too large": "La imagen animada sería demasiado grande",
+    "Sliders in 3D": "Deslizadores en 3D",
+    "Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)": "Cambia una letra como a en a sin(x) cos(y) con un deslizador en la gráfica 3D (en 2D es gratis)",
+    "The 3D graph and a slider moving as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "La gráfica 3D y un deslizador en movimiento como imagen animada (GIF), e imágenes de las gráficas a resolución completa sin «QCalc» en la esquina",
     // (1.15.0) the kinds of lines of the 2D graph
     "Polar (graph)": "Polar",
     "Parametric": "Paramétrica",
@@ -41,6 +59,7 @@
     // (1.15.0) the Taylor series
     "Taylor series: taylor on the Calculus page, with a graph to compare": "Serie de Taylor: taylor en la página «Cálculo», con una gráfica para comparar",
     "2D graph: parametric, polar and implicit curves": "Gráfica 2D: curvas paramétricas, polares e implícitas",
+    "Sliders: letters such as a in a sin(b x) get sliders in the graph": "Deslizadores: letras como a en a sin(b x) tienen deslizadores en la gráfica",
     "Area: the line crosses itself, so no area is given": "Área: la línea se corta a sí misma, así que no se da el área",
     "Taylor series": "Serie de Taylor",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "El polinomio hasta el grado n (20 como máximo) en torno a x = a, con coeficientes exactos cuando se puede",

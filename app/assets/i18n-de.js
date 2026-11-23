@@ -1,6 +1,24 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    // (1.15.0) the sliders of the letters of the graphs
+    "Sliders": "Schieberegler",
+    "Value of {0}": "Wert von {0}",
+    "{0} = {1} (tap to type a value)": "{0} = {1} (tippen, um einen Wert einzugeben)",
+    "Move {0} to and fro": "{0} hin und her bewegen",
+    "Stop {0}": "{0} anhalten",
+    "Slider of {0}": "Schieberegler für {0}",
+    "Slider of {0}: range and step": "Schieberegler für {0}: Bereich und Schritt",
+    "From": "Von",
+    "To": "Bis",
+    "Back to −5 to 5, step 0.1": "Zurück auf −5 bis 5, Schritt 0,1",
+    "The end must be larger than the start": "Das Ende muss größer als der Anfang sein",
+    "Check the step (more than 0, at most 100 000 steps)": "Schritt prüfen (größer als 0, höchstens 100 000 Schritte)",
+    "Sliders in 3D are a QCalc Pro feature": "Schieberegler in 3D sind eine Funktion von QCalc Pro",
+    "The moving picture would be too large": "Das bewegte Bild würde zu groß",
+    "Sliders in 3D": "Schieberegler in 3D",
+    "Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)": "Einen Buchstaben wie a in a sin(x) cos(y) im 3D-Graphen mit einem Schieberegler ändern (in 2D kostenlos)",
+    "The 3D graph and a slider moving as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "Der 3D-Graph und ein bewegter Schieberegler als bewegtes Bild (GIF), und Bilder der Graphen in voller Auflösung ohne „QCalc“ in der Ecke",
     // (1.15.0) the kinds of lines of the 2D graph
     "Polar (graph)": "Polar",
     "Parametric": "Parameter",
@@ -29,6 +47,7 @@
     // (1.15.0) the Taylor series
     "Taylor series: taylor on the Calculus page, with a graph to compare": "Taylorreihe: taylor auf der Seite „Analysis“, mit einem Graphen zum Vergleich",
     "2D graph: parametric, polar and implicit curves": "2D-Graph: Parameter-, Polar- und implizite Kurven",
+    "Sliders: letters such as a in a sin(b x) get sliders in the graph": "Schieberegler: Buchstaben wie a in a sin(b x) bekommen im Graphen Schieberegler",
     "Area: the line crosses itself, so no area is given": "Fläche: die Linie schneidet sich selbst, daher keine Fläche",
     "Taylor series": "Taylorreihe",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "Das Polynom bis zum Grad n (höchstens 20) um x = a, mit exakten Koeffizienten, wo möglich",

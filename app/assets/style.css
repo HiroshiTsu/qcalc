@@ -1781,3 +1781,16 @@ body.hselect #history { padding-bottom: 150px; }
 .ct-btn { min-height: 36px; padding: 4px 12px; }
 .ct-out { font-weight: 600; }
 .tools-note { margin-top: 2px; }
+/* (1.15.0) the sliders of the letters under a graph: name, slider, value (tap to type), ▶ and ⋯, each 48 px high */
+.sliders { display: flex; flex-direction: column; gap: 0; margin: 6px 0 2px; }
+.sliders[hidden] { display: none; }
+.sl-row { display: flex; align-items: center; gap: 4px; min-height: 48px; }
+.sl-name { flex: 0 0 auto; min-width: 20px; text-align: center; font: italic 600 18px/1 "Times New Roman", "Noto Serif", serif; }
+.sl-range { flex: 1 1 auto; min-width: 72px; height: 48px; margin: 0 4px; accent-color: var(--accent); background: transparent; }
+.sl-val { flex: 0 0 auto; min-width: 58px; max-width: 40%; min-height: 40px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: inherit; font-size: 15px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sl-play, .sl-more { flex: 0 0 auto; width: 48px; height: 48px; border: 0; border-radius: 24px; background: transparent; color: var(--accent); font-size: 18px; padding: 0; }
+.sl-lock { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 13.5px; color: var(--muted); padding: 4px 0; }
+.sl-lock .sl-pro { min-height: 40px; }
+.sl-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 6px 6px; }
+.sl-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.sl-field .sheet-input { margin: 0; width: 100%; box-sizing: border-box; }

@@ -1,6 +1,24 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    // (1.15.0) the sliders of the letters of the graphs
+    "Sliders": "Curseurs",
+    "Value of {0}": "Valeur de {0}",
+    "{0} = {1} (tap to type a value)": "{0} = {1} (touchez pour saisir une valeur)",
+    "Move {0} to and fro": "Faire varier {0} dans les deux sens",
+    "Stop {0}": "Arrêter {0}",
+    "Slider of {0}": "Curseur de {0}",
+    "Slider of {0}: range and step": "Curseur de {0} : plage et pas",
+    "From": "De",
+    "To": "À",
+    "Back to −5 to 5, step 0.1": "Revenir à −5 à 5, pas 0,1",
+    "The end must be larger than the start": "La fin doit être plus grande que le début",
+    "Check the step (more than 0, at most 100 000 steps)": "Vérifiez le pas (plus de 0, au plus 100 000 pas)",
+    "Sliders in 3D are a QCalc Pro feature": "Les curseurs en 3D sont une fonction de QCalc Pro",
+    "The moving picture would be too large": "L’image animée serait trop grande",
+    "Sliders in 3D": "Curseurs en 3D",
+    "Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)": "Faire varier une lettre comme a dans a sin(x) cos(y) avec un curseur dans le graphe 3D (gratuit en 2D)",
+    "The 3D graph and a slider moving as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "Le graphe 3D et un curseur qui bouge en image animée (GIF), et des images des graphes en pleine résolution sans « QCalc » dans le coin",
     // (1.15.0) the kinds of lines of the 2D graph
     "Polar (graph)": "Polaire",
     "Parametric": "Paramétrique",
@@ -29,6 +47,7 @@
     // (1.15.0) the Taylor series
     "Taylor series: taylor on the Calculus page, with a graph to compare": "Série de Taylor : taylor sur la page « Analyse », avec un graphique pour comparer",
     "2D graph: parametric, polar and implicit curves": "Graphe 2D : courbes paramétriques, polaires et implicites",
+    "Sliders: letters such as a in a sin(b x) get sliders in the graph": "Curseurs : les lettres comme a dans a sin(b x) ont des curseurs dans le graphique",
     "Area: the line crosses itself, so no area is given": "Aire : la ligne se coupe elle-même, l’aire n’est donc pas donnée",
     "Taylor series": "Série de Taylor",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "Le polynôme jusqu’au degré n (20 au plus) autour de x = a, avec des coefficients exacts si possible",
