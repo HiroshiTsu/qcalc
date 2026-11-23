@@ -1486,11 +1486,13 @@
   // the numbers of a line of plain text: digits with their groups and decimals, and an exponent
   const RES_NUM_RE = /\d(?:[\d  ,.]*\d)?(?:E[−-]?\d+)?/g;
   // a number without its ending zeros (an approximation): 1.414 213 562 373 10 → 1.414 213 562 373 1, 2.50 → 2.5, 3.0 → 3
+  // (the exponent kept as it is: 1.606 938 044 258 99E60 stays …E60, not …E6)
   function noEndZeros(num) {
-    const k = num.indexOf(NF.dec);
+    const e = /E[−-]?\d+$/.exec(num), exp = e ? e[0] : '', mant = e ? num.slice(0, e.index) : num;
+    const k = mant.indexOf(NF.dec);
     if (k < 0) return num;
-    const f = num.slice(k + 1).replace(/[0  ]+$/, '');
-    return f ? num.slice(0, k + 1) + f : num.slice(0, k);
+    const f = mant.slice(k + 1).replace(/[0  ]+$/, '');
+    return (f ? mant.slice(0, k + 1) + f : mant.slice(0, k)) + exp;
   }
   // a number as nodes: the groups with a place to break after the sign between them (",", "." or a narrow space: the
   // owner's choice of 11-23, a line may end with "," but not begin with it), and its
