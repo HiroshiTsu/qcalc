@@ -2,6 +2,11 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "Touching an expression edits its line: = puts the new result in its place. For a new line, press \"As a new line\".": "點按算式會修改那一行：按 = 會以新結果取代那一行。若要新增一行，請按「改為新的一列」。",
+    "This line was worked out in {0}: it is worked out in {0} again": "這一行是以{0}計算的，仍以{0}計算",
+    "The angle unit of this line was not kept: it is worked out in {0}, as set now": "這一行沒有保留角度單位，因此以目前的設定（{0}）計算",
+    "Nothing changed: still editing the line": "沒有任何變更（回到修改中的狀態）",
+    "A line above was edited: this answer may be out of date": "上方的行已修改，此結果可能已過時",
     "#{0}: that line is no longer in the history": "#{0}：該行已不在歷史紀錄中（已刪除）",
     "The answer of #{0} cannot be used in a calculation (too long, or text)": "#{0} 的結果無法用於計算（太長或為文字）",
     "#{0} is no longer in the history: this answer is the one from before": "#{0} 這一行已刪除（此結果為刪除前的值）",

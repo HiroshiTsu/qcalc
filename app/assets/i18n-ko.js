@@ -1,6 +1,11 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "Touching an expression edits its line: = puts the new result in its place. For a new line, press \"As a new line\".": "식을 탭하면 그 줄을 고칩니다. =를 누르면 그 줄이 새 결과로 바뀝니다. 새 줄로 하려면 \"새 줄로\"를 누르세요.",
+    "This line was worked out in {0}: it is worked out in {0} again": "이 줄은 {0}(으)로 계산했습니다. {0}(으)로 다시 계산합니다",
+    "The angle unit of this line was not kept: it is worked out in {0}, as set now": "이 줄의 각도 단위가 남아 있지 않아 지금 설정({0})으로 계산합니다",
+    "Nothing changed: still editing the line": "아무것도 바꾸지 않았습니다(고치는 중으로 돌아갔습니다)",
+    "A line above was edited: this answer may be out of date": "위의 줄이 고쳐져서 이 결과는 오래되었을 수 있습니다",
     "#{0}: that line is no longer in the history": "#{0}: 그 줄은 기록에 없습니다(삭제됨)",
     "The answer of #{0} cannot be used in a calculation (too long, or text)": "#{0}의 결과는 계산에 쓸 수 없습니다(너무 길거나 문자)",
     "#{0} is no longer in the history: this answer is the one from before": "#{0} 줄이 삭제되었습니다(이 결과는 삭제 전의 값입니다)",
