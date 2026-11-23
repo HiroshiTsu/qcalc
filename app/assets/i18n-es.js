@@ -13,6 +13,8 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    // (1.15.0) the 3D graph: a surface waiting for its edges
+    "Working out where a surface leaves the box…": "Calculando dónde sale una superficie de la caja…",
     // (1.15.0) the sliders of the letters of the graphs
     "Sliders": "Deslizadores",
     "Value of {0}": "Valor de {0}",

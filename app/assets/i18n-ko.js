@@ -1,6 +1,8 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    // (1.15.0) the 3D graph: a surface waiting for its edges
+    "Working out where a surface leaves the box…": "곡면이 상자 밖으로 나가는 곳을 계산 중…",
     // (1.15.0) the sliders of the letters of the graphs
     "Sliders": "슬라이더",
     "Value of {0}": "{0}의 값",

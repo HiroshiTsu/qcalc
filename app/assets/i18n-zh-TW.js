@@ -2,6 +2,8 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    // (1.15.0) the 3D graph: a surface waiting for its edges
+    "Working out where a surface leaves the box…": "正在計算曲面離開方框的位置…",
     // (1.15.0) the sliders of the letters of the graphs
     "Sliders": "滑桿",
     "Value of {0}": "{0} 的值",

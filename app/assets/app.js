@@ -7850,6 +7850,23 @@
 
 
   // --------------------------------------------- partial derivatives (3D graph)
+  // The partial derivative of a surface by x or y, as short as it can be had (1.15.0): the engine's, and for a surface of
+  // r = √(x² + y²) only (a doughnut, a sphere written with r, a cone), f′(r) · x / r by the chain rule, worked out with r
+  // as the variable, whichever is shorter. (The engine's for the doughnut was twice as long, and its long formula made
+  // the edges slow to find on a phone.)
+  async function partialOf(e, v) {
+    const d1 = await exactText(`diff(${e}, ${v})`);
+    const R = /(?:√|sqrt)\(\s*x\s*\^\s*2\s*\+\s*y\s*\^\s*2\s*\)/g;
+    if (!R.test(e)) return d1;
+    const e2 = e.replace(R, '(x)');
+    if (hasVar(e.replace(R, '(1)'), 'x') || hasVar(e.replace(R, '(1)'), 'y')) return d1;
+    const g = await exactText(`diff(${e2}, x)`);
+    if (!g || /diff\(|undefined/.test(g)) return d1;
+    const rr = 'x^2 + y^2';
+    const g2 = String(g).replace(/(?<![\p{L}_])x(?:²|\^2)(?![\p{N}])/gu, '\u0001').replace(/(?<![\p{L}_])x(?![\p{L}\p{N}_])/gu, '√(' + rr + ')').replace(/\u0001/g, '(' + rr + ')');
+    const d2 = g2 === '0' ? '0' : `(${g2}) × ${v} / √(${rr})`;
+    return !d1 || /diff\(|undefined/.test(d1) || toDisplay(d2).length < toDisplay(d1).length ? d2 : d1;
+  }
   function buildPartial3d() {
     const f = el('select', { 'aria-label': tr('Surface', '曲面') });
     const add = async (v) => {
@@ -7857,7 +7874,7 @@
       if (!s1) return;
       // worked out first: the 3D graph puts numbers for y into the expression before diff() could
       // see y, so diff(f, y) would be drawn wrong
-      const d = await exactText(`diff(${s1.expr}, ${v})`);
+      const d = await partialOf(s1.label || s1.expr, v);
       if (!d || /diff\(|undefined/.test(d)) { toast(tr('Could not find the partial derivative', '偏導関数を求められませんでした'), 2200); return; }
       const expr = normalizeExpr(d);
       const lines = Q3.ta.value.split('\n').map((t) => t.trim()).filter(Boolean);
@@ -10300,7 +10317,8 @@
       clearMark3d();
       // (1.12.0, BG09: the solid turns into being once its edges are known; until then "Calculating…")
       if (Q3.growNext && rimsReady()) { const ax = Q3.growNext; Q3.growNext = null; startGrow(ax); }
-      Q3.msg.textContent = Q3.growNext ? tr('Calculating…', '計算中…') : note;
+      // (1.15.0: a surface that rises out of the box toward its edge is drawn when the engine has found where it leaves it)
+      Q3.msg.textContent = Q3.growNext ? tr('Calculating…', '計算中…') : !data.edgesExact && series.some((q) => q.rising) ? [note, tr('Working out where a surface leaves the box…', '曲面が箱から出る所を計算中…')].filter(Boolean).join(' ') : note;
       legend3d(data, vals.length > 0);
       if (!quick && Q3.volUI && !Q3.volUI.box.hidden) volumeSurfacesChanged();
       if (!quick && Q3.partUI && !Q3.partUI.box.hidden) partialSurfacesChanged();
@@ -10335,16 +10353,23 @@
     const tolZ = (data.z1 - data.z0) * 4e-5, leaves = series.some((q) => q.z.some((v) => v === v && (v < data.z0 - tolZ || v > data.z1 + tolZ)));
     if (!leaves) show();
     const late = setTimeout(show, 2500);
-    if (!refined) refined = await refineRims(series, r.x, r.y, seq, guessed);
+    const tR = Date.now();
+    if (!refined && !devFlag('norefine')) refined = await refineRims(series, r.x, r.y, seq, guessed);
     if (seq !== Q3.seq) { clearTimeout(late); return; }
     if (!spec) settle();
     // where the surfaces leave the box at its top or bottom (1.9.5)
-    const clipped = await refineClips(series, r.x, r.y, data.z0, data.z1, seq);
+    const tC = Date.now();
+    const clipped = devFlag('norefine') ? false : await refineClips(series, r.x, r.y, data.z0, data.z1, seq);
+    // (1.15.0: from now on the edges are as exact as they can be: the cells there are drawn, cut where the engine found
+    // the edges, or on the straight line where it could not)
+    if (seq === Q3.seq && !devFlag('norefine')) data.edgesExact = true;
+    // (for the tests: how long the edges took, and the surfaces that rise toward an edge)
+    if (Q3.canvas) Q3.canvas.dataset.edges = JSON.stringify({ rims: !!refined, rimMs: tC - tR, clips: clipped, clipMs: Date.now() - tC, clipJobs: Q3.clipJobs, shownBefore: shown, n: series.length, rising: series.map((q) => !!q.rising) });
     clearTimeout(late);
     if (seq !== Q3.seq) return;
     if (shown) {
       if (Q3.growNext && rimsReady()) { const ax = Q3.growNext; Q3.growNext = null; Q3.msg.textContent = note; startGrow(ax); }
-      if (refined || clipped) { legend3d(data, vals.length > 0); draw3d(); }
+      if (refined || clipped || data.edgesExact) { if (!Q3.growNext) Q3.msg.textContent = note; legend3d(data, vals.length > 0); draw3d(); }
     } else show();
     if (Q3.pending) { const run = Q3.pending; Q3.pending = null; run(); }
   }
@@ -10443,6 +10468,7 @@
         if (j + 1 < ny) add('v' + k, k, k + nx);
       }
     });
+    Q3.clipJobs = jobs.length;
     if (!jobs.length || jobs.length > 2400) return false;
     const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect', base: 10, notation: 'auto', max_decimals: -1 });
     const B = batchOf(series.map((s) => s.expr));
@@ -10572,7 +10598,7 @@
   // the guesses are kept in jb.g for refineRims.
   function guessRims(series, xs, ys) {
     const nx = xs.length, ny = ys.length, jobs = rimJobs(series, nx, ny);
-    series.forEach((s) => { s.rim = {}; });
+    series.forEach((s) => { s.rim = {}; s.rising = false; });
     for (const jb of jobs) {
       const z = series[jb.si].z, k2 = 2 * jb.p - jb.q;
       const sameLine = jb.key[0] === 'v' || ((k2 / nx) | 0) === ((jb.p / nx) | 0);
@@ -10581,7 +10607,13 @@
       if (zb === zb) {
         const a2 = za * za, b2 = zb * zb;
         // (z² falls toward the edge: where the straight line reaches 0, as a share of the step)
-        if (b2 > a2) { f = Math.min(1, a2 / (b2 - a2)); zr = (za < 0 ? -1 : 1) * Math.sqrt(Math.max(0, a2 - (b2 - a2) * f)); } else { f = 0; zr = za; }
+        if (b2 > a2) { f = Math.min(1, a2 / (b2 - a2)); zr = (za < 0 ? -1 : 1) * Math.sqrt(Math.max(0, a2 - (b2 - a2) * f)); }
+        // (1.15.0) rising toward the edge, steeply (a derivative near where it has no finite value, as at the rim of a
+        // sphere or a doughnut): it leaves the box before the edge, somewhere not known yet. Beyond the box (no point
+        // is drawn there), the cell waits for the engine's points (refineRims, refineClips) instead of being drawn as
+        // a spike to the grid point; a gentle rise keeps the guess at the grid point.
+        else if (Math.abs(za) > 2 * Math.abs(zb) + 1e-12 * Math.abs(za)) { f = 0; zr = za < 0 ? -Infinity : Infinity; series[jb.si].rising = true; }
+        else { f = 0; zr = za; }
       }
       const xa = xs[jb.p % nx], ya = ys[(jb.p / nx) | 0], xb = xs[jb.q % nx], yb = ys[(jb.q / nx) | 0];
       jb.g = f;
@@ -11210,7 +11242,8 @@
   const GL3D = { state: 0 };  // 0 not tried yet, 1 ready, -1 no WebGL 2 here
   // the test switch "3D with WebGL" (test builds; on unless turned off)
   function gl3dWanted() { try { return localStorage.getItem('qalc.dev.gl3d') !== 'false'; } catch (e) { return true; } }
-  // a switch of the test builds ("true"): ms3d, the time of each 3D drawing in a corner; pf200, the example of 200 rows on the test page
+  // a switch of the test builds ("true"): ms3d, the time of each 3D drawing in a corner; pf200, the example of 200 rows on the test page;
+  // norefine (1.15.0), the edges of the 3D graph not worked out by the engine (what a slow phone shows at first)
   function devFlag(k) { try { return localStorage.getItem('qalc.dev.' + k) === 'true'; } catch (e) { return false; } }
   function gl3dReady() { if (GL3D.state === 0) gl3dInit(); return GL3D.state === 1; }
   // (the GPU's layer away, when the 3D view shows something drawn on the 2D canvas)
@@ -11536,17 +11569,40 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const nx = D.nx, ny = D.ny, n = nx * ny, st = s.proj.st, w = s.proj.pw, xs = D.xs, ys = D.ys, rim = s.rim || {};
     const N = s.nrm && s.nrm.length === 3 * n ? s.nrm : (s.nrm = new Float32Array(3 * n));
     const slope = parabolaSlope;
-    const fromRim = (key, along) => { const e = rim[key]; return e && e.z === e.z ? [along(e), Wz(e.z)] : null; };
+    const fromRim = (key, along) => { const e = rim[key]; return e && isFinite(e.z) ? [along(e), Wz(e.z)] : null; };
+    // (1.15.0: a neighbour beyond the range of z has a real height all the same: the slope toward it, so that a surface
+    // that rises steeply out of the box, as a derivative near where it has no finite value, is lit as steep there)
+    const H = (kk, c) => (st[kk] === 1 ? [c, w[kk]] : st[kk] === 2 ? [c, Wz(s.z[kk])] : null);
     for (let k = 0; k < n; k++) {
       if (st[k] !== 1) continue;
       const i = k % nx, j = (k / nx) | 0, u0 = U(xs[i]), v0 = V(ys[j]);
-      const L = i > 0 ? (st[k - 1] === 1 ? [U(xs[i - 1]), w[k - 1]] : fromRim('h' + (k - 1), (e) => U(e.x))) : null;
-      const R = i < nx - 1 ? (st[k + 1] === 1 ? [U(xs[i + 1]), w[k + 1]] : fromRim('h' + k, (e) => U(e.x))) : null;
-      const Dn = j > 0 ? (st[k - nx] === 1 ? [V(ys[j - 1]), w[k - nx]] : fromRim('v' + (k - nx), (e) => V(e.y))) : null;
-      const Up = j < ny - 1 ? (st[k + nx] === 1 ? [V(ys[j + 1]), w[k + nx]] : fromRim('v' + k, (e) => V(e.y))) : null;
+      const L = i > 0 ? (H(k - 1, U(xs[i - 1])) || fromRim('h' + (k - 1), (e) => U(e.x))) : null;
+      const R = i < nx - 1 ? (H(k + 1, U(xs[i + 1])) || fromRim('h' + k, (e) => U(e.x))) : null;
+      const Dn = j > 0 ? (H(k - nx, V(ys[j - 1])) || fromRim('v' + (k - nx), (e) => V(e.y))) : null;
+      const Up = j < ny - 1 ? (H(k + nx, V(ys[j + 1])) || fromRim('v' + k, (e) => V(e.y))) : null;
       const du = slope(u0, w[k], L, R), dv = slope(v0, w[k], Dn, Up);
       const l = Math.sqrt(du * du + dv * dv + 1);
       N[3 * k] = -du / l; N[3 * k + 1] = -dv / l; N[3 * k + 2] = 1 / l;
+    }
+    // (1.15.0) where a surface rises out of the box, the normals of the grid points next to it, which light the steep
+    // part up to the cut, are evened out with their neighbours along it: one by one they lit it in stripes
+    if (st.some((t) => t === 2)) {
+      const M = new Float32Array(N);
+      for (let k = 0; k < n; k++) {
+        if (st[k] !== 1) continue;
+        const i = k % nx, j = (k / nx) | 0;
+        let edge = false;
+        for (const q of [i > 0 ? k - 1 : -1, i < nx - 1 ? k + 1 : -1, j > 0 ? k - nx : -1, j < ny - 1 ? k + nx : -1]) if (q >= 0 && st[q] === 2) edge = true;
+        if (!edge) continue;
+        let a = 0, b = 0, c = 0;
+        for (let jj = Math.max(0, j - 1); jj <= Math.min(ny - 1, j + 1); jj++) for (let ii = Math.max(0, i - 1); ii <= Math.min(nx - 1, i + 1); ii++) {
+          const q = jj * nx + ii;
+          if (st[q] === 1) { a += N[3 * q]; b += N[3 * q + 1]; c += N[3 * q + 2]; }
+        }
+        const l = Math.hypot(a, b, c) || 1;
+        M[3 * k] = a / l; M[3 * k + 1] = b / l; M[3 * k + 2] = c / l;
+      }
+      N.set(M);
     }
     return N;
   }
@@ -13184,6 +13240,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       if (!VS.disk) return true; const cx = Math.max(xs[i], Math.min(xs[i + 1], 0)), cy = Math.max(ys[j], Math.min(ys[j + 1], 0)); return cx * cx + cy * cy <= VS.R * VS.R; };
     // a cell partly inside and partly outside the disk (its nearest point inside, its farthest corner outside)
     const crossing = (i, j) => VS.disk && inRegion(i, j) && Math.max(Math.hypot(xs[i], ys[j]), Math.hypot(xs[i + 1], ys[j]), Math.hypot(xs[i], ys[j + 1]), Math.hypot(xs[i + 1], ys[j + 1])) > VS.R;
+    D.waiting = false;
     for (const s of D.series) {
       const n = D.nx * D.ny;
       const chosen = !!vf && (s === vf || s === vg);
@@ -13256,18 +13313,46 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         }
       }
       // where the surface leaves the box (refineClips, 1.9.5): on its top or bottom, with the normal of
-      // the grid point inside
+      // the grid point inside. (1.15.0) Where the engine has not found it (yet: the surface is shown before, after
+      // 2.5 seconds; or it could not, on a slow phone), on the straight line between the grid point inside and the one
+      // beyond, so that a cell that leaves the box is cut along its top or bottom all the same, instead of being left
+      // out: left out, the cells near where a surface rises out of the box (a derivative near where it has no finite
+      // value) stood alone as spikes. The engine's points replace these when they come.
       s.clipP = null;
-      if (s.clip) {
-        s.clipP = {};
-        for (const key in s.clip) {
-          const e = s.clip[key], w = e.z > (D.z0 + D.z1) / 2 ? EZ : -EZ;
-          const ka = +key.slice(1), kb = key[0] === 'h' ? ka + 1 : ka + D.nx, kin = st[ka] === 1 ? ka : kb;
-          if (st[kin] !== 1) continue;
+      {
+        const zMid = (D.z0 + D.z1) / 2;
+        const clipAt = (key, kin, e) => {
+          const w = e.z > zMid ? EZ : -EZ;
           proj(U(e.x), V(e.y), w);
+          if (!s.clipP) s.clipP = {};
           s.clipP[key] = { x: T[0], y: T[1], d: T[2], u: U(e.x), v: V(e.y), w, n: [s.cnrm[3 * kin], s.cnrm[3 * kin + 1], s.cnrm[3 * kin + 2]], gi: giOf(U(e.x)), gj: gjOf(V(e.y)) };
+        };
+        const lineAt = (key, ka, kb) => {
+          if (!((st[ka] === 1 && st[kb] === 2) || (st[ka] === 2 && st[kb] === 1))) return;
+          const kin = st[ka] === 1 ? ka : kb, kout = kin === ka ? kb : ka;
+          const e = s.clip && s.clip[key];
+          if (e) { clipAt(key, kin, e); return; }
+          const zi = s.z[kin], zo = s.z[kout], zt = zo > zMid ? D.z1 : D.z0;
+          const f = Math.max(0, Math.min(1, (zt - zi) / ((zo - zi) || 1)));
+          const xa = xs[kin % D.nx], ya = ys[(kin / D.nx) | 0], xb = xs[kout % D.nx], yb = ys[(kout / D.nx) | 0];
+          clipAt(key, kin, { x: xa + (xb - xa) * f, y: ya + (yb - ya) * f, z: zt });
+        };
+        for (let j = 0; j < D.ny; j++) for (let i = 0; i < D.nx; i++) {
+          const k = j * D.nx + i;
+          if (i + 1 < D.nx) lineAt('h' + k, k, k + 1);
+          if (j + 1 < D.ny) lineAt('v' + k, k, k + D.nx);
+        }
+        // (the points the engine found from a grid point to the edge of the real values, beyond the box)
+        if (s.clip) for (const key in s.clip) {
+          if (s.clipP && s.clipP[key]) continue;
+          const ka = +key.slice(1), kb = key[0] === 'h' ? ka + 1 : ka + D.nx, kin = st[ka] === 1 ? ka : kb;
+          if (st[kin] === 1) clipAt(key, kin, s.clip[key]);
         }
       }
+      // (1.15.0) a surface that rises out of the box toward an edge where it has no value (a derivative at the rim of a
+      // doughnut or a sphere): not drawn before the engine has found where it leaves the box (the first seconds;
+      // "Calculating…" says so): drawn from the grid alone it stood in spikes along its edges
+      if (!D.edgesExact && s.rising) { D.waiting = true; continue; }
       for (let j = 0; j < D.ny - 1; j++) {
         const dv = V(ys[j + 1]) - V(ys[j]);
         for (let i = 0; i < D.nx - 1; i++) {
@@ -13275,6 +13360,16 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           const real = (st[a] === 1) + (st[b] === 1) + (st[c2] === 1) + (st[d] === 1);
           const out = st[a] === 2 || st[b] === 2 || st[c2] === 2 || st[d] === 2;
           if (!real || (out && !s.clipP)) continue;
+          // (1.15.0) before the engine has found where the surfaces end or leave the box (the first 2.5 seconds), a cell
+          // that leaves the box or rises steeply (more than a quarter of the box's height across it) is left out: near
+          // where a surface rises out of the box (a derivative near where it has no finite value) such cells, drawn from
+          // the grid alone, stood as spikes
+          if (!D.edgesExact) {
+            if (out) continue;
+            let lo = Infinity, hi = -Infinity;
+            for (const q of [a, b, c2, d]) if (st[q] === 1) { if (pw[q] < lo) lo = pw[q]; if (pw[q] > hi) hi = pw[q]; }
+            if (hi - lo > EZ * 0.5) continue;
+          }
           const du = U(xs[i + 1]) - U(xs[i]);
           let pts, nu, nv, nw;
           if (real < 4 && (s.rimP || s.clipP || s.angP)) {
@@ -13508,6 +13603,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (vc && cells.some((q) => !q.vol && !q.inR)) fadeTo = cssRgb(css.getPropertyValue('--plot-bg').trim()) || (dark ? [24, 26, 32] : [255, 255, 255]);
     // the cells as triangles with the normal, the color (by height for one surface) and the grid
     // coordinates at their corners, laid over the pixels with a depth buffer (1.9.2)
+    if (c) c.dataset.waiting = D.waiting ? 'edges' : ''; // (a surface waiting for its edges, for the tests)
     const tb = triBuf(Q3);
     const colorAt = (s, w) => (single ? viridis((w / EZ + 1) / 2) : s.drawRgb || s.rgb);
     // (a corner, and for rimModel its G, its side of the edge and the level part of its normal)
