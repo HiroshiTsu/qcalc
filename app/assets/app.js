@@ -1386,7 +1386,7 @@
         seen.add(c);
         try { if (!sugData) await loadSugData(); } catch (e) { }
         const u = sugData && sugData.byText.get(c);
-        if (u && !definedVars.has(c)) notes.push(trf('"{0}" was taken as the unit {1}; for an unknown, use x, y or z', '「{0}」は単位の「{1}」として計算しました。未知数には x、y、z を使ってください', c, u.title || u.name));
+        if (u && !definedVars.has(c)) notes.push(trf('"{0}" was taken as the unit {1}; for an unknown, use x, y or z', '「{0}」は単位の「{1}」として計算しました。未知数には x、y、z を使ってください', c, (JA && u._ja ? u._ja.split(' ')[0] : '') || u.title || u.name));
         if (notes.length > 4) break;
       }
     }
@@ -1789,6 +1789,43 @@
     [/^The middle of this long result is not shown \(([\d,]+) digits\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 桁）', 'result-cut-digits'],
     [/^The middle of this long result is not shown \(([\d,]+) characters\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 文字）', 'result-cut-characters'],
     [/^The middle of this long result is not shown$/, () => '長い結果のため、途中を省略しています', 'result-cut'],
+    // (1.16.0, the review of 11-24, T7) more of the engine's messages that people see
+    [/^The expression is ambiguous \(be careful when combining implicit multiplication and division\)\.?$/, (m) => '式があいまいです。省略した掛け算は割り算より先に計算します（6/2(1+2) は 6/(2(1+2))）。かっこで書くと確実です', 'ambiguous'],
+    [/^The (?:returned )?value is probably a prime number, but it is not (?:completely )?certain\.?$/, (m) => 'おそらく素数ですが、確実ではありません（確率的な判定です）', 'probably-prime'],
+    [/^(.+) interpreted as 10\^(.+) \(1(.+)\)\.?$/, (m, p1, p2, p3) => p1 + ' は 10^' + p2 + '（1' + p3 + '）として計算しました', 'exp-notation'],
+    [/^0\^0 was assumed equal to 1, but might be considered undefined\.?$/, (m) => '0^0 は 1 として計算しました（定義されないと考えることもあります）', 'zero-power-zero'],
+    [/^Required assumption: (.+)\.$/, (m, p1) => '前提とした条件：' + p1, 'required-assumption'],
+    [/^Solution (.+) requires that (.+)\.$/, (m, p1, p2) => '解 ' + p1 + ' は ' + p2 + ' のときだけです', 'solution-requires'],
+    [/^The solution requires that (.+)\.$/, (m, p1) => 'この解は ' + p1 + ' のときだけです', 'the-solution-requires'],
+    [/^The comparison is true for all (.+) \(with current assumptions\)\.?$/, (m, p1) => 'すべての ' + p1 + ' で成り立ちます', 'comparison-always'],
+    [/^The comparison is true for all (.+) if (.+)\.$/, (m, p1, p2) => p2 + ' のとき、すべての ' + p1 + ' で成り立ちます', 'comparison-always-if'],
+    [/^Unable to isolate (.+?)\.(?:\s[\s\S]*)?$/, (m, p1) => p1 + ' について解けませんでした', 'unable-to-isolate'],
+    [/^Not all complex roots were calculated for (.+)\.$/, (m, p1) => p1 + ' の複素数の解は、すべては求めていません', 'not-all-complex-roots'],
+    [/^Only one or two of the roots were calculated for (.+)\.$/, (m, p1) => p1 + ' の解は 1〜2 個だけ求めました', 'some-roots'],
+    [/^Limit for (.+) determined graphically\.?$/, (m, p1) => p1 + ' の極限は、グラフから数値的に求めた値です', 'limit-graphical'],
+    [/^Too large exponent\.?$/, (m) => '指数が大きすぎます', 'too-large-exponent'],
+    [/^Insufficient precision\.?$/, (m) => '有効桁数が足りません（設定で桁数を増やしてください）', 'insufficient-precision'],
+    [/^Vector size mismatch\.?$/, (m) => 'ベクトルの大きさが合いません', 'vector-size-mismatch'],
+    [/^Horizontal concatenation requires equal number of rows\.?$/, (m) => '横に並べるには、行の数が同じでなければなりません', 'horizontal-concatenation'],
+    [/^Vertical concatenation requires equal number of columns\.?$/, (m) => '縦に並べるには、列の数が同じでなければなりません', 'vertical-concatenation'],
+    [/^Trailing characters "(.+)" \(not a valid variable\/function\/unit\) in number "(.+)" were ignored\.?$/, (m, p1, p2) => '数「' + p2 + '」のあとの「' + p1 + '」は、変数・関数・単位ではないので無視しました', 'trailing-characters'],
+    [/^The determinant can only be calculated for square matrices\.?$/, (m) => '行列式は正方行列（行と列の数が同じ行列）でしか計算できません', 'determinant-square'],
+    [/^Maximum recursive depth reached\.?$/, (m) => '計算の入れ子が深くなりすぎました', 'max-recursion'],
+    [/^No equality or inequality to solve\.[\s\S]*$/, (m) => '解く等式・不等式がありません（例：x + 5 = 3）', 'no-equation-to-solve'],
+    [/^Calculations involving conversion of units without proportional linear relationship might give unexpected results[\s\S]*$/, (m) => '比例しない単位（°C や °F など）の計算は、思わぬ結果になることがあります', 'nonlinear-units'],
+    [/^Logarithmic ratio units are treated as other units[\s\S]*$/, (m) => '対数の比の単位（dB など）は普通の単位として扱うので、思わぬ結果になることがあります', 'log-ratio-units'],
+    [/^Because of time constraints only a limited number of combinations of terms were tried during factorization\.[\s\S]*$/, (m) => '時間の都合で、因数分解は一部の組み合わせだけ試しました（もう一度実行すると別の組み合わせを試します）', 'factor-limited'],
+    [/^Can only display rational numbers as roman numerals\.?$/, (m) => 'ローマ数字で表せるのは有理数だけです', 'roman-rational'],
+    [/^Cannot display numbers greater than 9999 or less than -9999 as roman numerals\.?$/, (m) => 'ローマ数字で表せるのは −9999〜9999 の数です', 'roman-range'],
+    [/^Too many elements \((\d+)\) for the dimensions \((\d+)x(\d+)\) of the matrix\.?$/, (m, p1, p2, p3) => '要素が多すぎます（' + p1 + ' 個、行列は ' + p2 + ' × ' + p3 + '）', 'matrix-too-many'],
+    [/^Too few elements \((\d+)\) in vector \((\d+) required\)\.?$/, (m, p1, p2) => 'ベクトルの要素が足りません（' + p1 + ' 個、' + p2 + ' 個必要）', 'vector-too-few'],
+    [/^Recursive variable: (.+) = (.+)$/, (m, p1, p2) => '変数が自分自身を使っています：' + p1 + ' = ' + p2, 'recursive-variable'],
+    [/^(.+)\(\) is incomplete and unreliable\.?$/, (m, p1) => p1 + '() は完全ではなく、結果が正しくない場合があります', 'incomplete-unreliable'],
+    [/^Unexpected unit in logarithm\.?$/, (m) => '対数の中に単位があります', 'unit-in-logarithm'],
+    [/^Inequalities are not allowed in (.+)\(\)\.?$/, (m, p1) => p1 + '() では不等式は使えません', 'inequality-not-allowed'],
+    [/^Error\(s\) in unit expression\.?$/, (m) => '単位の書き方に誤りがあります', 'unit-expression-errors'],
+    [/^Name "(.+)" is in use\. Replacing with "(.+)"\.?$/, (m, p1, p2) => '名前「' + p1 + '」は使われているので、「' + p2 + '」にしました', 'name-in-use'],
+    [/^(Element|Row|Column) (\d+) does not exist in (?:vector|matrix)\.?$/, (m, p1, p2) => (({ Element: '要素', Row: '行', Column: '列' })[p1] || p1) + ' ' + p2 + ' はありません', 'item-not-there'],
     // (after the more exact ones above) an argument of another kind than the function takes
     [/^Argument (\d+), (.+), in (.+)\(\) must be (.+?)\.?$/, (m, n, a, f, c) => f + '() の ' + n + ' 番目の引数が合っていません（' + c + '）', 'argument-kind'],
   ];
@@ -4827,8 +4864,51 @@
     V: 'ボルト', A: 'アンペア', ohm: 'オーム', F: 'ファラド', C: 'クーロン', Hz: 'ヘルツ', T: 'テスラ',
     bit: 'ビット', B: 'バイト', kbyte_c: 'キロバイト', Mbyte_c: 'メガバイト', Gbyte_c: 'ギガバイト', Tbyte_c: 'テラバイト',
     rad: 'ラジアン', deg: '度', gra: 'グラード', rpm: '回転毎分', lx: 'ルクス', lm: 'ルーメン', cd: 'カンデラ', mol: 'モル',
-    Bq: 'ベクレル', Sv: 'シーベルト', Gy: 'グレイ', dB: 'デシベル', km_p_l: 'キロメートル毎リットル 燃費', pt: 'ポイント'
+    Bq: 'ベクレル', Sv: 'シーベルト', Gy: 'グレイ', dB: 'デシベル', km_p_l: 'キロメートル毎リットル 燃費', pt: 'ポイント',
+    // (1.16.0, the review of 11-24, T6: the units of the converter that were shown with their English names)
+    dm_c: 'デシメートル', micron: 'ミクロン', 'Å': 'オングストローム', US_in: '米国測量インチ', hand: 'ハンド', US_ft: '米国測量フィート', li: 'リンク',
+    rd: 'ロッド', fathom: 'ファゾム 尋', ch: 'チェーン', fur: 'ハロン ファーロング', US_mi: '米国測量マイル', thou: 'ミル（1/1000インチ）', light_second: '光秒',
+    light_minute: '光分', light_hour: '光時',
+    hg_c: 'ヘクトグラム', gr: 'グレーン', pwt: 'ペニーウェイト', oz_t: 'トロイオンス', lb_t: 'トロイポンド', dr: 'ドラム', cwt: 'ショートハンドレッドウェイト',
+    l_cwt: 'ロングハンドレッドウェイト', s_ton: 'ショートトン 米トン', l_ton: 'ロングトン 英トン', stone: 'ストーン', u: '統一原子質量単位', Da: 'ダルトン',
+    kDa_c: 'キロダルトン', slug: 'スラグ',
+    cl_c: 'センチリットル', cuin: '立方インチ', UK_fl_oz: '英液量オンス', UK_gi: '英ジル', UK_pt: '英パイント', UK_qt: '英クォート', UK_gal: '英ガロン',
+    UK_bu: '英ブッシェル', fl_oz: '米液量オンス', gi: '米ジル', liq_pt: '米液量パイント', liq_qt: '米液量クォート', dry_pt: '米乾量パイント', dry_qt: '米乾量クォート',
+    pk: '米ペック', bu: '米ブッシェル', acre_ft: 'エーカーフィート', US_teaspoon: '米小さじ', US_tablespoon: '米大さじ', cup_US: '米カップ',
+    decare: 'デカール（10アール）', rood: 'ルード', sqin: '平方インチ', sqmi: '平方マイル', oR: 'ランキン度',
+    nautical_mile_p_h: '海里毎時', min_p_km: 'ペース（1kmあたりの分）', min_p_mile: 'ペース（1マイルあたりの分）', fortnight: '2週間',
+    RON: 'ルーマニア・レウ', ISK: 'アイスランド・クローナ', eurocent: 'ユーロセント', US_cent: 'セント（米ドル）',
+    cal_IT: '国際カロリー', Calorie: '大カロリー（キロカロリー）', gTNT: 'TNT火薬グラム', tTNT: 'TNT火薬トン', Btu: '英熱量単位', therm: 'サーム', erg: 'エルグ',
+    ft_lbf: 'フィート重量ポンド', PS: '仏馬力', dBm: 'ミリワット基準のデシベル', dBW: 'ワット基準のデシベル',
+    arcmin: '分（角度）', arcsec: '秒（角度）', turn: '回転', tex_point: 'TeXポイント', pica: 'パイカ', twip: 'トゥイップ', ata_point: 'アメリカンポイント',
+    cd_p_sqm: 'カンデラ毎平方メートル 輝度', fc: 'フートカンデラ', W_p_sr: 'ワット毎ステラジアン', W_p_sqm: 'ワット毎平方メートル',
+    A_p_m: 'アンペア毎メートル', Oe: 'エルステッド', Wb: 'ウェーバ', Mx: 'マクスウェル', gauss: 'ガウス',
+    nibble: 'ニブル', word: 'ワード（16ビット）', Pbyte_c: 'ペタバイト', Ebyte_c: 'エクサバイト', Kibyte_c: 'キビバイト', Mibyte_c: 'メビバイト',
+    Gibyte_c: 'ギビバイト', Tibyte_c: 'テビバイト', kbit_c: 'キロビット', Mbit_c: 'メガビット', Gbit_c: 'ギガビット', Tbit_c: 'テラビット', Pbit_c: 'ペタビット',
+    Kibit_c: 'キビビット', Mibit_c: 'メビビット', Gibit_c: 'ギビビット',
+    S: 'ジーメンス', V_p_m: 'ボルト毎メートル', N_p_C: 'ニュートン毎クーロン', H: 'ヘンリー',
+    mol_p_cum: 'モル毎立方メートル', mol_p_cudm: 'モル毎立方デシメートル', kat: 'カタール', mol_p_L: 'モル毎リットル', molar: 'モーラー（mol/L）',
+    Ci: 'キュリー', rem_radioactivity: 'レム', mrem_c: 'ミリレム', C_p_kg: 'クーロン毎キログラム', R: 'レントゲン', Gy_p_s: 'グレイ毎秒', mrem_p_h: 'ミリレム毎時',
+    dyn: 'ダイン', lbf: '重量ポンド', ozf: '重量オンス', pond: '重量グラム', kpond_c: '重量キログラム', kpond_p_sqcm: '重量キログラム毎平方センチメートル',
+    psi: '重量ポンド毎平方インチ', ksi: '重量キロポンド毎平方インチ', Torr: 'トル', inHg: '水銀柱インチ', mTorr_c: 'ミリトル', mWC: '水柱メートル',
+    mmWC_c: '水柱ミリメートル', cmWC_c: '水柱センチメートル', inWC: '水柱インチ', bel: 'ベル'
   };
+  // (1.16.0, the review of 11-24, T6) units left out of the lists of the converter, in every language: units of physics in natural or
+  // atomic units, of astronomy and old French measures, and the quantities of another kind in a list (flows among the volumes,
+  // accelerations among the speeds, densities among the masses); they can still be typed in an expression
+  const CONV_HIDE = new Set(('pied_du_roi pouce ligne toise planck_length bohr_unit rack_unit planck_c_p_eV l_N solar_radius US_rd ' +
+    'pfund zentner planck_mass electron_unit eV_p_sqc kg_p_kg solar_mass kg_p_cum g_p_cudm g_p_cucm g_p_mol ' +
+    'imperial_minim imperial_fluid_scruple UK_fl_dr minim fl_dr sverdrup cum_p_kg l_p_km l_p_s l_p_min l_p_h cum_p_s cucm_p_min cuf_p_min cfm cuf_p_s cfs gpm gph gal_p_s acre_ft_p_d mpg US_dessertspoon dessertspoon ' +
+    'cmil kcmil b section township darcy millidarcy planck_temperature eV_p_kB ' +
+    'c_unit m_p_sqs Gal gee m_p_scu gee_p_s m_p_sfourth m_p_sfifth m_p_ssixth bohr_Ha_p_planck ' +
+    'planck_time planck_p_Ha planck_p_electron_sqc planck_p_eV a_g a_t ' +
+    'electron_sqc Ha Ry foe boltzmann_unit planck_unit J_p_K J_p_kg_K W_p_m_K J_p_cum J_p_mol J_p_mol_K J_s erg_p_s solar_luminosity cal_fifteen cal_mean therm_ISO therm_US thermie kcal_p_g J_p_kg ton_refrigaration ' +
+    'sqdeg sr rad_p_sqs rad_p_s tex_scaled_point agate ata_pica new_didot didot cicero ' +
+    'erg_p_sqcm_p_s W_p_sqm_sr sb lambert foot_lambert ph planck_p_e_sqbohr e_planck_p_electron kayser recm A_sqm ' +
+    'tribble nonet declet octal_digit hartley trit nat ' +
+    'abampere abcoulomb statcoulomb planck_charge e_unit C_p_cum C_m D C_p_sqm statvolt abvolt Ha_p_e V_p_C recF daraf abohm statohm Ha_p_e_bohr F_p_m abhenry H_p_m A_p_sqm ' +
+    'einstein einstein_p_sqm_p_s microeinstein_p_sqm_p_s micromol_p_sqm_p_s mol_p_sqm_p_s kat_p_cum Rd rad_radioactivity erg_p_g ' +
+    'electron_c Ha_p_bohr eV_p_c planck_p_bohr kg_m_p_s poundal Ba sqm_p_s N_p_m Pa_s P cP_c St cSt_c N_m Np').split(' '));
   // functions and variables (constants): the first word is shown, all words are found by the search
   const FUNC_JA = {
     solve: '方程式を解く', multisolve: '連立方程式を解く', solve2: '2元連立方程式を解く', dsolve: '微分方程式を解く',
@@ -20155,7 +20235,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (kind === 'fuel') return FUEL.map(([n, label]) => ({ name: n, abbr: label, title: '' }));
         const names = KIND_ALIASES[kind] || [kind];
         // (the Japanese units are a category of their own in the engine: here also with their kind)
-        return (catalogs.units || []).filter((it) => names.indexOf(it._top) >= 0 || JP_UNIT_KIND[it.name] === kind || JP_UNIT_KIND[it.abbr] === kind).slice().sort((x, y) => x._i - y._i);
+        return (catalogs.units || []).filter((it) => (names.indexOf(it._top) >= 0 || JP_UNIT_KIND[it.name] === kind || JP_UNIT_KIND[it.abbr] === kind) && !CONV_HIDE.has(it.name)).slice().sort((x, y) => x._i - y._i);
       };
       const label = (it) => {
         if (!it.title) return it.abbr;
