@@ -27,6 +27,9 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 
 ## new-1-16 | Novedades de 1.16.0
 - **Tus variables y funciones**: las variables y funciones que defines con `k := 2` y similares, con sus valores, en una sola pantalla. Ábrela con el botón [[Variables]] encima del campo de entrada; al tocar un nombre se pone en el campo, y ⋯ cambia el valor o el nombre o lo borra (todo se puede deshacer) ([Tus variables y funciones](#variables)).
+- **Distribuciones de probabilidad**: [[Distributions]] en [[Statistics]] da la probabilidad de un rango, la densidad y los cuantiles de las distribuciones normal, binomial, de Poisson, t y χ², con el rango coloreado en una gráfica ([Distribuciones de probabilidad](#distributions)).
+- **Histograma y diagrama de caja**: para una columna, un histograma (con un ancho de clase que puedes cambiar) y un diagrama de caja (los atípicos como puntos) ([Estadística](#stats)).
+- **Curvas de regresión y CSV**: para dos columnas, elige una curva de grado 2 a 4, exponencial, logarítmica o potencial (salvo la recta: QCalc Pro). [[Read a CSV file]] lee una columna de un archivo CSV ([Estadística](#stats)).
 
 ## new-1-15 | Novedades de 1.15.0
 - **Resultados más claros**: los resultados tienen 15 cifras significativas, en grupos de tres. Los teléfonos que aún tenían los valores anteriores (10 cifras, sin grupos) cambian una vez con esta versión. [[Precision (significant digits)]] y [[Digit grouping (1,000)]] en [[Settings]] lo devuelven ([Leer el resultado](#results)).
@@ -395,14 +398,26 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :tip: Antes de imprimir, comprueba el tamaño y las paredes en tu programa de laminado.
 
 ## stats | Estadística
-:what: Para una columna: la media, la mediana, la desviación típica, los cuartiles y más; para dos columnas: la recta de regresión y la correlación.
+:what: Para una columna: la media, la mediana, la desviación típica, los cuartiles y más, con un histograma y un diagrama de caja; para dos columnas: la recta de regresión y la correlación. [[Distributions]] arriba da las probabilidades de distribuciones ([Distribuciones de probabilidad](#distributions)).
 :step: Abre [[Statistics]] en [[Tools]].
-:step: Escribe los valores o pégalos de una hoja de cálculo.
-:step: Con dos columnas, [[📈 Show in a graph]] dibuja los puntos y la recta.
+:step: Escribe los valores, pégalos de una hoja de cálculo o lee una columna de un archivo CSV con [[Read a CSV file]] (se saltan una fila de títulos y las celdas que no son números).
+:step: Con una columna, bajo los resultados aparecen un [[Histogram]] y un [[Box plot]]. − y + cambian el [[Width of the bins]] del histograma; [[Auto]] vuelve al ancho de la regla de Sturges.
+:step: Con dos columnas, [[📈 Show in a graph]] dibuja los puntos y la recta (o la curva elegida).
 :shot: stats | [[Statistics]] con un ejemplo
-:example: Notas de 10 personas → media 73.90, mediana 74.00, desviación típica (muestra) 9.94
-:tip: Los cuartiles salen primero por el método de los libros de bachillerato de Japón; el de las hojas de cálculo está en «Más».
+:example: Notas de 10 personas → media 73.90, mediana 74.00, desviación típica (muestra) 9.94; el histograma tiene 5 clases de ancho 10
+:tip: Los cuartiles salen primero por el método de los libros de bachillerato de Japón; el de las hojas de cálculo está en «Más». Los bigotes del diagrama de caja llegan a los valores más alejados entre Q1 − 1,5 × IQR y Q3 + 1,5 × IQR; los de fuera son atípicos y se dibujan como puntos (× es la media).
+:tip: Con dos columnas, elige una curva encima de los resultados: recta, grado 2, 3 o 4, exponencial, logarítmica o potencial. Se muestran su fórmula, R² y predicción, y [[📈 Show in a graph]] la dibuja.
+:pro: Elegir una curva que no sea la recta y guardar la tabla como archivo CSV son funciones de QCalc Pro (las fórmulas y el R² de las otras curvas están en «Más» también sin Pro).
 :mistake: Un valor que no es un número se muestra con su fila y cómo corregirlo.
+
+### distributions | Distribuciones de probabilidad
+:what: Para las distribuciones normal, binomial, de Poisson, t y χ²: la probabilidad de un rango a ≤ X ≤ b, la densidad (P(X = a) en la binomial y la de Poisson) y el cuantil, con el rango coloreado en una gráfica.
+:step: Pulsa [[Distributions]] arriba en [[Statistics]] y elige una distribución.
+:step: Escribe sus parámetros (la media μ y la desviación típica σ en la normal, los ensayos n y la probabilidad de éxito p en la binomial).
+:step: Escribe a y b del rango. Deja uno vacío para no poner límite en ese lado (P(X ≤ b) o P(a ≤ X)).
+:step: Una probabilidad acumulada tras [[Quantile: P(X ≤ x) =]] da su x (en la binomial y la de Poisson, el menor k con P(X ≤ k) al menos ese valor), con línea discontinua en la gráfica.
+:example: Normal, μ = 0, σ = 1, de −1,96 a 1,96 → 0,950004; x con P(X ≤ x) = 0,975 → 1,95996
+:tip: Las mismas funciones sirven en el campo de entrada: `normdist(1.96, 0, 1, 1)` (P(X ≤ 1,96)), `normdistinv(0.975, 0, 1)`, `binomdist(3, 10, 0.5)` (P(X = 3)), `poisson(2, 3, 1)`, `tdist(2, 10, 1)`, `tdistinv(0.975, 10)`, `chisqdist(7.81, 3, 1)`, `chisqdistinv(0.95, 3)`. Sin el último 1 dan la densidad. Toca un resultado para poner su expresión en el campo de entrada.
 
 ## notes | Notas de cálculo
 :what: Una nota con un cálculo por línea y su resultado a la derecha. Da nombre a un valor y úsalo en las líneas de abajo.
@@ -603,6 +618,7 @@ La integración numérica (áreas, longitudes y volúmenes del gráfico) es segu
 | Deslizadores en 3D | [Gráfica 3D](#graph-3d) |
 | GIF e imágenes sin la marca | [Compartir](#share) |
 | Más notas de cálculo, guardadas como archivo | [Notas de cálculo](#notes) |
+| Curvas de regresión (salvo la recta) | [Estadística](#stats) |
 :tip: [[How to use ›]] en una fila de las funciones Pro abre su sección de este manual.
 
 ## pro-buy | Comprar y restaurar

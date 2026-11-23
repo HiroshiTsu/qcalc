@@ -1829,3 +1829,23 @@ body.hselect #history { padding-bottom: 150px; }
 .dv-noteline .dv-name { font-size: 16px; }
 .dv-empty { margin: 8px 0; }
 .note-flash { outline: 2px solid var(--accent); outline-offset: 2px; transition: outline-color 0.6s; }
+/* (1.16.0) statistics: data or distributions; the curve chosen; the histogram and the box plot; the distributions */
+.seg.stat-mode { display: flex; margin: 0 0 10px; }
+.seg.stat-mode button { flex: 1 1 0; min-height: 48px; }
+.seg.mini.stat-models, .seg.mini.stat-dists { display: flex; flex-wrap: wrap; margin: 4px 0 8px; }
+.seg.mini.stat-models button, .seg.mini.stat-dists button { flex: 1 1 auto; min-height: 44px; }
+.seg.mini.stat-models button.off { color: var(--muted); text-decoration: line-through; }
+.stat-charts { margin: 8px 0; }
+.stat-charts .seg.mini { display: flex; margin-bottom: 6px; }
+.stat-charts .seg.mini button { flex: 1 1 0; min-height: 44px; }
+.stat-chart { width: 100%; }
+.stat-chart canvas.st-chart { display: block; width: 100%; border: 1px solid var(--line); border-radius: 8px; }
+.stat-bwrow .stat-bw { flex: 1 1 0; }
+.stat-bw-btn { flex: 0 0 auto; min-width: 48px; min-height: 44px; padding: 0 10px; }
+.stat-cap { margin: 4px 0; }
+.stat-csv { margin: 6px 0; }
+.stat-dpars .geo-lbl small { color: var(--muted); font-size: 12.5px; }
+.stat-range input { flex: 1 1 0; min-width: 0; }
+.stat-tilde { flex: 0 0 auto; color: var(--muted); }
+.stat-dist .geo-out { margin-top: 6px; }
+.stat-bwrow[hidden], .stat-models[hidden], .stat-charts[hidden], .stat-data[hidden], .stat-dist[hidden] { display: none; }
