@@ -9707,6 +9707,8 @@
       Q3.res = Number(res.value) || 41;
       // (1.12.0, BG21: the formulas of a solid made elsewhere, as read the first time; others drawn later end it)
       if (Q3.solid && Q3.solid.fresh) { Q3.solid.fresh = false; Q3.solid.exprs = Q3.exprs.join('\n'); }
+      // (1.15.0: the formulas of a solid of revolution made in 2D, as read the first time: drawn again, it stays)
+      if (Q3.revPending) { Q3.revPending = false; Q3.revExprs = Q3.exprs.join('\n'); }
     };
     Q3.read = read;
     go.addEventListener('click', () => {
@@ -9717,7 +9719,11 @@
         // surfaces are drawn again with another grid or range; other surfaces drop them (1.8.3)
         if (plotExprs(ta.value, 4).join('\n') !== Q3.exprs.join('\n')) { Q3.equalOnce = false; if (Q3.samples) Q3.samples.clearChoice(); }
       }
-      if (!Q3.keep) { Q3.revInfo = null; Q3.grow = null; Q3.rimSpec = null; Q3.from2d = null; showBack3d(); if (Q3.angleRow) Q3.angleRow.hidden = true; } // (another graph: not the solid of revolution)
+      // (1.15.0) the solid of revolution made in 2D (its volume above the graph, "← Back to 2D", the angle and "Cut in
+      // half") stays only while its own formulas are drawn again (another grid or range); other formulas end it,
+      // also a sample or a partial derivative, which keep the points and the 1:1 of the graph (Q3.keep) but are another
+      // graph. (Until 1.15.0 Q3.keep kept the solid too: its volume stayed above a donut.)
+      if (!Q3.revPending && plotExprs(ta.value, 4).join('\n') !== Q3.revExprs) endRev3d();
       Q3.keep = false;
       store.set('qalc.plot3d.exprs', ta.value); store.set('qalc.plot3d.res', res.value);
       store.set('qalc.plot3d.xmin', xmin.value); store.set('qalc.plot3d.xmax', xmax.value);
@@ -9778,6 +9784,8 @@
     if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
     // (a solid made in the 2D graph, BG20: its volume large above the graph, and "← Back to 2D")
     Q3.from2d = opts.back || null;
+    // (1.15.0: its formulas are noted when they are read; other formulas drawn later end it)
+    Q3.revExprs = null; Q3.revPending = !!(opts.grow || opts.back);
     showBack3d();
     // (1.12.0, BG21: the values of a solid made elsewhere for "Volume and surface", which opens closed)
     Q3.solid = opts.solid ? Object.assign({ fresh: true }, opts.solid) : null;
@@ -9796,6 +9804,13 @@
       Q3.keep = true;
       Q3.go.click();
     }
+  }
+  // the end of a solid of revolution made in 2D, when other formulas are drawn (1.15.0)
+  function endRev3d() {
+    Q3.revInfo = null; Q3.grow = null; Q3.growNext = null; Q3.rimSpec = null; Q3.from2d = null; Q3.revExprs = null; Q3.revPending = false;
+    showBack3d();
+    if (Q3.angleRow) Q3.angleRow.hidden = true;
+    if (Q3.canvas) delete Q3.canvas.dataset.grow;
   }
   // the row above the 3D graph for a solid made in the 2D graph (BG20)
   // (D6: a solid of "Shapes": its values as the tool shows them, a line each, and "← Back to the shape")
