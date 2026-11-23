@@ -1843,8 +1843,8 @@
       histPinned = true;
     }
     announce(entry);
-    // (1.15.0) a variable defined: the names of the user's variables again (a letter with a value of its own gets no slider)
-    if (/^save\(/.test(r.parsed || '')) refreshDefined();
+    // (a variable defined: definitionMade reads the names of the user's variables again, so that a letter with a value of
+    // its own gets no slider in a graph, 1.15.0)
     definitionMade(r, expr);
     startupMark('first');
   }
@@ -1859,9 +1859,14 @@
     for (const v of r.variables || []) definedVars.add(v.name);
   }
   function definitionMade(r, expr) {
-    const m = /^save\(.*?, '([^']+)',/.exec(r.parsed || '');
+    // (the engine writes save(2, 'k'), save(3 meters, "abc") and save(x² + 1, "f(x)"): the name last, in single or double
+    // quotes, with nothing after it. 1.15.0: until then a third argument was looked for, which the engine does not
+    // write, so from 1.8.0, when this came, the message and its Undo were never shown)
+    const m = /^save\(.*, (['"])([^'"]+)\1(?:, [^()]*)?\)$/.exec(r.parsed || '');
     if (!m) return;
-    const name = m[1], kind = new RegExp('^\\s*' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(').test(expr) ? 'function' : 'variable';
+    const fm = /^\s*([^\s(]+)\s*\(/.exec(m[2]);
+    const name = fm ? fm[1] : m[2].trim();
+    const kind = fm || new RegExp('^\\s*' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(').test(expr) ? 'function' : 'variable';
     invalidateCatalogs();
     const shown = kind === 'function' ? name + '()' : name;
     toast(kind === 'function' ? trf('{0} is defined', '{0} を定義しました', shown)
