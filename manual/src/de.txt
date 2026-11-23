@@ -25,6 +25,11 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :tip: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu übernehmen oder zu kopieren.
 :mistake: Der Buchstabe x ist eine Variable, kein „mal“. Multiplizieren Sie mit der Taste × (oder *).
 
+## new-1-16 | Neu in 1.16.0
+- **Wahrscheinlichkeitsverteilungen**: [[Distributions]] in [[Statistics]] gibt die Wahrscheinlichkeit eines Bereichs, die Dichte und die Quantile der Normal-, Binomial-, Poisson-, t- und χ²-Verteilung, mit dem Bereich farbig im Graphen ([Wahrscheinlichkeitsverteilungen](#distributions)).
+- **Histogramm und Boxplot**: für eine Spalte ein Histogramm (mit änderbarer Klassenbreite) und ein Boxplot (Ausreißer als Punkte) ([Statistik](#stats)).
+- **Regressionskurven und CSV**: für zwei Spalten eine Kurve vom Grad 2 bis 4, eine Exponential-, Logarithmus- oder Potenzkurve wählen (außer der Geraden: QCalc Pro). [[Read a CSV file]] liest eine Spalte einer CSV-Datei ([Statistik](#stats)).
+
 ## new-1-15 | Neu in 1.15.0
 - **Besser lesbare Ergebnisse**: Ergebnisse mit 15 gültigen Stellen, in Dreiergruppen. Geräte, die noch die bisherigen Standardwerte hatten (10 Stellen, ohne Gruppen), wechseln mit dieser Version einmal. [[Precision (significant digits)]] und [[Digit grouping (1,000)]] in den [[Settings]] stellen es zurück ([Das Ergebnis lesen](#results)).
 - **Einlesen in die Rechennotizen**: [[More ▾]] → [[Open a file]] in den Notizen liest eine .txt- oder .csv-Datei, und Text oder eine Datei, die eine andere App mit „Teilen“ → QCalc sendet, wird ebenfalls übernommen ([Rechennotizen](#notes)).
@@ -381,14 +386,26 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :tip: Prüfen Sie vor dem Drucken Größe und Wände in Ihrem Slicer.
 
 ## stats | Statistik
-:what: Für eine Spalte: Mittelwert, Median, Standardabweichung, Quartile und mehr; für zwei Spalten: Regressionsgerade und Korrelation.
+:what: Für eine Spalte: Mittelwert, Median, Standardabweichung, Quartile und mehr, mit Histogramm und Boxplot; für zwei Spalten: Regressionsgerade und Korrelation. [[Distributions]] oben gibt die Wahrscheinlichkeiten von Verteilungen ([Wahrscheinlichkeitsverteilungen](#distributions)).
 :step: Öffnen Sie [[Statistics]] in den [[Tools]].
-:step: Geben Sie die Werte ein oder fügen Sie sie aus einer Tabellenkalkulation ein.
-:step: Bei zwei Spalten zeichnet [[📈 Show in a graph]] die Punkte und die Gerade.
+:step: Geben Sie die Werte ein, fügen Sie sie aus einer Tabellenkalkulation ein oder lesen Sie mit [[Read a CSV file]] eine Spalte einer CSV-Datei (eine Überschriftenzeile und Zellen, die keine Zahlen sind, werden übersprungen).
+:step: Bei einer Spalte stehen [[Histogram]] und [[Box plot]] unter den Ergebnissen. − und + ändern die [[Width of the bins]] des Histogramms; [[Auto]] geht zur Breite nach der Sturges-Regel zurück.
+:step: Bei zwei Spalten zeichnet [[📈 Show in a graph]] die Punkte und die Gerade (oder die gewählte Kurve).
 :shot: stats | [[Statistics]] mit einem Beispiel
-:example: Testergebnisse von 10 Personen → Mittelwert 73,90, Median 74,00, Standardabweichung (Stichprobe) 9,94
-:tip: Die Quartile kommen zuerst nach der Methode japanischer Schulbücher; die Methode der Tabellenkalkulationen steht unter „Mehr“.
+:example: Testergebnisse von 10 Personen → Mittelwert 73,90, Median 74,00, Standardabweichung (Stichprobe) 9,94; das Histogramm hat 5 Klassen der Breite 10
+:tip: Die Quartile kommen zuerst nach der Methode japanischer Schulbücher; die Methode der Tabellenkalkulationen steht unter „Mehr“. Die Whisker des Boxplots reichen bis zu den äußersten Werten von Q1 − 1,5 × IQR bis Q3 + 1,5 × IQR; Werte darüber hinaus sind Ausreißer und werden als Punkte gezeichnet (× ist der Mittelwert).
+:tip: Bei zwei Spalten wählen Sie oberhalb der Ergebnisse eine Kurve: Gerade, Grad 2, 3 oder 4, Exponential, Log oder Potenz. Formel, R² und Vorhersage werden gezeigt, und [[📈 Show in a graph]] zeichnet sie.
+:pro: Eine andere Kurve als die Gerade zu wählen und die Tabelle als CSV-Datei zu speichern sind Funktionen von QCalc Pro (Formeln und R² der anderen Kurven stehen auch ohne Pro unter „Mehr“).
 :mistake: Ein Wert, der keine Zahl ist, wird mit Zeile und Korrekturhinweis angezeigt.
+
+### distributions | Wahrscheinlichkeitsverteilungen
+:what: Für die Normal-, Binomial-, Poisson-, t- und χ²-Verteilung: die Wahrscheinlichkeit eines Bereichs a ≤ X ≤ b, die Dichte (P(X = a) bei Binomial und Poisson) und das Quantil, mit dem Bereich farbig im Graphen.
+:step: Drücken Sie [[Distributions]] oben in [[Statistics]] und wählen Sie eine Verteilung.
+:step: Geben Sie die Parameter ein (Mittelwert μ und Standardabweichung σ bei der Normalverteilung, Versuche n und Erfolgswahrscheinlichkeit p bei der Binomialverteilung).
+:step: Geben Sie a und b des Bereichs ein. Ein leeres Feld heißt keine Grenze auf dieser Seite (P(X ≤ b) oder P(a ≤ X)).
+:step: Eine kumulierte Wahrscheinlichkeit nach [[Quantile: P(X ≤ x) =]] gibt ihr x (bei Binomial und Poisson das kleinste k mit P(X ≤ k) mindestens so groß), gestrichelt im Graphen.
+:example: Normal, μ = 0, σ = 1, von −1,96 bis 1,96 → 0,950004; x mit P(X ≤ x) = 0,975 → 1,95996
+:tip: Dieselben Funktionen gehen im Eingabefeld: `normdist(1.96, 0, 1, 1)` (P(X ≤ 1,96)), `normdistinv(0.975, 0, 1)`, `binomdist(3, 10, 0.5)` (P(X = 3)), `poisson(2, 3, 1)`, `tdist(2, 10, 1)`, `tdistinv(0.975, 10)`, `chisqdist(7.81, 3, 1)`, `chisqdistinv(0.95, 3)`. Ohne die letzte 1 geben sie die Dichte. Tippen Sie auf ein Ergebnis, um seinen Ausdruck ins Eingabefeld zu setzen.
 
 ## notes | Rechennotizen
 :what: Eine Notiz mit einer Rechnung pro Zeile und ihrem Ergebnis rechts. Geben Sie einem Wert einen Namen und verwenden Sie ihn in den Zeilen darunter.
@@ -589,6 +606,7 @@ Numerische Integration (Flächen, Längen und Volumen im Graphen) ist auf etwa 2
 | Schieberegler in 3D | [3D-Graph](#graph-3d) |
 | GIF und Bilder ohne Kennzeichnung | [Teilen](#share) |
 | Weitere Rechennotizen, als Datei gespeichert | [Rechennotizen](#notes) |
+| Regressionskurven (außer der Geraden) | [Statistik](#stats) |
 :tip: [[How to use ›]] in einer Zeile der Pro-Funktionen öffnet den Abschnitt dieser Anleitung.
 
 ## pro-buy | Kaufen und wiederherstellen

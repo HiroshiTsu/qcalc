@@ -25,6 +25,11 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :tip: Touchez un résultat de l'historique pour le mettre dans le champ de saisie ou le copier.
 :mistake: La lettre x est une variable, pas « fois ». Multipliez avec la touche × (ou *).
 
+## new-1-16 | Nouveautés de la 1.16.0
+- **Lois de probabilité** : [[Distributions]] dans [[Statistics]] donne la probabilité d’un intervalle, la densité et les quantiles des lois normale, binomiale, de Poisson, t et χ², avec l’intervalle coloré sur un graphique ([Lois de probabilité](#distributions)).
+- **Histogramme et boîte à moustaches** : pour une colonne, un histogramme (largeur des classes modifiable) et une boîte à moustaches (valeurs aberrantes en points) ([Statistiques](#stats)).
+- **Courbes de régression et CSV** : pour deux colonnes, choisissez une courbe de degré 2 à 4, exponentielle, logarithmique ou puissance (sauf la droite : QCalc Pro). [[Read a CSV file]] lit une colonne d’un fichier CSV ([Statistiques](#stats)).
+
 ## new-1-15 | Nouveautés de la 1.15.0
 - **Résultats plus lisibles** : les résultats ont 15 chiffres significatifs, par groupes de trois. Les téléphones qui avaient encore les anciennes valeurs par défaut (10 chiffres, sans groupes) changent une fois avec cette version. [[Precision (significant digits)]] et [[Digit grouping (1,000)]] dans les [[Settings]] permettent de revenir ([Lire le résultat](#results)).
 - **Lire dans les notes de calcul** : [[More ▾]] → [[Open a file]] dans les notes lit un fichier .txt ou .csv, et le texte ou le fichier qu’une autre application envoie avec « Partager » → QCalc est aussi reçu ([Notes de calcul](#notes)).
@@ -381,14 +386,26 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :tip: Avant d'imprimer, vérifiez la taille et les parois dans votre logiciel de tranchage.
 
 ## stats | Statistiques
-:what: Pour une colonne : la moyenne, la médiane, l'écart type, les quartiles et plus ; pour deux colonnes : la droite de régression et la corrélation.
+:what: Pour une colonne : la moyenne, la médiane, l'écart type, les quartiles et plus, avec un histogramme et une boîte à moustaches ; pour deux colonnes : la droite de régression et la corrélation. [[Distributions]] en haut donne les probabilités de lois ([Lois de probabilité](#distributions)).
 :step: Ouvrez [[Statistics]] dans [[Tools]].
-:step: Tapez les valeurs ou collez-les depuis un tableur.
-:step: Avec deux colonnes, [[📈 Show in a graph]] trace les points et la droite.
+:step: Tapez les valeurs, collez-les depuis un tableur ou lisez une colonne d'un fichier CSV avec [[Read a CSV file]] (une ligne de titres et les cellules qui ne sont pas des nombres sont ignorées).
+:step: Avec une colonne, un [[Histogram]] et une [[Box plot]] sont sous les résultats. − et + changent la [[Width of the bins]] de l'histogramme ; [[Auto]] revient à la largeur de la règle de Sturges.
+:step: Avec deux colonnes, [[📈 Show in a graph]] trace les points et la droite (ou la courbe choisie).
 :shot: stats | [[Statistics]] avec un exemple
-:example: Notes de 10 personnes → moyenne 73,90, médiane 74,00, écart type (échantillon) 9,94
-:tip: Les quartiles sont d'abord donnés par la méthode des manuels du lycée au Japon ; celle des tableurs est dans « Plus ».
+:example: Notes de 10 personnes → moyenne 73,90, médiane 74,00, écart type (échantillon) 9,94 ; l'histogramme a 5 classes de largeur 10
+:tip: Les quartiles sont d'abord donnés par la méthode des manuels du lycée au Japon ; celle des tableurs est dans « Plus ». Les moustaches vont jusqu'aux valeurs les plus éloignées entre Q1 − 1,5 × IQR et Q3 + 1,5 × IQR ; au-delà, les valeurs aberrantes sont tracées en points (× est la moyenne).
+:tip: Avec deux colonnes, choisissez une courbe au-dessus des résultats : droite, degré 2, 3 ou 4, exponentielle, logarithmique ou puissance. Sa formule, R² et la prévision s'affichent, et [[📈 Show in a graph]] la trace.
+:pro: Choisir une autre courbe que la droite et enregistrer le tableau en fichier CSV sont des fonctions de QCalc Pro (les formules et le R² des autres courbes sont dans « Plus » même sans Pro).
 :mistake: Une valeur qui n'est pas un nombre s'affiche avec sa ligne et comment la corriger.
+
+### distributions | Lois de probabilité
+:what: Pour les lois normale, binomiale, de Poisson, t et χ² : la probabilité d'un intervalle a ≤ X ≤ b, la densité (P(X = a) pour la binomiale et Poisson) et le quantile, avec l'intervalle coloré sur un graphique.
+:step: Appuyez sur [[Distributions]] en haut de [[Statistics]] et choisissez une loi.
+:step: Saisissez ses paramètres (la moyenne μ et l'écart type σ pour la loi normale, les essais n et la probabilité de succès p pour la binomiale).
+:step: Saisissez a et b de l'intervalle. Laissez-en un vide pour aucune limite de ce côté (P(X ≤ b) ou P(a ≤ X)).
+:step: Une probabilité cumulée après [[Quantile: P(X ≤ x) =]] donne son x (pour la binomiale et Poisson, le plus petit k avec P(X ≤ k) au moins égal), en pointillés sur le graphique.
+:example: Normale, μ = 0, σ = 1, de −1,96 à 1,96 → 0,950004 ; x tel que P(X ≤ x) = 0,975 → 1,95996
+:tip: Les mêmes fonctions marchent dans le champ de saisie : `normdist(1.96, 0, 1, 1)` (P(X ≤ 1,96)), `normdistinv(0.975, 0, 1)`, `binomdist(3, 10, 0.5)` (P(X = 3)), `poisson(2, 3, 1)`, `tdist(2, 10, 1)`, `tdistinv(0.975, 10)`, `chisqdist(7.81, 3, 1)`, `chisqdistinv(0.95, 3)`. Sans le dernier 1, elles donnent la densité. Touchez un résultat pour mettre son expression dans le champ de saisie.
 
 ## notes | Notes de calcul
 :what: Une note avec un calcul par ligne et son résultat à droite. Donnez un nom à une valeur et utilisez-le dans les lignes du dessous.
@@ -589,6 +606,7 @@ L'intégration numérique (aires, longueurs et volumes du graphique) est sûre �
 | Curseurs en 3D | [Graphique 3D](#graph-3d) |
 | GIF et images sans la marque | [Partager](#share) |
 | Plus de notes de calcul, enregistrées en fichier | [Notes de calcul](#notes) |
+| Courbes de régression (sauf la droite) | [Statistiques](#stats) |
 :tip: [[How to use ›]] sur une ligne des fonctions Pro ouvre sa section de ce manuel.
 
 ## pro-buy | Acheter et restaurer

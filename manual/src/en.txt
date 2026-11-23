@@ -25,6 +25,11 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :tip: Tap an answer in the history to put it into the input field or to copy it.
 :mistake: The letter x is a variable, not "times". Multiply with the × key (or *).
 
+## new-1-16 | New in 1.16.0
+- **Probability distributions**: [[Distributions]] in [[Statistics]] gives the probability of a range, the density and the quantiles of the normal, binomial, Poisson, t and χ² distributions, with the range shaded in a graph ([Probability distributions](#distributions)).
+- **Histogram and box plot**: for one column of data, a histogram (with a bin width you can change) and a box plot (outliers as points) ([Statistics](#stats)).
+- **Regression curves and CSV**: for two columns, choose a curve of degree 2 to 4, an exponential, a logarithmic or a power curve (other than the line: QCalc Pro). [[Read a CSV file]] reads a column of a CSV file ([Statistics](#stats)).
+
 ## new-1-15 | What is new in 1.15.0
 - **Easier results**: results have 15 significant digits, in groups of three. Phones that still had the earlier defaults (10 digits, no groups) change once with this version. [[Precision (significant digits)]] and [[Digit grouping (1,000)]] in the [[Settings]] set them back ([Reading the answer](#results)).
 - **Reading into the calculation notes**: [[More ▾]] → [[Open a file]] in the notes reads a .txt or .csv file, and text or a file sent with “Share” → QCalc from another app is taken in too ([Calculation notes](#notes)).
@@ -381,14 +386,26 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :tip: Before printing, check the size and the walls in your slicer.
 
 ## stats | Statistics
-:what: For one column: the mean, the median, the standard deviation, the quartiles and more; for two columns: the regression line and the correlation.
+:what: For one column: the mean, the median, the standard deviation, the quartiles and more, with a histogram and a box plot; for two columns: the regression line and the correlation. [[Distributions]] at the top gives the probabilities of distributions ([Probability distributions](#distributions)).
 :step: Open [[Statistics]] in [[Tools]].
-:step: Type the values, or paste them from a spreadsheet.
-:step: With two columns, [[📈 Show in a graph]] draws the points and the line.
+:step: Type the values, paste them from a spreadsheet, or read a column of a CSV file with [[Read a CSV file]] (a row of headings and cells that are not numbers are skipped).
+:step: With one column, a [[Histogram]] and a [[Box plot]] are under the results. − and + change the [[Width of the bins]] of the histogram; [[Auto]] goes back to the width from Sturges' rule.
+:step: With two columns, [[📈 Show in a graph]] draws the points and the line (or the curve chosen).
 :shot: stats | [[Statistics]] with an example
-:example: Test scores of 10 people → mean 73.90, median 74.00, standard deviation (sample) 9.94
-:tip: The quartiles come first by the method of Japanese high school textbooks; the method of spreadsheets is under "More".
+:example: Test scores of 10 people → mean 73.90, median 74.00, standard deviation (sample) 9.94; the histogram has 5 bins of width 10
+:tip: The quartiles come first by the method of Japanese high school textbooks; the method of spreadsheets is under "More". The whiskers of the box plot reach the furthest values from Q1 − 1.5 × IQR to Q3 + 1.5 × IQR; values beyond are outliers, drawn as points (× is the mean).
+:tip: With two columns, choose a curve above the results: line, degree 2, 3 or 4, exponential, logarithmic or power. Its formula, R² and prediction are shown, and [[📈 Show in a graph]] draws it.
+:pro: Choosing a curve other than the line and saving the table as a CSV file are QCalc Pro features (the formulas and R² of the other curves are under "More" also without it).
 :mistake: A value that is not a number is shown with its row and how to fix it.
+
+### distributions | Probability distributions
+:what: For the normal, binomial, Poisson, t and χ² distributions: the probability of a range a ≤ X ≤ b, the density (P(X = a) for the binomial and Poisson) and the quantile, with the range shaded in a graph.
+:step: Press [[Distributions]] at the top of [[Statistics]] and choose a distribution.
+:step: Type its parameters (the mean μ and the standard deviation σ for the normal, the trials n and the probability of success p for the binomial).
+:step: Type a and b of the range. Leave one empty for no limit on that side (P(X ≤ b) or P(a ≤ X)).
+:step: Type a cumulative probability after [[Quantile: P(X ≤ x) =]] for its x (for the binomial and Poisson the smallest k with P(X ≤ k) at least that), dashed in the graph.
+:example: Normal, μ = 0, σ = 1, from −1.96 to 1.96 → 0.950004; x with P(X ≤ x) = 0.975 → 1.95996
+:tip: The same functions work in the input field: `normdist(1.96, 0, 1, 1)` (P(X ≤ 1.96)), `normdistinv(0.975, 0, 1)`, `binomdist(3, 10, 0.5)` (P(X = 3)), `poisson(2, 3, 1)`, `tdist(2, 10, 1)`, `tdistinv(0.975, 10)`, `chisqdist(7.81, 3, 1)`, `chisqdistinv(0.95, 3)`. Without the last 1 they give the density. Tap a result to put its expression into the input field.
 
 ## notes | Calculation notes
 :what: A memo with one calculation on each line and its answer on the right. Give a value a name and use it in the lines below.
@@ -589,6 +606,7 @@ Numeric integration (areas, lengths and volumes of the graph) is certain to abou
 | Sliders in 3D | [3D graph](#graph-3d) |
 | GIF and pictures without the mark | [Sharing](#share) |
 | More calculation notes, saved as files | [Calculation notes](#notes) |
+| Regression curves (other than the line) | [Statistics](#stats) |
 :tip: [[How to use ›]] on a row of the Pro features opens its section of this manual.
 
 ## pro-buy | Buying and restoring

@@ -260,7 +260,7 @@
     precision: 'results', '3d': 'graph-3d', themes: 'settings', export: 'history', tables: 'loan', tank_heads: 'tank-heads',
     profile: 'profile', stl: 'stl', share_pro: 'share', notes: 'notes', enclosed: 'area-length', tanks: 'tanks',
     revolution: 'solid', regions: 'volume-3d', sections: 'measured', history_tools: 'history', memkeys: 'memory-keys',
-    cross_sections: 'cross-sections', rev_lines: 'solid', everyday: 'price', convert: 'convert', quick: 'widget', stats: 'stats'
+    cross_sections: 'cross-sections', rev_lines: 'solid', everyday: 'price', convert: 'convert', quick: 'widget', stats: 'stats', stats_fit: 'stats'
   };
   const FORM_HELP = { int: 'calculus', diff: 'calculus', lim: 'calculus', sum: 'calculus', prod: 'calculus', dsolve: 'calculus', subst: 'calculus', solve: 'equations', mat: 'matrices' };
   // every id the app links to (for the test of the links; '' is the top of the manual)
@@ -572,6 +572,7 @@
     share: 'free',         // sharing a picture of a graph, with a small "QCalc" in the corner (1.12 D4)
     share_pro: 'pro',      // the moving picture (GIF) of the 3D graph and of a slider, and pictures without the mark at full resolution (1.12 D4; sliders 1.15): Pro
     sliders3d: 'pro',      // the sliders of the letters in the 3D graph (1.15; in 2D free): Pro
+    stats_fit: 'pro',      // statistics: choosing a curve other than the line for two columns (degree 2 to 4, exponential, power, log) with its prediction and graph (1.16; the line, the distributions, the histogram, the box plot, reading a CSV file, and the formulas and R² of the curves under "More" as in 1.15 are free): Pro
     notes: 'pro'           // calculation notes: the second memo and more, and saving them as text or CSV (1.12 D5): Pro; the first memo, copying and sharing it are free
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
@@ -17448,9 +17449,10 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // the models of two columns: [key, name, equation shown, expression (in x), f, R²] or [key, name, why not]
   function statModels(xs, ys) {
     const out = [], N = (v) => statNum(v), E = exprNum;
-    // (a term that is 0 is left out: y = 2x², y = 3x)
-    const signed = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + N(-v) + t : ' + ' + N(v) + t), signedE = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + E(-v) + t : ' + ' + E(v) + t);
-    const lead = (v, t, rest, restE) => (v === 0 ? [(rest.replace(/^ \+ /, '').replace(/^ − /, '−') || '0'), (restE.replace(/^ \+ /, '').replace(/^ − /, '−') || '0')] : [N(v) + t + rest, E(v) + t + restE]);
+    // (a term that is 0 is left out: y = 2x², y = 3x; 1.16.0: a coefficient 1 too, y = x² rather than y = 1x²)
+    const co = (f, v, t) => { const c = f(v); return t && c === '1' ? t.trim() : t && c === '−1' ? '−' + t.trim() : c + t; };
+    const signed = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + co(N, -v, t) : ' + ' + co(N, v, t)), signedE = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + co(E, -v, t) : ' + ' + co(E, v, t));
+    const lead = (v, t, rest, restE) => (v === 0 ? [(rest.replace(/^ \+ /, '').replace(/^ − /, '−') || '0'), (restE.replace(/^ \+ /, '').replace(/^ − /, '−') || '0')] : [co(N, v, t) + rest, co(E, v, t) + restE]);
     // a coefficient that is only rounding (its term below 1e-10 of the largest y) is 0: y = 2x², not 2x² + 3.1 × 10^−15
     const ymax = Math.max(...ys.map(Math.abs)) || 1, xmax = Math.max(...xs.map(Math.abs)) || 1;
     const snap = (v, k) => (Math.abs(v) * Math.pow(xmax, k) < 1e-10 * ymax ? 0 : v);
@@ -17477,15 +17479,26 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const [sh, ex] = lead(p2, 'x²', signed(p1, 'x') + signed(p0, ''), signedE(p1, 'x') + signedE(p0, ''));
       if ([p0, p1, p2].every(isFinite)) out.push(['quad', tr('Quadratic', '2 次式'), 'y = ' + sh, ex.replace('x²', 'x^2'), f, statR2(xs, ys, f)]);
     } else out.push(['quad', tr('Quadratic', '2 次式'), tr('needs three different x', '異なる x が 3 つ必要です')]);
+    // (1.16.0) polynomials of degree 3 and 4 (choosing them above the results is QCalc Pro: PRO_GATES.stats_fit)
+    const SUP = ['', 'x', 'x²', 'x³', 'x⁴'], POW = ['', 'x', 'x^2', 'x^3', 'x^4'];
+    for (const [key, d, name] of [['cubic', 3, tr('Cubic', '3 次式')], ['quartic', 4, tr('Quartic', '4 次式')]]) {
+      const c0 = distinct > d ? statPoly(xs, ys, d) : null;
+      if (!c0) { out.push([key, name, distinct > d ? tr('cannot be worked out for these values', 'この値では求められません') : trf('needs {0} different x', '異なる x が {0} 個必要です', d + 1)]); continue; }
+      const c = c0.map((v, k) => snap(v, k)), f = (x) => c.reduceRight((acc, v) => acc * x + v, 0);
+      let rest = '', restE = '';
+      for (let k = d - 1; k >= 0; k--) { rest += signed(c[k], SUP[k]); restE += signedE(c[k], POW[k]); }
+      const [sh, ex] = lead(c[d], SUP[d], rest, restE);
+      out.push([key, name, 'y = ' + sh, c[d] ? ex.replace(SUP[d], POW[d]) : ex, f, statR2(xs, ys, f)]);
+    }
     const ypos = ys.every((y) => y > 0), xpos = xs.every((x) => x > 0);
     const Le = ypos ? statLine(xs, ys.map(Math.log)) : null;
-    if (Le) { const a = Math.exp(Le.b), b = Le.a, f = (x) => a * Math.exp(b * x); out.push(['exp', tr('Exponential', '指数'), 'y = ' + N(a) + ' e^(' + N(b) + 'x)', E(a) + ' e^(' + E(b) + 'x)', f, statR2(xs, ys, f)]); }
+    if (Le) { const a = Math.exp(Le.b), b = Le.a, f = (x) => a * Math.exp(b * x); out.push(['exp', tr('Exponential', '指数'), 'y = ' + co(N, a, ' e^(' + co(N, b, 'x') + ')'), co(E, a, ' e^(' + co(E, b, 'x') + ')'), f, statR2(xs, ys, f)]); }
     else out.push(['exp', tr('Exponential', '指数'), ypos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every y must be above 0', 'y がすべて 0 より大きいときだけ使えます')]);
     const Ll = xpos ? statLine(xs.map(Math.log), ys) : null;
-    if (Ll) { const a = Ll.b, b = Ll.a, f = (x) => a + b * Math.log(x); out.push(['log', tr('Logarithmic', '対数'), 'y = ' + N(a) + signed(b, ' ln x'), E(a) + signedE(b, ' ln(x)'), f, statR2(xs, ys, f)]); }
+    if (Ll) { const a = Ll.b, b = Ll.a, f = (x) => a + b * Math.log(x); out.push(['log', tr('Logarithmic', '対数'), 'y = ' + lead(a, '', signed(b, ' ln x'), '')[0], lead(a, '', '', signedE(b, ' ln(x)'))[1], f, statR2(xs, ys, f)]); }
     else out.push(['log', tr('Logarithmic', '対数'), xpos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every x must be above 0', 'x がすべて 0 より大きいときだけ使えます')]);
     const Lp = xpos && ypos ? statLine(xs.map(Math.log), ys.map(Math.log)) : null;
-    if (Lp) { const a = Math.exp(Lp.b), b = Lp.a, f = (x) => a * Math.pow(x, b); out.push(['power', tr('Power', '累乗'), 'y = ' + N(a) + ' x^' + N(b), E(a) + ' x^(' + E(b) + ')', f, statR2(xs, ys, f)]); }
+    if (Lp) { const a = Math.exp(Lp.b), b = Lp.a, f = (x) => a * Math.pow(x, b); out.push(['power', tr('Power', '累乗'), 'y = ' + co(N, a, ' x^' + N(b)), co(E, a, ' x^(' + E(b) + ')'), f, statR2(xs, ys, f)]); }
     else out.push(['power', tr('Power', '累乗'), xpos && ypos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every x and y must be above 0', 'x と y がすべて 0 より大きいときだけ使えます')]);
     return out;
   }
@@ -17624,10 +17637,14 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       sh.inert = false;
     });
   }
+  // (1.16.0) a file picked for the statistics ("Read a CSV file"): its text goes there, not to the calculation notes
+  let statImport = null;
   // the event "import" (from the phone, or from the browser's file picker in the same form)
   async function importArrived(ev) {
-    if (!ev || ev.cancelled) return;
+    if (!ev || ev.cancelled) { statImport = null; return; }
     const share = ev.from === 'share';
+    const forStats = !share && statImport;
+    statImport = null;
     // (shared from another app: the notes come to the top, as the widget opens its place)
     if (share) {
       if (!varPopEl.hidden) closeVarPop();
@@ -17637,6 +17654,22 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       for (let i = 0; i < 20 && panelStack.length; i++) closePanel();
     }
     const fail = (e, n) => { if (share) openNotesTool(); messageSheet(importFailText(e, n)); };
+    if (forStats) {
+      let t = typeof ev.text === 'string' ? ev.text : null;
+      if (ev.error) { fail(ev.error); return; }
+      if (t === null) {
+        let bytes = ev.bytes;
+        if (!bytes && typeof ev.b64 === 'string') { try { const s0 = atob(ev.b64); bytes = new Uint8Array(s0.length); for (let i = 0; i < s0.length; i++) bytes[i] = s0.charCodeAt(i); } catch (e) { fail('read'); return; } }
+        if (!bytes) return;
+        if (bytes.length > IMPORT_MAX_BYTES) { fail('big'); return; }
+        const d = importDecode(bytes);
+        if (d.error) { fail(d.error); return; }
+        t = d.text;
+      }
+      if (t.length > IMPORT_MAX_BYTES) { fail('big'); return; }
+      forStats(t, ev.name ? String(ev.name).slice(0, 80) : '');
+      return;
+    }
     if (ev.error) { fail(ev.error); return; }
     let text;
     if (typeof ev.text === 'string') {
@@ -17840,7 +17873,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         save(); fillPick(); titleIn.value = memo().title; build(); run(empty ? 0 : end);
         toast(trf('Added to “{0}”: {1} lines', '「{0}」に {1} 行を足しました', memo().title, n), 2500);
       };
-      const openBtn = tapButton({ class: 'btn', text: tr('Open a file', 'ファイルを開く') }, () => openImportFile());
+      const openBtn = tapButton({ class: 'btn', text: tr('Open a file', 'ファイルを開く') }, () => { statImport = null; openImportFile(); });
       const txtBtn = tapButton({ class: 'btn', text: tr('Save as text', 'テキストで保存') + lock() }, () => exp('txt'));
       const csvBtn = tapButton({ class: 'btn', text: tr('Save as CSV', 'CSV で保存') + lock() }, () => exp('csv'));
       const more = el('details', { class: 'sec-more note-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }),
@@ -17852,12 +17885,155 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     });
     return p;
   }
+  // ---- (1.16.0, feature/stats-plus, the owner's request of 11-23 11:16: the statistics of R, made here) probability
+  // distributions, the histogram and the box plot of one column, regression with a choice of the curve (polynomials
+  // of degree 2 to 4, exponential, power, logarithmic) and a column read from a CSV file. The probabilities are the
+  // engine's (normdist, binomdist, poisson, tdist, chisqdist and their inverses, so that a tap on a result gives the
+  // expression for the calculator); the curves of the densities are drawn from the formulas here.
+  function statLgamma(z) {
+    if (z < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * z))) - statLgamma(1 - z);
+    const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    z -= 1;
+    let x = c[0];
+    for (let i = 1; i < 9; i++) x += c[i] / (z + i);
+    const t = z + 7.5;
+    return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+  }
+  // the distributions: [key, name, parameters [key, symbol, default, what it is], discrete]
+  const DISTS = () => [
+    ['norm', tr('Normal', '正規'), [['mu', 'μ', '0', tr('mean', '平均')], ['sd', 'σ', '1', tr('standard deviation', '標準偏差')]], false],
+    ['binom', tr('Binomial', '二項'), [['n', 'n', '10', tr('trials', '試行の回数')], ['p', 'p', '0.5', tr('probability of success', '成功の確率')]], true],
+    ['pois', tr('Poisson', 'ポアソン'), [['lam', 'λ', '3', tr('mean number', '平均の回数')]], true],
+    ['t', tr('t', 't'), [['df', 'ν', '10', tr('degrees of freedom', '自由度')]], false],
+    ['chisq', tr('χ²', 'χ²'), [['df', 'k', '3', tr('degrees of freedom', '自由度')]], false]
+  ];
+  const DIST_DEF = { norm: { a: '-1.96', b: '1.96', q: '0.975' }, binom: { a: '3', b: '7', q: '0.5' }, pois: { a: '0', b: '2', q: '0.9' }, t: { a: '-2', b: '2', q: '0.975' }, chisq: { a: '0', b: '7.81', q: '0.95' } };
+  // the parameters checked: '' or why not
+  function distCheck(k, P) {
+    const pos = (v) => isFinite(v) && v > 0;
+    if (k === 'norm') return !isFinite(P.mu) ? tr('Enter the mean μ', '平均 μ を入れてください') : !pos(P.sd) ? tr('The standard deviation σ must be above 0', '標準偏差 σ は 0 より大きくしてください') : '';
+    if (k === 'binom') return !(Number.isInteger(P.n) && P.n >= 1 && P.n <= 100000) ? tr('The number of trials n is a whole number from 1 to 100000', '試行の回数 n は 1〜100000 の整数です') : !(P.p >= 0 && P.p <= 1) ? tr('The probability p is from 0 to 1', '確率 p は 0〜1 です') : '';
+    if (k === 'pois') return !(pos(P.lam) && P.lam <= 1e6) ? tr('The mean number λ must be above 0', '平均の回数 λ は 0 より大きくしてください') : '';
+    return !(pos(P.df) && P.df <= 1e6) ? tr('The degrees of freedom must be above 0', '自由度は 0 より大きくしてください') : '';
+  }
+  // the density (continuous) or the probability of each value (discrete), here for the drawing and the quantiles
+  function distPdf(k, P, x) {
+    const lg = statLgamma;
+    if (k === 'norm') { const z = (x - P.mu) / P.sd; return Math.exp(-z * z / 2) / (P.sd * Math.sqrt(2 * Math.PI)); }
+    if (k === 't') { const v = P.df; return Math.exp(lg((v + 1) / 2) - lg(v / 2) - 0.5 * Math.log(v * Math.PI) - (v + 1) / 2 * Math.log(1 + x * x / v)); }
+    if (k === 'chisq') { const h = P.df / 2; if (x < 0) return 0; if (x === 0) return h < 1 ? Infinity : h === 1 ? 0.5 : 0; return Math.exp((h - 1) * Math.log(x) - x / 2 - h * Math.log(2) - lg(h)); }
+    if (!Number.isInteger(x) || x < 0) return 0;
+    if (k === 'binom') {
+      if (x > P.n) return 0;
+      if (P.p === 0) return x === 0 ? 1 : 0;
+      if (P.p === 1) return x === P.n ? 1 : 0;
+      return Math.exp(lg(P.n + 1) - lg(x + 1) - lg(P.n - x + 1) + x * Math.log(P.p) + (P.n - x) * Math.log(1 - P.p));
+    }
+    return Math.exp(x * Math.log(P.lam) - P.lam - lg(x + 1));
+  }
+  // the mean and the variance; the range drawn
+  function distMoments(k, P) {
+    if (k === 'norm') return [P.mu, P.sd * P.sd];
+    if (k === 'binom') return [P.n * P.p, P.n * P.p * (1 - P.p)];
+    if (k === 'pois') return [P.lam, P.lam];
+    if (k === 't') return [P.df > 1 ? 0 : NaN, P.df > 2 ? P.df / (P.df - 2) : P.df > 1 ? Infinity : NaN];
+    return [P.df, 2 * P.df];
+  }
+  function distRange(k, P) {
+    const [m, v] = distMoments(k, P), s = Math.sqrt(v);
+    if (k === 'norm') return [m - 4 * s, m + 4 * s];
+    if (k === 't') { const w = P.df < 1.5 ? 12 : P.df < 3 ? 8 : 5; return [-w, w]; }
+    if (k === 'chisq') return [0, Math.max(8, m + 4.5 * s)];
+    if (k === 'binom') return [Math.max(0, Math.floor(m - 5 * s - 1)), Math.min(P.n, Math.ceil(m + 5 * s + 1))];
+    return [Math.max(0, Math.floor(m - 5 * s - 1)), Math.ceil(m + 5 * s + 2)];
+  }
+  // the engine's expressions: the cumulative probability P(X ≤ x), the density or P(X = x), the quantile (null: here)
+  function distExpr(k, P, what, x) {
+    const E = exprNum;
+    const args = k === 'norm' ? [E(P.mu), E(P.sd)] : k === 'binom' ? [E(P.n), E(P.p)] : k === 'pois' ? [E(P.lam)] : [E(P.df)];
+    const f = { norm: 'normdist', binom: 'binomdist', pois: 'poisson', t: 'tdist', chisq: 'chisqdist' }[k];
+    if (what === 'cdf') return f + '(' + [E(x)].concat(args, ['1']).join(', ') + ')';
+    if (what === 'pdf') return f + '(' + [E(x)].concat(args).join(', ') + ')';
+    const inv = { norm: 'normdistinv', t: 'tdistinv', chisq: 'chisqdistinv' }[k];
+    return inv ? inv + '(' + [E(x)].concat(args).join(', ') + ')' : null;
+  }
+  // the smallest whole k with P(X ≤ k) ≥ q (binomial, Poisson), summed here
+  function distDiscreteQuantile(k, P, q) {
+    let c = 0;
+    const top = k === 'binom' ? P.n : Math.ceil(P.lam + 50 * Math.sqrt(P.lam) + 100);
+    for (let i = 0; i <= top; i++) { c += distPdf(k, P, i); if (c >= q - 1e-12) return i; }
+    return top;
+  }
+  // a chart drawn on a canvas in the panels: the theme's colours, the size of the box, the device's pixels
+  function chartCanvas(box, h, label) {
+    let c = box.querySelector('canvas.st-chart');
+    if (!c) { c = el('canvas', { class: 'st-chart', role: 'img' }); box.prepend(c); }
+    c.setAttribute('aria-label', label);
+    const W = Math.max(200, box.clientWidth || 320), dpr = window.devicePixelRatio || 1;
+    c.style.height = h + 'px';
+    c.width = Math.round(W * dpr); c.height = Math.round(h * dpr);
+    const g = c.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cs = getComputedStyle(document.documentElement), col = (n, d) => cs.getPropertyValue(n).trim() || d;
+    const C = { bg: col('--plot-bg', '#fff'), line: col('--line', '#ccd'), text: col('--muted', '#667'), accent: col('--accent', '#2563eb'), fill: col('--accent', '#2563eb'), danger: col('--danger', '#c62828') };
+    g.fillStyle = C.bg; g.fillRect(0, 0, W, h);
+    g.font = '11px system-ui, sans-serif'; g.textBaseline = 'top';
+    return { c, g, W, H: h, C };
+  }
+  // tick marks: about n nice numbers from lo to hi
+  function niceTicks(lo, hi, n) {
+    const span = hi - lo;
+    if (!(span > 0)) return [lo];
+    const raw = span / Math.max(1, n), p = Math.pow(10, Math.floor(Math.log10(raw))), r = raw / p;
+    const step = (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * p, out = [];
+    for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + step * 1e-9; v += step) out.push(Math.abs(v) < step * 1e-9 ? 0 : v);
+    return out;
+  }
+  const tickNum = (v) => statNum(+v.toPrecision(6), 6);
+  // a nice width for the bins of a histogram: 1, 2 or 5 × 10^k, the next larger or smaller
+  function niceStep(w, dir) {
+    if (!(w > 0)) return 1;
+    const p = Math.pow(10, Math.floor(Math.log10(w) + 1e-9)), r = w / p;
+    const steps = [1, 2, 5, 10];
+    if (!dir) return steps.find((s) => s >= r - 1e-9) * p;
+    let i = steps.findIndex((s) => Math.abs(s - r) < 1e-6);
+    if (i < 0) return niceStep(w, 0);
+    i += dir;
+    return i < 0 ? 5 * p / 10 : i > 3 ? 2 * p * 10 : steps[i] * p;
+  }
+  // a polynomial of degree d by least squares in u = x − mean, written again in x: the coefficients c[0] + c[1] x + …
+  function statPoly(xs, ys, d) {
+    const n = xs.length, m = xs.reduce((s, x) => s + x, 0) / n, N = d + 1, S = new Array(2 * d + 1).fill(0), T = new Array(N).fill(0);
+    for (let i = 0; i < n; i++) { const u = xs[i] - m; let p = 1; for (let k = 0; k <= 2 * d; k++) { S[k] += p; if (k < N) T[k] += p * ys[i]; p *= u; } }
+    const A = [];
+    for (let i = 0; i < N; i++) { const r = []; for (let j = 0; j < N; j++) r.push(S[i + j]); r.push(T[i]); A.push(r); }
+    for (let i = 0; i < N; i++) {
+      let piv = i;
+      for (let j = i + 1; j < N; j++) if (Math.abs(A[j][i]) > Math.abs(A[piv][i])) piv = j;
+      [A[i], A[piv]] = [A[piv], A[i]];
+      if (!A[i][i]) return null;
+      for (let j = 0; j < N; j++) if (j !== i) { const q = A[j][i] / A[i][i]; for (let k = i; k <= N; k++) A[j][k] -= q * A[i][k]; }
+    }
+    const b = A.map((r, i) => r[N] / r[i]);
+    // (u = x − m: Σ b_j (x − m)^j = Σ_k x^k Σ_{j ≥ k} b_j C(j, k) (−m)^(j−k))
+    const c = new Array(N).fill(0), C = (j, k) => { let r = 1; for (let i = 1; i <= k; i++) r = r * (j - k + i) / i; return r; };
+    for (let j = 0; j < N; j++) for (let k = 0; k <= j; k++) c[k] += b[j] * C(j, k) * Math.pow(-m, j - k);
+    return c.every(isFinite) ? c : null;
+  }
+  // the short names of the curves (the buttons above the results); the curves that are QCalc Pro (PRO_GATES.stats_fit)
+  const STAT_CURVE_SHORT = () => ({ linear: tr('Line', '直線'), quad: tr('Degree 2', '2 次'), cubic: tr('Degree 3', '3 次'), quartic: tr('Degree 4', '4 次'), exp: tr('Exponential', '指数'), power: tr('Power', '累乗'), log: tr('Log', '対数') });
+  const STAT_PRO_CURVES = ['cubic', 'quartic'];
+  const fitLocked = () => PRO_GATES.stats_fit === 'pro' && !hasPro();
   function openStatsTool() {
     const p = panel('stats', tr('Statistics', '統計'), (p) => {
       const saved = store.get('qalc.stats', null) || {};
       const ex0 = STAT_EX()[0];
-      const D = { cols: saved.cols === 2 ? 2 : 1, rows: Array.isArray(saved.rows) && saved.rows.length ? saved.rows.slice(0, STAT_MAX) : ex0[2].map((r) => r.slice()), px: typeof saved.px === 'string' ? saved.px : '' };
-      const save = () => store.set('qalc.stats', { cols: D.cols, rows: D.rows, px: D.px });
+      const D = { cols: saved.cols === 2 ? 2 : 1, rows: Array.isArray(saved.rows) && saved.rows.length ? saved.rows.slice(0, STAT_MAX) : ex0[2].map((r) => r.slice()), px: typeof saved.px === 'string' ? saved.px : '',
+        // (1.16.0) the part shown (data or distributions), the curve chosen for two columns, the chart of one column and
+        // the width of its bins ('' automatic), the distribution with its parameters, range and probability
+        mode: saved.mode === 'dist' ? 'dist' : 'data', model: typeof saved.model === 'string' ? saved.model : 'linear', chart: saved.chart === 'box' ? 'box' : 'hist',
+        bw: typeof saved.bw === 'string' ? saved.bw : '', dist: Object.assign({ k: 'norm', P: {}, at: {} }, saved.dist && typeof saved.dist === 'object' ? saved.dist : {}) };
+      const save = () => store.set('qalc.stats', { cols: D.cols, rows: D.rows, px: D.px, mode: D.mode, model: D.model, chart: D.chart, bw: D.bw, dist: D.dist });
       const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
         ...STAT_EX().map(([label, cols, rows]) => tapButton({ class: 'area-chip', text: label }, () => { D.cols = cols; D.rows = rows.map((r) => r.slice()); save(); setCols(cols); })));
       const b1 = tapButton({ text: tr('1 column', '1 列') }, () => setCols(1)), b2 = tapButton({ text: tr('2 columns (x and y)', '2 列（x と y）') }, () => setCols(2));
@@ -17873,6 +18049,30 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const pxRow = el('label', { class: 'geo-size stat-px' }, el('span', { class: 'geo-lbl', text: tr('Predict at x =', '予測：x =') }), pxIn);
       const graph = tapButton({ class: 'btn geo-graph', text: tr('📈 Show in a graph', '📈 グラフで見る') }, () => showGraph());
       const hint = el('div', { class: 'form-hint stat-hint' });
+      // (1.16.0) a column read from a CSV file (free), the table saved as a CSV file (QCalc Pro, as the other tables)
+      const csvRead = tapButton({ class: 'btn', text: tr('Read a CSV file', 'CSV を読み込む') }, () => { statImport = (text, name) => takeCsv(text, name); openImportFile(); });
+      const csvSave = tapButton({ class: 'btn', text: tr('Save as CSV', 'CSV で保存') + (PRO_GATES.tables === 'pro' && !hasPro() ? '  ⭐ Pro' : '') }, () => {
+        const rows = D.rows.filter((r) => String(r[0] || '').trim() || String(r[1] || '').trim()).map((r) => r.slice(0, D.cols).map((c) => String(c || '').trim()));
+        saveTableCsv({ title: tr('Statistics', '統計'), name: 'statistics', head: D.cols === 2 ? ['x', 'y'] : [tr('Values', '値')], rows });
+      });
+      const csvRow = el('div', { class: 'tool-tbl-btns stat-csv' }, csvRead, csvSave);
+      // two columns: the curve (the line is free; the others are QCalc Pro: PRO_GATES.stats_fit)
+      const modelRow = el('div', { class: 'seg mini stat-models', role: 'group', 'aria-label': tr('Curve', '曲線') });
+      // one column: the histogram or the box plot
+      const cHist = tapButton({ text: tr('Histogram', 'ヒストグラム') }, () => { D.chart = 'hist'; save(); run(); });
+      const cBox = tapButton({ text: tr('Box plot', '箱ひげ図') }, () => { D.chart = 'box'; save(); run(); });
+      const bwIn = el('input', { inputmode: 'decimal', autocapitalize: 'off', spellcheck: 'false', class: 'stat-bw', 'aria-label': tr('Width of the bins', '階級の幅') });
+      const bwMinus = tapButton({ class: 'btn stat-bw-btn', text: '−', 'aria-label': tr('Narrower bins', '階級の幅を狭く') }, () => stepBins(-1));
+      const bwPlus = tapButton({ class: 'btn stat-bw-btn', text: '+', 'aria-label': tr('Wider bins', '階級の幅を広く') }, () => stepBins(1));
+      const bwAuto = tapButton({ class: 'btn stat-bw-btn', text: tr('Auto', '自動') }, () => { D.bw = ''; save(); run(); });
+      bwIn.addEventListener('change', () => { const v = statVal(bwIn.value); if (v > 0) { D.bw = String(v); save(); run(); } else bwIn.setAttribute('aria-invalid', 'true'); });
+      const bwRow = el('label', { class: 'geo-size stat-bwrow' }, el('span', { class: 'geo-lbl', text: tr('Width of the bins', '階級の幅') }), bwIn, bwMinus, bwPlus, bwAuto);
+      const chartCap = el('div', { class: 'form-hint stat-cap' });
+      const chartShare = tapButton({ class: 'btn', text: tr('Share the picture', '画像で共有') }, () => { const c = chartArea.querySelector('canvas'); if (c) shareData(graphPng(c, chartCap.textContent, hasPro() || PRO_GATES.share_pro !== 'pro'), 'image/png', 'QCalc'); });
+      const chartArea = el('div', { class: 'stat-chart' });
+      const chartBox = el('div', { class: 'stat-charts' }, el('div', { class: 'seg mini', role: 'group', 'aria-label': tr('Chart', 'グラフ') }, cHist, cBox), chartArea, bwRow, chartCap, chartShare);
+      let binNow = 0;
+      const stepBins = (dir) => { const w = niceStep(binNow || 1, dir); if (w > 0) { D.bw = String(+w.toPrecision(6)); save(); run(); } };
       // a value box: on paste of several values (tabs, commas, lines) the table becomes the pasted one from there
       const cell = (r, c) => {
         const inp = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: (D.rows[r] || [])[c] || '',
@@ -17928,6 +18128,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const list = (vs) => '[' + vs.map(exprNum).join(', ') + ']';
       const run = () => {
         msg.textContent = ''; outs.textContent = ''; moreOut.textContent = ''; more.hidden = false; D.fit = null;
+        chartBox.hidden = true; modelRow.hidden = true; modelRow.textContent = '';
         const xs = [], ys = [];
         let dx = 0, dy = 0; // the decimals of the data (feature/screen-digits)
         for (let r = 0; r < D.rows.length; r++) {
@@ -17966,6 +18167,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           if (s.n > 1) row(moreOut, tr('Interquartile range', '四分位範囲'), 'Q3 − Q1', A(s.q3 - s.q1), 'median(' + list(s.upper) + ') − median(' + list(s.lower) + ')');
           if (s.n > 1) row(moreOut, tr('Variance (sample / population)', '分散（標本 / 母集団）'), 's² / σ²', A(s.vs) + ' / ' + A(s.vp), 'var(' + L + ')');
           row(moreOut, tr('Quartiles as in spreadsheets', '表計算ソフトの四分位数'), 'QUARTILE.INC', A(s.inc1) + ' / ' + A(s.inc3), 'quartile(' + L + ', 1)');
+          drawChart(xs, s, dx);
           hint.textContent = tr('The sample standard deviation divides by n − 1 (for a part of all the data), the population one by n (for all of it). The quartiles are the medians of the lower and the upper half (without the median when n is odd), as in school books.',
             '標本の標準偏差は n − 1 で割ります（全体の一部のデータから全体を推し量るとき）。母集団の標準偏差は n で割ります（データが全体のとき）。四分位数は、下半分と上半分のそれぞれの中央値です（n が奇数のときは中央値を除く。教科書の方法）。');
           return;
@@ -17973,36 +18175,274 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (xs.length < 2) return fail(null, tr('Enter at least two rows of x and y', 'x と y を 2 行以上入れてください'));
         const models = statModels(xs, ys), lin = models.find((m) => m[0] === 'linear');
         if (!lin) return fail(null, tr('Every x is the same, so no line can be drawn: enter different x', 'x がすべて同じなので、直線を引けません。違う x を入れてください'));
-        D.fit = { xs, ys, expr: lin[3] };
-        const L = lin[6];
-        row(outs, tr('Regression line', '回帰直線'), tr('least squares', '最小二乗法'), lin[2], lin[3], true);
-        row(outs, tr('Correlation coefficient', '相関係数'), 'r', isFinite(L.r) ? R4(L.r) : '—', isFinite(L.r) ? exprNum(L.r) : '');
-        row(outs, tr('Coefficient of determination', '決定係数'), 'R²', isFinite(lin[5]) ? R4(lin[5]) : '—', isFinite(lin[5]) ? exprNum(lin[5]) : '');
+        // (1.16.0) the curve chosen above the results: the line (free) or another (QCalc Pro); one that cannot be worked
+        // out for these values (needs more different x, or values above 0) is shown greyed with the reason
+        const locked = fitLocked();
+        let sel = models.find((m) => m[0] === D.model && m.length > 3) || lin;
+        if (sel !== lin && locked) sel = lin;
+        for (const m of models) {
+          const b = tapButton({ class: m === sel ? 'on' : '', text: STAT_CURVE_SHORT()[m[0]] + (m[0] !== 'linear' && locked ? ' ⭐' : ''), 'aria-pressed': String(m === sel), 'aria-label': m[1] + (m.length === 3 ? ' — ' + m[2] : '') }, () => {
+            if (m.length === 3) { toast(m[1] + ': ' + m[2], 3000); return; }
+            if (m[0] !== 'linear' && !proGate('stats_fit')) return;
+            D.model = m[0]; save(); run();
+          });
+          if (m.length === 3) b.classList.add('off');
+          modelRow.append(b);
+        }
+        modelRow.hidden = false;
+        D.fit = { xs, ys, expr: sel[3], name: sel[1] };
+        const L = lin[6], logFit = /^(exp|power|log)$/.test(sel[0]);
+        row(outs, sel === lin ? tr('Regression line', '回帰直線') : trf('Regression curve ({0})', '回帰曲線（{0}）', sel[1]), logFit ? tr('least squares on the logarithms', '対数をとって最小二乗法') : tr('least squares', '最小二乗法'), sel[2], sel[3], true);
+        if (sel === lin) row(outs, tr('Correlation coefficient', '相関係数'), 'r', isFinite(L.r) ? R4(L.r) : '—', isFinite(L.r) ? exprNum(L.r) : '');
+        row(outs, tr('Coefficient of determination', '決定係数'), 'R²', isFinite(sel[5]) ? R4(sel[5]) : '—', isFinite(sel[5]) ? exprNum(sel[5]) : '');
         const pxv = statVal(D.px);
         if (String(D.px).trim() && !isFinite(pxv)) pxIn.setAttribute('aria-invalid', 'true');
-        if (isFinite(pxv)) row(outs, trf('Predicted y at x = {0}', 'x = {0} のときの y（予測）', statNum(pxv)), 'ŷ', A(lin[4](pxv), dy), lin[3].replace(/x/g, '(' + exprNum(pxv) + ')'));
+        if (isFinite(pxv)) row(outs, trf('Predicted y at x = {0}', 'x = {0} のときの y（予測）', statNum(pxv)), 'ŷ', A(sel[4](pxv), dy), sel[3].replace(/x/g, '(' + exprNum(pxv) + ')'));
         row(outs, tr('Rows', '行の数'), 'n', String(xs.length), String(xs.length));
-        for (const m of models.filter((q) => q[0] !== 'linear')) {
+        let lockRow = false;
+        for (const m of models.filter((q) => q !== sel)) {
+          if (locked && STAT_PRO_CURVES.indexOf(m[0]) >= 0) {
+            // (the polynomials of degree 3 and 4 are QCalc Pro: one row that says so)
+            if (lockRow) continue;
+            lockRow = true;
+            const lr = tapButton({ class: 'geo-row' }, () => proGate('stats_fit'));
+            lr.append(el('span', { class: 'geo-name', text: tr('Cubic and quartic', '3 次式・4 次式') }), el('span', { class: 'geo-val geo-val-text', text: '⭐ QCalc Pro' }));
+            moreOut.append(lr);
+            continue;
+          }
           if (m.length === 3) { row(moreOut, m[1], '', m[2], ''); continue; }
           const at = isFinite(pxv) ? '  ' + trf('(x = {0}: {1})', '（x = {0} で {1}）', statNum(pxv), A(m[4](pxv), dy)) : '';
           row(moreOut, m[1], 'R² = ' + (isFinite(m[5]) ? R4(m[5]) : '—') + at, m[2], m[3]);
         }
         const xm = xs.reduce((a, b) => a + b, 0) / xs.length, ym = ys.reduce((a, b) => a + b, 0) / ys.length;
         row(moreOut, tr('Means of x and y', 'x と y の平均'), 'x̄ / ȳ', A(xm, dx) + ' / ' + A(ym, dy), 'mean(' + list(xs) + ')');
-        hint.textContent = tr('The line is found by least squares; r near ±1 means the points lie close to it. Other curves are under "More"; their R² is worked out on the y values themselves.',
-          '回帰直線は最小二乗法で求めます。r が ±1 に近いほど、点は直線の近くに並びます。ほかの曲線は「詳しく」の中にあります（決定係数は元の y の値で計算）。');
+        hint.textContent = tr('The line is found by least squares; r near ±1 means the points lie close to it. Other curves are under "More"; their R² is worked out on the y values themselves. Choosing another curve above, with its prediction and graph, is a QCalc Pro feature.',
+          '回帰直線は最小二乗法で求めます。r が ±1 に近いほど、点は直線の近くに並びます。ほかの曲線は「詳しく」の中にあります（決定係数は元の y の値で計算）。上でほかの曲線を選び、その予測とグラフを出すのは QCalc Pro の機能です。');
+        if (!locked) hint.textContent = tr('The line is found by least squares; r near ±1 means the points lie close to it. Choose another curve above: its R² is worked out on the y values themselves. "More" compares all the curves.',
+          '回帰直線は最小二乗法で求めます。r が ±1 に近いほど、点は直線の近くに並びます。上でほかの曲線も選べます（決定係数は元の y の値で計算）。「詳しく」ですべての曲線を比べられます。');
       };
       // the points and the line in the 2D graph
       const showGraph = () => {
         if (!D.fit) return;
-        const { xs, ys, expr } = D.fit;
+        const { xs, ys, expr } = D.fit; // (1.16.0: the curve chosen)
         let lo = Math.min(...xs), hi = Math.max(...xs);
         const pad = (hi - lo) * 0.15 || Math.abs(lo) * 0.2 || 1;
         openPlotWith([expr], { points: xs.map((x, i) => ({ x, y: ys[i] })), range: [+(lo - pad).toPrecision(6), +(hi + pad).toPrecision(6)] });
       };
-      p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Columns', '列') }), seg), table, tools, pxRow, msg, outs, more, graph, hint);
-      digitsButton(p, 'stats'); digitsRefresh.stats = () => run();
+      // (1.16.0) one column: the histogram (bins of a nice width: automatic by Sturges' rule, or chosen) or the box plot
+      // (the box from Q1 to Q3 with the median, the whiskers to the furthest values within 1.5 × IQR, the others as points)
+      const drawChart = (xs, s, dx) => {
+        if (xs.length < 2) return;
+        chartBox.hidden = false;
+        for (const [b, k] of [[cHist, 'hist'], [cBox, 'box']]) { b.classList.toggle('on', D.chart === k); b.setAttribute('aria-pressed', String(D.chart === k)); }
+        bwRow.hidden = D.chart !== 'hist';
+        const lo = s.min, hi = s.max;
+        if (D.chart === 'hist') {
+          const auto = niceStep((hi - lo) / Math.max(1, Math.ceil(Math.log2(xs.length) + 1)), 0) || 1;
+          let w = statVal(D.bw);
+          if (!(w > 0) || (hi - lo) / w > 200) w = auto;
+          binNow = w;
+          bwIn.value = statNum(w, 6); bwIn.removeAttribute('aria-invalid');
+          const start = Math.floor(lo / w + 1e-9) * w, nb = Math.max(1, Math.floor((hi - start) / w + 1e-9) + 1), counts = new Array(nb).fill(0);
+          for (const x of xs) counts[Math.min(nb - 1, Math.max(0, Math.floor((x - start) / w + 1e-9)))]++;
+          const top = Math.max(...counts);
+          const { g, W, H, C } = chartCanvas(chartArea, 190, trf('Histogram: {0} bins of width {1}', 'ヒストグラム：幅 {1} の階級が {0} 個', nb, statNum(w, 6)));
+          const L = 30, R = 8, T = 8, B = 20, X = (v) => L + (v - start) / (nb * w) * (W - L - R), Y = (n) => H - B - n / top * (H - T - B);
+          g.strokeStyle = C.line; g.fillStyle = C.text; g.lineWidth = 1;
+          for (const t of niceTicks(0, top, 4).filter((t) => Number.isInteger(t))) { g.beginPath(); g.moveTo(L, Y(t) + 0.5); g.lineTo(W - R, Y(t) + 0.5); g.stroke(); g.textAlign = 'right'; g.fillText(String(t), L - 4, Y(t) - 6); }
+          g.fillStyle = C.fill; g.globalAlpha = 0.75;
+          counts.forEach((n, i) => { if (n) g.fillRect(X(start + i * w) + 1, Y(n), X(start + (i + 1) * w) - X(start + i * w) - 2, H - B - Y(n)); });
+          g.globalAlpha = 1; g.fillStyle = C.text; g.textAlign = 'center';
+          const every = Math.max(1, Math.ceil(nb / Math.max(1, Math.floor((W - L - R) / 56))));
+          for (let i = 0; i <= nb; i += every) { const x = X(start + i * w); g.textAlign = x > W - 24 ? 'right' : x < L + 12 ? 'left' : 'center'; g.fillText(tickNum(start + i * w), x, H - B + 4); }
+          chartCap.textContent = trf('{0} bins of width {1} (from {2})', '幅 {1} の階級が {0} 個（{2} から）', nb, statNum(w, 6), statNum(start, 8)) + (D.bw ? '' : tr(' — automatic', '（自動）'));
+        } else {
+          const iqr = s.q3 - s.q1, f1 = s.q1 - 1.5 * iqr, f3 = s.q3 + 1.5 * iqr;
+          const inside = xs.filter((x) => x >= f1 - 1e-12 && x <= f3 + 1e-12), out = xs.filter((x) => x < f1 - 1e-12 || x > f3 + 1e-12).sort((a, b) => a - b);
+          const w0 = Math.min(...inside), w1 = Math.max(...inside), pad = (hi - lo) * 0.06 || Math.abs(hi) * 0.1 || 1;
+          const { g, W, H, C } = chartCanvas(chartArea, 150, tr('Box plot', '箱ひげ図'));
+          const L = 12, R = 12, a0 = lo - pad, a1 = hi + pad, X = (v) => L + (v - a0) / (a1 - a0) * (W - L - R), yc = 60, bh = 26;
+          g.strokeStyle = C.line; g.fillStyle = C.text; g.lineWidth = 1; g.textAlign = 'center';
+          g.beginPath(); g.moveTo(L, H - 26.5); g.lineTo(W - R, H - 26.5); g.stroke();
+          for (const t of niceTicks(a0, a1, Math.max(2, Math.floor((W - L - R) / 64)))) { g.beginPath(); g.moveTo(X(t) + 0.5, H - 26); g.lineTo(X(t) + 0.5, H - 22); g.stroke(); g.fillText(tickNum(t), X(t), H - 19); }
+          g.strokeStyle = C.accent; g.lineWidth = 2;
+          g.beginPath(); g.moveTo(X(w0), yc); g.lineTo(X(s.q1), yc); g.moveTo(X(s.q3), yc); g.lineTo(X(w1), yc);
+          g.moveTo(X(w0), yc - bh / 3); g.lineTo(X(w0), yc + bh / 3); g.moveTo(X(w1), yc - bh / 3); g.lineTo(X(w1), yc + bh / 3); g.stroke();
+          g.fillStyle = C.fill; g.globalAlpha = 0.18; g.fillRect(X(s.q1), yc - bh, X(s.q3) - X(s.q1), 2 * bh); g.globalAlpha = 1;
+          g.strokeRect(X(s.q1), yc - bh, X(s.q3) - X(s.q1), 2 * bh);
+          g.lineWidth = 3; g.beginPath(); g.moveTo(X(s.median), yc - bh); g.lineTo(X(s.median), yc + bh); g.stroke();
+          g.lineWidth = 1.5; g.beginPath(); g.moveTo(X(s.mean) - 4, yc - 4); g.lineTo(X(s.mean) + 4, yc + 4); g.moveTo(X(s.mean) + 4, yc - 4); g.lineTo(X(s.mean) - 4, yc + 4); g.stroke();
+          g.strokeStyle = C.danger; g.lineWidth = 1.5;
+          for (const x of out) { g.beginPath(); g.arc(X(x), yc, 4, 0, 2 * Math.PI); g.stroke(); }
+          const Bd = (v) => fmtDigits('stats', v, { m: 'dec', n: dx, zeros: true }), A2 = (v) => fmtDigits('stats', v, { m: 'dec', n: dx + 2, zeros: true });
+          chartCap.textContent = trf('Box Q1 {0} to Q3 {1}, median {2} (|), mean ×; whiskers {3} to {4}', '箱は Q1 {0}〜Q3 {1}、中央値 {2}（|）、平均 ×。ひげは {3}〜{4}', A2(s.q1), A2(s.q3), A2(s.median), Bd(w0), Bd(w1)) + '. '
+            + (out.length ? trf('Outliers (beyond 1.5 × IQR): {0} ({1})', '外れ値（1.5 × IQR より外）：{0} 個（{1}）', out.length, clip(out.map(Bd).join(', '), 80)) : tr('No outliers (none beyond 1.5 × IQR).', '外れ値はありません（1.5 × IQR より外の値なし）。'));
+        }
+      };
+      // (1.16.0) a CSV file read in: one column (or x and y) chosen when it has more; a row of headings is skipped,
+      // and so are the cells that are not numbers
+      const takeCsv = async (text, name) => {
+        const rows0 = importCsvRows(String(text).replace(/^\ufeff/, '').replace(/\r\n?/g, '\n')).map((r) => r.map((c) => String(c).trim())).filter((r) => r.some((c) => c));
+        const rows = pastedDecimals(rows0);
+        const isNum = (c) => isFinite(statVal(c));
+        if (!rows.length) { messageSheet(tr('There is nothing to read in it', '読み込む行がありません')); return; }
+        const head = rows.length > 1 && rows[0].some((c) => c && !isNum(c)) ? rows[0] : null, body = head ? rows.slice(1) : rows;
+        const ncol = Math.max(...body.map((r) => r.length));
+        const numeric = [];
+        for (let c = 0; c < ncol; c++) { const v = body.map((r) => r[c] || '').filter((x) => x); if (v.length && v.filter(isNum).length >= v.length / 2) numeric.push(c); }
+        if (!numeric.length) { messageSheet(tr('No column of numbers was found in this file', 'このファイルには数の列がありません')); return; }
+        const colName = (c) => (head && head[c] ? head[c] + '  ' : '') + trf('(column {0})', '（{0} 列目）', c + 1);
+        const pick = async (title, skip) => {
+          const cs = numeric.filter((c) => c !== skip);
+          if (cs.length === 1) return cs[0];
+          const k = await sheet(title, cs.map((c) => ['c' + c, colName(c) + ' — ' + clip(body.map((r) => r[c] || '').filter(isNum).slice(0, 3).join(', '), 40)]));
+          return k ? Number(k.slice(1)) : null;
+        };
+        let rowsNew;
+        if (D.cols === 1) {
+          const c = await pick(tr('Which column?', 'どの列を読み込みますか？'));
+          if (c === null) return;
+          rowsNew = body.map((r) => r[c] || '').filter(isNum).map((v) => [v, '']);
+        } else {
+          if (numeric.length < 2) { messageSheet(tr('This file has only one column of numbers: choose "1 column" to read it', 'このファイルの数の列は 1 つだけです。「1 列」にして読み込んでください')); return; }
+          const cx = await pick(tr('Which column is x?', 'x はどの列ですか？'));
+          if (cx === null) return;
+          const cy = await pick(tr('Which column is y?', 'y はどの列ですか？'), cx);
+          if (cy === null) return;
+          rowsNew = body.filter((r) => isNum(r[cx] || '') && isNum(r[cy] || '')).map((r) => [r[cx], r[cy]]);
+        }
+        if (!rowsNew.length) { messageSheet(tr('No column of numbers was found in this file', 'このファイルには数の列がありません')); return; }
+        const cut = rowsNew.length > STAT_MAX;
+        D.rows = rowsNew.slice(0, STAT_MAX); save(); setCols(D.cols);
+        toast(trf('Read {0} rows from “{1}”', '「{1}」から {0} 行を読み込みました', D.rows.length, name || 'CSV') + (cut ? trf(' (the first {0})', '（最初の {0} 行）', STAT_MAX) : ''), 3500);
+      };
+      // ---- the distributions (free): P(a ≤ X ≤ b) shaded under the curve, the density (or P(X = a)), P(X ≤ b), P(X ≥ a),
+      // the quantile for a cumulative probability, the mean and the standard deviation
+      const distSeg = el('div', { class: 'seg mini stat-dists', role: 'group', 'aria-label': tr('Distribution', '分布') });
+      const distPars = el('div', { class: 'stat-dpars' });
+      const inBox = (ph, label) => el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: ph, 'aria-label': label });
+      const aIn = inBox('−∞', tr('From a (empty: no limit)', '下限 a（空：なし）')), bIn = inBox('∞', tr('To b (empty: no limit)', '上限 b（空：なし）')), qIn = inBox('0.95', tr('Cumulative probability for the quantile', '分位点の累積確率'));
+      const rangeRow = el('div', { class: 'geo-size stat-range' }, el('span', { class: 'geo-lbl', text: tr('Range a ≤ X ≤ b', '範囲 a ≤ X ≤ b') }), aIn, el('span', { class: 'stat-tilde', text: '〜' }), bIn);
+      const qRow = el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Quantile: P(X ≤ x) =', '分位点：P(X ≤ x) =') }), qIn);
+      const distMsg = el('div', { class: 'geo-msg', role: 'alert' });
+      const distChart = el('div', { class: 'stat-chart' });
+      const distOut = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
+      const distShare = tapButton({ class: 'btn', text: tr('Share the picture', '画像で共有') }, () => { const c = distChart.querySelector('canvas'); if (c) shareData(graphPng(c, c.getAttribute('aria-label') || '', hasPro() || PRO_GATES.share_pro !== 'pro'), 'image/png', 'QCalc'); });
+      const distHint = el('div', { class: 'form-hint', text: tr('In the input field too: normdist(x, μ, σ, 1) is P(X ≤ x), normdistinv(P, μ, σ) its quantile; binomdist(k, n, p, 1), poisson(k, λ, 1), tdist(x, ν, 1), tdistinv(P, ν), chisqdist(x, k, 1), chisqdistinv(P, k). Without the last 1: the density (P(X = k) for the binomial and Poisson). Tap a result for its expression.',
+        '入力欄でも使えます：normdist(x, μ, σ, 1) が P(X ≤ x)、normdistinv(P, μ, σ) がその分位点。binomdist(k, n, p, 1)・poisson(k, λ, 1)・tdist(x, ν, 1)・tdistinv(P, ν)・chisqdist(x, k, 1)・chisqdistinv(P, k)。最後の 1 を省くと密度（二項・ポアソンは P(X = k)）。結果をタップすると式を使えます。') });
+      const distBox = el('div', { class: 'stat-dist' }, distSeg, distPars, rangeRow, qRow, distMsg, distChart, distOut, distShare, distHint);
+      let distSeq = 0;
+      const dAt = () => { const k = D.dist.k; D.dist.at[k] = Object.assign({}, DIST_DEF[k], D.dist.at[k] || {}); return D.dist.at[k]; };
+      for (const [inp, f] of [[aIn, 'a'], [bIn, 'b'], [qIn, 'q']]) inp.addEventListener('input', () => { dAt()[f] = inp.value; inp.removeAttribute('aria-invalid'); save(); runDist(); });
+      const buildDist = () => {
+        distSeg.textContent = ''; distPars.textContent = '';
+        for (const [k, name] of DISTS()) distSeg.append(tapButton({ class: k === D.dist.k ? 'on' : '', 'aria-pressed': String(k === D.dist.k), text: name }, () => { D.dist.k = k; save(); buildDist(); runDist(); }));
+        const def = DISTS().find((d) => d[0] === D.dist.k), P = D.dist.P[D.dist.k] = D.dist.P[D.dist.k] || {};
+        for (const [pk, sym, d0, what] of def[2]) {
+          const inp = inBox(d0, sym + ' — ' + what);
+          inp.value = P[pk] !== undefined ? P[pk] : d0;
+          inp.addEventListener('input', () => { P[pk] = inp.value; inp.removeAttribute('aria-invalid'); save(); runDist(); });
+          distPars.append(el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl' }, sym + ' ', el('small', { text: what })), inp));
+        }
+        const at = dAt();
+        aIn.value = at.a; bIn.value = at.b; qIn.value = at.q;
+      };
+      const runDist = async () => {
+        const seq = ++distSeq, k = D.dist.k, def = DISTS().find((d) => d[0] === k), disc = def[3];
+        distMsg.textContent = ''; distOut.textContent = '';
+        const P = {}, PIn = D.dist.P[k] || {};
+        for (const [pk, , d0] of def[2]) P[pk] = statVal(PIn[pk] !== undefined ? PIn[pk] : d0);
+        const bad = distCheck(k, P);
+        if (bad) { distMsg.textContent = bad; distChart.textContent = ''; return; }
+        const at = dAt(), num = (t, inp) => { const v = String(t || '').trim() ? statVal(t) : null; if (v !== null && !isFinite(v)) inp.setAttribute('aria-invalid', 'true'); return v !== null && isFinite(v) ? v : null; };
+        let a = num(at.a, aIn), b = num(at.b, bIn);
+        const q = num(at.q, qIn);
+        if (q !== null && !(q > 0 && q < 1)) qIn.setAttribute('aria-invalid', 'true');
+        if (a !== null && b !== null && a > b) { distMsg.textContent = tr('a must not be larger than b', 'a は b 以下にしてください'); }
+        // the bounds as the distribution has them: whole numbers for the binomial and Poisson, none below 0 for χ²
+        const lo = a === null ? null : disc ? Math.ceil(a - 1e-9) : a, hi = b === null ? null : disc ? Math.floor(b + 1e-9) : b;
+        const lowCut = lo !== null && (disc ? lo > 0 : k !== 'chisq' || lo > 0);
+        const cdf = (x) => distExpr(k, P, 'cdf', x);
+        const sh = (v) => statNum(v, 8), F6 = (v) => fmtDigits('stats', v, { m: 'sig', n: 6 });
+        const rows = [];
+        if ((lo !== null || hi !== null) && !(a !== null && b !== null && a > b)) {
+          const e = lo !== null && hi !== null ? (lowCut ? cdf(hi) + ' − ' + cdf(disc ? lo - 1 : lo) : cdf(hi)) : hi !== null ? cdf(hi) : lowCut ? '1 − ' + cdf(disc ? lo - 1 : lo) : '1';
+          const name = 'P(' + (lo !== null ? sh(lo) + ' ≤ ' : '') + 'X' + (hi !== null ? ' ≤ ' + sh(hi) : '') + ')';
+          rows.push([name, tr('the shaded part', '色を付けた部分'), e, true]);
+        }
+        if (hi !== null && lo !== null) rows.push(['P(X ≤ ' + sh(hi) + ')', '', cdf(hi)]);
+        if (lo !== null && hi !== null) rows.push(['P(X ≥ ' + sh(lo) + ')', '', lowCut ? '1 − ' + cdf(disc ? lo - 1 : lo) : '1']);
+        if (a !== null && (!disc || Number.isInteger(a))) rows.push([disc ? 'P(X = ' + sh(a) + ')' : 'f(' + sh(a) + ')', disc ? '' : tr('density', '確率密度'), distExpr(k, P, 'pdf', a)]);
+        let qx = null;
+        if (q !== null && q > 0 && q < 1) {
+          const ie = distExpr(k, P, 'inv', q);
+          if (ie) rows.push([trf('x with P(X ≤ x) = {0}', 'P(X ≤ x) = {0} の x', sh(q)), tr('quantile', '分位点'), ie, false, 'q']);
+          else { qx = distDiscreteQuantile(k, P, q); rows.push([trf('Smallest k with P(X ≤ k) ≥ {0}', 'P(X ≤ k) ≥ {0} となる最小の k', sh(q)), tr('quantile', '分位点'), String(qx), false, 'k']); }
+        }
+        const [mean, vr] = distMoments(k, P);
+        // the numbers from the engine, one after the other (a newer change wins)
+        for (const [name, small, e, main, kind] of rows) {
+          const v = kind === 'k' ? [qx] : e === '1' ? [1] : await resultNumbers(e);
+          if (seq !== distSeq) return;
+          const shown = v ? (kind === 'k' ? String(v[0]) : F6(Math.abs(v[0]) < 1e-300 ? 0 : v[0])) : '—';
+          if (kind === 'q' && v) qx = v[0];
+          row(distOut, name, small, shown, v ? e : '', !!main);
+        }
+        row(distOut, tr('Mean / standard deviation', '平均 / 標準偏差'), 'E(X) / √V(X)', (isFinite(mean) ? F6(mean) : '—') + ' / ' + (isFinite(vr) ? F6(Math.sqrt(vr)) : vr === Infinity ? '∞' : '—'), '');
+        // the picture: the density (or the bars), the range shaded, the quantile dashed
+        let [x0, x1] = distRange(k, P);
+        const label = def[1] + ': ' + (rows[0] ? rows[0][0] : '');
+        const { g, W, H, C } = chartCanvas(distChart, 190, label);
+        const L = 10, R = 10, T = 10, B = 20, X = (x) => L + (x - x0) / (x1 - x0) * (W - L - R);
+        let top = 0;
+        const pts = [];
+        if (disc) for (let i = Math.ceil(x0); i <= x1; i++) { const y = distPdf(k, P, i); pts.push([i, y]); top = Math.max(top, y); }
+        else { for (let i = 0; i <= 240; i++) { const x = x0 + (x1 - x0) * i / 240, y = distPdf(k, P, x); pts.push([x, y]); if (isFinite(y)) top = Math.max(top, y); } }
+        if (!(top > 0)) top = 1;
+        const fin = pts.filter((p) => isFinite(p[1])).map((p) => p[1]).sort((u, v) => u - v);
+        if (!disc && k === 'chisq' && P.df < 2 && fin.length > 10) top = fin[Math.floor(fin.length * 0.97)];
+        const Y = (y) => H - B - Math.min(1.05, y / top) / 1.05 * (H - T - B);
+        const inR = (x) => (lo === null || x >= lo - 1e-12) && (hi === null || x <= hi + 1e-12);
+        g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(L, H - B + 0.5); g.lineTo(W - R, H - B + 0.5); g.stroke();
+        g.fillStyle = C.text; g.textAlign = 'center';
+        for (const t of niceTicks(x0, x1, Math.max(3, Math.floor((W - L - R) / 60)))) g.fillText(tickNum(t), X(t), H - B + 4);
+        if (disc) {
+          const bw = Math.max(1, Math.min(18, (W - L - R) / Math.max(1, pts.length) * 0.7));
+          for (const [x, y] of pts) { g.fillStyle = inR(x) && rows[0] && rows[0][3] ? C.fill : C.line; g.globalAlpha = inR(x) && rows[0] && rows[0][3] ? 0.85 : 0.9; g.fillRect(X(x) - bw / 2, Y(y), bw, H - B - Y(y)); }
+          g.globalAlpha = 1;
+        } else {
+          if (rows[0] && rows[0][3]) {
+            const s0 = lo === null ? x0 : Math.max(x0, lo), s1 = hi === null ? x1 : Math.min(x1, hi);
+            if (s1 > s0) {
+              g.fillStyle = C.fill; g.globalAlpha = 0.28; g.beginPath(); g.moveTo(X(s0), H - B);
+              for (let i = 0; i <= 160; i++) { const x = s0 + (s1 - s0) * i / 160, y = distPdf(k, P, x); g.lineTo(X(x), Y(isFinite(y) ? y : top * 1.05)); }
+              g.lineTo(X(s1), H - B); g.closePath(); g.fill(); g.globalAlpha = 1;
+            }
+          }
+          g.strokeStyle = C.accent; g.lineWidth = 2; g.beginPath();
+          let pen = false;
+          for (const [x, y] of pts) { if (!isFinite(y)) { pen = false; continue; } if (pen) g.lineTo(X(x), Y(y)); else g.moveTo(X(x), Y(y)); pen = true; }
+          g.stroke();
+        }
+        if (qx !== null && isFinite(qx) && qx >= x0 && qx <= x1) {
+          g.strokeStyle = C.danger; g.lineWidth = 1.5; g.setLineDash([5, 4]); g.beginPath(); g.moveTo(X(qx) + 0.5, T); g.lineTo(X(qx) + 0.5, H - B); g.stroke(); g.setLineDash([]);
+          g.fillStyle = C.danger; g.textAlign = X(qx) > W - 60 ? 'right' : 'left'; g.fillText((disc ? 'k = ' : 'x = ') + tickNum(qx), X(qx) + (X(qx) > W - 60 ? -4 : 4), T);
+        }
+      };
+      // data or distributions
+      const mData = tapButton({ text: tr('Data', 'データ') }, () => setMode('data')), mDist = tapButton({ text: tr('Distributions', '確率分布') }, () => setMode('dist'));
+      const dataBox = el('div', { class: 'stat-data' });
+      const setMode = (m) => {
+        D.mode = m; save();
+        for (const [b, k] of [[mData, 'data'], [mDist, 'dist']]) { b.classList.toggle('on', m === k); b.setAttribute('aria-pressed', String(m === k)); }
+        dataBox.hidden = m !== 'data'; distBox.hidden = m !== 'dist';
+        if (m === 'dist') { buildDist(); runDist(); } else run();
+      };
+      dataBox.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Columns', '列') }), seg), table, tools, csvRow, pxRow, msg, modelRow, outs, chartBox, more, graph, hint);
+      p.body.append(el('div', { class: 'seg stat-mode', role: 'group', 'aria-label': tr('Statistics', '統計') }, mData, mDist), dataBox, distBox);
+      digitsButton(p, 'stats'); digitsRefresh.stats = () => { if (D.mode === 'dist') runDist(); else run(); };
       setCols(D.cols);
+      setMode(D.mode);
     });
     return p;
   }
@@ -18167,8 +18607,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['memo', 'data', '📝', tr('Calculation notes', '計算メモ'), tr('A calculation on each line with its result; names, totals, units and currencies', '1 行ずつ計算して結果を右に。名前・合計・単位・通貨も'),
       'notes memo notepad calculation sheet lines budget total sum variables names list 計算メモ メモ 計算 合計 名前 変数 家計 予算 一覧 めも けいさん Notizen Rechenblatt Summe notas cálculo suma notes calcul somme 계산 메모 합계 計算筆記 備忘 總計',
       () => openNotesTool()],
-    ['stats', 'data', '📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰'),
-      'statistics stats mean average median mode standard deviation variance quartile regression correlation trend least squares data 統計 平均 中央値 最頻値 標準偏差 分散 四分位 回帰 相関 決定係数 最小二乗 データ 散布図 へいきん ちゅうおうち とうけい Statistik Mittelwert Durchschnitt Median Standardabweichung Varianz Quartil Regression Korrelation Daten estadística media promedio mediana moda desviación varianza cuartil regresión correlación datos statistiques moyenne médiane mode écart-type variance quartile régression corrélation données 통계 평균 중앙값 최빈값 표준편차 분산 사분위 회귀 상관 데이터 統計 平均 中位數 眾數 標準差 變異數 四分位 迴歸 相關 資料',
+    ['stats', 'data', '📊', tr('Statistics', '統計'), tr('Mean, standard deviation, histogram; regression; probability distributions', '平均・標準偏差・ヒストグラム、回帰、確率分布'),
+      'distribution normal binomial poisson student chi square probability density cumulative quantile percentile histogram box plot whisker outlier csv polynomial fit 確率分布 正規分布 二項分布 ポアソン分布 t分布 カイ二乗分布 確率 密度 累積 分位点 ヒストグラム 度数分布 箱ひげ図 外れ値 多項式 近似曲線 Verteilung Normalverteilung Binomialverteilung Wahrscheinlichkeit Histogramm Boxplot Ausreißer distribución normal binomial probabilidad histograma diagrama de caja atípico distribution loi normale binomiale probabilité histogramme boîte à moustaches aberrant 분포 정규분포 이항분포 확률 히스토그램 상자그림 이상치 分佈 常態分佈 二項分佈 機率 直方圖 盒鬚圖 離群值 statistics stats mean average median mode standard deviation variance quartile regression correlation trend least squares data 統計 平均 中央値 最頻値 標準偏差 分散 四分位 回帰 相関 決定係数 最小二乗 データ 散布図 へいきん ちゅうおうち とうけい Statistik Mittelwert Durchschnitt Median Standardabweichung Varianz Quartil Regression Korrelation Daten estadística media promedio mediana moda desviación varianza cuartil regresión correlación datos statistiques moyenne médiane mode écart-type variance quartile régression corrélation données 통계 평균 중앙값 최빈값 표준편차 분산 사분위 회귀 상관 데이터 統計 平均 中位數 眾數 標準差 變異數 四分位 迴歸 相關 資料',
       () => openStatsTool()],
     // 1.12.0 (C1): everyday calculations
     ['price', 'shop', '🏷', tr('Price: discount and tax', '値段：割引と税'), tr('Tax included or not, a discount (also two), rounding', '税込・税抜、割引（2 回も）、端数の扱い'),
@@ -18864,7 +19304,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     stl: ['🖨', tr('STL files for 3D printers', 'STL ファイル（3D プリンター）'), tr('Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres', '回転体・断面の立体・輪郭から回転体を、閉じた立体の面（mm）として保存')],
     notes: ['📝', tr('More calculation notes, saved as files', '計算メモの 2 つ目以降と書き出し'), tr('Several memos of calculations, and saving them as text or CSV (the first memo is free)', '計算メモをいくつも作り、テキストや CSV で保存（1 つ目のメモは無料）')],
     share_pro: ['🎞', tr('GIF and pictures without the mark', 'GIF と透かしなしの共有'), tr('The 3D graph and a slider moving as a moving picture (GIF), and pictures of the graphs at full resolution without "QCalc" in the corner', '3D グラフやスライダーの動きを動く画像（GIF）で、グラフの画像を高い解像度・透かしなしで共有')],
-    sliders3d: ['🎛', tr('Sliders in 3D', '3D のスライダー'), tr('Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)', '3D グラフで a sin(x) cos(y) の a などをスライダーで動かす（2D は無料）')]
+    sliders3d: ['🎛', tr('Sliders in 3D', '3D のスライダー'), tr('Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)', '3D グラフで a sin(x) cos(y) の a などをスライダーで動かす（2D は無料）')],
+    stats_fit: ['📈', tr('Regression curves', '回帰曲線'), tr('For two columns, choose a polynomial of degree 2 to 4, an exponential, a power or a logarithmic curve: its formula, R², prediction and graph (the line stays free)', '2 列のデータで、2〜4 次の多項式・指数・累乗・対数の曲線を選び、式・決定係数・予測・グラフを出す（直線は無料）')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {
@@ -18887,7 +19328,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     stl: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
     share_pro: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.2l5 2.8-5 2.8z"/><path d="M3 8.5h2M3 15.5h2M19 8.5h2M19 15.5h2"/>',
     notes: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
-    future: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>'
+    future: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>',
+    stats_fit: '<path d="M3.5 3.5v17h17"/><circle cx="7.5" cy="15" r="1.1"/><circle cx="11" cy="12.5" r="1.1"/><circle cx="14.5" cy="12" r="1.1"/><circle cx="18" cy="7" r="1.1"/><path d="M5.5 17c4-6 8-5 13.5-12"/>'
   };
   // the picture of a feature: its line picture, or its symbol
   function proIco(key, sym) {
