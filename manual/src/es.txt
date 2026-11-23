@@ -27,6 +27,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 
 ## new-1-15 | Novedades de 1.15.0
 - **Resultados más claros**: los resultados tienen 15 cifras significativas, en grupos de tres. Los teléfonos que aún tenían los valores anteriores (10 cifras, sin grupos) cambian una vez con esta versión. [[Precision (significant digits)]] y [[Digit grouping (1,000)]] en [[Settings]] lo devuelven ([Leer el resultado](#results)).
+- **Leer en las notas de cálculo**: [[More ▾]] → [[Open a file]] en las notas lee un archivo .txt o .csv, y también se recibe el texto o el archivo que otra app envía con «Compartir» → QCalc ([Notas de cálculo](#notes)).
 - **Dos líneas**: un resultado exacto con su aproximación muestra «= exacto» en una línea y «≈ aproximación» en la siguiente. Las fracciones y raíces se dibujan con la misma letra que los demás resultados.
 - **Números**: sin ceros finales en las aproximaciones; los números muy grandes o pequeños como 1.606 938 × 10⁶⁰ (se copian como 1.606938E60); los enteros y decimales exactos se muestran completos hasta 60 cifras, aunque superen la precisión (por ejemplo 30!).
 - **Resultados largos y unidades**: un resultado que no cabe en una línea se hace algo más pequeño y solo entonces se parte entre grupos de tres cifras; un resultado con unidades queda en una línea (m/s).
@@ -389,8 +390,12 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Una línea con la palabra de total suma los resultados de arriba.
 :shot: notes | [[Calculation notes]] con un ejemplo
 :example: alquiler 85000, luz 6200, agua 3100 (JPY) → la línea del total muestra ¥94300
-:pro: La primera nota es gratis. Más notas y guardarlas como texto o CSV son funciones de QCalc Pro.
+:pro: La primera nota es gratis, y también leer en ella un archivo o algo compartido (en una nota vacía o al final). Más notas (también leer como nota nueva) y guardarlas como texto o CSV son funciones de QCalc Pro.
 :tip: Una línea que empieza por # o // es un comentario (no se calcula).
+:step: Para leer un archivo, pulsa [[Open a file]] en [[More ▾]] y elige un archivo .txt o .csv. Un .txt da una línea por cada línea; un .csv guardado por QCalc da su columna «Cálculo», otro .csv su primera columna. Se pueden leer UTF-8 y Shift_JIS (un CSV japonés hecho con Excel).
+:step: En otra app (notas, correo…), elige un texto o un archivo .txt o .csv y luego QCalc en «Compartir» de esa app: se abren las notas de cálculo.
+:step: Después elige [[As a new memo]] o [[At the end of this memo]]; con una sola línea, también [[Put it into the input field]]. Una nota nueva recibe el nombre del archivo (sin extensión).
+:tip: Lo leído es solo texto y se calcula con las mismas reglas que las líneas escritas. Un archivo de más de 1 MB, o de más de 300 líneas (lo que cabe en una nota), no se lee, y la app lo indica.
 
 # graphs | Gráficas
 

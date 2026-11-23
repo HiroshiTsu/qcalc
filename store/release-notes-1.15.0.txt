@@ -1,83 +1,91 @@
 <en-US>
-• Easier results: 15 digits in groups of 3, "= exact" and "≈ approximation" on two lines, whole numbers in full; digits: the new chip at the top
-• Edit a line of the history in place: touch its expression; the lines below can follow
+• Easier results: 15 digits in groups of 3, exact and approximate on two lines, whole numbers in full; a new chip for the digits
+• Edit a line of the history in place by touching its expression
+• Calculation notes read .txt and .csv files, and text shared from other apps
 • 3D drawn by the GPU: real light, shadows, metals and liquids
-• "See-through" in every 3D view, also for one part (a tank's "Container")
-• Turn 3D any way with one finger; "From the front", "From above", "From the side"
+• "See-through" in every 3D view, also for one part
+• Turn 3D any way with one finger; front, top and side views
 • Without QCalc Pro, open 3D once for free
 </en-US>
 <en-GB>
-• Easier results: 15 digits in groups of 3, "= exact" and "≈ approximation" on two lines, whole numbers in full; digits: the new chip at the top
-• Edit a line of the history in place: touch its expression; the lines below can follow
+• Easier results: 15 digits in groups of 3, exact and approximate on two lines, whole numbers in full; a new chip for the digits
+• Edit a line of the history in place by touching its expression
+• Calculation notes read .txt and .csv files, and text shared from other apps
 • 3D drawn by the GPU: real light, shadows, metals and liquids
-• "See-through" in every 3D view, also for one part (a tank's "Container")
-• Turn 3D any way with one finger; "From the front", "From above", "From the side"
+• "See-through" in every 3D view, also for one part
+• Turn 3D any way with one finger; front, top and side views
 • Without QCalc Pro, open 3D once for free
 </en-GB>
 <ja-JP>
 ・答えが見やすくなりました：有効桁数 15 桁、3 桁ごとの区切り、「= 厳密な値」と「≈ 近似値」の 2 行表示、割り切れる数は全部の桁（桁数は上の新しいボタンですぐ変えられます）
 ・履歴の式の行をタップすると、その行をその場で直せます。下の行も計算し直せます
+・計算メモに、.txt・.csv のファイルや、ほかのアプリから共有した文字を読み込めます
 ・3D を端末の GPU で描くようになり、光と影、金属や液体の見た目が本物に近くなりました
 ・どの 3D でも「透明」が使えます。濃さを変え、どの式・どの部分を透明にするかも選べます（タンクの「容器」だけ、など）
 ・3D を 1 本の指でどの方向にも回せます。「正面」「上」「横」の向きにもすぐ変えられます
 ・材料に、ステンレス・アルミニウム・銅・真ちゅう・木・PLA・ABS・アクリルを足しました
 ・QCalc Pro がなくても、3D を 1 回だけ無料で開けます
-・「このアプリについて」に「Google Play で評価」を足しました
 ・グラフの「面積・長さ」と「立体にする」で、描いた直後に入れた範囲 a・b が、探した範囲に置き換わることがあったのを直しました
 </ja-JP>
 <de-DE>
 • Klarere Ergebnisse: 15 Stellen in Dreiergruppen, „= exakt“ und „≈ Näherung“ in zwei Zeilen, ganze Zahlen vollständig (Stellen: neues Feld oben)
-• Zeile im Verlauf direkt bearbeiten: Ausdruck antippen; Zeilen darunter rechnen mit
-• 3D mit der GPU: echtes Licht, Schatten, Metalle und Flüssigkeiten
-• „Durchsichtig“ in jeder 3D-Ansicht, auch für Teile (der „Behälter“)
-• 3D mit einem Finger frei drehen; „Von vorn“, „Von oben“, „Von der Seite“
+• Zeile im Verlauf direkt bearbeiten: Ausdruck antippen
+• Rechennotizen lesen .txt- und .csv-Dateien und geteilten Text
+• 3D mit der GPU: echtes Licht, Schatten, Metalle, Flüssigkeiten
+• „Durchsichtig“ in jeder 3D-Ansicht, auch für Teile
+• 3D mit einem Finger frei drehen; Ansicht von vorn, oben, Seite
 • Ohne QCalc Pro 3D einmal kostenlos öffnen
 </de-DE>
 <es-ES>
 • Resultados más claros: 15 cifras en grupos de 3, «= exacto» y «≈ aproximación» en dos líneas, enteros completos (cifras: botón de arriba)
-• Edita una línea del historial en su sitio: toca su expresión; las de abajo se recalculan
+• Edita una línea del historial en su sitio tocando su expresión
+• Las notas de cálculo leen archivos .txt y .csv y texto compartido
 • 3D con la GPU: luz, sombras, metales y líquidos reales
-• «Transparente» en toda vista 3D, también para una parte (el «Recipiente»)
-• Gira el 3D en cualquier dirección con un dedo; «De frente», «Desde arriba», «De lado»
+• «Transparente» en toda vista 3D, también por partes
+• Gira el 3D con un dedo; vistas de frente, arriba y lado
 • Sin QCalc Pro, el 3D se abre una vez gratis
 </es-ES>
 <es-419>
 • Resultados más claros: 15 cifras en grupos de 3, «= exacto» y «≈ aproximación» en dos líneas, enteros completos (cifras: botón de arriba)
-• Edita una línea del historial en su sitio: toca su expresión; las de abajo se recalculan
+• Edita una línea del historial en su sitio tocando su expresión
+• Las notas de cálculo leen archivos .txt y .csv y texto compartido
 • 3D con la GPU: luz, sombras, metales y líquidos reales
-• «Transparente» en toda vista 3D, también para una parte (el «Recipiente»)
-• Gira el 3D en cualquier dirección con un dedo; «De frente», «Desde arriba», «De lado»
+• «Transparente» en toda vista 3D, también por partes
+• Gira el 3D con un dedo; vistas de frente, arriba y lado
 • Sin QCalc Pro, el 3D se abre una vez gratis
 </es-419>
 <fr-FR>
-• Résultats plus clairs : 15 chiffres par groupes de 3, « = exact » et « ≈ approché » sur deux lignes (chiffres : nouveau bouton en haut)
+• Résultats plus clairs : 15 chiffres par groupes de 3, exact et approché sur deux lignes (chiffres : nouveau bouton en haut)
 • Modifiez une ligne de l’historique sur place : touchez son expression
-• 3D par le GPU : lumière, ombres, métaux et liquides réalistes
-• « Transparent » dans toute vue 3D, aussi par partie (le « Récipient »)
-• La 3D tourne dans tous les sens d’un doigt ; « De face », « De dessus », « De côté »
+• Les notes de calcul lisent .txt, .csv et le texte partagé
+• 3D par le GPU : lumière, ombres, métaux, liquides
+• « Transparent » dans toute vue 3D, aussi par partie
+• La 3D tourne dans tous les sens d’un doigt ; vues de face, dessus, côté
 • Sans QCalc Pro, la 3D s’ouvre une fois gratuitement
 </fr-FR>
 <fr-CA>
-• Résultats plus clairs : 15 chiffres par groupes de 3, « = exact » et « ≈ approché » sur deux lignes (chiffres : nouveau bouton en haut)
+• Résultats plus clairs : 15 chiffres par groupes de 3, exact et approché sur deux lignes (chiffres : nouveau bouton en haut)
 • Modifiez une ligne de l’historique sur place : touchez son expression
-• 3D par le GPU : lumière, ombres, métaux et liquides réalistes
-• « Transparent » dans toute vue 3D, aussi par partie (le « Récipient »)
-• La 3D tourne dans tous les sens d’un doigt ; « De face », « De dessus », « De côté »
+• Les notes de calcul lisent .txt, .csv et le texte partagé
+• 3D par le GPU : lumière, ombres, métaux, liquides
+• « Transparent » dans toute vue 3D, aussi par partie
+• La 3D tourne dans tous les sens d’un doigt ; vues de face, dessus, côté
 • Sans QCalc Pro, la 3D s’ouvre une fois gratuitement
 </fr-CA>
 <ko-KR>
 • 결과가 보기 쉬워졌습니다: 유효숫자 15자리, 세 자리마다 구분, ‘= 정확한 값’과 ‘≈ 근삿값’의 두 줄 표시, 나누어떨어지는 수는 모든 자리(자릿수는 위쪽의 새 버튼으로 바로 바꿀 수 있음)
 • 기록의 식을 탭하면 그 줄을 그 자리에서 고칠 수 있고, 아래 줄도 다시 계산할 수 있습니다
+• 계산 메모에 .txt・.csv 파일이나 다른 앱에서 공유한 텍스트를 읽어 들일 수 있습니다
 • 3D를 기기의 GPU로 그려 빛과 그림자, 금속과 액체가 실물에 가까워졌습니다
 • 모든 3D에서 ‘투명’을 쓸 수 있습니다. 불투명도를 바꾸고, 어느 식·어느 부분을 투명하게 할지 고를 수 있습니다(탱크의 ‘용기’만 등)
 • 3D를 손가락 하나로 어느 방향으로든 돌릴 수 있고, ‘정면’·‘위’·‘옆’으로 바로 바꿀 수 있습니다
 • 재료에 스테인리스강·알루미늄·구리·황동·나무·PLA·ABS·아크릴을 더했습니다
 • QCalc Pro가 없어도 3D를 한 번 무료로 열 수 있습니다
-• ‘앱 정보’에 ‘Google Play에서 평가하기’를 더했습니다
 </ko-KR>
 <zh-TW>
 • 結果更易讀：15 位有效數字、每三位分隔、「= 精確值」與「≈ 近似值」分兩行，能整除的數顯示全部位數（位數可用上方的新按鈕立即變更）
 • 點一下歷史紀錄的算式，就能就地修改那一行，下方的行也能重新計算
+• 計算筆記可讀取 .txt・.csv 檔，以及從其他 App 分享來的文字
 • 3D 改由裝置的 GPU 繪製，光線與陰影、金屬與液體的樣子更接近真實
 • 所有 3D 都能使用「透明」：可調整不透明度，並選擇哪個式子或哪個部分要透明（例如只有儲槽的「容器」）
 • 用一根手指就能往任何方向旋轉 3D，也能立即改為「正面」「上方」「側面」

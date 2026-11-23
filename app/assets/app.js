@@ -1881,6 +1881,7 @@
     if (ev.event === 'shared') { if (!ev.ok) toast(tr('Could not share the image', '画像を共有できませんでした'), 3500); else reviewMoment('share'); return; }
     if (ev.event === 'review') { reviewDone(ev); return; }
     if (ev.event === 'quick') { quickAnswer(ev); return; }
+    if (ev.event === 'import') { importArrived(ev); return; } // (1.15.0: calculation notes read in)
     if (ev.event !== 'ans') return;
     const h = sessionEntries.get(ev.id);
     if (h) { sessionEntries.delete(ev.id); setInput(h, ev.input); saveHistory(); return; }
@@ -15206,6 +15207,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['🔢', tr('Easier results: 15 digits in groups of 3 (Settings → Precision to change)', '答えが見やすく：15 桁、3 桁ごとに区切り（設定の「有効桁数」で戻せます）'), () => { setExpr('exp(pi*sqrt(163))'); commit(); }],
     history.length ? ['✏️', tr('Edit a line of the history in place (touch its expression)', '履歴の行をその場で直せます（式の行をタップ）'), () => startHistEdit(history[history.length - 1])] : null,
     ['🎚️', tr('The precision at the top: press its chip to choose 10 to 100 digits or another', '有効桁数を上のボタンですぐ変えられます（10〜100 桁ほか）'), () => precisionSheet()],
+    ['📥', tr('Calculation notes: open a .txt or .csv file, or share text to QCalc', '計算メモに .txt・.csv のファイルや、ほかのアプリから共有した文字を読み込めます'), () => { const p = openNotesTool(); const d = p.body.querySelector('.note-more'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ block: 'center' }), 350); } }],
     ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
     try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
   ].filter(Boolean);
@@ -16270,6 +16272,157 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     }
     return { expr: s };
   }
+  // ---- (1.15.0) calculation notes read in: a file opened in the notes ("Open a file": Android's file picker, or the
+  // browser's), or text or a .txt or .csv file shared to QCalc from another app (MainActivity, NotesImport.java: the
+  // event "import"). What is read is only text, put into a memo as its lines, which are worked out as typed lines are
+  // (the same rules and time limit); nothing is defined, run or sent. The bytes of a file are decoded here: UTF-8 (with
+  // or without a BOM), UTF-16 with a BOM, otherwise Shift_JIS (a CSV made by Excel in Japanese). A .txt gives one line
+  // for each line (a line copied or saved from the notes, "rent = 85000 JPY  →  = 85000 JPY", gives back its
+  // calculation); a CSV saved by QCalc (Line, Calculation, Result, in any of its languages) gives its column
+  // "Calculation", another CSV its first column. At most 1 MB, and a memo holds at most NOTE_MAX lines; a file that is
+  // larger, longer or not text is not read, with a sheet that says why. Into the first memo it is free (an empty memo,
+  // or at the end of a memo); as a second memo or more it is QCalc Pro, as more memos are.
+  const IMPORT_MAX_BYTES = 1048576;
+  const CSV_LINE_NAMES = ['line', '行', 'zeile', 'línea', 'ligne', '행'];
+  const CSV_CALC_NAMES = ['calculation', '計算', 'rechnung', 'cálculo', 'calcul', '계산'];
+  function importDecode(bytes) {
+    const has = (...b) => b.every((x, i) => bytes[i] === x);
+    let text;
+    try {
+      if (has(0xEF, 0xBB, 0xBF)) text = new TextDecoder('utf-8').decode(bytes.subarray(3));
+      else if (has(0xFF, 0xFE)) text = new TextDecoder('utf-16le').decode(bytes.subarray(2));
+      else if (has(0xFE, 0xFF)) text = new TextDecoder('utf-16be').decode(bytes.subarray(2));
+      else {
+        try { text = new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch (e) { text = new TextDecoder('shift_jis').decode(bytes); }
+      }
+    } catch (e) { return { error: 'read' }; }
+    // not text: a zero byte, or many characters that are not in the encoding
+    const bad = (text.match(/�/g) || []).length;
+    if (text.indexOf('\u0000') >= 0 || bad > 8 + text.length / 100) return { error: 'binary' };
+    return { text };
+  }
+  // the rows of a CSV (quoted cells with "" inside them and line breaks; the separator , ; or tab, as most in its first line)
+  function importCsvRows(text) {
+    const first = text.slice(0, text.indexOf('\n') < 0 ? text.length : text.indexOf('\n')).replace(/"[^"]*"/g, '');
+    const count = (c) => first.split(c).length - 1;
+    const sep = [',', ';', '\t'].reduce((a, c) => (count(c) > count(a) ? c : a), ',');
+    const rows = [];
+    let row = [], cell = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c;
+      } else if (c === '"' && cell === '') q = true;
+      else if (c === sep) { row.push(cell); cell = ''; }
+      else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+      else cell += c;
+    }
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+  // the lines of what was read: { lines, csv: 'qcalc' | 'first' | '' } or { error, n }
+  function importParse(text, name, mime) {
+    text = String(text).replace(/^﻿/, '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
+    const csv = /\.(csv|tsv)$/i.test(name || '') || /csv|tab-separated/i.test(mime || '');
+    let lines, kind = '';
+    if (csv) {
+      const rows = importCsvRows(text);
+      const h = rows[0] || [];
+      if (h.length >= 2 && CSV_LINE_NAMES.indexOf(String(h[0]).trim().toLowerCase()) >= 0 && CSV_CALC_NAMES.indexOf(String(h[1]).trim().toLowerCase()) >= 0) {
+        kind = 'qcalc';
+        lines = rows.slice(1).map((r) => String(r[1] === undefined ? '' : r[1]));
+      } else {
+        kind = 'first';
+        lines = rows.map((r) => String(r[0] === undefined ? '' : r[0]));
+        while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+      }
+      lines = lines.map((l) => l.replace(/\n/g, ' ').replace(/\t/g, ' '));
+    } else {
+      lines = text.split('\n');
+      if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+      // a line of the notes copied, shared or saved as text: "calculation  →  = result" gives back the calculation
+      lines = lines.map((l) => l.replace(/\t/g, ' ').replace(/ {2}→ {2}[=≈] .*$/, '').replace(/\s+$/, ''));
+    }
+    if (!lines.length || lines.every((l) => !l.trim())) return { error: 'empty' };
+    if (lines.length > NOTE_MAX) return { error: 'lines', n: lines.length };
+    if (lines.some((l) => l.length > MAX_INPUT)) return { error: 'long' };
+    return { lines, csv: kind };
+  }
+  function importFailText(e, n) {
+    return e === 'big' || e === 'too-big' ? tr('This file is too large to read (up to 1 MB)', 'ファイルが大きすぎるので読み込みませんでした（1 MB まで）')
+      : e === 'lines' ? trf('A memo holds up to {0} lines: this has {1}', '1 つのメモは {0} 行までです。読み込もうとしたものは {1} 行あります', NOTE_MAX, n)
+      : e === 'long' ? tr('A line is too long to read', '長すぎる行があるので読み込みませんでした')
+      : e === 'empty' ? tr('There is nothing to read in it', '読み込む行がありません')
+      : e === 'binary' ? tr('This is not a text file: QCalc reads .txt and .csv files', 'テキストのファイルではありません。読み込めるのは .txt と .csv のファイルです')
+      : tr('Could not read the file', 'ファイルを読み込めませんでした');
+  }
+  // a sheet with only its message and OK (why a file was not read)
+  function messageSheet(text) {
+    if (sheetResolve) closeSheet(null);
+    return new Promise((resolve) => {
+      const sh = $('#sheet');
+      sh.textContent = '';
+      sh.append(el('div', { class: 'stitle', text, role: 'alert' }), el('button', { class: 'accent', text: tr('OK', 'OK'), onclick: () => closeSheet('ok') }));
+      sheetResolve = resolve;
+      $('#scrim').classList.add('show', 'over-panels');
+      sh.classList.add('open');
+      sh.inert = false;
+    });
+  }
+  // the event "import" (from the phone, or from the browser's file picker in the same form)
+  async function importArrived(ev) {
+    if (!ev || ev.cancelled) return;
+    const share = ev.from === 'share';
+    // (shared from another app: the notes come to the top, as the widget opens its place)
+    if (share) {
+      if (!varPopEl.hidden) closeVarPop();
+      if ($('#sheet').classList.contains('open')) closeSheet(null);
+      closeHistSelect(); closeHistSearch();
+      if ($('#drawer').classList.contains('open')) closeDrawer();
+      for (let i = 0; i < 20 && panelStack.length; i++) closePanel();
+    }
+    const fail = (e, n) => { if (share) openNotesTool(); messageSheet(importFailText(e, n)); };
+    if (ev.error) { fail(ev.error); return; }
+    let text;
+    if (typeof ev.text === 'string') {
+      if (ev.text.length > IMPORT_MAX_BYTES) { fail('big'); return; }
+      text = ev.text;
+    } else if (typeof ev.b64 === 'string' || ev.bytes instanceof Uint8Array) {
+      let bytes = ev.bytes;
+      if (!bytes) { try { const s = atob(ev.b64); bytes = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i); } catch (e) { fail('read'); return; } }
+      if (bytes.length > IMPORT_MAX_BYTES) { fail('big'); return; }
+      const d = importDecode(bytes);
+      if (d.error) { fail(d.error); return; }
+      text = d.text;
+    } else return;
+    const got = importParse(text, ev.name || '', ev.mime || '');
+    if (got.error) { fail(got.error, got.n); return; }
+    // the name of the memo: the file's name without its extension, or the subject of what was shared
+    const base = String(ev.name || '').replace(/\.[^./]{1,5}$/, '').trim().slice(0, 60);
+    got.title = base || String(ev.subject || '').trim().slice(0, 60);
+    got.name = ev.name ? String(ev.name).slice(0, 80) : '';
+    const p = openNotesTool();
+    if (p.importLines) await p.importLines(got);
+  }
+  // "Open a file" in the notes: Android's file picker (the phone reads the file: the event "import"), or the browser's
+  let importPicker = null;
+  function openImportFile() {
+    if (window.QalcNative && QalcNative.openTextFile) { QalcNative.openTextFile(); return; }
+    if (!importPicker) {
+      importPicker = el('input', { type: 'file', accept: '.txt,.csv,.tsv,text/plain,text/csv', hidden: '', 'aria-hidden': 'true' });
+      importPicker.addEventListener('change', async () => {
+        const f = importPicker.files && importPicker.files[0];
+        importPicker.value = '';
+        if (!f) return;
+        if (f.size > IMPORT_MAX_BYTES) { importArrived({ event: 'import', from: 'file', error: 'too-big', name: f.name }); return; }
+        let bytes;
+        try { bytes = new Uint8Array(await f.arrayBuffer()); } catch (e) { importArrived({ event: 'import', from: 'file', error: 'read' }); return; }
+        importArrived({ event: 'import', from: 'file', name: f.name, mime: f.type, bytes });
+      });
+      document.body.append(importPicker);
+    }
+    importPicker.click();
+  }
   function openNotesTool() {
     const p = panel('notes', tr('Calculation notes', '計算メモ'), (p) => {
       const saved = store.get('qalc.notes', null) || {};
@@ -16347,7 +16500,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           if (seq !== N.seq) return;
           c.done = true;
           if (r.ok && r.result && !r.timeout && !(r.messages || []).some((q) => q.type === 'error')) {
-            c.ok = true; c.expr = ex.expr; c.shown = resultText(r);
+            c.ok = true; c.expr = ex.expr; c.shown = groupText(resultText(r)); // (1.15.0: the groups of digits as on the calculator)
             if (name) { c.name = name; names[name] = ex.expr; }
             prev = ex.expr;
             if (res) { res.textContent = (c.total ? tr('Total ', '合計 ') : '') + c.shown; res.classList.remove('bad'); }
@@ -16393,10 +16546,50 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (!N.memos.length) N.memos.push({ id: 1, title: tr('Memo 1', 'メモ 1'), lines: [''] });
         N.cur = N.memos[0].id; N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
       });
+      // (1.15.0) what was read: as a new memo (an empty memo takes it; a second memo is QCalc Pro), at the end of this memo,
+      // or one line into the input field
+      p.importLines = async (got) => {
+        const L = memo().lines, empty = L.every((l) => !String(l).trim()), n = got.lines.length;
+        const lock = PRO_GATES.notes === 'pro' && !hasPro() && !empty;
+        const head = got.name ? trf('Read “{0}”: {1} lines', '「{0}」を読み込みます（{1} 行）', got.name, n) : trf('Text received: {0} lines', '受け取った文字（{0} 行）', n);
+        const note = got.csv === 'first' ? '\n' + tr('A CSV file: its first column is read', 'CSV の 1 列目を読み込みます') : '';
+        const peek = '\n' + clip(got.lines.filter((l) => l.trim()).slice(0, 3).join(' / '), 90);
+        const acts = [['new', tr('As a new memo', '新しいメモにする') + (lock ? '  ⭐ Pro' : ''), 'accent'], ['add', tr('At the end of this memo', '今のメモの最後に足す')]];
+        if (n === 1) acts.push(['field', tr('Put it into the input field', '入力欄に入れる')]);
+        const k = await sheet(head + note + peek, acts);
+        if (!k) return;
+        if (k === 'field') {
+          while (panelStack.length) closePanel();
+          exprEl.value = got.lines[0].trim(); exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length);
+          exprChanged(); focusExpr();
+          return;
+        }
+        const into = (m) => { m.lines = got.lines.slice(); if (got.title) m.title = got.title; };
+        if (k === 'new') {
+          if (empty) into(memo());
+          else {
+            if (!proGate('notes')) return;
+            if (N.memos.length >= 50) { messageSheet(tr('There can be up to 50 memos', 'メモは 50 個までです')); return; }
+            const id = Math.max(...N.memos.map((m) => m.id)) + 1;
+            N.memos.push({ id, title: got.title || trf('Memo {0}', 'メモ {0}', N.memos.length + 1), lines: got.lines.slice() }); N.cur = id;
+          }
+          N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
+          toast(trf('Read into “{0}”: {1} lines', '「{0}」に {1} 行を読み込みました', memo().title, n), 2500);
+          return;
+        }
+        // at the end of this memo (its empty lines at the end go)
+        let end = L.length;
+        while (end > 0 && !String(L[end - 1]).trim()) end--;
+        if (end + n > NOTE_MAX) { messageSheet(trf('A memo holds up to {0} lines: with these it would have {1}', '1 つのメモは {0} 行までです。足すと {1} 行になります', NOTE_MAX, end + n)); return; }
+        if (empty) into(memo()); else L.splice(end, L.length - end, ...got.lines);
+        save(); fillPick(); titleIn.value = memo().title; build(); run(empty ? 0 : end);
+        toast(trf('Added to “{0}”: {1} lines', '「{0}」に {1} 行を足しました', memo().title, n), 2500);
+      };
+      const openBtn = tapButton({ class: 'btn', text: tr('Open a file', 'ファイルを開く') }, () => openImportFile());
       const txtBtn = tapButton({ class: 'btn', text: tr('Save as text', 'テキストで保存') + lock() }, () => exp('txt'));
       const csvBtn = tapButton({ class: 'btn', text: tr('Save as CSV', 'CSV で保存') + lock() }, () => exp('csv'));
       const more = el('details', { class: 'sec-more note-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }),
-        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Name', '名前') }), titleIn), el('div', { class: 'tool-tbl-btns' }, txtBtn, csvBtn), delBtn);
+        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Name', '名前') }), titleIn), el('div', { class: 'tool-tbl-btns' }, openBtn, txtBtn, csvBtn), delBtn);
       more.addEventListener('toggle', () => { if (more.open) titleIn.value = memo().title; });
       const hint = el('div', { class: 'form-hint', text: tr('One calculation on each line. "name = …" gives a name for the lines below (in this memo), "ans" is the line above, and "total" adds the lines above. Tap a result for the three actions.', '1 行に 1 つの計算。「名前 = 式」で下の行で使える名前（このメモの中だけ）、「ans」は上の行の値、「合計」で上の行を足します。結果をタップすると 3 つの操作。') });
       p.body.append(chips, el('div', { class: 'geo-size note-pick' }, pick, addBtn), list, msg, el('div', { class: 'tool-tbl-btns' }, copyBtn, shareBtn), more, hint);
