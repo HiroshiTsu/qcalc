@@ -36,33 +36,34 @@ Try "60 mph to km/h", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can st
 
 ■ For students and teachers
 • Graph functions, then pan and zoom with your fingers; derivatives, tangent lines, zeros, extrema and areas right on the graph
-• Turn the region between two curves into a solid of revolution with "⟳ 3D" and see its volume at once; tap an axis to change it. Disk and shell lines, Pappus's theorem, and solids with square, triangle or semicircle cross sections
+• Turn the region between two curves into a solid of revolution with "⟳ 3D" and see its volume at once. Disk and shell lines, Pappus's theorem, and solids with square, triangle or semicircle cross sections
 • Equations and systems, derivatives, integrals, limits, sums, matrices up to 30 × 30, complex numbers, binary, octal and hex
 • Mean, median, standard deviation, quartiles, and regression with a graph
 • Up to 200,000 digits (more than 1,000 digits with QCalc Pro)
 
 ■ 3D drawn by the GPU (QCalc Pro)
 • Real light and shadows; metals and liquids look real
-• "See-through" in every 3D view, for any formula or part (a tank's "Container")
-• Turn 3D any way with one finger; "From the front", "From above", "From the side"
+• "See-through" in every 3D view, also for one part
+• Turn 3D any way with one finger; front, top and side views
 • Without QCalc Pro, open 3D once for free
 
 ■ For work on site and in design
 • Areas and volumes of 22 shapes, liquid in tanks (level ⇄ volume), volume from measured cross sections, weight from density (stainless steel, aluminium, copper, brass, wood, PLA, ABS, acrylic and more)
 • Calculate with the units attached (12 ft × 9.5 ft to m², 3/4 in to mm) and with error propagation
-• QCalc Pro: shapes and tanks in 3D, tank heads with quick-reference tables, a solid's volume, capacity and weight from a measured profile, STL files for 3D printing, CSV
+• QCalc Pro: shapes and tanks in 3D, tank heads with quick-reference tables, solids from a measured profile, STL files for 3D printing, CSV
 
 ■ For shopping and the household budget
 • Price with a discount and sales tax, percentages, unit price comparison, splitting a bill, monthly loan payments with an amortization table, savings, dates (days from now, age), hours worked and pay
 • Currency conversion with exchange rates from the European Central Bank and others
-• Calculation notes: one calculation per line, with a total; give values names, such as rent = 1450 USD
+• Calculation notes: one calculation per line, with a total; give values names, such as rent = 1450 USD; open .txt and .csv files
 
 ■ Easy to use
-• Every tool has examples: tap one for the result. Tap a result to insert, keep or copy it
-• Choose the digits each tool shows: ⋯ next to its title → "Digits shown…"
-• Search, pin, note and add up lines of the history; memory keys
+• Examples in every tool; tap a result to insert, keep or copy it
+• Easier answers: 15 digits in groups of 3, exact and approximate on two lines; a chip at the top changes the digits
+• Digits of each tool: ⋯ next to its title → "Digits shown…"
+• Edit a line of the history in place; search, pin, note and add up lines; memory keys
 • A home screen widget, a quick settings tile; share a graph as a picture
-• Seven languages: English, Japanese, Spanish, German, French, Korean, Traditional Chinese. The manual is in the app and works offline: tap "?" on a screen to open its page
+• Seven languages: English, Japanese, Spanish, German, French, Korean, Traditional Chinese. The manual is in the app, offline too: "?" opens its page
 
 ■ QCalc Pro (one in-app purchase)
 The 3D graph and views (above; volume and area of surfaces, moving GIFs), the Pro tools for work (above), more than 1,000 digits, CSV of the history, color themes, and more than one calculation note. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
@@ -101,33 +102,34 @@ Try "70 mph to km/h", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can st
 
 ■ For students and teachers
 • Graph functions, then pan and zoom with your fingers; derivatives, tangents, roots, turning points and areas right on the graph
-• Turn the region between two curves into a solid of revolution with "⟳ 3D" and see its volume at once; tap an axis to change it. Disc and shell lines, Pappus's theorem, and solids with square, triangle or semicircle cross-sections
+• Turn the region between two curves into a solid of revolution with "⟳ 3D" and see its volume at once. Disc and shell lines, Pappus's theorem, and solids with square, triangle or semicircle cross-sections
 • Equations and simultaneous equations, differentiation, integration, limits, sums, matrices up to 30 × 30, complex numbers, binary, octal and hex
 • Mean, median, standard deviation, quartiles, and regression with a graph
 • Up to 200,000 digits (more than 1,000 digits with QCalc Pro)
 
 ■ 3D drawn by the GPU (QCalc Pro)
 • Real light and shadows; metals and liquids look real
-• "See-through" in every 3D view, for any formula or part (a tank's "Container")
-• Turn 3D any way with one finger; "From the front", "From above", "From the side"
+• "See-through" in every 3D view, also for one part
+• Turn 3D any way with one finger; front, top and side views
 • Without QCalc Pro, open 3D once for free
 
 ■ For work on site and in design
 • Areas and volumes of 22 shapes, liquid in tanks (level ⇄ volume), volume from measured cross-sections, weight from density (stainless steel, aluminium, copper, brass, wood, PLA, ABS, acrylic and more)
 • Calculate with the units attached (4.2 m × 3.6 m to ft², 2.4 m × 1.8 m × 0.15 m to L) and with error propagation
-• QCalc Pro: shapes and tanks in 3D, tank heads with quick-reference tables, a solid's volume, capacity and weight from a measured profile, STL files for 3D printing, CSV
+• QCalc Pro: shapes and tanks in 3D, tank heads with quick-reference tables, solids from a measured profile, STL files for 3D printing, CSV
 
 ■ For shopping and the household budget
 • Price with a discount and 20 % VAT, percentages, unit price comparison, splitting a bill, loan or mortgage repayments with a table, savings, dates (days from today, age), hours worked and pay
 • Currency conversion with exchange rates from the European Central Bank and others
-• Calculation notes: one calculation per line, with a total; give values names, such as rent = 1250 GBP
+• Calculation notes: one calculation per line, with a total; give values names, such as rent = 1250 GBP; open .txt and .csv files
 
 ■ Easy to use
-• Every tool has examples: tap one for the result. Tap a result to insert, keep or copy it
-• Choose the digits each tool shows: ⋯ next to its title → "Digits shown…"
-• Search, pin, note and add up lines of the history; memory keys
+• Examples in every tool; tap a result to insert, keep or copy it
+• Easier answers: 15 digits in groups of 3, exact and approximate on two lines; a chip at the top changes the digits
+• Digits of each tool: ⋯ next to its title → "Digits shown…"
+• Edit a line of the history in place; search, pin, note and add up lines; memory keys
 • A home screen widget, a quick settings tile; share a graph as a picture
-• Seven languages: English, Japanese, Spanish, German, French, Korean, Traditional Chinese. The manual is in the app and works offline: tap "?" on a screen to open its page
+• Seven languages: English, Japanese, Spanish, German, French, Korean, Traditional Chinese. The manual is in the app, offline too: "?" opens its page
 
 ■ QCalc Pro (one in-app purchase)
 The 3D graph and views (above; volume and area of surfaces, moving GIFs), the Pro tools for work (above), more than 1,000 digits, CSV of the history, colour themes, and more than one calculation note. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.
@@ -166,33 +168,34 @@ Try "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can s
 
 ■ For students and teachers
 • Graph functions, then pan and zoom with your fingers; derivatives, tangents, roots, turning points and areas right on the graph
-• Turn the region between two curves into a solid of revolution with "⟳ 3D" and see its volume at once; tap an axis to change it. Disc and shell lines, Pappus's theorem, and solids with square, triangle or semicircle cross-sections
+• Turn the region between two curves into a solid of revolution with "⟳ 3D" and see its volume at once. Disc and shell lines, Pappus's theorem, and solids with square, triangle or semicircle cross-sections
 • Equations and simultaneous equations, differentiation, integration, limits, sums, matrices up to 30 × 30, complex numbers, binary, octal and hex
 • Mean, median, standard deviation, quartiles, and regression with a graph
 • Up to 200,000 digits (more than 1,000 digits with QCalc Pro)
 
 ■ 3D drawn by the GPU (QCalc Pro)
 • Real light and shadows; metals and liquids look real
-• "See-through" in every 3D view, for any formula or part (a tank's "Container")
-• Turn 3D any way with one finger; "From the front", "From above", "From the side"
+• "See-through" in every 3D view, also for one part
+• Turn 3D any way with one finger; front, top and side views
 • Without QCalc Pro, open 3D once for free
 
 ■ For work on site and in design
 • Areas and volumes of 22 shapes, liquid in tanks (level ⇄ volume), volume from measured cross-sections, weight from density (stainless steel, aluminium, copper, brass, wood, PLA, ABS, acrylic and more)
 • Calculate with the units attached (4.2 m × 3.6 m to m², 2.4 m × 1.8 m × 0.15 m to L) and with error propagation
-• QCalc Pro: shapes and tanks in 3D, tank heads with quick-reference tables, a solid's volume, capacity and weight from a measured profile, STL files for 3D printing, CSV
+• QCalc Pro: shapes and tanks in 3D, tank heads with quick-reference tables, solids from a measured profile, STL files for 3D printing, CSV
 
 ■ For shopping and the household budget
 • Price with a discount and 10 % GST, percentages, unit price comparison, splitting a bill, home loan repayments with a table, savings, dates (days from today, age), hours worked and pay
 • Currency conversion with exchange rates from the European Central Bank and others
-• Calculation notes: one calculation per line, with a total; give values names, such as rent = 2400 AUD
+• Calculation notes: one calculation per line, with a total; give values names, such as rent = 2400 AUD; open .txt and .csv files
 
 ■ Easy to use
-• Every tool has examples: tap one for the result. Tap a result to insert, keep or copy it
-• Choose the digits each tool shows: ⋯ next to its title → "Digits shown…"
-• Search, pin, note and add up lines of the history; memory keys
+• Examples in every tool; tap a result to insert, keep or copy it
+• Easier answers: 15 digits in groups of 3, exact and approximate on two lines; a chip at the top changes the digits
+• Digits of each tool: ⋯ next to its title → "Digits shown…"
+• Edit a line of the history in place; search, pin, note and add up lines; memory keys
 • A home screen widget, a quick settings tile; share a graph as a picture
-• Seven languages: English, Japanese, Spanish, German, French, Korean, Traditional Chinese. The manual is in the app and works offline: tap "?" on a screen to open its page
+• Seven languages: English, Japanese, Spanish, German, French, Korean, Traditional Chinese. The manual is in the app, offline too: "?" opens its page
 
 ■ QCalc Pro (one in-app purchase)
 The 3D graph and views (above; volume and area of surfaces, moving GIFs), the Pro tools for work (above), more than 1,000 digits, CSV of the history, colour themes, and more than one calculation note. Everything for learning and everyday use works without buying it. The price is shown on the Google Play purchase screen.

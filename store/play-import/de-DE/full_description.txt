@@ -3,33 +3,34 @@ Probier „100 km/h to mph“, „solve(x^2 − 5x + 6 = 0)“ oder „3/8 + 1/6
 
 ■ Für Schule, Studium und Unterricht
 • Funktionen zeichnen, mit den Fingern verschieben und zoomen; Ableitung, Tangente, Nullstellen, Extrempunkte und Flächen direkt im Graphen
-• Die Fläche zwischen zwei Kurven mit „⟳ 3D“ zu einem Rotationskörper machen und das Volumen sofort sehen; Achse per Tippen wechseln. Scheiben- und Schalenlinien, Guldinsche Regel und Körper mit quadratischem, dreieckigem oder halbkreisförmigem Querschnitt
+• Die Fläche zwischen zwei Kurven mit „⟳ 3D“ zu einem Rotationskörper machen und das Volumen sofort sehen. Scheiben- und Schalenlinien, Guldinsche Regel und Körper mit quadratischem, dreieckigem oder halbkreisförmigem Querschnitt
 • Gleichungen und Gleichungssysteme, Ableitungen, Integrale, Grenzwerte, Summen, Matrizen bis 30 × 30, komplexe Zahlen, Binär-, Oktal- und Hexzahlen
 • Mittelwert, Median, Standardabweichung, Quartile und Regression mit Graph
 • Bis zu 200.000 Stellen (mehr als 1.000 Stellen mit QCalc Pro)
 
 ■ 3D mit der GPU (QCalc Pro)
 • Echtes Licht und Schatten; Metalle und Flüssigkeiten wie echt
-• „Durchsichtig“ in jeder 3D-Ansicht, auch nur für eine Formel oder den „Behälter“
-• 3D mit einem Finger in jede Richtung drehen; „Von vorn“, „Von oben“, „Von der Seite“
+• „Durchsichtig“ in jeder 3D-Ansicht, auch für einzelne Teile
+• 3D mit einem Finger in jede Richtung drehen; Ansicht von vorn, oben, Seite
 • Ohne QCalc Pro 3D einmal kostenlos öffnen
 
 ■ Für Baustelle, Werkstatt und Konstruktion
 • Flächen und Volumen von 22 Formen, Füllmenge von Tanks (Höhe ⇄ Volumen), Volumen aus gemessenen Querschnitten, Gewicht aus der Dichte (auch Edelstahl, Aluminium, Kupfer, Messing, Holz, PLA, ABS, Acrylglas)
 • Mit Einheiten rechnen (2,4 m × 1,8 m × 0,15 m to L), mit Fehlerfortpflanzung
-• QCalc Pro: Figuren und Tanks in 3D, Tankböden mit Peiltabellen, Körper aus einem gemessenen Profil (Volumen, Inhalt, Gewicht), STL für den 3D-Druck, CSV
+• QCalc Pro: Figuren und Tanks in 3D, Tankböden mit Peiltabellen, Körper aus einem gemessenen Profil, STL für den 3D-Druck, CSV
 
 ■ Für Einkauf und Haushaltskasse
 • Preis mit Rabatt und MwSt., Prozentrechnung, Grundpreise vergleichen, Rechnung teilen, Kreditrate mit Tilgungsplan, Sparen, Daten (Tage ab heute, Alter), Arbeitszeit und Lohn
-• Währungsrechner (Kurse u. a. der Europäischen Zentralbank)
-• Rechennotizen: eine Rechnung pro Zeile, mit Summe; Werte bekommen Namen, etwa Miete = 980 EUR
+• Währungsrechner (Kurse u. a. der EZB)
+• Rechennotizen: eine Rechnung pro Zeile, mit Summe; Werte bekommen Namen, etwa Miete = 980 EUR; .txt- und .csv-Dateien öffnen
 
 ■ Einfach zu bedienen
-• Beispiele in jedem Werkzeug: antippen, Ergebnis da. Ergebnis antippen: einfügen, in den Verlauf, kopieren
-• Stellen je Werkzeug wählbar: ⋯ neben dem Titel → „Angezeigte Stellen…“
-• Verlauf durchsuchen, Zeilen anheften, notieren und addieren; Speichertasten
+• Beispiele in jedem Werkzeug; Ergebnis antippen: einfügen, in den Verlauf, kopieren
+• Klare Ergebnisse: 15 Stellen in Dreiergruppen, exakt und genähert zweizeilig; Stellen über das Feld oben
+• Stellen je Werkzeug: ⋯ neben dem Titel → „Angezeigte Stellen…“
+• Zeilen im Verlauf direkt bearbeiten, suchen, anheften, notieren, addieren; Speichertasten
 • Widget, Kachel in den Schnelleinstellungen, Graphen als Bild teilen
-• Sieben Sprachen, darunter Deutsch. Die Anleitung ist in der App und funktioniert offline: „?“ öffnet die passende Seite
+• Sieben Sprachen, darunter Deutsch. Die Anleitung ist in der App, auch offline: „?“ öffnet die passende Seite
 
 ■ QCalc Pro (ein In-App-Kauf)
 3D (oben; Volumen und Oberfläche, bewegte GIFs), die Pro-Werkzeuge für die Arbeit (oben), mehr als 1.000 Stellen, CSV des Verlaufs, Farbthemen und mehr als eine Rechennotiz. Alles für Lernen und Alltag funktioniert auch ohne Kauf. Den Preis zeigt Google Play beim Kauf an.

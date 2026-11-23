@@ -3,33 +3,34 @@ Prueba "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" o "3/8 + 1/6": el resultad
 
 ■ Para estudiantes y maestros
 • Grafica funciones y muévelas o haz zoom con los dedos; derivadas, tangentes, raíces, extremos y áreas en la gráfica
-• Convierte la región entre dos curvas en un sólido de revolución con "⟳ 3D" y ve su volumen al instante; toca un eje para cambiarlo. Líneas de discos y capas, teorema de Pappus y sólidos con secciones cuadradas, triangulares o semicirculares
+• Convierte la región entre dos curvas en un sólido de revolución con "⟳ 3D" y ve su volumen al instante. Líneas de discos y capas, teorema de Pappus y sólidos con secciones cuadradas, triangulares o semicirculares
 • Ecuaciones y sistemas, derivadas, integrales, límites, sumatorias, matrices hasta 30 × 30, complejos, binario, octal y hexadecimal
 • Media, mediana, desviación estándar, cuartiles y regresión con gráfica
 • Hasta 200,000 dígitos (más de 1,000 dígitos con QCalc Pro)
 
 ■ 3D con la GPU (QCalc Pro)
 • Luz y sombras reales; metales y líquidos con su aspecto
-• "Transparente" en toda vista 3D, también solo para una fórmula o el "Recipiente"
-• Gira el 3D en cualquier dirección con un dedo; "De frente", "Desde arriba", "De lado"
+• "Transparente" en toda vista 3D, también por partes
+• Gira el 3D en cualquier dirección con un dedo; vistas de frente, arriba y lado
 • Sin QCalc Pro, el 3D se abre una vez gratis
 
 ■ Para la obra y el diseño
 • Áreas y volúmenes de 22 figuras, líquido en tanques (nivel ⇄ volumen), volumen desde secciones medidas, peso desde la densidad (también acero inoxidable, aluminio, cobre, latón, madera, PLA, ABS, acrílico)
 • Calcula con las unidades puestas (2.4 m × 1.8 m × 0.15 m to L), con propagación de errores
-• QCalc Pro: figuras y tanques en 3D, tapas de tanques con tablas de consulta, sólidos desde un perfil medido (volumen, capacidad, peso), STL para impresión 3D, CSV
+• QCalc Pro: figuras y tanques en 3D, tapas de tanques con tablas de consulta, sólidos desde un perfil medido, STL para impresión 3D, CSV
 
 ■ Para las compras y el presupuesto de la casa
 • Precio con descuento e IVA, porcentajes, comparar precio por unidad, dividir la cuenta, pago de un préstamo con tabla de amortización, ahorro, fechas (días desde hoy, edad), horas trabajadas y sueldo
-• Conversión de monedas (tipos de cambio del Banco Central Europeo y otros)
-• Notas de cálculo: una operación por línea, con total; valores con nombre, como renta = 12000 MXN
+• Conversión de monedas (tipos de cambio del BCE y otros)
+• Notas de cálculo: una operación por línea, con total; valores con nombre, como renta = 12000 MXN; abre .txt y .csv
 
 ■ Fácil de usar
-• Ejemplos en cada herramienta: toca uno y listo. Toca un resultado para pasarlo a la entrada, al historial o copiarlo
+• Ejemplos en cada herramienta; toca un resultado para pasarlo a la entrada, al historial o copiarlo
+• Resultados claros: 15 cifras en grupos de 3, exacto y aproximado en dos líneas; cifras con el botón de arriba
 • Cifras de cada herramienta: ⋯ junto al título → "Cifras mostradas…"
-• Busca, fija, anota y suma líneas del historial; teclas de memoria
+• Edita en su sitio, busca, fija, anota y suma líneas del historial; teclas de memoria
 • Widget, botón en la configuración rápida, gráficas como imagen
-• Siete idiomas, entre ellos el español. El manual va dentro de la app y funciona sin conexión: toca "?" para abrir su página
+• Siete idiomas, entre ellos el español. El manual va en la app, también sin conexión: "?" abre su página
 
 ■ QCalc Pro (una compra dentro de la app)
 El 3D (arriba; volumen y área, GIF animados), las herramientas Pro para el trabajo (arriba), más de 1,000 dígitos, CSV del historial, temas de color y más de una nota de cálculo. Todo para estudiar y para el día a día funciona sin comprarlo. El precio aparece en la pantalla de compra de Google Play.
