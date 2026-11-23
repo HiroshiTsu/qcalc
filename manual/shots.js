@@ -28,7 +28,8 @@ async function start(browser, lang, q) {
       localStorage.setItem('qalc.lang', JSON.stringify(l));
       localStorage.setItem('qalc.settings', JSON.stringify({ auto_rates: false }));
       localStorage.setItem('qalc.moved112', 'true');
-      localStorage.setItem('qalc.news', JSON.stringify('1.14'));
+      localStorage.setItem('qalc.news', JSON.stringify('1.15'));
+      localStorage.setItem('qalc.defaults115', 'true'); // (1.15.0: a new phone, 15 digits in groups)
     } catch (e) { }
   }, lang);
   const page = await ctx.newPage();
