@@ -664,7 +664,7 @@
     "The tube must not be wider than the ring (r ≤ R)": "管的半徑不能大於環的半徑（r ≤ R）",
     "The values are those of the graph that is drawn. Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.": "這些是所畫圖形的值。平面（或另一個曲面）下方的部分也算成正值。表面積是兩個曲面（或曲面與 z = 0 的底面）的面積和，不含側面。",
     "The variable is one letter or name, such as x or t": "變數請填一個字母或名稱，例如 x 或 t",
-    "The x of the extrema (max/min key)": "極值處的 x（極值鍵）",
+    "The x of the extrema (extremum, in the list of more…)": "極值處的 x（「更多…」清單中的 extremum）",
     "The → key types \"to\" (conversion of units, currencies and number bases). Example: 5 km → mi": "→ 鍵會輸入「to」（單位、貨幣與進位制換算）。例如：5 km → mi",
     "The ▦ key of the Matrix page opens a grid of cells: set the rows and columns with + and −, type the elements and choose what to calculate (determinant, inverse, transpose, rank, eigenvalues, linear system). det, Aᵀ and A⁻¹ open it too when the input field is empty. Touch and hold a matrix result to edit it there.": "「矩陣」頁的 ▦ 鍵會開啟一個格狀表：用 + 和 − 設定列數與行數，輸入元素，再選擇要計算的項目（行列式、反矩陣、轉置、秩、特徵值、線性方程組）。輸入欄是空的時候，det、Aᵀ、A⁻¹ 鍵也會開啟它。長按矩陣結果即可在那裡編輯。",
     "There are no real values (check the expression and the ranges of x and y)": "沒有實數值（請檢查運算式及 x、y 的範圍）",

@@ -663,7 +663,7 @@
     "The tube must not be wider than the ring (r ≤ R)": "관의 반지름은 고리의 반지름 이하로 하세요(r ≤ R)",
     "The values are those of the graph that is drawn. Parts below the plane (or the other surface) count as positive. The surface area is that of the two surfaces (or the surface and its floor on z = 0), without side walls.": "지금 그린 그래프의 값입니다. 평면(또는 다른 곡면)보다 아래 부분도 양수로 셉니다. 겉넓이는 두 곡면(또는 곡면과 z = 0의 밑면)의 넓이의 합이며 옆면은 포함하지 않습니다.",
     "The variable is one letter or name, such as x or t": "변수는 x나 t 같은 문자 하나로 하세요",
-    "The x of the extrema (max/min key)": "극값을 갖는 x(극값 키)",
+    "The x of the extrema (extremum, in the list of more…)": "극값을 갖는 x(더 보기…의 목록에서 extremum)",
     "The → key types \"to\" (conversion of units, currencies and number bases). Example: 5 km → mi": "→ 키는 ‘to’(단위·통화·진법 변환)입니다. 예: 5 km → mi",
     "The ▦ key of the Matrix page opens a grid of cells: set the rows and columns with + and −, type the elements and choose what to calculate (determinant, inverse, transpose, rank, eigenvalues, linear system). det, Aᵀ and A⁻¹ open it too when the input field is empty. Touch and hold a matrix result to edit it there.": "‘행렬’ 페이지의 ▦ 키로 행렬을 표 형태로 입력하는 양식이 열립니다. 행과 열의 수를 +와 −로 정하고 원소를 넣은 뒤 계산(행렬식, 역행렬, 전치, 계수, 고윳값, 연립방정식)을 고릅니다. 입력란이 비어 있으면 det, Aᵀ, A⁻¹ 키로도 열립니다. 결과 행렬을 길게 누르면 그 양식에서 편집할 수 있습니다.",
     "There are no real values (check the expression and the ranges of x and y)": "실수 값이 없습니다(식과 x, y의 범위를 확인하세요)",
