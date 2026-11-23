@@ -1499,6 +1499,27 @@
     const out = [];
     const m = /^(.*?)E([−-]?\d+)$/.exec(num), mant = m ? m[1] : num;
     const k = mant.indexOf(NF.dec);
+    // (1.15.0, the triage of the full suite) without the groups of digits (Digit grouping off) a long number may still
+    // break between groups of three, with nothing shown there (<wbr>): it was one line that scrolled sideways. Up to
+    // 20000 characters, as groupText makes groups (a longer one stays one line that scrolls sideways, quick to show)
+    const plain = mant.length > 20000 ? null : new RegExp('^([−-]?)(\\d+)(?:' + (NF.dec === '.' ? '\\.' : NF.dec) + '(\\d*))?(…?)$').exec(mant);
+    if (plain && (plain[2].length + (plain[3] || '').length) > 12) {
+      const ip = plain[2], fp = plain[3] || '', ch = [];
+      for (let j = ip.length; j > 0; j -= 3) ch.unshift(ip.slice(Math.max(0, j - 3), j));
+      ch[0] = plain[1] + ch[0];
+      if (plain[3] !== undefined) {
+        ch[ch.length - 1] += NF.dec;
+        for (let j = 0; j < fp.length; j += 3) ch.push(fp.slice(j, j + 3));
+      }
+      ch[ch.length - 1] += plain[4];
+      ch.forEach((c, i) => { if (i) out.push(el('wbr')); out.push(c); });
+      if (m) {
+        const p = m[2].replace('-', '−');
+        out.push(el('span', { class: 'r-exp', 'aria-hidden': 'true', text: ' × 10' + supText(p) }));
+        out.push(el('span', { class: 'sr-only', text: trf(' times 10 to the power of {0}', ' × 10 の {0} 乗', p) }));
+      }
+      return out;
+    }
     let s = '';
     for (let i = 0; i < mant.length; i++) {
       const c = mant[i];
