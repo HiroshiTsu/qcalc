@@ -339,7 +339,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Tapez les mesures indiquées sur le dessin (r, h). Les mesures rondes peuvent être un rayon ou un diamètre.
 :step: Les résultats changent pendant la saisie ; un toucher utilise ou copie leur calcul.
 :example: Une sphère de rayon 2 → volume 32π/3 ≈ 33,5103, surface 16π
-:tip: Choisissez un matériau pour obtenir le poids.
+:tip: Le poids est la dernière ligne des résultats (volume × masse volumique). Choisissez un matériau juste en dessous dans [[Material (density)]] ou saisissez une masse volumique avec [[Another density…]]. Quand les longueurs n’ont pas d’unité, la ligne indique « Apparaît quand les longueurs ont une unité » : appuyez dessus et choisissez une unité. Comme les autres lignes, un appui sur le poids met son expression dans le champ de saisie ou la copie.
 :tip: [[!⟳ 3D]], en haut à gauche du dessin, montre le solide en 3D pour le faire tourner ([Solides et cuves en 3D](#shapes-3d)).
 
 ## tanks | Cuves : liquide et niveau
@@ -352,6 +352,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :example: Horizontale, diamètre 1 m, longueur 2 m, liquide à 30 cm → 0,396337 m³ (environ 396 L)
 :tip: [[Quick-reference table ▾]] donne la quantité pour chaque hauteur.
 :mistake: Un rayon tapé dans la case du diamètre donne à peu près le quart. Vérifiez rayon ou diamètre.
+:tip: Choisissez un matériau (eau, eau de mer, kérosène, essence, etc.) : le poids du liquide est la dernière ligne des résultats (liquide × masse volumique).
 
 ## tank-heads | Fonds de cuves et barèmes de jaugeage
 :pro:

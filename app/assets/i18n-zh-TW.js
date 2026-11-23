@@ -2,6 +2,17 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    // (1.16.0) the weight as a row of the results of Shapes and Tanks
+    "Weight of the liquid": "液體的重量",
+    "liquid \u00d7 density": "液量 × 密度",
+    "volume \u00d7 density": "體積 × 密度",
+    "Choose a material just below": "在下方選擇材料即可算出",
+    "Type the density just below": "在下方輸入密度即可算出",
+    "Shown when the lengths have a unit": "長度加上單位就會顯示",
+    " \u2014 tap to choose a unit": "。點一下即可選擇單位",
+    " \u2014 tap to choose a material": "。點一下即可選擇材料",
+    " \u2014 tap to type the density": "。點一下即可輸入密度",
+    "The unit of the lengths (the weight is shown with it)": "長度的單位（選擇後就會顯示重量）",
     // (1.16.0) the card of what is new
     "Your variables and functions on one screen: the button \"Variables\" above the input field": "在一個畫面查看自己的變數與函數：輸入欄上方的「變數」按鈕",
     "The arguments of a function shown as you type it, under the input field": "輸入函數時，在輸入欄下方顯示其引數",
@@ -1121,9 +1132,7 @@
     "More than the tank holds": "超過槽的容量",
     " (": "（",
     " full)": "）",
-    "Give the lengths a unit to get the weight": "長度加上單位就會算出重量",
     "Check the density (for example 0.9 g/cm³)": "請檢查密度（例如 0.9 g/cm³）",
-    "Weight ": "重量 ",
     " = ": " = ",
     " (typical)": "（參考值）",
     "x axis": "x 軸",

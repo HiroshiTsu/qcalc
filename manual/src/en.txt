@@ -339,7 +339,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Type the sizes named in the picture (r, h). Round sizes can be a radius or a diameter.
 :step: The results change while you type; tap one to use or copy its expression.
 :example: A sphere of radius 2 → volume 32π/3 ≈ 33.5103, surface 16π
-:tip: Choose a material to get the weight.
+:tip: The weight is the last row of the results (volume × density). Choose a material just under it in [[Material (density)]], or type a density with [[Another density…]]. When the lengths have no unit, the row says "Shown when the lengths have a unit": tap it and choose a unit. Like the other rows, a tap on the weight puts its expression into the input field or copies it.
 :tip: [[!⟳ 3D]] at the top left of the picture shows the solid in 3D, to turn it ([Solids and tanks in 3D](#shapes-3d)).
 
 ## tanks | Tanks: liquid and level
@@ -352,6 +352,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :example: Lying, diameter 1 m, length 2 m, liquid 30 cm → 0.396337 m³ (about 396 L)
 :tip: [[Quick-reference table ▾]] lists the amount for each height.
 :mistake: A radius typed in the diameter box gives about a quarter of the amount. Check radius or diameter.
+:tip: Choose a material (water, seawater, kerosene, gasoline and others): the weight of the liquid is the last row of the results (liquid × density).
 
 ## tank-heads | Tank heads and quick-reference tables
 :pro:

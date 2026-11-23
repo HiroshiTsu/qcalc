@@ -339,7 +339,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Escribe las medidas indicadas en el dibujo (r, h). Las medidas redondas pueden ser radio o diámetro.
 :step: Los resultados cambian mientras escribes; un toque usa o copia su expresión.
 :example: Una esfera de radio 2 → volumen 32π/3 ≈ 33.5103, superficie 16π
-:tip: Elige un material para obtener el peso.
+:tip: El peso es la última fila de los resultados (volumen × densidad). Elige un material justo debajo en [[Material (density)]] o escribe una densidad con [[Another density…]]. Si las longitudes no tienen unidad, la fila dice «Aparece cuando las longitudes tienen unidad»: tócala y elige una unidad. Como las demás filas, al tocar el peso puedes poner su expresión en el campo de entrada o copiarla.
 :tip: [[!⟳ 3D]], arriba a la izquierda del dibujo, muestra el sólido en 3D para girarlo ([Sólidos y depósitos en 3D](#shapes-3d)).
 
 ## tanks | Tanques: líquido y nivel
@@ -352,6 +352,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :example: Horizontal, diámetro 1 m, longitud 2 m, líquido a 30 cm → 0.396337 m³ (unos 396 L)
 :tip: [[Quick-reference table ▾]] da la cantidad para cada altura.
 :mistake: Un radio escrito en la casilla del diámetro da más o menos la cuarta parte. Comprueba radio o diámetro.
+:tip: Elige un material (agua, agua de mar, queroseno, gasolina y otros): el peso del líquido es la última fila de los resultados (líquido × densidad).
 
 ## tank-heads | Fondos de tanques y tablas de consulta
 :pro:
