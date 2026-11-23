@@ -2,15 +2,14 @@ A scientific calculator you type into the way you write maths on paper. Convert 
 Try "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can stay exact, with fractions, surds and π.
 
 ■ For students and teachers
-• Graph functions, then pan and zoom with your fingers; derivatives, tangents, roots, turning points and areas right on the graph
+• Graph functions and parametric, polar or implicit curves, pan and zoom; sliders for letters such as a; derivatives, tangents, roots, turning points and areas on the graph
 • Turn the region between two curves into a solid of revolution with "⟳ 3D" and see its volume at once. Disc and shell lines, Pappus's theorem, and solids with square, triangle or semicircle cross-sections
-• Equations and simultaneous equations, differentiation, integration, limits, sums, matrices up to 30 × 30, complex numbers, binary, octal and hex
+• Equations and simultaneous equations, differentiation, integration, limits, sums, Taylor series, matrices up to 30 × 30, complex numbers, binary, octal and hex
 • Mean, median, standard deviation, quartiles, and regression with a graph
-• Up to 200,000 digits (more than 1,000 digits with QCalc Pro)
+• Up to 200,000 digits (over 1,000 with QCalc Pro)
 
 ■ 3D drawn by the GPU (QCalc Pro)
-• Real light and shadows; metals and liquids look real
-• "See-through" in every 3D view, also for one part
+• Real light, shadows, metals and liquids; "See-through", also for one part
 • Turn 3D any way with one finger; front, top and side views
 • Without QCalc Pro, open 3D once for free
 
@@ -26,8 +25,8 @@ Try "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" or "3/8 + 1/6": answers can s
 
 ■ Easy to use
 • Examples in every tool; tap a result to insert, keep or copy it
-• Easier answers: 15 digits in groups of 3, exact and approximate on two lines; a chip at the top changes the digits
-• Digits of each tool: ⋯ next to its title → "Digits shown…"
+• Easier answers: 15 digits in groups of 3, exact and approximate on two lines; digits set at the top
+• Next steps under the newest answer; "Details" shows its other forms
 • Edit a line of the history in place; search, pin, note and add up lines; memory keys
 • A home screen widget, a quick settings tile; share a graph as a picture
 • Seven languages: English, Japanese, Spanish, German, French, Korean, Traditional Chinese. The manual is in the app, offline too: "?" opens its page

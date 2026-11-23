@@ -28,16 +28,15 @@ Ein wissenschaftlicher Taschenrechner, in den du Rechnungen so eintippst, wie du
 Probier „100 km/h to mph“, „solve(x^2 − 5x + 6 = 0)“ oder „3/8 + 1/6“: Ergebnisse bleiben auf Wunsch exakt, mit Brüchen, Wurzeln und π.
 
 ■ Für Schule, Studium und Unterricht
-• Funktionen zeichnen, mit den Fingern verschieben und zoomen; Ableitung, Tangente, Nullstellen, Extrempunkte und Flächen direkt im Graphen
+• Funktionen sowie Parameter-, Polar- und implizite Kurven zeichnen, verschieben, zoomen; Schieberegler für Buchstaben wie a; Ableitung, Tangente, Nullstellen, Extrempunkte und Flächen im Graphen
 • Die Fläche zwischen zwei Kurven mit „⟳ 3D“ zu einem Rotationskörper machen und das Volumen sofort sehen. Scheiben- und Schalenlinien, Guldinsche Regel und Körper mit quadratischem, dreieckigem oder halbkreisförmigem Querschnitt
-• Gleichungen und Gleichungssysteme, Ableitungen, Integrale, Grenzwerte, Summen, Matrizen bis 30 × 30, komplexe Zahlen, Binär-, Oktal- und Hexzahlen
+• Gleichungen und Gleichungssysteme, Ableitungen, Integrale, Grenzwerte, Summen, Taylorreihen, Matrizen bis 30 × 30, komplexe Zahlen, Binär-, Oktal- und Hexzahlen
 • Mittelwert, Median, Standardabweichung, Quartile und Regression mit Graph
-• Bis zu 200.000 Stellen (mehr als 1.000 Stellen mit QCalc Pro)
+• Bis zu 200.000 Stellen (über 1.000 mit QCalc Pro)
 
 ■ 3D mit der GPU (QCalc Pro)
-• Echtes Licht und Schatten; Metalle und Flüssigkeiten wie echt
-• „Durchsichtig“ in jeder 3D-Ansicht, auch für einzelne Teile
-• 3D mit einem Finger in jede Richtung drehen; Ansicht von vorn, oben, Seite
+• Echtes Licht und Schatten, Metalle, Flüssigkeiten; „Durchsichtig“, auch für Teile
+• 3D mit einem Finger frei drehen; Ansicht von vorn, oben, Seite
 • Ohne QCalc Pro 3D einmal kostenlos öffnen
 
 ■ Für Baustelle, Werkstatt und Konstruktion
@@ -52,8 +51,8 @@ Probier „100 km/h to mph“, „solve(x^2 − 5x + 6 = 0)“ oder „3/8 + 1/6
 
 ■ Einfach zu bedienen
 • Beispiele in jedem Werkzeug; Ergebnis antippen: einfügen, in den Verlauf, kopieren
-• Klare Ergebnisse: 15 Stellen in Dreiergruppen, exakt und genähert zweizeilig; Stellen über das Feld oben
-• Stellen je Werkzeug: ⋯ neben dem Titel → „Angezeigte Stellen…“
+• Klare Ergebnisse: 15 Stellen in Dreiergruppen, exakt und genähert zweizeilig; Stellen oben
+• Nächste Schritte unter der Antwort; „Details“ zeigt andere Formen
 • Zeilen im Verlauf direkt bearbeiten, suchen, anheften, notieren, addieren; Speichertasten
 • Widget, Kachel in den Schnelleinstellungen, Graphen als Bild teilen
 • Sieben Sprachen, darunter Deutsch. Die Anleitung ist in der App, auch offline: „?“ öffnet die passende Seite

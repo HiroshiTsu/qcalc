@@ -2,17 +2,16 @@ Une calculatrice scientifique où l’on entre les calculs comme sur papier : un
 Essayez « 100 km/h to mph », « solve(x^2 − 5x + 6 = 0) » ou « 3/8 + 1/6 » : le résultat peut rester exact, avec fractions, racines et π.
 
 ■ Pour élèves, étudiants et enseignants
-• Tracez des fonctions, déplacez et zoomez du doigt ; dérivée, tangente, zéros, extremums et aires sur le graphique
+• Tracez des fonctions et des courbes paramétriques, polaires, implicites, déplacez et zoomez ; curseurs pour les lettres comme a ; dérivée, tangente, zéros, extremums et aires sur le graphique
 • Transformez la région entre deux courbes en solide de révolution avec « ⟳ 3D » et voyez son volume aussitôt. Disques et tubes, théorème de Pappus-Guldin, solides à section carrée, triangulaire ou demi-circulaire
-• Équations et systèmes, dérivées, intégrales, limites, sommes, matrices jusqu’à 30 × 30, complexes, binaire, octal et hexadécimal
+• Équations et systèmes, dérivées, intégrales, limites, sommes, séries de Taylor, matrices jusqu’à 30 × 30, complexes, binaire, octal et hexadécimal
 • Moyenne, médiane, écart type, quartiles et régression avec graphique
 • Jusqu’à 200 000 chiffres (plus de 1 000 avec QCalc Pro)
 
 ■ La 3D par le GPU (QCalc Pro)
-• Lumière et ombres réelles ; métaux et liquides réalistes
-• « Transparent » dans toute vue 3D, aussi par partie
+• Lumière et ombres réelles, métaux, liquides ; « Transparent », aussi par partie
 • La 3D tourne dans tous les sens d’un doigt ; vues de face, de dessus, de côté
-• Sans QCalc Pro, ouvrez la 3D une fois gratuitement
+• Sans QCalc Pro, la 3D une fois gratuite
 
 ■ Pour le chantier et la conception
 • Aires et volumes de 22 formes, liquide dans un réservoir (hauteur ⇄ volume), volume d’après des sections mesurées, masse d’après la masse volumique (aussi inox, aluminium, cuivre, laiton, bois, PLA, ABS, acrylique)
@@ -26,8 +25,8 @@ Essayez « 100 km/h to mph », « solve(x^2 − 5x + 6 = 0) » ou « 3/8 + 1/6 �
 
 ■ Simple à utiliser
 • Des exemples dans chaque outil ; touchez un résultat pour le saisir, le garder ou le copier
-• Résultats clairs : 15 chiffres par groupes de 3, exact et approché sur deux lignes ; chiffres via le bouton du haut
-• Chiffres de chaque outil : ⋯ à côté du titre → « Chiffres affichés… »
+• Résultats clairs : 15 chiffres par groupes de 3, exact et approché sur deux lignes 
+• Étapes suivantes sous la réponse ; « Détails » montre d’autres formes
 • Historique : modification sur place, recherche, épinglage, notes, somme des lignes ; touches mémoire
 • Widget, tuile dans les paramètres rapides, graphique partagé en image
 • Sept langues, dont le français. Le guide est dans l’application, même hors ligne : « ? » ouvre la bonne page
@@ -43,7 +42,7 @@ La 3D et les outils Pro ci-dessus (avec volume et aire, GIF animés), plus de 1 
 • QCalc utilise libqalculate, le moteur de calcul libre de Qalculate!. QCalc est un projet indépendant d’une seule personne, sans lien avec les développeurs de Qalculate!.
 
 ■ À noter
-Les résultats sont fournis à titre indicatif. À ne pas utiliser pour des transactions ou certifications, la conception et la construction ni les impôts ; vérifiez les résultats importants par une méthode officielle.
+Résultats indicatifs. À ne pas utiliser pour des transactions ou certifications, la conception et la construction ni les impôts ; vérifiez les résultats importants par une méthode officielle.
 
 ■ Contact
 Bogues et suggestions : hiroshitsu.apps@gmail.com

@@ -2,17 +2,16 @@ Una calculadora científica en la que escribes las operaciones igual que en pape
 Prueba "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" o "3/8 + 1/6": el resultado puede quedar exacto, con fracciones, raíces y π.
 
 ■ Para estudiantes y maestros
-• Grafica funciones y muévelas o haz zoom con los dedos; derivadas, tangentes, raíces, extremos y áreas en la gráfica
+• Grafica funciones y curvas paramétricas, polares e implícitas, muévelas o haz zoom; deslizadores para letras como a; derivadas, tangentes, raíces, extremos y áreas en la gráfica
 • Convierte la región entre dos curvas en un sólido de revolución con "⟳ 3D" y ve su volumen al instante. Líneas de discos y capas, teorema de Pappus y sólidos con secciones cuadradas, triangulares o semicirculares
-• Ecuaciones y sistemas, derivadas, integrales, límites, sumatorias, matrices hasta 30 × 30, complejos, binario, octal y hexadecimal
+• Ecuaciones y sistemas, derivadas, integrales, límites, sumatorias, series de Taylor, matrices hasta 30 × 30, complejos, binario, octal y hexadecimal
 • Media, mediana, desviación estándar, cuartiles y regresión con gráfica
-• Hasta 200,000 dígitos (más de 1,000 dígitos con QCalc Pro)
+• Hasta 200,000 dígitos (más de 1,000 con QCalc Pro)
 
 ■ 3D con la GPU (QCalc Pro)
-• Luz y sombras reales; metales y líquidos con su aspecto
-• "Transparente" en toda vista 3D, también por partes
+• Luz y sombras reales, metales y líquidos; "Transparente", también por partes
 • Gira el 3D en cualquier dirección con un dedo; vistas de frente, arriba y lado
-• Sin QCalc Pro, el 3D se abre una vez gratis
+• Sin QCalc Pro, 3D gratis una vez
 
 ■ Para la obra y el diseño
 • Áreas y volúmenes de 22 figuras, líquido en tanques (nivel ⇄ volumen), volumen desde secciones medidas, peso desde la densidad (también acero inoxidable, aluminio, cobre, latón, madera, PLA, ABS, acrílico)
@@ -26,11 +25,11 @@ Prueba "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" o "3/8 + 1/6": el resultad
 
 ■ Fácil de usar
 • Ejemplos en cada herramienta; toca un resultado para pasarlo a la entrada, al historial o copiarlo
-• Resultados claros: 15 cifras en grupos de 3, exacto y aproximado en dos líneas; cifras con el botón de arriba
-• Cifras de cada herramienta: ⋯ junto al título → "Cifras mostradas…"
+• Resultados claros: 15 cifras en grupos de 3, exacto y aproximado en dos líneas; cifras arriba
+• Siguientes pasos bajo la respuesta; "Detalles" muestra otras formas
 • Edita en su sitio, busca, fija, anota y suma líneas del historial; teclas de memoria
 • Widget, botón en la configuración rápida, gráficas como imagen
-• Siete idiomas, entre ellos el español. El manual va en la app, también sin conexión: "?" abre su página
+• Siete idiomas, entre ellos el español. Manual en la app, también sin conexión: "?" abre su página
 
 ■ QCalc Pro (una compra dentro de la app)
 El 3D (arriba; volumen y área, GIF animados), las herramientas Pro para el trabajo (arriba), más de 1,000 dígitos, CSV del historial, temas de color y más de una nota de cálculo. Todo para estudiar y para el día a día funciona sin comprarlo. El precio aparece en la pantalla de compra de Google Play.
