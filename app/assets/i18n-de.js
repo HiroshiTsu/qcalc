@@ -1,6 +1,9 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    // (1.15.0) the box "center" of the Taylor series, and the colon after a function in the tip of the graph
+    "center x =": "Entwicklungspunkt x =",
+    ":  ": ":  ",
     // (1.15.0) the next steps under the newest answer and the sheet of details
     "As a decimal": "Als Dezimalzahl",
     "As a fraction": "Als Bruch",
@@ -106,8 +109,6 @@
     ", with the vertical sides at a and b": ", mit den senkrechten Seiten bei a und b",
     "1 to 3600 seconds (default 20). A calculation with = is stopped after this time; tap \"Calculating…\" to stop it sooner": "1 bis 3600 Sekunden (Standard 20). Eine Rechnung mit = wird nach dieser Zeit abgebrochen; tippe auf „Wird berechnet …“, um sie früher zu stoppen",
     "1:1 in the graph makes one unit as long on every axis, so a circle or a sphere looks round. In 3D it turns on by itself when the ranges are about the same.": "1:1 im Graphen macht eine Einheit auf jeder Achse gleich lang, sodass ein Kreis oder eine Kugel rund aussieht. In 3D schaltet es sich von selbst ein, wenn die Bereiche etwa gleich groß sind.",
-    "2 to 200000 digits (default 10). Higher values take longer to calculate": "2 bis 200000 Stellen (Standard 10). Höhere Werte brauchen länger zum Rechnen",
-    "2 to 200000 digits (default 10; above 1000 with QCalc Pro). Higher values take longer to calculate": "2 bis 200000 Stellen (Standard 10; über 1000 mit QCalc Pro). Höhere Werte brauchen länger zum Rechnen",
     "2D graph": "2D-Graph",
     "3D graph": "3D-Graph",
     "3D graphs": "3D-Graphen",
@@ -783,7 +784,6 @@
     "lower": "untere",
     "max": "Max",
     "max ": "Max ",
-    "max/min": "max/min",
     "min": "Min",
     "min ": "Min ",
     "more…": "mehr…",
@@ -1614,7 +1614,6 @@
     "Making the moving picture…": "Das bewegte Bild wird erstellt…",
     "Could not share the image": "Das Bild konnte nicht geteilt werden",
     "GIF and pictures without the mark": "GIF und Bilder ohne Zeichen",
-    "The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "Der 3D-Graph als bewegtes Bild (GIF) und Bilder der Graphen in voller Auflösung ohne „QCalc“ in der Ecke",
     "Rent and bills": "Miete und Nebenkosten",
     "rent": "Miete",
     "electricity": "Strom",

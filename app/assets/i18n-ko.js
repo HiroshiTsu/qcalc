@@ -1,6 +1,9 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    // (1.15.0) the box "center" of the Taylor series, and the colon after a function in the tip of the graph
+    "center x =": "중심 x =",
+    ":  ": ":  ",
     // (1.15.0) the next steps under the newest answer and the sheet of details
     "As a decimal": "소수로",
     "As a fraction": "분수로",
@@ -108,8 +111,6 @@
     "1 to 3600 seconds (default 20). A calculation with = is stopped after this time; tap \"Calculating…\" to stop it sooner": "1~3600초(기본 20). ‘=’ 계산이 이 시간을 넘으면 중단합니다. ‘계산 중…’을 탭하면 중간에 멈출 수 있습니다",
     "100 USD to EUR": "100 USD to KRW",
     "1:1 in the graph makes one unit as long on every axis, so a circle or a sphere looks round. In 3D it turns on by itself when the ranges are about the same.": "그래프의 ‘1:1’은 모든 축에서 한 눈금의 길이를 같게 하므로 원이나 구가 둥글게 보입니다. 3D에서는 범위의 길이가 비슷하면 자동으로 켜집니다.",
-    "2 to 200000 digits (default 10). Higher values take longer to calculate": "계산 정밀도(2~200000자리, 기본 10). 클수록 계산에 시간이 걸립니다",
-    "2 to 200000 digits (default 10; above 1000 with QCalc Pro). Higher values take longer to calculate": "계산 정밀도(2~200000자리, 기본 10. 1000자리를 넘으려면 QCalc Pro). 클수록 계산에 시간이 걸립니다",
     "2D graph": "2D 그래프",
     "3D graph": "3D 그래프",
     "3D graphs": "3D 그래프",
@@ -786,7 +787,6 @@
     "lower": "아래끝",
     "max": "극대",
     "max ": "극대 ",
-    "max/min": "극값",
     "min": "극소",
     "min ": "극소 ",
     "more…": "더 보기…",
@@ -1617,7 +1617,6 @@
     "Making the moving picture…": "움직이는 이미지를 만드는 중…",
     "Could not share the image": "이미지를 공유할 수 없습니다",
     "GIF and pictures without the mark": "GIF와 워터마크 없는 공유",
-    "The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without \"QCalc\" in the corner": "3D 그래프를 움직이는 이미지(GIF)로, 그래프 이미지를 높은 해상도·워터마크 없이 공유",
     "Rent and bills": "월세와 공과금",
     "rent": "월세",
     "electricity": "전기",
