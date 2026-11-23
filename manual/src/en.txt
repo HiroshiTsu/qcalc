@@ -25,6 +25,9 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :tip: Tap an answer in the history to put it into the input field or to copy it.
 :mistake: The letter x is a variable, not "times". Multiply with the × key (or *).
 
+## new-1-16 | New in 1.16.0
+- **Your variables and functions**: the variables and functions you set with `k := 2` and the like, with their values, on one screen. Open it with the button [[Variables]] above the input field; a tap on a name puts it into the input field, and ⋯ changes the value or the name or deletes it (each can be undone) ([Your variables and functions](#variables)).
+
 ## new-1-15 | What is new in 1.15.0
 - **Easier results**: results have 15 significant digits, in groups of three. Phones that still had the earlier defaults (10 digits, no groups) change once with this version. [[Precision (significant digits)]] and [[Digit grouping (1,000)]] in the [[Settings]] set them back ([Reading the answer](#results)).
 - **Reading into the calculation notes**: [[More ▾]] → [[Open a file]] in the notes reads a .txt or .csv file, and text or a file sent with “Share” → QCalc from another app is taken in too ([Calculation notes](#notes)).
@@ -214,7 +217,18 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Open [[Lists: functions, units, constants]] from ☰.
 :step: Choose a tab and type part of a name in the box at the top.
 :step: Tap an item to read about it; [[Insert]] puts it into the input field.
-:tip: In the tab of your own definitions you can save variables (r = 5 cm) and functions; they are kept for the next time.
+:tip: The tab of your own definitions is the list of your variables and functions ([Your variables and functions](#variables)). Variables (r = 5 cm) and functions saved with the fields at its bottom are kept for the next time.
+
+## variables | Your variables and functions
+:what: The variables you set with `k := 2` or `r = 5 cm` and the functions you set with `f(x) := x^2 + 1`, with their values, on one screen. When you have at least one, a button such as [[!Variables 2]] (the number of variables and functions) is above the input field.
+:step: Press the button [[Variables]] above the input field. The tab [[My own]] of [[Lists: functions, units, constants]] in the menu is the same screen.
+:step: The variables come first, with their values. A variable set to an expression shows the value worked out too (w = 3 k = 6).
+:step: Tap a name to put it into the input field (a function with the caret between its parentheses).
+:step: ⋯ on the right: [[Change the value]] ([[Change the expression]] for a function), [[Rename]] or [[Delete]]. Each can be taken back with [[Undo]] right after.
+:example: `k := 2` → [[Variables]] → ⋯ of k → [[Change the value]] → 3. Now `k + 1` is 4.
+:tip: What `:=` or `=` sets is marked "temporary" and is gone when the app is closed. What you save with [[Save variable]] in the fields at the bottom stays. A change of the value or the name keeps it temporary or saved.
+:tip: The names in the calculation notes (`rent = 85000 JPY`) work only in their memo and are not variables of the calculator. They are listed at the bottom, memo by memo; a tap opens the memo at that line.
+:mistake: A name that QCalc already uses (m for the meter, pi …) cannot be given: choose another.
 
 ## currencies | Currencies and exchange rates
 :what: Currencies convert like `100 USD to EUR`. The exchange rates are updated by themselves when the app is opened (when it starts or when you come back to it; an internet connection is needed). While roaming abroad or in Data Saver they are not updated by themselves; press [[Update now]] when you need new rates.

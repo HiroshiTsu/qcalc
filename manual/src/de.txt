@@ -25,6 +25,9 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :tip: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu übernehmen oder zu kopieren.
 :mistake: Der Buchstabe x ist eine Variable, kein „mal“. Multiplizieren Sie mit der Taste × (oder *).
 
+## new-1-16 | Neu in 1.16.0
+- **Eigene Variablen und Funktionen**: Die mit `k := 2` und Ähnlichem festgelegten Variablen und Funktionen mit ihren Werten auf einem Bildschirm. Öffnen Sie ihn mit der Schaltfläche [[Variables]] über dem Eingabefeld; ein Tippen auf einen Namen setzt ihn ins Eingabefeld, und ⋯ ändert den Wert oder den Namen oder löscht (alles lässt sich rückgängig machen) ([Eigene Variablen und Funktionen](#variables)).
+
 ## new-1-15 | Neu in 1.15.0
 - **Besser lesbare Ergebnisse**: Ergebnisse mit 15 gültigen Stellen, in Dreiergruppen. Geräte, die noch die bisherigen Standardwerte hatten (10 Stellen, ohne Gruppen), wechseln mit dieser Version einmal. [[Precision (significant digits)]] und [[Digit grouping (1,000)]] in den [[Settings]] stellen es zurück ([Das Ergebnis lesen](#results)).
 - **Einlesen in die Rechennotizen**: [[More ▾]] → [[Open a file]] in den Notizen liest eine .txt- oder .csv-Datei, und Text oder eine Datei, die eine andere App mit „Teilen“ → QCalc sendet, wird ebenfalls übernommen ([Rechennotizen](#notes)).
@@ -214,7 +217,18 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Öffnen Sie [[Lists: functions, units, constants]] über ☰.
 :step: Wählen Sie einen Reiter und tippen Sie einen Teil eines Namens in das Feld oben.
 :step: Tippen Sie auf einen Eintrag, um die Beschreibung zu lesen; [[Insert]] setzt ihn ins Eingabefeld.
-:tip: Im Reiter der eigenen Definitionen speichern Sie Variablen (r = 5 cm) und Funktionen; sie bleiben für das nächste Mal erhalten.
+:tip: Der Reiter der eigenen Definitionen ist die Liste Ihrer Variablen und Funktionen ([Eigene Variablen und Funktionen](#variables)). Mit den Feldern unten gespeicherte Variablen (r = 5 cm) und Funktionen bleiben für das nächste Mal erhalten.
+
+## variables | Eigene Variablen und Funktionen
+:what: Die Variablen, die Sie mit `k := 2` oder `r = 5 cm` festlegen, und die Funktionen, die Sie mit `f(x) := x^2 + 1` festlegen, mit ihren Werten auf einem Bildschirm. Sobald es mindestens eine gibt, steht über dem Eingabefeld eine Schaltfläche wie [[!Variablen 2]] (die Zahl der Variablen und Funktionen).
+:step: Drücken Sie die Schaltfläche [[Variables]] über dem Eingabefeld. Der Reiter [[My own]] von [[Lists: functions, units, constants]] im Menü ist derselbe Bildschirm.
+:step: Die Variablen stehen oben, mit ihren Werten. Eine Variable mit einem Ausdruck zeigt auch den ausgerechneten Wert (w = 3 k = 6).
+:step: Tippen Sie auf einen Namen, um ihn ins Eingabefeld zu setzen (eine Funktion mit dem Cursor zwischen den Klammern).
+:step: ⋯ rechts: [[Change the value]] ([[Change the expression]] bei einer Funktion), [[Rename]] oder [[Delete]]. Alles lässt sich gleich danach mit [[Undo]] zurücknehmen.
+:example: `k := 2` → [[Variables]] → ⋯ von k → [[Change the value]] → 3. Jetzt ist `k + 1` gleich 4.
+:tip: Was `:=` oder `=` festlegt, ist als „vorübergehend“ markiert und verschwindet, wenn die App geschlossen wird. Was Sie mit [[Save variable]] in den Feldern unten speichern, bleibt. Eine Änderung des Werts oder des Namens ändert daran nichts.
+:tip: Die Namen in den Rechennotizen (`Miete = 850 EUR`) gelten nur in ihrer Notiz und sind keine Variablen des Rechners. Sie stehen unten, nach Notizen geordnet; ein Tippen öffnet die Notiz an dieser Zeile.
+:mistake: Einen Namen, den QCalc schon verwendet (m für den Meter, pi …), können Sie nicht vergeben: Wählen Sie einen anderen.
 
 ## currencies | Währungen und Wechselkurse
 :what: Währungen werden wie `100 USD to EUR` umgerechnet. Die Wechselkurse werden beim Öffnen der App von selbst aktualisiert (beim Start oder wenn Sie zur App zurückkehren; eine Internetverbindung ist nötig). Beim Roaming im Ausland und im Datensparmodus geschieht das nicht von selbst; drücken Sie bei Bedarf [[Update now]].

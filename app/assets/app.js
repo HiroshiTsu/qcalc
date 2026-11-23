@@ -250,7 +250,7 @@
   // the section of the manual for each panel and tool (a panel can give its own with p.help, as the
   // graph does for its tools); PRO_HELP: for each feature of QCalc Pro; FORM_HELP: for each form
   const HELP = {
-    examples: 'examples', 'cat-functions': 'lists', 'cat-units': 'lists', 'cat-variables': 'lists', defs: 'lists',
+    examples: 'examples', 'cat-functions': 'lists', 'cat-units': 'lists', 'cat-variables': 'lists', defs: 'variables',
     rates: 'currencies', plot: 'graph-2d', shapes: 'shapes', profile: 'profile', sections: 'measured', notes: 'notes',
     stats: 'stats', convert: 'convert', tools: 'find-tools', settings: 'settings', about: 'about', licenses: 'about',
     pro: 'pro', price: 'price', percent: 'percent', unitprice: 'unit-price', split: 'split', loan: 'loan',
@@ -1876,11 +1876,24 @@
   // it (x is 5 in the forms too), which is easy to do by mistake when an equation was meant: a
   // message says so and offers to take the definition back.
   const definedVars = new Set(); // the names of the user's variables
+  // (1.16.0) the functions made with f(x) := … (temporary: the engine does not list them in user_defs, see userDefs):
+  // name → { sig: "f(x)" as typed, expr: its expression as the engine wrote it }. Kept for the page's session (a page
+  // opened again keeps the engine, and with it these functions; a new start of the app has neither)
+  const tempFuncs = (() => {
+    const m = new Map();
+    try { for (const [k, v] of JSON.parse(sessionStorage.getItem('qalc.tempfuncs') || '[]')) if (v && typeof v.sig === 'string' && typeof v.expr === 'string') m.set(String(k), v); } catch (e) { }
+    const keep = () => { try { sessionStorage.setItem('qalc.tempfuncs', JSON.stringify(Array.from(m))); } catch (e) { } };
+    return { get size() { return m.size; }, has: (k) => m.has(k), get: (k) => m.get(k), entries: () => Array.from(m),
+      set: (k, v) => { m.set(k, v); keep(); }, delete: (k) => { m.delete(k); keep(); } };
+  })();
+  let defCount = 0; // variables and functions of the user (the button "Variables" above the input field)
   async function refreshDefined() {
     const r = await Bridge.send('user_defs');
     if (!r.ok) return;
     definedVars.clear();
     for (const v of r.variables || []) definedVars.add(v.name);
+    defCount = (r.variables || []).length + (r.functions || []).filter((f) => !tempFuncs.has(f.name)).length + tempFuncs.size;
+    updateVarsBtn();
   }
   // the arguments of save(…) as the engine writes it, split at the commas outside brackets and quotes; null for
   // anything else (save(2, 'k') + 1, or a bracket not closed)
@@ -1912,6 +1925,7 @@
     const fm = /^\s*([^\s(]+)\s*\(/.exec(nm[2]);
     const name = fm ? fm[1] : nm[2].trim();
     const kind = fm || new RegExp('^\\s*' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(').test(expr) ? 'function' : 'variable';
+    if (kind === 'function') tempFuncs.set(name, { sig: fm ? nm[2].trim() : name + '(x)', expr: args[0] });
     invalidateCatalogs();
     const shown = kind === 'function' ? name + '()' : name;
     toast(kind === 'function' ? trf('{0} is defined', '{0} を定義しました', shown)
@@ -1919,6 +1933,7 @@
     [tr('Undo', '取り消す'), async () => {
       const d = await Bridge.send('delete_def', { kind, name });
       if (!d.ok) { toast(localMessage(d.error)); return; }
+      if (kind === 'function') tempFuncs.delete(name);
       invalidateCatalogs();
       await refreshDefined();
       toast(trf('The definition of {0} was taken back', '{0} の定義を取り消しました', shown));
@@ -16183,42 +16198,193 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   }
 
   // ----------------------------------------------------- user definitions
+  // (1.16.0, feature/variables, the owner's request of 11-23 11:16: like the Environment of RStudio) "My own" in Lists
+  // lists the user's variables with their values first, then the functions, then the names in the calculation notes;
+  // the button "Variables" above the input field (shown when there is at least one definition) opens it too. A tap on
+  // a variable or a function puts its name into the input field; ⋯ changes its value (or expression), renames or
+  // deletes it, with Undo after each. What k := 2, x = 5 and f(x) := … make is temporary (save(): gone when the app is
+  // closed, marked "temporary"), and stays temporary when it is changed, renamed or brought back: save() again, run as
+  // "=" runs it but not kept as ans (preview false, store false); what the fields below save is kept (define_var,
+  // define_func). Functions made with := are not in the engine's user_defs: the app keeps their expressions from the
+  // definition (tempFuncs) and checks in the engine's list of functions that they are still there. The names of the
+  // calculation notes ("rent = 85000 JPY") are no variables of the calculator (a name stands for its expression in its
+  // memo only, nothing is defined in the engine): they are listed under their memo, and a tap opens the memo there.
+  async function userDefs() {
+    const r = await Bridge.send('user_defs');
+    if (!r.ok) return r;
+    const variables = r.variables || [], functions = (r.functions || []).map((f) => Object.assign({ sig: f.name + '(' + ['x', 'y', 'z'].filter((v) => hasVar(f.expr, v)).join(', ') + ')' }, f, { temporary: false }));
+    if (tempFuncs.size) {
+      let cat = null;
+      try { cat = await loadCatalog('functions'); } catch (e) { }
+      for (const [name, t] of tempFuncs.entries()) {
+        if (cat && !cat.some((it) => it.name === name && it.local)) { tempFuncs.delete(name); continue; }
+        if (!functions.some((f) => f.name === name)) functions.push({ name, sig: t.sig, expr: t.expr, temporary: true });
+      }
+    }
+    return { ok: true, variables, functions };
+  }
+  // the names in the calculation notes, memo by memo: [{ id, title, names: [{ name, expr, line }] }]
+  function noteNames() {
+    const saved = store.get('qalc.notes', null) || {};
+    const out = [];
+    for (const m of Array.isArray(saved.memos) ? saved.memos : []) {
+      const names = [];
+      (m.lines || []).forEach((l, i) => { const a = NOTE_ASSIGN.exec(String(l)); if (a && names.length < 30) names.push({ name: a[1], expr: a[2].trim(), line: i }); });
+      if (names.length) out.push({ id: m.id, title: m.title || '', names });
+    }
+    return out;
+  }
+  // a variable or function defined (again): '' when it worked, else the message. temp: with save(), as := does (shadow:
+  // a built-in name may be hidden, as x = 5 hides the unknown x: only to bring back what was deleted)
+  async function defineAgain(kind, name, sig, value, temp, shadow) {
+    if (!temp) {
+      const r = await Bridge.send(kind === 'function' ? 'define_func' : 'define_var', kind === 'function' ? { name, expr: value } : { name, value });
+      if (!r.ok) return localMessage(r.error) || tr('Could not save it', '保存できませんでした');
+      const err = (r.messages || []).find((m) => m.type === 'error');
+      return err ? localMessage(err.text) : '';
+    }
+    if (/["'\\]/.test(sig) || /"/.test(value)) return tr('The name cannot have quotes', '名前に引用符は使えません');
+    const r = await Bridge.send('calc', { expr: 'save((' + value + '), "' + sig + '")', opts: engineOpts(), timeout: 3000, store: false, preview: false });
+    if (!r.ok) return localMessage(r.error) || tr('Could not save it', '保存できませんでした');
+    const msgs = r.messages || [];
+    if (!shadow && msgs.some((m) => /deactivated/.test(m.text))) {
+      await Bridge.send('delete_def', { kind, name });
+      return trf('"{0}" is already a name in QCalc (a unit, a constant or a function): choose another', '「{0}」は QCalc の中ですでに使われている名前です（単位・定数・関数）。別の名前にしてください', name);
+    }
+    const err = msgs.find((m) => m.type === 'error');
+    if (err) return localMessage(err.text);
+    if (kind === 'function') tempFuncs.set(name, { sig, expr: value });
+    return '';
+  }
   function openDefs() {
-    const p = panel('defs', tr('User-defined variables and functions', 'ユーザー定義の変数・関数'), (p) => {
-      const list = el('div');
+    const p = panel('defs', tr('Your variables and functions', '自分の変数と関数'), (p) => {
+      const list = el('div', { class: 'dv-list' });
       const vName = el('input', { placeholder: tr('e.g. r', '例：r'), autocapitalize: 'off' });
       const vVal = el('input', { placeholder: tr('e.g. 5 cm, 2*pi', '例：5 cm、2*pi'), autocapitalize: 'off' });
       const fName = el('input', { placeholder: tr('e.g. hyp', '例：hyp'), autocapitalize: 'off' });
       const fExpr = el('input', { placeholder: tr('e.g. pi*x^2 (arguments x, y, z)', '例：pi*x^2（引数は x, y, z）'), autocapitalize: 'off' });
       const addVar = el('button', { class: 'btn primary', text: tr('Save variable', '変数を保存') });
       const addFn = el('button', { class: 'btn primary', text: tr('Save function', '関数を保存') });
-      p.body.append(listTabs('defs'),
-        el('div', { class: 'section-title', text: tr('Saved', '保存済み') }), list,
+      p.body.append(listTabs('defs'), list,
         el('div', { class: 'section-title', text: tr('Add or change a variable', '変数を追加・変更') }),
         el('div', { class: 'form-row' }, el('label', { text: tr('Name', '名前') }), vName),
         el('div', { class: 'form-row' }, el('label', { text: tr('Value (an expression is fine)', '値（式も可）') }), vVal), addVar,
         el('div', { class: 'section-title', text: tr('Add or change a function', '関数を追加・変更') }),
         el('div', { class: 'form-row' }, el('label', { text: tr('Name', '名前') }), fName),
         el('div', { class: 'form-row' }, el('label', { text: tr('Expression', '式') }), fExpr,
-          el('div', { class: 'form-hint', text: tr('Write the arguments as x, y and z. Example: save sqrt(x^2 + y^2) as "hyp", and hyp(3, 4) = 5.', '引数は x, y, z で書きます。例：「hyp」に sqrt(x^2 + y^2) を保存すると hyp(3, 4) = 5。') })), addFn);
+          el('div', { class: 'form-hint', text: tr('Write the arguments as x, y and z. Example: save sqrt(x^2 + y^2) as "hyp", and hyp(3, 4) = 5.', '引数は x, y, z で書きます。例：「hyp」に sqrt(x^2 + y^2) を保存すると hyp(3, 4) = 5。') })), addFn,
+        el('div', { class: 'form-hint', text: tr('A tap on a name puts it into the input field; ⋯ changes, renames or deletes it. What k := 2 or f(x) := … makes is temporary: it is gone when the app is closed. What is saved here stays.', '名前をタップすると入力欄に入ります。⋯ で値の変更・名前の変更・削除ができます。k := 2 や f(x) := … で決めたものは一時的で、アプリを閉じると消えます。ここで保存したものは残ります。') }));
+      let seq = 0;
+      const changed = async () => { invalidateCatalogs(); await refreshDefined(); refresh(); if (CF.id) formChanged(); else exprChanged(); };
+      // ⋯ of a variable or a function
+      const actions = async (kind, d) => {
+        const fn = kind === 'function', shown = fn ? d.sig : d.name;
+        const acts = [['val', fn ? tr('Change the expression', '式を変える') : tr('Change the value', '値を変える')], ['ren', tr('Rename', '名前を変える')]];
+        if (fn && hasVar(d.expr, 'x') && !hasVar(d.expr, 'z')) acts.push(['graph', tr('Graph', 'グラフ')]);
+        acts.push(['del', tr('Delete', '削除'), 'danger']);
+        const k = await sheet(shown + ' = ' + clip(toDisplay(fn ? d.expr : d.value), 60) + (d.temporary ? '  ' + tr('(temporary)', '（一時的）') : ''), acts);
+        if (k === 'graph') { graphOf(d.name + (hasVar(d.expr, 'y') ? '(x, y)' : '(x)')); return; }
+        if (k === 'val') {
+          const old = fn ? d.expr : d.value;
+          const nv = await promptSheet(fn ? trf('Expression of {0}', '{0} の式', shown) : trf('Value of {0}', '{0} の値', d.name), toDisplay(old), fn ? tr('e.g. x^2 + 1', '例：x^2 + 1') : tr('e.g. 5 cm, 2 π', '例：5 cm、2 π'), tr('Change', '変える'));
+          if (nv === null || !nv.trim() || normalizeExpr(nv) === old) return;
+          const e = await defineAgain(kind, d.name, d.sig || d.name, normalizeExpr(nv), d.temporary);
+          if (e) { toast(e, 4000); return; }
+          await changed();
+          toast(trf('{0} is now {1}', '{0} を {1} にしました', shown, clip(nv.trim(), 24)), 6000, [tr('Undo', '元に戻す'), async () => {
+            const e2 = await defineAgain(kind, d.name, d.sig || d.name, old, d.temporary, true);
+            if (e2) toast(e2, 4000); else { await changed(); toast(trf('{0} is back to {1}', '{0} を元の {1} に戻しました', shown, clip(toDisplay(old), 24)), 2500); }
+          }]);
+        } else if (k === 'ren') {
+          const nn = await promptSheet(trf('New name of {0}', '{0} の新しい名前', shown), d.name, tr('e.g. rate', '例：rate'), tr('Rename', '変える'));
+          const to = nn === null ? '' : nn.trim();
+          if (!to || to === d.name) return;
+          if (!/^[\p{L}_][\p{L}\p{N}_]*$/u.test(to)) { toast(tr('A name is letters, digits and _, and does not start with a digit', '名前は文字・数字・_ で、数字で始めません'), 4000); return; }
+          const all = await userDefs();
+          if (all.ok && (fn ? all.functions : all.variables).some((x) => x.name === to)
+            && !(await confirmSheet(trf('"{0}" exists already. Replace it?', '「{0}」はもうあります。置き換えますか？', to), tr('Replace', '置き換える')))) return;
+          const sig = fn ? to + d.sig.slice(d.sig.indexOf('(')) : to;
+          const e = await defineAgain(kind, to, sig, fn ? d.expr : d.value, d.temporary);
+          if (e) { toast(e, 4500); return; }
+          await Bridge.send('delete_def', { kind, name: d.name });
+          if (fn) tempFuncs.delete(d.name);
+          await changed();
+          toast(trf('{0} is now called {1}', '{0} の名前を {1} にしました', shown, fn ? sig : to), 6000, [tr('Undo', '元に戻す'), async () => {
+            const e2 = await defineAgain(kind, d.name, d.sig || d.name, fn ? d.expr : d.value, d.temporary, true);
+            if (e2) { toast(e2, 4000); return; }
+            await Bridge.send('delete_def', { kind, name: to });
+            if (fn) tempFuncs.delete(to);
+            await changed();
+          }]);
+        } else if (k === 'del') {
+          const d0 = await Bridge.send('delete_def', { kind, name: d.name });
+          if (!d0.ok) { toast(localMessage(d0.error)); return; }
+          if (fn) tempFuncs.delete(d.name);
+          await changed();
+          toast(trf('{0} was deleted', '{0} を削除しました', shown), 7000, [tr('Undo', '元に戻す'), async () => {
+            const e2 = await defineAgain(kind, d.name, d.sig || d.name, fn ? d.expr : d.value, d.temporary, true);
+            if (e2) toast(e2, 4000); else { await changed(); toast(trf('{0} is back', '{0} を元に戻しました', shown), 2000); }
+          }]);
+        }
+      };
+      const row = (kind, d, valueText) => {
+        const fn = kind === 'function';
+        const val = el('span', { class: 'dv-val', text: valueText });
+        const main = tapButton({ class: 'dv-main', 'aria-label': trf('Insert {0}', '{0} を入力欄に入れる', fn ? d.name + '()' : d.name) + ' ' + valueText },
+          () => useItem(fn ? d.name + '()' : d.name, fn ? 1 : 0));
+        main.append(el('span', { class: 'dv-name mono', text: fn ? d.sig : d.name }), val,
+          d.temporary ? el('span', { class: 'dv-tag', text: tr('temporary', '一時的') }) : '');
+        const more = tapButton({ class: 'icon-btn dv-more', text: '⋯', 'aria-label': trf('Change, rename or delete {0}', '{0} の変更・名前・削除', fn ? d.sig : d.name) }, () => actions(kind, d));
+        const r = el('div', { class: 'dv-row', role: 'listitem' }, main, more);
+        r.dataset.kind = kind; r.dataset.name = d.name;
+        return { node: r, val };
+      };
       const refresh = async () => {
+        const my = ++seq;
+        const r = await userDefs();
+        if (my !== seq) return;
         list.textContent = '';
-        const r = await Bridge.send('user_defs');
-        if (!r.ok) { list.textContent = localMessage(r.error); return; }
-        if (!r.variables.length && !r.functions.length) list.append(el('div', { class: 'card muted', text: tr('None yet.', 'まだありません。') }));
-        const row = (kind, name, body) => el('div', { class: 'item' }, el('div', { class: 'row1' },
-          el('div', { class: 't' }, el('span', { class: 'mono', text: kind === 'function' ? name + '()' : name }), el('div', { class: 'n', text: body })),
-          el('div', { class: 'acts' },
-            // a function of x (and y): its graph, 2D or 3D (1.8.4)
-            kind === 'function' && hasVar(body, 'x') && !hasVar(body, 'z') ? el('button', { class: 'btn', text: tr('Graph', 'グラフ'), onclick: () => graphOf(name + (hasVar(body, 'y') ? '(x, y)' : '(x)')) }) : '',
-            el('button', { class: 'btn', text: tr('Insert', '挿入'), onclick: () => useItem(kind === 'function' ? name + '()' : name, kind === 'function' ? 1 : 0) }),
-            el('button', { class: 'btn danger', text: tr('Delete', '削除'), onclick: async () => {
-              if (!(await confirmSheet(trf('Delete "{0}"?', '「{0}」を削除しますか？', name), tr('Delete', '削除する')))) return;
-              const d = await Bridge.send('delete_def', { kind, name });
-              if (!d.ok) toast(localMessage(d.error)); else { invalidateCatalogs(); refresh(); }
-            } }))));
-        for (const v of r.variables) list.append(row('variable', v.name, '= ' + v.value + (v.temporary ? tr(' (temporary: gone when the app is closed)', '（一時的：アプリを閉じると消えます）') : '')));
-        for (const f of r.functions) list.append(row('function', f.name, f.expr));
+        if (!r.ok) { list.append(el('div', { class: 'card muted', text: localMessage(r.error) })); return; }
+        if (!r.variables.length && !r.functions.length) {
+          list.append(el('div', { class: 'card muted dv-empty', text: tr('No variables or functions yet. Calculate k := 2 (or f(x) := x^2 + 1) and they are listed here; or save one with the fields below.', 'まだ変数・関数はありません。k := 2（関数は f(x) := x^2 + 1）のように計算すると、ここに出ます。下の欄で保存することもできます。') }));
+        }
+        if (r.variables.length) {
+          const box = el('div', { role: 'list', 'aria-label': tr('Variables', '変数') });
+          list.append(el('div', { class: 'section-title', text: trf('Variables ({0})', '変数（{0}）', r.variables.length) }), box);
+          const vals = [];
+          for (const v of r.variables) {
+            const x = row('variable', v, '= ' + displayText(v.value));
+            box.append(x.node);
+            vals.push([v, x.val]);
+          }
+          // the value worked out (2 π ≈ 6.28…, a value that has other names in it), one at a time
+          for (const [v, node] of vals) {
+            const c = await Bridge.send('calc', { expr: v.name, opts: engineOpts(), timeout: 1500 });
+            if (my !== seq) return;
+            if (!c.ok || !c.result || c.timeout || c.deferred || (c.messages || []).some((m) => m.type === 'error')) continue;
+            const flat = (t) => String(t).replace(/[\s\u202f\u2009()]/g, '');
+            if (flat(c.result) !== flat(toDisplay(v.value)) && flat(c.result) !== flat(v.value)) node.textContent = '= ' + displayText(v.value) + '  ' + (c.approx ? '≈ ' : '= ') + displayText(clip(c.result, 40));
+          }
+        }
+        if (r.functions.length) {
+          const box = el('div', { role: 'list', 'aria-label': tr('Functions', '関数') });
+          list.append(el('div', { class: 'section-title', text: trf('Functions ({0})', '関数（{0}）', r.functions.length) }), box);
+          for (const f of r.functions) box.append(row('function', f, '= ' + displayText(f.expr)).node);
+        }
+        const nn = noteNames();
+        if (nn.length) {
+          list.append(el('div', { class: 'section-title', text: tr('Names in the calculation notes', '計算メモの中の名前') }),
+            el('div', { class: 'form-hint dv-note-hint', text: tr('These work only in their memo, not in the calculator. A tap opens the memo there.', 'そのメモの中だけで使える名前で、電卓の変数ではありません。タップするとメモのその行を開きます。') }));
+          for (const m of nn) {
+            const box = el('div', { role: 'list', 'aria-label': m.title });
+            list.append(el('div', { class: 'dv-memo', text: '📝 ' + m.title }), box);
+            for (const x of m.names) {
+              const b = tapButton({ class: 'dv-main dv-noteline', 'aria-label': trf('Open “{0}” at {1}', '「{0}」の {1} を開く', m.title, x.name) }, () => { const np = openNotesTool(); if (np.showMemo) np.showMemo(m.id, x.line); });
+              b.append(el('span', { class: 'dv-name', text: x.name }), el('span', { class: 'dv-val', text: '= ' + x.expr }));
+              box.append(el('div', { class: 'dv-row', role: 'listitem' }, b));
+            }
+          }
+        }
       };
       const save = async (cmd, params, clear) => {
         const r = await Bridge.send(cmd, params);
@@ -16226,7 +16392,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         const err = (r.messages || []).find((m) => m.type === 'error');
         toast(err ? localMessage(err.text) : (r.saved === false ? tr('Set, but it could not be saved to a file', '設定しましたが、ファイルに保存できませんでした') : tr('Saved', '保存しました')));
         clear.forEach((i) => { i.value = ''; });
+        if (cmd === 'define_func') tempFuncs.delete(params.name); // (saved now: no longer temporary)
         invalidateCatalogs();
+        await refreshDefined();
         refresh();
       };
       addVar.addEventListener('click', () => save('define_var', { name: normalizeExpr(vName.value), value: normalizeExpr(vVal.value) }, [vName, vVal]));
@@ -16236,6 +16404,15 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     p.refresh();
     return p;
   }
+  // the button "Variables n" above the input field: shown when the user has variables or functions
+  function updateVarsBtn() {
+    const b = $('#varsbtn');
+    if (!b) return;
+    b.hidden = !defCount;
+    b.textContent = trf('Variables {0}', '変数 {0}', defCount);
+    b.setAttribute('aria-label', trf('Your variables and functions ({0})', '自分の変数と関数（{0}）', defCount));
+  }
+  if ($('#varsbtn')) $('#varsbtn').addEventListener('click', () => { vibrate(); store.set('qalc.lists.tab', 'defs'); openDefs(); });
   function invalidateCatalogs() {
     callKind.clear();
     exactCache.clear(); // (a name in a kept integral may mean something else now)
@@ -17862,6 +18039,12 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (empty) into(memo()); else L.splice(end, L.length - end, ...got.lines);
         save(); fillPick(); titleIn.value = memo().title; build(); run(empty ? 0 : end);
         toast(trf('Added to “{0}”: {1} lines', '「{0}」に {1} 行を足しました', memo().title, n), 2500);
+      };
+      // (1.16.0) from the list of variables: a memo shown at one of its lines
+      p.showMemo = (id, line) => {
+        if (!N.memos.some((m) => m.id === id)) return;
+        if (N.cur !== id) { N.cur = id; N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0); }
+        setTimeout(() => { const f = list.querySelectorAll('input')[line]; if (f) { f.scrollIntoView({ block: 'center' }); f.classList.add('note-flash'); setTimeout(() => f.classList.remove('note-flash'), 1800); } }, 150);
       };
       const openBtn = tapButton({ class: 'btn', text: tr('Open a file', 'ファイルを開く') }, () => openImportFile());
       const txtBtn = tapButton({ class: 'btn', text: tr('Save as text', 'テキストで保存') + lock() }, () => exp('txt'));
