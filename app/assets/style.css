@@ -1767,7 +1767,9 @@ body.hselect #history { padding-bottom: 150px; }
 .hedit .hedit-t { flex: 1 1 auto; font-weight: 600; }
 .hedit .hedit-n { flex-basis: 100%; order: 3; font-size: .9em; color: var(--muted); }
 .hedit .hedit-n[hidden] { display: none; }
-.hedit .hedit-new { min-height: 44px; padding: 6px 12px; background: var(--surface); }
+.hedit .hedit-new { min-height: 48px; padding: 6px 16px; background: var(--accent); color: var(--accent-text); border: 1px solid var(--accent); border-radius: 24px; font-weight: 700; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); } /* (1.16.0, R9: a button that stands out) */
+.hedit .hedit-tip { flex-basis: 100%; order: 4; font-size: .92em; line-height: 1.45; padding: 6px 8px; border-radius: 8px; background: var(--surface); }
+.hedit .hedit-tip[hidden] { display: none; }
 .hedit .hedit-x { width: 48px; height: 48px; border: 0; border-radius: 24px; background: transparent; color: inherit; font-size: 18px; }
 .h-item.editing { box-shadow: inset 3px 0 0 var(--accent); background: var(--accent-soft); border-radius: 8px; }
 /* (1.16.0, fix/hist-tap) a line whose answer is in the expression: framed in its color, as a cell a formula refers to */

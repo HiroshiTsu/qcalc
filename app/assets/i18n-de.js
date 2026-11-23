@@ -1,6 +1,11 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    "Touching an expression edits its line: = puts the new result in its place. For a new line, press \"As a new line\".": "Ein Tippen auf einen Ausdruck bearbeitet seine Zeile: = ersetzt sie durch das neue Ergebnis. Für eine neue Zeile „Als neue Zeile“ drücken.",
+    "This line was worked out in {0}: it is worked out in {0} again": "Diese Zeile wurde in {0} berechnet: Sie wird wieder in {0} berechnet",
+    "The angle unit of this line was not kept: it is worked out in {0}, as set now": "Die Winkeleinheit dieser Zeile ist nicht gespeichert: Sie wird wie jetzt eingestellt in {0} berechnet",
+    "Nothing changed: still editing the line": "Nichts geändert: Die Zeile wird weiter bearbeitet",
+    "A line above was edited: this answer may be out of date": "Eine Zeile darüber wurde bearbeitet: Dieses Ergebnis ist vielleicht veraltet",
     "#{0}: that line is no longer in the history": "#{0}: Diese Zeile ist nicht mehr im Verlauf (gelöscht)",
     "The answer of #{0} cannot be used in a calculation (too long, or text)": "Das Ergebnis von #{0} kann nicht in einer Rechnung verwendet werden (zu lang oder Text)",
     "#{0} is no longer in the history: this answer is the one from before": "#{0} wurde gelöscht: Dieses Ergebnis ist der Wert von vorher",

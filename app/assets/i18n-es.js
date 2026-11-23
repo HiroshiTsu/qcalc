@@ -13,6 +13,11 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "Touching an expression edits its line: = puts the new result in its place. For a new line, press \"As a new line\".": "Tocar una expresión edita su línea: = la sustituye por el nuevo resultado. Para una línea nueva, pulsa «Como línea nueva».",
+    "This line was worked out in {0}: it is worked out in {0} again": "Esta línea se calculó en {0}: se vuelve a calcular en {0}",
+    "The angle unit of this line was not kept: it is worked out in {0}, as set now": "No se guardó la unidad de ángulo de esta línea: se calcula en {0}, como está ajustado ahora",
+    "Nothing changed: still editing the line": "No se cambió nada: se sigue editando la línea",
+    "A line above was edited: this answer may be out of date": "Se editó una línea de arriba: este resultado puede estar desactualizado",
     "#{0}: that line is no longer in the history": "#{0}: esa línea ya no está en el historial (se borró)",
     "The answer of #{0} cannot be used in a calculation (too long, or text)": "El resultado de #{0} no se puede usar en un cálculo (demasiado largo o texto)",
     "#{0} is no longer in the history: this answer is the one from before": "#{0} se borró: este resultado es el de antes",

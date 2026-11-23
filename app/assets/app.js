@@ -1130,6 +1130,9 @@
         targetChanged();
         break;
       case 'clear':
+        // (1.16.0, the review of 11-24, R2: AC while a line of the history is edited stops the editing, as ✕ does: the history
+        // stays as it was, the field is empty; until then the editing went on, and the next new calculation took that line's place)
+        if (f === exprEl && histEdit) { endHistEdit(false); f.value = ''; targetChanged(); break; }
         if (f === exprEl) offerUndo(v); // AC is next to ⌫: a long expression cleared by mistake can be brought back
         f.value = '';
         targetChanged();
@@ -1210,7 +1213,7 @@
       const t = /^[=≈]/.test(pv) ? pv : last;
       if (!t) return;
       e.preventDefault();
-      copyText(t.replace(/^= /, ''));
+      copyText(ungroupText(t.replace(/^= /, ''))); // (1.16.0, R8: without the groups of digits)
     }
   });
   // some keyboards send a line break as text instead of an Enter key press
@@ -1427,6 +1430,24 @@
     const t = shownText(h);
     if (h.cmp) return t;
     return (h.approx && t.indexOf('≈') < 0 ? '≈ ' : '= ') + t;
+  }
+  // (1.16.0, the review of 11-24, R8) an answer as it is copied: as shown, but without the groups of digits (24690, not 24,690,
+  // which pasted back into QCalc is read as two values; a spreadsheet reads both)
+  function copyResultText(h) {
+    const plain = (x) => displayText(String(x || '').replace(/(\d)[\u202f\u2009](?=\d)/g, '$1'));
+    const t = plain(h.result);
+    return typeof h.tail === 'string' && h.tail ? t.replace(/…$/, '') + ' … ' + plain(h.tail) : t;
+  }
+  // a text as shown without the groups of digits (1,234,567.5 → 1234567.5; 1.234,5 → 1234,5), for the results that are copied
+  function ungroupText(t) {
+    let x = String(t || '').replace(/(\d)[\u202f\u2009\u00a0](?=\d)/g, '$1');
+    const g = NF.group === '.' ? '\\.' : NF.group === ',' ? ',' : NF.group === ' ' ? ' ' : null;
+    if (g) x = x.replace(new RegExp('(\\d)' + g + '(?=\\d{3}(?!\\d))', 'g'), '$1');
+    return x;
+  }
+  function copyDisplayResult(h) {
+    const t = copyResultText(h);
+    return h.cmp ? t : (h.approx && t.indexOf('≈') < 0 ? '≈ ' : '= ') + t;
   }
   function resultText(r) {
     if (!r || !r.result) return '';
@@ -1786,11 +1807,14 @@
 
   // ============================================================ commit
   let committing = false, stopping = false, busyTimer = null, commitWaiting = false;
-  async function commit() {
-    const raw = exprEl.value.trim();
+  // given (1.16.0, the review of 11-24, R5): an expression worked out as a new line without the field being read or changed
+  // (the next steps under an answer); until then they were put into the field and what was being typed was lost
+  async function commit(given) {
+    const raw = given !== undefined ? String(given).trim() : exprEl.value.trim();
     if (!raw || committing) return;
     // 1.12.0: "=" while the engine is starting is kept, and the expression in the field then is
     // calculated as soon as the engine is ready (startEngine); until 1.11.0 it only said so
+    if (!engineReady && given !== undefined) { toast(tr('The calculation engine is starting', '計算エンジンを準備中です'), 1500); return; }
     if (!engineReady) { commitWaiting = true; previewEl.textContent = tr('Starting the calculation engine… the result follows', '計算エンジンを準備中です。準備ができたら計算します'); return; }
     const expr = withoutOpenTo(normalizeExpr(raw));
     if (!expr) return;
@@ -1814,8 +1838,8 @@
       if (s >= 1) previewEl.textContent = trf('Calculating… {0} s (tap here to stop)', '計算中… {0} 秒（ここをタップで中止）', s);
     }, 1000);
     // (1.15.0) a line of the history being edited: worked out in its place (ans of the lines above it, not stored)
-    const editing = histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
-    if (histEdit && !editing) endHistEdit(true); // (the line was deleted meanwhile: a new line)
+    const editing = given === undefined && histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
+    if (given === undefined && histEdit && !editing) endHistEdit(true); // (the line was deleted meanwhile: a new line)
     // (1.16.0, feature/hist-excel: "#12", the answer of line 12, for the engine)
     const rx = editing ? null : expandHistRefs(expr, histNo + 1);
     if (rx && rx.error) { committing = false; clearInterval(busyTimer); previewEl.textContent = ''; msgEl.textContent = rx.error; msgEl.className = 'msg error'; return; }
@@ -1856,7 +1880,7 @@
       return;
     }
     const entry = {
-      expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base),
+      expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), angle: S.angle, // (angle: 1.16.0, R3)
       msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3), t: Date.now()
     };
     if (r.truncated) { // longer than MAX_RESULT: the engine ended it with "…" and sent its end
@@ -1877,8 +1901,11 @@
     if (over) history = trimHistory(history);
     const shortened = fitHistory();
     saveHistory();
-    dropUndo();
-    if (exprEl.value.trim() === raw) {
+    if (given === undefined) dropUndo();
+    if (given !== undefined) {
+      // (the field as it was: its own preview again)
+      if (exprEl.value.trim()) exprChanged(); else previewEl.textContent = '';
+    } else if (exprEl.value.trim() === raw) {
       exprEl.value = '';
       showPreview(null);
       autosize();
@@ -3759,7 +3786,7 @@
     else if (a === 'f-solve') openForm('solve', { eqs: [fx + ' = 0'] });
     else if (a === 'f-subst') openForm('subst', { f: fx, focus: 'a' });
     else if (a === 'details') openDetails(h);
-    else if (a === 'copy-res') copyText(shownText(h));
+    else if (a === 'copy-res') copyText(copyResultText(h));
     else if (a === 'copy-expr') copyText(h.expr);
     else if (a === 'edit') startHistEdit(h);
     else if (a === 'digits') recalcWithDigits(h);
@@ -3769,6 +3796,9 @@
     else if (a === 'del') {
       const i = history.indexOf(h);
       if (i < 0) return; // the history changed while the menu was open
+      // (1.16.0, the review of 11-24, R7: the line being edited is deleted: the editing ends, its expression stays in the field
+      // as a new line; Undo brings the line back, not the editing)
+      if (histEdit && histEdit.h === h) endHistEdit(true);
       history.splice(i, 1);
       historyChanged();
       toast(tr('Line deleted', '1 行を削除しました'), 5000, [tr('Undo', '元に戻す'), () => {
@@ -3854,7 +3884,8 @@
         return out;
       }
       const out = [D];
-      if (!/ ≈ /.test(h.result) && !h.approx) out.push({ id: 'frac', label: tr('As a fraction', '分数で'), expr: t, opts: { fraction: 'fraction', approx: 'exact' }, note: tr('As a fraction', '分数で') });
+      // (1.16.0, R6: also for a decimal that was approximated when its value is a fraction, 2/3 ≈ 0.666…, h.input "2/3")
+      if ((!/ ≈ /.test(h.result) && !h.approx) || (/^\(?[−-]?\d+\/\d+\)?$/.test(t) && !/\//.test(h.result))) out.push({ id: 'frac', label: tr('As a fraction', '分数で'), expr: t, opts: { fraction: 'fraction', approx: 'exact' }, note: tr('As a fraction', '分数で') });
       // (the scientific notation only where it changes something: from 10 000, and below 0.001)
       const v = Math.abs(Number(num));
       if (v >= 1e4 || (v > 0 && v < 1e-3)) out.push(SCI);
@@ -3869,8 +3900,7 @@
     if (s.id === 'graph') { const fx = functionOfX(h); if (fx && !(await graphOf(fx))) openPlotWith(fx); return; }
     if (s.id === 'convert') { openConverter(); return; }
     if (s.opts) { await keepWithOpts(s.expr, s.opts, s.note); return; }
-    setExpr(s.expr);
-    commit();
+    commit(s.expr); // (1.16.0, R5: the field is not touched)
   }
   // a value worked out with other settings of the display, kept as a line of the history with a note
   async function keepWithOpts(expr, opts, note) {
@@ -4060,7 +4090,7 @@
     const a = await sheet(row.label + '\n' + clip(row.shown, 200), [['ins', tr('Put the expression in the field', '式を入力欄に入れる')], ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy result', '結果をコピー')]]);
     if (a === 'ins') { setExpr(row.expr); focusExpr(); }
     else if (a === 'keep') { if (row.opts) await keepWithOpts(row.expr, row.opts, row.note); else { setExpr(row.expr); commit(); } }
-    else if (a === 'copy') copyText(row.shown);
+    else if (a === 'copy') copyText(ungroupText(row.shown)); // (1.16.0, R8)
   }
   function historyChanged() {
     fitHistory();
@@ -4080,17 +4110,35 @@
   const editBand = el('div', { id: 'hist-edit', class: 'hedit', role: 'region', hidden: true, 'aria-label': tr('Editing a line of the history', '履歴の行を直しています') });
   editBand.append(el('span', { class: 'hedit-t', text: tr('Editing a line of the history', '履歴の行を直しています') }),
     el('span', { class: 'hedit-n', hidden: true }),
+    // (1.16.0, the review of 11-24, R9: until 1.14 touching an expression put it into the field for a new line; shown once)
+    el('span', { class: 'hedit-tip', hidden: true, text: tr('Touching an expression edits its line: = puts the new result in its place. For a new line, press "As a new line".', '式のタップは、その行を直します。= でその行が置き換わります。新しい行にするには「新しい行にする」を押してください。') }),
     tapButton({ class: 'btn hedit-new', type: 'button', text: tr('As a new line', '新しい行にする') }, () => endHistEdit(true)),
     tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Stop editing (nothing changes)', '直すのをやめる（何も変わりません）') }, () => endHistEdit(false)));
   $('.entry').insertBefore(editBand, $('.entry').firstChild);
+  // (1.16.0, the review of 11-24, R3) The angle unit a line was worked out with (h.angle, kept from 1.16.0): editing it, working it
+  // out again (the lines below, other digits) and making its definitions again use it, not the setting of now (until then
+  // sin(30) worked out in degrees gave −0.988… after the setting went back to radians, without a word). A line of an earlier
+  // version has none: the setting of now, and the band says so when its expression has a function of angles.
+  const ANGLE_FN = /(^|[^\p{L}\p{N}_])(?:a|arc)?(?:sin|cos|tan|sec|csc|cot)(?!h)\s*\(|atan2\s*\(|arg\s*\(|cis\b|°/u;
+  const ANGLE_NAME = () => ({ rad: tr('radians', 'ラジアン'), deg: tr('degrees', '度'), gra: tr('gradians', 'グラード') });
+  const lineOpts = (h) => Object.assign(engineOpts(), h && h.angle ? { angle: h.angle } : {});
+  function angleNote(h) {
+    const N = ANGLE_NAME();
+    if (h.angle && h.angle !== S.angle) return trf('This line was worked out in {0}: it is worked out in {0} again', 'この行は{0}で計算しました。{0}のまま計算します', N[h.angle] || h.angle);
+    if (!h.angle && ANGLE_FN.test(String(h.expr || ''))) return trf('The angle unit of this line was not kept: it is worked out in {0}, as set now', 'この行の角度の単位は残っていないので、今の設定（{0}）で計算します', N[S.angle] || S.angle);
+    return '';
+  }
   function startHistEdit(h) {
     if (history.indexOf(h) < 0) return;
     if (histSel) closeHistSelect();
     if (!histEdit) histEdit = { h, keep: exprEl.value };
     else histEdit.h = h;
     const n = editBand.querySelector('.hedit-n'), b = Number(h.base || 10), now = Number(S.base);
-    n.textContent = b !== now ? trf('This line was in {0}; it is worked out in {1}, as set now', 'この行は {0} でした。今の設定の {1} で計算します', BASE_NAME[b] || String(b), BASE_NAME[now] || String(now)) : '';
+    n.textContent = [b !== now ? trf('This line was in {0}; it is worked out in {1}, as set now', 'この行は {0} でした。今の設定の {1} で計算します', BASE_NAME[b] || String(b), BASE_NAME[now] || String(now)) : '', angleNote(h)].filter(Boolean).join(' ');
     n.hidden = !n.textContent;
+    // (1.16.0, R9) the first time: what touching an expression does
+    const tip = editBand.querySelector('.hedit-tip');
+    if (tip) { tip.hidden = store.get('qalc.hedittip', false) === true; store.set('qalc.hedittip', true); }
     editBand.hidden = false;
     exprEl.value = toDisplay(h.expr);
     exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length);
@@ -4133,20 +4181,20 @@
       return v ? pre + '(' + v + ')' : m;
     });
   }
-  const ENTRY_KEYS = ['expr', 'result', 'approx', 'cmp', 'base', 'msgs', 'cut', 'tail', 'input', 'big', 'edited'];
+  const ENTRY_KEYS = ['expr', 'result', 'approx', 'cmp', 'base', 'angle', 'msgs', 'cut', 'tail', 'input', 'big', 'edited'];
   const snapEntry = (h) => { const s = {}; for (const k of ENTRY_KEYS) if (k in h) s[k] = h[k]; return s; };
   function putEntry(h, s) { for (const k of ENTRY_KEYS) delete h[k]; Object.assign(h, s); }
   // a line worked out again in place (the settings of now): its new fields, or { error }
   async function recalcLine(i, expr) {
     const rx = refsAt(expr, i);
     if (rx.error) return { error: rx.error };
-    const r = await Bridge.send('calc', { expr: withAns(expr, i), opts: engineOpts(), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    const r = await Bridge.send('calc', { expr: withAns(expr, i), opts: lineOpts(history[i]), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
     if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
     if (!r.ok || r.timeout || !r.result) {
       const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
       return { error: r.timeout ? tr('The time limit was reached', '制限時間を過ぎました') : localMessage(err ? err.text : r.error) || tr('Check the expression', '式を確認してください') };
     }
-    const s = { expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3) };
+    const s = { expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), angle: (history[i] && history[i].angle) || S.angle, msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3) };
     if (r.truncated) { s.cut = true; if (typeof r.tail === 'string' && r.tail) s.tail = r.tail; s.msgs.push({ type: 'warning', text: cutMessage(r) }); }
     if (typeof r.input === 'string' && r.input) { if (r.input.length > MAX_INPUT) s.big = true; else s.input = r.input; }
     return s;
@@ -4171,7 +4219,7 @@
     for (const nm of names) {
       let k = -1;
       for (let j = history.length - 1; j >= 0; j--) if (defName(history[j].expr) === nm) { k = j; break; }
-      if (k >= 0) await Bridge.send('calc', { expr: withAns(history[k].expr, k), opts: engineOpts(), timeout: timeLimit() * 1000, store: false, preview: false });
+      if (k >= 0) await Bridge.send('calc', { expr: withAns(history[k].expr, k), opts: lineOpts(history[k]), timeout: timeLimit() * 1000, store: false, preview: false });
     }
     if (names.size) { invalidateCatalogs(); await refreshDefined(); }
   }
@@ -4223,7 +4271,7 @@
   }
   // "=" while a line is edited: that line gets the new expression and result (s: the fields of recalcLine)
   async function applyHistEdit(h, s) {
-    const i = history.indexOf(h);
+    const i = history.indexOf(h), keepField = histEdit ? histEdit.keep : '';
     const before = new Map([[h, snapEntry(h)]]);
     const names = new Set([defName(h.expr), defName(s.expr)].filter(Boolean));
     const touched = new Set(names);
@@ -4241,6 +4289,31 @@
     if (deps.length) {
       const a = await sheet(trf('{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?', '下の {0} 行は、この行の答え（ans や #{1}）や変数を使っています。計算し直しますか？', deps.length, h.n),
         [['all', trf('Also the {0} lines below', '下の {0} 行も計算し直す', deps.length)], ['one', tr('Only this line', 'この行だけ')]]);
+      if (a === null) {
+        // (1.16.0, the review of 11-24, R4) Cancel: nothing changes, as before "=", and the line is being edited again with the new
+        // expression in the field (until then the line stayed edited, its variable changed, and the lines below were not
+        // worked out again, while the toast said "Edited")
+        putEntry(h, before.get(h));
+        saveHistory();
+        redrawEntries(new Set([h]));
+        await engineAsHistory(history.indexOf(h) === history.length - 1, touched);
+        histEdit = { h, keep: keepField };
+        startHistEdit(h);
+        exprEl.value = toDisplay(s.expr); exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length); exprChanged();
+        toast(tr('Nothing changed: still editing the line', '何も変えていません（直している途中に戻しました）'), 2500);
+        return;
+      }
+      if (a === 'one') {
+        // (R4) the lines below that were not worked out again: a note that their answers may be out of date
+        for (const j of deps) {
+          const d = history[j];
+          if (!d) continue;
+          if (!before.has(d)) before.set(d, snapEntry(d));
+          d.msgs = (d.msgs || []).filter((m) => !m.stale).concat([{ type: 'warning', text: tr('A line above was edited: this answer may be out of date', '上の行が直されたので、この答えは古いかもしれません'), stale: true }]);
+        }
+        saveHistory();
+        redrawEntries(new Set(before.keys()));
+      }
       if (a === 'all') {
         for (const j of deps) {
           const d = history[j];
@@ -4261,6 +4334,7 @@
     const lastIdx = history.length - 1, lastChanged = Array.from(before.keys()).some((x) => history.indexOf(x) === lastIdx);
     await engineAsHistory(lastChanged, touched);
     announce(h);
+    refreshSteps(); // (the next steps under the newest answer again, when it was the line edited)
     revealHistLine(h); // (again with the toast up: the line not under it)
     toast(done ? trf('Edited, and {0} lines below worked out again', '直しました（下の {0} 行も計算し直しました）', done) : tr('Edited', '直しました'), 7000,
       [tr('Undo', '元に戻す'), async () => {
@@ -4399,6 +4473,7 @@
     else if (k === 'clear') {
       if (!history.length) { toast(tr('The history is empty', '履歴はありません'), 1400); return; }
       if (!(await confirmSheet(tr('Clear the whole history?', '計算履歴をすべて消去しますか？'), tr('Clear', '消去する')))) return;
+      if (histEdit) endHistEdit(true); // (1.16.0, R7: as for a deleted line)
       const old = history;
       history = [];
       historyChanged();
@@ -17165,7 +17240,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   function copySelected() {
     const list = history.filter((h) => histSel && histSel.has(h));
     if (!list.length) { toast(tr('Nothing is selected', '何も選ばれていません'), 1500); return; }
-    copyText(list.map((h) => toDisplay(h.expr) + ' ' + displayResult(h)).join('\n'));
+    copyText(list.map((h) => toDisplay(h.expr) + ' ' + copyDisplayResult(h)).join('\n'));
   }
   // the answer of a line as a cell of a spreadsheet: the decimal value when there is one (1/5523 ≈ 0.000181… → 0.000181…, as
   // a spreadsheet would read 1/5523 as a date), without the groups of digits, with the decimal sign of the number format
@@ -20338,7 +20413,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     let expr = h.expr;
     const rx0 = refsAt(expr, i);
     if (rx0.error) { toast(rx0.error, 3500); return; } // (1.16.0: "#12" of a line that is gone)
-    const calc = (e) => Bridge.send('calc', { expr: withAns(e, i), opts: Object.assign(engineOpts(), { precision: n }), timeout: timeLimit() * 1000, max_chars: MAX_RESULT });
+    const calc = (e) => Bridge.send('calc', { expr: withAns(e, i), opts: Object.assign(lineOpts(h), { precision: n }), timeout: timeLimit() * 1000, max_chars: MAX_RESULT });
     let r = await calc(expr);
     const vd = /^\s*[\p{L}_][\p{L}\p{N}_]*\s*:?=(?!=)\s*(.+)$/su.exec(expr);
     if (r.ok && r.deferred && vd && defName(expr)) { expr = vd[1].trim(); r = await calc(expr); }
@@ -20367,7 +20442,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy the result', '結果をコピー')]]);
     if (k === 'use') useExample(expr);
     else if (k === 'keep') { keepResult(expr, shownToEngine(plain || shown)); reviewMoment('tool'); }
-    else if (k === 'copy') { copyText(copy || shown); reviewMoment('tool'); }
+    else if (k === 'copy') { copyText(ungroupText(copy || shown)); reviewMoment('tool'); } // (1.16.0, R8: without the groups of digits)
   }
   // a text as shown (the number format) → the engine's form, as the history keeps its results: the digit
   // groups as thin spaces (shown again in the number format), the decimal sign ".", ";" between arguments ","
@@ -20384,7 +20459,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (t.indexOf('= ') === 0) t = t.slice(2);
     else if (t.indexOf('≈ ') === 0) { t = t.slice(2); approx = true; }
     if (!expr || !t) return;
-    history.push({ expr, result: t, approx, base: 10, msgs: [], t: Date.now() });
+    history.push({ expr, result: t, approx, base: 10, angle: S.angle, msgs: [], t: Date.now() });
     history = trimHistory(history);
     historyChanged();
     histEl.scrollTop = histEl.scrollHeight;
