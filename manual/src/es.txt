@@ -79,7 +79,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :svg: main | Las partes de la pantalla principal (los números son los de la tabla)
 | N.º | Nombre | Para qué sirve |
 | 1 | ☰ (menú) | Abre las herramientas, las gráficas, las listas, los ajustes y más |
-| 2 | Botones | Cambian con un toque la unidad de ángulo (RAD, DEG), exacto o aproximado, decimal o hexadecimal |
+| 2 | Botones | Cambian con un toque la unidad de ángulo (RAD, DEG), exacto o aproximado, decimal o hexadecimal; «15 cif.» permite elegir la precisión |
 | 3 | 🕘 (menú del historial) | Buscar en el historial, elegir líneas, exportar, borrar |
 | 4 | Historial | Las expresiones y sus resultados, la más nueva abajo |
 | 5 | Campo de entrada | Donde escribes; debajo, el resultado mientras escribes (la vista previa) |

@@ -79,7 +79,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :svg: main | Die Teile des Hauptbildschirms (die Nummern entsprechen der Tabelle)
 | Nr. | Name | Wofür |
 | 1 | ☰ (Menü) | Öffnet Werkzeuge, Graphen, Listen, Einstellungen und mehr |
-| 2 | Schalter | Winkeleinheit (RAD, DEG), exakt oder genähert, dezimal oder hexadezimal, mit einem Tippen |
+| 2 | Schalter | Winkeleinheit (RAD, DEG), exakt oder genähert, dezimal oder hexadezimal, mit einem Tippen; „15 St.“ bietet die Genauigkeit zur Wahl |
 | 3 | 🕘 (Verlaufsmenü) | Verlauf durchsuchen, Zeilen auswählen, exportieren, löschen |
 | 4 | Verlauf | Die Ausdrücke mit ihren Ergebnissen, das neueste unten |
 | 5 | Eingabefeld | Hier wird getippt; darunter das Ergebnis beim Tippen (Vorschau) |

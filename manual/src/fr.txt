@@ -79,7 +79,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :svg: main | Les parties de l'écran principal (les numéros sont ceux du tableau)
 | N° | Nom | À quoi ça sert |
 | 1 | ☰ (menu) | Ouvre les outils, les graphiques, les listes, les réglages et plus |
-| 2 | Boutons | Changent d'un toucher l'unité d'angle (RAD, DEG), exact ou approché, décimal ou hexadécimal |
+| 2 | Boutons | Changent d'un toucher l'unité d'angle (RAD, DEG), exact ou approché, décimal ou hexadécimal ; « 15 ch. » permet de choisir la précision |
 | 3 | 🕘 (menu de l'historique) | Rechercher dans l'historique, choisir des lignes, exporter, effacer |
 | 4 | Historique | Les calculs et leurs résultats, le plus récent en bas |
 | 5 | Champ de saisie | Là où vous tapez ; dessous, le résultat pendant la saisie (l'aperçu) |

@@ -75,10 +75,10 @@
     "Folium of Descartes": "데카르트의 엽선",
     // (1.15.0) the Taylor series
     "Taylor series: taylor on the Calculus page, with a graph to compare": "‘미적분’ 페이지의 taylor로 테일러 전개(그래프로 비교 가능)",
-    "2D graph: parametric, polar and implicit curves": "2D 그래프: 매개변수・극좌표・음함수 곡선",
+    "2D graph: parametric, polar and implicit curves": "2D 그래프: 매개변수·극좌표·음함수 곡선",
     "Sliders: letters such as a in a sin(b x) get sliders in the graph": "슬라이더: 그래프 식의 a, b 같은 문자를 슬라이더로 움직일 수 있습니다",
     "Next steps under the newest answer: details, graph, factor and more": "최신 답 아래에 다음 작업 후보(자세히, 그래프, 인수분해 등)",
-    "Details: the other forms of an answer on one sheet": "「자세히」로 답의 여러 형태를 한 화면에",
+    "Details: the other forms of an answer on one sheet": "‘자세히’로 답의 여러 형태를 한 화면에",
     "Area: the line crosses itself, so no area is given": "면적: 선이 자기 자신과 교차하므로 내지 않습니다",
     "Taylor series": "테일러 전개",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "중심 x = a 주변에서 n차(최대 20)까지의 다항식을 가능한 한 정확한 계수로 보여 줍니다",

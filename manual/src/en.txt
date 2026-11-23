@@ -79,7 +79,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :svg: main | The parts of the main screen (the numbers are those of the table)
 | No. | Name | What it is for |
 | 1 | ☰ (menu) | Opens the tools, the graphs, the lists, the settings and more |
-| 2 | Chips | Switch the angle unit (RAD, DEG), exact or approximate ([[!EXACT]] and others), decimal or hexadecimal, with one tap |
+| 2 | Chips | Switch the angle unit (RAD, DEG), exact or approximate ([[!EXACT]] and others), decimal or hexadecimal, with one tap; “15 dig” lets you choose the precision |
 | 3 | 🕘 (history menu) | Search the history, select lines, export, clear |
 | 4 | History | The expressions and their answers, the newest at the bottom |
 | 5 | Input field | Where you type. The answer while you type (the preview) shows under it |
