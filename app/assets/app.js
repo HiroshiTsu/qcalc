@@ -15031,9 +15031,11 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // On the first start of a new version, a card with what is new, once (1.12.0): to those who used
   // an earlier version, each with "Try it". Closed, it does not come again.
   // (1.14.0: a card again, as what is seen changes much: the 3D drawn by the GPU with see-through, and the free trial of
-  // 3D for those without QCalc Pro while it is left; 1.13.0 had none)
-  const NEWS_VERSION = '1.14';
+  // 3D for those without QCalc Pro while it is left; 1.13.0 had none. 1.15.0: 1.14.0 was not given out, so the card
+  // has both: the results easier to read, with the precision of the settings to set them back, and the 3D)
+  const NEWS_VERSION = '1.15';
   const NEWS = () => [
+    ['🔢', tr('Easier results: 15 digits in groups of 3 (Settings → Precision to change)', '答えが見やすく：15 桁、3 桁ごとに区切り（設定の「有効桁数」で戻せます）'), () => { setExpr('exp(pi*sqrt(163))'); commit(); }],
     ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
     try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
   ].filter(Boolean);
@@ -15052,7 +15054,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         el('button', { class: 'btn news-try', type: 'button', text: tr('Try it', '試す'), 'aria-label': tr('Try it', '試す') + ': ' + text, onclick: () => { closeNews(); run(); } })));
     }
     // (1.12.0, H) everything new, step by step: the section of the user manual
-    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.14.0 (user manual) ›', '1.14.0 の新しい機能（説明書）›') }, () => openManual('new-1-14'))));
+    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.15.0 (user manual) ›', '1.15.0 の新しい機能（説明書）›') }, () => openManual('new-1-15'))));
     newsCard = card;
     histEl.append(card);
     // its title and × in sight, also when the history is short (memory keys, a small screen)

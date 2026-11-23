@@ -9,7 +9,7 @@
 ## what-qcalc-does | Was QCalc kann
 QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Papier schreiben würden, und sofort das Ergebnis erhalten. Gerechnet wird mit libqalculate, der Rechenmaschine des Desktop-Rechners Qalculate!.
 - Von den Grundrechenarten über Brüche, Wurzeln, Einheiten, Währungen, Ableitungen, Integrale und Gleichungen bis zu Matrizen, alles in einer Zeile.
-- Wenn möglich ist das Ergebnis exakt (√2, π/2, 7/12), mit einem Dezimalnäherungswert daneben.
+- Wenn möglich ist das Ergebnis exakt (√2, π/2, 7/12), mit einem Dezimalnäherungswert darunter.
 - Alltägliche Rechnungen wie Preise, Kredite, Daten, Umrechnungen, Statistik und Tanks finden Sie unter „Werkzeuge“: Zahlen eingeben, das Ergebnis erscheint.
 - 2D- und 3D-Graphen mit Flächen, Längen und dem Volumen von Rotationskörpern.
 - QCalc sammelt keine persönlichen Daten. Das Internet wird nur für die Wechselkurse genutzt.
@@ -19,13 +19,18 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :what: Geben Sie einen Ausdruck mit den Tasten ein und drücken Sie [[!=]]: Das Ergebnis kommt in den Verlauf. Schon beim Tippen erscheint es unter dem Eingabefeld.
 :step: Öffnen Sie die App und tippen Sie `2 + 3 × 4`. Unter dem Eingabefeld erscheint „= 14“.
 :step: Drücken Sie [[!=]]. Ausdruck und „= 14“ kommen in den Verlauf, das Eingabefeld ist wieder leer.
-:step: Tippen Sie nun `60 mph to km/h` („to“ liegt auf der Taste →). Es erscheint „≈ 96,56064 km/h“.
-:step: Die dritte Rechnung ist `sqrt(2)`, auch über die Taste √: „= √2 ≈ 1,414213562“, der exakte Wert und die Näherung.
-:example: `1/3 + 1/4` → `= 7/12 ≈ 0,5833333333`
+:step: Tippen Sie nun `60 mph to km/h` („to“ liegt auf der Taste →). Es erscheint „= 96,560 64 km/h“.
+:step: Die dritte Rechnung ist `sqrt(8)`, auch über die Taste √: „= 2√2“ und darunter „≈ 2,828 427 124 746 19“, der exakte Wert und die Näherung in zwei Zeilen.
+:example: `1/3 + 1/4` → `= 7/12`, darunter `≈ 0,583 333 333 333 333`
 :tip: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu übernehmen oder zu kopieren.
 :mistake: Der Buchstabe x ist eine Variable, kein „mal“. Multiplizieren Sie mit der Taste × (oder *).
 
-## new-1-14 | Neu in 1.14.0
+## new-1-15 | Neu in 1.15.0
+- **Besser lesbare Ergebnisse**: Ergebnisse mit 15 gültigen Stellen, in Dreiergruppen. Geräte, die noch die bisherigen Standardwerte hatten (10 Stellen, ohne Gruppen), wechseln mit dieser Version einmal. [[Precision (significant digits)]] und [[Digit grouping (1,000)]] in den [[Settings]] stellen es zurück ([Das Ergebnis lesen](#results)).
+- **Zwei Zeilen**: Ein exaktes Ergebnis mit Näherung zeigt „= exakt“ in einer Zeile und „≈ Näherung“ in der nächsten. Brüche und Wurzeln erscheinen in derselben Schrift wie die anderen Ergebnisse.
+- **Zahlen**: keine Endnullen bei Näherungen; sehr große oder kleine Zahlen als 1,606 938 × 10⁶⁰ (kopiert als 1.606938E60); ganze Zahlen und abbrechende Dezimalzahlen erscheinen bis 60 Stellen vollständig, auch über die Genauigkeit hinaus (zum Beispiel 30!).
+- **Lange Ergebnisse und Einheiten**: Ein Ergebnis, das nicht in eine Zeile passt, wird etwas kleiner und erst dann zwischen Dreiergruppen umbrochen; ein Ergebnis mit Einheiten bleibt in einer Zeile (m/s).
+- **Der Verlauf**: Seine Ausdrücke erscheinen mit ×, √, π und hochgestellten Exponenten (2^10 → 2¹⁰).
 - **3D fast wie echt**: 3D wird mit der GPU des Geräts (WebGL 2) gezeichnet, mit echtem Licht und Schatten: der 3D-Graph, [[!⟳ 3D]] im 2D-Graph, die Körper und Tanks der Formen und der Körper aus einem Profil ([3D-Graph](#graph-3d)).
 - **Durchsichtig**: Mit [[See-through]] sehen Sie durch Flächen und Körper: Rück- und Innenseiten und die Stellen, an denen sich zwei Flächen schneiden. Der Schieberegler stellt die Deckkraft ein und schaltet [[See-through]] ein, wenn er bewegt wird, während es aus ist; bei zwei oder mehr Dingen wählen Sie, was durchsichtig ist (zum Beispiel nur der [[Container]] eines Tanks).
 - **In jede Richtung drehen**: Ein Finger dreht 3D in jede Richtung, auch über oben und unten hinaus. Die Würfel-Schaltfläche wählt sofort [[From the front]], [[From above]] oder [[From the side]].
@@ -89,12 +94,13 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :mistake: Klammern, die nicht paarweise stehen, führen zu einem Fehler. Die Meldung sagt, was zu korrigieren ist.
 
 ## results | Das Ergebnis lesen: exakt, genähert, Brüche
-:what: Ein Ergebnis mit „=“ ist exakt, eines mit „≈“ genähert. Ergebnisse mit Brüchen oder √ zeigen auch die Dezimalzahl.
-- `1/3 + 1/4` → `= 7/12 ≈ 0,5833333333` (der Bruch bleibt, mit Dezimalzahl)
-- `sqrt(8)` → `= 2√2 ≈ 2,828427125`
-- `pi × 2` → `= 2π ≈ 6,283185307`
+:what: Ein Ergebnis mit „=“ ist exakt, eines mit „≈“ genähert. Ergebnisse mit Brüchen oder √ zeigen auch die Dezimalzahl, in der nächsten Zeile.
+- `1/3 + 1/4` → `= 7/12`, darunter `≈ 0,583 333 333 333 333` (der Bruch bleibt, mit Dezimalzahl)
+- `sqrt(8)` → `= 2√2`, darunter `≈ 2,828 427 124 746 19`
+- `30!` → `= 265.252.859.812.191.058.636.308.480.000.000` (ganze Zahlen bis 60 Stellen vollständig)
+- `2^200` → `≈ 1,606 938 044 258 99 × 10⁶⁰` (eine sehr große Zahl)
 :step: Der Schalter oben wechselt zwischen exakt, genähert und automatisch.
-:step: Die Stellenzahl ist [[Precision (significant digits)]] in den [[Settings]] (Standard 10).
+:step: Die Stellenzahl ist [[Precision (significant digits)]] in den [[Settings]] (Standard 15). Ergebnisse erscheinen mit Dreiergruppen ([[Digit grouping (1,000)]] schaltet es aus).
 :pro: Bis 1000 Stellen kostenlos. Mehr als 1000, bis 200000 Stellen, ist eine Funktion von QCalc Pro.
 :tip: Ein sehr langes Ergebnis lässt sich im Verlauf scrollen, sodass jede Stelle lesbar ist; beim Kopieren wird jede Stelle kopiert.
 
@@ -318,7 +324,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Mit der Würfel-Schaltfläche wählen Sie sofort [[From the front]], [[From above]] oder [[From the side]]. [[!⟲]] stellt die erste Ansicht und Größe wieder her.
 :step: [[← Back to the shape]] führt mit derselben Form und denselben Maßen zum Werkzeug zurück.
 :shot: shapes3d | Ein liegender Tank mit Böden in 3D
-:example: Ein Zylinder mit 30 cm Durchmesser und 50 cm Höhe → Volumen 11250π ≈ 35342,91735 cm³
+:example: Ein Zylinder mit 30 cm Durchmesser und 50 cm Höhe → Volumen 11.250π ≈ 35.342,9 cm³
 :tip: Ein Tank wird wie klares Glas gezeichnet, die Flüssigkeit als Körper, der wie sie aussieht (Wasser, Meerwasser, Petroleum oder Benzin; bei anderer Wahl in der Farbe der App). Ziehen Sie vom Füllstand (dem Kästchen mit der Menge) nach oben oder unten, um ihn zu bewegen: [[Height of the liquid]] im Werkzeug ändert sich mit. Ein Ziehen an anderer Stelle dreht den Graphen. Auch der Regler [[Level]] darunter bewegt ihn.
 :tip: Ein Körper wird im Aussehen des für sein Gewicht gewählten Materials gezeichnet ([[Material (density)]]: Eisen, Edelstahl, Aluminium, Kupfer, Messing, Holz, PLA, ABS, Acryl und andere); ohne Wahl in Blau. [[See-through]] und die Schaltflächen darunter gibt es auch hier ([3D-Graph](#graph-3d)).
 :tip: Die Striche an der Wand sind runde Mengen: Bei einem liegenden oder kugelförmigen Tank sind ihre Abstände sichtbar ungleich.
@@ -402,7 +408,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Für eine andere Achse gehen Sie mit [[← Back to 2D]] zurück und tippen auf ihre Linie; die Linie y = k ziehen Sie mit dem Finger. [[View in 3D]] zeigt ihn wieder in 3D.
 :step: [[↶ Undo]] kehrt zur vorherigen Achse zurück.
 :shot: solid | Der Bereich zwischen y = x und y = x² um die x-Achse gedreht
-:example: Zwischen y = x und y = x², um die x-Achse → Volumen 2π/15 ≈ 0,41887902
+:example: Zwischen y = x und y = x², um die x-Achse → Volumen 2π/15 ≈ 0,418 879
 :tip: [[Show the method with lines]] zeichnet die Scheiben (Ringe) oder Zylinderschalen. Die Zeile [[Pappus–Guldinus theorem: ]] vergleicht das Volumen aus dem Schwerpunkt mit dem Integral.
 :pro: Den Körper in 3D mit dem Finger zu drehen ist, wie der 3D-Graph, eine Funktion von QCalc Pro. Ohne Pro erscheint stattdessen die Zeile [[Turn it in 3D (QCalc Pro)]].
 
@@ -451,7 +457,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Füllen Sie die Kästchen aus. Die Variable kann x bleiben.
 :step: Das Ergebnis erscheint darunter; [[!=]] legt es im Verlauf ab.
 :shot: form | Das Formular eines Integrals
-:example: ∫ x² sin(x) dx von 0 bis π → `π² − 4 ≈ 5,869604401`
+:example: ∫ x² sin(x) dx von 0 bis π → `= π² − 4`, darunter `≈ 5,869 604 401 089 36`
 :tip: Ein Grenzwert kann [[Both sides]], [[From the right (+)]] oder [[From the left (−)]] sein.
 
 ## equations | Gleichungen
@@ -476,7 +482,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 | [[Exact or approximate]] | Automatisch, immer exakt, immer genähert |
 | [[Number format]] | Dezimalzeichen und Zifferngruppen ([Zahlenformat](#number-format)) |
 | [[Fractions]] | Automatisch, dezimal, Bruch, gemischter Bruch |
-| [[Precision (significant digits)]] | Die Rechengenauigkeit (Standard 10) |
+| [[Precision (significant digits)]] | Die Rechengenauigkeit (Standard 15) |
 | [[Digits shown by each tool]] | Die Stellen jedes Werkzeugs und die gemeinsamen Stellen von Figuren, Behältern, Körpern und Graph ([Angezeigte Stellen je Werkzeug](#digits)) |
 | [[Light or dark]] | Die Farben des Bildschirms |
 | [[Text size]] | Die Schrift von Verlauf, Eingabefeld und Ergebnis |
@@ -492,9 +498,9 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Wählen Sie [[Recommended (automatic)]], [[Significant digits]] oder [[Decimals]] und stellen Sie die Zahl mit + und − ein. Jedes Werkzeug merkt sich seine Wahl.
 :step: Mit gewählten Stellen sind [[Trailing zeros]] auf [[Keep (2.50)]] (anfangs: genau so viele Stellen wie gewählt, 1,000000000) oder [[Drop (2.5)]] (1).
 :step: Ein Werkzeug, das nicht seine Standardstellen verwendet, trägt in der Liste der Einstellungen und in [[Digits shown…]] unter ⋯ die Markierung „[[changed]]“.
-:example: Das Volumen eines Zylinders 11250π ≈ 35342,91735 cm³ → empfohlen 11250π ≈ 35342,9 cm³; mit 2 Nachkommastellen 11250π ≈ 35342,92 cm³; mit 4 gültigen Ziffern 11250π ≈ 35340 cm³
+:example: Das Volumen eines Zylinders 11.250π cm³ → empfohlen 11.250π ≈ 35.342,9 cm³; mit 2 Nachkommastellen 11.250π ≈ 35.342,92 cm³; mit 4 gültigen Ziffern 11.250π ≈ 35.340 cm³
 :tip: Für Figuren, Behälter, Körper aus einem Profil und den Graphen stellt [[More: each kind, the 3D picture, rounding, CSV ▾]] außerdem [[Each kind of quantity on its own]] ein (Volumen, Fläche, Länge, Gewicht und %), die Zahlen [[In the 3D picture]] (empfohlen: 3 signifikante Stellen, % mit einer Nachkommastelle), das Runden ([[Round half up]], [[Round down]] oder [[Round up]]) und die als CSV gespeicherten Tabellen ([[All the digits]] oder [[As shown]]). Exakte Werte (11250π) bleiben; nur die Zahlen nach „≈“ ändern sich.
-Es gibt drei Wege zurück. Für ein Werkzeug drücken Sie [[Back to the default (recommended)]] unter ⋯ → [[Digits shown…]]. Für alle Werkzeuge drücken Sie [[All back to the default (recommended)]] unter [[Digits shown by each tool]] in den Einstellungen (auch [[Precision (significant digits)]] des Rechners wird 10 und [[Maximum decimal places]] wieder ohne Grenze). Für alles drücken Sie [[Reset all settings]] in den Einstellungen (Einstellungen und Stellen je Werkzeug auf den Standard; die Sprache bleibt).
+Es gibt drei Wege zurück. Für ein Werkzeug drücken Sie [[Back to the default (recommended)]] unter ⋯ → [[Digits shown…]]. Für alle Werkzeuge drücken Sie [[All back to the default (recommended)]] unter [[Digits shown by each tool]] in den Einstellungen (auch [[Precision (significant digits)]] des Rechners wird 15 und [[Maximum decimal places]] wieder ohne Grenze). Für alles drücken Sie [[Reset all settings]] in den Einstellungen (Einstellungen und Stellen je Werkzeug auf den Standard; die Sprache bleibt).
 Die empfohlenen Stellen sind ein bis zwei mehr, als meist nötig ist (genauen Werten werden keine Stellen angehängt). Geld wird bis zur kleinsten Einheit der Währung Ihrer Region gezeigt (0,01 Euro), mit seinen Nullen (19,90); Figuren, Behälter und Körper aus einem Profil haben 6 signifikante Stellen nach „≈“, Fläche, Länge, Körper bilden und 3D-Werte des Graphen 8 (mindestens 5 Nachkommastellen), % eine Nachkommastelle. Empfohlene Stellen haben keine Nullen am Ende, außer bei Geld, Grundpreisen und Statistik.
 
 Gerechnet wird mit 12 Stellen mehr als angezeigt (nahe der Grenze der Genauigkeit mindestens 4; numerische Integration 4 mehr, höchstens 24 Stellen); zum Anzeigen wird gerundet.

@@ -9,7 +9,7 @@
 ## what-qcalc-does | What QCalc does
 QCalc is a calculator where you type an expression as you would write it on paper and get the answer at once. The calculations are done by libqalculate, the engine of the desktop calculator Qalculate!.
 - From arithmetic to fractions, roots, units, currencies, derivatives, integrals, equations and matrices, all in one line.
-- When it can, the answer is exact (√2, π/2, 7/12), with a decimal approximation beside it.
+- When it can, the answer is exact (√2, π/2, 7/12), with a decimal approximation under it.
 - Everyday calculations such as prices, loans, dates, conversions, statistics and tanks are in "Tools": type the numbers and the answer appears.
 - 2D and 3D graphs, with areas, lengths and the volumes of solids of revolution.
 - QCalc collects no personal data. It uses the internet only to download exchange rates.
@@ -19,13 +19,18 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :what: Type an expression with the keys and press [[!=]]: the answer goes into the history. While you type, the answer already shows under the input field.
 :step: Open the app and type `2 + 3 × 4` with the keys. "= 14" shows under the input field.
 :step: Press [[!=]]. The expression and "= 14" go into the history, and the input field is empty again.
-:step: Next type `60 mph to km/h` ("to" is on the → key). "≈ 96.56064 km/h" shows.
-:step: The third one is `sqrt(2)`, also on the √ key: "= √2 ≈ 1.414213562", the exact value and the approximation.
-:example: `1/3 + 1/4` → `= 7/12 ≈ 0.5833333333`
+:step: Next type `60 mph to km/h` ("to" is on the → key). "= 96.560 64 km/h" shows.
+:step: The third one is `sqrt(8)`, also on the √ key: "= 2√2" and under it "≈ 2.828 427 124 746 19", the exact value and the approximation on two lines.
+:example: `1/3 + 1/4` → `= 7/12`, then `≈ 0.583 333 333 333 333`
 :tip: Tap an answer in the history to put it into the input field or to copy it.
 :mistake: The letter x is a variable, not "times". Multiply with the × key (or *).
 
-## new-1-14 | What is new in 1.14.0
+## new-1-15 | What is new in 1.15.0
+- **Easier results**: results have 15 significant digits, in groups of three. Phones that still had the earlier defaults (10 digits, no groups) change once with this version. [[Precision (significant digits)]] and [[Digit grouping (1,000)]] in the [[Settings]] set them back ([Reading the answer](#results)).
+- **Two lines**: an exact result with its approximation shows "= exact" on one line and "≈ approximation" on the next. Fractions and roots are drawn in the same letters as the other results.
+- **Numbers**: no ending zeros in approximations; very large or small numbers as 1.606 938 × 10⁶⁰ (copied as 1.606938E60); whole numbers and decimals that end are shown in full up to 60 digits, even beyond the precision (for example 30!).
+- **Long results and units**: a result too long for one line gets smaller letters, and only then breaks between groups of three digits; a result with units stays on one line (m/s).
+- **The history**: its expressions are written with ×, √, π and raised powers (2^10 → 2¹⁰).
 - **3D close to real things**: 3D is drawn by the device's GPU (WebGL 2), with real light and shadows: the 3D graph, [[!⟳ 3D]] in the 2D graph, the solids and tanks of the shapes, and the solid from a profile ([3D graph](#graph-3d)).
 - **See-through**: [[See-through]] lets you see through surfaces and solids: their back and inner faces and where two surfaces meet. The slider sets how opaque, and moving it while the see-through is off turns it on; with two things or more, choose which are see-through (for example only a tank's [[Container]]).
 - **Turn it any way**: one finger turns 3D in any direction, over the top and under the bottom too. The cube button gives [[From the front]], [[From above]] or [[From the side]] at once.
@@ -89,12 +94,13 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :mistake: Parentheses that do not pair up give an error. The message says what to fix.
 
 ## results | Reading the answer: exact, approximate, fractions
-:what: An answer that starts with "=" is exact; one that starts with "≈" is approximate. Answers with fractions or √ also show the decimal.
-- `1/3 + 1/4` → `= 7/12 ≈ 0.5833333333` (the fraction stays, with its decimal)
-- `sqrt(8)` → `= 2√2 ≈ 2.828427125`
-- `pi × 2` → `= 2π ≈ 6.283185307`
+:what: An answer that starts with "=" is exact; one that starts with "≈" is approximate. Answers with fractions or √ also show the decimal, on the next line.
+- `1/3 + 1/4` → `= 7/12`, then `≈ 0.583 333 333 333 333` (the fraction stays, with its decimal)
+- `sqrt(8)` → `= 2√2`, then `≈ 2.828 427 124 746 19`
+- `30!` → `= 265,252,859,812,191,058,636,308,480,000,000` (whole numbers in full up to 60 digits)
+- `2^200` → `≈ 1.606 938 044 258 99 × 10⁶⁰` (a very large number)
 :step: The chip at the top switches between [[!EXACT]], approximate and automatic.
-:step: The number of digits is [[Precision (significant digits)]] in [[Settings]] (10 by default).
+:step: The number of digits is [[Precision (significant digits)]] in [[Settings]] (15 by default). Results are shown with their digits in groups of three ([[Digit grouping (1,000)]] turns it off).
 :pro: Up to 1000 digits are free. More than 1000, up to 200000 digits, is a QCalc Pro feature.
 :tip: A very long answer scrolls in the history so that every digit can be read; copying it copies every digit.
 
@@ -318,7 +324,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: The cube button gives [[From the front]], [[From above]] or [[From the side]] at once. [[!⟲]] gives the first view and size back.
 :step: [[← Back to the shape]] goes back to the tool with the same shape and sizes.
 :shot: shapes3d | A lying tank with heads in 3D
-:example: A cylinder of diameter 30 cm and height 50 cm → volume 11250π ≈ 35342.91735 cm³
+:example: A cylinder of diameter 30 cm and height 50 cm → volume 11,250π ≈ 35,342.9 cm³
 :tip: A tank is drawn as clear glass, its liquid as a solid that looks like what it is (water, seawater, kerosene or gasoline; other choices have the app's color). Drag up or down from the level (the box with the amount) to move it: [[Height of the liquid]] in the tool changes too. A drag elsewhere turns the graph. The slider [[Level]] below moves it as well.
 :tip: A solid is drawn in the look of the material chosen for its weight ([[Material (density)]]: iron, stainless steel, aluminium, copper, brass, wood, PLA, ABS, acrylic and others); with none chosen, in blue. [[See-through]] and the buttons under it work here too ([3D graph](#graph-3d)).
 :tip: The marks on the wall are round amounts: in a lying or a spherical tank their gaps are visibly uneven.
@@ -402,7 +408,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: For another axis, go back with [[← Back to 2D]] and tap its line; drag the line y = k with a finger. [[View in 3D]] shows it in 3D again.
 :step: [[↶ Undo]] goes back to the axis before.
 :shot: solid | The region between y = x and y = x² turned around the x axis
-:example: Between y = x and y = x², around the x axis → volume 2π/15 ≈ 0.41887902
+:example: Between y = x and y = x², around the x axis → volume 2π/15 ≈ 0.418 879
 :tip: [[Show the method with lines]] draws the disks (washers) or shells. The line [[Pappus–Guldinus theorem: ]] compares the volume from the centroid with the integral.
 :pro: Turning the solid with a finger in 3D is a QCalc Pro feature, like the 3D graph. Without Pro, the row [[Turn it in 3D (QCalc Pro)]] appears instead.
 
@@ -451,7 +457,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Fill in the boxes. The variable can stay x.
 :step: The answer shows below; [[!=]] keeps it in the history.
 :shot: form | The form of an integral
-:example: ∫ x² sin(x) dx from 0 to π → `π² − 4 ≈ 5.869604401`
+:example: ∫ x² sin(x) dx from 0 to π → `= π² − 4`, then `≈ 5.869 604 401 089 36`
 :tip: A limit can be [[Both sides]], [[From the right (+)]] or [[From the left (−)]].
 
 ## equations | Equations
@@ -477,7 +483,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 | [[Exact or approximate]] | Automatic, always exact, always approximate |
 | [[Number format]] | The decimal sign and the digit groups ([Number format](#number-format)) |
 | [[Fractions]] | Automatic, decimal, fraction, mixed fraction |
-| [[Precision (significant digits)]] | The precision of calculations (10 by default) |
+| [[Precision (significant digits)]] | The precision of calculations (15 by default) |
 | [[Digits shown by each tool]] | The digits of each tool, and those shared by Shapes, Tanks, solids and the graph ([Digits shown by each tool](#digits)) |
 | [[Light or dark]] | The colors of the screen |
 | [[Text size]] | The text of the history, the input field and the result |
@@ -492,9 +498,9 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Choose [[Recommended (automatic)]], [[Significant digits]] or [[Decimals]], and set the number with + and −. Each tool keeps its own choice.
 :step: With digits chosen, [[Trailing zeros]] are [[Keep (2.50)]] (at first: exactly as many digits as chosen, 1.000000000) or [[Drop (2.5)]] (1).
 :step: A tool that does not use its default digits has the mark "[[changed]]" in the settings' list and in [[Digits shown…]] of its ⋯.
-:example: The volume of a cylinder 11250π ≈ 35342.91735 cm³ → recommended 11250π ≈ 35342.9 cm³; with 2 decimal places 11250π ≈ 35342.92 cm³; with 4 significant digits 11250π ≈ 35340 cm³
+:example: The volume of a cylinder 11,250π cm³ → recommended 11,250π ≈ 35,342.9 cm³; with 2 decimal places 11,250π ≈ 35,342.92 cm³; with 4 significant digits 11,250π ≈ 35,340 cm³
 :tip: For Shapes, Tanks, Solid from a profile and the graph, [[More: each kind, the 3D picture, rounding, CSV ▾]] also sets [[Each kind of quantity on its own]] (volume, area, length, weight and %), the numbers [[In the 3D picture]] (recommended: 3 significant digits, % with one decimal), the rounding ([[Round half up]], [[Round down]] or [[Round up]]) and the quick-reference tables saved as CSV ([[All the digits]] or [[As shown]]). Exact values (11250π) stay; only the numbers after "≈" change.
-There are three ways back. For one tool, press [[Back to the default (recommended)]] in ⋯ → [[Digits shown…]]. For every tool, press [[All back to the default (recommended)]] under [[Digits shown by each tool]] in the settings (the calculator's [[Precision (significant digits)]] goes back to 10 and [[Maximum decimal places]] to no limit as well). For everything, press [[Reset all settings]] in the settings (the settings and the digits of each tool go back to their defaults; the language stays).
+There are three ways back. For one tool, press [[Back to the default (recommended)]] in ⋯ → [[Digits shown…]]. For every tool, press [[All back to the default (recommended)]] under [[Digits shown by each tool]] in the settings (the calculator's [[Precision (significant digits)]] goes back to 15 and [[Maximum decimal places]] to no limit as well). For everything, press [[Reset all settings]] in the settings (the settings and the digits of each tool go back to their defaults; the language stays).
 The recommended digits are a digit or two more than are usually needed (no digits are added to values that are exact). Money is shown to the smallest unit of the currency of your region (1 yen, 0.01 dollar), with its zeros (19.90); Shapes, Tanks and Solid from a profile have 6 significant digits after "≈", the area, the length, Make a solid and the 3D values of the graph 8 (at least 5 decimals), and % one decimal. Recommended digits have no zeros at the end, but for money, unit prices and statistics.
 
 The calculation is made with 12 digits more than are shown (at least 4 near the limit of the precision; numeric integration 4 more, 24 digits at most); the result is rounded for showing.
