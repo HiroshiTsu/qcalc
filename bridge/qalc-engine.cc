@@ -12,6 +12,7 @@
 //   {"id":8,"cmd":"delete_def","kind":"variable"|"function","name":"r"}
 //   {"id":9,"cmd":"user_defs"}
 //   {"id":10,"cmd":"set_ans","expr":"1/3"}       (the app restores "ans" in a new engine process)
+//   "input":true in calc: the reply has "input", the text to insert the result (1.15.0, a line of the history edited)
 //
 // After a calculation with "store":true, an event line follows the reply:
 //   {"event":"ans","id":<id of that calculation>,"value":"<ans, re-readable>","input":"<text to insert>"}
@@ -945,6 +946,9 @@ static string cmd_calc(const JVal &req, JOut &out) {
 		if(!tail.empty()) out.str("tail", tail);
 	}
 	out.raw("messages", msgs);
+	// (1.15.0) a line of the history worked out again in place ("input":true, without "store", so that ans stays): the
+	// text to insert its result, as the event "ans" gives it after a calculation that is stored
+	if(req.boolean("input", false) && r.have_value && !r.timed_out) out.str("input", print_input(r.value));
 	return "";
 }
 

@@ -31,6 +31,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - **Numbers**: no ending zeros in approximations; very large or small numbers as 1.606 938 × 10⁶⁰ (copied as 1.606938E60); whole numbers and decimals that end are shown in full up to 60 digits, even beyond the precision (for example 30!).
 - **Long results and units**: a result too long for one line gets smaller letters, and only then breaks between groups of three digits; a result with units stays on one line (m/s).
 - **The history**: its expressions are written with ×, √, π and raised powers (2^10 → 2¹⁰).
+- **Editing a line of the history**: tap the expression of a line to edit it in place; = puts the new answer there, and the lines below can be worked out again ([Editing a line of the history](#edit-line)).
 - **3D close to real things**: 3D is drawn by the device's GPU (WebGL 2), with real light and shadows: the 3D graph, [[!⟳ 3D]] in the 2D graph, the solids and tanks of the shapes, and the solid from a profile ([3D graph](#graph-3d)).
 - **See-through**: [[See-through]] lets you see through surfaces and solids: their back and inner faces and where two surfaces meet. The slider sets how opaque, and moving it while the see-through is off turns it on; with two things or more, choose which are see-through (for example only a tank's [[Container]]).
 - **Turn it any way**: one finger turns 3D in any direction, over the top and under the bottom too. The cube button gives [[From the front]], [[From above]] or [[From the side]] at once.
@@ -127,6 +128,15 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: 🕘 offers [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] and [[Clear the whole history]].
 :shot: history | The history menu of 🕘
 :tip: Lines pinned with a star stay when the history is full.
+
+## edit-line | Editing a line of the history
+:what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "[[Editing a line of the history]]" above it.
+:step: Change the expression and press [[!=]]. The line gets the new expression and answer in the same place. ★ and the short note stay, and the menu ⋯ shows the time of the change beside the time of the line.
+:step: "[[Edited]]" and [[Undo]] show for a few seconds. [[Undo]] brings back the expression and answer as they were.
+:step: When the lines below use the answer of this line (ans) or a variable it defines, the app asks whether to work them out again ("Also the 2 lines below") or [[Only this line]]. [[Undo]] takes those lines back too.
+:step: To work it out as a new line below instead, press [[As a new line]] in the band, then [[!=]]. ✕ in the band, or the back button, stops editing and changes nothing.
+:tip: The line is worked out with the settings of now (angle unit, base and the others). A line worked out in another base says so in the band and gets the base of now.
+:tip: Tapping the answer of a line still puts the answer into the expression or copies it, as before.
 
 ## pins-notes | Pins, notes and search
 :step: Choose [[☆ Pin at the top]] in the ⋯ of a line: it moves up with the other pinned lines.

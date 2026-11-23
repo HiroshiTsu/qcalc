@@ -31,6 +31,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 - **Zahlen**: keine Endnullen bei Näherungen; sehr große oder kleine Zahlen als 1,606 938 × 10⁶⁰ (kopiert als 1.606938E60); ganze Zahlen und abbrechende Dezimalzahlen erscheinen bis 60 Stellen vollständig, auch über die Genauigkeit hinaus (zum Beispiel 30!).
 - **Lange Ergebnisse und Einheiten**: Ein Ergebnis, das nicht in eine Zeile passt, wird etwas kleiner und erst dann zwischen Dreiergruppen umbrochen; ein Ergebnis mit Einheiten bleibt in einer Zeile (m/s).
 - **Der Verlauf**: Seine Ausdrücke erscheinen mit ×, √, π und hochgestellten Exponenten (2^10 → 2¹⁰).
+- **Eine Zeile des Verlaufs bearbeiten**: Tippen Sie auf den Ausdruck einer Zeile, um sie an Ort und Stelle zu bearbeiten; = setzt dort das neue Ergebnis, und die Zeilen darunter lassen sich neu berechnen ([Eine Zeile des Verlaufs bearbeiten](#edit-line)).
 - **3D fast wie echt**: 3D wird mit der GPU des Geräts (WebGL 2) gezeichnet, mit echtem Licht und Schatten: der 3D-Graph, [[!⟳ 3D]] im 2D-Graph, die Körper und Tanks der Formen und der Körper aus einem Profil ([3D-Graph](#graph-3d)).
 - **Durchsichtig**: Mit [[See-through]] sehen Sie durch Flächen und Körper: Rück- und Innenseiten und die Stellen, an denen sich zwei Flächen schneiden. Der Schieberegler stellt die Deckkraft ein und schaltet [[See-through]] ein, wenn er bewegt wird, während es aus ist; bei zwei oder mehr Dingen wählen Sie, was durchsichtig ist (zum Beispiel nur der [[Container]] eines Tanks).
 - **In jede Richtung drehen**: Ein Finger dreht 3D in jede Richtung, auch über oben und unten hinaus. Die Würfel-Schaltfläche wählt sofort [[From the front]], [[From above]] oder [[From the side]].
@@ -127,6 +128,15 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: 🕘 bietet [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] und [[Clear the whole history]].
 :shot: history | Das Verlaufsmenü von 🕘
 :tip: Mit Stern angeheftete Zeilen bleiben erhalten, wenn der Verlauf voll ist.
+
+## edit-line | Eine Zeile des Verlaufs bearbeiten
+:what: Tippen Sie auf den Ausdruck einer Zeile (den kleinen über dem Ergebnis) oder auf [[Edit expression]] in ihrem ⋯, um die Zeile zu bearbeiten. Der Ausdruck kommt ins Eingabefeld, darüber erscheint das Band „[[Editing a line of the history]]“.
+:step: Ändern Sie den Ausdruck und drücken Sie [[!=]]. Die Zeile bekommt an derselben Stelle den neuen Ausdruck und das neue Ergebnis. ★ und die kurze Notiz bleiben; das Menü ⋯ zeigt neben der Zeit der Zeile die Zeit der Änderung.
+:step: Einige Sekunden lang erscheinen „[[Edited]]“ und [[Undo]]. [[Undo]] stellt Ausdruck und Ergebnis wieder her.
+:step: Wenn Zeilen darunter das Ergebnis dieser Zeile (ans) oder eine hier definierte Variable verwenden, fragt die App, ob sie neu berechnet werden sollen („Auch die 2 Zeilen darunter“) oder [[Only this line]]. [[Undo]] nimmt auch diese Zeilen zurück.
+:step: Um stattdessen eine neue Zeile darunter zu rechnen, drücken Sie [[As a new line]] im Band und dann [[!=]]. ✕ im Band oder die Zurück-Taste beendet das Bearbeiten, ohne etwas zu ändern.
+:tip: Gerechnet wird mit den Einstellungen von jetzt (Winkeleinheit, Zahlensystem und die anderen). Eine Zeile aus einem anderen Zahlensystem sagt das im Band und bekommt das Zahlensystem von jetzt.
+:tip: Ein Tippen auf das Ergebnis einer Zeile setzt es wie bisher in den Ausdruck ein oder kopiert es.
 
 ## pins-notes | Anheften, Notizen und Suche
 :step: Wählen Sie [[☆ Pin at the top]] im ⋯ einer Zeile: Sie rückt zu den anderen angehefteten Zeilen nach oben.

@@ -31,6 +31,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 - **Nombres** : pas de zéros finaux dans les valeurs approchées ; les très grands ou très petits nombres s’affichent comme 1,606 938 × 10⁶⁰ (copiés sous la forme 1.606938E60) ; les entiers et les décimaux exacts s’affichent en entier jusqu’à 60 chiffres, même au-delà de la précision (par exemple 30!).
 - **Résultats longs et unités** : un résultat trop long pour une ligne s’affiche un peu plus petit, et seulement ensuite passe à la ligne entre des groupes de trois chiffres ; un résultat avec des unités reste sur une ligne (m/s).
 - **L’historique** : ses expressions s’écrivent avec ×, √, π et des exposants (2^10 → 2¹⁰).
+- **Modifier une ligne de l’historique** : touchez l’expression d’une ligne pour la modifier sur place ; = y met le nouveau résultat, et les lignes en dessous peuvent être recalculées ([Modifier une ligne de l’historique](#edit-line)).
 - **Une 3D presque réelle** : la 3D est dessinée par le GPU de l’appareil (WebGL 2), avec une lumière et des ombres réelles : le graphique 3D, [[!⟳ 3D]] dans le graphique 2D, les solides et les cuves des formes, et le solide à partir d’un profil ([Graphique 3D](#graph-3d)).
 - **Transparent** : [[See-through]] permet de voir à travers les surfaces et les solides : leurs faces arrière et intérieures et l’intersection de deux surfaces. Le curseur règle l’opacité et, déplacé quand [[See-through]] est désactivé, l’active ; avec deux choses ou plus, choisissez ce qui est transparent (par exemple seulement le [[Container]] d’une cuve).
 - **Tourner dans tous les sens** : un doigt fait tourner la 3D dans tous les sens, y compris par-dessus et par-dessous. Le bouton au cube propose aussitôt [[From the front]], [[From above]] ou [[From the side]].
@@ -127,6 +128,15 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: 🕘 propose [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] et [[Clear the whole history]].
 :shot: history | Le menu de l'historique de 🕘
 :tip: Les lignes épinglées avec une étoile restent même quand l'historique est plein.
+
+## edit-line | Modifier une ligne de l’historique
+:what: Touchez l’expression d’une ligne (la petite au-dessus de son résultat), ou [[Edit expression]] dans son ⋯, pour modifier cette ligne. L’expression passe dans le champ de saisie, avec la bande « [[Editing a line of the history]] » au-dessus.
+:step: Modifiez l’expression et appuyez sur [[!=]]. La ligne reçoit la nouvelle expression et le nouveau résultat à la même place. ★ et la note courte restent, et le menu ⋯ affiche l’heure de la modification à côté de l’heure de la ligne.
+:step: Pendant quelques secondes, « [[Edited]] » et [[Undo]] s’affichent. [[Undo]] rétablit l’expression et le résultat d’avant.
+:step: Si les lignes en dessous utilisent le résultat de cette ligne (ans) ou une variable qu’elle définit, l’application demande s’il faut les recalculer (« Aussi les 2 lignes en dessous ») ou [[Only this line]]. [[Undo]] rétablit aussi ces lignes.
+:step: Pour la calculer plutôt comme une nouvelle ligne en dessous, appuyez sur [[As a new line]] dans la bande, puis sur [[!=]]. Le ✕ de la bande ou le bouton Retour arrête la modification sans rien changer.
+:tip: La ligne est calculée avec les réglages actuels (unité d’angle, base et les autres). Une ligne calculée dans une autre base le signale dans la bande et prend la base actuelle.
+:tip: Toucher le résultat d’une ligne le met toujours dans l’expression ou le copie, comme avant.
 
 ## pins-notes | Épingles, notes et recherche
 :step: Choisissez [[☆ Pin at the top]] dans le ⋯ d'une ligne : elle monte avec les autres lignes épinglées.
