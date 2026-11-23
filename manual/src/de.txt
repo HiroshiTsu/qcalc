@@ -29,6 +29,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 - **Besser lesbare Ergebnisse**: Ergebnisse mit 15 gültigen Stellen, in Dreiergruppen. Geräte, die noch die bisherigen Standardwerte hatten (10 Stellen, ohne Gruppen), wechseln mit dieser Version einmal. [[Precision (significant digits)]] und [[Digit grouping (1,000)]] in den [[Settings]] stellen es zurück ([Das Ergebnis lesen](#results)).
 - **Einlesen in die Rechennotizen**: [[More ▾]] → [[Open a file]] in den Notizen liest eine .txt- oder .csv-Datei, und Text oder eine Datei, die eine andere App mit „Teilen“ → QCalc sendet, wird ebenfalls übernommen ([Rechennotizen](#notes)).
 - **Taylorreihe**: taylor auf der Seite [[Calculus]] gibt das Taylorpolynom um eine Mitte bis zu einem Grad (exakte Koeffizienten; `taylor(sin(x), x, 0, 5)` geht auch). [[Compare in a graph]] zeichnet es mit der Funktion ([Ableitungen, Integrale, Grenzwerte, Summen](#calculus)).
+- **Drei neue Arten von 2D-Graphen**: Parameterkurven (`x = cos(t), y = sin(2t)`), Polarkurven (`r = 1 + cos(θ)`) und implizite Kurven (`x^2 + y^2 = 1`), an der Form erkannt oder oben gewählt; Länge und Fläche (polar) und neue Beispiele: Kardioide, Rosenkurve, Lissajous-Figur und mehr ([2D-Graph](#graph-2d)).
 - **Zwei Zeilen**: Ein exaktes Ergebnis mit Näherung zeigt „= exakt“ in einer Zeile und „≈ Näherung“ in der nächsten. Brüche und Wurzeln erscheinen in derselben Schrift wie die anderen Ergebnisse.
 - **Zahlen**: keine Endnullen bei Näherungen; sehr große oder kleine Zahlen als 1,606 938 × 10⁶⁰ (kopiert als 1.606938E60); ganze Zahlen und abbrechende Dezimalzahlen erscheinen bis 60 Stellen vollständig, auch über die Genauigkeit hinaus (zum Beispiel 30!).
 - **Lange Ergebnisse und Einheiten**: Ein Ergebnis, das nicht in eine Zeile passt, wird etwas kleiner und erst dann zwischen Dreiergruppen umbrochen; ein Ergebnis mit Einheiten bleibt in einer Zeile (m/s).
@@ -406,6 +407,10 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Geben Sie die Funktionen ein, eine pro Zeile, und den Bereich von x.
 :step: Drücken Sie [[Draw]].
 :step: Tippen Sie auf den Graphen, um die Koordinaten eines Punktes zu sehen.
+:step: Die Art jeder Linie wird an ihrer Form erkannt; oben lässt sie sich auch wählen: [[!y = f(x)]], [[Parametric]], [[Polar (graph)]], [[Implicit]] (eine andere Art als im Feld setzt ein Beispiel dafür ein).
+:example: Parameter `x = cos(t), y = sin(2t)` (mit einem Bereich von t), polar `r = 1 + cos(θ)` (ein Bereich von θ, zuerst 0 bis 2π; t geht statt θ), implizit `x^2 + y^2 = 1`, `x^3 + y^3 = 3x y` (eine Gleichung mit x und y)
+:tip: Parameter- und Polarkurven nehmen Winkel im Bogenmaß. Eine implizite Kurve verbindet die Punkte eines Gitters, an denen linke Seite − rechte Seite das Vorzeichen wechselt, mit einem feineren Gitter, wo sie verwickelt ist; Verschieben oder Zoomen zeichnet sie für den neuen Ausschnitt neu.
+:tip: Eine Parameter- oder Polarkurve hat Knöpfe für ihre [[Length]] und [[Area]] (polar, oder eine geschlossene Parameterkurve). Die Polarfläche ist ½∫r² dθ über den Bereich von θ (zweimal Umlaufenes zählt doppelt); eine Parameterkurve, die sich selbst schneidet, hat keine Fläche. [[Calculus ▾]], [[Area and length ▾]] und [[Make a solid ▾]] sind für Linien y = f(x).
 :tip: [[Calculus ▾]] liefert Ableitung, Tangenten, Nullstellen und Extrema.
 :tip: Tippen Sie auf ein Beispiel unter dem Graphen, um es zu zeichnen.
 

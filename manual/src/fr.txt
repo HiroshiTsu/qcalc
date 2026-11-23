@@ -29,6 +29,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 - **Résultats plus lisibles** : les résultats ont 15 chiffres significatifs, par groupes de trois. Les téléphones qui avaient encore les anciennes valeurs par défaut (10 chiffres, sans groupes) changent une fois avec cette version. [[Precision (significant digits)]] et [[Digit grouping (1,000)]] dans les [[Settings]] permettent de revenir ([Lire le résultat](#results)).
 - **Lire dans les notes de calcul** : [[More ▾]] → [[Open a file]] dans les notes lit un fichier .txt ou .csv, et le texte ou le fichier qu’une autre application envoie avec « Partager » → QCalc est aussi reçu ([Notes de calcul](#notes)).
 - **Série de Taylor** : taylor sur la page [[Calculus]] donne le polynôme de Taylor autour d’un centre jusqu’à un degré (coefficients exacts ; on peut aussi saisir `taylor(sin(x), x, 0, 5)`). [[Compare in a graph]] le trace avec la fonction ([Dérivées, intégrales, limites, sommes](#calculus)).
+- **Trois nouveaux types de graphique 2D** : courbes paramétriques (`x = cos(t), y = sin(2t)`), polaires (`r = 1 + cos(θ)`) et implicites (`x^2 + y^2 = 1`), reconnues à leur forme ou choisies en haut ; leur longueur et leur aire (polaire), et de nouveaux exemples : cardioïde, rosace, courbe de Lissajous… ([Graphique 2D](#graph-2d)).
 - **Deux lignes** : un résultat exact avec sa valeur approchée affiche « = exact » sur une ligne et « ≈ valeur approchée » sur la suivante. Les fractions et les racines sont dessinées dans la même écriture que les autres résultats.
 - **Nombres** : pas de zéros finaux dans les valeurs approchées ; les très grands ou très petits nombres s’affichent comme 1,606 938 × 10⁶⁰ (copiés sous la forme 1.606938E60) ; les entiers et les décimaux exacts s’affichent en entier jusqu’à 60 chiffres, même au-delà de la précision (par exemple 30!).
 - **Résultats longs et unités** : un résultat trop long pour une ligne s’affiche un peu plus petit, et seulement ensuite passe à la ligne entre des groupes de trois chiffres ; un résultat avec des unités reste sur une ligne (m/s).
@@ -406,6 +407,10 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Tapez les fonctions, une par ligne, et l'intervalle de x.
 :step: Appuyez sur [[Draw]].
 :step: Touchez le graphique pour lire les coordonnées d'un point.
+:step: Le type de chaque ligne est reconnu à sa forme ; en haut on le choisit aussi : [[!y = f(x)]], [[Parametric]], [[Polar (graph)]], [[Implicit]] (un autre type que celui de la zone y met un exemple).
+:example: paramétrique `x = cos(t), y = sin(2t)` (avec une plage de t), polaire `r = 1 + cos(θ)` (une plage de θ, de 0 à 2π au départ ; t marche à la place de θ), implicite `x^2 + y^2 = 1`, `x^3 + y^3 = 3x y` (une équation avec x et y)
+:tip: Les courbes paramétriques et polaires prennent les angles en radians. Une courbe implicite relie les points d’une grille où membre de gauche − membre de droite change de signe, avec une grille plus fine là où elle est compliquée ; déplacer ou zoomer la redessine pour la nouvelle vue.
+:tip: Une courbe paramétrique ou polaire a des boutons pour sa [[Length]] et son [[Area]] (polaire, ou paramétrique fermée). L’aire polaire est ½∫r² dθ sur l’intervalle de θ (ce qui est parcouru deux fois compte deux fois) ; une paramétrique qui se coupe elle-même n’a pas d’aire. [[Calculus ▾]], [[Area and length ▾]] et [[Make a solid ▾]] sont pour les lignes y = f(x).
 :tip: [[Calculus ▾]] donne la dérivée, des tangentes, les zéros et les extremums.
 :tip: Touchez un exemple sous le graphique pour le tracer.
 

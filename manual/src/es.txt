@@ -29,6 +29,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 - **Resultados más claros**: los resultados tienen 15 cifras significativas, en grupos de tres. Los teléfonos que aún tenían los valores anteriores (10 cifras, sin grupos) cambian una vez con esta versión. [[Precision (significant digits)]] y [[Digit grouping (1,000)]] en [[Settings]] lo devuelven ([Leer el resultado](#results)).
 - **Leer en las notas de cálculo**: [[More ▾]] → [[Open a file]] en las notas lee un archivo .txt o .csv, y también se recibe el texto o el archivo que otra app envía con «Compartir» → QCalc ([Notas de cálculo](#notes)).
 - **Serie de Taylor**: taylor en la página [[Calculus]] da el polinomio de Taylor en torno a un centro hasta un grado (coeficientes exactos; también se puede escribir `taylor(sin(x), x, 0, 5)`). [[Compare in a graph]] lo dibuja con la función ([Derivadas, integrales, límites, sumas](#calculus)).
+- **Tres nuevos tipos de gráfica 2D**: curvas paramétricas (`x = cos(t), y = sin(2t)`), polares (`r = 1 + cos(θ)`) e implícitas (`x^2 + y^2 = 1`), reconocidas por su forma o elegidas arriba; su longitud y área (polar), y nuevos ejemplos: cardioide, rosa, curva de Lissajous y más ([Gráfica 2D](#graph-2d)).
 - **Dos líneas**: un resultado exacto con su aproximación muestra «= exacto» en una línea y «≈ aproximación» en la siguiente. Las fracciones y raíces se dibujan con la misma letra que los demás resultados.
 - **Números**: sin ceros finales en las aproximaciones; los números muy grandes o pequeños como 1.606 938 × 10⁶⁰ (se copian como 1.606938E60); los enteros y decimales exactos se muestran completos hasta 60 cifras, aunque superen la precisión (por ejemplo 30!).
 - **Resultados largos y unidades**: un resultado que no cabe en una línea se hace algo más pequeño y solo entonces se parte entre grupos de tres cifras; un resultado con unidades queda en una línea (m/s).
@@ -406,6 +407,10 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Escribe las funciones, una por línea, y el intervalo de x.
 :step: Pulsa [[Draw]].
 :step: Toca la gráfica para ver las coordenadas de un punto.
+:step: El tipo de cada línea se reconoce por su forma; arriba también se elige: [[!y = f(x)]], [[Parametric]], [[Polar (graph)]], [[Implicit]] (otro tipo que el del cuadro pone un ejemplo de él).
+:example: paramétrica `x = cos(t), y = sin(2t)` (con un rango de t), polar `r = 1 + cos(θ)` (un rango de θ, de 0 a 2π al principio; t sirve en lugar de θ), implícita `x^2 + y^2 = 1`, `x^3 + y^3 = 3x y` (una ecuación con x e y)
+:tip: Las curvas paramétricas y polares toman los ángulos en radianes. Una curva implícita une los puntos de una cuadrícula donde lado izquierdo − lado derecho cambia de signo, con una cuadrícula más fina donde es intrincada; al mover o ampliar se dibuja de nuevo para la nueva vista.
+:tip: Una curva paramétrica o polar tiene botones para su [[Length]] y su [[Area]] (polar, o una paramétrica cerrada). El área polar es ½∫r² dθ en el rango de θ (lo recorrido dos veces cuenta dos veces); una paramétrica que se corta a sí misma no tiene área. [[Calculus ▾]], [[Area and length ▾]] y [[Make a solid ▾]] son para líneas y = f(x).
 :tip: [[Calculus ▾]] da la derivada, tangentes, ceros y extremos.
 :tip: Toca un ejemplo bajo la gráfica para dibujarlo.
 

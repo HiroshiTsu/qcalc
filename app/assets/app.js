@@ -4565,7 +4565,365 @@
 
   // -------------------------------------------------------------- plot
   const COLORS = ['#2563eb', '#e11d48', '#059669', '#d97706', '#7c3aed', '#0891b2'];
-  const P = { series: [], view: null, dataX: null, exprs: [] };
+  const P = { series: [], view: null, dataX: null, exprs: [], curves: [] };
+  // ---- (1.15.0, feature/graph-kinds) four kinds of lines in the 2D graph, each line of the box told from its form:
+  //   y = f(x)              sin(x), y = x^2 (as before: the engine's plot over the range of x)
+  //   parametric            x = cos(t), y = sin(2t)  (or (cos(t), sin(2t))): t over its range, 0 to 2π at first
+  //   polar                 r = 1 + cos(θ)  (θ, theta or t): θ over its range, 0 to 2π at first
+  //   implicit              x^2 + y^2 = 1, x^3 + y^3 = 3xy: an equation with x and y that is not y = f(x)
+  // Parametric and polar lines are sampled by the engine (t as their variable, in radians); an implicit line is the
+  // set where F = left − right changes its sign: F on a grid over the view (plot3d), the curve through the cells
+  // where the sign changes (marching squares, linear between the corners), and the blocks of cells it crosses worked
+  // out again on a finer grid while there is time (about 1 s on a phone); a change of sign across a pole (tan) is not
+  // a curve. These lines move and zoom with the graph (an implicit one is worked out again for the new view); a tap
+  // shows the point of the line nearest to it. The tools below the graph (derivative, area, solid) are for y = f(x).
+  const KIND_IDS = ['fx', 'param', 'polar', 'implicit'];
+  const kindName = (k) => ({ fx: 'y = f(x)', param: tr('Parametric', '媒介変数'), polar: LANG === 'en' ? 'Polar' : tr('Polar (graph)', '極座標'), implicit: tr('Implicit', '陰関数') })[k];
+  // the parts of a line at its top-level commas and semicolons (a decimal comma between digits stays), as plotExprs
+  function topParts(line) {
+    const parts = [];
+    let d = 0, cur = '';
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if ('([{'.indexOf(c) >= 0) d++; else if (')]}'.indexOf(c) >= 0) d--;
+      const dec = c === ',' && commaMode && isDigit(line[i + 1] || '') && (isDigit(line[i - 1] || '') || !/[\p{L}\p{N}_)\]]/u.test(line[i - 1] || ''));
+      if ((c === ',' || c === ';') && d <= 0 && !dec) { parts.push(cur); cur = ''; } else cur += c;
+    }
+    parts.push(cur);
+    return parts.map((s) => s.trim());
+  }
+  // the one "=" of an equation at the top level (not ==, <=, >=, !=, :=), or −1
+  function topEquals(s) {
+    let d = 0, at = -1;
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if ('([{'.indexOf(c) >= 0) d++; else if (')]}'.indexOf(c) >= 0) d--;
+      else if (c === '=' && d === 0 && !/[=<>!:≤≥≠]/.test(s[i - 1] || '') && s[i + 1] !== '=') { if (at >= 0) return -1; at = i; }
+    }
+    return at;
+  }
+  const POLAR_VAR = /θ|theta/g;
+  // one line of the box: [{ kind, text (as typed), f (y = f(x)) | x, y (in t) | r (in t) | F (in x and y) }]
+  function lineItems(raw) {
+    const line = raw.trim();
+    if (!line) return [];
+    const parts = topParts(line);
+    const N = normalizeExpr;
+    if (parts.length === 2) {
+      const mx = /^x\s*=\s*([\s\S]+)$/.exec(parts[0]), my = /^y\s*=\s*([\s\S]+)$/.exec(parts[1]);
+      if (mx && my) return [{ kind: 'param', text: line, x: N(mx[1]), y: N(my[1]) }];
+    }
+    // a point that moves with t, as (cos(t), sin(t)): its commas are inside the parentheses
+    const tup = parts.length === 1 ? /^\(([\s\S]*)\)$/.exec(line) : null;
+    const tp = tup ? topParts(tup[1]) : null;
+    if (tp && tp.length === 2 && (hasVar(tp[0], 't') || hasVar(tp[1], 't'))) return [{ kind: 'param', text: line, x: N(tp[0]), y: N(tp[1]) }];
+    if (parts.length > 1) return parts.flatMap((p) => lineItems(p));
+    const s = parts[0];
+    const mr = /^r\s*=\s*([\s\S]+)$/.exec(s);
+    if (mr) return [{ kind: 'polar', text: line, r: N(mr[1]).replace(POLAR_VAR, 't') }];
+    const q = topEquals(s);
+    if (q < 0) {
+      if (/θ|theta/.test(s) && !hasVar(s, 'x') && !hasVar(s, 'y')) return [{ kind: 'polar', text: 'r = ' + line, r: N(s).replace(POLAR_VAR, 't') }];
+      return [{ kind: 'fx', text: line, f: N(s) }];
+    }
+    const L = s.slice(0, q).trim(), R = s.slice(q + 1).trim();
+    if (!L || !R) return [{ kind: 'fx', text: line, f: N(s) }];
+    if (L === 'y' && !hasVar(R, 'y')) return [{ kind: 'fx', text: line, f: N(R) }];
+    if (R === 'y' && !hasVar(L, 'y')) return [{ kind: 'fx', text: line, f: N(L) }];
+    return [{ kind: 'implicit', text: line, F: '(' + N(L) + ') − (' + N(R) + ')' }];
+  }
+  // all the lines of the box (up to max items; .more: how many were left out)
+  function plotItems(text, max) {
+    const all = [];
+    for (const line of String(text || '').split('\n')) all.push(...lineItems(line));
+    const out = all.slice(0, max);
+    out.more = all.length - out.length;
+    return out;
+  }
+  // the kind of the box: that of its first line (y = f(x) when empty)
+  const boxKind = (text) => { const it = plotItems(text, 1); return it.length ? it[0].kind : 'fx'; };
+  // the range of t (parametric) and θ (polar), kept apart from the range of x
+  const tRange = (kind) => [store.get('qalc.plot.' + kind + '.min', '0'), store.get('qalc.plot.' + kind + '.max', '2π')];
+  // sampled lines: parametric and polar, as polylines (null between pieces)
+  async function sampleCurve(C) {
+    const [a, b] = tRange(C.kind);
+    const exprs = C.kind === 'param' ? [C.x, C.y] : [C.r];
+    const r = await Bridge.send('plot', { exprs, min: engineNum(normalizeExpr(a)), max: engineNum(normalizeExpr(b)), steps: 900, var: 't', opts: Object.assign(engineOpts(), { angle: 'rad' }), timeout: 6000 });
+    C.xs = []; C.ys = []; C.ts = [];
+    if (!r.ok || !Array.isArray(r.series)) { C.error = r.ok ? '' : r.error === 'invalid range' ? (C.kind === 'param' ? tr('Check the range of t', 't の範囲を確認してください') : tr('Check the range of θ', 'θ の範囲を確認してください')) : localMessage(r.error); return; }
+    const s0 = r.series[0], s1 = r.series[1];
+    // (the engine may take another number of points for each expression: y(t) is read at the t of x(t), between its points)
+    const at = (s, t) => {
+      let lo = 0, hi = s.x.length - 1;
+      if (hi < 0 || t < s.x[0] - 1e-12 || t > s.x[hi] + 1e-12) return null;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (s.x[m] <= t) lo = m; else hi = m; }
+      const ya = s.y[lo], yb = s.y[hi];
+      if (Math.abs(s.x[lo] - t) < 1e-12) return ya;
+      if (Math.abs(s.x[hi] - t) < 1e-12) return yb;
+      if (ya === null || yb === null) return null;
+      return ya + (yb - ya) * (t - s.x[lo]) / (s.x[hi] - s.x[lo]);
+    };
+    for (let i = 0; i < s0.x.length; i++) {
+      const t = s0.x[i];
+      let x = null, y = null;
+      if (C.kind === 'param') { x = s0.y[i]; y = s1 ? at(s1, t) : null; }
+      else if (s0.y[i] !== null) { x = s0.y[i] * Math.cos(t); y = s0.y[i] * Math.sin(t); }
+      const ok = x !== null && y !== null && isFinite(x) && isFinite(y);
+      C.ts.push(t); C.xs.push(ok ? x : null); C.ys.push(ok ? y : null);
+    }
+  }
+  // marching squares on a grid z (rows of nx values from y0 up), xs and ys its coordinates: segments [x1, y1, x2, y2, …]
+  // and the cells to work out again on a finer grid (ambiguous saddles, values close to 0 at all four corners)
+  function marchCells(z, xs, ys, nx, ny, flags) {
+    const segs = [];
+    let mags = [];
+    for (let k = 0; k < z.length; k += Math.max(1, Math.floor(z.length / 400))) if (z[k] !== null) mags.push(Math.abs(z[k]));
+    mags.sort((p, q) => p - q);
+    const med = mags.length ? mags[mags.length >> 1] || 1e-300 : 1;
+    const pole = med * 1e3, tiny = med * 0.02;
+    const at = (i, j) => z[j * nx + i];
+    for (let j = 0; j + 1 < ny; j++) {
+      for (let i = 0; i + 1 < nx; i++) {
+        const a = at(i, j), b = at(i + 1, j), c = at(i + 1, j + 1), d = at(i, j + 1); // corners: bottom left, bottom right, top right, top left
+        if (a === null || b === null || c === null || d === null) continue;
+        const k = (a > 0 ? 1 : 0) | (b > 0 ? 2 : 0) | (c > 0 ? 4 : 0) | (d > 0 ? 8 : 0);
+        if (k === 0 || k === 15) continue;
+        const x0 = xs[i], x1 = xs[i + 1], y0 = ys[j], y1 = ys[j + 1];
+        // a crossing on an edge between two values (none across a pole: both ends far from 0)
+        const cross = (u, v) => (Math.min(Math.abs(u), Math.abs(v)) > pole ? NaN : u / (u - v));
+        const e = [
+          () => { const f = cross(a, b); return [x0 + (x1 - x0) * f, y0]; },
+          () => { const f = cross(b, c); return [x1, y0 + (y1 - y0) * f]; },
+          () => { const f = cross(d, c); return [x0 + (x1 - x0) * f, y1]; },
+          () => { const f = cross(a, d); return [x0, y0 + (y1 - y0) * f]; }
+        ];
+        let pairs;
+        switch (k) {
+          case 1: case 14: pairs = [[0, 3]]; break;
+          case 2: case 13: pairs = [[0, 1]]; break;
+          case 3: case 12: pairs = [[1, 3]]; break;
+          case 4: case 11: pairs = [[1, 2]]; break;
+          case 6: case 9: pairs = [[0, 2]]; break;
+          case 7: case 8: pairs = [[2, 3]]; break;
+          case 5: case 10: {
+            const m = (a + b + c + d) / 4, same = (m > 0) === (a > 0);
+            pairs = (k === 5) === same ? [[0, 1], [2, 3]] : [[0, 3], [1, 2]];
+            if (flags) flags.push([i, j]);
+            break;
+          }
+        }
+        if (flags && Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d)) < tiny) flags.push([i, j]);
+        for (const [p, q] of pairs) {
+          const P1 = e[p](), P2 = e[q]();
+          if (P1[0] === P1[0] && P1[1] === P1[1] && P2[0] === P2[0] && P2[1] === P2[1]) segs.push(P1[0], P1[1], P2[0], P2[1]);
+        }
+        if (flags && flags.cross) flags.cross.push([i, j]);
+      }
+    }
+    return segs;
+  }
+  const gridAxis = (lo, hi, n) => { const a = []; for (let i = 0; i < n; i++) a.push(i === n - 1 ? hi : lo + (hi - lo) * i / (n - 1)); return a; };
+  // the implicit lines over a window: a grid over it, then a finer grid in the blocks the curves cross (busy ones first)
+  async function computeImplicit(items, win) {
+    if (!items.length) return;
+    const t0 = Date.now();
+    const W = Math.max(1, (P.canvas && P.canvas.clientWidth) || 360), H = Math.max(1, (P.canvas && P.canvas.clientHeight) || 300);
+    const nx = 97, ny = Math.max(41, Math.min(121, Math.round(97 * H / W)));
+    const r = await Bridge.send('plot3d', { exprs: items.map((C) => C.F), xmin: engineNum(win.x0), xmax: engineNum(win.x1), ymin: engineNum(win.y0), ymax: engineNum(win.y1), nx, ny, opts: engineOpts(), timeout: 6000 });
+    for (const C of items) { C.segs = []; C.win = Object.assign({}, win); }
+    if (!r.ok || !Array.isArray(r.series)) { for (const C of items) C.error = r.ok ? '' : localMessage(r.error); return; }
+    const xs = r.x, ys = r.y;
+    const blocks = new Map(), B = 8;
+    items.forEach((C, n) => {
+      const flags = []; flags.cross = [];
+      const s = r.series[n];
+      C.segs = marchCells(s.z, xs, ys, nx, ny, flags);
+      C.empty = !C.segs.length;
+      C.cells = flags.cross.length;
+      for (const [i, j] of flags.cross) { const key = Math.floor(i / B) + ',' + Math.floor(j / B); const o = blocks.get(key) || { bi: Math.floor(i / B), bj: Math.floor(j / B), busy: 0 }; o.busy += 1; blocks.set(key, o); }
+      for (const [i, j] of flags) { const key = Math.floor(i / B) + ',' + Math.floor(j / B); const o = blocks.get(key); if (o) o.busy += 20; }
+    });
+    // finer: 4 times as many cells in a block, busy blocks first, while there is time
+    const list = Array.from(blocks.values()).sort((p, q) => q.busy - p.busy);
+    const fine = [];
+    for (const o of list) {
+      if (Date.now() - t0 > 650 || fine.length >= 40) break;
+      const i0 = o.bi * B, j0 = o.bj * B, i1 = Math.min(nx - 1, i0 + B), j1 = Math.min(ny - 1, j0 + B);
+      const m = (i1 - i0) * 4 + 1, n2 = (j1 - j0) * 4 + 1;
+      const rr = await Bridge.send('plot3d', { exprs: items.map((C) => C.F), xmin: engineNum(xs[i0]), xmax: engineNum(xs[i1]), ymin: engineNum(ys[j0]), ymax: engineNum(ys[j1]), nx: m, ny: n2, opts: engineOpts(), timeout: 1500 });
+      if (!rr.ok || !Array.isArray(rr.series)) break;
+      fine.push({ x0: xs[i0], x1: xs[i1], y0: ys[j0], y1: ys[j1], segs: items.map((C, k) => marchCells(rr.series[k].z, rr.x, rr.y, m, n2, null)) });
+    }
+    // the coarse segments inside a block worked out again are replaced by the fine ones
+    if (fine.length) {
+      const inside = (x, y, f) => x >= f.x0 && x <= f.x1 && y >= f.y0 && y <= f.y1;
+      items.forEach((C, k) => {
+        const keep = [];
+        for (let q = 0; q < C.segs.length; q += 4) {
+          const mx = (C.segs[q] + C.segs[q + 2]) / 2, my = (C.segs[q + 1] + C.segs[q + 3]) / 2;
+          if (!fine.some((f) => inside(mx, my, f))) keep.push(C.segs[q], C.segs[q + 1], C.segs[q + 2], C.segs[q + 3]);
+        }
+        for (const f of fine) keep.push(...f.segs[k]);
+        C.segs = keep;
+      });
+    }
+    P.implicitMs = Date.now() - t0;
+  }
+  // the window of the implicit lines: the view, or the range of x with the same scale on both axes around y = 0
+  function implicitWindow(min, max) {
+    if (P.view) return Object.assign({}, P.view);
+    const a = Number(min), b = Number(max);
+    const x0 = isFinite(a) ? a : -5, x1 = isFinite(b) && b > x0 ? b : x0 + 10;
+    const W = (P.canvas && P.canvas.clientWidth) || 360, H = (P.canvas && P.canvas.clientHeight) || 300;
+    const hy = (x1 - x0) * H / W / 2;
+    return { x0, x1, y0: -hy, y1: hy };
+  }
+  // the lines of the box: the functions (P.exprs, for the engine's plot and the tools) and the other lines (P.curves);
+  // the colors in the order of the lines
+  function setItems(text) {
+    const items = plotItems(text, 6);
+    items.forEach((q, n) => { q.color = COLORS[n % COLORS.length]; });
+    P.items = items;
+    const fx = items.filter((q) => q.kind === 'fx');
+    P.exprs = fx.map((q) => q.f);
+    P.exprs.more = items.more;
+    P.exprColors = fx.map((q) => q.color);
+    P.curves = items.filter((q) => q.kind !== 'fx');
+  }
+  // the length (and the area: polar, or a parametric line that closes) of a parametric or polar line, by the engine:
+  // polar area ½∫r² dθ, length ∫√(r² + r′²) dθ; parametric length ∫√(x′² + y′²) dt, area |½∫(x y′ − y x′) dt|
+  const closedCurve = (C) => {
+    const pts = []; for (let i = 0; i < (C.xs || []).length; i++) if (C.xs[i] !== null) pts.push([C.xs[i], C.ys[i]]);
+    if (pts.length < 3) return false;
+    const b = curvesBoxOf(C), size = Math.max(b.x1 - b.x0, b.y1 - b.y0) || 1;
+    return Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) < size * 1e-3;
+  };
+  // whether a sampled line crosses or touches itself (then the formula of the area, ½∮(x dy − y dx), adds the loops
+  // with their directions, 0 for a figure eight, and counts twice what is gone round twice: no area is given)
+  function crossesItself(C) {
+    const pts = []; for (let i = 0; i < (C.xs || []).length; i++) if (C.xs[i] !== null) pts.push([C.xs[i], C.ys[i]]);
+    const n = pts.length;
+    if (n < 4) return false;
+    const b = curvesBoxOf(C), size = Math.max(b.x1 - b.x0, b.y1 - b.y0) || 1, eps = size * 1e-7;
+    const G = 64, cell = size / G * 1.0001;
+    const key = (x, y) => Math.floor((x - b.x0) / cell) + ',' + Math.floor((y - b.y0) / cell);
+    const grid = new Map();
+    const last = Math.hypot(pts[0][0] - pts[n - 1][0], pts[0][1] - pts[n - 1][1]) < size * 1e-3 ? n - 1 : n; // (the end on the start: once)
+    // a point come back to (away from its neighbours)
+    for (let i = 0; i < last; i++) {
+      const k = key(pts[i][0], pts[i][1]);
+      const l = grid.get(k) || []; grid.set(k, l);
+      for (const j of l) if (i - j > 2 && !(j === 0 && last - i <= 2) && Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]) < size * 1e-4) return true;
+      l.push(i);
+    }
+    // two segments that cross
+    const segs = new Map();
+    const orient = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+    for (let i = 0; i < n - 1; i++) {
+      const p = pts[i], q = pts[i + 1];
+      const i0 = Math.floor((Math.min(p[0], q[0]) - b.x0) / cell), i1 = Math.floor((Math.max(p[0], q[0]) - b.x0) / cell);
+      const j0 = Math.floor((Math.min(p[1], q[1]) - b.y0) / cell), j1 = Math.floor((Math.max(p[1], q[1]) - b.y0) / cell);
+      if ((i1 - i0 + 1) * (j1 - j0 + 1) > 400) continue; // (a jump across the picture)
+      for (let a = i0; a <= i1; a++) for (let c = j0; c <= j1; c++) {
+        const k = a + ',' + c;
+        const l = segs.get(k) || []; segs.set(k, l);
+        for (const j of l) {
+          if (i - j < 2 || (j === 0 && i === n - 2)) continue;
+          const r = pts[j], s2 = pts[j + 1];
+          const d1 = orient(r, s2, p), d2 = orient(r, s2, q), d3 = orient(p, q, r), d4 = orient(p, q, s2);
+          if (((d1 > eps * size && d2 < -eps * size) || (d1 < -eps * size && d2 > eps * size)) && ((d3 > eps * size && d4 < -eps * size) || (d3 < -eps * size && d4 > eps * size))) return true;
+        }
+        l.push(i);
+      }
+    }
+    return false;
+  }
+  function curvesBoxOf(C) { let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; for (let i = 0; i < C.xs.length; i++) { if (C.xs[i] === null) continue; x0 = Math.min(x0, C.xs[i]); x1 = Math.max(x1, C.xs[i]); y0 = Math.min(y0, C.ys[i]); y1 = Math.max(y1, C.ys[i]); } return { x0, x1, y0, y1 }; }
+  async function curveValue(C, what, out) {
+    const [a, b] = tRange(C.kind).map((s) => normalizeExpr(String(s)));
+    // (t is a unit, tonne, for the engine's calculations: x here; also after a number, as in sin(2t), not inside a name)
+    const sub = (e) => String(e).replace(/(?<![\p{L}_][\p{L}\p{N}_]*)t(?![\p{L}\p{N}_])/gu, 'x');
+    let expr;
+    if (C.kind === 'polar') { const R = sub(C.r); expr = what === 'area' ? `integrate((${R})^2 / 2, ${a}, ${b})` : `integrate(sqrt((${R})^2 + (diff(${R}, x))^2), ${a}, ${b})`; }
+    else { const X = sub(C.x), Y = sub(C.y); expr = what === 'area' ? `abs(integrate(((${X}) × diff(${Y}, x) − (${Y}) × diff(${X}, x)) / 2, ${a}, ${b}))` : `integrate(sqrt(diff(${X}, x)^2 + diff(${Y}, x)^2), ${a}, ${b})`; }
+    if (what === 'area' && C.kind === 'param' && crossesItself(C)) { out.textContent = tr('Area: the line crosses itself, so no area is given', '面積：線が自分と交わるので出しません'); return; }
+    out.textContent = tr('Calculating…', '計算中…');
+    const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { angle: 'rad', grouping: false }, what === 'len' ? { approx: 'approx', precision: 12 } : {}), timeout: 5000 });
+    const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
+    const name = what === 'area' ? tr('Area', '面積') : tr('Length', '長さ');
+    out.textContent = !r.ok || r.timeout || err || !r.result || /integrate|diff/.test(r.result) ? name + tr(': could not be calculated', '：計算できませんでした') : shortValue(name, resultText(r), r.approx);
+  }
+  function curveToolsChanged() {
+    const box = P.curveTools;
+    if (!box) return;
+    box.textContent = '';
+    if (P.toolsNote) {
+      P.toolsNote.hidden = !(P.curves && P.curves.length);
+      P.toolsNote.textContent = (P.curves || []).some((c) => c.kind !== 'implicit')
+        ? tr('The tools below are for lines y = f(x): parametric and polar lines have their length and area above', '下の道具は y = f(x) の線に使えます（媒介変数・極座標・陰関数の線には使えません。媒介変数と極座標の長さと面積は上のボタンで出せます）')
+        : tr('The tools below are for lines y = f(x), not for parametric, polar or implicit lines', '下の道具は y = f(x) の線に使えます（媒介変数・極座標・陰関数の線には使えません）');
+    }
+    for (const C of (P.curves || []).filter((c) => c.kind !== 'implicit')) {
+      if (!(C.xs || []).some((x) => x !== null)) continue;
+      const row = el('div', { class: 'ct-row' }, el('span', { class: 'ct-name', style: '--c:' + C.color, text: clip(toDisplay(C.text), 30) }));
+      const outs = el('div', { class: 'ct-outs', 'aria-live': 'polite' });
+      const add = (label, what, aria) => {
+        const out = el('div', { class: 'ct-out' });
+        row.append(tapButton({ class: 'btn ct-btn', text: label, 'aria-label': aria }, () => { if (!out.parentNode) outs.append(out); curveValue(C, what, out); }));
+      };
+      add(tr('Length', '長さ'), 'len', trf('Length of {0}', '{0}の長さ', toDisplay(C.text)));
+      if (C.kind === 'polar' || closedCurve(C)) add(tr('Area', '面積'), 'area', trf('Area inside {0}', '{0}が囲む面積', toDisplay(C.text)));
+      box.append(row, outs);
+    }
+  }
+  async function computeCurves(min, max) {
+    const C = P.curves || [];
+    for (const c of C) { c.error = ''; if (c.kind === 'param' || c.kind === 'polar') await sampleCurve(c); }
+    const imp = C.filter((c) => c.kind === 'implicit');
+    if (imp.length) {
+      const a = await numValue(min), b = await numValue(max);
+      await computeImplicit(imp, implicitWindow(a, b));
+    }
+  }
+  // the box of the parametric and polar lines, and the windows of the implicit ones
+  function curvesBox() {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const C of P.curves || []) {
+      if (C.kind === 'implicit') { if (C.win) { x0 = Math.min(x0, C.win.x0); x1 = Math.max(x1, C.win.x1); y0 = Math.min(y0, C.win.y0); y1 = Math.max(y1, C.win.y1); } continue; }
+      for (let i = 0; i < (C.xs || []).length; i++) { const x = C.xs[i], y = C.ys[i]; if (x === null) continue; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    return isFinite(x0) && isFinite(y0) ? { x0, x1, y0, y1 } : null;
+  }
+  function drawCurves(g, sx, sy) {
+    for (const C of P.curves || []) {
+      g.strokeStyle = C.color; g.lineWidth = 2.2; g.lineJoin = 'round'; g.lineCap = 'round';
+      g.beginPath();
+      if (C.kind === 'implicit') {
+        const s = C.segs || [];
+        for (let q = 0; q < s.length; q += 4) { g.moveTo(sx(s[q]), sy(s[q + 1])); g.lineTo(sx(s[q + 2]), sy(s[q + 3])); }
+      } else {
+        let pen = false;
+        for (let i = 0; i < (C.xs || []).length; i++) {
+          if (C.xs[i] === null) { pen = false; continue; }
+          const px = sx(C.xs[i]), py = sy(C.ys[i]);
+          if (pen) g.lineTo(px, py); else g.moveTo(px, py);
+          pen = true;
+        }
+      }
+      g.stroke();
+    }
+  }
+  // the point of a line nearest to a tap (in parts of the view): { dist, x, y, color, expr, t? }
+  function nearestCurvePoint(d) {
+    let best = null;
+    const v = P.view, w = v.x1 - v.x0, h = v.y1 - v.y0;
+    const consider = (x, y, C, t) => { const dx = (x - d.x) / w, dy = (y - d.y) / h, dist = dx * dx + dy * dy; if (!best || dist < best.dist) best = { dist, x, y, color: C.color, expr: C.text, t, kind: C.kind }; };
+    for (const C of P.curves || []) {
+      if (C.kind === 'implicit') { const s = C.segs || []; for (let q = 0; q < s.length; q += 4) consider((s[q] + s[q + 2]) / 2, (s[q + 1] + s[q + 3]) / 2, C); }
+      else for (let i = 0; i < (C.xs || []).length; i++) if (C.xs[i] !== null) consider(C.xs[i], C.ys[i], C, C.ts[i]);
+    }
+    return best;
+  }
   function openPlot() {
     // (D6: a solid of "Shapes" in the 3D graph ends when the graph is opened for something else)
     if (Q3.model && !Q3.opening3d) endModel3d(false);
@@ -4599,7 +4957,7 @@
         if (m === '3d') { Q3.start(); return; }
         if (started2d) { draw(); return; }
         started2d = true;
-        if (store.get('qalc.plot.ok', true)) setTimeout(() => compute(normalizeExpr(xmin.value), normalizeExpr(xmax.value)), 260);
+        if (store.get('qalc.plot.ok', true)) setTimeout(() => compute(...P.xr()), 260);
         else msg.textContent = tr('Press "Draw" to draw the graph', '「描画」を押すとグラフを描きます');
       };
       b2.addEventListener('click', () => setMode('2d'));
@@ -4612,6 +4970,51 @@
       ta.value = store.get('qalc.plot.exprs', 'sin(x)\nx^2/10');
       const xmin = el('input', { value: store.get('qalc.plot.min', '-10'), inputmode: 'text', autocapitalize: 'off', 'aria-label': tr('Graph: x from', 'グラフの x の始め') });
       const xmax = el('input', { value: store.get('qalc.plot.max', '10'), inputmode: 'text', autocapitalize: 'off', 'aria-label': tr('Graph: x to', 'グラフの x の終わり') });
+      // (1.15.0) the kind of the lines (that of the first line, told from its form; a tap on another kind puts its example
+      // in the box, with Undo), and the range row for x, t (parametric) or θ (polar), each kept apart
+      const rangeLbl = el('span', { text: tr('x:', 'x：') });
+      const kindSeg = el('div', { class: 'seg mini plot-kinds', role: 'group', 'aria-label': tr('Kind of line', '線の種類') });
+      const kindBtns = {};
+      const KIND_EX = { fx: 'sin(x)', param: 'x = cos(t), y = sin(2t)', polar: 'r = 1 + cos(θ)', implicit: 'x^2 + y^2 = 4' };
+      const KIND_PH = () => ({ fx: tr('Functions (one per line, variable x)', '関数（1行に1つ、変数は x）'), param: tr('x = …, y = … (variable t)', 'x = …, y = …（変数は t）'), polar: tr('r = … (variable θ or t)', 'r = …（変数は θ か t）'), implicit: tr('An equation in x and y, as x^2 + y^2 = 4', 'x と y の式の等式（例：x^2 + y^2 = 4）') });
+      const rangeOf = (k) => (k === 'param' || k === 'polar' ? k : 'x');
+      let rangeVar = 'x';
+      const syncKind = (force) => {
+        const k = boxKind(ta.value);
+        for (const id of KIND_IDS) { kindBtns[id].classList.toggle('on', id === k); kindBtns[id].setAttribute('aria-pressed', String(id === k)); }
+        const rv = rangeOf(k);
+        if (rv !== rangeVar || force) {
+          if (rv !== rangeVar) {
+            if (rangeVar === 'x') { store.set('qalc.plot.min', xmin.value); store.set('qalc.plot.max', xmax.value); }
+            else { store.set('qalc.plot.' + rangeVar + '.min', xmin.value); store.set('qalc.plot.' + rangeVar + '.max', xmax.value); }
+          }
+          rangeVar = rv;
+          const ab = rv === 'x' ? [store.get('qalc.plot.min', '-10'), store.get('qalc.plot.max', '10')] : tRange(rv);
+          xmin.value = String(ab[0]); xmax.value = String(ab[1]); // (kept as typed, in the number format: BG14)
+        }
+        const v = rv === 'param' ? 't' : rv === 'polar' ? 'θ' : 'x';
+        rangeLbl.textContent = trf('{0}:', '{0}：', v);
+        xmin.setAttribute('aria-label', trf('Graph: {0} from', 'グラフの {0} の始め', v)); xmax.setAttribute('aria-label', trf('Graph: {0} to', 'グラフの {0} の終わり', v));
+        ta.placeholder = KIND_PH()[k];
+      };
+      const chooseKind = (k) => {
+        if (boxKind(ta.value) === k && ta.value.trim()) return;
+        const before = ta.value;
+        ta.value = toDisplay(KIND_EX[k]);
+        syncKind();
+        if (k !== 'fx') { P.equal = true; }
+        go.click();
+        if (before.trim()) toast(tr('An example of this kind is in the box', 'この種類の例を入れました'), 4000, [tr('Undo', '元に戻す'), () => { ta.value = before; syncKind(); go.click(); }]);
+      };
+      for (const k of KIND_IDS) {
+        const b = el('button', { type: 'button', text: kindName(k), 'aria-pressed': 'false' });
+        b.addEventListener('click', () => chooseKind(k));
+        kindBtns[k] = b; kindSeg.append(b);
+      }
+      ta.addEventListener('input', () => syncKind());
+      // the range of x for the functions and the implicit lines (from the row when it is for x)
+      P.xr = () => (rangeVar === 'x' ? [xmin.value, xmax.value] : [store.get('qalc.plot.min', '-10'), store.get('qalc.plot.max', '10')]).map((s) => normalizeExpr(String(s)));
+      P.syncKind = syncKind;
       const go = el('button', { class: 'btn primary', text: tr('Draw', '描画') });
       const canvas = el('canvas', { role: 'img', 'aria-label': tr('2D graph', '2D グラフ') });
       const tip = el('div', { class: 'plot-tip', 'aria-live': 'polite' });
@@ -4620,7 +5023,7 @@
         el('button', { text: '−', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom(2) }),
         el('button', { text: '⟲', 'aria-label': tr('Back to the entered range', '入力した範囲に戻す'), onclick: () => {
           P.view = null; P.mark = null; P.tip.style.display = 'none';
-          compute(normalizeExpr(xmin.value), normalizeExpr(xmax.value));
+          compute(...P.xr());
         } }),
         // the same length for one unit on both axes (a circle stays round); kept for the next graphs
         P.eqBtn = el('button', { class: 'eq', text: '1:1', 'aria-label': tr('The same scale on the x and y axes', 'x と y の目盛りの間隔をそろえる'), onclick: () => {
@@ -4640,32 +5043,37 @@
       const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
       const legend = el('div', { class: 'legend' });
       const msg = el('div', { class: 'form-hint' });
-      f2.append(el('div', { class: 'plot-form' }, ta,
-        el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax, go)),
-      wrap, legend, msg, el('div', { class: 'tools' }, buildCalc2d(), buildArea2d()), P.samples = buildSamples(SAMPLES2D, false, drawSample2d),
+      P.curveTools = el('div', { class: 'curve-tools' });
+      P.toolsNote = el('div', { class: 'form-hint tools-note', hidden: true });
+      f2.append(el('div', { class: 'plot-form' }, kindSeg, ta,
+        el('div', { class: 'plot-range' }, rangeLbl, xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax, go)),
+      wrap, legend, msg, P.curveTools, P.toolsNote, el('div', { class: 'tools' }, buildCalc2d(), buildArea2d()), P.samples = buildSamples(SAMPLES2D, false, drawSample2d),
       el('div', { class: 'form-hint', text: tr('Drag to move, pinch to zoom, tap to show the coordinates. The functions are the same as on the calculator.', 'ドラッグで移動、2本指で拡大・縮小、タップで座標を表示します。式に使える関数は計算画面と同じです。') }));
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Type of graph', 'グラフの種類') }, b2, b3), f2, f3);
       P.canvas = canvas; P.tip = tip; P.legend = legend; P.msg = msg; P.wrap = wrap;
       P.ta = ta; P.go = go; P.setMode = setMode; P.xmin = xmin; P.xmax = xmax;
       go.addEventListener('click', () => {
-        store.set('qalc.plot.exprs', ta.value); store.set('qalc.plot.min', xmin.value); store.set('qalc.plot.max', xmax.value);
+        store.set('qalc.plot.exprs', ta.value);
+        if (rangeVar === 'x') { store.set('qalc.plot.min', xmin.value); store.set('qalc.plot.max', xmax.value); }
+        else { store.set('qalc.plot.' + rangeVar + '.min', xmin.value); store.set('qalc.plot.' + rangeVar + '.max', xmax.value); }
         document.activeElement && document.activeElement.blur();
         // points and marks belong to the graph they were made for (a matrix, a form), not to one drawn by hand
         if (!P.keep) {
           P.points = null; P.marks = []; P.pending = null; P.guides = null;
           // the same scale of a sample (a circle) and the marked sample stay while the same functions
           // are drawn again with another range; other functions drop them (1.8.3)
-          if (plotExprs(ta.value, 6).join('\n') !== (P.exprs || []).join('\n')) { P.equal = store.get('qalc.plot.equal', false) === true; if (P.samples) P.samples.clearChoice(); }
+          if (plotItems(ta.value, 6).map((q) => q.text).join('\n') !== (P.items || []).map((q) => q.text).join('\n')) { P.equal = store.get('qalc.plot.equal', false) === true; if (P.samples) P.samples.clearChoice(); }
         }
         P.keep = false;
-        P.exprs = plotExprs(ta.value, 6);
+        setItems(ta.value);
         P.view = null;
         P.mark = null; P.tip.style.display = 'none'; // the point that was tapped belongs to the graph before
-        compute(normalizeExpr(xmin.value), normalizeExpr(xmax.value));
+        compute(...P.xr());
       });
       setupPlotGestures(wrap);
       window.addEventListener('resize', debounce(() => { draw(); draw3d(); }, 120));
-      P.exprs = plotExprs(ta.value, 6);
+      setItems(ta.value);
+      syncKind(true);
       // ⋯: the digits of the graph's values (area, length, solids, volume and surface area in 3D)
       digitsButton(p, 'graph');
       digitsRefresh.graph = () => {
@@ -4692,6 +5100,8 @@
     // (the fields as typed: in the number format, BG14)
     store.set('qalc.plot.exprs', toDisplay(list.join('\n')));
     if (opts.range) { store.set('qalc.plot.min', toDisplay(String(opts.range[0]))); store.set('qalc.plot.max', toDisplay(String(opts.range[1]))); }
+    // (1.15.0) the range of t (parametric) or θ (polar)
+    if (opts.trange) { const k = boxKind(list.join('\n')); if (k === 'param' || k === 'polar') { store.set('qalc.plot.' + k + '.min', toDisplay(String(opts.trange[0]))); store.set('qalc.plot.' + k + '.max', toDisplay(String(opts.trange[1]))); } }
     store.set('qalc.plot.mode', '2d');
     P.points = opts.points || null;
     P.marks = [];
@@ -4703,7 +5113,7 @@
     openPlot();
     if (built && P.ta) {
       P.ta.value = toDisplay(list.join('\n'));
-      if (opts.range) { P.xmin.value = toDisplay(String(opts.range[0])); P.xmax.value = toDisplay(String(opts.range[1])); }
+      if (P.syncKind) P.syncKind(true);
       P.setMode('2d');
       P.keep = true;
       P.go.click();
@@ -4760,7 +5170,7 @@
     draw();
   }
   async function compute(min, max, keepView) {
-    if (!P.exprs.length) {
+    if (!P.exprs.length && !(P.curves && P.curves.length)) {
       // only points (the rows of a matrix)
       if (P.points && P.points.length) {
         P.series = [];
@@ -4779,7 +5189,7 @@
     P.msg.textContent = tr('Calculating…', '計算中…');
     // (feature/ratings, VR01) what a and b had been changed by the person when this graph was asked for: typed after it, they stay
     const typedAtDraw = P.areaUI ? Object.assign({ a: 0, b: 0 }, P.areaUI.typed) : null;
-    const r = await Bridge.send('plot', { exprs: P.exprs, min: String(min), max: String(max), steps: 600, var: 'x', opts: engineOpts(), timeout: 12000 });
+    const r = P.exprs.length ? await Bridge.send('plot', { exprs: P.exprs, min: String(min), max: String(max), steps: 600, var: 'x', opts: engineOpts(), timeout: 12000 }) : { ok: true, series: [], messages: [] };
     if (!r.ok && r.error === 'invalid range' && !keepView && !P.swapped) {
       // the range the wrong way round ("5 to 1"): the two ends change places
       const a = await numValue(min), b = await numValue(max);
@@ -4795,15 +5205,26 @@
     if (!Array.isArray(r.series)) { P.msg.textContent = tr('The calculation took too long and was stopped', '時間がかかりすぎたため計算を中止しました'); return; }
     // moving or zooming the graph only reads its values again: the shaded area and its results stay
     const kept = keepView && P.area ? [P.series.indexOf(P.area.f), P.area.g ? P.series.indexOf(P.area.g) : -1] : null;
-    P.series = r.series.map((s, i) => ({ expr: P.exprs[i], x: s.x, y: s.y, color: COLORS[i % COLORS.length] }));
+    P.series = r.series.map((s, i) => ({ expr: P.exprs[i], x: s.x, y: s.y, color: (P.exprColors && P.exprColors[i]) || COLORS[i % COLORS.length] }));
+    // (1.15.0) the parametric, polar and implicit lines
+    if (!keepView) P.view = null;
+    if (P.curves && P.curves.length) await computeCurves(min, max);
     const err = (r.messages || []).find((m) => m.type === 'error');
-    P.msg.textContent = plotNote(err, P.exprs, P.series.filter((q) => !q.y.some((v) => v !== null)).map((q) => q.expr), 6, false);
+    const curveNotes = (P.curves || []).map((C) => (C.error ? C.error : C.kind === 'implicit' && C.empty ? trf('No curve of {0} in the view: try another range', '{0}の曲線は表示範囲にありません（範囲を変えてみてください）', JA ? '「' + clip(C.text, 18) + '」' : '"' + clip(C.text, 18) + '" ') : (C.kind !== 'implicit' && !(C.xs || []).some((x) => x !== null)) ? trf('No values for {0}: check the expression and the range', '{0}は値が出ません。式と範囲を確認してください', JA ? '「' + clip(C.text, 18) + '」' : '"' + clip(C.text, 18) + '" ') : '')).filter(Boolean);
+    P.msg.textContent = [plotNote(err, P.exprs, P.series.filter((q) => !q.y.some((v) => v !== null)).map((q) => q.expr), 6, false)].concat(curveNotes).filter(Boolean).join(' ');
     let x0 = Infinity, x1 = -Infinity;
     for (const s of P.series) for (const x of s.x) { if (x < x0) x0 = x; if (x > x1) x1 = x; }
+    const cb = curvesBox();
+    if (cb && !P.series.length) { x0 = cb.x0; x1 = cb.x1; }
     P.dataX = isFinite(x0) ? [x0, x1] : null;
-    if (!keepView) P.view = null;
     P.legend.textContent = '';
-    for (const s of P.series) P.legend.append(el('span', { style: '--c:' + s.color, text: toDisplay(s.expr) + (s.y.some((v) => v !== null) ? '' : tr(' (no values)', '（値なし）')) }));
+    for (const q of P.items || []) {
+      const s = q.kind === 'fx' ? P.series[P.exprs.indexOf(q.f)] : null;
+      if (q.kind === 'fx' && !s) continue;
+      const noVals = s ? !s.y.some((v) => v !== null) : q.kind === 'implicit' ? !!q.empty : !(q.xs || []).some((x) => x !== null);
+      P.legend.append(el('span', { style: '--c:' + q.color, text: toDisplay(q.kind === 'fx' ? s.expr : q.text) + (noVals ? tr(' (no values)', '（値なし）') : '') }));
+    }
+    curveToolsChanged();
     // (1.12.0, C4: the points of the statistics with their regression line)
     if (P.points && P.points.length) P.legend.append(el('span', { class: 'legend-points', style: '--c:' + COLORS[0], text: tr('Points: ', '点：') + P.points.length }));
     if (kept && P.series[kept[0]] && (kept[1] < 0 || P.series[kept[1]])) {
@@ -4821,12 +5242,26 @@
   }
   function autoView() {
     if (!P.dataX) return { x0: -10, x1: 10, y0: -10, y1: 10 };
+    // (1.15.0) only parametric, polar and implicit lines: their box, with the same scale on both axes
+    const cb = P.curves && P.curves.length ? curvesBox() : null;
+    if (cb && !P.series.length) {
+      const imp = P.curves.every((C) => C.kind === 'implicit');
+      let x0 = cb.x0, x1 = cb.x1, y0 = cb.y0, y1 = cb.y1;
+      if (!imp) { const mx = (x1 - x0) * 0.08 || 1, my = (y1 - y0) * 0.08 || 1; x0 -= mx; x1 += mx; y0 -= my; y1 += my; }
+      const W = P.canvas && P.canvas.clientWidth, H = P.canvas && P.canvas.clientHeight;
+      if (W > 0 && H > 0) {
+        const ux = (x1 - x0) / W, uy = (y1 - y0) / H;
+        if (ux > uy) { const c = (y0 + y1) / 2, h = ux * H / 2; y0 = c - h; y1 = c + h; } else { const c = (x0 + x1) / 2, h = uy * W / 2; x0 = c - h; x1 = c + h; }
+      }
+      return { x0, x1, y0, y1 };
+    }
     const ys = [];
     // tangent lines do not count (a long straight line would flatten the function)
     let scaled = P.series.filter((s) => !(P.guides && P.guides.has(s.expr)));
     if (!scaled.length) scaled = P.series;
     for (const s of scaled) for (const y of s.y) if (y !== null && isFinite(y)) ys.push(y);
     for (const p of P.points || []) ys.push(p.y);
+    if (cb) { ys.push(cb.y0, cb.y1); }
     ys.sort((a, b) => a - b);
     let y0 = -1, y1 = 1;
     if (ys.length) {
@@ -4894,7 +5329,7 @@
     const css = getComputedStyle(document.documentElement);
     g.fillStyle = css.getPropertyValue('--plot-bg').trim() || '#fff';
     g.fillRect(0, 0, W, H);
-    if (!P.series.length && !(P.points && P.points.length)) return;
+    if (!P.series.length && !(P.points && P.points.length) && !(P.curves && P.curves.length)) return;
     if (!P.view) P.view = autoView();
     const v = P.view;
     const sx = (x) => (x - v.x0) / (v.x1 - v.x0) * W;
@@ -4952,6 +5387,8 @@
       }
       g.stroke();
     }
+    drawCurves(g, sx, sy);
+    if (P.curves && P.curves.length) c.dataset.lines = P.curves.map((C) => C.kind + ':' + (C.kind === 'implicit' ? (C.segs || []).length / 4 : (C.xs || []).filter((x) => x !== null).length)).join(','); else delete c.dataset.lines; // (what is drawn, for the tests)
     // points (the rows of a matrix) and marks (crossing points, extrema, the point of a tangent)
     g.font = '12px system-ui, sans-serif'; g.textBaseline = 'bottom'; g.textAlign = 'left';
     for (const p of P.points || []) {
@@ -5028,6 +5465,16 @@
     if (!P.view || !P.dataX) return;
     const v = P.view, d = P.dataX;
     const w = v.x1 - v.x0;
+    // (1.15.0) an implicit line is worked out again for a view beyond its grid, or zoomed in on
+    const imp = (P.curves || []).filter((C) => C.kind === 'implicit');
+    if (imp.length) {
+      const g0 = imp[0].win;
+      if (!g0 || v.x0 < g0.x0 - w * 0.01 || v.x1 > g0.x1 + w * 0.01 || v.y0 < g0.y0 - (v.y1 - v.y0) * 0.01 || v.y1 > g0.y1 + (v.y1 - v.y0) * 0.01 || w < (g0.x1 - g0.x0) / 1.6) {
+        const h = v.y1 - v.y0;
+        computeImplicit(imp, { x0: v.x0 - w * 0.1, x1: v.x1 + w * 0.1, y0: v.y0 - h * 0.1, y1: v.y1 + h * 0.1 }).then(() => draw());
+      }
+    }
+    if (!P.exprs.length) return;
     if (v.x0 < d[0] - w * 0.05 || v.x1 > d[1] + w * 0.05 || w < (d[1] - d[0]) / 6) {
       const pad = w * 0.5;
       compute(engineNum(v.x0 - pad), engineNum(v.x1 + pad), true);
@@ -5178,9 +5625,12 @@
         if (!best || dist < best.dist) best = { dist, x: s.x[i], y, color: s.color, expr: s.expr };
       }
     }
+    const bc = P.curves && P.curves.length ? nearestCurvePoint(d) : null;
+    if (bc && (!best || bc.dist < best.dist)) best = bc;
     if (!best || best.dist > 0.02) { P.mark = null; P.tip.style.display = 'none'; draw(); return; }
     P.mark = best;
-    P.tip.textContent = best.expr + tr(':  x = ', '：x = ') + Number(best.x.toPrecision(10)) + ', y = ' + Number(best.y.toPrecision(10));
+    const tv = best.t !== undefined ? (best.kind === 'polar' ? 'θ = ' : 't = ') + decSign(String(Number(best.t.toPrecision(6)))) + ', ' : '';
+    P.tip.textContent = toDisplay(best.expr) + tr(':  ', '：') + tv + 'x = ' + decSign(String(Number(best.x.toPrecision(10)))) + ', y = ' + decSign(String(Number(best.y.toPrecision(10))));
     P.tip.style.display = 'block';
     draw();
   }
@@ -8532,6 +8982,12 @@
     { t: tr('Heart', 'ハート'), e: ['√(1 − (abs(x) − 1)^2)', '−3 √(1 − √(abs(x) / 2))'], r: ['-2', '2'], eq: true,
       f: [(x) => Math.sqrt(1 - (Math.abs(x) - 1) ** 2), (x) => -3 * Math.sqrt(1 - Math.sqrt(Math.abs(x) / 2))] },
     { t: tr('Circle', '円'), e: ['√(4 − x^2)', '−√(4 − x^2)'], r: ['-2.6', '2.6'], eq: true, f: [(x) => Math.sqrt(4 - x * x), (x) => -Math.sqrt(4 - x * x)] },
+    // (1.15.0) parametric, polar and implicit lines (k: the kind; tr: the range of t or θ; p and F for the small picture)
+    { t: tr('Circle (implicit)', '円（陰関数）'), e: ['x^2 + y^2 = 4'], r: ['-3', '3'], eq: true, k: 'implicit', F: (x, y) => x * x + y * y - 4 },
+    { t: tr('Cardioid', 'カージオイド'), e: ['r = 1 + cos(θ)'], tr: ['0', '2π'], eq: true, k: 'polar', p: (q) => 1 + Math.cos(q) },
+    { t: tr('Rose', 'バラ曲線'), e: ['r = cos(3θ)'], tr: ['0', 'π'], eq: true, k: 'polar', p: (q) => Math.cos(3 * q) },
+    { t: tr('Lissajous', 'リサジュー曲線'), e: ['x = sin(3t), y = sin(2t)'], tr: ['0', '2π'], eq: true, k: 'param', p: (q) => [Math.sin(3 * q), Math.sin(2 * q)] },
+    { t: tr('Folium of Descartes', '正葉線（デカルト）'), e: ['x^3 + y^3 = 3x y'], r: ['-3', '3'], eq: true, k: 'implicit', F: (x, y) => x * x * x + y * y * y - 3 * x * y },
     { t: tr('Bell curve', 'ベルカーブ'), e: ['e^(−x^2 / 2) / √(2π)'], r: ['-4', '4'], f: [(x) => Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI)] },
     { t: tr('Damped wave', '減衰する波'), e: ['e^(−x / 5) sin(3x@)', 'e^(−x / 5)', '−e^(−x / 5)'], r: ['0', '15'],
       f: [(x) => Math.exp(-x / 5) * Math.sin(3 * x), (x) => Math.exp(-x / 5), (x) => -Math.exp(-x / 5)] },
@@ -8580,7 +9036,34 @@
     g.clearRect(0, 0, THUMB_W, THUMB_H);
     return g;
   }
+  // (1.15.0) the small picture of a parametric, polar or implicit sample
+  function thumbCurve(c, d) {
+    const g = thumbContext(c), W = THUMB_W, H = THUMB_H, pad = 5;
+    let pts = [];
+    if (d.k === 'implicit') {
+      const n = 60, x0 = Number(d.r[0]), x1 = Number(d.r[1]), hy = (x1 - x0) * H / W / 2, xs = gridAxis(x0, x1, n), ys = gridAxis(-hy, hy, Math.round(n * H / W));
+      const z = []; for (const y of ys) for (const x of xs) z.push(d.F(x, y));
+      const s = marchCells(z, xs, ys, xs.length, ys.length, null);
+      const X = (x) => (x - x0) / (x1 - x0) * W, Y = (y) => H / 2 - y / (2 * hy) * H;
+      g.strokeStyle = 'rgba(128,128,128,0.5)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, Y(0)); g.lineTo(W, Y(0)); g.moveTo(X(0), 0); g.lineTo(X(0), H); g.stroke();
+      g.strokeStyle = COLORS[0]; g.lineWidth = 1.7; g.lineCap = 'round'; g.beginPath();
+      for (let q = 0; q < s.length; q += 4) { g.moveTo(X(s[q]), Y(s[q + 1])); g.lineTo(X(s[q + 2]), Y(s[q + 3])); }
+      g.stroke();
+      return;
+    }
+    const a = 0, b = d.tr[1] === 'π' ? Math.PI : 2 * Math.PI, N = 240;
+    for (let i = 0; i <= N; i++) { const q = a + (b - a) * i / N; if (d.k === 'param') pts.push(d.p(q)); else { const r = d.p(q); pts.push([r * Math.cos(q), r * Math.sin(q)]); } }
+    let lx = Infinity, hx = -Infinity, ly = Infinity, hy = -Infinity;
+    for (const [x, y] of pts) { lx = Math.min(lx, x); hx = Math.max(hx, x); ly = Math.min(ly, y); hy = Math.max(hy, y); }
+    const s = Math.min((W - 2 * pad) / ((hx - lx) || 1), (H - 2 * pad) / ((hy - ly) || 1));
+    const X = (x) => W / 2 + (x - (lx + hx) / 2) * s, Y = (y) => H / 2 - (y - (ly + hy) / 2) * s;
+    g.strokeStyle = 'rgba(128,128,128,0.5)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, Y(0)); g.lineTo(W, Y(0)); g.moveTo(X(0), 0); g.lineTo(X(0), H); g.stroke();
+    g.strokeStyle = COLORS[0]; g.lineWidth = 1.7; g.lineJoin = 'round'; g.beginPath();
+    pts.forEach(([x, y], i) => { if (i) g.lineTo(X(x), Y(y)); else g.moveTo(X(x), Y(y)); });
+    g.stroke();
+  }
   function thumb2d(c, d) {
+    if (d.k) return thumbCurve(c, d);
     const g = thumbContext(c), W = THUMB_W, H = THUMB_H, N = d.n || 140;
     const x0 = Number(d.r[0]), x1 = Number(d.r[1]);
     const ys = d.f.map((f) => { const a = []; for (let i = 0; i <= N; i++) { const v = f(x0 + (x1 - x0) * i / N); a.push(isFinite(v) ? v : NaN); } return a; });
@@ -8693,7 +9176,7 @@
     return wrap;
   }
   function drawSample2d(d) {
-    openPlotWith(sampleExprs(d), { range: d.r, equal: !!d.eq, sample: true });
+    openPlotWith(sampleExprs(d), { range: d.r, trange: d.tr, equal: !!d.eq, sample: true });
   }
   function drawSample3d(d) {
     Q3.ta.value = toDisplay(sampleExprs(d).join('\n'));
@@ -15242,6 +15725,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['🎚️', tr('The precision at the top: press its chip to choose 10 to 100 digits or another', '有効桁数を上のボタンですぐ変えられます（10〜100 桁ほか）'), () => precisionSheet()],
     ['📥', tr('Calculation notes: open a .txt or .csv file, or share text to QCalc', '計算メモに .txt・.csv のファイルや、ほかのアプリから共有した文字を読み込めます'), () => { const p = openNotesTool(); const d = p.body.querySelector('.note-more'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ block: 'center' }), 350); } }],
     ['📐', tr('Taylor series: taylor on the Calculus page, with a graph to compare', '「解析」のページの taylor でテイラー展開（グラフで比べられます）'), () => openForm('taylor', { f: 'sin(x)' })],
+    ['🌀', tr('2D graph: parametric, polar and implicit curves', '2D グラフで媒介変数・極座標・陰関数の曲線'), () => openPlotWith(['r = 1 + cos(θ)'])],
     ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
     try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
   ].filter(Boolean);
