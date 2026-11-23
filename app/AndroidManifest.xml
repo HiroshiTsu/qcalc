@@ -34,6 +34,17 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- 1.15.0: text, or a .txt or .csv file, shared to QCalc from another app goes into the calculation
+                 notes (NotesImport.java). Only read, as text; no permission is needed for it. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="text/csv" />
+                <data android:mimeType="text/comma-separated-values" />
+                <data android:mimeType="text/x-csv" />
+                <data android:mimeType="application/csv" />
+            </intent-filter>
         </activity>
 
         <!-- 1.12.0: the widget on the home screen (Widget.java), the tile of the quick settings

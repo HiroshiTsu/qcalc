@@ -336,9 +336,9 @@
 
   // ----------------------------------------------------------- settings
   const DEFAULTS = {
-    angle: 'rad', approx: 'auto', fraction: 'auto', precision: 10, max_decimals: -1, time_limit: 20, math_view: true,
+    angle: 'rad', approx: 'auto', fraction: 'auto', precision: 15, max_decimals: -1, time_limit: 20, math_view: true,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
-    grouping: false, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
+    grouping: true, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
     text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
@@ -366,7 +366,28 @@
   }
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
   S.lang = LANG_AUTO ? 'auto' : LANG; // the language in use (qalc.lang, or 'auto'), whatever qalc.settings says
-  function saveSettings() { store.set('qalc.settings', S); }
+  // (1.15.0) the new defaults, 15 significant digits and digit groups, once, also on a phone whose saved settings still
+  // have the old ones (up to 1.14 every setting was saved whenever one changed, so a value as it was cannot be told
+  // from one chosen): each on its own, 10 digits → 15 and no groups → groups (the owner's choice B of 11-23). What the
+  // user sets afterwards stays (qalc.defaults115). The card of what is new says that the precision can be set back
+  if (!store.get('qalc.defaults115', false)) {
+    const saved = store.get('qalc.settings', null);
+    if (saved && (Number(saved.precision) === 10 || saved.grouping === false)) {
+      if (Number(saved.precision) === 10) S.precision = DEFAULTS.precision;
+      if (saved.grouping === false) S.grouping = DEFAULTS.grouping;
+      store.set('qalc.settings', S);
+    }
+    store.set('qalc.defaults115', true);
+  }
+  // (1.15.0) the settings the user has changed (qalc.touched): a later change of a default can leave those alone
+  const touched = new Set(store.get('qalc.touched', []));
+  let lastSaved = Object.assign({}, S);
+  function saveSettings() {
+    for (const k of Object.keys(DEFAULTS)) if (k !== 'lang' && S[k] !== lastSaved[k]) touched.add(k);
+    lastSaved = Object.assign({}, S);
+    store.set('qalc.settings', S);
+    if (touched.size) store.set('qalc.touched', Array.from(touched));
+  }
 
   // ------------------------------------------------------- number format
   // 1.12.0: how numbers are written, setting "Number format": 1,234.5, 1.234,5 or 1 234,5, or
@@ -441,15 +462,31 @@
       return c;
     });
   }
-  // a result as shown → the engine's form, for the math notation (mathview.js reads the engine's syntax)
+  // a result as shown → the engine's form, for the math notation (mathview.js reads the engine's syntax). (1.15.0)
+  // The groups of digits are kept as narrow spaces, as the engine writes them: mathview.js draws them with the signs
+  // of the number format (render's opts.nf)
   function mathSource(t) {
+    if (NF.group !== '\u202f') {
+      const g = NF.group === '.' ? '\\.' : NF.group === ',' ? ',' : null;
+      if (g) t = t.replace(new RegExp('(\\d)' + g + '(?=\\d{3}(?!\\d))', 'g'), '$1\u202f');
+    }
     if (!commaMode) return t;
-    if (NF.group === '.') t = t.replace(/(\d)\.(?=\d{3})/g, '$1');
-    return toInternal(t.replace(/(\d)[\u202f\u2009](?=\d)/g, '$1'));
+    // (as toInternal, but the narrow spaces between groups stay)
+    return mapSeps(t, (c, i, inB) => {
+      if (c === ',') return (isDigit(t[i + 1] || '') && (isDigit(t[i - 1] || '') || !/[\p{L}\p{N}_)\]]/u.test(t[i - 1] || ''))) ? '.' : ',';
+      if (c === ';') return inB ? ';' : ',';
+      return c;
+    });
   }
   // the numbers drawn by KaTeX with a decimal comma (and ";" between arguments)
-  function commaMath(node) {
+  function commaMath(node, final) {
     if (!commaMode || !node) return;
+    // (1.15.0: the numbers drawn with their own signs by mathview.js) only "," between arguments becomes ";"
+    if (final) {
+      const w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+      for (let n = w.nextNode(); n; n = w.nextNode()) if (n.nodeValue === ',' && n.parentNode && n.parentNode.closest && n.parentNode.closest('.mpunct, mo[separator]')) n.nodeValue = ';';
+      return;
+    }
     // (BG11: the MathML read by TalkBack holds a number as one text node per digit and sign — KaTeX
     // joins its <mn> parts so — and a "." alone was not changed: one text node per number first)
     node.normalize();
@@ -668,9 +705,9 @@
   }
   function engineOpts() {
     return {
-      angle: S.angle, approx: S.approx, fraction: S.fraction, precision: Math.min(Number(S.precision) || 10, maxPrecision()),
+      angle: S.angle, approx: S.approx, fraction: S.fraction, precision: Math.min(Number(S.precision) || DEFAULTS.precision, maxPrecision()),
       max_decimals: Number(S.max_decimals), base: Number(S.base), notation: S.notation, units: S.units,
-      mixed_units: !!S.mixed_units, complex: S.complex, grouping: !!S.grouping, structuring: S.structuring
+      mixed_units: !!S.mixed_units, complex: S.complex, grouping: false, structuring: S.structuring // (1.15.0: the groups of digits are made when shown, groupText)
     };
   }
   // The time limit of a calculation with "=" in seconds (setting "Time limit"). The engine accepts up
@@ -1407,13 +1444,126 @@
     if (from < n) parts.push(text.slice(from));
     return parts;
   }
+  // (1.15.0) How a result is shown (the owner's wishes of 11-23 07:21):
+  //   - an exact result with its approximation: "= exact" on one line and "≈ approximation" on the next, both on the right
+  //     (the line of ≈ a little smaller); one of them alone: one line
+  //   - the digits in math notation as in plain text: the same letters, and the groups of digits with narrow spaces
+  //     (mathview.js; 0.583 · 333 before)
+  //   - no ending zeros in an approximation (√2 ≈ 1.414 213 562 373 1, not …3 10)
+  //   - 2.6525E32 as 2.6525 × 10³² (a screen reader says "10 to the power of 32"); copying and inserting keep the
+  //     engine's text, which it reads again
+  //   - a result with units on one line (m/s, not a stacked fraction)
+  //   - a line too wide for its place gets smaller letters, down to 80 % (of the size set and the phone's), and only
+  //     then breaks, only between groups of digits, after the sign between them ("1,569,275," and then "433,…"; after a
+  //     narrow space in the decimals); never after "=" or "≈" and never inside a group (fitLines, after drawing)
+  const SUP_DIGITS = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻', '−': '⁻', '+': '⁺' };
+  const supText = (s) => Array.from(String(s)).map((c) => SUP_DIGITS[c] || c).join('');
+  // the places of " ≈ " outside brackets and quotes
+  function topApprox(text) {
+    const at = [];
+    let depth = 0, q = '';
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) { if (c === q) q = ''; continue; }
+      if (c === '"') { q = c; continue; }
+      if ('([{'.indexOf(c) >= 0) depth++;
+      else if (')]}'.indexOf(c) >= 0) depth = Math.max(0, depth - 1);
+      else if (c === '≈' && depth === 0 && text[i - 1] === ' ' && text[i + 1] === ' ') at.push(i);
+    }
+    return at;
+  }
+  // "= exact ≈ approximation" (or "Volume V = exact ≈ approximation") → its two lines; anything else: one line
+  function resultLines(text) {
+    const at = topApprox(text);
+    if (at.length !== 1 || / \|\| | or /.test(text)) return [text];
+    const a = text.slice(0, at[0]).trimEnd(), b = text.slice(at[0]);
+    if (!/(^|\s)=\s/.test(a)) return [text];
+    return [a, b];
+  }
+  // a result that has units: a number, a space and a letter (17 636 684 142.857 m/s, 5 km)
+  const hasUnits = (t) => /\d[   ]+[\p{L}µΩ°℃℉$€£¥₩]/u.test(t);
+  // the numbers of a line of plain text: digits with their groups and decimals, and an exponent
+  const RES_NUM_RE = /\d(?:[\d  ,.]*\d)?(?:E[−-]?\d+)?/g;
+  // a number without its ending zeros (an approximation): 1.414 213 562 373 10 → 1.414 213 562 373 1, 2.50 → 2.5, 3.0 → 3
+  function noEndZeros(num) {
+    const k = num.indexOf(NF.dec);
+    if (k < 0) return num;
+    const f = num.slice(k + 1).replace(/[0  ]+$/, '');
+    return f ? num.slice(0, k + 1) + f : num.slice(0, k);
+  }
+  // a number as nodes: the groups with a place to break after the sign between them (",", "." or a narrow space: the
+  // owner's choice of 11-23, a line may end with "," but not begin with it), and its
+  // exponent as × 10 with the power raised (and said as words to a screen reader)
+  function numberNodes(num) {
+    const out = [];
+    const m = /^(.*?)E([−-]?\d+)$/.exec(num), mant = m ? m[1] : num;
+    const k = mant.indexOf(NF.dec);
+    let s = '';
+    for (let i = 0; i < mant.length; i++) {
+      const c = mant[i];
+      const groupSign = (c === ' ' || c === ' ') || (c === NF.group && (k < 0 || i < k) && c !== NF.dec);
+      if (!groupSign) { s += c; continue; }
+      if (c === ' ' || c === ' ') { s += ' '; out.push(s, el('wbr')); s = ''; }
+      else { out.push(s + c, el('wbr')); s = ''; }
+    }
+    out.push(s);
+    if (m) {
+      const p = m[2].replace('-', '−');
+      out.push(el('span', { class: 'r-exp', 'aria-hidden': 'true', text: ' × 10' + supText(p) }));
+      out.push(el('span', { class: 'sr-only', text: trf(' times 10 to the power of {0}', ' × 10 の {0} 乗', p) }));
+    }
+    return out;
+  }
+  // a line of plain text as nodes ("= " and "≈ " held to what follows)
+  function plainInto(line, t, approx) {
+    t = t.replace(/^([=≈]) /, '$1 ').replace(/ ([=≈]) /g, ' $1 ');
+    let at = 0;
+    for (const mm of t.matchAll(RES_NUM_RE)) {
+      if (mm.index > at) line.append(t.slice(at, mm.index));
+      // (not a part of a name or of a date such as 2026-11-23: only numbers that stand alone are changed)
+      const before = t[mm.index - 1] || '';
+      const num = /[\p{L}_]/u.test(before) ? mm[0] : (approx ? noEndZeros(mm[0]) : mm[0]);
+      line.append(...numberNodes(num));
+      at = mm.index + mm[0].length;
+    }
+    if (at < t.length) line.append(t.slice(at));
+  }
+  // (1.15.0) The groups of digits, made here when a result is shown (setting "Digit grouping", on by default): the engine
+  // is always asked without them, so that the tools read its numbers as before (with the groups of the engine, the
+  // shapes tool cut 33.510 321 638 into 33.51 321 638). A whole part or decimals of 5 digits or more in groups of 3, as
+  // the engine wrote them: the whole part with the sign of the number format, the decimals with narrow spaces; not the
+  // power after E, nor digits that belong to a name; only in base 10
+  function groupText(t) {
+    if (!S.grouping || Number(S.base) !== 10 || !t || t.length > 20000) return t;
+    const re = new RegExp('\\d+(?:' + (NF.dec === '.' ? '\\.' : ',') + '\\d+)?', 'g');
+    return t.replace(re, (num, at, all) => {
+      const b = all[at - 1] || '';
+      if (/[\p{L}_\d]/u.test(b) || (b === NF.dec || b === NF.group) || ((b === '-' || b === '−' || b === '+') && all[at - 2] === 'E')) return num;
+      const k = num.indexOf(NF.dec), i = k < 0 ? num : num.slice(0, k), f = k < 0 ? '' : num.slice(k + 1);
+      const gi = i.length >= 5 ? i.replace(/\B(?=(\d{3})+$)/g, NF.group) : i;
+      const gf = f.length >= 5 ? f.replace(/(\d{3})(?=\d)/g, '$1\u202f') : f;
+      return k < 0 ? gi : gi + NF.dec + gf;
+    });
+  }
+  function resultLine(t, approx, second) {
+    t = groupText(t);
+    const line = el('span', { class: 'r-line' + (second ? ' r-ap' : '') });
+    if (S.math_view && mathResult(t) && window.QMath && QMath.render(line, mathSource(t), { richOnly: true, mathml: true, nf: NF })) {
+      line.classList.add('math'); commaMath(line, true);
+      return line;
+    }
+    plainInto(line, t, approx);
+    return line;
+  }
   function showResult(node, text) {
-    const parts = splitMatrices(text); node.classList.toggle('brk', /\S{16,}/.test(text)); // a number longer than a line is cut at the end of the line (.brk in style.css); "≈" does not stand alone
-    node.classList.remove('math');
+    const parts = splitMatrices(text);
+    node.classList.remove('math', 'brk', 'two');
     if (parts.every((x) => typeof x === 'string')) {
-      // fractions, roots and powers in math notation (setting "math notation"): 1/6 as a stacked fraction
-      if (S.math_view && mathResult(text) && window.QMath && QMath.render(node, mathSource(text), { richOnly: true, mathml: true })) { node.classList.add('math'); commaMath(node); return; }
-      node.textContent = text;
+      node.textContent = '';
+      const lines = resultLines(text);
+      node.classList.toggle('two', lines.length > 1);
+      lines.forEach((l, i) => node.append(resultLine(l, i > 0 || /^\s*≈/.test(l), i > 0)));
+      if (node.isConnected) fitLines(node);
       return;
     }
     node.textContent = '';
@@ -1425,11 +1575,28 @@
       node.append(grid);
     }
   }
+  // the lines of results under root made to fit (after they are on the page): smaller letters down to 80 %, then a
+  // plain line may break (where numberNodes allows it); a line in math notation scrolls sideways instead
+  function fitLines(root) {
+    const lines = root.classList && root.classList.contains('r-line') ? [root] : root.querySelectorAll('.r-line');
+    for (const l of lines) {
+      const base = l.classList.contains('r-ap') ? 0.86 : 1;
+      l.style.fontSize = base === 1 ? '' : base + 'em';
+      l.classList.add('nw');
+      let k = 1;
+      for (let i = 0; i < 4 && k > 0.8 && l.clientWidth > 0 && l.scrollWidth > l.clientWidth + 1; i++) {
+        k = Math.max(0.8, k * (l.clientWidth - 1) / l.scrollWidth - 0.005);
+        l.style.fontSize = (base * k).toFixed(3) + 'em';
+      }
+      if (!l.classList.contains('math') && l.scrollWidth > l.clientWidth + 1) l.classList.remove('nw');
+    }
+  }
   // A result that reads well in math notation: numbers, x, π, √, fractions and powers, functions
-  // such as sin; not units (km, mph), dates, texts, matrices or very long numbers.
+  // such as sin; not units (km, mph, m/s: 1.15.0), dates, texts, matrices or very long numbers. A number with an
+  // exponent alone (1.2E32) is plain text since 1.15.0 (× 10³² in the same letters as the other results).
   const MATH_WORDS = /^(?:sin|cos|tan|sec|csc|cot|sinh|cosh|tanh|asin|acos|atan|arcsin|arccos|arctan|ln|log|log10|log2|sqrt|cbrt|abs|exp|or|and|where)$/;
   function mathResult(t) {
-    if (!t || t.length > 400 || /[[\]"…|]/.test(t) || !/[/^√∛⁰¹²³⁴⁵⁶⁷⁸⁹]|E[−-]?\d/.test(t)) return false;
+    if (!t || t.length > 400 || /[[\]"…|]/.test(t) || !/[/^√∛⁰¹²³⁴⁵⁶⁷⁸⁹]/.test(t) || hasUnits(t)) return false;
     const words = t.match(/[\p{L}_][\p{L}\p{Nd}_]+/gu) || [];
     return words.every((w) => MATH_WORDS.test(w));
   }
@@ -1584,7 +1751,17 @@
       const s = Math.floor((Date.now() - started) / 1000);
       if (s >= 1) previewEl.textContent = trf('Calculating… {0} s (tap here to stop)', '計算中… {0} 秒（ここをタップで中止）', s);
     }, 1000);
-    const r = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    // (1.15.0) a line of the history being edited: worked out in its place (ans of the lines above it, not stored)
+    const editing = histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
+    if (histEdit && !editing) endHistEdit(true); // (the line was deleted meanwhile: a new line)
+    const r = editing ? Object.assign(await recalcLine(history.indexOf(editing), expr), { editRun: true })
+      : await Bridge.send('calc', { expr, opts: engineOpts(), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    if (editing) {
+      committing = false; clearInterval(busyTimer); clearInterval(cancelTimer);
+      if (r.error) { previewEl.textContent = ''; msgEl.textContent = r.error; msgEl.className = 'msg error'; return; }
+      await applyHistEdit(editing, r);
+      return;
+    }
     if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
     committing = false;
     clearInterval(busyTimer);
@@ -1640,6 +1817,8 @@
       showPreview(null);
       autosize();
       updateSuggest(false);
+      updateMathView(); // (1.15.0) the expression in math notation above the field goes with it (it stayed after Enter on a keyboard)
+      plotBtnEl.hidden = true;
     } else {
       previewEl.textContent = '';
       exprChanged(); // something was typed while the calculation ran: keep it
@@ -1702,6 +1881,7 @@
     if (ev.event === 'shared') { if (!ev.ok) toast(tr('Could not share the image', '画像を共有できませんでした'), 3500); else reviewMoment('share'); return; }
     if (ev.event === 'review') { reviewDone(ev); return; }
     if (ev.event === 'quick') { quickAnswer(ev); return; }
+    if (ev.event === 'import') { importArrived(ev); return; } // (1.15.0: calculation notes read in)
     if (ev.event !== 'ans') return;
     const h = sessionEntries.get(ev.id);
     if (h) { sessionEntries.delete(ev.id); setInput(h, ev.input); saveHistory(); return; }
@@ -3191,11 +3371,25 @@
   }
   // all lines drawn now (to search them)
   function drawAllOlder() { while (olderLeft > 0) drawOlder(olderJob); }
+  // (1.15.0) the expression of a line of the history written as above the input field: × for *, √ for sqrt, π for pi,
+  // and a simple power raised (x^2 → x², 10^-3 → 10⁻³); what is in quotes stays. Only the display: touching the line
+  // puts back the expression as typed
+  function prettyExpr(s) {
+    if (!s || s.length > 2000) return s;
+    return s.split(/("[^"]*"|'[^']*')/).map((part, i) => (i % 2 ? part : part
+      .replace(/\*\*/g, '^')
+      .replace(/ *\* */g, ' × ')
+      .replace(/(^|[^\p{L}\p{N}_])sqrt\(/gu, '$1√(')
+      .replace(/(^|[^\p{L}\p{N}_])cbrt\(/gu, '$1∛(')
+      .replace(/(^|[^\p{L}\p{N}_])pi(?![\p{L}\p{N}_])/gu, '$1π')
+      .replace(/\^\(?([−-]?)(\d{1,4})\)?(?![\d.,(])/g, (m, sg, d) => ((m[1] === '(') !== (m.endsWith(')')) ? m : supText(sg + d)))
+    )).join('');
+  }
   // one line of the history: the expression, the result and its warnings
   function historyItem(h) {
     const res = el('div', { class: 'h-res' });
     showResult(res, displayResult(h));
-    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') }, el('div', { class: 'h-expr', text: toDisplay(h.expr) }), res);
+    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: prettyExpr(toDisplay(h.expr)) }), res);
     item._h = h;
     if (h.note) item.insertBefore(el('div', { class: 'h-note', text: h.note }), item.firstChild);
     for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
@@ -3205,7 +3399,7 @@
     bindLongPress(item, () => { if (!histSel) historyMenu(h); }, (target) => {
       if (histSel) { toggleSelected(item); return; }
       if (target.closest('.h-more')) { historyMenu(h); return; }
-      if (target.closest('.h-expr')) setExpr(h.expr);
+      if (target.closest('.h-expr')) startHistEdit(h); // (1.15.0: the line edited in place)
       else insertResult(h);
       focusExpr();
     });
@@ -3223,6 +3417,7 @@
   // A matrix that is wider than the place it is shown in gets smaller characters (down to 60 %);
   // if it is still too wide it can be moved sideways.
   function fitMatrices(root) {
+    fitLines(root); // (1.15.0: and the lines of the results)
     for (const g of root.querySelectorAll('.mx')) {
       g.style.fontSize = '';
       let scale = 1;
@@ -3273,8 +3468,9 @@
     const mcols = mat ? parseMatrix(mat).rows[0].length : 0;
     if (mcols === 2) more.push(['m-plot', tr('Draw the rows as points (2D graph)', '各行を点としてグラフに描く（2D）')]);
     else if (mcols === 3) more.push(['m-plot', tr('Draw the rows as points (3D graph)', '各行を点としてグラフに描く（3D）')]);
-    const a = await sheet((h.t ? fmtTime(h.t / 1000) + '\n' : '') + clip(toDisplay(h.expr), 300) + '\n' + clip(displayText(h.result), 300), more.concat([
+    const a = await sheet((h.t ? fmtTime(h.t / 1000) + (h.edited ? trf(' (edited {0})', '（直した時刻 {0}）', fmtTime(h.edited / 1000)) : '') + '\n' : '') + clip(toDisplay(h.expr), 300) + '\n' + clip(displayText(h.result), 300), more.concat([
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
+      ['digits', tr('Work it out with other digits', '桁数を変えて計算し直す')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')],
       ['star', h.star ? tr('★ Unpin', '★ 固定を外す') : tr('☆ Pin at the top', '☆ 上に固定')],
       ['note', h.note ? tr('Change the note', 'メモを変える') : tr('Add a short note', 'ひとことメモ')],
@@ -3290,7 +3486,8 @@
     else if (a === 'f-subst') openForm('subst', { f: fx, focus: 'a' });
     else if (a === 'copy-res') copyText(shownText(h));
     else if (a === 'copy-expr') copyText(h.expr);
-    else if (a === 'edit') setExpr(h.expr);
+    else if (a === 'edit') startHistEdit(h);
+    else if (a === 'digits') recalcWithDigits(h);
     else if (a === 'ins-ans') insertResult(h);
     else if (a === 'del') {
       const i = history.indexOf(h);
@@ -3337,6 +3534,155 @@
     fitHistory();
     saveHistory();
     renderHistory(false);
+  }
+  // ------------------------------------------------- a line of the history edited in place (1.15.0)
+  // The owner's design of 11-23 09:12: touching the expression of a line (or ⋯ "Edit expression") puts it into the field
+  // with a band above it, "Editing a line of the history", with "As a new line" and ✕. "=" then puts the new expression
+  // and its result in that place: ★ and the note stay, the time of the change is kept beside the time of the line, and
+  // "Edited" with "Undo" shows for a few seconds. The lines below that went on from it (ans, ans2 … of the lines above, or
+  // a variable it defines) can be worked out again too, after one question; Undo takes them back as well. A line is worked
+  // out with the settings of now, as a new line would be (a line of another base gets the base of now: the band says so).
+  // The engine keeps its ans and its variables as the history now has them (set_ans; the newest definition of a name is
+  // worked out again when an older one was).
+  let histEdit = null; // { h, keep: what the field held before }
+  const editBand = el('div', { id: 'hist-edit', class: 'hedit', role: 'region', hidden: true, 'aria-label': tr('Editing a line of the history', '履歴の行を直しています') });
+  editBand.append(el('span', { class: 'hedit-t', text: tr('Editing a line of the history', '履歴の行を直しています') }),
+    el('span', { class: 'hedit-n', hidden: true }),
+    tapButton({ class: 'btn hedit-new', type: 'button', text: tr('As a new line', '新しい行にする') }, () => endHistEdit(true)),
+    tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Stop editing (nothing changes)', '直すのをやめる（何も変わりません）') }, () => endHistEdit(false)));
+  $('.entry').insertBefore(editBand, $('.entry').firstChild);
+  function startHistEdit(h) {
+    if (history.indexOf(h) < 0) return;
+    if (histSel) closeHistSelect();
+    if (!histEdit) histEdit = { h, keep: exprEl.value };
+    else histEdit.h = h;
+    const n = editBand.querySelector('.hedit-n'), b = Number(h.base || 10), now = Number(S.base);
+    n.textContent = b !== now ? trf('This line was in {0}; it is worked out in {1}, as set now', 'この行は {0} でした。今の設定の {1} で計算します', BASE_NAME[b] || String(b), BASE_NAME[now] || String(now)) : '';
+    n.hidden = !n.textContent;
+    editBand.hidden = false;
+    exprEl.value = toDisplay(h.expr);
+    exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length);
+    exprChanged();
+    markEditing();
+    const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === h);
+    if (it) it.scrollIntoView({ block: 'nearest' });
+    $('#status').textContent = tr('Editing a line of the history: = puts the new result in its place', '履歴の行を直しています。= で、その行を新しい式と答えに置き換えます');
+    focusExpr();
+  }
+  function markEditing() { for (const it of histEl.querySelectorAll('.h-item')) it.classList.toggle('editing', !!histEdit && it._h === histEdit.h); }
+  // asNew: "As a new line" (the expression stays in the field, = adds a line); otherwise ✕ or back: nothing changes, the
+  // field gets back what it held
+  function endHistEdit(asNew) {
+    if (!histEdit) return false;
+    const keep = histEdit.keep;
+    histEdit = null;
+    editBand.hidden = true;
+    markEditing();
+    if (!asNew) { exprEl.value = keep || ''; exprChanged(); }
+    $('#status').textContent = asNew ? tr('= adds a new line', '= で新しい行になります') : tr('Editing stopped, nothing changed', '直すのをやめました（何も変わりません）');
+    return true;
+  }
+  // the names an expression defines ("x = 5", "x := 5", "f(x) := x^2") and whether it uses a name or ans
+  const defName = (e) => { const m = /^\s*([\p{L}_][\p{L}\p{N}_]*)\s*(?:\([^()]*\))?\s*:?=(?!=)/u.exec(e || ''); return m && !/^ans\d?$/.test(m[1]) ? m[1] : null; };
+  const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const usesName = (e, name) => new RegExp('(^|[^\\p{L}\\p{N}_])' + escRe(name) + '(?![\\p{L}\\p{N}_])', 'u').test(e || '');
+  const ansUses = (e) => Array.from(String(e || '').matchAll(/(^|[^\p{L}\p{N}_])ans(\d?)(?![\p{L}\p{N}_])/gu)).map((m) => (m[2] ? Number(m[2]) : 1));
+  // the expression of line i with ans (ans2 …) as the results of the lines above it then (not the newest ans)
+  function withAns(expr, i) {
+    return String(expr).replace(/(^|[^\p{L}\p{N}_])ans(\d?)(?![\p{L}\p{N}_])/gu, (m, pre, d) => {
+      const p = history[i - (d ? Number(d) : 1)], v = p ? insertText(p) : null;
+      return v ? pre + '(' + v + ')' : m;
+    });
+  }
+  const ENTRY_KEYS = ['expr', 'result', 'approx', 'cmp', 'base', 'msgs', 'cut', 'tail', 'input', 'big', 'edited'];
+  const snapEntry = (h) => { const s = {}; for (const k of ENTRY_KEYS) if (k in h) s[k] = h[k]; return s; };
+  function putEntry(h, s) { for (const k of ENTRY_KEYS) delete h[k]; Object.assign(h, s); }
+  // a line worked out again in place (the settings of now): its new fields, or { error }
+  async function recalcLine(i, expr) {
+    const r = await Bridge.send('calc', { expr: withAns(expr, i), opts: engineOpts(), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
+    if (!r.ok || r.timeout || !r.result) {
+      const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
+      return { error: r.timeout ? tr('The time limit was reached', '制限時間を過ぎました') : localMessage(err ? err.text : r.error) || tr('Check the expression', '式を確認してください') };
+    }
+    const s = { expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3) };
+    if (r.truncated) { s.cut = true; if (typeof r.tail === 'string' && r.tail) s.tail = r.tail; s.msgs.push({ type: 'warning', text: cutMessage(r) }); }
+    if (typeof r.input === 'string' && r.input) { if (r.input.length > MAX_INPUT) s.big = true; else s.input = r.input; }
+    return s;
+  }
+  // the lines below line i that go on from it (or from a line that does): ans of a changed line above, or a name that a
+  // changed line defines (until a line defines it again)
+  function editDependents(i, names) {
+    const changed = new Set([i]), list = [];
+    for (let j = i + 1; j < history.length; j++) {
+      const e = history[j].expr, dn = defName(e), body = dn ? String(e).replace(/^[^=]*=/, '') : e;
+      const dep = ansUses(e).some((n) => changed.has(j - n)) || Array.from(names).some((nm) => usesName(body, nm));
+      if (dep) { changed.add(j); list.push(j); if (dn) names.add(dn); } else if (dn) names.delete(dn);
+    }
+    return list;
+  }
+  // the engine as the history now has it: ans the newest line, and each name its newest definition
+  async function engineAsHistory(lastChanged, names) {
+    if (lastChanged && history.length) { const v = insertText(history[history.length - 1]); if (v) await Bridge.send('set_ans', { expr: v }); }
+    for (const nm of names) {
+      let k = -1;
+      for (let j = history.length - 1; j >= 0; j--) if (defName(history[j].expr) === nm) { k = j; break; }
+      if (k >= 0) await Bridge.send('calc', { expr: withAns(history[k].expr, k), opts: engineOpts(), timeout: timeLimit() * 1000, store: false, preview: false });
+    }
+    if (names.size) { invalidateCatalogs(); await refreshDefined(); }
+  }
+  function redrawEntries(set) {
+    for (const it of Array.from(histEl.querySelectorAll('.h-item'))) {
+      if (!set.has(it._h)) continue;
+      const n = historyItem(it._h);
+      it.replaceWith(n); fitMatrices(n);
+    }
+    markEditing();
+    if (histFiltered()) filterHistory();
+  }
+  // "=" while a line is edited: that line gets the new expression and result (s: the fields of recalcLine)
+  async function applyHistEdit(h, s) {
+    const i = history.indexOf(h);
+    const before = new Map([[h, snapEntry(h)]]);
+    const names = new Set([defName(h.expr), defName(s.expr)].filter(Boolean));
+    const touched = new Set(names);
+    putEntry(h, Object.assign(s, { edited: Date.now() }));
+    histEdit = null; editBand.hidden = true;
+    exprEl.value = ''; showPreview(null); autosize(); updateSuggest(false); saveDraft();
+    saveHistory();
+    redrawEntries(new Set([h]));
+    // the lines below that went on from it
+    const deps = editDependents(i, new Set(names));
+    let done = 0;
+    if (deps.length) {
+      const a = await sheet(trf('{0} lines below go on from this line (its ans or its variable). Work them out again too?', '下の {0} 行は、この行の答え（ans）や変数を使っています。計算し直しますか？', deps.length),
+        [['all', trf('Also the {0} lines below', '下の {0} 行も計算し直す', deps.length)], ['one', tr('Only this line', 'この行だけ')]]);
+      if (a === 'all') {
+        for (const j of deps) {
+          const d = history[j];
+          if (!d) continue;
+          const n = await recalcLine(j, d.expr);
+          if (!before.has(d)) before.set(d, snapEntry(d));
+          if (n.error) { d.msgs = [{ type: 'error', text: trf('Not worked out again: {0}', '計算し直せませんでした：{0}', n.error) }]; continue; }
+          const dn = defName(d.expr); if (dn) touched.add(dn);
+          putEntry(d, Object.assign(n, { edited: Date.now() }));
+          done++;
+        }
+        saveHistory();
+        redrawEntries(new Set(before.keys()));
+      }
+    }
+    const lastIdx = history.length - 1, lastChanged = Array.from(before.keys()).some((x) => history.indexOf(x) === lastIdx);
+    await engineAsHistory(lastChanged, touched);
+    announce(h);
+    toast(done ? trf('Edited, and {0} lines below worked out again', '直しました（下の {0} 行も計算し直しました）', done) : tr('Edited', '直しました'), 7000,
+      [tr('Undo', '元に戻す'), async () => {
+        for (const [x, snap] of before) if (history.indexOf(x) >= 0) putEntry(x, snap);
+        saveHistory();
+        redrawEntries(new Set(before.keys()));
+        await engineAsHistory(Array.from(before.keys()).some((x) => history.indexOf(x) === history.length - 1), touched);
+        toast(tr('Back as it was', '元に戻しました'), 1800);
+      }]);
   }
   // a button that does not take the focus (and with it the caret) away from the expression field
   function tapButton(attrs, run) {
@@ -8519,7 +8865,23 @@
     const seeBtn = tapButton({ class: 'btn see-btn', 'aria-pressed': 'false', text: tr('See-through', '透明') }, () => { if (!gl3dReady()) return; Q3.see.on = !Q3.see.on; saveSee(); syncSeeRow(); draw3d(); });
     const seeRange = el('input', { type: 'range', min: '10', max: '90', step: '5', 'aria-label': tr('How opaque (%)', '濃さ（%）') });
     const seeVal = el('span', { class: 'rev-angle-v' });
-    seeRange.addEventListener('input', () => { Q3.see.a = Number(seeRange.value) / 100; saveSee(); syncSeeRow(); requestDraw3d(); });
+    // (the slider can be moved while the see-through is off, by a finger, the keyboard or a screen reader: it turns the
+    // see-through on, as a phone showed a slider that did not move until "See-through" was pressed first)
+    seeRange.addEventListener('input', () => {
+      if (!(gl3dWanted() && gl3dReady())) return;
+      const was = Q3.see.on;
+      Q3.see.a = Number(seeRange.value) / 100; Q3.see.on = true;
+      saveSee(); syncSeeRow();
+      if (was) requestDraw3d(); else draw3d();
+    });
+    // (a tap on the knob that does not move it, or a key at the end of the slider, sends no input event: it turns the
+    // see-through on too; a finger that scrolls the page from the slider ends with pointercancel, not pointerup)
+    const seeFromRange = () => {
+      if (!(gl3dWanted() && gl3dReady()) || Q3.see.on) return;
+      Q3.see.on = true; saveSee(); syncSeeRow(); draw3d();
+    };
+    seeRange.addEventListener('pointerup', seeFromRange);
+    seeRange.addEventListener('keydown', (e) => { if (/^(Arrow|Page|Home$|End$)/.test(e.key)) seeFromRange(); });
     const boxBtn = tapButton({ class: 'btn box-btn', 'aria-pressed': 'true', text: tr('Box and axes', '箱と目盛り') }, () => { Q3.see.box = !Q3.see.box; saveSee(); syncSeeRow(); draw3d(); });
     const seeNote = el('span', { class: 'see-note', id: 'see-note', hidden: true, text: tr('Not available on this device', 'この端末では使えません') });
     // (what is see-through: a chip for each formula, the solid, the container and the liquid of a tank)
@@ -8684,8 +9046,10 @@
     syncSeeRow();
   }
   // the row of see-through and the box (feature/3d-view): shown in every 3D view (since 11-22 20:40); the see-through
-  // button cannot be pressed without WebGL 2 (or with the test switch "3D with WebGL" off), with a note; with the
-  // see-through on, a chip for each thing drawn chooses whether it is see-through
+  // button cannot be pressed without WebGL 2 (or with the test switch "3D with WebGL" off), with a note, and the slider
+  // is not shown; with WebGL 2 the slider can always be moved (moved while the see-through is off, it turns it on); with
+  // the see-through on, a chip for each thing drawn chooses whether it is see-through. "See-through" and "Box and axes"
+  // are drawn as switches (a track and a knob before the words, style.css), on or off at a glance in every language
   function syncSeeRow() {
     if (!Q3.seeRow) return;
     const Md = Q3.model, shown = !!(Q3.data || Md);
@@ -8695,7 +9059,7 @@
     Q3.seeBtn.disabled = !ok; Q3.seeBtn.setAttribute('aria-pressed', String(on)); Q3.seeBtn.classList.toggle('on', on);
     if (ok) Q3.seeBtn.removeAttribute('aria-describedby'); else Q3.seeBtn.setAttribute('aria-describedby', 'see-note');
     Q3.seeNote.hidden = ok;
-    Q3.seeRange.disabled = !on; Q3.seeRange.hidden = !ok; Q3.seeRange.value = String(pc);
+    Q3.seeRange.disabled = !ok; Q3.seeRange.hidden = !ok; Q3.seeRange.value = String(pc);
     Q3.seeVal.hidden = !ok; Q3.seeVal.textContent = pc + '%';
     const box = Q3.see.box !== false;
     Q3.boxBtn.setAttribute('aria-pressed', String(box)); Q3.boxBtn.classList.toggle('on', box);
@@ -14714,6 +15078,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   function openHistSelect() {
     if (!proGate('history_tools')) return;
     closeHistSearch();
+    endHistEdit(true); // (1.15.0: selecting lines ends the editing of one; its expression stays in the field)
     drawAllOlder();
     histSel = new Set();
     document.body.classList.add('hselect');
@@ -14772,16 +15137,17 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     copyText(list.map((h) => toDisplay(h.expr) + ' ' + displayResult(h)).join('\n'));
   }
   // a dialog with one line of text: the text, or null when cancelled
-  function promptSheet(title, value, placeholder) {
+  function promptSheet(title, value, placeholder, okText, numeric) {
     if (sheetResolve) closeSheet(null);
     return new Promise((resolve) => {
       const sh = $('#sheet');
       sh.textContent = '';
       const inp = el('input', { type: 'text', class: 'sheet-input', value: value || '', placeholder: placeholder || '', 'aria-label': title, maxlength: '120' });
+      if (numeric) inp.setAttribute('inputmode', 'numeric'); // (1.15.0: a number of digits)
       const done = (v) => { sheetResolve = null; closeSheet(null); resolve(v); };
       inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); done(inp.value); } });
       sh.append(el('div', { class: 'stitle', text: title }), inp,
-        el('button', { class: 'accent', text: tr('Save', '保存'), onclick: () => done(inp.value) }),
+        el('button', { class: 'accent', text: okText || tr('Save', '保存'), onclick: () => done(inp.value) }),
         el('button', { text: tr('Cancel', 'キャンセル'), onclick: () => done(null) }));
       sheetResolve = () => resolve(null);
       $('#scrim').classList.add('show', 'over-panels');
@@ -14833,9 +15199,15 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // On the first start of a new version, a card with what is new, once (1.12.0): to those who used
   // an earlier version, each with "Try it". Closed, it does not come again.
   // (1.14.0: a card again, as what is seen changes much: the 3D drawn by the GPU with see-through, and the free trial of
-  // 3D for those without QCalc Pro while it is left; 1.13.0 had none)
-  const NEWS_VERSION = '1.14';
+  // 3D for those without QCalc Pro while it is left; 1.13.0 had none. 1.15.0: 1.14.0 was not given out, so the card
+  // has both: the results easier to read, with the precision of the settings to set them back, a line of the history
+  // edited in place (Try it: the newest line), and the 3D)
+  const NEWS_VERSION = '1.15';
   const NEWS = () => [
+    ['🔢', tr('Easier results: 15 digits in groups of 3 (Settings → Precision to change)', '答えが見やすく：15 桁、3 桁ごとに区切り（設定の「有効桁数」で戻せます）'), () => { setExpr('exp(pi*sqrt(163))'); commit(); }],
+    history.length ? ['✏️', tr('Edit a line of the history in place (touch its expression)', '履歴の行をその場で直せます（式の行をタップ）'), () => startHistEdit(history[history.length - 1])] : null,
+    ['🎚️', tr('The precision at the top: press its chip to choose 10 to 100 digits or another', '有効桁数を上のボタンですぐ変えられます（10〜100 桁ほか）'), () => precisionSheet()],
+    ['📥', tr('Calculation notes: open a .txt or .csv file, or share text to QCalc', '計算メモに .txt・.csv のファイルや、ほかのアプリから共有した文字を読み込めます'), () => { const p = openNotesTool(); const d = p.body.querySelector('.note-more'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ block: 'center' }), 350); } }],
     ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
     try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
   ].filter(Boolean);
@@ -14854,7 +15226,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         el('button', { class: 'btn news-try', type: 'button', text: tr('Try it', '試す'), 'aria-label': tr('Try it', '試す') + ': ' + text, onclick: () => { closeNews(); run(); } })));
     }
     // (1.12.0, H) everything new, step by step: the section of the user manual
-    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.14.0 (user manual) ›', '1.14.0 の新しい機能（説明書）›') }, () => openManual('new-1-14'))));
+    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.15.0 (user manual) ›', '1.15.0 の新しい機能（説明書）›') }, () => openManual('new-1-15'))));
     newsCard = card;
     histEl.append(card);
     // its title and × in sight, also when the history is short (memory keys, a small screen)
@@ -15900,6 +16272,157 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     }
     return { expr: s };
   }
+  // ---- (1.15.0) calculation notes read in: a file opened in the notes ("Open a file": Android's file picker, or the
+  // browser's), or text or a .txt or .csv file shared to QCalc from another app (MainActivity, NotesImport.java: the
+  // event "import"). What is read is only text, put into a memo as its lines, which are worked out as typed lines are
+  // (the same rules and time limit); nothing is defined, run or sent. The bytes of a file are decoded here: UTF-8 (with
+  // or without a BOM), UTF-16 with a BOM, otherwise Shift_JIS (a CSV made by Excel in Japanese). A .txt gives one line
+  // for each line (a line copied or saved from the notes, "rent = 85000 JPY  →  = 85000 JPY", gives back its
+  // calculation); a CSV saved by QCalc (Line, Calculation, Result, in any of its languages) gives its column
+  // "Calculation", another CSV its first column. At most 1 MB, and a memo holds at most NOTE_MAX lines; a file that is
+  // larger, longer or not text is not read, with a sheet that says why. Into the first memo it is free (an empty memo,
+  // or at the end of a memo); as a second memo or more it is QCalc Pro, as more memos are.
+  const IMPORT_MAX_BYTES = 1048576;
+  const CSV_LINE_NAMES = ['line', '行', 'zeile', 'línea', 'ligne', '행'];
+  const CSV_CALC_NAMES = ['calculation', '計算', 'rechnung', 'cálculo', 'calcul', '계산'];
+  function importDecode(bytes) {
+    const has = (...b) => b.every((x, i) => bytes[i] === x);
+    let text;
+    try {
+      if (has(0xEF, 0xBB, 0xBF)) text = new TextDecoder('utf-8').decode(bytes.subarray(3));
+      else if (has(0xFF, 0xFE)) text = new TextDecoder('utf-16le').decode(bytes.subarray(2));
+      else if (has(0xFE, 0xFF)) text = new TextDecoder('utf-16be').decode(bytes.subarray(2));
+      else {
+        try { text = new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch (e) { text = new TextDecoder('shift_jis').decode(bytes); }
+      }
+    } catch (e) { return { error: 'read' }; }
+    // not text: a zero byte, or many characters that are not in the encoding
+    const bad = (text.match(/�/g) || []).length;
+    if (text.indexOf('\u0000') >= 0 || bad > 8 + text.length / 100) return { error: 'binary' };
+    return { text };
+  }
+  // the rows of a CSV (quoted cells with "" inside them and line breaks; the separator , ; or tab, as most in its first line)
+  function importCsvRows(text) {
+    const first = text.slice(0, text.indexOf('\n') < 0 ? text.length : text.indexOf('\n')).replace(/"[^"]*"/g, '');
+    const count = (c) => first.split(c).length - 1;
+    const sep = [',', ';', '\t'].reduce((a, c) => (count(c) > count(a) ? c : a), ',');
+    const rows = [];
+    let row = [], cell = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c;
+      } else if (c === '"' && cell === '') q = true;
+      else if (c === sep) { row.push(cell); cell = ''; }
+      else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+      else cell += c;
+    }
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+  // the lines of what was read: { lines, csv: 'qcalc' | 'first' | '' } or { error, n }
+  function importParse(text, name, mime) {
+    text = String(text).replace(/^﻿/, '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
+    const csv = /\.(csv|tsv)$/i.test(name || '') || /csv|tab-separated/i.test(mime || '');
+    let lines, kind = '';
+    if (csv) {
+      const rows = importCsvRows(text);
+      const h = rows[0] || [];
+      if (h.length >= 2 && CSV_LINE_NAMES.indexOf(String(h[0]).trim().toLowerCase()) >= 0 && CSV_CALC_NAMES.indexOf(String(h[1]).trim().toLowerCase()) >= 0) {
+        kind = 'qcalc';
+        lines = rows.slice(1).map((r) => String(r[1] === undefined ? '' : r[1]));
+      } else {
+        kind = 'first';
+        lines = rows.map((r) => String(r[0] === undefined ? '' : r[0]));
+        while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+      }
+      lines = lines.map((l) => l.replace(/\n/g, ' ').replace(/\t/g, ' '));
+    } else {
+      lines = text.split('\n');
+      if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+      // a line of the notes copied, shared or saved as text: "calculation  →  = result" gives back the calculation
+      lines = lines.map((l) => l.replace(/\t/g, ' ').replace(/ {2}→ {2}[=≈] .*$/, '').replace(/\s+$/, ''));
+    }
+    if (!lines.length || lines.every((l) => !l.trim())) return { error: 'empty' };
+    if (lines.length > NOTE_MAX) return { error: 'lines', n: lines.length };
+    if (lines.some((l) => l.length > MAX_INPUT)) return { error: 'long' };
+    return { lines, csv: kind };
+  }
+  function importFailText(e, n) {
+    return e === 'big' || e === 'too-big' ? tr('This file is too large to read (up to 1 MB)', 'ファイルが大きすぎるので読み込みませんでした（1 MB まで）')
+      : e === 'lines' ? trf('A memo holds up to {0} lines: this has {1}', '1 つのメモは {0} 行までです。読み込もうとしたものは {1} 行あります', NOTE_MAX, n)
+      : e === 'long' ? tr('A line is too long to read', '長すぎる行があるので読み込みませんでした')
+      : e === 'empty' ? tr('There is nothing to read in it', '読み込む行がありません')
+      : e === 'binary' ? tr('This is not a text file: QCalc reads .txt and .csv files', 'テキストのファイルではありません。読み込めるのは .txt と .csv のファイルです')
+      : tr('Could not read the file', 'ファイルを読み込めませんでした');
+  }
+  // a sheet with only its message and OK (why a file was not read)
+  function messageSheet(text) {
+    if (sheetResolve) closeSheet(null);
+    return new Promise((resolve) => {
+      const sh = $('#sheet');
+      sh.textContent = '';
+      sh.append(el('div', { class: 'stitle', text, role: 'alert' }), el('button', { class: 'accent', text: tr('OK', 'OK'), onclick: () => closeSheet('ok') }));
+      sheetResolve = resolve;
+      $('#scrim').classList.add('show', 'over-panels');
+      sh.classList.add('open');
+      sh.inert = false;
+    });
+  }
+  // the event "import" (from the phone, or from the browser's file picker in the same form)
+  async function importArrived(ev) {
+    if (!ev || ev.cancelled) return;
+    const share = ev.from === 'share';
+    // (shared from another app: the notes come to the top, as the widget opens its place)
+    if (share) {
+      if (!varPopEl.hidden) closeVarPop();
+      if ($('#sheet').classList.contains('open')) closeSheet(null);
+      closeHistSelect(); closeHistSearch();
+      if ($('#drawer').classList.contains('open')) closeDrawer();
+      for (let i = 0; i < 20 && panelStack.length; i++) closePanel();
+    }
+    const fail = (e, n) => { if (share) openNotesTool(); messageSheet(importFailText(e, n)); };
+    if (ev.error) { fail(ev.error); return; }
+    let text;
+    if (typeof ev.text === 'string') {
+      if (ev.text.length > IMPORT_MAX_BYTES) { fail('big'); return; }
+      text = ev.text;
+    } else if (typeof ev.b64 === 'string' || ev.bytes instanceof Uint8Array) {
+      let bytes = ev.bytes;
+      if (!bytes) { try { const s = atob(ev.b64); bytes = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i); } catch (e) { fail('read'); return; } }
+      if (bytes.length > IMPORT_MAX_BYTES) { fail('big'); return; }
+      const d = importDecode(bytes);
+      if (d.error) { fail(d.error); return; }
+      text = d.text;
+    } else return;
+    const got = importParse(text, ev.name || '', ev.mime || '');
+    if (got.error) { fail(got.error, got.n); return; }
+    // the name of the memo: the file's name without its extension, or the subject of what was shared
+    const base = String(ev.name || '').replace(/\.[^./]{1,5}$/, '').trim().slice(0, 60);
+    got.title = base || String(ev.subject || '').trim().slice(0, 60);
+    got.name = ev.name ? String(ev.name).slice(0, 80) : '';
+    const p = openNotesTool();
+    if (p.importLines) await p.importLines(got);
+  }
+  // "Open a file" in the notes: Android's file picker (the phone reads the file: the event "import"), or the browser's
+  let importPicker = null;
+  function openImportFile() {
+    if (window.QalcNative && QalcNative.openTextFile) { QalcNative.openTextFile(); return; }
+    if (!importPicker) {
+      importPicker = el('input', { type: 'file', accept: '.txt,.csv,.tsv,text/plain,text/csv', hidden: '', 'aria-hidden': 'true' });
+      importPicker.addEventListener('change', async () => {
+        const f = importPicker.files && importPicker.files[0];
+        importPicker.value = '';
+        if (!f) return;
+        if (f.size > IMPORT_MAX_BYTES) { importArrived({ event: 'import', from: 'file', error: 'too-big', name: f.name }); return; }
+        let bytes;
+        try { bytes = new Uint8Array(await f.arrayBuffer()); } catch (e) { importArrived({ event: 'import', from: 'file', error: 'read' }); return; }
+        importArrived({ event: 'import', from: 'file', name: f.name, mime: f.type, bytes });
+      });
+      document.body.append(importPicker);
+    }
+    importPicker.click();
+  }
   function openNotesTool() {
     const p = panel('notes', tr('Calculation notes', '計算メモ'), (p) => {
       const saved = store.get('qalc.notes', null) || {};
@@ -15977,7 +16500,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           if (seq !== N.seq) return;
           c.done = true;
           if (r.ok && r.result && !r.timeout && !(r.messages || []).some((q) => q.type === 'error')) {
-            c.ok = true; c.expr = ex.expr; c.shown = resultText(r);
+            c.ok = true; c.expr = ex.expr; c.shown = groupText(resultText(r)); // (1.15.0: the groups of digits as on the calculator)
             if (name) { c.name = name; names[name] = ex.expr; }
             prev = ex.expr;
             if (res) { res.textContent = (c.total ? tr('Total ', '合計 ') : '') + c.shown; res.classList.remove('bad'); }
@@ -16023,10 +16546,50 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (!N.memos.length) N.memos.push({ id: 1, title: tr('Memo 1', 'メモ 1'), lines: [''] });
         N.cur = N.memos[0].id; N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
       });
+      // (1.15.0) what was read: as a new memo (an empty memo takes it; a second memo is QCalc Pro), at the end of this memo,
+      // or one line into the input field
+      p.importLines = async (got) => {
+        const L = memo().lines, empty = L.every((l) => !String(l).trim()), n = got.lines.length;
+        const lock = PRO_GATES.notes === 'pro' && !hasPro() && !empty;
+        const head = got.name ? trf('Read “{0}”: {1} lines', '「{0}」を読み込みます（{1} 行）', got.name, n) : trf('Text received: {0} lines', '受け取った文字（{0} 行）', n);
+        const note = got.csv === 'first' ? '\n' + tr('A CSV file: its first column is read', 'CSV の 1 列目を読み込みます') : '';
+        const peek = '\n' + clip(got.lines.filter((l) => l.trim()).slice(0, 3).join(' / '), 90);
+        const acts = [['new', tr('As a new memo', '新しいメモにする') + (lock ? '  ⭐ Pro' : ''), 'accent'], ['add', tr('At the end of this memo', '今のメモの最後に足す')]];
+        if (n === 1) acts.push(['field', tr('Put it into the input field', '入力欄に入れる')]);
+        const k = await sheet(head + note + peek, acts);
+        if (!k) return;
+        if (k === 'field') {
+          while (panelStack.length) closePanel();
+          exprEl.value = got.lines[0].trim(); exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length);
+          exprChanged(); focusExpr();
+          return;
+        }
+        const into = (m) => { m.lines = got.lines.slice(); if (got.title) m.title = got.title; };
+        if (k === 'new') {
+          if (empty) into(memo());
+          else {
+            if (!proGate('notes')) return;
+            if (N.memos.length >= 50) { messageSheet(tr('There can be up to 50 memos', 'メモは 50 個までです')); return; }
+            const id = Math.max(...N.memos.map((m) => m.id)) + 1;
+            N.memos.push({ id, title: got.title || trf('Memo {0}', 'メモ {0}', N.memos.length + 1), lines: got.lines.slice() }); N.cur = id;
+          }
+          N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
+          toast(trf('Read into “{0}”: {1} lines', '「{0}」に {1} 行を読み込みました', memo().title, n), 2500);
+          return;
+        }
+        // at the end of this memo (its empty lines at the end go)
+        let end = L.length;
+        while (end > 0 && !String(L[end - 1]).trim()) end--;
+        if (end + n > NOTE_MAX) { messageSheet(trf('A memo holds up to {0} lines: with these it would have {1}', '1 つのメモは {0} 行までです。足すと {1} 行になります', NOTE_MAX, end + n)); return; }
+        if (empty) into(memo()); else L.splice(end, L.length - end, ...got.lines);
+        save(); fillPick(); titleIn.value = memo().title; build(); run(empty ? 0 : end);
+        toast(trf('Added to “{0}”: {1} lines', '「{0}」に {1} 行を足しました', memo().title, n), 2500);
+      };
+      const openBtn = tapButton({ class: 'btn', text: tr('Open a file', 'ファイルを開く') }, () => openImportFile());
       const txtBtn = tapButton({ class: 'btn', text: tr('Save as text', 'テキストで保存') + lock() }, () => exp('txt'));
       const csvBtn = tapButton({ class: 'btn', text: tr('Save as CSV', 'CSV で保存') + lock() }, () => exp('csv'));
       const more = el('details', { class: 'sec-more note-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }),
-        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Name', '名前') }), titleIn), el('div', { class: 'tool-tbl-btns' }, txtBtn, csvBtn), delBtn);
+        el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Name', '名前') }), titleIn), el('div', { class: 'tool-tbl-btns' }, openBtn, txtBtn, csvBtn), delBtn);
       more.addEventListener('toggle', () => { if (more.open) titleIn.value = memo().title; });
       const hint = el('div', { class: 'form-hint', text: tr('One calculation on each line. "name = …" gives a name for the lines below (in this memo), "ans" is the line above, and "total" adds the lines above. Tap a result for the three actions.', '1 行に 1 つの計算。「名前 = 式」で下の行で使える名前（このメモの中だけ）、「ans」は上の行の値、「合計」で上の行を足します。結果をタップすると 3 つの操作。') });
       p.body.append(chips, el('div', { class: 'geo-size note-pick' }, pick, addBtn), list, msg, el('div', { class: 'tool-tbl-btns' }, copyBtn, shareBtn), more, hint);
@@ -16494,6 +17057,40 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     return tab === 'defs' ? openDefs() : openCatalog(tab);
   }
 
+  // (1.15.0) ⋯ "Work it out with other digits": the expression of the line worked out again with 30, 50, 100 or another
+  // number of digits, shown in the sheet of the tools' results (into the field, keep it in the history, copy); the
+  // precision of the settings and the line stay as they are
+  async function recalcWithDigits(h) {
+    const i = history.indexOf(h);
+    if (i < 0) return;
+    const k = await sheet(tr('Work it out with other digits', '桁数を変えて計算し直す'), [30, 50, 100].map((n) => [String(n), trf('{0} digits', '{0} 桁', n)]).concat([['other', tr('Other…', 'その他…')]]));
+    if (!k) return;
+    let n = Number(k);
+    if (k === 'other') {
+      const v = await promptSheet(tr('Work it out with other digits', '桁数を変えて計算し直す'), String(Math.max(30, Number(S.precision))), trf('{0} to {1}', '{0}〜{1}', 2, hasPro() ? MAX_PRECISION : FREE_MAX_PRECISION), tr('Calculate', '計算する'), true);
+      if (v === null) return;
+      n = parseInt(String(v).replace(/[^\d]/g, ''), 10);
+    }
+    if (!Number.isFinite(n)) return;
+    n = Math.max(2, Math.min(MAX_PRECISION, Math.round(n)));
+    if (n > maxPrecision()) { proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'), 'precision'); return; }
+    // the settings of now with the digits chosen (as a line edited in place); nothing is defined or kept: a line that
+    // defines a value ("a := 2/3") gives its value, a line that defines a function or changes something else is not worked out
+    let expr = h.expr;
+    const calc = (e) => Bridge.send('calc', { expr: withAns(e, i), opts: Object.assign(engineOpts(), { precision: n }), timeout: timeLimit() * 1000, max_chars: MAX_RESULT });
+    let r = await calc(expr);
+    const vd = /^\s*[\p{L}_][\p{L}\p{N}_]*\s*:?=(?!=)\s*(.+)$/su.exec(expr);
+    if (r.ok && r.deferred && vd && defName(expr)) { expr = vd[1].trim(); r = await calc(expr); }
+    if (!r.ok || r.timeout || !r.result || r.deferred) {
+      const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
+      toast(r.deferred ? tr('This line changes something: it is not worked out again here', 'この行は何かを変える式なので、ここでは計算し直せません') : r.timeout ? tr('The time limit was reached', '制限時間を過ぎました') : (localMessage(err ? err.text : r.error) || tr('Could not calculate', '計算できませんでした')), 3500);
+      return;
+    }
+    const plain = displayResult({ result: r.result, approx: r.approx, cmp: r.comparison });
+    // (the long number breaks only after a group of digits, as the answers do: a zero-width space after each separator)
+    const sep = new RegExp('([' + (NF.group === '.' ? '\\.' : NF.group) + '\u202f])(?=\\d)', 'g');
+    await resultSheet(trf('{0} digits:', '{0} 桁：', n), expr, groupText(plain).replace(sep, '$1\u200b'), plain.replace(/^[=≈]\s*/, ''), 600, plain);
+  }
   // ------------------------------------------------------- result actions
   // A tap on a result of a tool offers the same three things in every tool (1.12.0): put its
   // expression into the input field, keep it in the history (staying in the tool), copy it.
@@ -16502,13 +17099,13 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // the "= " or "≈ " in front when not given, like a result copied from the history). 1.12.0 (BG12): until the fix, some tools gave their text as shown and others in the
   // engine's form, and "Keep it in the history" put the shown text into the history, where it was taken for
   // the engine's: with a decimal comma 1.458 (yen) came back as 1,458 and 84.685,71 as 84,685;71.
-  async function resultSheet(title, expr, result, copy) {
+  async function resultSheet(title, expr, result, copy, max, plain) {
     const shown = String(result || '');
     if (copy === undefined) copy = shown.replace(/^[=≈]\s*/, '');
-    const k = await sheet(title + '  ' + clip(shown, 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'],
+    const k = await sheet(title + (max ? '\n' : '  ') + clip(shown, max || 60), [['use', tr('Put the expression into the input field', '式を入力欄に入れる'), 'accent'],
       ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy the result', '結果をコピー')]]);
     if (k === 'use') useExample(expr);
-    else if (k === 'keep') { keepResult(expr, shownToEngine(shown)); reviewMoment('tool'); }
+    else if (k === 'keep') { keepResult(expr, shownToEngine(plain || shown)); reviewMoment('tool'); }
     else if (k === 'copy') { copyText(copy || shown); reviewMoment('tool'); }
   }
   // a text as shown (the number format) → the engine's form, as the history keeps its results: the digit
@@ -16560,8 +17157,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         tr('The decimal sign of the numbers you type and see. With 1,5 the arguments are separated by ";": max(1,5; 2)', '入力・表示する数の小数点。1,5 の書き方では、引数を「;」で区切ります：max(1,5; 2)')],
       ['fraction', tr('Fractions', '分数の表示'), [['auto', tr('Automatic', '自動')], ['decimal', tr('Decimal', '小数')], ['exact', tr('Decimal (when exact)', '小数（厳密なときだけ）')], ['fraction', tr('Fraction', '分数')], ['combined', tr('Mixed fraction', '帯分数')]]],
       ['precision', tr('Precision (significant digits)', '有効桁数'), 'number', proOffered()
-        ? tr('2 to 200000 digits (default 10; above 1000 with QCalc Pro). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 10。1000 桁を超えるには QCalc Pro）。大きくするほど計算に時間がかかります')
-        : tr('2 to 200000 digits (default 10). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 10）。大きくするほど計算に時間がかかります')],
+        ? tr('2 to 200000 digits (default 15; above 1000 with QCalc Pro). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 15。1000 桁を超えるには QCalc Pro）。大きくするほど計算に時間がかかります')
+        : tr('2 to 200000 digits (default 15). Higher values take longer to calculate', '計算の精度（2〜200000桁、既定 15）。大きくするほど計算に時間がかかります')],
       ['max_decimals', tr('Maximum decimal places', '小数点以下の最大桁数'), [['-1', tr('No limit', '制限なし')], ['0', '0'], ['2', '2'], ['4', '4'], ['6', '6'], ['8', '8'], ['10', '10']]],
       ['base', tr('Number base of results', '結果の進数'), [['10', tr('Decimal', '10進数')], ['16', tr('Hexadecimal', '16進数')], ['2', tr('Binary', '2進数')], ['8', tr('Octal', '8進数')], ['12', tr('Duodecimal', '12進数')], ['-1', tr('Roman numerals', 'ローマ数字')]]],
       ['notation', tr('Exponential notation', '指数表記'), [['auto', tr('Automatic', '自動')], ['sci', tr('Scientific (exponent from about 1000)', '科学表記（1000 以上などで指数）')], ['eng', tr('Engineering (exponent a multiple of 3)', '工学表記（指数は 3 の倍数）')], ['pure', tr('Always', '常に指数表記')], ['none', tr('Never (all digits)', '使わない（全桁を表示）')]],
@@ -16590,7 +17187,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   const ADV_SETTINGS = ['structuring', 'complex', 'units', 'mixed_units', 'time_limit', 'max_decimals', 'base', 'notation', 'grouping', 'math_view', 'auto_ans', 'haptics', 'memkeys'];
   // the settings that are numbers: smallest, largest (now, and with QCalc Pro) and default value
   const NUMBER_RANGE = {
-    precision: { min: 2, max: maxPrecision, limit: MAX_PRECISION, def: 10 },
+    precision: { min: 2, max: maxPrecision, limit: MAX_PRECISION, def: DEFAULTS.precision },
     time_limit: { min: MIN_TIME_LIMIT, max: () => MAX_TIME_LIMIT, limit: MAX_TIME_LIMIT, def: DEFAULT_TIME_LIMIT }
   };
   function openSettings() {
@@ -16694,7 +17291,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       p.body.append(el('div', { class: 'section-title', text: '' }),
         el('button', { class: 'btn', text: tr('Reset all settings', '設定を初期値に戻す'), onclick: async () => {
           if (!(await confirmSheet(tr('Reset the settings and the digits shown by each tool to their defaults?', '設定と画面ごとの表示桁数を初期値に戻しますか？'), tr('Reset', '戻す')))) return;
-          S = Object.assign({}, DEFAULTS, { lang: LANG_AUTO ? 'auto' : LANG }); settingsChanged(); // the language stays
+          S = Object.assign({}, DEFAULTS, { lang: LANG_AUTO ? 'auto' : LANG }); touched.clear(); store.del('qalc.touched'); lastSaved = Object.assign({}, S); settingsChanged(); // the language stays (1.15.0: and nothing counts as changed)
           digitsClearAll(); // (feature/screen-digits: the digits of each tool too, and the shared digits of D7)
           for (const k of Object.keys(p.inputs)) { const i = p.inputs[k]; if (i.type === 'checkbox') i.checked = !!S[k]; else i.value = String(S[k]); }
           if (p.precisionBack) p.precisionBack();
@@ -16722,13 +17319,57 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     applyTheme();
     exprChanged();
     if (CF.id) formChanged();
-    if (mathShown !== S.math_view) { mathShown = S.math_view; renderHistory(false); }
+    if (mathShown !== S.math_view || groupShown !== S.grouping) { mathShown = S.math_view; groupShown = S.grouping; renderHistory(false); }
   }
-  let mathShown = S.math_view;
+  let mathShown = S.math_view, groupShown = S.grouping; // (1.15.0: the groups of digits are made when shown, groupText)
   function updateChips() {
     $('#chip-angle').textContent = ANGLE_LABEL[S.angle] || 'RAD';
     $('#chip-approx').textContent = APPROX_LABEL[S.approx] || APPROX_LABEL.auto;
     $('#chip-base').textContent = BASE_LABEL[String(S.base)] || String(S.base);
+    // (1.15.0) the precision at once: "15 dig" (short in every language), said "Precision: 15 significant digits"
+    const pc = $('#chip-prec');
+    pc.textContent = trf('{0} dig', '{0}桁', S.precision);
+    pc.setAttribute('aria-label', trf('Precision: {0} significant digits', '有効桁数 {0} 桁', S.precision));
+    fitBar();
+  }
+  // (1.15.0) the bar at the top on a narrow phone: with the four chips the title "QCalc" gives way first, then the chips
+  // get narrower in steps (less space inside and between them, then a smaller letter); the words of the chips are never cut
+  const BAR_STEPS = ['notitle', 'tight', 'tighter', 'tightest'];
+  function fitBar() {
+    const bar = $('.bar');
+    if (!bar) return;
+    bar.classList.remove(...BAR_STEPS);
+    const title = bar.querySelector('.title');
+    if (title && title.scrollWidth > title.clientWidth) bar.classList.add('notitle'); // "Q…" is not shown: the space stays empty
+    for (const c of BAR_STEPS) { if (bar.scrollWidth <= bar.clientWidth) break; bar.classList.add(c); }
+  }
+  window.addEventListener('resize', () => fitBar());
+  // (1.15.0) the precision chosen at the top: 10, 15, 20, 30, 50, 100 or another; the expression being typed is worked out
+  // again at once, the history stays as it is; above 1000 digits it is QCalc Pro, as in the settings
+  async function setPrecisionNow(n) {
+    if (!Number.isFinite(n)) return;
+    n = Math.max(NUMBER_RANGE.precision.min, Math.min(MAX_PRECISION, Math.round(n)));
+    if (n > maxPrecision()) { proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'), 'precision'); return; }
+    S.precision = n;
+    settingsChanged();
+    const sp = panels.settings;
+    if (sp && sp.inputs && sp.inputs.precision) { sp.inputs.precision.value = String(n); if (sp.precisionBack) sp.precisionBack(); }
+    toast(trf('Precision: {0} digits', '有効桁数：{0} 桁', n), 1400);
+  }
+  const PREC_CHOICES = [10, 15, 20, 30, 50, 100];
+  async function precisionSheet() {
+    const cur = Number(S.precision);
+    const k = await sheet(tr('Precision (significant digits)', '有効桁数'), PREC_CHOICES.map((n) => [String(n), (n === cur ? '✓ ' : '') + trf('{0} digits', '{0} 桁', n)])
+      .concat([['other', (PREC_CHOICES.indexOf(cur) < 0 ? '✓ ' + trf('{0} digits', '{0} 桁', cur) + ' · ' : '') + tr('Other…', 'その他…')]]));
+    if (!k) return;
+    if (k === 'other') {
+      const v = await promptSheet(tr('Precision (significant digits)', '有効桁数'), String(cur), trf('{0} to {1}', '{0}〜{1}', 2, hasPro() ? MAX_PRECISION : FREE_MAX_PRECISION), null, true);
+      if (v === null) return;
+      const n = parseInt(String(v).replace(/[^\d]/g, ''), 10);
+      if (Number.isFinite(n)) await setPrecisionNow(n);
+      return;
+    }
+    await setPrecisionNow(Number(k));
   }
   function cycle(key, values) {
     const i = values.indexOf(String(S[key]));
@@ -16737,7 +17378,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     settingsChanged();
     if (panels.settings && panels.settings.inputs) panels.settings.inputs[key].value = String(S[key]);
   }
-  for (const id of ['#chip-angle', '#chip-approx', '#chip-base']) $(id).addEventListener('pointerdown', (e) => e.preventDefault());
+  for (const id of ['#chip-angle', '#chip-approx', '#chip-base', '#chip-prec']) $(id).addEventListener('pointerdown', (e) => e.preventDefault());
+  $('#chip-prec').addEventListener('click', () => { vibrate(); precisionSheet(); });
   $('#chip-angle').addEventListener('click', () => { vibrate(); cycle('angle', ['rad', 'deg', 'gra']); toast(tr('Angle: ', '角度：') + { rad: tr('radians', 'ラジアン'), deg: tr('degrees', '度'), gra: tr('gradians', 'グラード') }[S.angle], 1200); });
   $('#chip-approx').addEventListener('click', () => { vibrate(); cycle('approx', ['auto', 'exact', 'approx']); toast({ auto: tr('Exact and approximate values, automatically', '厳密値と近似値を自動で表示'), exact: tr('Always exact', '常に厳密に計算'), approx: tr('Always approximate (decimals)', '常に近似（小数）で計算') }[S.approx], 1400); });
   $('#chip-base').addEventListener('click', () => { vibrate(); cycle('base', ['10', '16', '2', '8']); toast(trf('Results in {0}', '結果を {0}で表示', BASE_NAME[String(S.base)]), 1200); });
@@ -17279,6 +17921,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   window.qalcBack = function () {
     if (!varPopEl.hidden) { closeVarPop(); return true; }
     if ($('#sheet').classList.contains('open')) { closeSheet(null); return true; }
+    if (endHistEdit(false)) return true; // (1.15.0: a line being edited: nothing changes)
     if (closeHistSelect() || closeHistSearch()) return true;
     if ($('#drawer').classList.contains('open')) { closeDrawer(); return true; }
     if (panelStack.length) { closePanel(); return true; }
@@ -17353,6 +17996,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     set('#chip-angle', 'title', 'Angle unit', '角度の単位');
     set('#chip-approx', 'title', 'Exact or approximate', '厳密計算・近似');
     set('#chip-base', 'title', 'Number base of results', '結果の進数');
+    set('#chip-prec', 'title', 'Precision (significant digits)', '有効桁数');
     set('#history', 'aria-label', 'History', '計算の履歴');
     set('#expr', 'placeholder', 'Enter an expression', '式を入力');
     set('#pages', 'aria-label', 'Keys', 'キーの種類');

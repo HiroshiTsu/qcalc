@@ -12,6 +12,7 @@
 //   {"id":8,"cmd":"delete_def","kind":"variable"|"function","name":"r"}
 //   {"id":9,"cmd":"user_defs"}
 //   {"id":10,"cmd":"set_ans","expr":"1/3"}       (the app restores "ans" in a new engine process)
+//   "input":true in calc: the reply has "input", the text to insert the result (1.15.0, a line of the history edited)
 //
 // After a calculation with "store":true, an event line follows the reply:
 //   {"event":"ans","id":<id of that calculation>,"value":"<ans, re-readable>","input":"<text to insert>"}
@@ -469,6 +470,7 @@ static Opts make_opts(const JVal *o) {
 	po.spell_out_logical_operators = true;            // "true"/"false", "and"/"or"
 	po.base_display = BASE_DISPLAY_NORMAL;            // 0xFF, 0b..., 0o...: results can be pasted back
 	po.exp_display = EXP_UPPERCASE_E;
+	po.show_ending_zeroes = false;                    // (1.15.0) √2 ≈ 1.4142135623731, not …310
 	r.af = AUTOMATIC_FRACTION_AUTO;
 	r.aa = AUTOMATIC_APPROXIMATION_AUTO;
 	int prec = 10;
@@ -517,6 +519,42 @@ static Opts make_opts(const JVal *o) {
 	if(prec > MAX_PRECISION) prec = MAX_PRECISION;
 	if(CALCULATOR->getPrecision() != prec) CALCULATOR->setPrecision(prec);
 	return r;
+}
+
+// (1.15.0) The significant digits of an exact result whose numbers are whole numbers or decimals that end (a
+// denominator of only 2s and 5s), alone or with units: up to FULL_DIGITS they are all shown, even above the precision
+// set (30! = 265252859812191058636308480000000, 1234567890.12 + 1 = 1234567891.12 at 10 digits); 0 for anything else
+// (an approximation, a fraction such as 1/3 that does not end, a variable, a function).
+static const int FULL_DIGITS = 60;
+static int exact_full_digits(const MathStructure &m) {
+	if(m.isApproximate()) return 0;
+	if(m.isNumber()) {
+		const Number &n = m.number();
+		if(!n.isRational() || n.isApproximate()) return 0;
+		Number d(n.denominator());
+		while(d.isEven()) d.divide(2);
+		while(d.isIntegerDivisible(Number(5, 1))) d.divide(5);
+		if(!d.isOne()) return 0;
+		PrintOptions po;
+		po.base = 10; po.number_fraction_format = FRACTION_DECIMAL_EXACT; po.min_exp = EXP_NONE;
+		po.digit_grouping = DIGIT_GROUPING_NONE; po.restrict_fraction_length = false;
+		string s = n.print(po);
+		int digits = 0; bool lead = true;
+		for(char c : s) { if(c < '0' || c > '9') continue; if(lead && c == '0') continue; lead = false; digits++; }
+		return digits;
+	}
+	if(m.isUnit()) return 1;
+	if(m.isMultiplication() || m.isPower() || m.isDivision() || m.isInverse() || m.isNegate()) {
+		int most = 0;
+		for(size_t i = 0; i < m.size(); i++) {
+			if(m.isPower() && i == 1) { if(!m[1].isInteger()) return 0; continue; }
+			int d = exact_full_digits(m[i]);
+			if(d == 0) return 0;
+			if(d > most) most = d;
+		}
+		return most;
+	}
+	return 0;
 }
 
 // ---------------------------------------------------------------- commands
@@ -696,6 +734,13 @@ static void calculate_once(string str, int msecs, EvaluationOptions evalops, Pri
 			vector<string> alt_results;
 			bool exact_comparison = false;
 			string &result = r.result;
+			// (1.15.0) an exact whole number or ending decimal of up to FULL_DIGITS digits: all its digits (the precision is
+			// raised only while it is printed, and set back below)
+			const int prec_set = CALCULATOR->getPrecision(), min_exp_set = printops.min_exp;
+			if(printops.base == 10) {
+				int full = exact_full_digits(mstruct);
+				if(full > prec_set && full <= FULL_DIGITS) { CALCULATOR->setPrecision(full); printops.min_exp = EXP_NONE; }
+			}
 			if(do_calendars && mstruct.isDateTime()) {
 				static const struct {const char *title; CalendarSystem c;} cal[] = {{"Gregorian:", CALENDAR_GREGORIAN}, {"Hebrew:", CALENDAR_HEBREW}, {"Islamic:", CALENDAR_ISLAMIC}, {"Persian:", CALENDAR_PERSIAN}, {"Indian national:", CALENDAR_INDIAN}, {"Chinese:", CALENDAR_CHINESE}, {"Julian:", CALENDAR_JULIAN}, {"Revised julian:", CALENDAR_MILANKOVIC}, {"Coptic:", CALENDAR_COPTIC}, {"Ethiopian:", CALENDAR_ETHIOPIAN}};
 				for(size_t ic = 0; ic < sizeof(cal) / sizeof(cal[0]); ic++) {
@@ -769,6 +814,8 @@ static void calculate_once(string str, int msecs, EvaluationOptions evalops, Pri
 				}
 			}
 			r.approx = (exact_comparison || !alt_results.empty()) ? false : (is_approx || r.value.isApproximate());
+			if(CALCULATOR->getPrecision() != prec_set) CALCULATOR->setPrecision(prec_set);
+			printops.min_exp = min_exp_set;
 			if(CALCULATOR->aborted()) r.timed_out = true;
 		}
 		// parsed expression, printed as calculateAndPrint() does
@@ -899,6 +946,9 @@ static string cmd_calc(const JVal &req, JOut &out) {
 		if(!tail.empty()) out.str("tail", tail);
 	}
 	out.raw("messages", msgs);
+	// (1.15.0) a line of the history worked out again in place ("input":true, without "store", so that ans stays): the
+	// text to insert its result, as the event "ans" gives it after a calculation that is stored
+	if(req.boolean("input", false) && r.have_value && !r.timed_out) out.str("input", print_input(r.value));
 	return "";
 }
 

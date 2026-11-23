@@ -9,7 +9,7 @@
 ## what-qcalc-does | Ce que fait QCalc
 QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez le résultat aussitôt. Les calculs sont faits par libqalculate, le moteur de la calculatrice de bureau Qalculate!.
 - De l'arithmétique aux fractions, racines, unités, devises, dérivées, intégrales, équations et matrices, le tout sur une ligne.
-- Quand c'est possible, le résultat est exact (√2, π/2, 7/12), avec sa valeur décimale à côté.
+- Quand c'est possible, le résultat est exact (√2, π/2, 7/12), avec sa valeur décimale en dessous.
 - Les calculs de tous les jours, comme les prix, les prêts, les dates, les conversions, les statistiques et les cuves, sont dans « Outils » : saisissez les nombres et le résultat s'affiche.
 - Graphiques 2D et 3D, avec aires, longueurs et volumes des solides de révolution.
 - QCalc ne collecte aucune donnée personnelle. Il n'utilise internet que pour télécharger les taux de change.
@@ -19,15 +19,23 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :what: Tapez un calcul avec les touches et appuyez sur [[!=]] : le résultat passe dans l'historique. Pendant la saisie, le résultat s'affiche déjà sous le champ de saisie.
 :step: Ouvrez l'app et tapez `2 + 3 × 4` avec les touches. « = 14 » s'affiche sous le champ.
 :step: Appuyez sur [[!=]]. Le calcul et « = 14 » passent dans l'historique et le champ se vide.
-:step: Tapez ensuite `60 mph to km/h` (« to » est sur la touche →). « ≈ 96,56064 km/h » s'affiche.
-:step: Le troisième est `sqrt(2)`, aussi avec la touche √ : « = √2 ≈ 1,414213562 », la valeur exacte et la valeur approchée.
-:example: `1/3 + 1/4` → `= 7/12 ≈ 0,5833333333`
+:step: Tapez ensuite `60 mph to km/h` (« to » est sur la touche →). « = 96,560 64 km/h » s'affiche.
+:step: Le troisième est `sqrt(8)`, aussi avec la touche √ : « = 2√2 » et dessous « ≈ 2,828 427 124 746 19 », la valeur exacte et la valeur approchée sur deux lignes.
+:example: `1/3 + 1/4` → `= 7/12`, dessous `≈ 0,583 333 333 333 333`
 :tip: Touchez un résultat de l'historique pour le mettre dans le champ de saisie ou le copier.
 :mistake: La lettre x est une variable, pas « fois ». Multipliez avec la touche × (ou *).
 
-## new-1-14 | Nouveautés de la 1.14.0
+## new-1-15 | Nouveautés de la 1.15.0
+- **Résultats plus lisibles** : les résultats ont 15 chiffres significatifs, par groupes de trois. Les téléphones qui avaient encore les anciennes valeurs par défaut (10 chiffres, sans groupes) changent une fois avec cette version. [[Precision (significant digits)]] et [[Digit grouping (1,000)]] dans les [[Settings]] permettent de revenir ([Lire le résultat](#results)).
+- **Lire dans les notes de calcul** : [[More ▾]] → [[Open a file]] dans les notes lit un fichier .txt ou .csv, et le texte ou le fichier qu’une autre application envoie avec « Partager » → QCalc est aussi reçu ([Notes de calcul](#notes)).
+- **Deux lignes** : un résultat exact avec sa valeur approchée affiche « = exact » sur une ligne et « ≈ valeur approchée » sur la suivante. Les fractions et les racines sont dessinées dans la même écriture que les autres résultats.
+- **Nombres** : pas de zéros finaux dans les valeurs approchées ; les très grands ou très petits nombres s’affichent comme 1,606 938 × 10⁶⁰ (copiés sous la forme 1.606938E60) ; les entiers et les décimaux exacts s’affichent en entier jusqu’à 60 chiffres, même au-delà de la précision (par exemple 30!).
+- **Résultats longs et unités** : un résultat trop long pour une ligne s’affiche un peu plus petit, et seulement ensuite passe à la ligne entre des groupes de trois chiffres ; un résultat avec des unités reste sur une ligne (m/s).
+- **L’historique** : ses expressions s’écrivent avec ×, √, π et des exposants (2^10 → 2¹⁰).
+- **Modifier une ligne de l’historique** : touchez l’expression d’une ligne pour la modifier sur place ; = y met le nouveau résultat, et les lignes en dessous peuvent être recalculées ([Modifier une ligne de l’historique](#edit-line)).
+- **La précision sous la main** : la rangée du haut affiche la précision (p. ex. 15 ch.) ; en appuyant dessus, on choisit 10, 15, 20, 30, 50, 100 ou Autre…, et l’expression en cours de saisie est recalculée aussitôt. ⋯ → [[Work it out with other digits]] dans l’historique montre une ligne avec un autre nombre de chiffres ([Lire le résultat](#results)).
 - **Une 3D presque réelle** : la 3D est dessinée par le GPU de l’appareil (WebGL 2), avec une lumière et des ombres réelles : le graphique 3D, [[!⟳ 3D]] dans le graphique 2D, les solides et les cuves des formes, et le solide à partir d’un profil ([Graphique 3D](#graph-3d)).
-- **Transparent** : [[See-through]] permet de voir à travers les surfaces et les solides : leurs faces arrière et intérieures et l’intersection de deux surfaces. Le curseur règle l’opacité ; avec deux choses ou plus, choisissez ce qui est transparent (par exemple seulement le [[Container]] d’une cuve).
+- **Transparent** : [[See-through]] permet de voir à travers les surfaces et les solides : leurs faces arrière et intérieures et l’intersection de deux surfaces. Le curseur règle l’opacité et, déplacé quand [[See-through]] est désactivé, l’active ; avec deux choses ou plus, choisissez ce qui est transparent (par exemple seulement le [[Container]] d’une cuve).
 - **Tourner dans tous les sens** : un doigt fait tourner la 3D dans tous les sens, y compris par-dessus et par-dessous. Le bouton au cube propose aussitôt [[From the front]], [[From above]] ou [[From the side]].
 - **Matériaux** : un solide a l’aspect du matériau choisi dans [[Material (density)]], et le liquide d’une cuve celui de l’eau, de l’eau de mer, du kérosène ou de l’essence. Nouveaux matériaux : acier inoxydable, aluminium, cuivre, laiton, bois, PLA, ABS et acrylique.
 - **La 3D une fois gratuitement** : sans QCalc Pro, la 3D peut s’ouvrir une fois gratuitement ([Ce qui est gratuit](#pro-free)).
@@ -89,12 +97,14 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :mistake: Des parenthèses qui ne vont pas par paires donnent une erreur. Le message dit quoi corriger.
 
 ## results | Lire le résultat : exact, approché, fractions
-:what: Un résultat qui commence par « = » est exact ; un résultat qui commence par « ≈ » est approché. Les résultats avec des fractions ou √ affichent aussi la valeur décimale.
-- `1/3 + 1/4` → `= 7/12 ≈ 0,5833333333` (la fraction reste, avec sa valeur décimale)
-- `sqrt(8)` → `= 2√2 ≈ 2,828427125`
-- `pi × 2` → `= 2π ≈ 6,283185307`
+:what: Un résultat qui commence par « = » est exact ; un résultat qui commence par « ≈ » est approché. Les résultats avec des fractions ou √ affichent aussi la valeur décimale, sur la ligne suivante.
+- `1/3 + 1/4` → `= 7/12`, dessous `≈ 0,583 333 333 333 333` (la fraction reste, avec sa valeur décimale)
+- `sqrt(8)` → `= 2√2`, dessous `≈ 2,828 427 124 746 19`
+- `30!` → `= 265 252 859 812 191 058 636 308 480 000 000` (les entiers en entier jusqu’à 60 chiffres)
+- `2^200` → `≈ 1,606 938 044 258 99 × 10⁶⁰` (un très grand nombre)
 :step: Le bouton du haut passe d'exact à approché ou automatique.
-:step: Le nombre de chiffres est [[Precision (significant digits)]] dans [[Settings]] (10 par défaut).
+:step: La précision (15 chiffres par défaut) se change avec le bouton « 15 ch. » de la rangée du haut. Il propose 10, 15, 20, 30, 50, 100 et Autre… (saisir un nombre) ; le résultat de l’expression en cours de saisie est recalculé aussitôt, et les résultats de l’historique ne changent pas. [[Precision (significant digits)]] dans [[Settings]] la change aussi. Les résultats s’affichent avec leurs chiffres par groupes de trois ([[Digit grouping (1,000)]] le désactive).
+:step: Pour voir une ligne de l’historique avec plus de chiffres, choisissez 30, 50, 100 ou Autre… dans son ⋯ → [[Work it out with other digits]]. Le résultat s’affiche dans une feuille avec [[Put the expression into the input field]], [[Keep it in the history]] et [[Copy the result]]. La précision des réglages et la ligne ne changent pas.
 :pro: Jusqu'à 1000 chiffres, c'est gratuit. Au-delà de 1000, jusqu'à 200000 chiffres, c'est une fonction de QCalc Pro.
 :tip: Un résultat très long défile dans l'historique pour lire tous les chiffres ; le copier copie tous les chiffres.
 
@@ -121,6 +131,15 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: 🕘 propose [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] et [[Clear the whole history]].
 :shot: history | Le menu de l'historique de 🕘
 :tip: Les lignes épinglées avec une étoile restent même quand l'historique est plein.
+
+## edit-line | Modifier une ligne de l’historique
+:what: Touchez l’expression d’une ligne (la petite au-dessus de son résultat), ou [[Edit expression]] dans son ⋯, pour modifier cette ligne. L’expression passe dans le champ de saisie, avec la bande « [[Editing a line of the history]] » au-dessus.
+:step: Modifiez l’expression et appuyez sur [[!=]]. La ligne reçoit la nouvelle expression et le nouveau résultat à la même place. ★ et la note courte restent, et le menu ⋯ affiche l’heure de la modification à côté de l’heure de la ligne.
+:step: Pendant quelques secondes, « [[Edited]] » et [[Undo]] s’affichent. [[Undo]] rétablit l’expression et le résultat d’avant.
+:step: Si les lignes en dessous utilisent le résultat de cette ligne (ans) ou une variable qu’elle définit, l’application demande s’il faut les recalculer (« Aussi les 2 lignes en dessous ») ou [[Only this line]]. [[Undo]] rétablit aussi ces lignes.
+:step: Pour la calculer plutôt comme une nouvelle ligne en dessous, appuyez sur [[As a new line]] dans la bande, puis sur [[!=]]. Le ✕ de la bande ou le bouton Retour arrête la modification sans rien changer.
+:tip: La ligne est calculée avec les réglages actuels (unité d’angle, base et les autres). Une ligne calculée dans une autre base le signale dans la bande et prend la base actuelle.
+:tip: Toucher le résultat d’une ligne le met toujours dans l’expression ou le copie, comme avant.
 
 ## pins-notes | Épingles, notes et recherche
 :step: Choisissez [[☆ Pin at the top]] dans le ⋯ d'une ligne : elle monte avec les autres lignes épinglées.
@@ -318,7 +337,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Le bouton au cube propose aussitôt [[From the front]], [[From above]] ou [[From the side]]. [[!⟲]] rétablit la vue et la taille de départ.
 :step: [[← Back to the shape]] revient à l’outil avec la même forme et les mêmes dimensions.
 :shot: shapes3d | Une cuve horizontale avec fonds en 3D
-:example: Un cylindre de 30 cm de diamètre et de 50 cm de hauteur → volume 11250π ≈ 35342,91735 cm³
+:example: Un cylindre de 30 cm de diamètre et de 50 cm de hauteur → volume 11 250π ≈ 35 342,9 cm³
 :tip: La cuve est dessinée comme du verre clair, le liquide comme un solide qui a son aspect (eau, eau de mer, kérosène ou essence ; sinon dans la couleur de l’app). Faites glisser vers le haut ou le bas depuis le niveau (la case de la quantité) pour le déplacer : [[Height of the liquid]] dans l’outil change aussi. Un glissement ailleurs fait tourner le graphique. Le curseur [[Level]] en dessous le déplace aussi.
 :tip: Un solide est dessiné avec l’aspect du matériau choisi pour son poids ([[Material (density)]] : fer, acier inoxydable, aluminium, cuivre, laiton, bois, PLA, ABS, acrylique et autres) ; sans choix, en bleu. [[See-through]] et les boutons dessous fonctionnent ici aussi ([Graphique 3D](#graph-3d)).
 :tip: Les traits sur la paroi sont des quantités rondes : dans une cuve horizontale ou sphérique, leurs écarts sont visiblement inégaux.
@@ -371,8 +390,12 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Une ligne avec le mot du total additionne les résultats du dessus.
 :shot: notes | [[Calculation notes]] avec un exemple
 :example: loyer 85000, électricité 6200, eau 3100 (JPY) → la ligne du total affiche ¥94300
-:pro: La première note est gratuite. Plus de notes et leur enregistrement en texte ou CSV sont des fonctions de QCalc Pro.
+:pro: La première note est gratuite, de même qu’y lire un fichier ou un partage (dans une note vide ou à la fin). Plus de notes (y compris lire comme nouvelle note) et leur enregistrement en texte ou CSV sont des fonctions de QCalc Pro.
 :tip: Une ligne qui commence par # ou // est un commentaire (non calculée).
+:step: Pour lire un fichier, appuyez sur [[Open a file]] sous [[More ▾]] et choisissez un fichier .txt ou .csv. Un .txt donne une ligne par ligne ; un .csv enregistré par QCalc donne sa colonne « Calcul », un autre .csv sa première colonne. L’UTF-8 et le Shift_JIS (un CSV japonais fait avec Excel) peuvent être lus.
+:step: Dans une autre application (notes, e-mail…), choisissez du texte ou un fichier .txt ou .csv, puis QCalc dans « Partager » de cette application : les notes de calcul s’ouvrent.
+:step: Choisissez ensuite [[As a new memo]] ou [[At the end of this memo]] ; pour une seule ligne, aussi [[Put it into the input field]]. Une nouvelle note prend le nom du fichier (sans extension).
+:tip: Ce qui est lu n’est que du texte, calculé selon les mêmes règles que les lignes saisies. Un fichier de plus de 1 Mo, ou de plus de 300 lignes (ce que contient une note), n’est pas lu, et l’application le signale.
 
 # graphs | Graphiques
 
@@ -402,7 +425,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Pour un autre axe, revenez avec [[← Back to 2D]] et touchez sa ligne ; la ligne y = k se glisse au doigt. [[View in 3D]] le montre de nouveau en 3D.
 :step: [[↶ Undo]] revient à l'axe précédent.
 :shot: solid | La région entre y = x et y = x² tournée autour de l'axe des x
-:example: Entre y = x et y = x², autour de l'axe des x → volume 2π/15 ≈ 0,41887902
+:example: Entre y = x et y = x², autour de l'axe des x → volume 2π/15 ≈ 0,418 879
 :tip: [[Show the method with lines]] trace les disques (rondelles) ou les coquilles. La ligne [[Pappus–Guldinus theorem: ]] compare le volume obtenu par le centre de gravité à l'intégrale.
 :pro: Faire tourner le solide au doigt en 3D est une fonction de QCalc Pro, comme le graphique 3D. Sans Pro, la ligne [[Turn it in 3D (QCalc Pro)]] s'affiche à la place.
 
@@ -420,7 +443,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Tapez jusqu'à quatre fonctions et les intervalles de x et de y, puis appuyez sur [[Draw]].
 :step: Faites tourner dans tous les sens d’un doigt (y compris par-dessus et par-dessous). À deux doigts : pincez pour zoomer, faites-les glisser ensemble pour déplacer l’image, tournez-les pour la faire pivoter dans l’écran.
 :step: Le bouton au cube propose aussitôt [[From the front]], [[From above]] ou [[From the side]]. [[!⟲]] rétablit la vue et la taille de départ.
-:step: [[See-through]] rend les surfaces et les solides transparents : leurs faces arrière et intérieures et l’intersection de deux surfaces apparaissent, les arêtes restent. Le curseur règle l’opacité. Avec deux choses ou plus, les boutons dessous choisissent ce qui est transparent (par exemple seulement le [[Container]] d’une cuve, le [[Liquid]] restant opaque).
+:step: [[See-through]] rend les surfaces et les solides transparents : leurs faces arrière et intérieures et l’intersection de deux surfaces apparaissent, les arêtes restent. Le curseur à côté règle l’opacité ; le déplacer quand [[See-through]] est désactivé l’active aussi (l’interrupteur de [[See-through]] passe à activé). Touchez de nouveau [[See-through]] pour le désactiver. Avec deux choses ou plus, les boutons dessous choisissent ce qui est transparent (par exemple seulement le [[Container]] d’une cuve, le [[Liquid]] restant opaque).
 :step: [[Box and axes]] masque ou affiche la boîte avec sa grille et ses axes.
 :shot: graph3d | Le graphique 3D (la sphère de l'exemple)
 :tip: La 3D est dessinée par le GPU de l’appareil (WebGL 2), avec une lumière et des ombres presque réelles ; les couleurs selon la hauteur restent. Si c’est lent, le dessin est un peu plus grossier pendant la rotation et redevient net quand vous levez le doigt.
@@ -451,7 +474,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Remplissez les cases. La variable peut rester x.
 :step: Le résultat s'affiche en bas ; [[!=]] le garde dans l'historique.
 :shot: form | Le formulaire d'une intégrale
-:example: ∫ x² sin(x) dx de 0 à π → `π² − 4 ≈ 5,869604401`
+:example: ∫ x² sin(x) dx de 0 à π → `= π² − 4`, dessous `≈ 5,869 604 401 089 36`
 :tip: Une limite peut être [[Both sides]], [[From the right (+)]] ou [[From the left (−)]].
 
 ## equations | Équations
@@ -476,7 +499,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 | [[Exact or approximate]] | Automatique, toujours exact, toujours approché |
 | [[Number format]] | Le séparateur décimal et les groupes de chiffres ([Format des nombres](#number-format)) |
 | [[Fractions]] | Automatique, décimal, fraction, fraction mixte |
-| [[Precision (significant digits)]] | La précision des calculs (10 par défaut) |
+| [[Precision (significant digits)]] | La précision des calculs (15 par défaut) |
 | [[Digits shown by each tool]] | Les chiffres de chaque outil, et ceux communs aux Formes, Cuves, solides et au graphique ([Chiffres affichés par outil](#digits)) |
 | [[Light or dark]] | Les couleurs de l'écran |
 | [[Text size]] | Le texte de l'historique, du champ de saisie et du résultat |
@@ -492,9 +515,9 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Choisissez [[Recommended (automatic)]], [[Significant digits]] ou [[Decimals]], puis réglez le nombre avec + et −. Chaque outil garde son choix.
 :step: Avec des chiffres choisis, les [[Trailing zeros]] sont sur [[Keep (2.50)]] (au début : exactement autant de chiffres que choisis, 1,000000000) ou [[Drop (2.5)]] (1).
 :step: Un outil qui n'utilise pas ses chiffres par défaut porte la marque « [[changed]] » dans la liste des paramètres et dans [[Digits shown…]] de son ⋯.
-:example: Le volume d’un cylindre 11250π ≈ 35342,91735 cm³ → recommandé 11250π ≈ 35342,9 cm³ ; avec 2 décimales 11250π ≈ 35342,92 cm³ ; avec 4 chiffres significatifs 11250π ≈ 35340 cm³
+:example: Le volume d’un cylindre 11 250π cm³ → recommandé 11 250π ≈ 35 342,9 cm³ ; avec 2 décimales 11 250π ≈ 35 342,92 cm³ ; avec 4 chiffres significatifs 11 250π ≈ 35 340 cm³
 :tip: Pour Formes, Cuves, Solide à partir d’un profil et le graphique, [[More: each kind, the 3D picture, rounding, CSV ▾]] règle aussi [[Each kind of quantity on its own]] (volume, aire, longueur, poids et %), les nombres [[In the 3D picture]] (recommandé : 3 chiffres significatifs, % avec une décimale), l’arrondi ([[Round half up]], [[Round down]] ou [[Round up]]) et les tableaux enregistrés en CSV ([[All the digits]] ou [[As shown]]). Les valeurs exactes (11250π) restent ; seuls les nombres après « ≈ » changent.
-Il y a trois façons de revenir. Pour un outil, appuyez sur [[Back to the default (recommended)]] dans ⋯ → [[Digits shown…]]. Pour tous les outils, appuyez sur [[All back to the default (recommended)]] sous [[Digits shown by each tool]] dans les paramètres ([[Precision (significant digits)]] de la calculatrice revient aussi à 10 et [[Maximum decimal places]] à sans limite). Pour tout, appuyez sur [[Reset all settings]] dans les paramètres (les paramètres et les chiffres de chaque outil reviennent par défaut ; la langue reste).
+Il y a trois façons de revenir. Pour un outil, appuyez sur [[Back to the default (recommended)]] dans ⋯ → [[Digits shown…]]. Pour tous les outils, appuyez sur [[All back to the default (recommended)]] sous [[Digits shown by each tool]] dans les paramètres ([[Precision (significant digits)]] de la calculatrice revient aussi à 15 et [[Maximum decimal places]] à sans limite). Pour tout, appuyez sur [[Reset all settings]] dans les paramètres (les paramètres et les chiffres de chaque outil reviennent par défaut ; la langue reste).
 Les chiffres recommandés en donnent un ou deux de plus que ce qui est d'ordinaire nécessaire (rien n'est ajouté aux valeurs exactes). L’argent est affiché jusqu’à la plus petite unité de la devise de votre région (0,01 euro), avec ses zéros (19,90) ; Formes, Cuves et Solide à partir d’un profil ont 6 chiffres significatifs après « ≈ », l’aire, la longueur, Faire un solide et les valeurs 3D du graphique 8 (au moins 5 décimales), et les % une décimale. Les chiffres recommandés n’ont pas de zéros finaux, sauf pour l’argent, les prix unitaires et les statistiques.
 
 Le calcul est fait avec 12 chiffres de plus que ceux affichés (au moins 4 près de la limite de la précision ; l’intégration numérique 4 de plus, 24 chiffres au plus) ; le résultat est arrondi pour l'affichage.

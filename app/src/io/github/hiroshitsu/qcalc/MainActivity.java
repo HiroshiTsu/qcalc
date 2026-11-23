@@ -62,6 +62,8 @@ public class MainActivity extends Activity {
     private static final String TAG = "QCalc";
     private static final String START_PAGE = "file:///android_asset/index.html";
     private static final int REQUEST_SAVE = 1;
+    /** Android's file picker for "Open a file" in the calculation notes (1.15.0, NotesImport). */
+    private static final int REQUEST_OPEN = 2;
     /** File names the page may suggest for a saved file (QCalc-history-20261112.csv). */
     private static final Pattern FILE_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,99}");
     private static final int MAX_SAVE = 16 * 1024 * 1024;
@@ -106,6 +108,8 @@ public class MainActivity extends Activity {
      * ready to be told (pageReady).
      */
     private String pendingOpen;
+    /** Text or a file shared to QCalc, read (the "import" event of NotesImport), until the page is ready (1.15.0). */
+    private String pendingImport;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +124,7 @@ public class MainActivity extends Activity {
         // activity again or it is opened from the list of recent apps (the same intent once more)
         if (savedInstanceState == null && (getIntent().getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0) {
             pendingOpen = Quick.targetOf(getIntent());
+            if (NotesImport.isShare(getIntent())) takeShare(getIntent());
         }
         configLocales = getResources().getConfiguration().getLocales().toLanguageTags();
         // first: on its first start a build with billing looks for the data of older versions
@@ -453,10 +458,35 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if (NotesImport.isShare(intent)) {
+            takeShare(intent);
+            return;
+        }
         String target = Quick.targetOf(intent);
         if (target == null) return;
         if (fullyDrawn && web != null) openPlace(target);
         else pendingOpen = target;
+    }
+
+    /** Text or a .txt or .csv file shared to QCalc (1.15.0): read on a background thread, then given to the page. */
+    private void takeShare(final Intent intent) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                giveImport(NotesImport.fromShare(MainActivity.this, intent));
+            }
+        }, "qalc-import").start();
+    }
+
+    /** The "import" event to the page now, or when it is ready (any thread). */
+    private void giveImport(final String json) {
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                if (fullyDrawn && web != null) sendEvent(json);
+                else pendingImport = json;
+            }
+        });
     }
 
     /** Tells the page to show a new calculation, Tools or Convert (window.qalcOpen in app.js). */
@@ -625,6 +655,21 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_OPEN) {
+            // "Open a file" in the calculation notes (1.15.0): the file read on a background thread
+            final Uri picked = resultCode == RESULT_OK && data != null ? data.getData() : null;
+            if (picked == null) {
+                sendEvent("{\"event\":\"import\",\"from\":\"file\",\"cancelled\":true}");
+                return;
+            }
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    sendEvent(NotesImport.read(MainActivity.this, picked, "file", null));
+                }
+            }, "qalc-import").start();
+            return;
+        }
         if (requestCode != REQUEST_SAVE) return;
         final String text = pendingSave;
         pendingSave = null;
@@ -1024,6 +1069,10 @@ public class MainActivity extends Activity {
                         openPlace(pendingOpen);
                         pendingOpen = null;
                     }
+                    if (pendingImport != null) {
+                        sendEvent(pendingImport);
+                        pendingImport = null;
+                    }
                 }
             });
         }
@@ -1275,6 +1324,25 @@ public class MainActivity extends Activity {
          * printers (model/stl, .stl) and the text of a calculation memo (text/plain, .txt), with a plain
          * name, as the page makes them.
          */
+        /**
+         * "Open a file" in the calculation notes (1.15.0): Android's file picker for one text or CSV file; what is read
+         * comes as an "import" event (NotesImport).
+         */
+        @JavascriptInterface
+        public void openTextFile() {
+            onUi("openTextFile", new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        startActivityForResult(NotesImport.pickerIntent(), REQUEST_OPEN);
+                    } catch (RuntimeException e) {
+                        // no file picker (ActivityNotFoundException), or the system refused
+                        sendEvent(NotesImport.error("file", "read"));
+                    }
+                }
+            });
+        }
+
         @JavascriptInterface
         public void saveFile(final String name, final String mime, final String text) {
             if (name == null || text == null || !FILE_NAME.matcher(name).matches()
