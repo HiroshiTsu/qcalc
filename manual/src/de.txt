@@ -28,6 +28,11 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 ## new-1-15 | Neu in 1.15.0
 - **Besser lesbare Ergebnisse**: Ergebnisse mit 15 gültigen Stellen, in Dreiergruppen. Geräte, die noch die bisherigen Standardwerte hatten (10 Stellen, ohne Gruppen), wechseln mit dieser Version einmal. [[Precision (significant digits)]] und [[Digit grouping (1,000)]] in den [[Settings]] stellen es zurück ([Das Ergebnis lesen](#results)).
 - **Einlesen in die Rechennotizen**: [[More ▾]] → [[Open a file]] in den Notizen liest eine .txt- oder .csv-Datei, und Text oder eine Datei, die eine andere App mit „Teilen“ → QCalc sendet, wird ebenfalls übernommen ([Rechennotizen](#notes)).
+- **Taylorreihe**: taylor auf der Seite [[Calculus]] gibt das Taylorpolynom um eine Mitte bis zu einem Grad (exakte Koeffizienten; `taylor(sin(x), x, 0, 5)` geht auch). [[Compare in a graph]] zeichnet es mit der Funktion ([Ableitungen, Integrale, Grenzwerte, Summen](#calculus)).
+- **Drei neue Arten von 2D-Graphen**: Parameterkurven (`x = cos(t), y = sin(2t)`), Polarkurven (`r = 1 + cos(θ)`) und implizite Kurven (`x^2 + y^2 = 1`), an der Form erkannt oder oben gewählt; Länge und Fläche (polar) und neue Beispiele: Kardioide, Rosenkurve, Lissajous-Figur und mehr ([2D-Graph](#graph-2d)).
+- **Schieberegler**: Buchstaben wie a und b in den Formeln eines Graphen bekommen Schieberegler, und der Graph ändert sich sofort; ▶ bewegt sie weiter. In 2D kostenlos; Schieberegler in 3D und das GIF eines Schiebereglers sind QCalc Pro ([2D-Graph](#graph-2d)).
+- **Nächste Schritte**: Schaltflächen unter der neuesten Antwort für Details, Graph, Faktorisieren, Ableitung und mehr; die Rechnung wird eine neue Zeile ([Antworten lesen](#results)).
+- **Details**: exakter Wert, Dezimalzahl, Bruch, Basen und Primfaktoren einer Antwort oder Graph, Nullstellen, Ableitung, Integral und Taylorreihe eines Ausdrucks auf einem Blatt ([Antworten lesen](#results)).
 - **Zwei Zeilen**: Ein exaktes Ergebnis mit Näherung zeigt „= exakt“ in einer Zeile und „≈ Näherung“ in der nächsten. Brüche und Wurzeln erscheinen in derselben Schrift wie die anderen Ergebnisse.
 - **Zahlen**: keine Endnullen bei Näherungen; sehr große oder kleine Zahlen als 1,606 938 × 10⁶⁰ (kopiert als 1.606938E60); ganze Zahlen und abbrechende Dezimalzahlen erscheinen bis 60 Stellen vollständig, auch über die Genauigkeit hinaus (zum Beispiel 30!).
 - **Lange Ergebnisse und Einheiten**: Ein Ergebnis, das nicht in eine Zeile passt, wird etwas kleiner und erst dann zwischen Dreiergruppen umbrochen; ein Ergebnis mit Einheiten bleibt in einer Zeile (m/s).
@@ -74,7 +79,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :svg: main | Die Teile des Hauptbildschirms (die Nummern entsprechen der Tabelle)
 | Nr. | Name | Wofür |
 | 1 | ☰ (Menü) | Öffnet Werkzeuge, Graphen, Listen, Einstellungen und mehr |
-| 2 | Schalter | Winkeleinheit (RAD, DEG), exakt oder genähert, dezimal oder hexadezimal, mit einem Tippen |
+| 2 | Schalter | Winkeleinheit (RAD, DEG), exakt oder genähert, dezimal oder hexadezimal, mit einem Tippen; „15 St.“ bietet die Genauigkeit zur Wahl |
 | 3 | 🕘 (Verlaufsmenü) | Verlauf durchsuchen, Zeilen auswählen, exportieren, löschen |
 | 4 | Verlauf | Die Ausdrücke mit ihren Ergebnissen, das neueste unten |
 | 5 | Eingabefeld | Hier wird getippt; darunter das Ergebnis beim Tippen (Vorschau) |
@@ -107,6 +112,9 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Um eine Zeile des Verlaufs mit mehr Stellen zu sehen, wählen Sie in ihrem ⋯ → [[Work it out with other digits]] 30, 50, 100 oder Andere …. Das Ergebnis erscheint in einem Blatt mit [[Put the expression into the input field]], [[Keep it in the history]] und [[Copy the result]]. Die Genauigkeit der Einstellungen und die Zeile bleiben, wie sie sind.
 :pro: Bis 1000 Stellen kostenlos. Mehr als 1000, bis 200000 Stellen, ist eine Funktion von QCalc Pro.
 :tip: Ein sehr langes Ergebnis lässt sich im Verlauf scrollen, sodass jede Stelle lesbar ist; beim Kopieren wird jede Stelle kopiert.
+:step: Unter der neuesten Antwort erscheinen Schaltflächen für das, was oft als Nächstes kommt (höchstens 6): bei einem Ausdruck in x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]; bei einer Zahl [[Details]], [[As a fraction]], [[Scientific]] (bei einer ganzen Zahl [[Prime factors]], [[In hex]]); mit Einheit [[Convert…]]; bei einer Matrix [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. Die Rechnung einer Schaltfläche wird eine neue Zeile im Verlauf.
+:step: [[Details]] (oder ⋯ → [[Details]]) zeigt die anderen Formen der Antwort zusammen: bei einer Zahl den exakten Wert, die Dezimalzahl, den Bruch, den gemischten Bruch und die wissenschaftliche Schreibweise (ganze Zahlen in den Basen 2, 8 und 16 und ihre Primfaktoren; mit Einheit andere Einheiten); bei einem Ausdruck in x einen kleinen Graphen, die Nullstellen, die Ableitung, das Integral, die Taylorreihe und die faktorisierte Form. Eine Zeile antippen für [[Put the expression in the field]], [[Keep it in the history]] oder [[Copy result]].
+:tip: Ohne diese Schaltflächen: [[Settings]] → [[Suggest the next steps under the newest answer]] aus.
 
 ## undo | Löschen und rückgängig machen
 :what: ⌫ löscht ein Zeichen, AC leert das Eingabefeld. Gleich danach holt [[Undo]] über dem Eingabefeld es zurück.
@@ -405,6 +413,12 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Geben Sie die Funktionen ein, eine pro Zeile, und den Bereich von x.
 :step: Drücken Sie [[Draw]].
 :step: Tippen Sie auf den Graphen, um die Koordinaten eines Punktes zu sehen.
+:step: Die Art jeder Linie wird an ihrer Form erkannt; oben lässt sie sich auch wählen: [[!y = f(x)]], [[Parametric]], [[Polar (graph)]], [[Implicit]] (eine andere Art als im Feld setzt ein Beispiel dafür ein).
+:example: Parameter `x = cos(t), y = sin(2t)` (mit einem Bereich von t), polar `r = 1 + cos(θ)` (ein Bereich von θ, zuerst 0 bis 2π; t geht statt θ), implizit `x^2 + y^2 = 1`, `x^3 + y^3 = 3x y` (eine Gleichung mit x und y)
+:tip: Parameter- und Polarkurven nehmen Winkel im Bogenmaß. Eine implizite Kurve verbindet die Punkte eines Gitters, an denen linke Seite − rechte Seite das Vorzeichen wechselt, mit einem feineren Gitter, wo sie verwickelt ist; Verschieben oder Zoomen zeichnet sie für den neuen Ausschnitt neu.
+:tip: Eine Parameter- oder Polarkurve hat Knöpfe für ihre [[Length]] und [[Area]] (polar, oder eine geschlossene Parameterkurve). Die Polarfläche ist ½∫r² dθ über den Bereich von θ (zweimal Umlaufenes zählt doppelt); eine Parameterkurve, die sich selbst schneidet, hat keine Fläche. [[Calculus ▾]], [[Area and length ▾]] und [[Make a solid ▾]] sind für Linien y = f(x).
+:tip: Buchstaben wie a und b in den Formeln bekommen Schieberegler unter dem Graphen (höchstens 6). Beim Bewegen wird der Graph sofort neu gezeichnet. Den Wert antippen, um eine Zahl einzugeben; ▶ bewegt ihn hin und her. ⋯ ändert den Bereich (zuerst −5 bis 5) und den Schritt (0,1).
+:tip: Schieberegler bekommen die einzelnen Buchstaben a bis z und A bis Z außer e, i, t, x, y und E, I, X, Y. Ihre Werte gelten nur in diesem Graphen: im Rechner bleibt a das Ar, c die Lichtgeschwindigkeit und g das Gramm. Eine Variable mit eigenem Wert (etwa k := 2) behält diesen Wert, und ein Buchstabe als Funktion, wie f in f(x), bekommt keinen Schieberegler. Einen Buchstaben von x trennen: `a x` oder `a*x` (`ax` ist ein Name).
 :tip: [[Calculus ▾]] liefert Ableitung, Tangenten, Nullstellen und Extrema.
 :tip: Tippen Sie auf ein Beispiel unter dem Graphen, um es zu zeichnen.
 
@@ -449,6 +463,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :tip: 3D wird mit der GPU des Geräts (WebGL 2) gezeichnet, mit Licht und Schatten fast wie echt; die Farben nach der Höhe bleiben. Ist es langsam, wird beim Drehen etwas gröber gezeichnet und nach dem Loslassen wieder scharf.
 :tip: Auf einem Gerät ohne WebGL 2 wird 3D wie bisher gezeichnet; dann lässt sich [[See-through]] nicht drücken, und es erscheint „[[Not available on this device]]“.
 :tip: [[Partial derivatives ▾]] zeichnet ∂f/∂x und ∂f/∂y.
+:tip: Auch im 3D-Graphen bekommen die Buchstaben der Formeln Schieberegler (QCalc Pro).
 
 ## volume-3d | Volumen und Oberfläche (3D)
 :what: Das Volumen unter einer Fläche des 3D-Graphen (oder zwischen zwei Flächen) und die Oberfläche.
@@ -464,6 +479,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :what: Sendet ein Bild eines Graphen an eine andere App; einen 3D-Graphen auch als bewegtes GIF.
 :step: Drücken Sie ↗ ([[Share a picture of the graph]]) am Graphen.
 :step: Wählen Sie die App im Teilen-Menü.
+:step: [[Moving picture (GIF)]] im ⋯ eines Schiebereglers macht ein GIF, in dem er vom Anfang bis zum Ende läuft (2D und 3D).
 :pro: Bilder in voller Größe ohne Kennzeichnung und bewegte GIFs sind Funktionen von QCalc Pro. Ohne Pro ist das Bild höchstens 800 px breit, mit einem kleinen „QCalc“.
 
 # forms | Formulare: Analysis, Gleichungen, Matrizen
@@ -476,6 +492,9 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :shot: form | Das Formular eines Integrals
 :example: ∫ x² sin(x) dx von 0 bis π → `= π² − 4`, darunter `≈ 5,869 604 401 089 36`
 :tip: Ein Grenzwert kann [[Both sides]], [[From the right (+)]] oder [[From the left (−)]] sein.
+:step: taylor ([[Taylor series]]) auf der Seite [[Calculus]] nimmt eine Funktion f(x), eine Mitte a (zuerst 0) und einen Grad n (zuerst 5, bis 20) und gibt das Taylorpolynom vom kleinsten Grad an, etwa `x − x³/6 + x⁵/120 + O(x⁶)`. Die Koeffizienten bleiben exakt, wo es geht (Brüche, √, π). `taylor(sin(x), x, 0, 5)` im Eingabefeld geht auch.
+:step: [[Compare in a graph]] zeichnet die Funktion und ihr Taylorpolynom zusammen im 2D-Graphen.
+:tip: Hat die Funktion oder eine Ableitung in der Mitte keinen endlichen Wert (√x oder 1/x bei x = 0), sagt es die App; ein Wert aus einem Grenzwert wie sin(x)/x bei x = 0 geht. Dauert es lange, einen kleineren Grad versuchen.
 
 ## equations | Gleichungen
 :what: Löst Gleichungen und Gleichungssysteme.
@@ -567,6 +586,7 @@ Numerische Integration (Flächen, Längen und Volumen im Graphen) ist auf etwa 2
 | Körper aus einem Profil | [Körper aus einem Profil](#profile) |
 | Körper und Tanks in 3D | [Körper und Tanks in 3D](#shapes-3d) |
 | STL-Dateien | [STL-Dateien](#stl) |
+| Schieberegler in 3D | [3D-Graph](#graph-3d) |
 | GIF und Bilder ohne Kennzeichnung | [Teilen](#share) |
 | Weitere Rechennotizen, als Datei gespeichert | [Rechennotizen](#notes) |
 :tip: [[How to use ›]] in einer Zeile der Pro-Funktionen öffnet den Abschnitt dieser Anleitung.

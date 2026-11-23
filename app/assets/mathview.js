@@ -40,7 +40,7 @@
   }
 
   // ---------------------------------------------------------------- parser (precedence climbing)
-  const FUNCS_1 = new Set(['f', 'g', 'h']); // single letters that are written as functions: f(x)
+  const FUNCS_1 = new Set(['f', 'g', 'h', 'O']); // single letters that are written as functions: f(x); O(x⁶), the remainder of a Taylor series (1.15.0)
   function parse(tokens) {
     let p = 0;
     const peek = () => tokens[p];
@@ -139,6 +139,7 @@
   // ---------------------------------------------------------------- TeX
   const GREEK = { alpha: 1, beta: 1, gamma: 1, delta: 1, epsilon: 1, theta: 1, lambda: 1, mu: 1, sigma: 1, tau: 1, phi: 1, omega: 1 };
   const NAMED = {
+    O: '\\operatorname{O}', // (1.15.0: the remainder of a Taylor series)
     sin: '\\sin', cos: '\\cos', tan: '\\tan', sec: '\\sec', csc: '\\csc', cot: '\\cot',
     sinh: '\\sinh', cosh: '\\cosh', tanh: '\\tanh', coth: '\\coth',
     asin: '\\arcsin', acos: '\\arccos', atan: '\\arctan', arcsin: '\\arcsin', arccos: '\\arccos', arctan: '\\arctan',
@@ -284,6 +285,7 @@
       }
     }
     const fn = NAMED[name];
+    if (name === 'O') return fn + '(' + a.map((x) => T(strip(x))).join(',\\, ') + ')'; // (O(x⁸) close to its parentheses)
     const head = fn ? fn : Array.from(name).length === 1 ? texId(name) : '\\operatorname{' + esc(name) + '}';
     return head + paren(a.map((x) => T(strip(x))).join(',\\, '));
   }

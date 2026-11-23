@@ -28,6 +28,11 @@ QCalc is a calculator where you type an expression as you would write it on pape
 ## new-1-15 | What is new in 1.15.0
 - **Easier results**: results have 15 significant digits, in groups of three. Phones that still had the earlier defaults (10 digits, no groups) change once with this version. [[Precision (significant digits)]] and [[Digit grouping (1,000)]] in the [[Settings]] set them back ([Reading the answer](#results)).
 - **Reading into the calculation notes**: [[More ▾]] → [[Open a file]] in the notes reads a .txt or .csv file, and text or a file sent with “Share” → QCalc from another app is taken in too ([Calculation notes](#notes)).
+- **Taylor series**: taylor on the [[Calculus]] page gives the Taylor polynomial about a center up to a degree (exact coefficients; `taylor(sin(x), x, 0, 5)` can be typed too). [[Compare in a graph]] draws it with the function ([Derivatives, integrals, limits, sums](#calculus)).
+- **Three new kinds of 2D graph**: parametric (`x = cos(t), y = sin(2t)`), polar (`r = 1 + cos(θ)`) and implicit (`x^2 + y^2 = 1`) lines, told from their form or chosen at the top; their length and area (polar), and new samples: a cardioid, a rose, a Lissajous curve and more ([2D graph](#graph-2d)).
+- **Sliders**: letters such as a and b in the formulas of a graph get sliders, and moving one changes the graph at once; ▶ keeps it moving. Free in 2D; the sliders in 3D and the GIF of a slider are QCalc Pro ([2D graph](#graph-2d)).
+- **Next steps**: buttons under the newest answer for details, a graph, factoring, the derivative and more; a button's calculation becomes a new line ([Reading answers](#results)).
+- **Details**: the exact value, decimal, fraction, bases and prime factors of an answer, or the graph, zeros, derivative, integral and Taylor series of an expression, on one sheet ([Reading answers](#results)).
 - **Two lines**: an exact result with its approximation shows "= exact" on one line and "≈ approximation" on the next. Fractions and roots are drawn in the same letters as the other results.
 - **Numbers**: no ending zeros in approximations; very large or small numbers as 1.606 938 × 10⁶⁰ (copied as 1.606938E60); whole numbers and decimals that end are shown in full up to 60 digits, even beyond the precision (for example 30!).
 - **Long results and units**: a result too long for one line gets smaller letters, and only then breaks between groups of three digits; a result with units stays on one line (m/s).
@@ -74,7 +79,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :svg: main | The parts of the main screen (the numbers are those of the table)
 | No. | Name | What it is for |
 | 1 | ☰ (menu) | Opens the tools, the graphs, the lists, the settings and more |
-| 2 | Chips | Switch the angle unit (RAD, DEG), exact or approximate ([[!EXACT]] and others), decimal or hexadecimal, with one tap |
+| 2 | Chips | Switch the angle unit (RAD, DEG), exact or approximate ([[!EXACT]] and others), decimal or hexadecimal, with one tap; “15 dig” lets you choose the precision |
 | 3 | 🕘 (history menu) | Search the history, select lines, export, clear |
 | 4 | History | The expressions and their answers, the newest at the bottom |
 | 5 | Input field | Where you type. The answer while you type (the preview) shows under it |
@@ -107,6 +112,9 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: To see one line of the history with more digits, choose 30, 50, 100 or Other… in its ⋯ → [[Work it out with other digits]]. The answer shows in a sheet with [[Put the expression into the input field]], [[Keep it in the history]] and [[Copy the result]]. The precision of the settings and the line stay as they are.
 :pro: Up to 1000 digits are free. More than 1000, up to 200000 digits, is a QCalc Pro feature.
 :tip: A very long answer scrolls in the history so that every digit can be read; copying it copies every digit.
+:step: Under the newest answer, buttons for what is often done next (6 at most): for an expression in x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]; for a number [[Details]], [[As a fraction]], [[Scientific]] (an integer: [[Prime factors]], [[In hex]]); with a unit [[Convert…]]; for a matrix [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. A button's calculation becomes a new line of the history.
+:step: [[Details]] (or ⋯ → [[Details]]) shows the other forms of the answer together: for a number the exact value, the decimal, the fraction, the mixed fraction and the scientific notation (an integer in bases 2, 8 and 16 and its prime factors; with a unit, other units); for an expression in x a small graph, the zeros, the derivative, the integral, the Taylor series and the factored form. Tap a row for [[Put the expression in the field]], [[Keep it in the history]] or [[Copy result]].
+:tip: Without these buttons: [[Settings]] → [[Suggest the next steps under the newest answer]] off.
 
 ## undo | Deleting and undoing
 :what: ⌫ deletes one character, AC empties the input field. Right after that, [[Undo]] above the input field brings it back.
@@ -405,6 +413,12 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Type the functions, one per line, and the range of x.
 :step: Press [[Draw]].
 :step: Tap the graph to see the coordinates of a point.
+:step: The kind of each line is told from its form; [[!y = f(x)]], [[Parametric]], [[Polar]] and [[Implicit]] at the top choose it too (another kind than the box has puts an example of it in the box).
+:example: parametric `x = cos(t), y = sin(2t)` (with a range of t), polar `r = 1 + cos(θ)` (a range of θ, 0 to 2π at first; t works in place of θ), implicit `x^2 + y^2 = 1`, `x^3 + y^3 = 3x y` (an equation with both x and y)
+:tip: Parametric and polar lines take angles in radians. An implicit line joins the points of a grid where left side − right side changes its sign, with a finer grid where the line is intricate; moving or zooming draws it again for the new view.
+:tip: A parametric or polar line has buttons for its [[Length]] and [[Area]] (polar, or a parametric line that closes). The polar area is ½∫r² dθ over the range of θ (what is gone round twice counts twice); a parametric line that crosses itself has no area. [[Calculus ▾]], [[Area and length ▾]] and [[Make a solid ▾]] are for lines y = f(x).
+:tip: Letters such as a and b in the formulas get sliders under the graph (6 at most). Moving one draws the graph again at once. Tap the value to type a number; ▶ moves it to and fro. ⋯ changes its range (−5 to 5 at first) and step (0.1).
+:tip: The letters with sliders are a to z and A to Z, one letter each, but e, i, t, x, y and E, I, X, Y. Their values are used in this graph only: in the calculator a stays the are, c the speed of light and g the gram. A variable with a value of your own (as k := 2) keeps that value, and a letter used as a function, as f in f(x), gets no slider. Write a letter apart from x: `a x` or `a*x` (`ax` is one name).
 :tip: [[Calculus ▾]] gives the derivative, tangents, zeros and extrema.
 :tip: Tap a sample below the graph to draw an example.
 
@@ -449,6 +463,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :tip: 3D is drawn by the device's GPU (WebGL 2), with light and shadows close to real things; the colors by height stay. When it is slow, it is drawn a little coarser while you turn it and sharp again when you lift your finger.
 :tip: On a device without WebGL 2, 3D is drawn as before; then [[See-through]] cannot be pressed and says "[[Not available on this device]]".
 :tip: [[Partial derivatives ▾]] draws ∂f/∂x and ∂f/∂y.
+:tip: The letters of the formulas get sliders in the 3D graph too (QCalc Pro).
 
 ## volume-3d | Volume and surface (3D)
 :what: The volume under a surface of the 3D graph (or between two surfaces) and the surface area.
@@ -464,6 +479,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :what: Sends a picture of a graph to another app; a 3D graph also as a moving GIF.
 :step: Press ↗ ([[Share a picture of the graph]]) on the graph.
 :step: Choose the app in the share sheet.
+:step: [[Moving picture (GIF)]] in a slider's ⋯ makes a GIF of the slider moving from its start to its end (2D and 3D).
 :pro: Full-size pictures without the mark, and moving GIFs, are QCalc Pro features. Without Pro the picture is at most 800 px wide, with a small "QCalc".
 
 # forms | Forms: calculus, equations, matrices
@@ -476,6 +492,9 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :shot: form | The form of an integral
 :example: ∫ x² sin(x) dx from 0 to π → `= π² − 4`, then `≈ 5.869 604 401 089 36`
 :tip: A limit can be [[Both sides]], [[From the right (+)]] or [[From the left (−)]].
+:step: taylor ([[Taylor series]]) on the [[Calculus]] page takes a function f(x), a center a (0 at first) and a degree n (5 at first, up to 20) and gives the Taylor polynomial from its lowest degree up, as `x − x³/6 + x⁵/120 + O(x⁶)`. The coefficients stay exact where they can (fractions, √, π). `taylor(sin(x), x, 0, 5)` typed in the input field works too.
+:step: [[Compare in a graph]] draws the function and its Taylor polynomial together in the 2D graph.
+:tip: When the function or a derivative has no finite value at the center (√x or 1/x at x = 0), the app says so; a value given by a limit, as sin(x)/x at x = 0, works. When it takes long, try a lower degree.
 
 ## equations | Equations
 :what: Solves equations and systems of equations.
@@ -567,6 +586,7 @@ Numeric integration (areas, lengths and volumes of the graph) is certain to abou
 | Solid from a profile | [Solid from a profile](#profile) |
 | Solids and tanks in 3D | [Solids and tanks in 3D](#shapes-3d) |
 | STL files | [STL files](#stl) |
+| Sliders in 3D | [3D graph](#graph-3d) |
 | GIF and pictures without the mark | [Sharing](#share) |
 | More calculation notes, saved as files | [Calculation notes](#notes) |
 :tip: [[How to use ›]] on a row of the Pro features opens its section of this manual.

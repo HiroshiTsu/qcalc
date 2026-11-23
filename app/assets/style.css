@@ -1232,6 +1232,10 @@ body.cform-open #history, body.cform-open .entry { display: none; }
   body.cform-open header.bar { display: none; }
   body.cform-open .cf-body { padding-top: 6px; gap: 6px; }
   body.cform-open .cf-hint:not(.cf-note) { display: none; }
+  /* (1.15.0) = and ≈ side by side when they fit in the width, as up to 1.14.0: on two lines the ≈ line was behind
+     the buttons (360 × 640, the integral of x^2 from 0 to 1); a long one still goes on to the next line */
+  body.cform-open .cf-res.two .r-line { display: inline-block; max-width: 100%; vertical-align: middle; }
+  body.cform-open .cf-res.two .r-line + .r-line { margin-left: .4em; }
 }
 
 
@@ -1768,3 +1772,44 @@ body.hselect #history { padding-bottom: 150px; }
 .bar.tightest .chip { padding: 4px 3px; min-width: 32px; font-size: 11px; letter-spacing: -.2px; }
 .bar.tightest .icon-btn { width: 40px; }
 .chip { white-space: nowrap; }
+
+/* (1.15.0) the kinds of lines of the 2D graph, and the length and area of a parametric or polar line */
+/* (one row when the labels fit, each as wide as it needs and the rest shared; two rows rather than a label cut) */
+.seg.mini.plot-kinds { display: flex; width: 100%; margin: 0 0 8px; flex-wrap: wrap; }
+.seg.mini.plot-kinds button { flex: 1 1 auto; min-width: 48px; font-size: 13px; padding: 7px 6px; min-height: 40px; white-space: nowrap; }
+.curve-tools:empty { display: none; }
+.curve-tools { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 8px; }
+.ct-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13.5px; }
+.ct-name { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ct-name::before { content: ""; width: 14px; height: 3px; border-radius: 2px; background: var(--c); flex: 0 0 auto; }
+.ct-btn { min-height: 36px; padding: 4px 12px; }
+.ct-out { font-weight: 600; }
+.tools-note { margin-top: 2px; }
+/* (1.15.0) the sliders of the letters under a graph: name, slider, value (tap to type), ▶ and ⋯, each 48 px high */
+.sliders { display: flex; flex-direction: column; gap: 0; margin: 6px 0 2px; }
+.sliders[hidden] { display: none; }
+.sl-row { display: flex; align-items: center; gap: 4px; min-height: 48px; }
+.sl-name { flex: 0 0 auto; min-width: 20px; text-align: center; font: italic 600 18px/1 "Times New Roman", "Noto Serif", serif; }
+.sl-range { flex: 1 1 auto; min-width: 72px; height: 48px; margin: 0 4px; accent-color: var(--accent); background: transparent; }
+.sl-val { flex: 0 0 auto; min-width: 58px; max-width: 40%; min-height: 40px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: inherit; font-size: 15px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sl-play, .sl-more { flex: 0 0 auto; width: 48px; height: 48px; border: 0; border-radius: 24px; background: transparent; color: var(--accent); font-size: 18px; padding: 0; }
+.sl-lock { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 13.5px; color: var(--muted); padding: 4px 0; }
+.sl-lock .sl-pro { min-height: 40px; }
+.sl-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 6px 6px; }
+.sl-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.sl-field .sheet-input { margin: 0; width: 100%; box-sizing: border-box; }
+/* (1.15.0) the next steps under the newest answer: one row of buttons that scrolls sideways */
+.h-steps { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 10px; margin: -4px 0 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.h-steps::-webkit-scrollbar { display: none; }
+.step-chip { flex: 0 0 auto; min-height: 48px; padding: 0 14px; border-radius: 24px; border: 1px solid var(--line); background: var(--surface); color: var(--accent); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.step-chip:active { background: var(--line); }
+/* the sheet of details */
+.sheet .dt-head { padding: 0 8px 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.sheet .dt-expr { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.sheet .dt-res { font-size: 17px; overflow-wrap: anywhere; }
+.sheet .dt-list { display: flex; flex-direction: column; max-height: 56vh; overflow-y: auto; }
+.sheet .dt-row { display: flex; flex-direction: column; align-items: stretch; text-align: left; gap: 2px; min-height: 48px; padding: 8px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; width: 100%; }
+.sheet .dt-lbl { font-size: 12.5px; color: var(--muted); }
+.sheet .dt-val { font-size: 16px; overflow-wrap: anywhere; }
+.sheet .dt-graph { display: block; width: 100%; height: 110px; }
+.sheet .dt-none { padding: 12px 8px; color: var(--muted); font-size: 14px; }

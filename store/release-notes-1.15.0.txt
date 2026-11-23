@@ -1,96 +1,101 @@
 <en-US>
-• Easier results: 15 digits in groups of 3, exact and approximate on two lines, whole numbers in full; a new chip for the digits
-• Edit a line of the history in place by touching its expression
-• Calculation notes read .txt and .csv files, and text shared from other apps
-• 3D drawn by the GPU: real light, shadows, metals and liquids
-• "See-through" in every 3D view, also for one part
-• Turn 3D any way with one finger; front, top and side views
-• Without QCalc Pro, open 3D once for free
+• New 2D graphs: parametric, polar and implicit curves; sliders for letters (a, b…), ▶ animates
+• Easier results: 15 digits in groups of 3, exact and approximate on two lines; a digits chip
+• Next steps under the answer; Details: decimal, fraction, bases, graph, zeros…
+• Taylor series with exact coefficients
+• Edit a history line in place
+• Notes read .txt/.csv files and shared text
+• 3D by the GPU: light, shadows, see-through; once free
+• Fixes: the message after a definition, 3D spikes
 </en-US>
 <en-GB>
-• Easier results: 15 digits in groups of 3, exact and approximate on two lines, whole numbers in full; a new chip for the digits
-• Edit a line of the history in place by touching its expression
-• Calculation notes read .txt and .csv files, and text shared from other apps
-• 3D drawn by the GPU: real light, shadows, metals and liquids
-• "See-through" in every 3D view, also for one part
-• Turn 3D any way with one finger; front, top and side views
-• Without QCalc Pro, open 3D once for free
+• New 2D graphs: parametric, polar and implicit curves; sliders for letters (a, b…), ▶ animates
+• Easier results: 15 digits in groups of 3, exact and approximate on two lines; a digits chip
+• Next steps under the answer; Details: decimal, fraction, bases, graph, zeros…
+• Taylor series with exact coefficients
+• Edit a history line in place
+• Notes read .txt/.csv files and shared text
+• 3D by the GPU: light, shadows, see-through; once free
+• Fixes: the message after a definition, 3D spikes
 </en-GB>
 <ja-JP>
-・答えが見やすくなりました：有効桁数 15 桁、3 桁ごとの区切り、「= 厳密な値」と「≈ 近似値」の 2 行表示、割り切れる数は全部の桁（桁数は上の新しいボタンですぐ変えられます）
-・履歴の式の行をタップすると、その行をその場で直せます。下の行も計算し直せます
-・計算メモに、.txt・.csv のファイルや、ほかのアプリから共有した文字を読み込めます
-・3D を端末の GPU で描くようになり、光と影、金属や液体の見た目が本物に近くなりました
-・どの 3D でも「透明」が使えます。濃さを変え、どの式・どの部分を透明にするかも選べます（タンクの「容器」だけ、など）
-・3D を 1 本の指でどの方向にも回せます。「正面」「上」「横」の向きにもすぐ変えられます
+・2D グラフに媒介変数・極座標・陰関数の曲線。a・b などの文字をスライダーで動かせ、▶ で動かし続けられます
+・答えが見やすく：15 桁・3 桁区切り・「= 厳密な値」と「≈ 近似値」の 2 行。桁数は上のボタンですぐ変更
+・答えの下に次の操作の候補。「詳しく見る」で小数・分数・進数・グラフ・零点・導関数などを 1 画面に
+・テイラー展開（係数は分数のまま）
+・履歴の行をその場で直せます
+・計算メモに .txt・.csv のファイルや共有した文字を読み込めます
+・3D を GPU で描画：本物に近い光と影、透明表示、1 本指でどの向きにも回転。Pro がなくても 1 回無料
 ・材料に、ステンレス・アルミニウム・銅・真ちゅう・木・PLA・ABS・アクリルを足しました
-・QCalc Pro がなくても、3D を 1 回だけ無料で開けます
-・グラフの「面積・長さ」と「立体にする」で、描いた直後に入れた範囲 a・b が、探した範囲に置き換わることがあったのを直しました
+・「このアプリについて」に「Google Play で評価」を足しました
+・変数を決めたときの知らせと取り消し、3D の偏微分のとげ、回転体の表示が残る問題、描いた直後に入れた範囲 a・b が置き換わる問題などを直しました
 </ja-JP>
 <de-DE>
-• Klarere Ergebnisse: 15 Stellen in Dreiergruppen, „= exakt“ und „≈ Näherung“ in zwei Zeilen, ganze Zahlen vollständig (Stellen: neues Feld oben)
-• Zeile im Verlauf direkt bearbeiten: Ausdruck antippen
-• Rechennotizen lesen .txt- und .csv-Dateien und geteilten Text
-• 3D mit der GPU: echtes Licht, Schatten, Metalle, Flüssigkeiten
-• „Durchsichtig“ in jeder 3D-Ansicht, auch für Teile
-• 3D mit einem Finger frei drehen; Ansicht von vorn, oben, Seite
-• Ohne QCalc Pro 3D einmal kostenlos öffnen
+• Neue 2D-Graphen: Parameter-, Polar- und implizite Kurven; Schieberegler für a, b…, ▶ animiert
+• Klarere Ergebnisse: 15 Stellen in Dreiergruppen, exakt und Näherung in zwei Zeilen; Stellen oben
+• Nächste Schritte unter der Antwort; Details: Dezimal, Bruch, Basen, Graph, Nullstellen…
+• Taylorreihe mit exakten Koeffizienten
+• Zeile im Verlauf direkt bearbeiten
+• Notizen lesen .txt/.csv und geteilten Text
+• 3D mit der GPU: Licht, Schatten, durchsichtig; einmal gratis
 </de-DE>
 <es-ES>
-• Resultados más claros: 15 cifras en grupos de 3, «= exacto» y «≈ aproximación» en dos líneas, enteros completos (cifras: botón de arriba)
-• Edita una línea del historial en su sitio tocando su expresión
-• Las notas de cálculo leen archivos .txt y .csv y texto compartido
-• 3D con la GPU: luz, sombras, metales y líquidos reales
-• «Transparente» en toda vista 3D, también por partes
-• Gira el 3D con un dedo; vistas de frente, arriba y lado
-• Sin QCalc Pro, el 3D se abre una vez gratis
+• Nuevas gráficas 2D: curvas paramétricas, polares e implícitas; deslizadores para letras como a y b, ▶ anima
+• Resultados más claros: 15 cifras en grupos de 3, exacto y aproximado en dos líneas; cifras arriba
+• Siguientes pasos bajo la última respuesta y Detalles: decimal, fracción, bases, gráfica, ceros…
+• Serie de Taylor con coeficientes exactos
+• Edita una línea del historial en su sitio
+• Las notas leen .txt/.csv y texto compartido
+• 3D con la GPU: luz, sombras, transparente; gratis una vez
 </es-ES>
 <es-419>
-• Resultados más claros: 15 cifras en grupos de 3, «= exacto» y «≈ aproximación» en dos líneas, enteros completos (cifras: botón de arriba)
-• Edita una línea del historial en su sitio tocando su expresión
-• Las notas de cálculo leen archivos .txt y .csv y texto compartido
-• 3D con la GPU: luz, sombras, metales y líquidos reales
-• «Transparente» en toda vista 3D, también por partes
-• Gira el 3D con un dedo; vistas de frente, arriba y lado
-• Sin QCalc Pro, el 3D se abre una vez gratis
+• Nuevas gráficas 2D: curvas paramétricas, polares e implícitas; deslizadores para letras como a y b, ▶ anima
+• Resultados más claros: 15 cifras en grupos de 3, exacto y aproximado en dos líneas; cifras arriba
+• Siguientes pasos bajo la última respuesta y Detalles: decimal, fracción, bases, gráfica, ceros…
+• Serie de Taylor con coeficientes exactos
+• Edita una línea del historial en su sitio
+• Las notas leen .txt/.csv y texto compartido
+• 3D con la GPU: luz, sombras, transparente; gratis una vez
 </es-419>
 <fr-FR>
-• Résultats plus clairs : 15 chiffres par groupes de 3, exact et approché sur deux lignes (chiffres : nouveau bouton en haut)
-• Modifiez une ligne de l’historique sur place : touchez son expression
-• Les notes de calcul lisent .txt, .csv et le texte partagé
-• 3D par le GPU : lumière, ombres, métaux, liquides
-• « Transparent » dans toute vue 3D, aussi par partie
-• La 3D tourne dans tous les sens d’un doigt ; vues de face, dessus, côté
-• Sans QCalc Pro, la 3D s’ouvre une fois gratuitement
+• Nouveaux graphiques 2D : courbes paramétriques, polaires, implicites ; curseurs pour a, b…, ▶ anime
+• Résultats plus clairs : 15 chiffres par groupes de 3, exact et approché sur deux lignes
+• Étapes suivantes sous la réponse ; Détails : décimal, fraction, bases, graphique, zéros…
+• Série de Taylor aux coefficients exacts
+• Modifiez une ligne de l’historique sur place
+• Les notes lisent .txt/.csv et le texte partagé
+• 3D par le GPU : lumière, ombres, transparent ; une fois gratuit
 </fr-FR>
 <fr-CA>
-• Résultats plus clairs : 15 chiffres par groupes de 3, exact et approché sur deux lignes (chiffres : nouveau bouton en haut)
-• Modifiez une ligne de l’historique sur place : touchez son expression
-• Les notes de calcul lisent .txt, .csv et le texte partagé
-• 3D par le GPU : lumière, ombres, métaux, liquides
-• « Transparent » dans toute vue 3D, aussi par partie
-• La 3D tourne dans tous les sens d’un doigt ; vues de face, dessus, côté
-• Sans QCalc Pro, la 3D s’ouvre une fois gratuitement
+• Nouveaux graphiques 2D : courbes paramétriques, polaires, implicites ; curseurs pour a, b…, ▶ anime
+• Résultats plus clairs : 15 chiffres par groupes de 3, exact et approché sur deux lignes
+• Étapes suivantes sous la réponse ; Détails : décimal, fraction, bases, graphique, zéros…
+• Série de Taylor aux coefficients exacts
+• Modifiez une ligne de l’historique sur place
+• Les notes lisent .txt/.csv et le texte partagé
+• 3D par le GPU : lumière, ombres, transparent ; une fois gratuit
 </fr-CA>
 <ko-KR>
-• 결과가 보기 쉬워졌습니다: 유효숫자 15자리, 세 자리마다 구분, ‘= 정확한 값’과 ‘≈ 근삿값’의 두 줄 표시, 나누어떨어지는 수는 모든 자리(자릿수는 위쪽의 새 버튼으로 바로 바꿀 수 있음)
-• 기록의 식을 탭하면 그 줄을 그 자리에서 고칠 수 있고, 아래 줄도 다시 계산할 수 있습니다
-• 계산 메모에 .txt・.csv 파일이나 다른 앱에서 공유한 텍스트를 읽어 들일 수 있습니다
-• 3D를 기기의 GPU로 그려 빛과 그림자, 금속과 액체가 실물에 가까워졌습니다
-• 모든 3D에서 ‘투명’을 쓸 수 있습니다. 불투명도를 바꾸고, 어느 식·어느 부분을 투명하게 할지 고를 수 있습니다(탱크의 ‘용기’만 등)
-• 3D를 손가락 하나로 어느 방향으로든 돌릴 수 있고, ‘정면’·‘위’·‘옆’으로 바로 바꿀 수 있습니다
+• 2D 그래프에 매개변수·극좌표·음함수 곡선. a, b 같은 문자를 슬라이더로 움직이고 ▶로 계속 움직일 수 있습니다
+• 결과가 보기 쉬워졌습니다: 15자리, 세 자리 구분, ‘= 정확한 값’과 ‘≈ 근삿값’ 두 줄. 자릿수는 위쪽 버튼으로 바로 변경
+• 최신 답 아래에 다음 작업 후보. ‘자세히’로 소수·분수·진법·그래프·영점·도함수 등을 한 화면에
+• 테일러 전개(계수는 분수 그대로)
+• 기록의 줄을 그 자리에서 고칠 수 있습니다
+• 계산 메모에 .txt·.csv 파일과 공유한 텍스트를 읽어 들입니다
+• 3D를 GPU로 그립니다: 실물 같은 빛과 그림자, 투명 표시, 한 손가락 회전. Pro 없이도 한 번 무료
 • 재료에 스테인리스강·알루미늄·구리·황동·나무·PLA·ABS·아크릴을 더했습니다
-• QCalc Pro가 없어도 3D를 한 번 무료로 열 수 있습니다
+• ‘이 앱에 대해’에 ‘Google Play에서 평가’를 더했습니다
+• 변수를 정할 때의 알림과 취소, 3D 편미분의 가시, 회전체 표시가 남는 문제 등을 고쳤습니다
 </ko-KR>
 <zh-TW>
-• 結果更易讀：15 位有效數字、每三位分隔、「= 精確值」與「≈ 近似值」分兩行，能整除的數顯示全部位數（位數可用上方的新按鈕立即變更）
-• 點一下歷史紀錄的算式，就能就地修改那一行，下方的行也能重新計算
-• 計算筆記可讀取 .txt・.csv 檔，以及從其他 App 分享來的文字
-• 3D 改由裝置的 GPU 繪製，光線與陰影、金屬與液體的樣子更接近真實
-• 所有 3D 都能使用「透明」：可調整不透明度，並選擇哪個式子或哪個部分要透明（例如只有儲槽的「容器」）
-• 用一根手指就能往任何方向旋轉 3D，也能立即改為「正面」「上方」「側面」
+• 2D 圖形新增參數式、極座標與隱函數曲線；a、b 等字母可用滑桿移動，▶ 可持續移動
+• 結果更易讀：15 位數、每三位分隔、「= 精確值」與「≈ 近似值」分兩行；位數可用上方按鈕立即變更
+• 最新答案下方的下一步建議；「詳細」可在一個畫面查看小數、分數、進位、圖形、零點、導函數等
+• 泰勒展開（係數保持分數）
+• 可就地修改歷史紀錄的一行
+• 計算筆記可讀取 .txt、.csv 檔與分享的文字
+• 3D 由 GPU 繪製：接近真實的光影、透明顯示、一指任意旋轉；沒有 Pro 也能免費開啟一次
 • 材料新增不鏽鋼、鋁、銅、黃銅、木、PLA、ABS、壓克力
-• 沒有 QCalc Pro 也能免費開啟一次 3D
 • 「關於這個 App」新增「到 Google Play 評分」
-• 修正「圖形」的「面積與長度」和「做成立體」中，畫完後馬上輸入的範圍 a、b 會被 App 找到的範圍取代的問題
+• 修正設定變數時的通知與取消、3D 偏微分的尖刺、旋轉體的顯示殘留、畫完後輸入的範圍 a、b 被取代等問題
 </zh-TW>

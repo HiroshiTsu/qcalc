@@ -339,7 +339,7 @@
     angle: 'rad', approx: 'auto', fraction: 'auto', precision: 15, max_decimals: -1, time_limit: 20, math_view: true,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: true, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
-    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false
+    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false, next_steps: true
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
   const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
@@ -570,7 +570,8 @@
     profile: 'pro',        // a solid from a measured profile: volume, capacity, weight, surface, its table (1.12 D2): Pro (work)
     stl: 'pro',            // the solids saved as STL files for 3D printers (1.12 D3): Pro (work)
     share: 'free',         // sharing a picture of a graph, with a small "QCalc" in the corner (1.12 D4)
-    share_pro: 'pro',      // the moving picture (GIF) of the 3D graph, and pictures without the mark at full resolution (1.12 D4): Pro
+    share_pro: 'pro',      // the moving picture (GIF) of the 3D graph and of a slider, and pictures without the mark at full resolution (1.12 D4; sliders 1.15): Pro
+    sliders3d: 'pro',      // the sliders of the letters in the 3D graph (1.15; in 2D free): Pro
     notes: 'pro'           // calculation notes: the second memo and more, and saving them as text or CSV (1.12 D5): Pro; the first memo, copying and sharing it are free
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
@@ -810,7 +811,7 @@
     calc: [
       ['d/dx', { form: 'diff', ins: 'diff(□)' }], ['d²/dx²', { form: 'diff', init: { n: '2' }, ins: 'diff(□, x, 2)', cls: 'fn sm' }], ['∂/∂y', { form: 'diff', init: { v: 'y' }, ins: 'diff(□, y)' }], ['⌫', { act: 'del', cls: 'ctl', repeat: true }], ['AC', { act: 'clear', cls: 'ctl' }],
       ['∫', { form: 'int', ins: 'integrate(□)' }], ['∫ₐᵇ', { form: 'int', init: { focus: 'a', order: ['a', 'b', 'f', 'v'] }, ins: 'integrate(□, □, □)', html: '∫<sub>a</sub><sup>b</sup>' }], ['lim', { form: 'lim', ins: 'limit(□, □)' }], ['Σ', { form: 'sum', ins: 'sum(□, □, □)' }], ['Π', { form: 'prod', ins: 'product(□, □, □)' }],
-      ['dsolve', { form: 'dsolve', ins: 'dsolve(diff(y, x) = □)', cls: 'fn sm' }], [tr('max/min', '極値'), { ins: 'extremum()', back: 1, cls: tr('fn sm', undefined) }], ['solve', { form: 'solve', ins: 'solve()', back: 1 }], ['∞', { ins: '∞' }], ['y', { ins: 'y' }],
+      ['dsolve', { form: 'dsolve', ins: 'dsolve(diff(y, x) = □)', cls: 'fn sm' }], ['taylor', { form: 'taylor', ins: 'taylor(□, x, 0, 5)', cls: 'fn sm' }], ['solve', { form: 'solve', ins: 'solve()', back: 1 }], ['∞', { ins: '∞' }], ['y', { ins: 'y' }],
       ['(', { ins: '(' }], [')', { ins: ')' }], ['xʸ', { ins: '^', op: true, cls: 'op' }], ['√', { ins: '√()', back: 1, cls: 'op' }], ['π', { ins: 'π', cls: 'op' }],
       ['sin', { ins: 'sin()', back: 1 }], ['ln', { ins: 'ln()', back: 1 }], ['e', { ins: 'e' }], [tr('more…', 'ほか…'), { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
     ],
@@ -852,7 +853,7 @@
     'eˣ': 'eのべき乗', '∫': '積分', 'd/dx': '微分', 'Σ': '総和', ',': 'カンマ',
     '°': '度', '%': 'パーセント', '(': '左かっこ', ')': '右かっこ', '.': '小数点',
     'd²/dx²': '2階微分', '∂/∂y': 'yで偏微分', '∫ₐᵇ': '定積分', 'lim': '極限', 'Π': '総乗', 'dsolve': '微分方程式を解く',
-    '極値': '極値', 'solve': '方程式を解く', '∞': '無限大', 'ほか…': 'ほかの関数を一覧から選ぶ',
+    'solve': '方程式を解く', 'taylor': 'テイラー展開', '∞': '無限大', 'ほか…': 'ほかの関数を一覧から選ぶ',
     '[': '左角かっこ（行列の始まり）', ']': '右角かっこ（行列の終わり）', ';': 'セミコロン（行列の行の区切り）',
     'det': '行列式', 'Aᵀ': '転置行列', 'A⁻¹': '逆行列', '▦': '行列を入力する画面を開く', 'a/b': '分数（分子と分母の欄）'
   } : I18N.keys || {
@@ -862,7 +863,7 @@
     'eˣ': 'e to the power', '∫': 'Integral', 'd/dx': 'Derivative', 'Σ': 'Sum', ',': 'Comma',
     '°': 'Degrees', '%': 'Percent', '(': 'Left parenthesis', ')': 'Right parenthesis', '.': 'Decimal point',
     'd²/dx²': 'Second derivative', '∂/∂y': 'Partial derivative with respect to y', '∫ₐᵇ': 'Definite integral', 'lim': 'Limit',
-    'Π': 'Product', 'dsolve': 'Solve a differential equation', 'max/min': 'Extremum (maximum or minimum)', 'solve': 'Solve an equation',
+    'Π': 'Product', 'dsolve': 'Solve a differential equation', 'solve': 'Solve an equation', 'taylor': 'Taylor series',
     '∞': 'Infinity', 'more…': 'Choose another function from the list',
     '[': 'Left bracket (start of a matrix)', ']': 'Right bracket (end of a matrix)', ';': 'Semicolon (end of a matrix row)',
     'det': 'Determinant', 'Aᵀ': 'Transpose', 'A⁻¹': 'Inverse matrix', '▦': 'Open the matrix form', 'a/b': 'Fraction (boxes for the numerator and the denominator)'
@@ -1485,11 +1486,13 @@
   // the numbers of a line of plain text: digits with their groups and decimals, and an exponent
   const RES_NUM_RE = /\d(?:[\d  ,.]*\d)?(?:E[−-]?\d+)?/g;
   // a number without its ending zeros (an approximation): 1.414 213 562 373 10 → 1.414 213 562 373 1, 2.50 → 2.5, 3.0 → 3
+  // (the exponent kept as it is: 1.606 938 044 258 99E60 stays …E60, not …E6)
   function noEndZeros(num) {
-    const k = num.indexOf(NF.dec);
+    const e = /E[−-]?\d+$/.exec(num), exp = e ? e[0] : '', mant = e ? num.slice(0, e.index) : num;
+    const k = mant.indexOf(NF.dec);
     if (k < 0) return num;
-    const f = num.slice(k + 1).replace(/[0  ]+$/, '');
-    return f ? num.slice(0, k + 1) + f : num.slice(0, k);
+    const f = mant.slice(k + 1).replace(/[0  ]+$/, '');
+    return (f ? mant.slice(0, k + 1) + f : mant.slice(0, k)) + exp;
   }
   // a number as nodes: the groups with a place to break after the sign between them (",", "." or a narrow space: the
   // owner's choice of 11-23, a line may end with "," but not begin with it), and its
@@ -1498,6 +1501,27 @@
     const out = [];
     const m = /^(.*?)E([−-]?\d+)$/.exec(num), mant = m ? m[1] : num;
     const k = mant.indexOf(NF.dec);
+    // (1.15.0, the triage of the full suite) without the groups of digits (Digit grouping off) a long number may still
+    // break between groups of three, with nothing shown there (<wbr>): it was one line that scrolled sideways. Up to
+    // 20000 characters, as groupText makes groups (a longer one stays one line that scrolls sideways, quick to show)
+    const plain = mant.length > 20000 ? null : new RegExp('^([−-]?)(\\d+)(?:' + (NF.dec === '.' ? '\\.' : NF.dec) + '(\\d*))?(…?)$').exec(mant);
+    if (plain && (plain[2].length + (plain[3] || '').length) > 12) {
+      const ip = plain[2], fp = plain[3] || '', ch = [];
+      for (let j = ip.length; j > 0; j -= 3) ch.unshift(ip.slice(Math.max(0, j - 3), j));
+      ch[0] = plain[1] + ch[0];
+      if (plain[3] !== undefined) {
+        ch[ch.length - 1] += NF.dec;
+        for (let j = 0; j < fp.length; j += 3) ch.push(fp.slice(j, j + 3));
+      }
+      ch[ch.length - 1] += plain[4];
+      ch.forEach((c, i) => { if (i) out.push(el('wbr')); out.push(c); });
+      if (m) {
+        const p = m[2].replace('-', '−');
+        out.push(el('span', { class: 'r-exp', 'aria-hidden': 'true', text: ' × 10' + supText(p) }));
+        out.push(el('span', { class: 'sr-only', text: trf(' times 10 to the power of {0}', ' × 10 の {0} 乗', p) }));
+      }
+      return out;
+    }
     let s = '';
     for (let i = 0; i < mant.length; i++) {
       const c = mant[i];
@@ -1609,6 +1633,10 @@
     [/^Misplaced operator\(s\) "(.+)" ignored\.?$/, (m, o) => '余分な演算子「' + o + '」を無視しました', 'extra-operator'],
     [/^Misplaced '(.+)' ignored\.?$/, (m, o) => '余分な「' + o + '」を無視しました', 'extra-sign'],
     [/^Division by zero\.?$/, () => 'ゼロで割っています', 'division-by-zero'],
+    // (1.15.0) taylor()
+    [/^Taylor series: the degree can be at most (\d+)\.?$/, (m, n) => 'テイラー展開の次数は ' + n + ' までです', 'taylor-degree'],
+    [/^Taylor series: the function has no finite value at (.+?) = (.+?)\.?$/, (m, v, a) => 'テイラー展開できません：' + v + ' = ' + a + ' で関数の値が有限になりません', 'taylor-value'],
+    [/^Taylor series: the derivative of order (\d+) has no finite value at (.+?) = (.+?)\.?$/, (m, k, v, a) => 'テイラー展開できません：' + v + ' = ' + a + ' で ' + k + ' 階の導関数の値が有限になりません（その点で微分できません）', 'taylor-derivative'],
     [/^Misplaced decimal separator ignored\.?$/, () => '余分な小数点を無視しました', 'extra-decimal-point'],
     [/^Floating point overflow\.?$/, () => '数が大きすぎて、小数では表せません', 'overflow'],
     [/^Floating point underflow\.?$/, () => '数が小さすぎて、小数では表せません', 'underflow'],
@@ -1778,7 +1806,8 @@
     if (r.timeout) {
       previewEl.textContent = '';
       msgEl.textContent = trf('The calculation took longer than the time limit ({0} s) and was stopped. The time limit can be changed in Settings',
-        '制限時間（{0} 秒）を過ぎたため計算を中止しました。制限時間は設定で変えられます', limit);
+        '制限時間（{0} 秒）を過ぎたため計算を中止しました。制限時間は設定で変えられます', limit)
+        + (/(^|[^\p{L}\p{N}_])taylor\(/u.test(raw) ? ' ' + tr('(A Taylor series of a lower degree is faster)', '（テイラー展開は次数を下げると速くなります）') : '');
       msgEl.className = 'msg error';
       return;
     }
@@ -1832,11 +1861,14 @@
     else {
       const item = historyItem(entry);
       histEl.append(item);
+      refreshSteps();
       fitMatrices(item);
       histEl.scrollTop = histEl.scrollHeight;
       histPinned = true;
     }
     announce(entry);
+    // (a variable defined: definitionMade reads the names of the user's variables again, so that a letter with a value of
+    // its own gets no slider in a graph, 1.15.0)
     definitionMade(r, expr);
     startupMark('first');
   }
@@ -1850,10 +1882,36 @@
     definedVars.clear();
     for (const v of r.variables || []) definedVars.add(v.name);
   }
+  // the arguments of save(…) as the engine writes it, split at the commas outside brackets and quotes; null for
+  // anything else (save(2, 'k') + 1, or a bracket not closed)
+  function saveArgs(p) {
+    const m = /^save\((.*)\)$/.exec(p || '');
+    if (!m) return null;
+    const out = [];
+    let depth = 0, q = '', cur = '';
+    for (const c of m[1]) {
+      if (q) { cur += c; if (c === q) q = ''; continue; }
+      if (c === '"' || c === "'") { q = c; cur += c; continue; }
+      if ('([{'.indexOf(c) >= 0) depth++;
+      else if (')]}'.indexOf(c) >= 0 && --depth < 0) return null;
+      if (c === ',' && !depth) { out.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    out.push(cur.trim());
+    return depth || q ? null : out;
+  }
   function definitionMade(r, expr) {
-    const m = /^save\(.*?, '([^']+)',/.exec(r.parsed || '');
-    if (!m) return;
-    const name = m[1], kind = new RegExp('^\\s*' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(').test(expr) ? 'function' : 'variable';
+    // (the engine writes save(2, 'k', "Temporary", 'k') for k := 2, save(5 centimeters, 'r', "Temporary", 'r', 1) or
+    // save(5, 'x', "Temporary", "", 1) for r = 5 cm and x = 5, and save(x² + 1, "f(x)") for f(x) := x² + 1: the name is
+    // always the second argument, in single or double quotes. 1.15.0: until then a third argument was looked for,
+    // which the engine does not always write, so from 1.8.0 the message and its Undo were never shown; and the name
+    // is read as the second argument, not the last one in quotes, which is the title or the category "Temporary")
+    const args = saveArgs(r.parsed);
+    const nm = args && args.length >= 2 ? /^(['"])(.+)\1$/.exec(args[1]) : null;
+    if (!nm) return;
+    const fm = /^\s*([^\s(]+)\s*\(/.exec(nm[2]);
+    const name = fm ? fm[1] : nm[2].trim();
+    const kind = fm || new RegExp('^\\s*' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(').test(expr) ? 'function' : 'variable';
     invalidateCatalogs();
     const shown = kind === 'function' ? name + '()' : name;
     toast(kind === 'function' ? trf('{0} is defined', '{0} を定義しました', shown)
@@ -1884,7 +1942,7 @@
     if (ev.event === 'import') { importArrived(ev); return; } // (1.15.0: calculation notes read in)
     if (ev.event !== 'ans') return;
     const h = sessionEntries.get(ev.id);
-    if (h) { sessionEntries.delete(ev.id); setInput(h, ev.input); saveHistory(); return; }
+    if (h) { sessionEntries.delete(ev.id); setInput(h, ev.input); saveHistory(); if (h === history[history.length - 1]) refreshSteps(); return; }
     earlyInputs.set(ev.id, ev.input);
     if (earlyInputs.size > 20) earlyInputs.delete(earlyInputs.keys().next().value);
   });
@@ -1999,6 +2057,21 @@
       matrix: true,
       boxes: [],
       build: () => matrixExpr()
+    },
+    // (1.15.0) the Taylor polynomial: taylor(f, x, a, n) of the engine (qalc-engine.cc), its terms from the lowest degree
+    // up with O(…) at the end; 📈 compares f with the polynomial in the 2D graph
+    taylor: {
+      title: tr('Taylor series', 'テイラー展開'),
+      boxes: [['f', 'f(x)', true], ['v', 'x', false, 'x'], ['a', '0', false, '0'], ['n', '5', false, '5']],
+      hint: tr('The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can', '中心 x = a のまわりの n 次までの多項式を、できるだけ正確な係数で出します（次数は 20 まで）'),
+      layout: (B, N) => [cfRow(N.op = el('span', { class: 'cf-tex' }), B.f),
+        el('div', { class: 'cf-opts' }, cfLbl(tr('variable', '変数'), B.v), cfLbl(N.at = el('span', { text: tr('center x =', '中心 x =') }), B.a), cfLbl(tr('degree', '次数'), B.n))],
+      update: (g, N) => {
+        const v = g('v').replace(/^\\/, ''), n = g('n');
+        renderTeX(N.op, 'T_{' + n + '}', 'T' + n);
+        N.at.textContent = trf('center {0} =', '中心 {0} =', v);
+      },
+      build: (g) => `taylor(${g('f')}, ${g('v')}, ${g('a')}, ${g('n')})`
     },
     subst: {
       title: tr('Substitute a value', '値を代入'),
@@ -2236,6 +2309,7 @@
         CF.nodes.graph = tapButton({ class: 'btn cf-graph', text: '📈', title: tr('Graph', 'グラフ'), 'aria-label': tr('Draw a graph', 'グラフに描く') }, () => formGraph()),
         tapButton({ class: 'btn', text: tr('Insert', '式に入れる') }, () => formInsert(false)),
         tapButton({ class: 'btn primary', text: tr('Calculate', '計算する') }, () => formCalculate())));
+    if (id === 'taylor') { CF.nodes.graph.textContent = '📈 ' + tr('Compare in a graph', 'グラフで比べる'); CF.nodes.graph.setAttribute('aria-label', tr('Compare f and the polynomial in a graph', 'f と多項式をグラフで比べる')); }
     cformEl.hidden = false;
     document.body.classList.add('cform-open');
     const first = init.focus || formMissing()[0] || CF.order[0];
@@ -2662,6 +2736,7 @@
       const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
       CF.nodes.msg.className = 'cf-msg error';
       if (!r.ok) { CF.nodes.res.textContent = ''; CF.nodes.msg.textContent = localMessage(r.error) || ''; }
+      else if (r.timeout && CF.id === 'taylor') { CF.nodes.res.textContent = ''; CF.nodes.msg.className = 'cf-msg'; CF.nodes.msg.textContent = tr('It takes long: press "Calculate" (with the time limit of the settings), or try a lower degree', '時間がかかります。「計算する」を押す（設定の制限時間まで計算します）か、次数を下げてみてください'); }
       else if (r.timeout) { CF.nodes.res.textContent = ''; CF.nodes.msg.className = 'cf-msg'; CF.nodes.msg.textContent = tr('Press "Calculate" to calculate it (it takes longer)', '時間がかかるため「計算する」で計算してください'); }
       else if (err || !r.result) { CF.nodes.res.textContent = ''; CF.nodes.msg.textContent = err ? localMessage(err.text) : tr('Check the boxes', '欄を確認してください'); markFaultyBox(seq); }
       else {
@@ -2959,6 +3034,7 @@
     switch (id) {
       case 'int': a = args('integrate'); return a && a.length <= 4 && a[0] ? { f: a[0], a: opt(a[1]), b: opt(a[2]), v: letter(a[3]) } : null;
       case 'diff': a = args('diff'); return a && a.length <= 4 && a[0] ? { f: a[0], v: letter(a[1]), n: a[2] || '', at: a[3] || '' } : null;
+      case 'taylor': a = args('taylor'); return a && a.length <= 4 && a[0] ? { f: a[0], v: letter(a[1]), a: a[2] || '', n: a[3] || '' } : null;
       case 'lim': a = args('limit'); return a && a.length >= 2 && a.length <= 4 ? { f: a[0], a: a[1], v: letter(a[2]), dir: a[3] === '1' ? '1' : /^[−-]1$/.test(a[3] || '') ? '−1' : '' } : null;
       case 'sum': case 'prod': a = args(id === 'sum' ? 'sum' : 'product'); return a && (a.length === 3 || a.length === 4) ? { f: a[0], a: a[1], b: a[2], v: letter(a[3]) } : null;
       case 'dsolve': {
@@ -3030,7 +3106,7 @@
     }
     if (CF.boxes.v && formValue('v') !== 'x') return false;
     if (CF.id === 'dsolve') return true;
-    return ['int', 'diff', 'lim', 'subst'].indexOf(CF.id) >= 0 && hasX(formValue('f'));
+    return ['int', 'diff', 'lim', 'subst', 'taylor'].indexOf(CF.id) >= 0 && hasX(formValue('f'));
   }
   // the numbers in a result ("[4/5; 7/5] = [0.8; 1.4]", "[3  2]", "x = 2"), or null
   async function resultNumbers(expr) {
@@ -3099,6 +3175,16 @@
       const p = await near(at, 3);
       if (n === '1') return openPlotWith(exprs, { tangentAt: at, range: p && p.range });
       return openPlotWith(exprs, { marks: [{ x: at, label: 'x = ' + at }], range: p && p.range });
+    }
+    if (id === 'taylor') {
+      // f and its Taylor polynomial (the polynomial as the engine writes it to be typed in), around the center
+      const r = await Bridge.send('calc', { expr: F.build(g), opts: Object.assign(engineOpts(), { grouping: false }), timeout: timeLimit() * 1000, input: true });
+      const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
+      if (!r.ok || r.timeout || err || !r.input) return toast(err ? localMessage(err.text) : r.timeout ? tr('The Taylor series took too long: try a lower degree', 'テイラー展開に時間がかかりすぎました。次数を下げてみてください') : tr('Could not draw the Taylor polynomial', 'テイラー多項式を描けませんでした'), 3200);
+      const p = await near(g('a'), 3);
+      // (the polynomial from its lowest degree up, as the result shows it, without O(…); else as the engine writes it)
+      const asc = String(r.result || '').replace(/ \+ O\(.*\)$/, '');
+      return openPlotWith([f, asc && asc !== r.result ? asc : r.input], { range: p && p.range });
     }
     if (id === 'lim' || id === 'subst') {
       const a = g('a');
@@ -3346,6 +3432,7 @@
     for (let i = first; i < history.length; i++) if (!history[i].star) frag.append(historyItem(history[i]));
     histEl.append(frag);
     if (newsCard) histEl.append(newsCard);
+    refreshSteps(); // (1.15.0: the next steps under the newest answer)
     fitMatrices(histEl);
     if (scroll) { histEl.scrollTop = histEl.scrollHeight; histPinned = true; }
     olderLeft = first;
@@ -3469,6 +3556,7 @@
     if (mcols === 2) more.push(['m-plot', tr('Draw the rows as points (2D graph)', '各行を点としてグラフに描く（2D）')]);
     else if (mcols === 3) more.push(['m-plot', tr('Draw the rows as points (3D graph)', '各行を点としてグラフに描く（3D）')]);
     const a = await sheet((h.t ? fmtTime(h.t / 1000) + (h.edited ? trf(' (edited {0})', '（直した時刻 {0}）', fmtTime(h.edited / 1000)) : '') + '\n' : '') + clip(toDisplay(h.expr), 300) + '\n' + clip(displayText(h.result), 300), more.concat([
+      ['details', tr('Details', '詳しく見る')],
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['digits', tr('Work it out with other digits', '桁数を変えて計算し直す')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')],
@@ -3484,6 +3572,7 @@
     else if (a === 'g-plot') graphOf(gsrc);
     else if (a === 'f-solve') openForm('solve', { eqs: [fx + ' = 0'] });
     else if (a === 'f-subst') openForm('subst', { f: fx, focus: 'a' });
+    else if (a === 'details') openDetails(h);
     else if (a === 'copy-res') copyText(shownText(h));
     else if (a === 'copy-expr') copyText(h.expr);
     else if (a === 'edit') startHistEdit(h);
@@ -3530,6 +3619,261 @@
     }
     return false;
   }
+  // ------------------------------------------------- next steps and details (1.15.0)
+  // The owner's design of 11-23 10:46. Under the newest answer, a row of buttons for what is often done next with it
+  // (setting "Suggest the next steps", on at first): by the kind of the answer, at most 6, in a row that scrolls
+  // sideways. A button that calculates puts its expression into the field and calculates it as a new line of the
+  // history (factor: "(x^2 − 1) to factors"); Graph opens the graph, Details the sheet of details, Convert… the
+  // conversion of units. What the engine has no function or conversion for here (expand; a fraction, a decimal, the
+  // scientific notation: "to sci" and the like give way to the settings of the display) is worked out with those
+  // settings for once, and kept as a line with a note ("Expanded", "As a fraction").
+  const POLY_X = /^[\dx\s+\-−×*/^().·⁰¹²³⁴⁵⁶⁷⁸⁹]+$/u; // (a polynomial or a quotient of them in x)
+  const UNIT_RES = /^\(?[−-]?\d[\d.]*(?:E[−-]?\d+)?\)?\s+[^\d\s()[\]][^()[\]]*$/u; // ("5 m", "27.78 m/s", "3 mi + 188 yd")
+  function nextSteps(h) {
+    if (!h || h.cut || h.big || h.cmp || typeof h.result !== 'string' || Number(h.base) !== 10) return [];
+    let t = insertText(h);
+    if (!t) return [];
+    const D = { id: 'details', label: tr('Details', '詳しく') };
+    const mat = parseMatrix(t);
+    if (mat) {
+      const n = mat.rows.length, m = mat.rows[0].length, out = [];
+      if (n === m && n > 1) {
+        out.push({ id: 'det', label: tr('Determinant', '行列式'), expr: `det(${t})` }, { id: 'inv', label: tr('Inverse', '逆行列'), expr: `inverse(${t})` });
+        if (n <= 6) out.push({ id: 'eig', label: tr('Eigenvalues', '固有値'), expr: `solve(det(${t} − x × identity(${n})) = 0)` });
+      }
+      out.push({ id: 'tr', label: tr('Transpose', '転置'), expr: `transpose(${t})` });
+      return out;
+    }
+    const fx = functionOfX(h);
+    if (fx) {
+      const out = [D, { id: 'graph', label: tr('Graph', 'グラフ') }];
+      const poly = POLY_X.test(fx);
+      if (poly) out.push(/\)\s*(?:[(\^×*·²³⁴⁵⁶⁷⁸⁹]|$)/u.test(fx) ? { id: 'expand', label: tr('Expand', '展開'), expr: fx, opts: { structuring: 'expand' }, note: tr('Expanded', '展開') } : { id: 'factor', label: tr('Factor', '因数分解'), expr: `(${fx}) to factors` });
+      else out.push({ id: 'taylor', label: tr('Taylor', 'テイラー展開'), expr: `taylor(${fx}, x, 0, 5)` });
+      out.push({ id: 'diff', label: tr('Derivative', '微分'), expr: `diff(${fx})` }, { id: 'int', label: tr('Integral', '積分'), expr: `integrate(${fx})` },
+        { id: 'solve', label: tr('Solve = 0', '= 0 を解く'), expr: `solve(${fx} = 0)` });
+      return out.slice(0, 6);
+    }
+    if (outerParens(t) && UNIT_RES.test(t.slice(1, -1))) t = t.slice(1, -1);
+    if (UNIT_RES.test(t) && !/[πℯ]/u.test(t)) return [D, { id: 'convert', label: tr('Convert…', 'ほかの単位に換算…') }];
+    const num = plainNumber(h);
+    const SCI = { id: 'sci', label: tr('Scientific', '指数表記'), expr: t, opts: { notation: 'pure', approx: 'approx', fraction: 'decimal' }, note: tr('Scientific', '指数表記') };
+    if (num) {
+      if (/^-?\d+$/.test(num) && !h.approx) {
+        const out = [D];
+        if (Math.abs(Number(num)) > 1) out.push({ id: 'factors', label: tr('Prime factors', '素因数分解'), expr: `${t} to factors` });
+        out.push({ id: 'hex', label: tr('In hex', '16進で'), expr: `${t} to hex` });
+        return out;
+      }
+      const out = [D];
+      if (!/ ≈ /.test(h.result) && !h.approx) out.push({ id: 'frac', label: tr('As a fraction', '分数で'), expr: t, opts: { fraction: 'fraction', approx: 'exact' }, note: tr('As a fraction', '分数で') });
+      // (the scientific notation only where it changes something: from 10 000, and below 0.001)
+      const v = Math.abs(Number(num));
+      if (v >= 1e4 || (v > 0 && v < 1e-3)) out.push(SCI);
+      return out;
+    }
+    // an exact value without a decimal shown (1/3 with "Always exact", √2, 2π): the decimal
+    if (/^[\d\s+\-−×*/^().·√∛πℯ⁰¹²³⁴⁵⁶⁷⁸⁹=]+$/u.test(h.result) && /\d|π|ℯ/u.test(h.result)) return [D, { id: 'dec', label: tr('As a decimal', '小数で'), expr: t, opts: { approx: 'approx', fraction: 'decimal' }, note: tr('As a decimal', '小数で') }];
+    return [];
+  }
+  async function runStep(h, s) {
+    if (s.id === 'details') { openDetails(h); return; }
+    if (s.id === 'graph') { const fx = functionOfX(h); if (fx && !(await graphOf(fx))) openPlotWith(fx); return; }
+    if (s.id === 'convert') { openConverter(); return; }
+    if (s.opts) { await keepWithOpts(s.expr, s.opts, s.note); return; }
+    setExpr(s.expr);
+    commit();
+  }
+  // a value worked out with other settings of the display, kept as a line of the history with a note
+  async function keepWithOpts(expr, opts, note) {
+    const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), opts), timeout: timeLimit() * 1000 });
+    const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
+    if (!r.ok || !r.result || r.timeout || err) { toast(tr('Could not calculate', '計算できませんでした'), 2000); return; }
+    keepResult(expr, resultText(r));
+    const k = history[history.length - 1];
+    if (k && note) { k.note = note; historyChanged(); }
+  }
+  // the row under the newest answer (drawn again with the history, after a result, and when its value comes)
+  function refreshSteps() {
+    for (const n of histEl.querySelectorAll('.h-steps')) n.remove();
+    if (S.next_steps === false || histSel || histFiltered() || histEdit) return;
+    const items = histEl.querySelectorAll(':scope > .h-item');
+    const item = items[items.length - 1];
+    const h = item && item._h;
+    if (!h || h !== history[history.length - 1]) return;
+    const steps = nextSteps(h);
+    if (!steps.length) return;
+    const row = el('div', { class: 'h-steps', role: 'group', 'aria-label': tr('Next steps', '次の操作') });
+    for (const s of steps) row.append(tapButton({ class: 'step-chip', text: s.label, 'data-step': s.id }, () => runStep(h, s)));
+    item.after(row);
+  }
+  // ---- the sheet of details (from "Details" and ⋯ "Details"): rows worked out one after another after it opens
+  // ("Calculating…"), each with a short time limit; a row that cannot be had is left out, and closing the sheet stops
+  // the rest. A tap on a row: put its expression into the field, keep it in the history, or copy its result.
+  let detailSeq = 0;
+  const UNIT_FAMILIES = [
+    ['m', 'km', 'cm', 'mm', 'in', 'ft', 'yd', 'mi'], ['kg', 'g', 'lb', 'oz'], ['s', 'min', 'h', 'd'], ['L', 'mL', 'm³', 'gal'],
+    ['m²', 'km²', 'ha', 'ft²', 'acre'], ['m/s', 'km/h', 'mph', 'kn'], ['J', 'kJ', 'kWh', 'kcal'], ['°C', '°F', 'K'],
+    ['Pa', 'kPa', 'bar', 'atm', 'psi'], ['W', 'kW', 'hp']];
+  function detailRows(h, t, fx) {
+    const rows = [];
+    const R = (id, label, expr, opts) => rows.push({ id, label, expr, opts });
+    if (fx) {
+      rows.push({ id: 'graph', label: tr('Graph', 'グラフ'), graph: fx });
+      R('zeros', tr('Zeros (= 0)', '零点（= 0 の解）'), `solve(${fx} = 0)`);
+      R('diff', tr('Derivative', '導関数'), `diff(${fx})`);
+      R('int', tr('Integral', '不定積分'), `integrate(${fx})`);
+      R('taylor', tr('Taylor series (x = 0, degree 5)', 'テイラー展開（x = 0、5 次）'), `taylor(${fx}, x, 0, 5)`);
+      if (POLY_X.test(fx)) { R('factor', tr('Factored', '因数分解'), `(${fx}) to factors`); R('expand', tr('Expanded', '展開'), fx, { structuring: 'expand' }); rows[rows.length - 1].note = tr('Expanded', '展開'); }
+      return rows;
+    }
+    let v = t;
+    if (outerParens(v) && UNIT_RES.test(v.slice(1, -1))) v = v.slice(1, -1);
+    if (UNIT_RES.test(v)) {
+      R('dec', tr('Decimal', '小数'), v, { approx: 'approx', fraction: 'decimal' });
+      R('sci', tr('Scientific', '指数表記'), v, { notation: 'pure', approx: 'approx', fraction: 'decimal' });
+      rows.push({ id: 'units', label: tr('Other units', 'ほかの単位'), units: v });
+      return rows;
+    }
+    R('exact', tr('Exact', '厳密な値'), h.expr, { approx: 'exact', fraction: 'fraction' });
+    R('dec', tr('Decimal', '小数'), t, { approx: 'approx', fraction: 'decimal' });
+    const num = plainNumber(h);
+    const isInt = !!num && /^-?\d+$/.test(num) && !h.approx;
+    if (!isInt) {
+      R('frac', tr('Fraction', '分数'), t, { fraction: 'fraction', approx: 'exact' });
+      R('mixed', tr('Mixed fraction', '帯分数'), t, { fraction: 'combined', approx: 'exact' });
+      R('sci', tr('Scientific', '指数表記'), t, { notation: 'pure', approx: 'approx', fraction: 'decimal' });
+    } else {
+      R('bin', tr('Binary', '2 進数'), t, { base: 2 }); R('oct', tr('Octal', '8 進数'), t, { base: 8 }); R('hex', tr('Hexadecimal', '16 進数'), t, { base: 16 });
+      if (Math.abs(Number(num)) > 1) R('factors', tr('Prime factors', '素因数分解'), `${t} to factors`);
+    }
+    for (const r of rows) if (r.opts && !r.note) r.note = r.label;
+    return rows;
+  }
+  async function openDetails(h) {
+    const t = insertText(h);
+    if (!t) { toast(tr('This result is too long for details', 'この結果は長すぎて詳しく見られません'), 2200); return; }
+    const fx = functionOfX(h);
+    const rows = detailRows(h, t, fx);
+    if (sheetResolve) closeSheet(null);
+    const seq = ++detailSeq;
+    const sh = $('#sheet');
+    sh.textContent = '';
+    const list = el('div', { class: 'dt-list', 'aria-live': 'polite' });
+    const head = el('div', { class: 'dt-head' }, el('div', { class: 'dt-expr', text: clip(prettyExpr(toDisplay(h.expr)), 160) }), el('div', { class: 'dt-res' }));
+    showResult(head.lastChild, displayResult(h));
+    sh.append(el('div', { class: 'stitle', text: tr('Details', '詳しく見る') }), head, list, el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
+    const done = new Promise((resolve) => { sheetResolve = resolve; $('#scrim').classList.add('show', 'over-panels'); sh.classList.add('open'); sh.inert = false; });
+    done.then(() => { if (detailSeq === seq) detailSeq++; });
+    const live = () => seq === detailSeq;
+    const shownOf = (r) => resultText(r).replace(/^= /, '');
+    const same = (a, b) => toDisplay(String(a || '')).replace(/\s+/g, '') === toDisplay(String(b || '')).replace(/\s+/g, '');
+    const nodes = rows.map((row) => {
+      const val = el('div', { class: 'dt-val', text: tr('Calculating…', '計算中…') });
+      const n = tapButton({ class: 'dt-row', 'data-row': row.id }, () => rowActions(row));
+      n.append(el('div', { class: 'dt-lbl', text: row.label }), val);
+      list.append(n);
+      return { row, n, val };
+    });
+    for (const it of nodes) {
+      if (!live()) return;
+      const { row, n, val } = it;
+      try {
+        if (row.graph) {
+          const ok = await detailGraph(val, row.graph, live);
+          if (!ok) n.remove(); else { n.setAttribute('aria-label', tr('Graph (opens the 2D graph)', 'グラフ（2D グラフを開く）')); n.onclick = null; }
+          continue;
+        }
+        if (row.units) {
+          const lines = await unitRows(row.units, live);
+          if (!live()) return;
+          if (!lines.length) { n.remove(); continue; }
+          n.remove();
+          for (const L of lines) {
+            const m = tapButton({ class: 'dt-row', 'data-row': 'unit' }, () => rowActions(L));
+            m.append(el('div', { class: 'dt-lbl', text: L.label }), el('div', { class: 'dt-val', text: L.shown }));
+            list.append(m);
+          }
+          continue;
+        }
+        const r = await Bridge.send('calc', { expr: row.expr, opts: Object.assign(engineOpts(), row.opts || {}), timeout: 3000 });
+        if (!live()) return;
+        const err = r.ok ? (r.messages || []).find((x) => x.type === 'error') : null;
+        const shown = r.ok && r.result && !r.timeout && !err ? shownOf(r) : '';
+        // (left out: what could not be had, what says nothing new, and a value of the engine that is not a value)
+        const prev = nodes.slice(0, nodes.indexOf(it)).map((q) => q.row.shown).filter(Boolean);
+        if (!shown || /\b(?:diff|integrate|solve|taylor)\(/.test(r.result) || prev.some((q) => same(q, shown))
+          || (row.id === 'exact' && (r.approx || same(r.result, plainNumber(h)))) || (row.id === 'mixed' && !/ \+ /.test(r.result)) || (row.id === 'frac' && !/\//.test(r.result))
+          || (row.id === 'sci' && !/E[−-]?\d/.test(r.result)) || ((row.id === 'factor' || row.id === 'expand') && same(r.result, fx))
+          || (row.id === 'dec' && same(r.result, h.result))) { n.remove(); continue; }
+        row.shown = shown;
+        val.textContent = '';
+        showResult(val, resultText(r));
+        n.setAttribute('aria-label', row.label + ': ' + shown);
+      } catch (e) { n.remove(); }
+    }
+    if (live() && !list.children.length) list.append(el('div', { class: 'dt-none', text: tr('Nothing more to show for this result', 'この結果について出せるものはありません') }));
+  }
+  // a small graph of f(x) from −10 to 10 (the engine's values); a tap opens the 2D graph
+  async function detailGraph(box, fx, live) {
+    const r = await Bridge.send('plot', { exprs: [fx], min: '-10', max: '10', steps: 160, var: 'x', opts: engineOpts(), timeout: 3000 });
+    if (!live() || !r.ok || !Array.isArray(r.series) || !r.series[0]) return false;
+    const s = r.series[0], ys = s.y.filter((y) => y !== null && isFinite(y)).sort((a, b) => a - b);
+    if (ys.length < 10) return false;
+    let y0 = ys[Math.floor(ys.length * 0.02)], y1 = ys[Math.ceil(ys.length * 0.98) - 1];
+    if (!(y1 > y0)) { y0 -= 1; y1 += 1; }
+    const pad = (y1 - y0) * 0.1; y0 -= pad; y1 += pad;
+    const c = el('canvas', { class: 'dt-graph', 'aria-hidden': 'true' });
+    box.textContent = '';
+    box.append(c);
+    const W = c.clientWidth || 260, H = 110, dpr = window.devicePixelRatio || 1;
+    c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+    const g = c.getContext('2d'), cs = getComputedStyle(document.documentElement);
+    g.scale(dpr, dpr);
+    const X = (x) => (x + 10) / 20 * W, Y = (y) => H - (y - y0) / (y1 - y0) * H;
+    g.strokeStyle = cs.getPropertyValue('--line').trim() || '#ccc'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(X(0), 0); g.lineTo(X(0), H); if (y0 < 0 && y1 > 0) { g.moveTo(0, Y(0)); g.lineTo(W, Y(0)); } g.stroke();
+    g.strokeStyle = cs.getPropertyValue('--accent').trim() || '#2563eb'; g.lineWidth = 2;
+    g.beginPath();
+    let pen = false;
+    for (let i = 0; i < s.x.length; i++) {
+      const y = s.y[i];
+      if (y === null || !isFinite(y) || y < y0 - (y1 - y0) || y > y1 + (y1 - y0)) { pen = false; continue; }
+      if (pen) g.lineTo(X(s.x[i]), Y(y)); else g.moveTo(X(s.x[i]), Y(y));
+      pen = true;
+    }
+    g.stroke();
+    c.addEventListener('click', (e) => { e.stopPropagation(); closeSheet(null); graphOf(fx).then((ok) => { if (!ok) openPlotWith(fx); }); });
+    return true;
+  }
+  // the value in the other units of its kind (the first unit of a kind it converts to cleanly tells the kind)
+  async function unitRows(v, live) {
+    const opts = Object.assign(engineOpts(), { mixed_units: false, approx: 'approx' });
+    const to = async (u) => { const r = await Bridge.send('calc', { expr: `(${v}) to ${u}`, opts, timeout: 1500 }); return r.ok && r.result && !r.timeout ? r.result.split(' ≈ ').pop() : ''; };
+    const ends = (res, u) => new RegExp('^[−-]?[\\d.\\s\\u202f\\u2009]+(?:E[−-]?\\d+)?\\s*' + u.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '$').test(res);
+    const own = v.replace(UNIT_RES, (m) => m).replace(/^\(?[−-]?\d[\d.]*(?:E[−-]?\d+)?\)?\s+/, '').trim();
+    for (const fam of UNIT_FAMILIES) {
+      if (!live()) return [];
+      const first = await to(fam[0]);
+      if (!ends(first, fam[0])) continue;
+      const out = [];
+      for (const u of fam) {
+        if (u === own || out.length >= 5) continue;
+        const res = u === fam[0] ? first : await to(u);
+        if (!live()) return [];
+        if (ends(res, u)) out.push({ label: u, expr: `(${v}) to ${u}`, shown: toDisplay(res), opts });
+      }
+      return out;
+    }
+    return [];
+  }
+  async function rowActions(row) {
+    if (!row || !row.expr || !row.shown) return;
+    const a = await sheet(row.label + '\n' + clip(row.shown, 200), [['ins', tr('Put the expression in the field', '式を入力欄に入れる')], ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy result', '結果をコピー')]]);
+    if (a === 'ins') { setExpr(row.expr); focusExpr(); }
+    else if (a === 'keep') { if (row.opts) await keepWithOpts(row.expr, row.opts, row.note); else { setExpr(row.expr); commit(); } }
+    else if (a === 'copy') copyText(row.shown);
+  }
   function historyChanged() {
     fitHistory();
     saveHistory();
@@ -3564,6 +3908,7 @@
     exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length);
     exprChanged();
     markEditing();
+    refreshSteps();
     const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === h);
     if (it) it.scrollIntoView({ block: 'nearest' });
     $('#status').textContent = tr('Editing a line of the history: = puts the new result in its place', '履歴の行を直しています。= で、その行を新しい式と答えに置き換えます');
@@ -3578,6 +3923,7 @@
     histEdit = null;
     editBand.hidden = true;
     markEditing();
+    refreshSteps();
     if (!asNew) { exprEl.value = keep || ''; exprChanged(); }
     $('#status').textContent = asNew ? tr('= adds a new line', '= で新しい行になります') : tr('Editing stopped, nothing changed', '直すのをやめました（何も変わりません）');
     return true;
@@ -3912,7 +4258,7 @@
       ['diff(x^5, x, 2)', tr('Second derivative (the third argument is the order; d²/dx² key)', '2 階微分（3 つ目が階数。d²/dx² キー）')],
       ['diff(x^2 × y^3, y)', tr('Partial derivative with respect to y (∂/∂y key)', '偏微分（y で微分。∂/∂y キー）')],
       ['diff(x^3, x, 1, 2)', tr('The derivative at x = 2 (the fourth argument is the value of x)', 'x = 2 での微分係数（4 つ目が x の値）')],
-      ['extremum(x^3 − 3x)', tr('The x of the extrema (max/min key)', '極値をとる x（極値 キー）')]
+      ['extremum(x^3 − 3x)', tr('The x of the extrema (extremum, in the list of more…)', '極値をとる x（「ほか…」の一覧の extremum）')]
     ]],
     [tr('Integrals', '積分'), [
       ['integrate(1/x)', tr('Indefinite integral (∫ key). C is the constant of integration', '不定積分（∫ キー）。C は積分定数')],
@@ -4134,7 +4480,7 @@
   const FUNC_JA = {
     solve: '方程式を解く', multisolve: '連立方程式を解く', solve2: '2元連立方程式を解く', dsolve: '微分方程式を解く',
     newtonsolve: 'ニュートン法で解く', secantsolve: '割線法で解く', sum: '総和 シグマ', product: '総乗',
-    diff: '微分', integrate: '積分', limit: '極限', extremum: '極値', romberg: '数値積分（ロンバーグ法）',
+    diff: '微分', integrate: '積分', limit: '極限', taylor: 'テイラー展開 テイラー級数 マクローリン展開', extremum: '極値', romberg: '数値積分（ロンバーグ法）',
     sqrt: '平方根 ルート', cbrt: '立方根', root: 'n乗根', sq: '2乗', exp: '指数関数', ln: '自然対数', log: '対数（底を指定）',
     log2: '2を底とする対数', log10: '常用対数', exp2: '2のべき乗', exp10: '10のべき乗',
     sin: '正弦 サイン', cos: '余弦 コサイン', tan: '正接 タンジェント', arcsin: '逆正弦 アークサイン', arccos: '逆余弦 アークコサイン',
@@ -4532,7 +4878,647 @@
 
   // -------------------------------------------------------------- plot
   const COLORS = ['#2563eb', '#e11d48', '#059669', '#d97706', '#7c3aed', '#0891b2'];
-  const P = { series: [], view: null, dataX: null, exprs: [] };
+  const P = { series: [], view: null, dataX: null, exprs: [], curves: [] };
+  // ---- (1.15.0, feature/graph-kinds) four kinds of lines in the 2D graph, each line of the box told from its form:
+  //   y = f(x)              sin(x), y = x^2 (as before: the engine's plot over the range of x)
+  //   parametric            x = cos(t), y = sin(2t)  (or (cos(t), sin(2t))): t over its range, 0 to 2π at first
+  //   polar                 r = 1 + cos(θ)  (θ, theta or t): θ over its range, 0 to 2π at first
+  //   implicit              x^2 + y^2 = 1, x^3 + y^3 = 3xy: an equation with x and y that is not y = f(x)
+  // Parametric and polar lines are sampled by the engine (t as their variable, in radians); an implicit line is the
+  // set where F = left − right changes its sign: F on a grid over the view (plot3d), the curve through the cells
+  // where the sign changes (marching squares, linear between the corners), and the blocks of cells it crosses worked
+  // out again on a finer grid while there is time (about 1 s on a phone); a change of sign across a pole (tan) is not
+  // a curve. These lines move and zoom with the graph (an implicit one is worked out again for the new view); a tap
+  // shows the point of the line nearest to it. The tools below the graph (derivative, area, solid) are for y = f(x).
+  const KIND_IDS = ['fx', 'param', 'polar', 'implicit'];
+  const kindName = (k) => ({ fx: 'y = f(x)', param: tr('Parametric', '媒介変数'), polar: LANG === 'en' ? 'Polar' : tr('Polar (graph)', '極座標'), implicit: tr('Implicit', '陰関数') })[k];
+  // the parts of a line at its top-level commas and semicolons (a decimal comma between digits stays), as plotExprs
+  function topParts(line) {
+    const parts = [];
+    let d = 0, cur = '';
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if ('([{'.indexOf(c) >= 0) d++; else if (')]}'.indexOf(c) >= 0) d--;
+      const dec = c === ',' && commaMode && isDigit(line[i + 1] || '') && (isDigit(line[i - 1] || '') || !/[\p{L}\p{N}_)\]]/u.test(line[i - 1] || ''));
+      if ((c === ',' || c === ';') && d <= 0 && !dec) { parts.push(cur); cur = ''; } else cur += c;
+    }
+    parts.push(cur);
+    return parts.map((s) => s.trim());
+  }
+  // the one "=" of an equation at the top level (not ==, <=, >=, !=, :=), or −1
+  function topEquals(s) {
+    let d = 0, at = -1;
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if ('([{'.indexOf(c) >= 0) d++; else if (')]}'.indexOf(c) >= 0) d--;
+      else if (c === '=' && d === 0 && !/[=<>!:≤≥≠]/.test(s[i - 1] || '') && s[i + 1] !== '=') { if (at >= 0) return -1; at = i; }
+    }
+    return at;
+  }
+  const POLAR_VAR = /θ|theta/g; // (put in as " t ": kθ is k times t, not kt, the kilotonne)
+  // one line of the box: [{ kind, text (as typed), f (y = f(x)) | x, y (in t) | r (in t) | F (in x and y) }]
+  function lineItems(raw) {
+    const line = raw.trim();
+    if (!line) return [];
+    const parts = topParts(line);
+    const N = normalizeExpr;
+    if (parts.length === 2) {
+      const mx = /^x\s*=\s*([\s\S]+)$/.exec(parts[0]), my = /^y\s*=\s*([\s\S]+)$/.exec(parts[1]);
+      if (mx && my) return [{ kind: 'param', text: line, x: N(mx[1]), y: N(my[1]) }];
+    }
+    // a point that moves with t, as (cos(t), sin(t)): its commas are inside the parentheses
+    const tup = parts.length === 1 ? /^\(([\s\S]*)\)$/.exec(line) : null;
+    const tp = tup ? topParts(tup[1]) : null;
+    if (tp && tp.length === 2 && (hasVar(tp[0], 't') || hasVar(tp[1], 't'))) return [{ kind: 'param', text: line, x: N(tp[0]), y: N(tp[1]) }];
+    if (parts.length > 1) return parts.flatMap((p) => lineItems(p));
+    const s = parts[0];
+    const mr = /^r\s*=\s*([\s\S]+)$/.exec(s);
+    if (mr) return [{ kind: 'polar', text: line, r: N(mr[1]).replace(POLAR_VAR, ' t ') }];
+    const q = topEquals(s);
+    if (q < 0) {
+      if (/θ|theta/.test(s) && !hasVar(s, 'x') && !hasVar(s, 'y')) return [{ kind: 'polar', text: 'r = ' + line, r: N(s).replace(POLAR_VAR, ' t ') }];
+      return [{ kind: 'fx', text: line, f: N(s) }];
+    }
+    const L = s.slice(0, q).trim(), R = s.slice(q + 1).trim();
+    if (!L || !R) return [{ kind: 'fx', text: line, f: N(s) }];
+    if (L === 'y' && !hasVar(R, 'y')) return [{ kind: 'fx', text: line, f: N(R) }];
+    if (R === 'y' && !hasVar(L, 'y')) return [{ kind: 'fx', text: line, f: N(L) }];
+    return [{ kind: 'implicit', text: line, F: '(' + N(L) + ') − (' + N(R) + ')' }];
+  }
+  // all the lines of the box (up to max items; .more: how many were left out)
+  function plotItems(text, max) {
+    const all = [];
+    for (const line of String(text || '').split('\n')) all.push(...lineItems(line));
+    const out = all.slice(0, max);
+    out.more = all.length - out.length;
+    return out;
+  }
+  // the kind of the box: that of its first line (y = f(x) when empty)
+  const boxKind = (text) => { const it = plotItems(text, 1); return it.length ? it[0].kind : 'fx'; };
+  // the range of t (parametric) and θ (polar), kept apart from the range of x
+  const tRange = (kind) => [store.get('qalc.plot.' + kind + '.min', '0'), store.get('qalc.plot.' + kind + '.max', '2π')];
+  // sampled lines: parametric and polar, as polylines (null between pieces)
+  async function sampleCurve(C) {
+    const [a, b] = tRange(C.kind);
+    const exprs = C.kind === 'param' ? [C.x, C.y] : [C.r];
+    const r = await Bridge.send('plot', { exprs, min: engineNum(normalizeExpr(a)), max: engineNum(normalizeExpr(b)), steps: 900, var: 't', opts: Object.assign(engineOpts(), { angle: 'rad' }), timeout: 6000 });
+    C.xs = []; C.ys = []; C.ts = [];
+    if (!r.ok || !Array.isArray(r.series)) { C.error = r.ok ? '' : r.error === 'invalid range' ? (C.kind === 'param' ? tr('Check the range of t', 't の範囲を確認してください') : tr('Check the range of θ', 'θ の範囲を確認してください')) : localMessage(r.error); return; }
+    const s0 = r.series[0], s1 = r.series[1];
+    // (the engine may take another number of points for each expression: y(t) is read at the t of x(t), between its points)
+    const at = (s, t) => {
+      let lo = 0, hi = s.x.length - 1;
+      if (hi < 0 || t < s.x[0] - 1e-12 || t > s.x[hi] + 1e-12) return null;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (s.x[m] <= t) lo = m; else hi = m; }
+      const ya = s.y[lo], yb = s.y[hi];
+      if (Math.abs(s.x[lo] - t) < 1e-12) return ya;
+      if (Math.abs(s.x[hi] - t) < 1e-12) return yb;
+      if (ya === null || yb === null) return null;
+      return ya + (yb - ya) * (t - s.x[lo]) / (s.x[hi] - s.x[lo]);
+    };
+    for (let i = 0; i < s0.x.length; i++) {
+      const t = s0.x[i];
+      let x = null, y = null;
+      if (C.kind === 'param') { x = s0.y[i]; y = s1 ? at(s1, t) : null; }
+      else if (s0.y[i] !== null) { x = s0.y[i] * Math.cos(t); y = s0.y[i] * Math.sin(t); }
+      const ok = x !== null && y !== null && isFinite(x) && isFinite(y);
+      C.ts.push(t); C.xs.push(ok ? x : null); C.ys.push(ok ? y : null);
+    }
+  }
+  // marching squares on a grid z (rows of nx values from y0 up), xs and ys its coordinates: segments [x1, y1, x2, y2, …]
+  // and the cells to work out again on a finer grid (ambiguous saddles, values close to 0 at all four corners)
+  function marchCells(z, xs, ys, nx, ny, flags) {
+    const segs = [];
+    let mags = [];
+    for (let k = 0; k < z.length; k += Math.max(1, Math.floor(z.length / 400))) if (z[k] !== null) mags.push(Math.abs(z[k]));
+    mags.sort((p, q) => p - q);
+    const med = mags.length ? mags[mags.length >> 1] || 1e-300 : 1;
+    const pole = med * 1e3, tiny = med * 0.02;
+    const at = (i, j) => z[j * nx + i];
+    for (let j = 0; j + 1 < ny; j++) {
+      for (let i = 0; i + 1 < nx; i++) {
+        const a = at(i, j), b = at(i + 1, j), c = at(i + 1, j + 1), d = at(i, j + 1); // corners: bottom left, bottom right, top right, top left
+        if (a === null || b === null || c === null || d === null) continue;
+        const k = (a > 0 ? 1 : 0) | (b > 0 ? 2 : 0) | (c > 0 ? 4 : 0) | (d > 0 ? 8 : 0);
+        if (k === 0 || k === 15) continue;
+        const x0 = xs[i], x1 = xs[i + 1], y0 = ys[j], y1 = ys[j + 1];
+        // a crossing on an edge between two values (none across a pole: both ends far from 0)
+        const cross = (u, v) => (Math.min(Math.abs(u), Math.abs(v)) > pole ? NaN : u / (u - v));
+        const e = [
+          () => { const f = cross(a, b); return [x0 + (x1 - x0) * f, y0]; },
+          () => { const f = cross(b, c); return [x1, y0 + (y1 - y0) * f]; },
+          () => { const f = cross(d, c); return [x0 + (x1 - x0) * f, y1]; },
+          () => { const f = cross(a, d); return [x0, y0 + (y1 - y0) * f]; }
+        ];
+        let pairs;
+        switch (k) {
+          case 1: case 14: pairs = [[0, 3]]; break;
+          case 2: case 13: pairs = [[0, 1]]; break;
+          case 3: case 12: pairs = [[1, 3]]; break;
+          case 4: case 11: pairs = [[1, 2]]; break;
+          case 6: case 9: pairs = [[0, 2]]; break;
+          case 7: case 8: pairs = [[2, 3]]; break;
+          case 5: case 10: {
+            const m = (a + b + c + d) / 4, same = (m > 0) === (a > 0);
+            pairs = (k === 5) === same ? [[0, 1], [2, 3]] : [[0, 3], [1, 2]];
+            if (flags) flags.push([i, j]);
+            break;
+          }
+        }
+        if (flags && Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d)) < tiny) flags.push([i, j]);
+        for (const [p, q] of pairs) {
+          const P1 = e[p](), P2 = e[q]();
+          if (P1[0] === P1[0] && P1[1] === P1[1] && P2[0] === P2[0] && P2[1] === P2[1]) segs.push(P1[0], P1[1], P2[0], P2[1]);
+        }
+        if (flags && flags.cross) flags.cross.push([i, j]);
+      }
+    }
+    return segs;
+  }
+  const gridAxis = (lo, hi, n) => { const a = []; for (let i = 0; i < n; i++) a.push(i === n - 1 ? hi : lo + (hi - lo) * i / (n - 1)); return a; };
+  // the implicit lines over a window: a grid over it, then a finer grid in the blocks the curves cross (busy ones first)
+  async function computeImplicit(items, win, quick) {
+    if (!items.length) return;
+    const t0 = Date.now();
+    const W = Math.max(1, (P.canvas && P.canvas.clientWidth) || 360), H = Math.max(1, (P.canvas && P.canvas.clientHeight) || 300);
+    const nx = 97, ny = Math.max(41, Math.min(121, Math.round(97 * H / W)));
+    const r = await Bridge.send('plot3d', { exprs: items.map((C) => C.F), xmin: engineNum(win.x0), xmax: engineNum(win.x1), ymin: engineNum(win.y0), ymax: engineNum(win.y1), nx, ny, opts: engineOpts(), timeout: 6000 });
+    for (const C of items) { C.segs = []; C.win = Object.assign({}, win); }
+    if (!r.ok || !Array.isArray(r.series)) { for (const C of items) C.error = r.ok ? '' : localMessage(r.error); return; }
+    const xs = r.x, ys = r.y;
+    const blocks = new Map(), B = 8;
+    items.forEach((C, n) => {
+      const flags = []; flags.cross = [];
+      const s = r.series[n];
+      C.segs = marchCells(s.z, xs, ys, nx, ny, flags);
+      C.empty = !C.segs.length;
+      C.cells = flags.cross.length;
+      for (const [i, j] of flags.cross) { const key = Math.floor(i / B) + ',' + Math.floor(j / B); const o = blocks.get(key) || { bi: Math.floor(i / B), bj: Math.floor(j / B), busy: 0 }; o.busy += 1; blocks.set(key, o); }
+      for (const [i, j] of flags) { const key = Math.floor(i / B) + ',' + Math.floor(j / B); const o = blocks.get(key); if (o) o.busy += 20; }
+    });
+    // finer: 4 times as many cells in a block, busy blocks first, while there is time
+    const list = Array.from(blocks.values()).sort((p, q) => q.busy - p.busy);
+    const fine = [];
+    for (const o of list) {
+      if (quick || Date.now() - t0 > 650 || fine.length >= 40) break; // (not while a slider moves)
+      const i0 = o.bi * B, j0 = o.bj * B, i1 = Math.min(nx - 1, i0 + B), j1 = Math.min(ny - 1, j0 + B);
+      const m = (i1 - i0) * 4 + 1, n2 = (j1 - j0) * 4 + 1;
+      const rr = await Bridge.send('plot3d', { exprs: items.map((C) => C.F), xmin: engineNum(xs[i0]), xmax: engineNum(xs[i1]), ymin: engineNum(ys[j0]), ymax: engineNum(ys[j1]), nx: m, ny: n2, opts: engineOpts(), timeout: 1500 });
+      if (!rr.ok || !Array.isArray(rr.series)) break;
+      fine.push({ x0: xs[i0], x1: xs[i1], y0: ys[j0], y1: ys[j1], segs: items.map((C, k) => marchCells(rr.series[k].z, rr.x, rr.y, m, n2, null)) });
+    }
+    // the coarse segments inside a block worked out again are replaced by the fine ones
+    if (fine.length) {
+      const inside = (x, y, f) => x >= f.x0 && x <= f.x1 && y >= f.y0 && y <= f.y1;
+      items.forEach((C, k) => {
+        const keep = [];
+        for (let q = 0; q < C.segs.length; q += 4) {
+          const mx = (C.segs[q] + C.segs[q + 2]) / 2, my = (C.segs[q + 1] + C.segs[q + 3]) / 2;
+          if (!fine.some((f) => inside(mx, my, f))) keep.push(C.segs[q], C.segs[q + 1], C.segs[q + 2], C.segs[q + 3]);
+        }
+        for (const f of fine) keep.push(...f.segs[k]);
+        C.segs = keep;
+      });
+    }
+    P.implicitMs = Date.now() - t0;
+  }
+  // the window of the implicit lines: the view, or the range of x with the same scale on both axes around y = 0
+  function implicitWindow(min, max) {
+    if (P.view) return Object.assign({}, P.view);
+    const a = Number(min), b = Number(max);
+    const x0 = isFinite(a) ? a : -5, x1 = isFinite(b) && b > x0 ? b : x0 + 10;
+    const W = (P.canvas && P.canvas.clientWidth) || 360, H = (P.canvas && P.canvas.clientHeight) || 300;
+    const hy = (x1 - x0) * H / W / 2;
+    return { x0, x1, y0: -hy, y1: hy };
+  }
+  // the lines of the box: the functions (P.exprs, for the engine's plot and the tools) and the other lines (P.curves);
+  // the colors in the order of the lines
+  // a formula of the 2D graph as written (with its letters, not the values of their sliders)
+  const shownExpr = (e) => (P.slLabels && P.slLabels.get(e)) || e;
+  function setItems(text) {
+    P.itemsText = text;
+    const items = plotItems(text, 6);
+    items.forEach((q, n) => { q.color = COLORS[n % COLORS.length]; });
+    // (1.15.0) the letters with a slider, and their values put in their place (in this graph only); the formulas as
+    // written stay for what is shown (P.slLabels: the formula with the values → as written)
+    const letters = sliderLetters(items.flatMap((q) => [q.f, q.x, q.y, q.r, q.F].filter(Boolean)), false);
+    const vals = letters.length ? sliderValues(SL_KEY2D, letters) : null;
+    P.slLabels = new Map();
+    if (vals) {
+      for (const q of items) {
+        const raw = q.f;
+        for (const k of ['f', 'x', 'y', 'r', 'F']) if (q[k]) q[k] = withSliders(q[k], vals);
+        if (q.kind === 'fx') P.slLabels.set(q.f, raw);
+      }
+    }
+    P.slVals = vals;
+    if (P.sl) P.sl.set(letters);
+    P.items = items;
+    const fx = items.filter((q) => q.kind === 'fx');
+    P.exprs = fx.map((q) => q.f);
+    P.exprs.more = items.more;
+    P.exprColors = fx.map((q) => q.color);
+    P.curves = items.filter((q) => q.kind !== 'fx');
+  }
+  // ------------------------------------------------------------------ sliders (1.15.0)
+  // A letter in the formulas of a graph that is not one of its variables gets a slider below the graph: a to z and A to Z
+  // but e and i (Euler's number, the imaginary unit), t, x and y (the variables; z too in 3D), E and I, X and Y, a letter
+  // with a value of its own (a user variable, which keeps its value), and a letter used as a function, as f in f(x).
+  // At most 6. Its value is put in the place of the letter in this graph only: in the calculator a, c and g stay the
+  // are, the speed of light and the gram. Each slider goes from −5 to 5 in steps of 0.1 at first, starting at 1 (⋯ to
+  // change them); its value can be typed (tap it), and ▶ moves it to and fro. Free in the 2D graph; in the 3D graph a
+  // QCalc Pro feature (PRO_GATES.sliders3d), as is the moving picture (GIF) of a slider (share_pro). A letter is one
+  // name: "a x" or "a*x", not "ax" (one name of two letters).
+  const SL_KEY2D = 'qalc.plot.sliders', SL_KEY3D = 'qalc.plot3d.sliders', SL_MAX = 6;
+  const SL_NOT = new Set(['e', 'i', 't', 'x', 'y', 'E', 'I', 'X', 'Y']);
+  const SL_TOKEN = /(?:(?![θπ])[\p{L}_])(?:(?![θπ])[\p{L}\p{N}_])*/gu; // (θ and π end a name: kθ is k times θ)
+  const slIsLetter = (w) => w.length === 1 && /^[a-zA-Z]$/.test(w) && !SL_NOT.has(w);
+  // the letters of formulas (in their order), for sliders
+  function sliderLetters(texts, three) {
+    const out = [];
+    for (const t of texts) {
+      const s = String(t || '');
+      for (const m of s.matchAll(SL_TOKEN)) {
+        const w = m[0];
+        if (!slIsLetter(w) || (three && w === 'z') || definedVars.has(w) || out.includes(w)) continue;
+        if (/^\s*\(/.test(s.slice(m.index + 1))) continue; // (f(x): a function)
+        out.push(w);
+      }
+    }
+    return out.slice(0, SL_MAX);
+  }
+  // a formula with the values of the letters put in (vals: letter → the number for the engine)
+  function withSliders(s, vals) {
+    if (!vals) return s;
+    return String(s).replace(SL_TOKEN, (w, off, all) => (w.length === 1 && Object.prototype.hasOwnProperty.call(vals, w) && !/^\s*\(/.test(all.slice(off + 1)) ? '(' + vals[w] + ')' : w));
+  }
+  // the settings of the sliders: in memory while they move, kept in the store when they stop (key → letter → {min, max, step, v})
+  const SL_DEF = { min: -5, max: 5, step: 0.1, v: 1 };
+  const SLV = {};
+  function sliderOf(key, l) {
+    if (!SLV[key]) { const all = store.get(key, null); SLV[key] = all && typeof all === 'object' ? all : {}; }
+    const o = Object.assign({}, SL_DEF, SLV[key][l] || {});
+    for (const k of ['min', 'max', 'step', 'v']) if (typeof o[k] !== 'number' || !isFinite(o[k])) o[k] = SL_DEF[k];
+    if (!(o.max > o.min)) { o.min = SL_DEF.min; o.max = SL_DEF.max; }
+    if (!(o.step > 0) || (o.max - o.min) / o.step > 1e5) o.step = SL_DEF.step;
+    o.v = Math.min(o.max, Math.max(o.min, o.v));
+    return o;
+  }
+  function sliderSet(key, l, o, keep) {
+    if (!SLV[key]) sliderOf(key, l);
+    SLV[key][l] = { min: o.min, max: o.max, step: o.step, v: o.v };
+    if (keep) store.set(key, SLV[key]);
+  }
+  // a value with the digits of the step (no more), as plain digits
+  function sliderNum(v, step) {
+    const d = Math.max(0, Math.min(12, Math.ceil(-Math.log10(step) - 1e-9)));
+    const r = Number(v.toFixed(d));
+    return Object.is(r, -0) ? '0' : r.toFixed(d).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+  }
+  function sliderValues(key, letters) {
+    const vals = {};
+    for (const l of letters) { const o = sliderOf(key, l); vals[l] = engineNum(sliderNum(o.v, o.step)); }
+    return vals;
+  }
+  const sliderShown = (o) => decSign(sliderNum(o.v, o.step)).replace(/^-/, '−');
+  // The box of sliders under a graph. cfg: key (the store), redraw(final) → a promise of the drawing (final: when a slider
+  // stops, everything is worked out again, the tools too), locked() (3D without Pro: a line instead of the sliders), gif(l)
+  function sliderBox(cfg) {
+    const box = el('div', { class: 'sliders', role: 'group', 'aria-label': tr('Sliders', 'スライダー'), hidden: true });
+    const S = { box, letters: [], rows: {}, anim: null, lockedNow: null };
+    const cur = (l) => sliderOf(cfg.key, l);
+    const show = (l) => {
+      const R = S.rows[l]; if (!R) return;
+      const o = cur(l);
+      R.rng.min = String(o.min); R.rng.max = String(o.max); R.rng.step = cfg.anyStep ? 'any' : String(o.step);
+      if (Number(R.rng.value) !== o.v) R.rng.value = String(o.v);
+      R.val.textContent = sliderShown(o);
+      R.val.setAttribute('aria-label', trf('{0} = {1} (tap to type a value)', '{0} = {1}（タップで値を入力）', l, sliderShown(o)));
+      R.rng.setAttribute('aria-valuetext', l + ' = ' + sliderShown(o));
+    };
+    const setV = (l, v, final, snap) => {
+      const o = cur(l);
+      if (snap) v = o.min + Math.round((v - o.min) / o.step) * o.step;
+      o.v = Math.min(o.max, Math.max(o.min, v));
+      sliderSet(cfg.key, l, o, final);
+      show(l);
+      return cfg.redraw(final);
+    };
+    const playShown = () => {
+      for (const l of S.letters) {
+        const R = S.rows[l]; if (!R) continue;
+        const on = !!(S.anim && S.anim.l === l);
+        R.play.textContent = on ? '■' : '▶';
+        R.play.setAttribute('aria-pressed', String(on));
+        R.play.setAttribute('aria-label', on ? trf('Stop {0}', '{0} を止める', l) : trf('Move {0} to and fro', '{0} を動かす', l));
+      }
+    };
+    S.stop = (noDraw) => {
+      if (!S.anim) return;
+      const l = S.anim.l;
+      S.anim = null;
+      playShown();
+      sliderSet(cfg.key, l, cur(l), true);
+      if (!noDraw) cfg.redraw(true);
+    };
+    const play = async (l) => {
+      if (S.anim && S.anim.l === l) { S.stop(); return; }
+      S.stop(true);
+      const a = S.anim = { l, dir: 1 };
+      playShown();
+      while (S.anim === a) {
+        if (!box.isConnected || !box.closest('.panel.open') || box.offsetParent === null || document.hidden) { S.stop(true); break; }
+        const o = cur(l), span = o.max - o.min;
+        let v = o.v + a.dir * span / 60;
+        if (v >= o.max - span * 1e-9) { v = o.max; a.dir = -1; } else if (v <= o.min + span * 1e-9) { v = o.min; a.dir = 1; }
+        const t0 = Date.now();
+        await setV(l, v, false, false);
+        await new Promise((r) => setTimeout(r, Math.max(16, 60 - (Date.now() - t0))));
+      }
+    };
+    const typeValue = async (l) => {
+      const o = cur(l);
+      const v = await promptSheet(trf('Value of {0}', '{0} の値', l), decSign(sliderNum(o.v, o.step)), '', tr('OK', 'OK'));
+      if (v === null || !String(v).trim()) return;
+      const n = await numValue(normalizeExpr(String(v)));
+      if (!isFinite(n)) { toast(tr('Enter a number', '数を入れてください'), 1800); return; }
+      S.stop(true);
+      // (a value outside the range widens it)
+      if (n < o.min) o.min = n; if (n > o.max) o.max = n;
+      sliderSet(cfg.key, l, o, false);
+      setV(l, n, true, false);
+    };
+    const settings = async (l) => {
+      if (sheetResolve) closeSheet(null);
+      const o = cur(l);
+      const sh = $('#sheet');
+      sh.textContent = '';
+      const field = (label, v) => { const i = el('input', { type: 'text', class: 'sheet-input', value: decSign(String(v)), inputmode: 'text', autocapitalize: 'off', 'aria-label': label }); return [i, el('label', { class: 'sl-field' }, el('span', { text: label }), i)]; };
+      const [a, fa] = field(tr('From', '最小'), o.min), [b, fb] = field(tr('To', '最大'), o.max), [st, fs] = field(tr('Step', '刻み'), o.step);
+      const gifLocked = PRO_GATES.share_pro === 'pro' && !hasPro();
+      sh.append(el('div', { class: 'stitle', text: trf('Slider of {0}', '{0} のスライダー', l) }), el('div', { class: 'sl-fields' }, fa, fb, fs),
+        el('button', { class: 'accent', text: tr('OK', 'OK'), onclick: () => closeSheet('ok') }),
+        cfg.gif ? el('button', { text: tr('Moving picture (GIF)', '動く画像（GIF）') + (gifLocked ? '  ⭐ Pro' : ''), onclick: () => closeSheet('gif') }) : '',
+        el('button', { text: tr('Back to −5 to 5, step 0.1', '−5〜5・刻み 0.1 に戻す'), onclick: () => closeSheet('reset') }),
+        el('button', { text: tr('Cancel', 'キャンセル'), onclick: () => closeSheet(null) }));
+      const k = await new Promise((resolve) => { sheetResolve = resolve; $('#scrim').classList.add('show', 'over-panels'); sh.classList.add('open'); sh.inert = false; });
+      if (k === 'gif') { if (proGate('share_pro')) { S.stop(true); cfg.gif(l); } return; }
+      if (k === 'reset') { S.stop(true); Object.assign(o, { min: SL_DEF.min, max: SL_DEF.max, step: SL_DEF.step }); o.v = Math.min(o.max, Math.max(o.min, o.v)); sliderSet(cfg.key, l, o, true); show(l); cfg.redraw(true); return; }
+      if (k !== 'ok') return;
+      const [n0, n1, ns] = await Promise.all([a, b, st].map((i) => numValue(normalizeExpr(i.value || ''))));
+      if (!isFinite(n0) || !isFinite(n1) || !(n1 > n0)) { toast(tr('The end must be larger than the start', '最大は最小より大きくしてください'), 2200); return; }
+      if (!(ns > 0) || (n1 - n0) / ns > 1e5) { toast(tr('Check the step (more than 0, at most 100 000 steps)', '刻みを確認してください（0 より大きく、10 万段まで）'), 2600); return; }
+      S.stop(true);
+      Object.assign(o, { min: n0, max: n1, step: ns });
+      o.v = Math.min(o.max, Math.max(o.min, o.v));
+      sliderSet(cfg.key, l, o, true);
+      show(l);
+      cfg.redraw(true);
+    };
+    const row = (l) => {
+      const o = cur(l);
+      const rng = el('input', { type: 'range', class: 'sl-range', min: String(o.min), max: String(o.max), step: String(o.step), 'aria-label': trf('Value of {0}', '{0} の値', l) });
+      rng.value = String(o.v);
+      const val = tapButton({ class: 'sl-val' }, () => typeValue(l));
+      const pl = tapButton({ class: 'sl-play', text: '▶' }, () => play(l));
+      const more = tapButton({ class: 'sl-more', text: '⋯', 'aria-label': trf('Slider of {0}: range and step', '{0} のスライダー：範囲と刻み', l) }, () => settings(l));
+      rng.addEventListener('input', () => { if (S.anim) S.stop(true); setV(l, Number(rng.value), false, true); });
+      rng.addEventListener('change', () => setV(l, Number(rng.value), true, true));
+      S.rows[l] = { rng, val, play: pl };
+      return el('div', { class: 'sl-row' }, el('span', { class: 'sl-name', text: l, 'aria-hidden': 'true' }), rng, val, pl, more);
+    };
+    // the rows for these letters (the same letters: the rows stay, with their values)
+    S.set = (letters) => {
+      const locked = !!(cfg.locked && cfg.locked());
+      if (letters.join() === S.letters.join() && locked === S.lockedNow) { for (const l of letters) show(l); return; }
+      S.stop(true);
+      S.letters = letters.slice(); S.rows = {}; S.lockedNow = locked;
+      box.textContent = '';
+      box.hidden = !letters.length;
+      if (!letters.length) return;
+      if (locked) {
+        box.append(el('div', { class: 'sl-lock' }, el('span', { text: letters.map((l) => l + ' = ' + sliderShown(cur(l))).join(tr(', ', '、')) }),
+          el('span', { text: tr('Sliders in 3D are a QCalc Pro feature', '3D のスライダーは QCalc Pro の機能です') }),
+          tapButton({ class: 'btn sl-pro', text: tr('About QCalc Pro', 'QCalc Pro について') }, () => proGate('sliders3d'))));
+        return;
+      }
+      for (const l of letters) { box.append(row(l)); show(l); }
+      playShown();
+    };
+    S.refresh = () => { const l = S.letters; S.letters = []; S.set(l); };
+    return S;
+  }
+  // 2D: one drawing at a time; values moved while one is drawn are drawn after it (the newest)
+  function sliderRedraw2d(final) {
+    P.slFinal = P.slFinal || final;
+    if (P.slJob) { P.slAgain = true; return P.slJob; }
+    P.slJob = (async () => {
+      try {
+        do {
+          P.slAgain = false;
+          const fin = P.slFinal; P.slFinal = false;
+          P.mark = null; if (P.tip) P.tip.style.display = 'none';
+          setItems(P.itemsText !== undefined ? P.itemsText : P.ta.value);
+          P.slDraws = (P.slDraws || 0) + 1;
+          // (what is shown: the view stays while a slider moves; when it stops, the graph fits the view to itself again
+          // unless the view was moved or zoomed by hand)
+          const v = P.view;
+          if (fin && !P.viewByUser) await compute(...P.xr(), false, false);
+          else if (v && P.exprs.length) { const pad = (v.x1 - v.x0) * 0.5; await compute(engineNum(v.x0 - pad), engineNum(v.x1 + pad), true, !fin); }
+          else await compute(...P.xr(), !!v, !fin);
+        } while (P.slAgain);
+      } finally { P.slJob = null; }
+    })();
+    return P.slJob;
+  }
+  // The moving picture (GIF) of a slider (QCalc Pro): its value from the start to the end of its range and back, drawn
+  // frame by frame with the value under the graph; at most GIF_W pixels wide and 2 MB.
+  async function sliderGif(l, cfg) {
+    if (cfg.busy()) return;
+    cfg.busy(true);
+    toast(tr('Making the moving picture…', '動く画像を作っています…'), 3000);
+    const key = cfg.key, o0 = sliderOf(key, l), keep = o0.v;
+    const N = 20, frames = [];
+    try {
+      for (let f = 0; f <= N; f++) {
+        const o = sliderOf(key, l);
+        o.v = o.min + (o.max - o.min) * f / N;
+        sliderSet(key, l, o, false);
+        await cfg.redraw(false);
+        await new Promise((r) => requestAnimationFrame(() => r()));
+        frames.push(cfg.capture(l + ' = ' + sliderShown(o)));
+      }
+      const all = frames.concat(frames.slice(1, -1).reverse());
+      const c0 = all[0];
+      let out = null;
+      for (let w = Math.min(GIF_W, c0.width); w >= 160 && !out; w = Math.round(w * 0.75)) {
+        const h = Math.round(c0.height * w / c0.width), small = el('canvas'); small.width = w; small.height = h;
+        const g = small.getContext('2d'), data = [];
+        for (const q of all) { g.drawImage(q, 0, 0, w, h); data.push(g.getImageData(0, 0, w, h).data); }
+        const bytes = gifEncode(data, w, h, 8);
+        if (bytes.length <= GIF_MAX) {
+          let bin = '';
+          for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+          out = 'data:image/gif;base64,' + btoa(bin);
+          cfg.canvas().dataset.gif = JSON.stringify({ w, h, frames: data.length, bytes: bytes.length, letter: l });
+        }
+      }
+      if (out) shareData(out, 'image/gif', cfg.words() + ' — QCalc');
+      else toast(tr('The moving picture would be too large', '動く画像が大きくなりすぎます'), 2500);
+    } finally {
+      const o = sliderOf(key, l); o.v = keep; sliderSet(key, l, o, true);
+      cfg.busy(false);
+      cfg.box().set(cfg.box().letters);
+      cfg.redraw(true);
+    }
+  }
+  // a frame of the 2D graph: the canvas with a band under it for the value of the slider
+  function frameWithBand(canvas, text) {
+    const W = canvas.width, H = canvas.height, s = W / (canvas.clientWidth || W), band = Math.round(28 * s);
+    const c = el('canvas'); c.width = W; c.height = H + band;
+    const g = c.getContext('2d'), cs = getComputedStyle(document.documentElement);
+    g.fillStyle = cs.getPropertyValue('--plot-bg').trim() || '#fff'; g.fillRect(0, 0, W, H + band);
+    g.drawImage(canvas, 0, 0);
+    g.fillStyle = cs.getPropertyValue('--surface').trim() || '#f4f6fa'; g.fillRect(0, H, W, band);
+    g.fillStyle = cs.getPropertyValue('--text').trim() || '#111'; g.textBaseline = 'middle'; g.textAlign = 'left';
+    g.font = '600 ' + Math.round(14 * s) + 'px system-ui, sans-serif';
+    g.fillText(text, 10 * s, H + band / 2);
+    return c;
+  }
+  // the length (and the area: polar, or a parametric line that closes) of a parametric or polar line, by the engine:
+  // polar area ½∫r² dθ, length ∫√(r² + r′²) dθ; parametric length ∫√(x′² + y′²) dt, area |½∫(x y′ − y x′) dt|
+  const closedCurve = (C) => {
+    const pts = []; for (let i = 0; i < (C.xs || []).length; i++) if (C.xs[i] !== null) pts.push([C.xs[i], C.ys[i]]);
+    if (pts.length < 3) return false;
+    const b = curvesBoxOf(C), size = Math.max(b.x1 - b.x0, b.y1 - b.y0) || 1;
+    return Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) < size * 1e-3;
+  };
+  // whether a sampled line crosses or touches itself (then the formula of the area, ½∮(x dy − y dx), adds the loops
+  // with their directions, 0 for a figure eight, and counts twice what is gone round twice: no area is given)
+  function crossesItself(C) {
+    const pts = []; for (let i = 0; i < (C.xs || []).length; i++) if (C.xs[i] !== null) pts.push([C.xs[i], C.ys[i]]);
+    const n = pts.length;
+    if (n < 4) return false;
+    const b = curvesBoxOf(C), size = Math.max(b.x1 - b.x0, b.y1 - b.y0) || 1, eps = size * 1e-7;
+    const G = 64, cell = size / G * 1.0001;
+    const key = (x, y) => Math.floor((x - b.x0) / cell) + ',' + Math.floor((y - b.y0) / cell);
+    const grid = new Map();
+    const last = Math.hypot(pts[0][0] - pts[n - 1][0], pts[0][1] - pts[n - 1][1]) < size * 1e-3 ? n - 1 : n; // (the end on the start: once)
+    // a point come back to (away from its neighbours)
+    for (let i = 0; i < last; i++) {
+      const k = key(pts[i][0], pts[i][1]);
+      const l = grid.get(k) || []; grid.set(k, l);
+      for (const j of l) if (i - j > 2 && !(j === 0 && last - i <= 2) && Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]) < size * 1e-4) return true;
+      l.push(i);
+    }
+    // two segments that cross
+    const segs = new Map();
+    const orient = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+    for (let i = 0; i < n - 1; i++) {
+      const p = pts[i], q = pts[i + 1];
+      const i0 = Math.floor((Math.min(p[0], q[0]) - b.x0) / cell), i1 = Math.floor((Math.max(p[0], q[0]) - b.x0) / cell);
+      const j0 = Math.floor((Math.min(p[1], q[1]) - b.y0) / cell), j1 = Math.floor((Math.max(p[1], q[1]) - b.y0) / cell);
+      if ((i1 - i0 + 1) * (j1 - j0 + 1) > 400) continue; // (a jump across the picture)
+      for (let a = i0; a <= i1; a++) for (let c = j0; c <= j1; c++) {
+        const k = a + ',' + c;
+        const l = segs.get(k) || []; segs.set(k, l);
+        for (const j of l) {
+          if (i - j < 2 || (j === 0 && i === n - 2)) continue;
+          const r = pts[j], s2 = pts[j + 1];
+          const d1 = orient(r, s2, p), d2 = orient(r, s2, q), d3 = orient(p, q, r), d4 = orient(p, q, s2);
+          if (((d1 > eps * size && d2 < -eps * size) || (d1 < -eps * size && d2 > eps * size)) && ((d3 > eps * size && d4 < -eps * size) || (d3 < -eps * size && d4 > eps * size))) return true;
+        }
+        l.push(i);
+      }
+    }
+    return false;
+  }
+  function curvesBoxOf(C) { let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; for (let i = 0; i < C.xs.length; i++) { if (C.xs[i] === null) continue; x0 = Math.min(x0, C.xs[i]); x1 = Math.max(x1, C.xs[i]); y0 = Math.min(y0, C.ys[i]); y1 = Math.max(y1, C.ys[i]); } return { x0, x1, y0, y1 }; }
+  async function curveValue(C, what, out) {
+    const [a, b] = tRange(C.kind).map((s) => normalizeExpr(String(s)));
+    // (t is a unit, tonne, for the engine's calculations: x here; also after a number, as in sin(2t), not inside a name)
+    const sub = (e) => String(e).replace(/(?<![\p{L}_][\p{L}\p{N}_]*)t(?![\p{L}\p{N}_])/gu, 'x');
+    let expr;
+    if (C.kind === 'polar') { const R = sub(C.r); expr = what === 'area' ? `integrate((${R})^2 / 2, ${a}, ${b})` : `integrate(sqrt((${R})^2 + (diff(${R}, x))^2), ${a}, ${b})`; }
+    else { const X = sub(C.x), Y = sub(C.y); expr = what === 'area' ? `abs(integrate(((${X}) × diff(${Y}, x) − (${Y}) × diff(${X}, x)) / 2, ${a}, ${b}))` : `integrate(sqrt(diff(${X}, x)^2 + diff(${Y}, x)^2), ${a}, ${b})`; }
+    if (what === 'area' && C.kind === 'param' && crossesItself(C)) { out.textContent = tr('Area: the line crosses itself, so no area is given', '面積：線が自分と交わるので出しません'); return; }
+    out.textContent = tr('Calculating…', '計算中…');
+    const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { angle: 'rad', grouping: false }, what === 'len' ? { approx: 'approx', precision: 12 } : {}), timeout: 5000 });
+    const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
+    const name = what === 'area' ? tr('Area', '面積') : tr('Length', '長さ');
+    out.textContent = !r.ok || r.timeout || err || !r.result || /integrate|diff/.test(r.result) ? name + tr(': could not be calculated', '：計算できませんでした') : shortValue(name, resultText(r), r.approx);
+  }
+  function curveToolsChanged() {
+    const box = P.curveTools;
+    if (!box) return;
+    box.textContent = '';
+    if (P.toolsNote) {
+      P.toolsNote.hidden = !(P.curves && P.curves.length);
+      P.toolsNote.textContent = (P.curves || []).some((c) => c.kind !== 'implicit')
+        ? tr('The tools below are for lines y = f(x): parametric and polar lines have their length and area above', '下の道具は y = f(x) の線に使えます（媒介変数・極座標・陰関数の線には使えません。媒介変数と極座標の長さと面積は上のボタンで出せます）')
+        : tr('The tools below are for lines y = f(x), not for parametric, polar or implicit lines', '下の道具は y = f(x) の線に使えます（媒介変数・極座標・陰関数の線には使えません）');
+    }
+    for (const C of (P.curves || []).filter((c) => c.kind !== 'implicit')) {
+      if (!(C.xs || []).some((x) => x !== null)) continue;
+      const row = el('div', { class: 'ct-row' }, el('span', { class: 'ct-name', style: '--c:' + C.color, text: clip(toDisplay(C.text), 30) }));
+      const outs = el('div', { class: 'ct-outs', 'aria-live': 'polite' });
+      const add = (label, what, aria) => {
+        const out = el('div', { class: 'ct-out' });
+        row.append(tapButton({ class: 'btn ct-btn', text: label, 'aria-label': aria }, () => { if (!out.parentNode) outs.append(out); curveValue(C, what, out); }));
+      };
+      add(tr('Length', '長さ'), 'len', trf('Length of {0}', '{0}の長さ', toDisplay(C.text)));
+      if (C.kind === 'polar' || closedCurve(C)) add(tr('Area', '面積'), 'area', trf('Area inside {0}', '{0}が囲む面積', toDisplay(C.text)));
+      box.append(row, outs);
+    }
+  }
+  async function computeCurves(min, max, quick) {
+    const C = P.curves || [];
+    for (const c of C) { c.error = ''; if (c.kind === 'param' || c.kind === 'polar') await sampleCurve(c); }
+    const imp = C.filter((c) => c.kind === 'implicit');
+    if (imp.length) {
+      const win = P.view ? implicitWindow() : implicitWindow(await numValue(min), await numValue(max));
+      await computeImplicit(imp, win, quick);
+    }
+  }
+  // the box of the parametric and polar lines, and the windows of the implicit ones
+  function curvesBox() {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const C of P.curves || []) {
+      if (C.kind === 'implicit') { if (C.win) { x0 = Math.min(x0, C.win.x0); x1 = Math.max(x1, C.win.x1); y0 = Math.min(y0, C.win.y0); y1 = Math.max(y1, C.win.y1); } continue; }
+      for (let i = 0; i < (C.xs || []).length; i++) { const x = C.xs[i], y = C.ys[i]; if (x === null) continue; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    return isFinite(x0) && isFinite(y0) ? { x0, x1, y0, y1 } : null;
+  }
+  function drawCurves(g, sx, sy) {
+    for (const C of P.curves || []) {
+      g.strokeStyle = C.color; g.lineWidth = 2.2; g.lineJoin = 'round'; g.lineCap = 'round';
+      g.beginPath();
+      if (C.kind === 'implicit') {
+        const s = C.segs || [];
+        for (let q = 0; q < s.length; q += 4) { g.moveTo(sx(s[q]), sy(s[q + 1])); g.lineTo(sx(s[q + 2]), sy(s[q + 3])); }
+      } else {
+        let pen = false;
+        for (let i = 0; i < (C.xs || []).length; i++) {
+          if (C.xs[i] === null) { pen = false; continue; }
+          const px = sx(C.xs[i]), py = sy(C.ys[i]);
+          if (pen) g.lineTo(px, py); else g.moveTo(px, py);
+          pen = true;
+        }
+      }
+      g.stroke();
+    }
+  }
+  // the point of a line nearest to a tap (in parts of the view): { dist, x, y, color, expr, t? }
+  function nearestCurvePoint(d) {
+    let best = null;
+    const v = P.view, w = v.x1 - v.x0, h = v.y1 - v.y0;
+    const consider = (x, y, C, t) => { const dx = (x - d.x) / w, dy = (y - d.y) / h, dist = dx * dx + dy * dy; if (!best || dist < best.dist) best = { dist, x, y, color: C.color, expr: C.text, t, kind: C.kind }; };
+    for (const C of P.curves || []) {
+      if (C.kind === 'implicit') { const s = C.segs || []; for (let q = 0; q < s.length; q += 4) consider((s[q] + s[q + 2]) / 2, (s[q + 1] + s[q + 3]) / 2, C); }
+      else for (let i = 0; i < (C.xs || []).length; i++) if (C.xs[i] !== null) consider(C.xs[i], C.ys[i], C, C.ts[i]);
+    }
+    return best;
+  }
   function openPlot() {
     // (D6: a solid of "Shapes" in the 3D graph ends when the graph is opened for something else)
     if (Q3.model && !Q3.opening3d) endModel3d(false);
@@ -4566,7 +5552,7 @@
         if (m === '3d') { Q3.start(); return; }
         if (started2d) { draw(); return; }
         started2d = true;
-        if (store.get('qalc.plot.ok', true)) setTimeout(() => compute(normalizeExpr(xmin.value), normalizeExpr(xmax.value)), 260);
+        if (store.get('qalc.plot.ok', true)) setTimeout(() => compute(...P.xr()), 260);
         else msg.textContent = tr('Press "Draw" to draw the graph', '「描画」を押すとグラフを描きます');
       };
       b2.addEventListener('click', () => setMode('2d'));
@@ -4579,6 +5565,51 @@
       ta.value = store.get('qalc.plot.exprs', 'sin(x)\nx^2/10');
       const xmin = el('input', { value: store.get('qalc.plot.min', '-10'), inputmode: 'text', autocapitalize: 'off', 'aria-label': tr('Graph: x from', 'グラフの x の始め') });
       const xmax = el('input', { value: store.get('qalc.plot.max', '10'), inputmode: 'text', autocapitalize: 'off', 'aria-label': tr('Graph: x to', 'グラフの x の終わり') });
+      // (1.15.0) the kind of the lines (that of the first line, told from its form; a tap on another kind puts its example
+      // in the box, with Undo), and the range row for x, t (parametric) or θ (polar), each kept apart
+      const rangeLbl = el('span', { text: tr('x:', 'x：') });
+      const kindSeg = el('div', { class: 'seg mini plot-kinds', role: 'group', 'aria-label': tr('Kind of line', '線の種類') });
+      const kindBtns = {};
+      const KIND_EX = { fx: 'sin(x)', param: 'x = cos(t), y = sin(2t)', polar: 'r = 1 + cos(θ)', implicit: 'x^2 + y^2 = 4' };
+      const KIND_PH = () => ({ fx: tr('Functions (one per line, variable x)', '関数（1行に1つ、変数は x）'), param: tr('x = …, y = … (variable t)', 'x = …, y = …（変数は t）'), polar: tr('r = … (variable θ or t)', 'r = …（変数は θ か t）'), implicit: tr('An equation in x and y, as x^2 + y^2 = 4', 'x と y の式の等式（例：x^2 + y^2 = 4）') });
+      const rangeOf = (k) => (k === 'param' || k === 'polar' ? k : 'x');
+      let rangeVar = 'x';
+      const syncKind = (force) => {
+        const k = boxKind(ta.value);
+        for (const id of KIND_IDS) { kindBtns[id].classList.toggle('on', id === k); kindBtns[id].setAttribute('aria-pressed', String(id === k)); }
+        const rv = rangeOf(k);
+        if (rv !== rangeVar || force) {
+          if (rv !== rangeVar) {
+            if (rangeVar === 'x') { store.set('qalc.plot.min', xmin.value); store.set('qalc.plot.max', xmax.value); }
+            else { store.set('qalc.plot.' + rangeVar + '.min', xmin.value); store.set('qalc.plot.' + rangeVar + '.max', xmax.value); }
+          }
+          rangeVar = rv;
+          const ab = rv === 'x' ? [store.get('qalc.plot.min', '-10'), store.get('qalc.plot.max', '10')] : tRange(rv);
+          xmin.value = String(ab[0]); xmax.value = String(ab[1]); // (kept as typed, in the number format: BG14)
+        }
+        const v = rv === 'param' ? 't' : rv === 'polar' ? 'θ' : 'x';
+        rangeLbl.textContent = trf('{0}:', '{0}：', v);
+        xmin.setAttribute('aria-label', trf('Graph: {0} from', 'グラフの {0} の始め', v)); xmax.setAttribute('aria-label', trf('Graph: {0} to', 'グラフの {0} の終わり', v));
+        ta.placeholder = KIND_PH()[k];
+      };
+      const chooseKind = (k) => {
+        if (boxKind(ta.value) === k && ta.value.trim()) return;
+        const before = ta.value;
+        ta.value = toDisplay(KIND_EX[k]);
+        syncKind();
+        if (k !== 'fx') { P.equal = true; }
+        go.click();
+        if (before.trim()) toast(tr('An example of this kind is in the box', 'この種類の例を入れました'), 4000, [tr('Undo', '元に戻す'), () => { ta.value = before; syncKind(); go.click(); }]);
+      };
+      for (const k of KIND_IDS) {
+        const b = el('button', { type: 'button', text: kindName(k), 'aria-pressed': 'false' });
+        b.addEventListener('click', () => chooseKind(k));
+        kindBtns[k] = b; kindSeg.append(b);
+      }
+      ta.addEventListener('input', () => syncKind());
+      // the range of x for the functions and the implicit lines (from the row when it is for x)
+      P.xr = () => (rangeVar === 'x' ? [xmin.value, xmax.value] : [store.get('qalc.plot.min', '-10'), store.get('qalc.plot.max', '10')]).map((s) => normalizeExpr(String(s)));
+      P.syncKind = syncKind;
       const go = el('button', { class: 'btn primary', text: tr('Draw', '描画') });
       const canvas = el('canvas', { role: 'img', 'aria-label': tr('2D graph', '2D グラフ') });
       const tip = el('div', { class: 'plot-tip', 'aria-live': 'polite' });
@@ -4587,7 +5618,7 @@
         el('button', { text: '−', 'aria-label': tr('Zoom out', '縮小'), onclick: () => zoom(2) }),
         el('button', { text: '⟲', 'aria-label': tr('Back to the entered range', '入力した範囲に戻す'), onclick: () => {
           P.view = null; P.mark = null; P.tip.style.display = 'none';
-          compute(normalizeExpr(xmin.value), normalizeExpr(xmax.value));
+          compute(...P.xr());
         } }),
         // the same length for one unit on both axes (a circle stays round); kept for the next graphs
         P.eqBtn = el('button', { class: 'eq', text: '1:1', 'aria-label': tr('The same scale on the x and y axes', 'x と y の目盛りの間隔をそろえる'), onclick: () => {
@@ -4605,34 +5636,43 @@
         el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share a picture of the graph', 'グラフの画像を共有'), onclick: () => shareGraph2d() }));
       P.equal = P.equal || store.get('qalc.plot.equal', false) === true;
       const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
+      // (1.15.0) the sliders of the letters, under the graph
+      P.sl = sliderBox({ key: SL_KEY2D, redraw: sliderRedraw2d,
+        gif: (l) => sliderGif(l, { key: SL_KEY2D, redraw: sliderRedraw2d, busy: (b) => (b === undefined ? !!P.gifBusy : (P.gifBusy = b)), capture: (t) => frameWithBand(P.canvas, t), canvas: () => P.canvas, words: () => legendWords(P.legend), box: () => P.sl }) });
       const legend = el('div', { class: 'legend' });
       const msg = el('div', { class: 'form-hint' });
-      f2.append(el('div', { class: 'plot-form' }, ta,
-        el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax, go)),
-      wrap, legend, msg, el('div', { class: 'tools' }, buildCalc2d(), buildArea2d()), P.samples = buildSamples(SAMPLES2D, false, drawSample2d),
+      P.curveTools = el('div', { class: 'curve-tools' });
+      P.toolsNote = el('div', { class: 'form-hint tools-note', hidden: true });
+      f2.append(el('div', { class: 'plot-form' }, kindSeg, ta,
+        el('div', { class: 'plot-range' }, rangeLbl, xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax, go)),
+      wrap, P.sl.box, legend, msg, P.curveTools, P.toolsNote, el('div', { class: 'tools' }, buildCalc2d(), buildArea2d()), P.samples = buildSamples(SAMPLES2D, false, drawSample2d),
       el('div', { class: 'form-hint', text: tr('Drag to move, pinch to zoom, tap to show the coordinates. The functions are the same as on the calculator.', 'ドラッグで移動、2本指で拡大・縮小、タップで座標を表示します。式に使える関数は計算画面と同じです。') }));
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Type of graph', 'グラフの種類') }, b2, b3), f2, f3);
       P.canvas = canvas; P.tip = tip; P.legend = legend; P.msg = msg; P.wrap = wrap;
       P.ta = ta; P.go = go; P.setMode = setMode; P.xmin = xmin; P.xmax = xmax;
       go.addEventListener('click', () => {
-        store.set('qalc.plot.exprs', ta.value); store.set('qalc.plot.min', xmin.value); store.set('qalc.plot.max', xmax.value);
+        if (P.sl) P.sl.stop(true);
+        store.set('qalc.plot.exprs', ta.value);
+        if (rangeVar === 'x') { store.set('qalc.plot.min', xmin.value); store.set('qalc.plot.max', xmax.value); }
+        else { store.set('qalc.plot.' + rangeVar + '.min', xmin.value); store.set('qalc.plot.' + rangeVar + '.max', xmax.value); }
         document.activeElement && document.activeElement.blur();
         // points and marks belong to the graph they were made for (a matrix, a form), not to one drawn by hand
         if (!P.keep) {
           P.points = null; P.marks = []; P.pending = null; P.guides = null;
           // the same scale of a sample (a circle) and the marked sample stay while the same functions
           // are drawn again with another range; other functions drop them (1.8.3)
-          if (plotExprs(ta.value, 6).join('\n') !== (P.exprs || []).join('\n')) { P.equal = store.get('qalc.plot.equal', false) === true; if (P.samples) P.samples.clearChoice(); }
+          if (plotItems(ta.value, 6).map((q) => q.text).join('\n') !== (P.items || []).map((q) => q.text).join('\n')) { P.equal = store.get('qalc.plot.equal', false) === true; if (P.samples) P.samples.clearChoice(); }
         }
         P.keep = false;
-        P.exprs = plotExprs(ta.value, 6);
+        setItems(ta.value);
         P.view = null;
         P.mark = null; P.tip.style.display = 'none'; // the point that was tapped belongs to the graph before
-        compute(normalizeExpr(xmin.value), normalizeExpr(xmax.value));
+        compute(...P.xr());
       });
       setupPlotGestures(wrap);
       window.addEventListener('resize', debounce(() => { draw(); draw3d(); }, 120));
-      P.exprs = plotExprs(ta.value, 6);
+      setItems(ta.value);
+      syncKind(true);
       // ⋯: the digits of the graph's values (area, length, solids, volume and surface area in 3D)
       digitsButton(p, 'graph');
       digitsRefresh.graph = () => {
@@ -4659,6 +5699,8 @@
     // (the fields as typed: in the number format, BG14)
     store.set('qalc.plot.exprs', toDisplay(list.join('\n')));
     if (opts.range) { store.set('qalc.plot.min', toDisplay(String(opts.range[0]))); store.set('qalc.plot.max', toDisplay(String(opts.range[1]))); }
+    // (1.15.0) the range of t (parametric) or θ (polar)
+    if (opts.trange) { const k = boxKind(list.join('\n')); if (k === 'param' || k === 'polar') { store.set('qalc.plot.' + k + '.min', toDisplay(String(opts.trange[0]))); store.set('qalc.plot.' + k + '.max', toDisplay(String(opts.trange[1]))); } }
     store.set('qalc.plot.mode', '2d');
     P.points = opts.points || null;
     P.marks = [];
@@ -4670,7 +5712,7 @@
     openPlot();
     if (built && P.ta) {
       P.ta.value = toDisplay(list.join('\n'));
-      if (opts.range) { P.xmin.value = toDisplay(String(opts.range[0])); P.xmax.value = toDisplay(String(opts.range[1])); }
+      if (P.syncKind) P.syncKind(true);
       P.setMode('2d');
       P.keep = true;
       P.go.click();
@@ -4726,8 +5768,8 @@
     }
     draw();
   }
-  async function compute(min, max, keepView) {
-    if (!P.exprs.length) {
+  async function compute(min, max, keepView, quick) {
+    if (!P.exprs.length && !(P.curves && P.curves.length)) {
       // only points (the rows of a matrix)
       if (P.points && P.points.length) {
         P.series = [];
@@ -4743,10 +5785,10 @@
       } else P.msg.textContent = tr('Enter a function (for example sin(x)), or tap a sample', '関数を入れてください（例：sin(x)）。下のサンプルもタップで描けます');
       return;
     }
-    P.msg.textContent = tr('Calculating…', '計算中…');
+    if (!quick) P.msg.textContent = tr('Calculating…', '計算中…');
     // (feature/ratings, VR01) what a and b had been changed by the person when this graph was asked for: typed after it, they stay
     const typedAtDraw = P.areaUI ? Object.assign({ a: 0, b: 0 }, P.areaUI.typed) : null;
-    const r = await Bridge.send('plot', { exprs: P.exprs, min: String(min), max: String(max), steps: 600, var: 'x', opts: engineOpts(), timeout: 12000 });
+    const r = P.exprs.length ? await Bridge.send('plot', { exprs: P.exprs, min: String(min), max: String(max), steps: 600, var: 'x', opts: engineOpts(), timeout: 12000 }) : { ok: true, series: [], messages: [] };
     if (!r.ok && r.error === 'invalid range' && !keepView && !P.swapped) {
       // the range the wrong way round ("5 to 1"): the two ends change places
       const a = await numValue(min), b = await numValue(max);
@@ -4762,15 +5804,28 @@
     if (!Array.isArray(r.series)) { P.msg.textContent = tr('The calculation took too long and was stopped', '時間がかかりすぎたため計算を中止しました'); return; }
     // moving or zooming the graph only reads its values again: the shaded area and its results stay
     const kept = keepView && P.area ? [P.series.indexOf(P.area.f), P.area.g ? P.series.indexOf(P.area.g) : -1] : null;
-    P.series = r.series.map((s, i) => ({ expr: P.exprs[i], x: s.x, y: s.y, color: COLORS[i % COLORS.length] }));
+    P.series = r.series.map((s, i) => ({ expr: P.exprs[i], x: s.x, y: s.y, color: (P.exprColors && P.exprColors[i]) || COLORS[i % COLORS.length] }));
+    // (1.15.0) the parametric, polar and implicit lines
+    if (!keepView) { P.view = null; P.viewByUser = false; }
+    if (P.curves && P.curves.length) await computeCurves(min, max, quick);
     const err = (r.messages || []).find((m) => m.type === 'error');
-    P.msg.textContent = plotNote(err, P.exprs, P.series.filter((q) => !q.y.some((v) => v !== null)).map((q) => q.expr), 6, false);
+    const curveNotes = (P.curves || []).map((C) => (C.error ? C.error : C.kind === 'implicit' && C.empty ? trf('No curve of {0} in the view: try another range', '{0}の曲線は表示範囲にありません（範囲を変えてみてください）', JA ? '「' + clip(C.text, 18) + '」' : '"' + clip(C.text, 18) + '" ') : (C.kind !== 'implicit' && !(C.xs || []).some((x) => x !== null)) ? trf('No values for {0}: check the expression and the range', '{0}は値が出ません。式と範囲を確認してください', JA ? '「' + clip(C.text, 18) + '」' : '"' + clip(C.text, 18) + '" ') : '')).filter(Boolean);
+    P.msg.textContent = [plotNote(err, P.exprs, P.series.filter((q) => !q.y.some((v) => v !== null)).map((q) => q.expr), 6, false)].concat(curveNotes).filter(Boolean).join(' ');
     let x0 = Infinity, x1 = -Infinity;
     for (const s of P.series) for (const x of s.x) { if (x < x0) x0 = x; if (x > x1) x1 = x; }
+    const cb = curvesBox();
+    if (cb && !P.series.length) { x0 = cb.x0; x1 = cb.x1; }
     P.dataX = isFinite(x0) ? [x0, x1] : null;
-    if (!keepView) P.view = null;
     P.legend.textContent = '';
-    for (const s of P.series) P.legend.append(el('span', { style: '--c:' + s.color, text: toDisplay(s.expr) + (s.y.some((v) => v !== null) ? '' : tr(' (no values)', '（値なし）')) }));
+    for (const q of P.items || []) {
+      const s = q.kind === 'fx' ? P.series[P.exprs.indexOf(q.f)] : null;
+      if (q.kind === 'fx' && !s) continue;
+      const noVals = s ? !s.y.some((v) => v !== null) : q.kind === 'implicit' ? !!q.empty : !(q.xs || []).some((x) => x !== null);
+      P.legend.append(el('span', { style: '--c:' + q.color, text: toDisplay(q.kind === 'fx' ? shownExpr(s.expr) : q.text) + (noVals ? tr(' (no values)', '（値なし）') : '') }));
+    }
+    // (while a slider moves, only the lines: the tools are worked out again when it stops)
+    if (quick) { if (kept && P.series[kept[0]] && (kept[1] < 0 || P.series[kept[1]])) { P.area.f = P.series[kept[0]]; P.area.g = kept[1] < 0 ? null : P.series[kept[1]]; } draw(); return; }
+    curveToolsChanged();
     // (1.12.0, C4: the points of the statistics with their regression line)
     if (P.points && P.points.length) P.legend.append(el('span', { class: 'legend-points', style: '--c:' + COLORS[0], text: tr('Points: ', '点：') + P.points.length }));
     if (kept && P.series[kept[0]] && (kept[1] < 0 || P.series[kept[1]])) {
@@ -4788,12 +5843,26 @@
   }
   function autoView() {
     if (!P.dataX) return { x0: -10, x1: 10, y0: -10, y1: 10 };
+    // (1.15.0) only parametric, polar and implicit lines: their box, with the same scale on both axes
+    const cb = P.curves && P.curves.length ? curvesBox() : null;
+    if (cb && !P.series.length) {
+      const imp = P.curves.every((C) => C.kind === 'implicit');
+      let x0 = cb.x0, x1 = cb.x1, y0 = cb.y0, y1 = cb.y1;
+      if (!imp) { const mx = (x1 - x0) * 0.08 || 1, my = (y1 - y0) * 0.08 || 1; x0 -= mx; x1 += mx; y0 -= my; y1 += my; }
+      const W = P.canvas && P.canvas.clientWidth, H = P.canvas && P.canvas.clientHeight;
+      if (W > 0 && H > 0) {
+        const ux = (x1 - x0) / W, uy = (y1 - y0) / H;
+        if (ux > uy) { const c = (y0 + y1) / 2, h = ux * H / 2; y0 = c - h; y1 = c + h; } else { const c = (x0 + x1) / 2, h = uy * W / 2; x0 = c - h; x1 = c + h; }
+      }
+      return { x0, x1, y0, y1 };
+    }
     const ys = [];
     // tangent lines do not count (a long straight line would flatten the function)
     let scaled = P.series.filter((s) => !(P.guides && P.guides.has(s.expr)));
     if (!scaled.length) scaled = P.series;
     for (const s of scaled) for (const y of s.y) if (y !== null && isFinite(y)) ys.push(y);
     for (const p of P.points || []) ys.push(p.y);
+    if (cb) { ys.push(cb.y0, cb.y1); }
     ys.sort((a, b) => a - b);
     let y0 = -1, y1 = 1;
     if (ys.length) {
@@ -4861,7 +5930,7 @@
     const css = getComputedStyle(document.documentElement);
     g.fillStyle = css.getPropertyValue('--plot-bg').trim() || '#fff';
     g.fillRect(0, 0, W, H);
-    if (!P.series.length && !(P.points && P.points.length)) return;
+    if (!P.series.length && !(P.points && P.points.length) && !(P.curves && P.curves.length)) return;
     if (!P.view) P.view = autoView();
     const v = P.view;
     const sx = (x) => (x - v.x0) / (v.x1 - v.x0) * W;
@@ -4919,6 +5988,10 @@
       }
       g.stroke();
     }
+    drawCurves(g, sx, sy);
+    if (P.slVals) c.dataset.sliders = Object.keys(P.slVals).map((l) => l + '=' + P.slVals[l]).join(','); else delete c.dataset.sliders; // (the values drawn, for the tests)
+    if (P.slDraws) c.dataset.slDraws = String(P.slDraws);
+    if (P.curves && P.curves.length) c.dataset.lines = P.curves.map((C) => C.kind + ':' + (C.kind === 'implicit' ? (C.segs || []).length / 4 : (C.xs || []).filter((x) => x !== null).length)).join(','); else delete c.dataset.lines; // (what is drawn, for the tests)
     // points (the rows of a matrix) and marks (crossing points, extrema, the point of a tangent)
     g.font = '12px system-ui, sans-serif'; g.textBaseline = 'bottom'; g.textAlign = 'left';
     for (const p of P.points || []) {
@@ -4992,9 +6065,20 @@
     refetchIfNeeded();
   }
   const refetchIfNeeded = debounce(() => {
+    P.viewByUser = true; // (moved or zoomed: a slider that stops keeps this view)
     if (!P.view || !P.dataX) return;
     const v = P.view, d = P.dataX;
     const w = v.x1 - v.x0;
+    // (1.15.0) an implicit line is worked out again for a view beyond its grid, or zoomed in on
+    const imp = (P.curves || []).filter((C) => C.kind === 'implicit');
+    if (imp.length) {
+      const g0 = imp[0].win;
+      if (!g0 || v.x0 < g0.x0 - w * 0.01 || v.x1 > g0.x1 + w * 0.01 || v.y0 < g0.y0 - (v.y1 - v.y0) * 0.01 || v.y1 > g0.y1 + (v.y1 - v.y0) * 0.01 || w < (g0.x1 - g0.x0) / 1.6) {
+        const h = v.y1 - v.y0;
+        computeImplicit(imp, { x0: v.x0 - w * 0.1, x1: v.x1 + w * 0.1, y0: v.y0 - h * 0.1, y1: v.y1 + h * 0.1 }).then(() => draw());
+      }
+    }
+    if (!P.exprs.length) return;
     if (v.x0 < d[0] - w * 0.05 || v.x1 > d[1] + w * 0.05 || w < (d[1] - d[0]) / 6) {
       const pad = w * 0.5;
       compute(engineNum(v.x0 - pad), engineNum(v.x1 + pad), true);
@@ -5145,9 +6229,12 @@
         if (!best || dist < best.dist) best = { dist, x: s.x[i], y, color: s.color, expr: s.expr };
       }
     }
+    const bc = P.curves && P.curves.length ? nearestCurvePoint(d) : null;
+    if (bc && (!best || bc.dist < best.dist)) best = bc;
     if (!best || best.dist > 0.02) { P.mark = null; P.tip.style.display = 'none'; draw(); return; }
     P.mark = best;
-    P.tip.textContent = best.expr + tr(':  x = ', '：x = ') + Number(best.x.toPrecision(10)) + ', y = ' + Number(best.y.toPrecision(10));
+    const tv = best.t !== undefined ? (best.kind === 'polar' ? 'θ = ' : 't = ') + decSign(String(Number(best.t.toPrecision(6)))) + ', ' : '';
+    P.tip.textContent = toDisplay(shownExpr(best.expr)) + tr(':  ', '：') + tv + 'x = ' + decSign(String(Number(best.x.toPrecision(10)))) + ', y = ' + decSign(String(Number(best.y.toPrecision(10))));
     P.tip.style.display = 'block';
     draw();
   }
@@ -5187,7 +6274,7 @@
   function calcFunctionsChanged() {
     const U = P.calcUI, keep = U.f.value;
     U.f.textContent = '';
-    P.series.forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(toDisplay(s1.expr), 34) })));
+    P.series.forEach((s1, i) => U.f.append(el('option', { value: String(i), text: clip(toDisplay(shownExpr(s1.expr)), 34) })));
     U.f.value = keep !== '' && P.series[Number(keep)] ? keep : '0';
   }
   // the tangent of f at x = a: its line as an expression (to draw), the point marked, the equation shown
@@ -5904,8 +6991,8 @@
     const U = P.areaUI, keep1 = U.f1.value, keep2 = U.f2.value;
     U.f1.textContent = ''; U.f2.textContent = '';
     P.series.forEach((s, i) => {
-      U.f1.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) }));
-      U.f2.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) }));
+      U.f1.append(el('option', { value: String(i), text: clip(toDisplay(shownExpr(s.expr)), 30) }));
+      U.f2.append(el('option', { value: String(i), text: clip(toDisplay(shownExpr(s.expr)), 30) }));
     });
     U.f2.prepend(el('option', { value: 'axis', text: tr('the x axis', 'x 軸') }));
     // the same choice as before while the number of functions stays the same; else the first
@@ -7073,6 +8160,23 @@
 
 
   // --------------------------------------------- partial derivatives (3D graph)
+  // The partial derivative of a surface by x or y, as short as it can be had (1.15.0): the engine's, and for a surface of
+  // r = √(x² + y²) only (a doughnut, a sphere written with r, a cone), f′(r) · x / r by the chain rule, worked out with r
+  // as the variable, whichever is shorter. (The engine's for the doughnut was twice as long, and its long formula made
+  // the edges slow to find on a phone.)
+  async function partialOf(e, v) {
+    const d1 = await exactText(`diff(${e}, ${v})`);
+    const R = /(?:√|sqrt)\(\s*x\s*\^\s*2\s*\+\s*y\s*\^\s*2\s*\)/g;
+    if (!R.test(e)) return d1;
+    const e2 = e.replace(R, '(x)');
+    if (hasVar(e.replace(R, '(1)'), 'x') || hasVar(e.replace(R, '(1)'), 'y')) return d1;
+    const g = await exactText(`diff(${e2}, x)`);
+    if (!g || /diff\(|undefined/.test(g)) return d1;
+    const rr = 'x^2 + y^2';
+    const g2 = String(g).replace(/(?<![\p{L}_])x(?:²|\^2)(?![\p{N}])/gu, '\u0001').replace(/(?<![\p{L}_])x(?![\p{L}\p{N}_])/gu, '√(' + rr + ')').replace(/\u0001/g, '(' + rr + ')');
+    const d2 = g2 === '0' ? '0' : `(${g2}) × ${v} / √(${rr})`;
+    return !d1 || /diff\(|undefined/.test(d1) || toDisplay(d2).length < toDisplay(d1).length ? d2 : d1;
+  }
   function buildPartial3d() {
     const f = el('select', { 'aria-label': tr('Surface', '曲面') });
     const add = async (v) => {
@@ -7080,7 +8184,7 @@
       if (!s1) return;
       // worked out first: the 3D graph puts numbers for y into the expression before diff() could
       // see y, so diff(f, y) would be drawn wrong
-      const d = await exactText(`diff(${s1.expr}, ${v})`);
+      const d = await partialOf(s1.label || s1.expr, v);
       if (!d || /diff\(|undefined/.test(d)) { toast(tr('Could not find the partial derivative', '偏導関数を求められませんでした'), 2200); return; }
       const expr = normalizeExpr(d);
       const lines = Q3.ta.value.split('\n').map((t) => t.trim()).filter(Boolean);
@@ -7397,7 +8501,7 @@
     const k1 = U.s1.value, k2 = U.s2.value, D = Q3.data;
     U.s1.textContent = ''; U.s2.textContent = '';
     const series = D ? D.series : [];
-    series.forEach((s, i) => { U.s1.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) })); U.s2.append(el('option', { value: String(i), text: clip(toDisplay(s.expr), 30) })); });
+    series.forEach((s, i) => { U.s1.append(el('option', { value: String(i), text: clip(toDisplay(s.label || s.expr), 30) })); U.s2.append(el('option', { value: String(i), text: clip(toDisplay(s.label || s.expr), 30) })); });
     U.s2.prepend(el('option', { value: 'plane', text: tr('the plane z = 0', '平面 z = 0') }));
     const same = U.count === series.length;
     U.count = series.length;
@@ -8499,6 +9603,12 @@
     { t: tr('Heart', 'ハート'), e: ['√(1 − (abs(x) − 1)^2)', '−3 √(1 − √(abs(x) / 2))'], r: ['-2', '2'], eq: true,
       f: [(x) => Math.sqrt(1 - (Math.abs(x) - 1) ** 2), (x) => -3 * Math.sqrt(1 - Math.sqrt(Math.abs(x) / 2))] },
     { t: tr('Circle', '円'), e: ['√(4 − x^2)', '−√(4 − x^2)'], r: ['-2.6', '2.6'], eq: true, f: [(x) => Math.sqrt(4 - x * x), (x) => -Math.sqrt(4 - x * x)] },
+    // (1.15.0) parametric, polar and implicit lines (k: the kind; tr: the range of t or θ; p and F for the small picture)
+    { t: tr('Circle (implicit)', '円（陰関数）'), e: ['x^2 + y^2 = 4'], r: ['-3', '3'], eq: true, k: 'implicit', F: (x, y) => x * x + y * y - 4 },
+    { t: tr('Cardioid', 'カージオイド'), e: ['r = 1 + cos(θ)'], tr: ['0', '2π'], eq: true, k: 'polar', p: (q) => 1 + Math.cos(q) },
+    { t: tr('Rose', 'バラ曲線'), e: ['r = cos(3θ)'], tr: ['0', 'π'], eq: true, k: 'polar', p: (q) => Math.cos(3 * q) },
+    { t: tr('Lissajous', 'リサジュー曲線'), e: ['x = sin(3t), y = sin(2t)'], tr: ['0', '2π'], eq: true, k: 'param', p: (q) => [Math.sin(3 * q), Math.sin(2 * q)] },
+    { t: tr('Folium of Descartes', '正葉線（デカルト）'), e: ['x^3 + y^3 = 3x y'], r: ['-3', '3'], eq: true, k: 'implicit', F: (x, y) => x * x * x + y * y * y - 3 * x * y },
     { t: tr('Bell curve', 'ベルカーブ'), e: ['e^(−x^2 / 2) / √(2π)'], r: ['-4', '4'], f: [(x) => Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI)] },
     { t: tr('Damped wave', '減衰する波'), e: ['e^(−x / 5) sin(3x@)', 'e^(−x / 5)', '−e^(−x / 5)'], r: ['0', '15'],
       f: [(x) => Math.exp(-x / 5) * Math.sin(3 * x), (x) => Math.exp(-x / 5), (x) => -Math.exp(-x / 5)] },
@@ -8547,7 +9657,34 @@
     g.clearRect(0, 0, THUMB_W, THUMB_H);
     return g;
   }
+  // (1.15.0) the small picture of a parametric, polar or implicit sample
+  function thumbCurve(c, d) {
+    const g = thumbContext(c), W = THUMB_W, H = THUMB_H, pad = 5;
+    let pts = [];
+    if (d.k === 'implicit') {
+      const n = 60, x0 = Number(d.r[0]), x1 = Number(d.r[1]), hy = (x1 - x0) * H / W / 2, xs = gridAxis(x0, x1, n), ys = gridAxis(-hy, hy, Math.round(n * H / W));
+      const z = []; for (const y of ys) for (const x of xs) z.push(d.F(x, y));
+      const s = marchCells(z, xs, ys, xs.length, ys.length, null);
+      const X = (x) => (x - x0) / (x1 - x0) * W, Y = (y) => H / 2 - y / (2 * hy) * H;
+      g.strokeStyle = 'rgba(128,128,128,0.5)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, Y(0)); g.lineTo(W, Y(0)); g.moveTo(X(0), 0); g.lineTo(X(0), H); g.stroke();
+      g.strokeStyle = COLORS[0]; g.lineWidth = 1.7; g.lineCap = 'round'; g.beginPath();
+      for (let q = 0; q < s.length; q += 4) { g.moveTo(X(s[q]), Y(s[q + 1])); g.lineTo(X(s[q + 2]), Y(s[q + 3])); }
+      g.stroke();
+      return;
+    }
+    const a = 0, b = d.tr[1] === 'π' ? Math.PI : 2 * Math.PI, N = 240;
+    for (let i = 0; i <= N; i++) { const q = a + (b - a) * i / N; if (d.k === 'param') pts.push(d.p(q)); else { const r = d.p(q); pts.push([r * Math.cos(q), r * Math.sin(q)]); } }
+    let lx = Infinity, hx = -Infinity, ly = Infinity, hy = -Infinity;
+    for (const [x, y] of pts) { lx = Math.min(lx, x); hx = Math.max(hx, x); ly = Math.min(ly, y); hy = Math.max(hy, y); }
+    const s = Math.min((W - 2 * pad) / ((hx - lx) || 1), (H - 2 * pad) / ((hy - ly) || 1));
+    const X = (x) => W / 2 + (x - (lx + hx) / 2) * s, Y = (y) => H / 2 - (y - (ly + hy) / 2) * s;
+    g.strokeStyle = 'rgba(128,128,128,0.5)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, Y(0)); g.lineTo(W, Y(0)); g.moveTo(X(0), 0); g.lineTo(X(0), H); g.stroke();
+    g.strokeStyle = COLORS[0]; g.lineWidth = 1.7; g.lineJoin = 'round'; g.beginPath();
+    pts.forEach(([x, y], i) => { if (i) g.lineTo(X(x), Y(y)); else g.moveTo(X(x), Y(y)); });
+    g.stroke();
+  }
   function thumb2d(c, d) {
+    if (d.k) return thumbCurve(c, d);
     const g = thumbContext(c), W = THUMB_W, H = THUMB_H, N = d.n || 140;
     const x0 = Number(d.r[0]), x1 = Number(d.r[1]);
     const ys = d.f.map((f) => { const a = []; for (let i = 0; i <= N; i++) { const v = f(x0 + (x1 - x0) * i / N); a.push(isFinite(v) ? v : NaN); } return a; });
@@ -8660,7 +9797,7 @@
     return wrap;
   }
   function drawSample2d(d) {
-    openPlotWith(sampleExprs(d), { range: d.r, equal: !!d.eq, sample: true });
+    openPlotWith(sampleExprs(d), { range: d.r, trange: d.tr, equal: !!d.eq, sample: true });
   }
   function drawSample3d(d) {
     Q3.ta.value = toDisplay(sampleExprs(d).join('\n'));
@@ -8823,6 +9960,9 @@
     const eq = store.get('qalc.plot3d.equal', 'auto');
     Q3.equal = eq && typeof eq === 'object' && typeof eq.on === 'boolean' && typeof eq.exprs === 'string' ? eq : 'auto';
     const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
+    // (1.15.0) the sliders of the letters (QCalc Pro in 3D)
+    Q3.sl = sliderBox({ key: SL_KEY3D, redraw: sliderRedraw3d, locked: () => PRO_GATES.sliders3d === 'pro' && !hasPro(), anyStep: false,
+      gif: (l) => sliderGif(l, { key: SL_KEY3D, redraw: sliderRedraw3d, busy: (b) => (b === undefined ? !!Q3.gifBusy : (Q3.gifBusy = b)), capture: (t) => frame3d(t), canvas: () => Q3.canvas, words: () => legendWords(Q3.legend), box: () => Q3.sl }) });
     const legend = el('div', { class: 'legend' });
     const msg = el('div', { class: 'form-hint' });
     // 1.12.0 (B2): for a solid of revolution, how far it is turned (0–360°; 180° is the solid cut in
@@ -8894,6 +10034,8 @@
       Q3.res = Number(res.value) || 41;
       // (1.12.0, BG21: the formulas of a solid made elsewhere, as read the first time; others drawn later end it)
       if (Q3.solid && Q3.solid.fresh) { Q3.solid.fresh = false; Q3.solid.exprs = Q3.exprs.join('\n'); }
+      // (1.15.0: the formulas of a solid of revolution made in 2D, as read the first time: drawn again, it stays)
+      if (Q3.revPending) { Q3.revPending = false; Q3.revExprs = Q3.exprs.join('\n'); }
     };
     Q3.read = read;
     go.addEventListener('click', () => {
@@ -8904,7 +10046,11 @@
         // surfaces are drawn again with another grid or range; other surfaces drop them (1.8.3)
         if (plotExprs(ta.value, 4).join('\n') !== Q3.exprs.join('\n')) { Q3.equalOnce = false; if (Q3.samples) Q3.samples.clearChoice(); }
       }
-      if (!Q3.keep) { Q3.revInfo = null; Q3.grow = null; Q3.rimSpec = null; Q3.from2d = null; showBack3d(); if (Q3.angleRow) Q3.angleRow.hidden = true; } // (another graph: not the solid of revolution)
+      // (1.15.0) the solid of revolution made in 2D (its volume above the graph, "← Back to 2D", the angle and "Cut in
+      // half") stays only while its own formulas are drawn again (another grid or range); other formulas end it,
+      // also a sample or a partial derivative, which keep the points and the 1:1 of the graph (Q3.keep) but are another
+      // graph. (Until 1.15.0 Q3.keep kept the solid too: its volume stayed above a donut.)
+      if (!Q3.revPending && plotExprs(ta.value, 4).join('\n') !== Q3.revExprs) endRev3d();
       Q3.keep = false;
       store.set('qalc.plot3d.exprs', ta.value); store.set('qalc.plot3d.res', res.value);
       store.set('qalc.plot3d.xmin', xmin.value); store.set('qalc.plot3d.xmax', xmax.value);
@@ -8929,7 +10075,7 @@
           el('div', { class: 'plot-range' }, el('span', { text: tr('x:', 'x：') }), xmin, el('span', { text: tr(' to ', ' 〜 ').trim() }), xmax),
           el('div', { class: 'plot-range' }, el('span', { text: tr('y:', 'y：') }), ymin, el('span', { text: tr(' to ', ' 〜 ').trim() }), ymax)),
         el('div', { class: 'plot-range' }, el('span', { text: tr('Grid:', '細かさ：') }), res, go)),
-      tryRow, backRow, wrap, angleRow, levelRow, seeRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
+      tryRow, backRow, wrap, Q3.sl.box, angleRow, levelRow, seeRow, legend, msg, el('div', { class: 'tools' }, Q3.partialEl, buildVolume3d()), Q3.samples = buildSamples(SAMPLES3D, true, drawSample3d),
       el('div', { class: 'form-hint', text: tr('Drag to rotate, pinch to zoom, tap to show the coordinates. The range of z is chosen automatically (extremely large values are not drawn).', 'ドラッグで回転、2本指で拡大・縮小、タップで座標を表示します。z の範囲は自動で決まります（極端に大きな値の部分は描きません）。') }));
   }
   // the z range: all values, or without the extreme ones when a few values are huge (poles)
@@ -8965,6 +10111,8 @@
     if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
     // (a solid made in the 2D graph, BG20: its volume large above the graph, and "← Back to 2D")
     Q3.from2d = opts.back || null;
+    // (1.15.0: its formulas are noted when they are read; other formulas drawn later end it)
+    Q3.revExprs = null; Q3.revPending = !!(opts.grow || opts.back);
     showBack3d();
     // (1.12.0, BG21: the values of a solid made elsewhere for "Volume and surface", which opens closed)
     Q3.solid = opts.solid ? Object.assign({ fresh: true }, opts.solid) : null;
@@ -8983,6 +10131,13 @@
       Q3.keep = true;
       Q3.go.click();
     }
+  }
+  // the end of a solid of revolution made in 2D, when other formulas are drawn (1.15.0)
+  function endRev3d() {
+    Q3.revInfo = null; Q3.grow = null; Q3.growNext = null; Q3.rimSpec = null; Q3.from2d = null; Q3.revExprs = null; Q3.revPending = false;
+    showBack3d();
+    if (Q3.angleRow) Q3.angleRow.hidden = true;
+    if (Q3.canvas) delete Q3.canvas.dataset.grow;
   }
   // the row above the 3D graph for a solid made in the 2D graph (BG20)
   // (D6: a solid of "Shapes": its values as the tool shows them, a line each, and "← Back to the shape")
@@ -9351,7 +10506,32 @@
     const [x0, x1] = pad(lo('x'), hi('x')), [y0, y1] = pad(lo('y'), hi('y')), [z0, z1] = pad(lo('z'), hi('z'));
     return { xs: [x0, x1], ys: [y0, y1], nx: 2, ny: 2, series: [], z0, z1 };
   }
-  async function compute3d() {
+  // 3D: one drawing at a time, as in 2D (sliderRedraw2d); while a slider moves, the range of z only grows and the edges
+  // are not worked out again
+  function sliderRedraw3d(final) {
+    Q3.slFinal = Q3.slFinal || final;
+    if (Q3.slJob) { Q3.slAgain = true; return Q3.slJob; }
+    Q3.slJob = (async () => {
+      try {
+        do {
+          Q3.slAgain = false;
+          const fin = Q3.slFinal; Q3.slFinal = false;
+          Q3.slDraws = (Q3.slDraws || 0) + 1;
+          await compute3d(!fin);
+        } while (Q3.slAgain);
+      } finally { Q3.slJob = null; }
+    })();
+    return Q3.slJob;
+  }
+  // a frame of the 3D graph for a moving picture (the solid drawn with WebGL 2 into the canvas), with the value under it
+  function frame3d(text) {
+    const c = Q3.canvas, glLayer = GL3D.cv && !GL3D.cv.hidden;
+    if (glLayer) { Q3.composite = true; try { draw3d(); } finally { Q3.composite = false; } }
+    const out = frameWithBand(c, text);
+    if (glLayer) requestDraw3d();
+    return out;
+  }
+  async function compute3d(quick) {
     // (D6) a solid or a tank of "Shapes": drawn from its own triangles, no engine
     if (Q3.model) {
       const Md = Q3.model;
@@ -9381,14 +10561,21 @@
       draw3d();
       return;
     }
-    if (!Q3.exprs.length) { Q3.msg.textContent = tr('Enter a function (for example sin(x) cos(y)), or tap a sample', '関数を入れてください（例：sin(x) cos(y)）。下のサンプルもタップで描けます'); return; }
-    Q3.msg.textContent = tr('Calculating…', '計算中…');
+    if (!Q3.exprs.length) { Q3.sl.set([]); Q3.msg.textContent = tr('Enter a function (for example sin(x) cos(y)), or tap a sample', '関数を入れてください（例：sin(x) cos(y)）。下のサンプルもタップで描けます'); return; }
+    // (1.15.0) the letters with a slider: their values put in for the engine (the formulas as written stay in Q3.exprs)
+    const slLetters = sliderLetters(Q3.exprs, true);
+    const slVals = slLetters.length ? sliderValues(SL_KEY3D, slLetters) : null;
+    const exprs = Q3.exprs.map((e) => withSliders(e, slVals));
+    Q3.sl.set(slLetters);
+    Q3.canvas.dataset.sliders = slVals ? Object.keys(slVals).map((l) => l + '=' + slVals[l]).join(',') : '';
+    if (Q3.slDraws) Q3.canvas.dataset.slDraws = String(Q3.slDraws);
+    if (!quick) Q3.msg.textContent = tr('Calculating…', '計算中…');
     // (the 1:1 chosen for other functions is dropped: these are automatic until 1:1 is pressed, 1.9.3)
     if (Q3.equal && Q3.equal.exprs !== undefined && Q3.equal.exprs !== Q3.exprs.join('\n')) { Q3.equal = 'auto'; store.set('qalc.plot3d.equal', 'auto'); }
     clearVolume();
     const seq = Q3.seq = (Q3.seq || 0) + 1;
     const [x0, x1, y0, y1] = Q3.range;
-    const r = await Bridge.send('plot3d', { exprs: Q3.exprs, xmin: x0 || '-5', xmax: x1 || '5', ymin: y0 || '-5', ymax: y1 || '5', nx: Q3.res, ny: Q3.res, opts: engineOpts(), timeout: 15000 });
+    const r = await Bridge.send('plot3d', { exprs, xmin: x0 || '-5', xmax: x1 || '5', ymin: y0 || '-5', ymax: y1 || '5', nx: Q3.res, ny: Q3.res, opts: engineOpts(), timeout: 15000 });
     if (!r.ok && /^invalid [xy] range$/.test(r.error || '') && !Q3.swapped) {
       const k = r.error === 'invalid x range' ? 0 : 2;
       const a = await numValue(Q3.range[k] || '-5'), b = await numValue(Q3.range[k + 1] || '5');
@@ -9415,10 +10602,13 @@
         if (z[k] === z[k]) vals.push(z[k]);
       }
       const color = COLORS[i % COLORS.length];
-      return { expr: Q3.exprs[i], z, complete: s.complete !== false, color, rgb: hexRgb(color) };
+      return { expr: exprs[i], label: Q3.exprs[i], z, complete: s.complete !== false, color, rgb: hexRgb(color) };
     });
     for (const p of Q3.points || []) vals.push(p.z);
-    const [z0, z1] = zRange3d(vals);
+    let [z0, z1] = zRange3d(vals);
+    // (while a slider moves the range of z only grows: the picture does not jump; when it stops, the range fits again)
+    if (quick && Q3.slZ) { z0 = Math.min(z0, Q3.slZ[0]); z1 = Math.max(z1, Q3.slZ[1]); }
+    Q3.slZ = quick ? [z0, z1] : null;
     const data = { xs: r.x, ys: r.y, nx, ny, series, z0, z1, seq };
     // (for the tests, 1.12.0 BG09: the most grid points at which two surfaces have the same value)
     { const tz = (z1 - z0) * 1e-9 || 1e-12; let most = 0; for (let a = 0; a < series.length; a++) for (let b = a + 1; b < series.length; b++) { let n = 0; const za = series[a].z, zb = series[b].z; for (let k = 0; k < za.length; k++) if (za[k] === za[k] && Math.abs(za[k] - zb[k]) <= tz) n++; most = Math.max(most, n); } data.same = most; }
@@ -9427,7 +10617,7 @@
     const note = err ? localMessage(err.text)
       : series.some((s) => !s.complete) ? tr('The calculation took too long: only part of the graph was calculated', '時間がかかりすぎたため、途中までしか計算できませんでした')
       : !vals.length ? tr('There are no real values (check the expression and the ranges of x and y)', '実数の値がありません（式と、x と y の範囲を確認してください）')
-      : plotNote(null, Q3.exprs, series.filter((q) => !q.z.some((v) => v === v)).map((q) => q.expr), 4, true);
+      : plotNote(null, Q3.exprs, series.filter((q) => !q.z.some((v) => v === v)).map((q) => q.label), 4, true);
     let shown = false;
     const show = () => {
       if (shown || seq !== Q3.seq) return;
@@ -9437,10 +10627,11 @@
       clearMark3d();
       // (1.12.0, BG09: the solid turns into being once its edges are known; until then "Calculating…")
       if (Q3.growNext && rimsReady()) { const ax = Q3.growNext; Q3.growNext = null; startGrow(ax); }
-      Q3.msg.textContent = Q3.growNext ? tr('Calculating…', '計算中…') : note;
+      // (1.15.0: a surface that rises out of the box toward its edge is drawn when the engine has found where it leaves it)
+      Q3.msg.textContent = Q3.growNext ? tr('Calculating…', '計算中…') : !data.edgesExact && series.some((q) => q.rising) ? [note, tr('Working out where a surface leaves the box…', '曲面が箱から出る所を計算中…')].filter(Boolean).join(' ') : note;
       legend3d(data, vals.length > 0);
-      if (Q3.volUI && !Q3.volUI.box.hidden) volumeSurfacesChanged();
-      if (Q3.partUI && !Q3.partUI.box.hidden) partialSurfacesChanged();
+      if (!quick && Q3.volUI && !Q3.volUI.box.hidden) volumeSurfacesChanged();
+      if (!quick && Q3.partUI && !Q3.partUI.box.hidden) partialSurfacesChanged();
       store.set('qalc.plot3d.ok', false);
       draw3d();
       store.set('qalc.plot3d.ok', true);
@@ -9468,19 +10659,27 @@
       if ((lo < data.z0 || hi > data.z1) && hi - lo <= 1.5 * (data.z1 - data.z0)) { data.z0 = lo; data.z1 = hi; }
     };
     settle();
+    if (quick) { if (Q3.slZ) { data.z0 = Math.min(data.z0, Q3.slZ[0]); data.z1 = Math.max(data.z1, Q3.slZ[1]); Q3.slZ = [data.z0, data.z1]; } show(); return; }
     const tolZ = (data.z1 - data.z0) * 4e-5, leaves = series.some((q) => q.z.some((v) => v === v && (v < data.z0 - tolZ || v > data.z1 + tolZ)));
     if (!leaves) show();
     const late = setTimeout(show, 2500);
-    if (!refined) refined = await refineRims(series, r.x, r.y, seq, guessed);
+    const tR = Date.now();
+    if (!refined && !devFlag('norefine')) refined = await refineRims(series, r.x, r.y, seq, guessed);
     if (seq !== Q3.seq) { clearTimeout(late); return; }
     if (!spec) settle();
     // where the surfaces leave the box at its top or bottom (1.9.5)
-    const clipped = await refineClips(series, r.x, r.y, data.z0, data.z1, seq);
+    const tC = Date.now();
+    const clipped = devFlag('norefine') ? false : await refineClips(series, r.x, r.y, data.z0, data.z1, seq);
+    // (1.15.0: from now on the edges are as exact as they can be: the cells there are drawn, cut where the engine found
+    // the edges, or on the straight line where it could not)
+    if (seq === Q3.seq && !devFlag('norefine')) data.edgesExact = true;
+    // (for the tests: how long the edges took, and the surfaces that rise toward an edge)
+    if (Q3.canvas) Q3.canvas.dataset.edges = JSON.stringify({ rims: !!refined, rimMs: tC - tR, clips: clipped, clipMs: Date.now() - tC, clipJobs: Q3.clipJobs, shownBefore: shown, n: series.length, rising: series.map((q) => !!q.rising) });
     clearTimeout(late);
     if (seq !== Q3.seq) return;
     if (shown) {
       if (Q3.growNext && rimsReady()) { const ax = Q3.growNext; Q3.growNext = null; Q3.msg.textContent = note; startGrow(ax); }
-      if (refined || clipped) { legend3d(data, vals.length > 0); draw3d(); }
+      if (refined || clipped || data.edgesExact) { if (!Q3.growNext) Q3.msg.textContent = note; legend3d(data, vals.length > 0); draw3d(); }
     } else show();
     if (Q3.pending) { const run = Q3.pending; Q3.pending = null; run(); }
   }
@@ -9492,7 +10691,7 @@
     Q3.legend.textContent = '';
     if (data.oneSolid && any) {
       const step = niceStep(data.z1 - data.z0, 4);
-      Q3.legend.append(el('span', { class: 'zbar' }, series.map((s) => toDisplay(s.expr)).join(tr(', ', '、')) + tr('   z: ', '　z：') + fmt(data.z0, step / 10), el('i'), fmt(data.z1, step / 10)));
+      Q3.legend.append(el('span', { class: 'zbar' }, series.map((s) => toDisplay(s.label || s.expr)).join(tr(', ', '、')) + tr('   z: ', '　z：') + fmt(data.z0, step / 10), el('i'), fmt(data.z1, step / 10)));
       return;
     }
     const done = new Set();
@@ -9501,9 +10700,9 @@
       const g = (data.groups || []).find((m) => m.includes(i));
       if (g) {
         g.forEach((m) => done.add(m));
-        Q3.legend.append(el('span', { style: '--c:' + s.color, text: g.map((m) => toDisplay(series[m].expr)).join(tr(', ', '、')) }));
+        Q3.legend.append(el('span', { style: '--c:' + s.color, text: g.map((m) => toDisplay(series[m].label || series[m].expr)).join(tr(', ', '、')) }));
       } else {
-        Q3.legend.append(el('span', { style: '--c:' + s.color, text: toDisplay(s.expr) + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
+        Q3.legend.append(el('span', { style: '--c:' + s.color, text: toDisplay(s.label || s.expr) + (s.z.some((v) => v === v) ? '' : tr(' (no values)', '（値なし）')) }));
       }
     });
   }
@@ -9579,6 +10778,7 @@
         if (j + 1 < ny) add('v' + k, k, k + nx);
       }
     });
+    Q3.clipJobs = jobs.length;
     if (!jobs.length || jobs.length > 2400) return false;
     const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect', base: 10, notation: 'auto', max_decimals: -1 });
     const B = batchOf(series.map((s) => s.expr));
@@ -9708,7 +10908,7 @@
   // the guesses are kept in jb.g for refineRims.
   function guessRims(series, xs, ys) {
     const nx = xs.length, ny = ys.length, jobs = rimJobs(series, nx, ny);
-    series.forEach((s) => { s.rim = {}; });
+    series.forEach((s) => { s.rim = {}; s.rising = false; });
     for (const jb of jobs) {
       const z = series[jb.si].z, k2 = 2 * jb.p - jb.q;
       const sameLine = jb.key[0] === 'v' || ((k2 / nx) | 0) === ((jb.p / nx) | 0);
@@ -9717,7 +10917,13 @@
       if (zb === zb) {
         const a2 = za * za, b2 = zb * zb;
         // (z² falls toward the edge: where the straight line reaches 0, as a share of the step)
-        if (b2 > a2) { f = Math.min(1, a2 / (b2 - a2)); zr = (za < 0 ? -1 : 1) * Math.sqrt(Math.max(0, a2 - (b2 - a2) * f)); } else { f = 0; zr = za; }
+        if (b2 > a2) { f = Math.min(1, a2 / (b2 - a2)); zr = (za < 0 ? -1 : 1) * Math.sqrt(Math.max(0, a2 - (b2 - a2) * f)); }
+        // (1.15.0) rising toward the edge, steeply (a derivative near where it has no finite value, as at the rim of a
+        // sphere or a doughnut): it leaves the box before the edge, somewhere not known yet. Beyond the box (no point
+        // is drawn there), the cell waits for the engine's points (refineRims, refineClips) instead of being drawn as
+        // a spike to the grid point; a gentle rise keeps the guess at the grid point.
+        else if (Math.abs(za) > 2 * Math.abs(zb) + 1e-12 * Math.abs(za)) { f = 0; zr = za < 0 ? -Infinity : Infinity; series[jb.si].rising = true; }
+        else { f = 0; zr = za; }
       }
       const xa = xs[jb.p % nx], ya = ys[(jb.p / nx) | 0], xb = xs[jb.q % nx], yb = ys[(jb.q / nx) | 0];
       jb.g = f;
@@ -10322,8 +11528,8 @@
     const rgbCss = (c) => (c ? 'rgb(' + c.map((x) => Math.round(x)).join(',') + ')' : '');
     (D && D.series || []).forEach((sr, i) => {
       if (i > 7) return;
-      const key = 's:' + (sr.expr || i);
-      if (!list.some((x) => x.key === key)) list.push({ key, k: i, label: toDisplay(sr.expr || ''), color: rgbCss(sr.drawRgb || sr.rgb) });
+      const key = 's:' + (sr.label || sr.expr || i); // (the formula as written: the same with another value of a slider)
+      if (!list.some((x) => x.key === key)) list.push({ key, k: i, label: toDisplay(sr.label || sr.expr || ''), color: rgbCss(sr.drawRgb || sr.rgb) });
       groups[i].see = chosen(key, true) ? a : 0;
       groups[i].cast = !groups[i].see;  // (what is see-through casts no shadow)
     });
@@ -10346,7 +11552,8 @@
   const GL3D = { state: 0 };  // 0 not tried yet, 1 ready, -1 no WebGL 2 here
   // the test switch "3D with WebGL" (test builds; on unless turned off)
   function gl3dWanted() { try { return localStorage.getItem('qalc.dev.gl3d') !== 'false'; } catch (e) { return true; } }
-  // a switch of the test builds ("true"): ms3d, the time of each 3D drawing in a corner; pf200, the example of 200 rows on the test page
+  // a switch of the test builds ("true"): ms3d, the time of each 3D drawing in a corner; pf200, the example of 200 rows on the test page;
+  // norefine (1.15.0), the edges of the 3D graph not worked out by the engine (what a slow phone shows at first)
   function devFlag(k) { try { return localStorage.getItem('qalc.dev.' + k) === 'true'; } catch (e) { return false; } }
   function gl3dReady() { if (GL3D.state === 0) gl3dInit(); return GL3D.state === 1; }
   // (the GPU's layer away, when the 3D view shows something drawn on the 2D canvas)
@@ -10672,17 +11879,40 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const nx = D.nx, ny = D.ny, n = nx * ny, st = s.proj.st, w = s.proj.pw, xs = D.xs, ys = D.ys, rim = s.rim || {};
     const N = s.nrm && s.nrm.length === 3 * n ? s.nrm : (s.nrm = new Float32Array(3 * n));
     const slope = parabolaSlope;
-    const fromRim = (key, along) => { const e = rim[key]; return e && e.z === e.z ? [along(e), Wz(e.z)] : null; };
+    const fromRim = (key, along) => { const e = rim[key]; return e && isFinite(e.z) ? [along(e), Wz(e.z)] : null; };
+    // (1.15.0: a neighbour beyond the range of z has a real height all the same: the slope toward it, so that a surface
+    // that rises steeply out of the box, as a derivative near where it has no finite value, is lit as steep there)
+    const H = (kk, c) => (st[kk] === 1 ? [c, w[kk]] : st[kk] === 2 ? [c, Wz(s.z[kk])] : null);
     for (let k = 0; k < n; k++) {
       if (st[k] !== 1) continue;
       const i = k % nx, j = (k / nx) | 0, u0 = U(xs[i]), v0 = V(ys[j]);
-      const L = i > 0 ? (st[k - 1] === 1 ? [U(xs[i - 1]), w[k - 1]] : fromRim('h' + (k - 1), (e) => U(e.x))) : null;
-      const R = i < nx - 1 ? (st[k + 1] === 1 ? [U(xs[i + 1]), w[k + 1]] : fromRim('h' + k, (e) => U(e.x))) : null;
-      const Dn = j > 0 ? (st[k - nx] === 1 ? [V(ys[j - 1]), w[k - nx]] : fromRim('v' + (k - nx), (e) => V(e.y))) : null;
-      const Up = j < ny - 1 ? (st[k + nx] === 1 ? [V(ys[j + 1]), w[k + nx]] : fromRim('v' + k, (e) => V(e.y))) : null;
+      const L = i > 0 ? (H(k - 1, U(xs[i - 1])) || fromRim('h' + (k - 1), (e) => U(e.x))) : null;
+      const R = i < nx - 1 ? (H(k + 1, U(xs[i + 1])) || fromRim('h' + k, (e) => U(e.x))) : null;
+      const Dn = j > 0 ? (H(k - nx, V(ys[j - 1])) || fromRim('v' + (k - nx), (e) => V(e.y))) : null;
+      const Up = j < ny - 1 ? (H(k + nx, V(ys[j + 1])) || fromRim('v' + k, (e) => V(e.y))) : null;
       const du = slope(u0, w[k], L, R), dv = slope(v0, w[k], Dn, Up);
       const l = Math.sqrt(du * du + dv * dv + 1);
       N[3 * k] = -du / l; N[3 * k + 1] = -dv / l; N[3 * k + 2] = 1 / l;
+    }
+    // (1.15.0) where a surface rises out of the box, the normals of the grid points next to it, which light the steep
+    // part up to the cut, are evened out with their neighbours along it: one by one they lit it in stripes
+    if (st.some((t) => t === 2)) {
+      const M = new Float32Array(N);
+      for (let k = 0; k < n; k++) {
+        if (st[k] !== 1) continue;
+        const i = k % nx, j = (k / nx) | 0;
+        let edge = false;
+        for (const q of [i > 0 ? k - 1 : -1, i < nx - 1 ? k + 1 : -1, j > 0 ? k - nx : -1, j < ny - 1 ? k + nx : -1]) if (q >= 0 && st[q] === 2) edge = true;
+        if (!edge) continue;
+        let a = 0, b = 0, c = 0;
+        for (let jj = Math.max(0, j - 1); jj <= Math.min(ny - 1, j + 1); jj++) for (let ii = Math.max(0, i - 1); ii <= Math.min(nx - 1, i + 1); ii++) {
+          const q = jj * nx + ii;
+          if (st[q] === 1) { a += N[3 * q]; b += N[3 * q + 1]; c += N[3 * q + 2]; }
+        }
+        const l = Math.hypot(a, b, c) || 1;
+        M[3 * k] = a / l; M[3 * k + 1] = b / l; M[3 * k + 2] = c / l;
+      }
+      N.set(M);
     }
     return N;
   }
@@ -12320,6 +13550,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       if (!VS.disk) return true; const cx = Math.max(xs[i], Math.min(xs[i + 1], 0)), cy = Math.max(ys[j], Math.min(ys[j + 1], 0)); return cx * cx + cy * cy <= VS.R * VS.R; };
     // a cell partly inside and partly outside the disk (its nearest point inside, its farthest corner outside)
     const crossing = (i, j) => VS.disk && inRegion(i, j) && Math.max(Math.hypot(xs[i], ys[j]), Math.hypot(xs[i + 1], ys[j]), Math.hypot(xs[i], ys[j + 1]), Math.hypot(xs[i + 1], ys[j + 1])) > VS.R;
+    D.waiting = false;
     for (const s of D.series) {
       const n = D.nx * D.ny;
       const chosen = !!vf && (s === vf || s === vg);
@@ -12392,18 +13623,46 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         }
       }
       // where the surface leaves the box (refineClips, 1.9.5): on its top or bottom, with the normal of
-      // the grid point inside
+      // the grid point inside. (1.15.0) Where the engine has not found it (yet: the surface is shown before, after
+      // 2.5 seconds; or it could not, on a slow phone), on the straight line between the grid point inside and the one
+      // beyond, so that a cell that leaves the box is cut along its top or bottom all the same, instead of being left
+      // out: left out, the cells near where a surface rises out of the box (a derivative near where it has no finite
+      // value) stood alone as spikes. The engine's points replace these when they come.
       s.clipP = null;
-      if (s.clip) {
-        s.clipP = {};
-        for (const key in s.clip) {
-          const e = s.clip[key], w = e.z > (D.z0 + D.z1) / 2 ? EZ : -EZ;
-          const ka = +key.slice(1), kb = key[0] === 'h' ? ka + 1 : ka + D.nx, kin = st[ka] === 1 ? ka : kb;
-          if (st[kin] !== 1) continue;
+      {
+        const zMid = (D.z0 + D.z1) / 2;
+        const clipAt = (key, kin, e) => {
+          const w = e.z > zMid ? EZ : -EZ;
           proj(U(e.x), V(e.y), w);
+          if (!s.clipP) s.clipP = {};
           s.clipP[key] = { x: T[0], y: T[1], d: T[2], u: U(e.x), v: V(e.y), w, n: [s.cnrm[3 * kin], s.cnrm[3 * kin + 1], s.cnrm[3 * kin + 2]], gi: giOf(U(e.x)), gj: gjOf(V(e.y)) };
+        };
+        const lineAt = (key, ka, kb) => {
+          if (!((st[ka] === 1 && st[kb] === 2) || (st[ka] === 2 && st[kb] === 1))) return;
+          const kin = st[ka] === 1 ? ka : kb, kout = kin === ka ? kb : ka;
+          const e = s.clip && s.clip[key];
+          if (e) { clipAt(key, kin, e); return; }
+          const zi = s.z[kin], zo = s.z[kout], zt = zo > zMid ? D.z1 : D.z0;
+          const f = Math.max(0, Math.min(1, (zt - zi) / ((zo - zi) || 1)));
+          const xa = xs[kin % D.nx], ya = ys[(kin / D.nx) | 0], xb = xs[kout % D.nx], yb = ys[(kout / D.nx) | 0];
+          clipAt(key, kin, { x: xa + (xb - xa) * f, y: ya + (yb - ya) * f, z: zt });
+        };
+        for (let j = 0; j < D.ny; j++) for (let i = 0; i < D.nx; i++) {
+          const k = j * D.nx + i;
+          if (i + 1 < D.nx) lineAt('h' + k, k, k + 1);
+          if (j + 1 < D.ny) lineAt('v' + k, k, k + D.nx);
+        }
+        // (the points the engine found from a grid point to the edge of the real values, beyond the box)
+        if (s.clip) for (const key in s.clip) {
+          if (s.clipP && s.clipP[key]) continue;
+          const ka = +key.slice(1), kb = key[0] === 'h' ? ka + 1 : ka + D.nx, kin = st[ka] === 1 ? ka : kb;
+          if (st[kin] === 1) clipAt(key, kin, s.clip[key]);
         }
       }
+      // (1.15.0) a surface that rises out of the box toward an edge where it has no value (a derivative at the rim of a
+      // doughnut or a sphere): not drawn before the engine has found where it leaves the box (the first seconds;
+      // "Calculating…" says so): drawn from the grid alone it stood in spikes along its edges
+      if (!D.edgesExact && s.rising) { D.waiting = true; continue; }
       for (let j = 0; j < D.ny - 1; j++) {
         const dv = V(ys[j + 1]) - V(ys[j]);
         for (let i = 0; i < D.nx - 1; i++) {
@@ -12411,6 +13670,16 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           const real = (st[a] === 1) + (st[b] === 1) + (st[c2] === 1) + (st[d] === 1);
           const out = st[a] === 2 || st[b] === 2 || st[c2] === 2 || st[d] === 2;
           if (!real || (out && !s.clipP)) continue;
+          // (1.15.0) before the engine has found where the surfaces end or leave the box (the first 2.5 seconds), a cell
+          // that leaves the box or rises steeply (more than a quarter of the box's height across it) is left out: near
+          // where a surface rises out of the box (a derivative near where it has no finite value) such cells, drawn from
+          // the grid alone, stood as spikes
+          if (!D.edgesExact) {
+            if (out) continue;
+            let lo = Infinity, hi = -Infinity;
+            for (const q of [a, b, c2, d]) if (st[q] === 1) { if (pw[q] < lo) lo = pw[q]; if (pw[q] > hi) hi = pw[q]; }
+            if (hi - lo > EZ * 0.5) continue;
+          }
           const du = U(xs[i + 1]) - U(xs[i]);
           let pts, nu, nv, nw;
           if (real < 4 && (s.rimP || s.clipP || s.angP)) {
@@ -12644,6 +13913,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (vc && cells.some((q) => !q.vol && !q.inR)) fadeTo = cssRgb(css.getPropertyValue('--plot-bg').trim()) || (dark ? [24, 26, 32] : [255, 255, 255]);
     // the cells as triangles with the normal, the color (by height for one surface) and the grid
     // coordinates at their corners, laid over the pixels with a depth buffer (1.9.2)
+    if (c) c.dataset.waiting = D.waiting ? 'edges' : ''; // (a surface waiting for its edges, for the tests)
     const tb = triBuf(Q3);
     const colorAt = (s, w) => (single ? viridis((w / EZ + 1) / 2) : s.drawRgb || s.rgb);
     // (a corner, and for rimModel its G, its side of the edge and the level part of its normal)
@@ -12896,7 +14166,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (!best) { clearMark3d(); draw3d(); return; }
     Q3.mark = best;
     const i = best.k % D.nx, j = Math.floor(best.k / D.nx), num = (v) => Number(v.toPrecision(10));
-    Q3.tip.textContent = best.s.expr + tr(':  x = ', '：x = ') + num(D.xs[i]) + ', y = ' + num(D.ys[j]) + ', z = ' + num(best.s.z[best.k]);
+    Q3.tip.textContent = toDisplay(best.s.label || best.s.expr) + tr(':  x = ', '：x = ') + num(D.xs[i]) + ', y = ' + num(D.ys[j]) + ', z = ' + num(best.s.z[best.k]);
     Q3.tip.style.display = 'block';
     draw3d();
   }
@@ -15068,6 +16338,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const sec = histEl.querySelector('.h-pinned');
     if (sec) sec.hidden = !Array.from(sec.querySelectorAll('.h-item')).some((x) => !x.hidden);
     hsCount.textContent = words.length ? trf('{0} found', '{0} 件', n) : '';
+    refreshSteps(); // (1.15.0: no next steps while searching)
   }
   const selBar = el('div', { class: 'hselbar', hidden: true, role: 'region', 'aria-label': tr('Selected lines', '選んだ行') });
   const selInfo = el('div', { class: 'hs-info', 'aria-live': 'polite' });
@@ -15084,6 +16355,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     document.body.classList.add('hselect');
     selBar.hidden = false;
     for (const it of histEl.querySelectorAll('.h-item')) it.classList.remove('sel');
+    refreshSteps();
     updateSelected();
   }
   function closeHistSelect() {
@@ -15093,6 +16365,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     document.body.classList.remove('hselect');
     selBar.hidden = true;
     for (const it of histEl.querySelectorAll('.h-item.sel')) { it.classList.remove('sel'); it.removeAttribute('aria-selected'); }
+    refreshSteps();
     focusExpr();
     return true;
   }
@@ -15208,6 +16481,11 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     history.length ? ['✏️', tr('Edit a line of the history in place (touch its expression)', '履歴の行をその場で直せます（式の行をタップ）'), () => startHistEdit(history[history.length - 1])] : null,
     ['🎚️', tr('The precision at the top: press its chip to choose 10 to 100 digits or another', '有効桁数を上のボタンですぐ変えられます（10〜100 桁ほか）'), () => precisionSheet()],
     ['📥', tr('Calculation notes: open a .txt or .csv file, or share text to QCalc', '計算メモに .txt・.csv のファイルや、ほかのアプリから共有した文字を読み込めます'), () => { const p = openNotesTool(); const d = p.body.querySelector('.note-more'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ block: 'center' }), 350); } }],
+    ['📐', tr('Taylor series: taylor on the Calculus page, with a graph to compare', '「解析」のページの taylor でテイラー展開（グラフで比べられます）'), () => openForm('taylor', { f: 'sin(x)' })],
+    ['🌀', tr('2D graph: parametric, polar and implicit curves', '2D グラフで媒介変数・極座標・陰関数の曲線'), () => openPlotWith(['r = 1 + cos(θ)'])],
+    ['🎛️', tr('Sliders: letters such as a in a sin(b x) get sliders in the graph', 'グラフの式の a・b などの文字をスライダーで動かせます'), () => openPlotWith(['a sin(b x)'])],
+    ['⏭️', tr('Next steps under the newest answer: details, graph, factor and more', '答えの下に次の操作の候補（詳しく・グラフ・因数分解など）'), () => { setExpr('x^2 - 1'); commit(); }],
+    ['🔍', tr('Details: the other forms of an answer on one sheet', '「詳しく見る」で答えのいろいろな形を 1 画面に'), () => { setExpr('x^3 - x'); Promise.resolve(commit()).then(() => { const h = history[history.length - 1]; if (h) openDetails(h); }); }],
     ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
     try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
   ].filter(Boolean);
@@ -17175,7 +18453,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       ['preview', tr('Show the result while typing', '入力中に結果を表示'), 'bool'],
       ['auto_ans', tr('An operator in an empty field continues from ans', '空欄で演算子を押すと ans から続ける'), 'bool'],
       ['haptics', tr('Vibrate when a key is pressed', 'キーを押したときに振動'), 'bool'],
-      ['memkeys', tr('Show the memory keys (M+ M− MR MC)', 'メモリーキー（M+ M− MR MC）を出す'), 'bool']
+      ['memkeys', tr('Show the memory keys (M+ M− MR MC)', 'メモリーキー（M+ M− MR MC）を出す'), 'bool'],
+      ['next_steps', tr('Suggest the next steps under the newest answer', '次の操作の候補を出す'), 'bool',
+        tr('Buttons under the newest answer for what is often done next: details, graph, factor, derivative and the like', 'いちばん新しい答えの下に、次によく使う操作（詳しく・グラフ・因数分解・微分など）のボタンを出します')]
     ]],
     // 1.12.0: updating the rates was an item of the menu until 1.11.0
     [tr('Exchange rates', '為替レート'), [
@@ -17320,6 +18600,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     exprChanged();
     if (CF.id) formChanged();
     if (mathShown !== S.math_view || groupShown !== S.grouping) { mathShown = S.math_view; groupShown = S.grouping; renderHistory(false); }
+    refreshSteps(); // (1.15.0: "Suggest the next steps")
   }
   let mathShown = S.math_view, groupShown = S.grouping; // (1.15.0: the groups of digits are made when shown, groupText)
   function updateChips() {
@@ -17605,7 +18886,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     profile: ['🏺', tr('Solid from a profile', '輪郭から回転体'), tr('Volume, capacity, weight and surface from positions and diameters (turned parts, pottery)', '位置と直径から体積・容量・重さ・表面積（旋盤の部品・陶芸）')],
     stl: ['🖨', tr('STL files for 3D printers', 'STL ファイル（3D プリンター）'), tr('Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres', '回転体・断面の立体・輪郭から回転体を、閉じた立体の面（mm）として保存')],
     notes: ['📝', tr('More calculation notes, saved as files', '計算メモの 2 つ目以降と書き出し'), tr('Several memos of calculations, and saving them as text or CSV (the first memo is free)', '計算メモをいくつも作り、テキストや CSV で保存（1 つ目のメモは無料）')],
-    share_pro: ['🎞', tr('GIF and pictures without the mark', 'GIF と透かしなしの共有'), tr('The 3D graph as a moving picture (GIF), and pictures of the graphs at full resolution without "QCalc" in the corner', '3D グラフを動く画像（GIF）で、グラフの画像を高い解像度・透かしなしで共有')]
+    share_pro: ['🎞', tr('GIF and pictures without the mark', 'GIF と透かしなしの共有'), tr('The 3D graph and a slider moving as a moving picture (GIF), and pictures of the graphs at full resolution without "QCalc" in the corner', '3D グラフやスライダーの動きを動く画像（GIF）で、グラフの画像を高い解像度・透かしなしで共有')],
+    sliders3d: ['🎛', tr('Sliders in 3D', '3D のスライダー'), tr('Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)', '3D グラフで a sin(x) cos(y) の a などをスライダーで動かす（2D は無料）')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {

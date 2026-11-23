@@ -28,6 +28,11 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 ## new-1-15 | Novedades de 1.15.0
 - **Resultados más claros**: los resultados tienen 15 cifras significativas, en grupos de tres. Los teléfonos que aún tenían los valores anteriores (10 cifras, sin grupos) cambian una vez con esta versión. [[Precision (significant digits)]] y [[Digit grouping (1,000)]] en [[Settings]] lo devuelven ([Leer el resultado](#results)).
 - **Leer en las notas de cálculo**: [[More ▾]] → [[Open a file]] en las notas lee un archivo .txt o .csv, y también se recibe el texto o el archivo que otra app envía con «Compartir» → QCalc ([Notas de cálculo](#notes)).
+- **Serie de Taylor**: taylor en la página [[Calculus]] da el polinomio de Taylor en torno a un centro hasta un grado (coeficientes exactos; también se puede escribir `taylor(sin(x), x, 0, 5)`). [[Compare in a graph]] lo dibuja con la función ([Derivadas, integrales, límites, sumas](#calculus)).
+- **Tres nuevos tipos de gráfica 2D**: curvas paramétricas (`x = cos(t), y = sin(2t)`), polares (`r = 1 + cos(θ)`) e implícitas (`x^2 + y^2 = 1`), reconocidas por su forma o elegidas arriba; su longitud y área (polar), y nuevos ejemplos: cardioide, rosa, curva de Lissajous y más ([Gráfica 2D](#graph-2d)).
+- **Deslizadores**: las letras como a y b de las fórmulas de una gráfica tienen deslizadores, y al moverlos la gráfica cambia al instante; ▶ los mantiene en movimiento. Gratis en 2D; los deslizadores en 3D y el GIF de un deslizador son de QCalc Pro ([Gráfica 2D](#graph-2d)).
+- **Siguientes pasos**: botones bajo la última respuesta para detalles, gráfica, factorizar, derivada y más; el cálculo se convierte en una nueva línea ([Leer respuestas](#results)).
+- **Detalles**: el valor exacto, el decimal, la fracción, las bases y los factores primos de una respuesta, o la gráfica, los ceros, la derivada, la integral y la serie de Taylor de una expresión, en una hoja ([Leer respuestas](#results)).
 - **Dos líneas**: un resultado exacto con su aproximación muestra «= exacto» en una línea y «≈ aproximación» en la siguiente. Las fracciones y raíces se dibujan con la misma letra que los demás resultados.
 - **Números**: sin ceros finales en las aproximaciones; los números muy grandes o pequeños como 1.606 938 × 10⁶⁰ (se copian como 1.606938E60); los enteros y decimales exactos se muestran completos hasta 60 cifras, aunque superen la precisión (por ejemplo 30!).
 - **Resultados largos y unidades**: un resultado que no cabe en una línea se hace algo más pequeño y solo entonces se parte entre grupos de tres cifras; un resultado con unidades queda en una línea (m/s).
@@ -74,7 +79,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :svg: main | Las partes de la pantalla principal (los números son los de la tabla)
 | N.º | Nombre | Para qué sirve |
 | 1 | ☰ (menú) | Abre las herramientas, las gráficas, las listas, los ajustes y más |
-| 2 | Botones | Cambian con un toque la unidad de ángulo (RAD, DEG), exacto o aproximado, decimal o hexadecimal |
+| 2 | Botones | Cambian con un toque la unidad de ángulo (RAD, DEG), exacto o aproximado, decimal o hexadecimal; «15 cif.» permite elegir la precisión |
 | 3 | 🕘 (menú del historial) | Buscar en el historial, elegir líneas, exportar, borrar |
 | 4 | Historial | Las expresiones y sus resultados, la más nueva abajo |
 | 5 | Campo de entrada | Donde escribes; debajo, el resultado mientras escribes (la vista previa) |
@@ -107,6 +112,9 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :step: Para ver una línea del historial con más cifras, elige 30, 50, 100 u Otro… en su ⋯ → [[Work it out with other digits]]. El resultado aparece en una hoja con [[Put the expression into the input field]], [[Keep it in the history]] y [[Copy the result]]. La precisión de los ajustes y la línea no cambian.
 :pro: Hasta 1000 cifras es gratis. Más de 1000, hasta 200000 cifras, es una función de QCalc Pro.
 :tip: Un resultado muy largo se desplaza en el historial para leer todas las cifras; al copiarlo se copian todas.
+:step: Bajo la última respuesta aparecen botones para lo que suele hacerse después (6 como mucho): para una expresión en x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]; para un número [[Details]], [[As a fraction]], [[Scientific]] (un entero: [[Prime factors]], [[In hex]]); con unidad [[Convert…]]; para una matriz [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. El cálculo de un botón se convierte en una nueva línea del historial.
+:step: [[Details]] (o ⋯ → [[Details]]) muestra juntas las otras formas de la respuesta: para un número el valor exacto, el decimal, la fracción, la fracción mixta y la notación científica (un entero en bases 2, 8 y 16 y sus factores primos; con unidad, otras unidades); para una expresión en x una gráfica pequeña, los ceros, la derivada, la integral, la serie de Taylor y la forma factorizada. Toca una fila para [[Put the expression in the field]], [[Keep it in the history]] o [[Copy result]].
+:tip: Sin estos botones: [[Settings]] → [[Suggest the next steps under the newest answer]] desactivado.
 
 ## undo | Borrar y deshacer
 :what: ⌫ borra un carácter, AC vacía el campo de entrada. Justo después, [[Undo]] sobre el campo lo recupera.
@@ -405,6 +413,12 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Escribe las funciones, una por línea, y el intervalo de x.
 :step: Pulsa [[Draw]].
 :step: Toca la gráfica para ver las coordenadas de un punto.
+:step: El tipo de cada línea se reconoce por su forma; arriba también se elige: [[!y = f(x)]], [[Parametric]], [[Polar (graph)]], [[Implicit]] (otro tipo que el del cuadro pone un ejemplo de él).
+:example: paramétrica `x = cos(t), y = sin(2t)` (con un rango de t), polar `r = 1 + cos(θ)` (un rango de θ, de 0 a 2π al principio; t sirve en lugar de θ), implícita `x^2 + y^2 = 1`, `x^3 + y^3 = 3x y` (una ecuación con x e y)
+:tip: Las curvas paramétricas y polares toman los ángulos en radianes. Una curva implícita une los puntos de una cuadrícula donde lado izquierdo − lado derecho cambia de signo, con una cuadrícula más fina donde es intrincada; al mover o ampliar se dibuja de nuevo para la nueva vista.
+:tip: Una curva paramétrica o polar tiene botones para su [[Length]] y su [[Area]] (polar, o una paramétrica cerrada). El área polar es ½∫r² dθ en el rango de θ (lo recorrido dos veces cuenta dos veces); una paramétrica que se corta a sí misma no tiene área. [[Calculus ▾]], [[Area and length ▾]] y [[Make a solid ▾]] son para líneas y = f(x).
+:tip: Las letras como a y b de las fórmulas tienen deslizadores bajo la gráfica (6 como mucho). Al mover uno, la gráfica se dibuja de nuevo al instante. Toca el valor para escribir un número; ▶ lo mueve de un lado a otro. ⋯ cambia su rango (al principio de −5 a 5) y su paso (0,1).
+:tip: Tienen deslizador las letras sueltas de a a z y de A a Z, salvo e, i, t, x, y y E, I, X, Y. Sus valores solo se usan en esta gráfica: en la calculadora a sigue siendo el área, c la velocidad de la luz y g el gramo. Una variable con un valor propio (como k := 2) conserva ese valor, y una letra usada como función, como f en f(x), no tiene deslizador. Separa la letra de x: `a x` o `a*x` (`ax` es un solo nombre).
 :tip: [[Calculus ▾]] da la derivada, tangentes, ceros y extremos.
 :tip: Toca un ejemplo bajo la gráfica para dibujarlo.
 
@@ -449,6 +463,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :tip: El 3D se dibuja con la GPU del dispositivo (WebGL 2), con luz y sombras casi reales; los colores según la altura se mantienen. Si va lento, se dibuja algo más tosco mientras gira y nítido de nuevo al levantar el dedo.
 :tip: En un dispositivo sin WebGL 2, el 3D se dibuja como antes; entonces [[See-through]] no se puede pulsar y aparece «[[Not available on this device]]».
 :tip: [[Partial derivatives ▾]] dibuja ∂f/∂x y ∂f/∂y.
+:tip: En la gráfica 3D las letras de las fórmulas también tienen deslizadores (QCalc Pro).
 
 ## volume-3d | Volumen y superficie (3D)
 :what: El volumen bajo una superficie de la gráfica 3D (o entre dos superficies) y el área de la superficie.
@@ -464,6 +479,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :what: Envía una imagen de una gráfica a otra app; una gráfica 3D también como GIF animado.
 :step: Pulsa ↗ ([[Share a picture of the graph]]) en la gráfica.
 :step: Elige la app en el menú de compartir.
+:step: [[Moving picture (GIF)]] en el ⋯ de un deslizador crea un GIF del deslizador moviéndose de su inicio a su final (2D y 3D).
 :pro: Las imágenes a tamaño completo sin la marca y los GIF animados son funciones de QCalc Pro. Sin Pro, la imagen mide como mucho 800 px de ancho, con un pequeño «QCalc».
 
 # forms | Formularios: cálculo, ecuaciones, matrices
@@ -476,6 +492,9 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :shot: form | El formulario de una integral
 :example: ∫ x² sin(x) dx de 0 a π → `= π² − 4`, debajo `≈ 5.869 604 401 089 36`
 :tip: Un límite puede ser [[Both sides]], [[From the right (+)]] o [[From the left (−)]].
+:step: taylor ([[Taylor series]]) en la página [[Calculus]] toma una función f(x), un centro a (0 al principio) y un grado n (5 al principio, hasta 20) y da el polinomio de Taylor desde el grado más bajo, como `x − x³/6 + x⁵/120 + O(x⁶)`. Los coeficientes quedan exactos cuando se puede (fracciones, √, π). También funciona escribir `taylor(sin(x), x, 0, 5)` en el campo de entrada.
+:step: [[Compare in a graph]] dibuja la función y su polinomio de Taylor juntos en la gráfica 2D.
+:tip: Si la función o una derivada no tiene un valor finito en el centro (√x o 1/x en x = 0), la app lo indica; un valor dado por un límite, como sin(x)/x en x = 0, funciona. Si tarda, prueba un grado menor.
 
 ## equations | Ecuaciones
 :what: Resuelve ecuaciones y sistemas de ecuaciones.
@@ -567,6 +586,7 @@ La integración numérica (áreas, longitudes y volúmenes del gráfico) es segu
 | Sólido a partir de un perfil | [Sólido a partir de un perfil](#profile) |
 | Sólidos y depósitos en 3D | [Sólidos y depósitos en 3D](#shapes-3d) |
 | Archivos STL | [Archivos STL](#stl) |
+| Deslizadores en 3D | [Gráfica 3D](#graph-3d) |
 | GIF e imágenes sin la marca | [Compartir](#share) |
 | Más notas de cálculo, guardadas como archivo | [Notas de cálculo](#notes) |
 :tip: [[How to use ›]] en una fila de las funciones Pro abre su sección de este manual.
