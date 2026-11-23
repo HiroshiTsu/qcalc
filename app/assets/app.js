@@ -17277,6 +17277,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     tblBtn,
     el('button', { class: 'btn primary', type: 'button', text: tr('Done', '終わる'), onclick: () => closeHistSelect() })));
   document.body.append(selBar);
+  // (1.16.0, fix/hist-selbar) the history ends above the bar however high it is (its buttons beside the numbers or under them,
+  // the text size): until then 150 px, and the last line stayed under a bar 220 px high
+  if (window.ResizeObserver) new ResizeObserver(() => { if (!selBar.hidden) histEl.style.setProperty('--selbar-h', selBar.offsetHeight + 'px'); }).observe(selBar);
   // first: a line to choose at once (1.16.0, feature/hist-excel: ⋯ "Select" of a line: its sum and average at once)
   let selLast = null;
   function openHistSelect(first) {

@@ -1426,17 +1426,20 @@ body.hselect .h-item.sel::after { content: "✓"; position: absolute; left: 15px
 body.hselect .h-item .h-more { visibility: hidden; }
 .hselbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(0,0,0,.12); padding: 8px 12px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: flex-end; }
 .hselbar[hidden] { display: none; }
-.hs-info { flex: 1 1 auto; min-width: 0; }
+/* (1.16.0, fix/hist-selbar: with "Copy as a table" the three buttons left the sum and the average 8 px in German, 88 px in
+   Japanese on a phone 360 px wide; the buttons go under the numbers when these would have less than 200 px) */
+.hselbar { flex-wrap: wrap; row-gap: 8px; }
+.hs-info { flex: 1 1 200px; min-width: 0; }
 .hs-n { font-size: 13px; color: var(--muted); }
 .hs-row { display: flex; gap: 8px; align-items: baseline; font-size: 15px; }
 .hs-row.sum { font-size: 20px; font-weight: 700; }
 .hs-l { color: var(--muted); font-size: 13px; font-weight: 400; flex: 0 0 auto; }
 .hs-v { min-width: 0; overflow-wrap: anywhere; }
-.hs-btns { display: flex; gap: 6px; flex: 0 0 auto; }
+.hs-btns { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; flex: 0 1 auto; margin-left: auto; }
 .hs-btns .btn { min-height: 48px; }
 /* while choosing lines: the keys and the field make room for the history (the bar covers its bottom) */
 body.hselect .keypad, body.hselect .entry { display: none; }
-body.hselect #history { padding-bottom: 150px; }
+body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 .sheet-input { display: block; width: 100%; box-sizing: border-box; height: 48px; font-size: 16px; padding: 0 12px; margin: 0 0 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
 /* memory keys */
 .memrow { display: grid; grid-template-columns: repeat(4, 1fr) 1.6fr; gap: 5px; margin-bottom: 5px; align-items: center; }
