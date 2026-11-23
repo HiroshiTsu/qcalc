@@ -29,6 +29,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - **Easier results**: results have 15 significant digits, in groups of three. Phones that still had the earlier defaults (10 digits, no groups) change once with this version. [[Precision (significant digits)]] and [[Digit grouping (1,000)]] in the [[Settings]] set them back ([Reading the answer](#results)).
 - **Reading into the calculation notes**: [[More ▾]] → [[Open a file]] in the notes reads a .txt or .csv file, and text or a file sent with “Share” → QCalc from another app is taken in too ([Calculation notes](#notes)).
 - **Taylor series**: taylor on the [[Calculus]] page gives the Taylor polynomial about a center up to a degree (exact coefficients; `taylor(sin(x), x, 0, 5)` can be typed too). [[Compare in a graph]] draws it with the function ([Derivatives, integrals, limits, sums](#calculus)).
+- **Three new kinds of 2D graph**: parametric (`x = cos(t), y = sin(2t)`), polar (`r = 1 + cos(θ)`) and implicit (`x^2 + y^2 = 1`) lines, told from their form or chosen at the top; their length and area (polar), and new samples: a cardioid, a rose, a Lissajous curve and more ([2D graph](#graph-2d)).
 - **Two lines**: an exact result with its approximation shows "= exact" on one line and "≈ approximation" on the next. Fractions and roots are drawn in the same letters as the other results.
 - **Numbers**: no ending zeros in approximations; very large or small numbers as 1.606 938 × 10⁶⁰ (copied as 1.606938E60); whole numbers and decimals that end are shown in full up to 60 digits, even beyond the precision (for example 30!).
 - **Long results and units**: a result too long for one line gets smaller letters, and only then breaks between groups of three digits; a result with units stays on one line (m/s).
@@ -406,6 +407,10 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Type the functions, one per line, and the range of x.
 :step: Press [[Draw]].
 :step: Tap the graph to see the coordinates of a point.
+:step: The kind of each line is told from its form; [[!y = f(x)]], [[Parametric]], [[Polar]] and [[Implicit]] at the top choose it too (another kind than the box has puts an example of it in the box).
+:example: parametric `x = cos(t), y = sin(2t)` (with a range of t), polar `r = 1 + cos(θ)` (a range of θ, 0 to 2π at first; t works in place of θ), implicit `x^2 + y^2 = 1`, `x^3 + y^3 = 3x y` (an equation with both x and y)
+:tip: Parametric and polar lines take angles in radians. An implicit line joins the points of a grid where left side − right side changes its sign, with a finer grid where the line is intricate; moving or zooming draws it again for the new view.
+:tip: A parametric or polar line has buttons for its [[Length]] and [[Area]] (polar, or a parametric line that closes). The polar area is ½∫r² dθ over the range of θ (what is gone round twice counts twice); a parametric line that crosses itself has no area. [[Calculus ▾]], [[Area and length ▾]] and [[Make a solid ▾]] are for lines y = f(x).
 :tip: [[Calculus ▾]] gives the derivative, tangents, zeros and extrema.
 :tip: Tap a sample below the graph to draw an example.
 

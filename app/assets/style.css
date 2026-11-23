@@ -1768,3 +1768,16 @@ body.hselect #history { padding-bottom: 150px; }
 .bar.tightest .chip { padding: 4px 3px; min-width: 32px; font-size: 11px; letter-spacing: -.2px; }
 .bar.tightest .icon-btn { width: 40px; }
 .chip { white-space: nowrap; }
+
+/* (1.15.0) the kinds of lines of the 2D graph, and the length and area of a parametric or polar line */
+/* (one row when the labels fit, each as wide as it needs and the rest shared; two rows rather than a label cut) */
+.seg.mini.plot-kinds { display: flex; width: 100%; margin: 0 0 8px; flex-wrap: wrap; }
+.seg.mini.plot-kinds button { flex: 1 1 auto; min-width: 48px; font-size: 13px; padding: 7px 6px; min-height: 40px; white-space: nowrap; }
+.curve-tools:empty { display: none; }
+.curve-tools { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 8px; }
+.ct-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13.5px; }
+.ct-name { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ct-name::before { content: ""; width: 14px; height: 3px; border-radius: 2px; background: var(--c); flex: 0 0 auto; }
+.ct-btn { min-height: 36px; padding: 4px 12px; }
+.ct-out { font-weight: 600; }
+.tools-note { margin-top: 2px; }
