@@ -790,8 +790,19 @@
   // (1.16.0, fix/hist-tap: the last value put in by a tap on an answer { f, before, at, after, end, h }, and the lines whose
   // answers are in the expression { h, text, color }: insertResult, tapMarks)
   let tapRef = null, tapMarks = [];
+  // (1.16.0, fix/hist-edit-scroll: the line of the history kept in sight for a moment { h, until, run }, revealHistLine; the
+  // lines just worked out again, marked for a moment: line → time it ends, flashLines)
+  let histReveal = null;
+  const histFlash = new Map();
   histEl.addEventListener('scroll', () => { histPinned = histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight < 24; }, { passive: true });
-  if (window.ResizeObserver) new ResizeObserver(() => { fitMatrices(histEl); if (histPinned) histEl.scrollTop = histEl.scrollHeight; }).observe(histEl);
+  if (window.ResizeObserver) new ResizeObserver(() => {
+    fitMatrices(histEl);
+    // (1.16.0, fix/hist-edit-scroll: a line being kept in sight is kept there, not the end of the history)
+    if (histReveal && performance.now() < histReveal.until) histReveal.run();
+    else { histReveal = null; if (histPinned) histEl.scrollTop = histEl.scrollHeight; }
+  }).observe(histEl);
+  // (a finger or a wheel on the history: it is the person's to scroll from then on)
+  for (const ev of ['pointerdown', 'wheel', 'touchstart']) histEl.addEventListener(ev, () => { histReveal = null; }, { passive: true });
 
   // ============================================================ keypad
   // a fraction: numerator and denominator as boxes to fill in (a selection becomes the numerator)
@@ -3589,6 +3600,7 @@
     const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: prettyExpr(toDisplay(h.expr)) }), res);
     item._h = h;
     if (tapMarks.length) paintTapMark(item);
+    if (histFlash.size && histFlash.get(h) > Date.now()) item.classList.add('h-flash');
     if (h.note) item.insertBefore(el('div', { class: 'h-note', text: h.note }), item.firstChild);
     for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
     // ⋯ opens the same menu as touching and holding the line (1.12.0: nothing only by a long touch);
@@ -4020,8 +4032,8 @@
     exprChanged();
     markEditing();
     refreshSteps();
-    const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === h);
-    if (it) it.scrollIntoView({ block: 'nearest' });
+    // (1.16.0: in sight once the band is up and the field has grown, fix/hist-edit-scroll)
+    revealHistLine(h);
     $('#status').textContent = tr('Editing a line of the history: = puts the new result in its place', '履歴の行を直しています。= で、その行を新しい式と答えに置き換えます');
     focusExpr();
   }
@@ -4097,6 +4109,43 @@
     markEditing();
     if (histFiltered()) filterHistory();
   }
+  // (1.16.0, fix/hist-edit-scroll) Keeps line h of the history in sight for a moment (1.5 s, or until a finger is put on the
+  // history): all of it inside the history's box with a margin (its top when it is taller than the box), and above the toast
+  // when the toast is over the history. Done at once, in the next two frames, after 250 ms, and whenever the history's size
+  // changes meanwhile (the band, the field and the keys come and go; the ResizeObserver above).
+  function revealHistLine(h, ms) {
+    const run = () => {
+      if (!histReveal || histReveal.h !== h) return;
+      const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === h);
+      if (!it || !histEl.clientHeight) return;
+      const r = it.getBoundingClientRect(), b = histEl.getBoundingClientRect(), m = 8;
+      let bottom = b.bottom;
+      const t = $('#toast');
+      if (t.classList.contains('show')) { const q = t.getBoundingClientRect(); if (q.top < b.bottom && q.bottom > b.top && q.top - b.top > r.height + 2 * m) bottom = q.top; }
+      let d = 0;
+      if (r.height > bottom - b.top - 2 * m) d = r.top - b.top - m;
+      else if (r.top < b.top + m) d = r.top - b.top - m;
+      else if (r.bottom > bottom - m) d = r.bottom - bottom + m;
+      if (Math.abs(d) >= 1) histEl.scrollTop += d;
+      histPinned = histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight < 24;
+    };
+    histReveal = { h, until: performance.now() + (ms || 1500), run };
+    run();
+    requestAnimationFrame(() => { run(); requestAnimationFrame(run); });
+    setTimeout(run, 250);
+  }
+  // the lines worked out again after an edit: marked for 3 s (h-flash in style.css), also when they are drawn again meanwhile
+  function flashLines(list) {
+    if (!list.length) return;
+    const until = Date.now() + 3000;
+    for (const x of list) histFlash.set(x, until);
+    for (const it of histEl.querySelectorAll('.h-item')) if (histFlash.has(it._h)) it.classList.add('h-flash');
+    setTimeout(() => {
+      const now = Date.now();
+      for (const [x, u] of histFlash) if (u <= now) histFlash.delete(x);
+      for (const it of histEl.querySelectorAll('.h-item.h-flash')) if (!histFlash.has(it._h)) it.classList.remove('h-flash');
+    }, 3050);
+  }
   // "=" while a line is edited: that line gets the new expression and result (s: the fields of recalcLine)
   async function applyHistEdit(h, s) {
     const i = history.indexOf(h);
@@ -4108,6 +4157,9 @@
     exprEl.value = ''; showPreview(null); autosize(); updateSuggest(false); saveDraft(); pruneTapMarks();
     saveHistory();
     redrawEntries(new Set([h]));
+    // (1.16.0, fix/hist-edit-scroll: as a cell after Enter, the line and its answer stay in sight while the band goes, the
+    // field gets small and the history grows; until then it could go to the end of the history, out of sight)
+    revealHistLine(h);
     // the lines below that went on from it
     const deps = editDependents(i, new Set(names));
     let done = 0;
@@ -4127,11 +4179,14 @@
         }
         saveHistory();
         redrawEntries(new Set(before.keys()));
+        flashLines(Array.from(before.keys()).filter((x) => x !== h && history.indexOf(x) >= 0));
+        revealHistLine(h);
       }
     }
     const lastIdx = history.length - 1, lastChanged = Array.from(before.keys()).some((x) => history.indexOf(x) === lastIdx);
     await engineAsHistory(lastChanged, touched);
     announce(h);
+    revealHistLine(h); // (again with the toast up: the line not under it)
     toast(done ? trf('Edited, and {0} lines below worked out again', '直しました（下の {0} 行も計算し直しました）', done) : tr('Edited', '直しました'), 7000,
       [tr('Undo', '元に戻す'), async () => {
         for (const [x, snap] of before) if (history.indexOf(x) >= 0) putEntry(x, snap);

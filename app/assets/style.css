@@ -1767,6 +1767,10 @@ body.hselect #history { padding-bottom: 150px; }
 .hedit .hedit-x { width: 48px; height: 48px; border: 0; border-radius: 24px; background: transparent; color: inherit; font-size: 18px; }
 .h-item.editing { box-shadow: inset 3px 0 0 var(--accent); background: var(--accent-soft); border-radius: 8px; }
 /* (1.16.0, fix/hist-tap) a line whose answer is in the expression: framed in its color, as a cell a formula refers to */
+/* (1.16.0, fix/hist-edit-scroll) a line worked out again after the line above it was edited: marked for 3 s, fading */
+.h-item.h-flash { animation: hflash 3s ease-out; border-radius: 8px; }
+@keyframes hflash { 0%, 60% { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); } 100% { background: transparent; box-shadow: inset 3px 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .h-item.h-flash { animation: none; background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); } }
 .h-item.h-ref { outline: 2px solid var(--ref, var(--accent)); outline-offset: -2px; border-radius: 8px; box-shadow: inset 5px 0 0 var(--ref, var(--accent)); }
 
 /* (1.15.0) the chip of the precision; on a narrow phone the title gives way first, then the chips get narrower */
