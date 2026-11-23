@@ -32,6 +32,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - **Long results and units**: a result too long for one line gets smaller letters, and only then breaks between groups of three digits; a result with units stays on one line (m/s).
 - **The history**: its expressions are written with ×, √, π and raised powers (2^10 → 2¹⁰).
 - **Editing a line of the history**: tap the expression of a line to edit it in place; = puts the new answer there, and the lines below can be worked out again ([Editing a line of the history](#edit-line)).
+- **The precision at hand**: the row at the top shows the precision (e.g. 15 dig); press it to choose 10, 15, 20, 30, 50, 100 or Other…, and the expression being typed is worked out again at once. ⋯ → [[Work it out with other digits]] in the history shows one line with other digits ([Reading the answer](#results)).
 - **3D close to real things**: 3D is drawn by the device's GPU (WebGL 2), with real light and shadows: the 3D graph, [[!⟳ 3D]] in the 2D graph, the solids and tanks of the shapes, and the solid from a profile ([3D graph](#graph-3d)).
 - **See-through**: [[See-through]] lets you see through surfaces and solids: their back and inner faces and where two surfaces meet. The slider sets how opaque, and moving it while the see-through is off turns it on; with two things or more, choose which are see-through (for example only a tank's [[Container]]).
 - **Turn it any way**: one finger turns 3D in any direction, over the top and under the bottom too. The cube button gives [[From the front]], [[From above]] or [[From the side]] at once.
@@ -101,7 +102,8 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - `30!` → `= 265,252,859,812,191,058,636,308,480,000,000` (whole numbers in full up to 60 digits)
 - `2^200` → `≈ 1.606 938 044 258 99 × 10⁶⁰` (a very large number)
 :step: The chip at the top switches between [[!EXACT]], approximate and automatic.
-:step: The number of digits is [[Precision (significant digits)]] in [[Settings]] (15 by default). Results are shown with their digits in groups of three ([[Digit grouping (1,000)]] turns it off).
+:step: The precision (15 digits by default) can be changed with the chip “15 dig” in the row at the top. It offers 10, 15, 20, 30, 50, 100 and Other… (type a number); the answer of the expression being typed is worked out again at once, and the answers in the history stay as they are. [[Precision (significant digits)]] in [[Settings]] changes it too. Results are shown with their digits in groups of three ([[Digit grouping (1,000)]] turns it off).
+:step: To see one line of the history with more digits, choose 30, 50, 100 or Other… in its ⋯ → [[Work it out with other digits]]. The answer shows in a sheet with [[Put the expression into the input field]], [[Keep it in the history]] and [[Copy the result]]. The precision of the settings and the line stay as they are.
 :pro: Up to 1000 digits are free. More than 1000, up to 200000 digits, is a QCalc Pro feature.
 :tip: A very long answer scrolls in the history so that every digit can be read; copying it copies every digit.
 

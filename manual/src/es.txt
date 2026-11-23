@@ -32,6 +32,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 - **Resultados largos y unidades**: un resultado que no cabe en una línea se hace algo más pequeño y solo entonces se parte entre grupos de tres cifras; un resultado con unidades queda en una línea (m/s).
 - **El historial**: sus expresiones se escriben con ×, √, π y exponentes elevados (2^10 → 2¹⁰).
 - **Editar una línea del historial**: toca la expresión de una línea para editarla en su lugar; = pone allí el nuevo resultado, y las líneas de abajo se pueden calcular de nuevo ([Editar una línea del historial](#edit-line)).
+- **La precisión a mano**: la fila de arriba muestra la precisión (p. ej. 15 cif.); al pulsarla se elige 10, 15, 20, 30, 50, 100 u Otro…, y la expresión que se escribe se calcula de nuevo al instante. ⋯ → [[Work it out with other digits]] en el historial muestra una línea con otras cifras ([Leer el resultado](#results)).
 - **3D casi real**: el 3D se dibuja con la GPU del dispositivo (WebGL 2), con luz y sombras reales: la gráfica 3D, [[!⟳ 3D]] en la gráfica 2D, los sólidos y depósitos de las figuras y el sólido a partir de un perfil ([Gráfica 3D](#graph-3d)).
 - **Transparente**: con [[See-through]] se ve a través de superficies y sólidos: sus caras de atrás e interiores y dónde se cortan dos superficies. El control deslizante ajusta la opacidad y, si lo mueve con [[See-through]] desactivado, lo activa; con dos cosas o más, elija cuáles son transparentes (por ejemplo, solo el [[Container]] de un depósito).
 - **Gire en cualquier dirección**: un dedo gira el 3D en cualquier dirección, también por encima y por debajo. El botón del cubo elige al instante [[From the front]], [[From above]] o [[From the side]].
@@ -101,7 +102,8 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 - `30!` → `= 265,252,859,812,191,058,636,308,480,000,000` (los enteros completos hasta 60 cifras)
 - `2^200` → `≈ 1.606 938 044 258 99 × 10⁶⁰` (un número muy grande)
 :step: El botón de arriba cambia entre exacto, aproximado y automático.
-:step: El número de cifras es [[Precision (significant digits)]] en [[Settings]] (15 por defecto). Los resultados se muestran con las cifras en grupos de tres ([[Digit grouping (1,000)]] lo desactiva).
+:step: La precisión (15 cifras por defecto) se cambia con el botón «15 cif.» de la fila de arriba. Ofrece 10, 15, 20, 30, 50, 100 y Otro… (escribir un número); el resultado de la expresión que se escribe se calcula de nuevo al instante y los resultados del historial no cambian. [[Precision (significant digits)]] en [[Settings]] también la cambia. Los resultados se muestran con las cifras en grupos de tres ([[Digit grouping (1,000)]] lo desactiva).
+:step: Para ver una línea del historial con más cifras, elige 30, 50, 100 u Otro… en su ⋯ → [[Work it out with other digits]]. El resultado aparece en una hoja con [[Put the expression into the input field]], [[Keep it in the history]] y [[Copy the result]]. La precisión de los ajustes y la línea no cambian.
 :pro: Hasta 1000 cifras es gratis. Más de 1000, hasta 200000 cifras, es una función de QCalc Pro.
 :tip: Un resultado muy largo se desplaza en el historial para leer todas las cifras; al copiarlo se copian todas.
 

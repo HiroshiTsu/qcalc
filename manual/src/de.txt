@@ -32,6 +32,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 - **Lange Ergebnisse und Einheiten**: Ein Ergebnis, das nicht in eine Zeile passt, wird etwas kleiner und erst dann zwischen Dreiergruppen umbrochen; ein Ergebnis mit Einheiten bleibt in einer Zeile (m/s).
 - **Der Verlauf**: Seine Ausdrücke erscheinen mit ×, √, π und hochgestellten Exponenten (2^10 → 2¹⁰).
 - **Eine Zeile des Verlaufs bearbeiten**: Tippen Sie auf den Ausdruck einer Zeile, um sie an Ort und Stelle zu bearbeiten; = setzt dort das neue Ergebnis, und die Zeilen darunter lassen sich neu berechnen ([Eine Zeile des Verlaufs bearbeiten](#edit-line)).
+- **Die Genauigkeit zur Hand**: Die Zeile oben zeigt die Genauigkeit (z. B. 15 St.); ein Druck darauf bietet 10, 15, 20, 30, 50, 100 oder Andere …, und der Ausdruck in der Eingabe wird sofort neu berechnet. ⋯ → [[Work it out with other digits]] im Verlauf zeigt eine Zeile mit anderer Stellenzahl ([Das Ergebnis lesen](#results)).
 - **3D fast wie echt**: 3D wird mit der GPU des Geräts (WebGL 2) gezeichnet, mit echtem Licht und Schatten: der 3D-Graph, [[!⟳ 3D]] im 2D-Graph, die Körper und Tanks der Formen und der Körper aus einem Profil ([3D-Graph](#graph-3d)).
 - **Durchsichtig**: Mit [[See-through]] sehen Sie durch Flächen und Körper: Rück- und Innenseiten und die Stellen, an denen sich zwei Flächen schneiden. Der Schieberegler stellt die Deckkraft ein und schaltet [[See-through]] ein, wenn er bewegt wird, während es aus ist; bei zwei oder mehr Dingen wählen Sie, was durchsichtig ist (zum Beispiel nur der [[Container]] eines Tanks).
 - **In jede Richtung drehen**: Ein Finger dreht 3D in jede Richtung, auch über oben und unten hinaus. Die Würfel-Schaltfläche wählt sofort [[From the front]], [[From above]] oder [[From the side]].
@@ -101,7 +102,8 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 - `30!` → `= 265.252.859.812.191.058.636.308.480.000.000` (ganze Zahlen bis 60 Stellen vollständig)
 - `2^200` → `≈ 1,606 938 044 258 99 × 10⁶⁰` (eine sehr große Zahl)
 :step: Der Schalter oben wechselt zwischen exakt, genähert und automatisch.
-:step: Die Stellenzahl ist [[Precision (significant digits)]] in den [[Settings]] (Standard 15). Ergebnisse erscheinen mit Dreiergruppen ([[Digit grouping (1,000)]] schaltet es aus).
+:step: Die Genauigkeit (Standard 15 Stellen) lässt sich mit dem Feld „15 St.“ in der Zeile oben ändern. Es bietet 10, 15, 20, 30, 50, 100 und Andere … (eine Zahl eingeben); das Ergebnis des Ausdrucks in der Eingabe wird sofort neu berechnet, die Ergebnisse im Verlauf bleiben, wie sie sind. Auch [[Precision (significant digits)]] in den [[Settings]] ändert sie. Ergebnisse erscheinen mit Dreiergruppen ([[Digit grouping (1,000)]] schaltet es aus).
+:step: Um eine Zeile des Verlaufs mit mehr Stellen zu sehen, wählen Sie in ihrem ⋯ → [[Work it out with other digits]] 30, 50, 100 oder Andere …. Das Ergebnis erscheint in einem Blatt mit [[Put the expression into the input field]], [[Keep it in the history]] und [[Copy the result]]. Die Genauigkeit der Einstellungen und die Zeile bleiben, wie sie sind.
 :pro: Bis 1000 Stellen kostenlos. Mehr als 1000, bis 200000 Stellen, ist eine Funktion von QCalc Pro.
 :tip: Ein sehr langes Ergebnis lässt sich im Verlauf scrollen, sodass jede Stelle lesbar ist; beim Kopieren wird jede Stelle kopiert.
 

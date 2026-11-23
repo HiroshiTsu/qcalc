@@ -1690,7 +1690,20 @@
     "← Back to the shape": "← Zurück zur Figur",
     "Values from \"Solid from a profile\"": "Werte aus „Körper aus einem Profil“",
     "← Back to the profile": "← Zurück zum Profil",
-    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "Im 3D-Graphen zeigt „Volumen und Oberfläche“ sofort beim Öffnen das Volumen unter der gezeichneten Fläche (oder zwischen zwei Flächen) und den Oberflächeninhalt, über dem Rechteck oder über einer Kreisscheibe x² + y² ≤ R². Für einen im 2D-Graphen (⟳ 3D), in „Körper aus einem Profil“ oder in „Figuren“ (⟳ 3D) gebildeten Körper zeigt es die dort gefundenen Werte. Unter „Beispiel“ unten lässt sich jeder Körper der Figuren mit seinen Werten in 3D zeichnen („Zahlen ändern“ öffnet die Figuren)."
+    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "Im 3D-Graphen zeigt „Volumen und Oberfläche“ sofort beim Öffnen das Volumen unter der gezeichneten Fläche (oder zwischen zwei Flächen) und den Oberflächeninhalt, über dem Rechteck oder über einer Kreisscheibe x² + y² ≤ R². Für einen im 2D-Graphen (⟳ 3D), in „Körper aus einem Profil“ oder in „Figuren“ (⟳ 3D) gebildeten Körper zeigt es die dort gefundenen Werte. Unter „Beispiel“ unten lässt sich jeder Körper der Figuren mit seinen Werten in 3D zeichnen („Zahlen ändern“ öffnet die Figuren).",
+    // (1.15.0) the precision at the top, "Work it out with other digits", the default 15
+    "The precision at the top: press its chip to choose 10 to 100 digits or another": "Die Genauigkeit oben: auf ihr Feld drücken und 10 bis 100 Stellen oder andere wählen",
+    "{0} dig": "{0} St.",
+    "Precision: {0} significant digits": "Genauigkeit: {0} signifikante Stellen",
+    "{0} digits": "{0} Stellen",
+    "Other…": "Andere …",
+    "{0} to {1}": "{0} bis {1}",
+    "Precision: {0} digits": "Genauigkeit: {0} Stellen",
+    "Work it out with other digits": "Mit anderer Stellenzahl neu rechnen",
+    "{0} digits:": "{0} Stellen:",
+    "This line changes something: it is not worked out again here": "Diese Zeile ändert etwas und wird hier nicht neu berechnet",
+    "2 to 200000 digits (default 15; above 1000 with QCalc Pro). Higher values take longer to calculate": "2 bis 200000 Stellen (Standard 15; über 1000 mit QCalc Pro). Höhere Werte brauchen länger zum Rechnen",
+    "2 to 200000 digits (default 15). Higher values take longer to calculate": "2 bis 200000 Stellen (Standard 15). Höhere Werte brauchen länger zum Rechnen",
   },
   messages: {
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",

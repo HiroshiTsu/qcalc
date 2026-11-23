@@ -1702,7 +1702,20 @@
     "← Back to the shape": "← Volver a la figura",
     "Values from \"Solid from a profile\"": "Valores de \"Sólido a partir de un perfil\"",
     "← Back to the profile": "← Volver al perfil",
-    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "En el gráfico 3D, \"Volumen y superficie\" muestra el volumen bajo la superficie dibujada (o entre dos superficies) y el área superficial apenas se abre, sobre el rectángulo o sobre un disco x² + y² ≤ R². Para un sólido hecho en el gráfico 2D (⟳ 3D), en \"Sólido a partir de un perfil\" o en \"Figuras\" (⟳ 3D), muestra los valores hallados allí. En \"Ejemplo\", abajo, cualquier sólido de Figuras se puede dibujar en 3D con sus valores (\"Cambiar los números\" abre Figuras)."
+    "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "En el gráfico 3D, \"Volumen y superficie\" muestra el volumen bajo la superficie dibujada (o entre dos superficies) y el área superficial apenas se abre, sobre el rectángulo o sobre un disco x² + y² ≤ R². Para un sólido hecho en el gráfico 2D (⟳ 3D), en \"Sólido a partir de un perfil\" o en \"Figuras\" (⟳ 3D), muestra los valores hallados allí. En \"Ejemplo\", abajo, cualquier sólido de Figuras se puede dibujar en 3D con sus valores (\"Cambiar los números\" abre Figuras).",
+    // (1.15.0) the precision at the top, "Work it out with other digits", the default 15
+    "The precision at the top: press its chip to choose 10 to 100 digits or another": "La precisión arriba: pulsa su botón para elegir de 10 a 100 cifras u otra",
+    "{0} dig": "{0} cif.",
+    "Precision: {0} significant digits": "Precisión: {0} cifras significativas",
+    "{0} digits": "{0} cifras",
+    "Other…": "Otro…",
+    "{0} to {1}": "{0} a {1}",
+    "Precision: {0} digits": "Precisión: {0} cifras",
+    "Work it out with other digits": "Recalcular con otras cifras",
+    "{0} digits:": "{0} cifras:",
+    "This line changes something: it is not worked out again here": "Esta línea cambia algo: aquí no se recalcula",
+    "2 to 200000 digits (default 15; above 1000 with QCalc Pro). Higher values take longer to calculate": "De 2 a 200000 cifras (por defecto 15; más de 1000 con QCalc Pro). Los valores más altos tardan más en calcularse",
+    "2 to 200000 digits (default 15). Higher values take longer to calculate": "De 2 a 200000 cifras (por defecto 15). Los valores más altos tardan más en calcularse",
   },
   messages: {
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (Ajustes → "Actualizar los tipos de cambio ahora")',
