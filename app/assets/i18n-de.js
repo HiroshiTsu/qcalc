@@ -1,6 +1,17 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    // (1.16.0) the weight as a row of the results of Shapes and Tanks
+    "Weight of the liquid": "Gewicht der Flüssigkeit",
+    "liquid \u00d7 density": "Flüssigkeit × Dichte",
+    "volume \u00d7 density": "Volumen × Dichte",
+    "Choose a material just below": "Gleich darunter ein Material wählen",
+    "Type the density just below": "Gleich darunter die Dichte eingeben",
+    "Shown when the lengths have a unit": "Erscheint, wenn die Längen eine Einheit haben",
+    " \u2014 tap to choose a unit": " — tippen, um eine Einheit zu wählen",
+    " \u2014 tap to choose a material": " — tippen, um ein Material zu wählen",
+    " \u2014 tap to type the density": " — tippen, um die Dichte einzugeben",
+    "The unit of the lengths (the weight is shown with it)": "Einheit der Längen (damit erscheint das Gewicht)",
     // (1.16.0) the card of what is new
     "Your variables and functions on one screen: the button \"Variables\" above the input field": "Eigene Variablen und Funktionen auf einem Bildschirm: die Schaltfläche „Variablen“ über dem Eingabefeld",
     "The arguments of a function shown as you type it, under the input field": "Die Argumente einer Funktion beim Tippen, unter dem Eingabefeld",
@@ -1117,9 +1128,7 @@
     "More than the tank holds": "Mehr als in den Tank passt",
     " (": " (",
     " full)": " gefüllt)",
-    "Give the lengths a unit to get the weight": "Gib den Längen eine Einheit, um das Gewicht zu erhalten",
     "Check the density (for example 0.9 g/cm³)": "Prüfe die Dichte (zum Beispiel 0,9 g/cm³)",
-    "Weight ": "Gewicht ",
     " = ": " = ",
     " (typical)": " (Richtwert)",
     "x axis": "x-Achse",

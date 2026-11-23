@@ -339,7 +339,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Geben Sie die im Bild genannten Maße ein (r, h). Runde Maße als Radius oder Durchmesser.
 :step: Die Ergebnisse ändern sich beim Tippen; ein Tippen übernimmt oder kopiert den Ausdruck.
 :example: Kugel mit Radius 2 → Volumen 32π/3 ≈ 33,5103, Oberfläche 16π
-:tip: Wählen Sie ein Material, um das Gewicht zu erhalten.
+:tip: Das Gewicht steht in der letzten Zeile der Ergebnisse (Volumen × Dichte). Wählen Sie gleich darunter unter [[Material (density)]] ein Material oder geben Sie mit [[Another density…]] eine Dichte ein. Haben die Längen keine Einheit, steht dort „Erscheint, wenn die Längen eine Einheit haben“: Tippen Sie darauf und wählen Sie eine Einheit. Wie die anderen Zeilen lässt sich das Gewicht antippen, um den Ausdruck in die Eingabe zu setzen oder ihn zu kopieren.
 :tip: [[!⟳ 3D]] oben links am Bild zeigt den Körper in 3D zum Drehen ([Körper und Tanks in 3D](#shapes-3d)).
 
 ## tanks | Tanks: Füllmenge und Füllhöhe
@@ -352,6 +352,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :example: Liegend, Durchmesser 1 m, Länge 2 m, Füllhöhe 30 cm → 0,396337 m³ (etwa 396 L)
 :tip: [[Quick-reference table ▾]] listet die Menge zu jeder Höhe.
 :mistake: Ein Radius im Feld für den Durchmesser ergibt etwa ein Viertel der Menge. Prüfen Sie Radius oder Durchmesser.
+:tip: Wählen Sie ein Material (Wasser, Meerwasser, Kerosin, Benzin und andere): Das Gewicht der Flüssigkeit steht in der letzten Zeile der Ergebnisse (Flüssigkeit × Dichte).
 
 ## tank-heads | Tankböden und Tabellen
 :pro:

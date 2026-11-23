@@ -1,6 +1,17 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    // (1.16.0) the weight as a row of the results of Shapes and Tanks
+    "Weight of the liquid": "액체의 무게",
+    "liquid \u00d7 density": "액량 × 밀도",
+    "volume \u00d7 density": "부피 × 밀도",
+    "Choose a material just below": "바로 아래에서 재료를 고르면 나옵니다",
+    "Type the density just below": "바로 아래에 밀도를 넣으면 나옵니다",
+    "Shown when the lengths have a unit": "단위를 붙이면 나옵니다",
+    " \u2014 tap to choose a unit": ". 누르면 단위를 고를 수 있습니다",
+    " \u2014 tap to choose a material": ". 누르면 재료를 고를 수 있습니다",
+    " \u2014 tap to type the density": ". 누르면 밀도를 넣을 수 있습니다",
+    "The unit of the lengths (the weight is shown with it)": "길이의 단위(고르면 무게가 나옵니다)",
     // (1.16.0) the card of what is new
     "Your variables and functions on one screen: the button \"Variables\" above the input field": "내 변수와 함수를 한 화면에서: 입력란 위의 ‘변수’ 버튼",
     "The arguments of a function shown as you type it, under the input field": "입력 중인 함수의 인수를 입력란 아래에 표시",
@@ -1120,9 +1131,7 @@
     "More than the tank holds": "탱크에 들어가는 양보다 많습니다",
     " (": " (",
     " full)": " 채움)",
-    "Give the lengths a unit to get the weight": "길이에 단위를 붙이면 무게가 나옵니다",
     "Check the density (for example 0.9 g/cm³)": "밀도를 확인하세요 (예: 0.9 g/cm³)",
-    "Weight ": "무게 ",
     " = ": " = ",
     " (typical)": " (대략)",
     "x axis": "x축",

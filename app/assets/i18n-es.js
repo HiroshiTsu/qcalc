@@ -13,6 +13,17 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    // (1.16.0) the weight as a row of the results of Shapes and Tanks
+    "Weight of the liquid": "Peso del líquido",
+    "liquid \u00d7 density": "líquido × densidad",
+    "volume \u00d7 density": "volumen × densidad",
+    "Choose a material just below": "Elige un material justo debajo",
+    "Type the density just below": "Escribe la densidad justo debajo",
+    "Shown when the lengths have a unit": "Aparece cuando las longitudes tienen unidad",
+    " \u2014 tap to choose a unit": " — toca para elegir una unidad",
+    " \u2014 tap to choose a material": " — toca para elegir un material",
+    " \u2014 tap to type the density": " — toca para escribir la densidad",
+    "The unit of the lengths (the weight is shown with it)": "Unidad de las longitudes (con ella aparece el peso)",
     // (1.16.0) the card of what is new
     "Your variables and functions on one screen: the button \"Variables\" above the input field": "Tus variables y funciones en una pantalla: el botón «Variables» sobre el campo de entrada",
     "The arguments of a function shown as you type it, under the input field": "Los argumentos de una función mientras la escribes, bajo el campo de entrada",
@@ -1129,9 +1140,7 @@
     "More than the tank holds": "Más de lo que cabe en el depósito",
     " (": " (",
     " full)": " lleno)",
-    "Give the lengths a unit to get the weight": "Pon una unidad a las longitudes para obtener el peso",
     "Check the density (for example 0.9 g/cm³)": "Revisa la densidad (por ejemplo 0,9 g/cm³)",
-    "Weight ": "Peso ",
     " = ": " = ",
     " (typical)": " (valor orientativo)",
     "x axis": "eje x",

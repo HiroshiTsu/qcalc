@@ -1,6 +1,17 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    // (1.16.0) the weight as a row of the results of Shapes and Tanks
+    "Weight of the liquid": "Poids du liquide",
+    "liquid \u00d7 density": "liquide × masse volumique",
+    "volume \u00d7 density": "volume × masse volumique",
+    "Choose a material just below": "Choisissez un matériau juste en dessous",
+    "Type the density just below": "Saisissez la masse volumique juste en dessous",
+    "Shown when the lengths have a unit": "Apparaît quand les longueurs ont une unité",
+    " \u2014 tap to choose a unit": " — appuyez pour choisir une unité",
+    " \u2014 tap to choose a material": " — appuyez pour choisir un matériau",
+    " \u2014 tap to type the density": " — appuyez pour saisir la masse volumique",
+    "The unit of the lengths (the weight is shown with it)": "Unité des longueurs (le poids apparaît avec elle)",
     // (1.16.0) the card of what is new
     "Your variables and functions on one screen: the button \"Variables\" above the input field": "Vos variables et fonctions sur un seul écran : le bouton « Variables » au-dessus du champ de saisie",
     "The arguments of a function shown as you type it, under the input field": "Les arguments d’une fonction pendant la saisie, sous le champ de saisie",
@@ -1117,9 +1128,7 @@
     "More than the tank holds": "Plus que ce que contient la cuve",
     " (": " (",
     " full)": " de remplissage)",
-    "Give the lengths a unit to get the weight": "Donnez une unité aux longueurs pour obtenir le poids",
     "Check the density (for example 0.9 g/cm³)": "Vérifiez la masse volumique (par exemple 0,9 g/cm³)",
-    "Weight ": "Poids ",
     " = ": " = ",
     " (typical)": " (valeur indicative)",
     "x axis": "axe des x",

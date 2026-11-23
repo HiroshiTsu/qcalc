@@ -14906,8 +14906,15 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       dens.append(el('option', { value: 'own', text: tr('Another density…', 'ほかの密度…') }));
       dens.value = G.dens;
       const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³')), value: G.dv, 'aria-label': tr('Density', '密度') });
-      const weightVal = el('span', { class: 'geo-val' });
-      const weightRow = el('div', { class: 'geo-weight' }, dens, densIn, weightVal);
+      // (1.16.0, fix/geo-weight: the owner looked for the weight) the weight is the last row of the results, as the others
+      // are (its formula, its value; a tap gives the sheet of a result), with the material and a density typed just
+      // under it; without a unit or a material its value says what to do, and a tap does it (the units in a sheet, or
+      // the material chosen)
+      const wVal = el('span', { class: 'geo-val' });
+      const wName = el('span', { class: 'geo-name' }), wRow = { state: '', expr: '', shown: '', copy: '' };
+      wRow.node = tapButton({ class: 'geo-row geo-wrow' }, () => weightTap());
+      wRow.node.append(wName, wVal);
+      const weightRow = el('div', { class: 'geo-weight' }, dens, densIn);
       const amtIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: tr('e.g. 1000 L', '例：1000 L'), 'aria-label': tr('Amount of liquid', '液量') });
       const amtVal = el('span', { class: 'geo-val' });
       const amtRow = el('label', { class: 'geo-amt' }, el('span', { class: 'geo-lbl', text: tr('Height for the amount', '液量から高さ') }), amtIn, amtVal);
@@ -15038,20 +15045,47 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         amtVal.textContent = 'h ≈ ' + fmtDigits('shapes', h, null, 'len') + (base ? ' ' + base : '') + tr(' (', '（') + fmtDigits('shapes', want / full * 100, null, 'pct') + ' %' + tr(' full)', '）');
       };
       // the weight of the first volume of the list (the liquid of a tank) with the density chosen
+      const wTitle = () => (cur().d === 4 ? tr('Weight of the liquid', '液の重さ') : tr('Weight', '重さ'));
+      const showWeight = (state, text, extra) => {
+        wRow.state = state; wVal.classList.toggle('geo-todo', state !== 'ok' && state !== 'busy' && state !== '');
+        wVal.textContent = text;
+        if (wVal.classList.contains('geo-todo')) wVal.append(el('span', { class: 'geo-todo-go', 'aria-hidden': 'true', text: ' ›' }));
+        if (extra) wVal.append(el('small', { class: 'geo-wt', text: extra }));
+        // (said whole by a screen reader: the name, the value, and what a tap does when it shows no value)
+        wRow.node.setAttribute('aria-label', wTitle() + ': ' + text + (extra || '') + (state === 'unit' ? tr(' — tap to choose a unit', '。押すと単位を選べます') : state === 'mat' ? tr(' — tap to choose a material', '。押すと材料を選べます') : state === 'own' || state === 'dens' ? tr(' — tap to type the density', '。押すと密度を入れられます') : ''));
+      };
       const weight = async (rows, seq) => {
-        weightVal.textContent = '';
+        wRow.expr = ''; wRow.shown = ''; wRow.copy = '';
         const d = G.dens === 'own' ? normalizeExpr(densIn.value) : (DENSITIES.find((x) => x[0] === G.dens) || [])[2];
-        if (!d) return;
         const row = rows.find((r) => r.def[3] === 3 && r.vol);
-        if (!row) { weightVal.textContent = tr('Give the lengths a unit to get the weight', '重さは、長さに単位を付けると出ます'); return; }
-        const r = await Bridge.send('calc', { expr: `(${row.vol}) × (${d}) to kg`, opts: Object.assign(engineOpts(), { approx: 'approx', precision: digitsPrecision('shapes', null, null, 'mass') }), timeout: 4000 });
+        if (!G.dens) { showWeight('mat', tr('Choose a material just below', 'すぐ下で材料を選ぶと出ます')); return; }
+        if (!d) { showWeight('own', tr('Type the density just below', 'すぐ下で密度を入れると出ます')); return; }
+        if (!row) { showWeight('unit', tr('Shown when the lengths have a unit', '単位を付けると出ます')); return; }
+        showWeight('busy', '…');
+        const expr = `(${row.vol}) × (${d}) to kg`;
+        const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { approx: 'approx', precision: digitsPrecision('shapes', null, null, 'mass') }), timeout: 4000 });
         if (seq !== G.seq) return;
         const ok = r.ok && r.result && !r.timeout && !(r.messages || []).some((m) => m.type === 'error') && / kg$/.test(r.result);
-        if (!ok) { weightVal.textContent = decSign(tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')); return; }
+        if (!ok) { showWeight('dens', decSign(tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）'))); return; }
         const kg = Number(numberPart(r.result.replace(/ kg$/, '')));
         // (D7: the weight with the digits set for weights; feature/screen-digits: the engine's answer rounded as a string)
         const wtxt = resultText(Object.assign({}, r, { result: digitsText('shapes', r.result, null, 'mass', false, !!r.approx) }));
-        weightVal.textContent = tr('Weight ', '重さ ') + wtxt + (kg >= 1000 ? tr(' = ', ' = ') + fmtDigits('shapes', kg / 1000, null, 'mass') + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
+        const tons = kg >= 1000 ? ' = ' + fmtDigits('shapes', kg / 1000, null, 'mass') + ' t' : '';
+        const typical = G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '';
+        wRow.expr = expr; wRow.shown = wtxt + tons + typical; wRow.copy = wtxt.replace(/^[=≈]\s*/, '');
+        showWeight('ok', wtxt + tons, typical);
+      };
+      // a tap on the weight row: its sheet (into the input field, kept in the history, copied), or what it needs
+      const weightTap = async () => {
+        if (wRow.state === 'ok' && wRow.expr) { resultSheet(wTitle(), wRow.expr, wRow.shown, wRow.copy); return; }
+        if (wRow.state === 'mat') { dens.scrollIntoView({ block: 'center' }); dens.focus(); try { dens.showPicker(); } catch (e) { } return; }
+        if (wRow.state === 'own' || wRow.state === 'dens') { densIn.hidden = false; densIn.scrollIntoView({ block: 'center' }); densIn.focus(); return; }
+        if (wRow.state === 'unit') {
+          // the units of the lengths in a sheet (one tap; the sizes keep their numbers in the unit chosen)
+          const k = await sheet(tr('The unit of the lengths (the weight is shown with it)', '長さの単位（選ぶと重さが出ます）'), GEO_UNITS.filter((u) => u).map((u) => [u, u]));
+          if (!k) return;
+          unit.value = k; G.unit = k; typed(); choose(G.k);
+        }
       };
       const svg = (sh, v, small) => {
         let t = typeof sh.pic === 'function' ? sh.pic(v || {}) : sh.pic;
@@ -15078,7 +15112,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         outs.classList.toggle('bad', !!problem);
         msg.textContent = problem;
         for (const row of rows) { row.expr = ''; row.vol = ''; row.result = ''; row.node.dataset.value = ''; if (problem) { row.val.textContent = '—'; row.val.classList.remove('math'); } }
-        if (problem) { weightVal.textContent = ''; amtVal.textContent = ''; return; }
+        if (problem) { showWeight('', '—'); amtVal.textContent = ''; return; }
         // Units: sizes that are plain numbers are calculated as numbers, so that exact values stay
         // (12π), and the unit of the panel is written after the result (cm³). Sizes with units of
         // their own are calculated with them; the result is asked for in their unit when they all
@@ -15180,6 +15214,12 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         });
         outs.textContent = '';
         for (const row of rows) outs.append(row.node);
+        if (sh.d >= 3) {
+          wName.textContent = '';
+          wName.append(wTitle(), el('small', { text: sh.d === 4 ? tr('liquid × density', '液量 × 密度') : tr('volume × density', '体積 × 密度') }));
+          showWeight('busy', '…');
+          outs.append(wRow.node);
+        }
         graph.hidden = !sh.graph;
         if (sh.k === 'sphere') graph.dataset.pro = ''; else delete graph.dataset.pro;
         // (D6) "⟳ 3D" for solids and tanks
@@ -15314,7 +15354,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips, headRow,
         el('div', { class: 'geo-main' }, picBox, el('div', { class: 'geo-side' }, rdSeg, sizes,
           el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
-        outUnits, msg, exNote, proRow3d, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
+        outUnits, msg, exNote, proRow3d, outs, weightRow, cautionWeight, amtRow, quick, cautionTank, cautionHead, graph,
         // 1.11.0: the volume from measured values (a table of cross sections, a grid of heights)
         tapButton({ class: 'btn geo-link', text: tr('Volume from measured values (cross sections, grid of heights) ›', '測った値から体積（断面積の表・点高法）›') }, () => openSections()),
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
