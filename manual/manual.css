@@ -45,7 +45,7 @@ a { color: var(--accent); }
 .m-pro { margin: .6em 0; }
 .m-badge { display: inline-block; padding: 0 8px; border-radius: 6px; background: var(--m-accent); color: var(--m-on-accent); font-weight: 700; font-size: .85em; }
 b.ui { font-weight: 700; }
-code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .92em; background: var(--box); padding: 0 4px; border-radius: 4px; }
+code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .92em; background: var(--box); padding: 0 4px; border-radius: 4px; overflow-wrap: anywhere; } /* (1.15.0: 30! in full is wider than a phone: LK07) */
 .m-tw { overflow-x: auto; }
 table { border-collapse: collapse; margin: .6em 0; font-size: .95em; }
 th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
