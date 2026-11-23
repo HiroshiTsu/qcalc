@@ -28,6 +28,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 ## new-1-15 | Neu in 1.15.0
 - **Besser lesbare Ergebnisse**: Ergebnisse mit 15 gültigen Stellen, in Dreiergruppen. Geräte, die noch die bisherigen Standardwerte hatten (10 Stellen, ohne Gruppen), wechseln mit dieser Version einmal. [[Precision (significant digits)]] und [[Digit grouping (1,000)]] in den [[Settings]] stellen es zurück ([Das Ergebnis lesen](#results)).
 - **Einlesen in die Rechennotizen**: [[More ▾]] → [[Open a file]] in den Notizen liest eine .txt- oder .csv-Datei, und Text oder eine Datei, die eine andere App mit „Teilen“ → QCalc sendet, wird ebenfalls übernommen ([Rechennotizen](#notes)).
+- **Taylorreihe**: taylor auf der Seite [[Calculus]] gibt das Taylorpolynom um eine Mitte bis zu einem Grad (exakte Koeffizienten; `taylor(sin(x), x, 0, 5)` geht auch). [[Compare in a graph]] zeichnet es mit der Funktion ([Ableitungen, Integrale, Grenzwerte, Summen](#calculus)).
 - **Zwei Zeilen**: Ein exaktes Ergebnis mit Näherung zeigt „= exakt“ in einer Zeile und „≈ Näherung“ in der nächsten. Brüche und Wurzeln erscheinen in derselben Schrift wie die anderen Ergebnisse.
 - **Zahlen**: keine Endnullen bei Näherungen; sehr große oder kleine Zahlen als 1,606 938 × 10⁶⁰ (kopiert als 1.606938E60); ganze Zahlen und abbrechende Dezimalzahlen erscheinen bis 60 Stellen vollständig, auch über die Genauigkeit hinaus (zum Beispiel 30!).
 - **Lange Ergebnisse und Einheiten**: Ein Ergebnis, das nicht in eine Zeile passt, wird etwas kleiner und erst dann zwischen Dreiergruppen umbrochen; ein Ergebnis mit Einheiten bleibt in einer Zeile (m/s).
@@ -476,6 +477,9 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :shot: form | Das Formular eines Integrals
 :example: ∫ x² sin(x) dx von 0 bis π → `= π² − 4`, darunter `≈ 5,869 604 401 089 36`
 :tip: Ein Grenzwert kann [[Both sides]], [[From the right (+)]] oder [[From the left (−)]] sein.
+:step: taylor ([[Taylor series]]) auf der Seite [[Calculus]] nimmt eine Funktion f(x), eine Mitte a (zuerst 0) und einen Grad n (zuerst 5, bis 20) und gibt das Taylorpolynom vom kleinsten Grad an, etwa `x − x³/6 + x⁵/120 + O(x⁶)`. Die Koeffizienten bleiben exakt, wo es geht (Brüche, √, π). `taylor(sin(x), x, 0, 5)` im Eingabefeld geht auch.
+:step: [[Compare in a graph]] zeichnet die Funktion und ihr Taylorpolynom zusammen im 2D-Graphen.
+:tip: Hat die Funktion oder eine Ableitung in der Mitte keinen endlichen Wert (√x oder 1/x bei x = 0), sagt es die App; ein Wert aus einem Grenzwert wie sin(x)/x bei x = 0 geht. Dauert es lange, einen kleineren Grad versuchen.
 
 ## equations | Gleichungen
 :what: Löst Gleichungen und Gleichungssysteme.

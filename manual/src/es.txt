@@ -28,6 +28,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 ## new-1-15 | Novedades de 1.15.0
 - **Resultados más claros**: los resultados tienen 15 cifras significativas, en grupos de tres. Los teléfonos que aún tenían los valores anteriores (10 cifras, sin grupos) cambian una vez con esta versión. [[Precision (significant digits)]] y [[Digit grouping (1,000)]] en [[Settings]] lo devuelven ([Leer el resultado](#results)).
 - **Leer en las notas de cálculo**: [[More ▾]] → [[Open a file]] en las notas lee un archivo .txt o .csv, y también se recibe el texto o el archivo que otra app envía con «Compartir» → QCalc ([Notas de cálculo](#notes)).
+- **Serie de Taylor**: taylor en la página [[Calculus]] da el polinomio de Taylor en torno a un centro hasta un grado (coeficientes exactos; también se puede escribir `taylor(sin(x), x, 0, 5)`). [[Compare in a graph]] lo dibuja con la función ([Derivadas, integrales, límites, sumas](#calculus)).
 - **Dos líneas**: un resultado exacto con su aproximación muestra «= exacto» en una línea y «≈ aproximación» en la siguiente. Las fracciones y raíces se dibujan con la misma letra que los demás resultados.
 - **Números**: sin ceros finales en las aproximaciones; los números muy grandes o pequeños como 1.606 938 × 10⁶⁰ (se copian como 1.606938E60); los enteros y decimales exactos se muestran completos hasta 60 cifras, aunque superen la precisión (por ejemplo 30!).
 - **Resultados largos y unidades**: un resultado que no cabe en una línea se hace algo más pequeño y solo entonces se parte entre grupos de tres cifras; un resultado con unidades queda en una línea (m/s).
@@ -476,6 +477,9 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :shot: form | El formulario de una integral
 :example: ∫ x² sin(x) dx de 0 a π → `= π² − 4`, debajo `≈ 5.869 604 401 089 36`
 :tip: Un límite puede ser [[Both sides]], [[From the right (+)]] o [[From the left (−)]].
+:step: taylor ([[Taylor series]]) en la página [[Calculus]] toma una función f(x), un centro a (0 al principio) y un grado n (5 al principio, hasta 20) y da el polinomio de Taylor desde el grado más bajo, como `x − x³/6 + x⁵/120 + O(x⁶)`. Los coeficientes quedan exactos cuando se puede (fracciones, √, π). También funciona escribir `taylor(sin(x), x, 0, 5)` en el campo de entrada.
+:step: [[Compare in a graph]] dibuja la función y su polinomio de Taylor juntos en la gráfica 2D.
+:tip: Si la función o una derivada no tiene un valor finito en el centro (√x o 1/x en x = 0), la app lo indica; un valor dado por un límite, como sin(x)/x en x = 0, funciona. Si tarda, prueba un grado menor.
 
 ## equations | Ecuaciones
 :what: Resuelve ecuaciones y sistemas de ecuaciones.

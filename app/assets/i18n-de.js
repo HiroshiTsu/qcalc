@@ -1,6 +1,18 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    // (1.15.0) the Taylor series
+    "Taylor series: taylor on the Calculus page, with a graph to compare": "Taylorreihe: taylor auf der Seite „Analysis“, mit einem Graphen zum Vergleich",
+    "Taylor series": "Taylorreihe",
+    "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "Das Polynom bis zum Grad n (höchstens 20) um x = a, mit exakten Koeffizienten, wo möglich",
+    "center {0} =": "Mitte {0} =",
+    "degree": "Grad",
+    "Compare in a graph": "Im Graphen vergleichen",
+    "Compare f and the polynomial in a graph": "f und das Polynom im Graphen vergleichen",
+    "The Taylor series took too long: try a lower degree": "Die Taylorreihe dauerte zu lange: einen kleineren Grad versuchen",
+    "Could not draw the Taylor polynomial": "Das Taylorpolynom konnte nicht gezeichnet werden",
+    "It takes long: press \"Calculate\" (with the time limit of the settings), or try a lower degree": "Das dauert: „Berechnen“ drücken (mit dem Zeitlimit der Einstellungen) oder einen kleineren Grad versuchen",
+    "(A Taylor series of a lower degree is faster)": "(Eine Taylorreihe kleineren Grades geht schneller)",
     " (Not available: {0})": " (Nicht verfügbar: {0})",
     " (checking for an exact value…)": " (es wird nach einem exakten Wert gesucht …)",
     " (no values)": " (keine Werte)",
@@ -1725,6 +1737,9 @@
     "2 to 200000 digits (default 15). Higher values take longer to calculate": "2 bis 200000 Stellen (Standard 15). Höhere Werte brauchen länger zum Rechnen",
   },
   messages: {
+    "taylor-degree": (p1) => "Der Grad einer Taylorreihe ist höchstens " + p1,
+    "taylor-value": (p1, p2) => "Keine Taylorreihe: Die Funktion hat bei " + p1 + " = " + p2 + " keinen endlichen Wert",
+    "taylor-derivative": (p1, p2, p3) => "Keine Taylorreihe: Die " + p1 + ". Ableitung hat bei " + p2 + " = " + p3 + " keinen endlichen Wert (dort nicht differenzierbar)",
     "rates-old": (p1) => "Die Wechselkurse wurden seit " + p1 + " " + (p1 === '1' ? "Tag" : "Tagen") + " nicht aktualisiert (Einstellungen → „Wechselkurse jetzt aktualisieren“)",
     "extra-operator": (p1) => "Überzähliger Operator „" + p1 + "“ wurde ignoriert",
     "extra-sign": (p1) => "Überzähliges „" + p1 + "“ wurde ignoriert",
@@ -1793,6 +1808,7 @@
     "argument-kind": (p1, p2, p3, p4) => "Argument " + p1 + " von " + p3 + "() hat nicht die richtige Art (" + p4 + ")"
   },
   keys: {
+    "taylor": "Taylorreihe",
     "⌫": "Rücktaste",
     "AC": "Alles löschen",
     "◀": "Cursor nach links",

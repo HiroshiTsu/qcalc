@@ -28,6 +28,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 ## new-1-15 | What is new in 1.15.0
 - **Easier results**: results have 15 significant digits, in groups of three. Phones that still had the earlier defaults (10 digits, no groups) change once with this version. [[Precision (significant digits)]] and [[Digit grouping (1,000)]] in the [[Settings]] set them back ([Reading the answer](#results)).
 - **Reading into the calculation notes**: [[More ▾]] → [[Open a file]] in the notes reads a .txt or .csv file, and text or a file sent with “Share” → QCalc from another app is taken in too ([Calculation notes](#notes)).
+- **Taylor series**: taylor on the [[Calculus]] page gives the Taylor polynomial about a center up to a degree (exact coefficients; `taylor(sin(x), x, 0, 5)` can be typed too). [[Compare in a graph]] draws it with the function ([Derivatives, integrals, limits, sums](#calculus)).
 - **Two lines**: an exact result with its approximation shows "= exact" on one line and "≈ approximation" on the next. Fractions and roots are drawn in the same letters as the other results.
 - **Numbers**: no ending zeros in approximations; very large or small numbers as 1.606 938 × 10⁶⁰ (copied as 1.606938E60); whole numbers and decimals that end are shown in full up to 60 digits, even beyond the precision (for example 30!).
 - **Long results and units**: a result too long for one line gets smaller letters, and only then breaks between groups of three digits; a result with units stays on one line (m/s).
@@ -476,6 +477,9 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :shot: form | The form of an integral
 :example: ∫ x² sin(x) dx from 0 to π → `= π² − 4`, then `≈ 5.869 604 401 089 36`
 :tip: A limit can be [[Both sides]], [[From the right (+)]] or [[From the left (−)]].
+:step: taylor ([[Taylor series]]) on the [[Calculus]] page takes a function f(x), a center a (0 at first) and a degree n (5 at first, up to 20) and gives the Taylor polynomial from its lowest degree up, as `x − x³/6 + x⁵/120 + O(x⁶)`. The coefficients stay exact where they can (fractions, √, π). `taylor(sin(x), x, 0, 5)` typed in the input field works too.
+:step: [[Compare in a graph]] draws the function and its Taylor polynomial together in the 2D graph.
+:tip: When the function or a derivative has no finite value at the center (√x or 1/x at x = 0), the app says so; a value given by a limit, as sin(x)/x at x = 0, works. When it takes long, try a lower degree.
 
 ## equations | Equations
 :what: Solves equations and systems of equations.

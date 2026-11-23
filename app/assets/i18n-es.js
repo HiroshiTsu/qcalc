@@ -13,6 +13,18 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    // (1.15.0) the Taylor series
+    "Taylor series: taylor on the Calculus page, with a graph to compare": "Serie de Taylor: taylor en la página «Cálculo», con una gráfica para comparar",
+    "Taylor series": "Serie de Taylor",
+    "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "El polinomio hasta el grado n (20 como máximo) en torno a x = a, con coeficientes exactos cuando se puede",
+    "center {0} =": "centro {0} =",
+    "degree": "grado",
+    "Compare in a graph": "Comparar en una gráfica",
+    "Compare f and the polynomial in a graph": "Comparar f y el polinomio en una gráfica",
+    "The Taylor series took too long: try a lower degree": "La serie de Taylor tardó demasiado: prueba un grado menor",
+    "Could not draw the Taylor polynomial": "No se pudo dibujar el polinomio de Taylor",
+    "It takes long: press \"Calculate\" (with the time limit of the settings), or try a lower degree": "Tarda: pulsa «Calcular» (con el límite de tiempo de los ajustes) o prueba un grado menor",
+    "(A Taylor series of a lower degree is faster)": "(Una serie de Taylor de menor grado es más rápida)",
     " (Not available: {0})": " (No disponibles: {0})",
     " (checking for an exact value…)": " (buscando un valor exacto…)",
     " (no values)": " (sin valores)",
@@ -1737,6 +1749,9 @@
     "2 to 200000 digits (default 15). Higher values take longer to calculate": "De 2 a 200000 cifras (por defecto 15). Los valores más altos tardan más en calcularse",
   },
   messages: {
+    "taylor-degree": (p1) => "El grado de una serie de Taylor es como máximo " + p1,
+    "taylor-value": (p1, p2) => "Sin serie de Taylor: la función no tiene un valor finito en " + p1 + " = " + p2,
+    "taylor-derivative": (p1, p2, p3) => "Sin serie de Taylor: la derivada de orden " + p1 + " no tiene un valor finito en " + p2 + " = " + p3 + " (no es derivable allí)",
     "rates-old": (d) => 'Los tipos de cambio no se actualizan desde hace ' + d + (d === '1' ? ' día' : ' días') + ' (Ajustes → "Actualizar los tipos de cambio ahora")',
     "extra-operator": (o) => 'Se ignoró el operador sobrante "' + o + '"',
     "extra-sign": (o) => 'Se ignoró el "' + o + '" sobrante',
@@ -1805,6 +1820,7 @@
     "argument-kind": (n, a, f, c) => 'El argumento ' + n + ' de ' + f + '() no es del tipo correcto (' + c + ')'
   },
   keys: {
+    "taylor": "Serie de Taylor",
     "⌫": "Borrar",
     "AC": "Borrar todo",
     "◀": "Cursor a la izquierda",
