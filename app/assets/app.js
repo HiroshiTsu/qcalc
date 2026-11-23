@@ -705,7 +705,7 @@
     return {
       angle: S.angle, approx: S.approx, fraction: S.fraction, precision: Math.min(Number(S.precision) || DEFAULTS.precision, maxPrecision()),
       max_decimals: Number(S.max_decimals), base: Number(S.base), notation: S.notation, units: S.units,
-      mixed_units: !!S.mixed_units, complex: S.complex, grouping: !!S.grouping, structuring: S.structuring
+      mixed_units: !!S.mixed_units, complex: S.complex, grouping: false, structuring: S.structuring // (1.15.0: the groups of digits are made when shown, groupText)
     };
   }
   // The time limit of a calculation with "=" in seconds (setting "Time limit"). The engine accepts up
@@ -1526,7 +1526,25 @@
     }
     if (at < t.length) line.append(t.slice(at));
   }
+  // (1.15.0) The groups of digits, made here when a result is shown (setting "Digit grouping", on by default): the engine
+  // is always asked without them, so that the tools read its numbers as before (with the groups of the engine, the
+  // shapes tool cut 33.510 321 638 into 33.51 321 638). A whole part or decimals of 5 digits or more in groups of 3, as
+  // the engine wrote them: the whole part with the sign of the number format, the decimals with narrow spaces; not the
+  // power after E, nor digits that belong to a name; only in base 10
+  function groupText(t) {
+    if (!S.grouping || Number(S.base) !== 10 || !t || t.length > 20000) return t;
+    const re = new RegExp('\\d+(?:' + (NF.dec === '.' ? '\\.' : ',') + '\\d+)?', 'g');
+    return t.replace(re, (num, at, all) => {
+      const b = all[at - 1] || '';
+      if (/[\p{L}_\d]/u.test(b) || (b === NF.dec || b === NF.group) || ((b === '-' || b === '−' || b === '+') && all[at - 2] === 'E')) return num;
+      const k = num.indexOf(NF.dec), i = k < 0 ? num : num.slice(0, k), f = k < 0 ? '' : num.slice(k + 1);
+      const gi = i.length >= 5 ? i.replace(/\B(?=(\d{3})+$)/g, NF.group) : i;
+      const gf = f.length >= 5 ? f.replace(/(\d{3})(?=\d)/g, '$1\u202f') : f;
+      return k < 0 ? gi : gi + NF.dec + gf;
+    });
+  }
   function resultLine(t, approx, second) {
+    t = groupText(t);
     const line = el('span', { class: 'r-line' + (second ? ' r-ap' : '') });
     if (S.math_view && mathResult(t) && window.QMath && QMath.render(line, mathSource(t), { richOnly: true, mathml: true, nf: NF })) {
       line.classList.add('math'); commaMath(line, true);
