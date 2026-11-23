@@ -1794,3 +1794,18 @@ body.hselect #history { padding-bottom: 150px; }
 .sl-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 6px 6px; }
 .sl-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
 .sl-field .sheet-input { margin: 0; width: 100%; box-sizing: border-box; }
+/* (1.15.0) the next steps under the newest answer: one row of buttons that scrolls sideways */
+.h-steps { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 10px; margin: -4px 0 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.h-steps::-webkit-scrollbar { display: none; }
+.step-chip { flex: 0 0 auto; min-height: 48px; padding: 0 14px; border-radius: 24px; border: 1px solid var(--line); background: var(--surface); color: var(--accent); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.step-chip:active { background: var(--line); }
+/* the sheet of details */
+.sheet .dt-head { padding: 0 8px 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.sheet .dt-expr { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.sheet .dt-res { font-size: 17px; overflow-wrap: anywhere; }
+.sheet .dt-list { display: flex; flex-direction: column; max-height: 56vh; overflow-y: auto; }
+.sheet .dt-row { display: flex; flex-direction: column; align-items: stretch; text-align: left; gap: 2px; min-height: 48px; padding: 8px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; width: 100%; }
+.sheet .dt-lbl { font-size: 12.5px; color: var(--muted); }
+.sheet .dt-val { font-size: 16px; overflow-wrap: anywhere; }
+.sheet .dt-graph { display: block; width: 100%; height: 110px; }
+.sheet .dt-none { padding: 12px 8px; color: var(--muted); font-size: 14px; }

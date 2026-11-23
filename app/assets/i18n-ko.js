@@ -1,6 +1,30 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    // (1.15.0) the next steps under the newest answer and the sheet of details
+    "As a decimal": "소수로",
+    "As a fraction": "분수로",
+    "Buttons under the newest answer for what is often done next: details, graph, factor, derivative and the like": "최신 답 아래에 다음에 자주 하는 작업(자세히, 그래프, 인수분해, 미분 등)의 버튼을 표시합니다",
+    "Convert…": "다른 단위로…",
+    "Details": "자세히",
+    "Exact": "정확한 값",
+    "Expanded": "전개",
+    "Factor": "인수분해",
+    "Factored": "인수분해",
+    "Graph (opens the 2D graph)": "그래프(2D 그래프 열기)",
+    "In hex": "16진수로",
+    "Next steps": "다음 작업",
+    "Nothing more to show for this result": "이 결과에 대해 더 보여 줄 것이 없습니다",
+    "Other units": "다른 단위",
+    "Prime factors": "소인수분해",
+    "Put the expression in the field": "식을 입력란에 넣기",
+    "Scientific": "지수 표기",
+    "Solve = 0": "= 0 풀기",
+    "Suggest the next steps under the newest answer": "최신 답 아래에 다음 작업 후보 표시",
+    "Taylor": "테일러 전개",
+    "Taylor series (x = 0, degree 5)": "테일러 전개(x = 0, 5차)",
+    "This result is too long for details": "이 결과는 너무 길어 자세히 볼 수 없습니다",
+    "Zeros (= 0)": "영점(= 0의 해)",
     // (1.15.0) the 3D graph: a surface waiting for its edges
     "Working out where a surface leaves the box…": "곡면이 상자 밖으로 나가는 곳을 계산 중…",
     // (1.15.0) the sliders of the letters of the graphs
@@ -50,6 +74,8 @@
     "Taylor series: taylor on the Calculus page, with a graph to compare": "‘미적분’ 페이지의 taylor로 테일러 전개(그래프로 비교 가능)",
     "2D graph: parametric, polar and implicit curves": "2D 그래프: 매개변수・극좌표・음함수 곡선",
     "Sliders: letters such as a in a sin(b x) get sliders in the graph": "슬라이더: 그래프 식의 a, b 같은 문자를 슬라이더로 움직일 수 있습니다",
+    "Next steps under the newest answer: details, graph, factor and more": "최신 답 아래에 다음 작업 후보(자세히, 그래프, 인수분해 등)",
+    "Details: the other forms of an answer on one sheet": "「자세히」로 답의 여러 형태를 한 화면에",
     "Area: the line crosses itself, so no area is given": "면적: 선이 자기 자신과 교차하므로 내지 않습니다",
     "Taylor series": "테일러 전개",
     "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "중심 x = a 주변에서 n차(최대 20)까지의 다항식을 가능한 한 정확한 계수로 보여 줍니다",
