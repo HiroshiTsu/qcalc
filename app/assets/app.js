@@ -1859,14 +1859,35 @@
     definedVars.clear();
     for (const v of r.variables || []) definedVars.add(v.name);
   }
+  // the arguments of save(…) as the engine writes it, split at the commas outside brackets and quotes; null for
+  // anything else (save(2, 'k') + 1, or a bracket not closed)
+  function saveArgs(p) {
+    const m = /^save\((.*)\)$/.exec(p || '');
+    if (!m) return null;
+    const out = [];
+    let depth = 0, q = '', cur = '';
+    for (const c of m[1]) {
+      if (q) { cur += c; if (c === q) q = ''; continue; }
+      if (c === '"' || c === "'") { q = c; cur += c; continue; }
+      if ('([{'.indexOf(c) >= 0) depth++;
+      else if (')]}'.indexOf(c) >= 0 && --depth < 0) return null;
+      if (c === ',' && !depth) { out.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    out.push(cur.trim());
+    return depth || q ? null : out;
+  }
   function definitionMade(r, expr) {
-    // (the engine writes save(2, 'k'), save(3 meters, "abc") and save(x² + 1, "f(x)"): the name last, in single or double
-    // quotes, with nothing after it. 1.15.0: until then a third argument was looked for, which the engine does not
-    // write, so from 1.8.0, when this came, the message and its Undo were never shown)
-    const m = /^save\(.*, (['"])([^'"]+)\1(?:, [^()]*)?\)$/.exec(r.parsed || '');
-    if (!m) return;
-    const fm = /^\s*([^\s(]+)\s*\(/.exec(m[2]);
-    const name = fm ? fm[1] : m[2].trim();
+    // (the engine writes save(2, 'k', "Temporary", 'k') for k := 2, save(5 centimeters, 'r', "Temporary", 'r', 1) or
+    // save(5, 'x', "Temporary", "", 1) for r = 5 cm and x = 5, and save(x² + 1, "f(x)") for f(x) := x² + 1: the name is
+    // always the second argument, in single or double quotes. 1.15.0: until then a third argument was looked for,
+    // which the engine does not always write, so from 1.8.0 the message and its Undo were never shown; and the name
+    // is read as the second argument, not the last one in quotes, which is the title or the category "Temporary")
+    const args = saveArgs(r.parsed);
+    const nm = args && args.length >= 2 ? /^(['"])(.+)\1$/.exec(args[1]) : null;
+    if (!nm) return;
+    const fm = /^\s*([^\s(]+)\s*\(/.exec(nm[2]);
+    const name = fm ? fm[1] : nm[2].trim();
     const kind = fm || new RegExp('^\\s*' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(').test(expr) ? 'function' : 'variable';
     invalidateCatalogs();
     const shown = kind === 'function' ? name + '()' : name;
