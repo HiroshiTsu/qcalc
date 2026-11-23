@@ -1,6 +1,18 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    // (1.15.0) the Taylor series
+    "Taylor series: taylor on the Calculus page, with a graph to compare": "Série de Taylor : taylor sur la page « Analyse », avec un graphique pour comparer",
+    "Taylor series": "Série de Taylor",
+    "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "Le polynôme jusqu’au degré n (20 au plus) autour de x = a, avec des coefficients exacts si possible",
+    "center {0} =": "centre {0} =",
+    "degree": "degré",
+    "Compare in a graph": "Comparer sur un graphique",
+    "Compare f and the polynomial in a graph": "Comparer f et le polynôme sur un graphique",
+    "The Taylor series took too long: try a lower degree": "La série de Taylor a pris trop de temps : essayez un degré plus petit",
+    "Could not draw the Taylor polynomial": "Impossible de tracer le polynôme de Taylor",
+    "It takes long: press \"Calculate\" (with the time limit of the settings), or try a lower degree": "C’est long : appuyez sur « Calculer » (avec la limite de temps des réglages) ou essayez un degré plus petit",
+    "(A Taylor series of a lower degree is faster)": "(Une série de Taylor de degré plus petit est plus rapide)",
     " (Not available: {0})": " (Non disponibles : {0})",
     " (checking for an exact value…)": " (recherche d’une valeur exacte…)",
     " (no values)": " (aucune valeur)",
@@ -1725,6 +1737,9 @@
     "2 to 200000 digits (default 15). Higher values take longer to calculate": "De 2 à 200000 chiffres (15 par défaut). Les valeurs élevées prennent plus de temps à calculer",
   },
   messages: {
+    "taylor-degree": (p1) => "Le degré d’une série de Taylor est au plus " + p1,
+    "taylor-value": (p1, p2) => "Pas de série de Taylor : la fonction n’a pas de valeur finie en " + p1 + " = " + p2,
+    "taylor-derivative": (p1, p2, p3) => "Pas de série de Taylor : la dérivée d’ordre " + p1 + " n’a pas de valeur finie en " + p2 + " = " + p3 + " (non dérivable en ce point)",
     "rates-old": (p1) => "Les taux de change n’ont pas été mis à jour depuis " + p1 + " " + (p1 === '1' ? "jour" : "jours") + " (Paramètres → « Mettre à jour les taux de change maintenant »)",
     "extra-operator": (p1) => "Opérateur en trop « " + p1 + " » ignoré",
     "extra-sign": (p1) => "« " + p1 + " » en trop ignoré",
@@ -1793,6 +1808,7 @@
     "argument-kind": (p1, p2, p3, p4) => "L’argument " + p1 + " de " + p3 + "() n’est pas du bon type (" + p4 + ")"
   },
   keys: {
+    "taylor": "Série de Taylor",
     "⌫": "Retour arrière",
     "AC": "Tout effacer",
     "◀": "Curseur à gauche",

@@ -1,6 +1,18 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    // (1.15.0) the Taylor series
+    "Taylor series: taylor on the Calculus page, with a graph to compare": "‘미적분’ 페이지의 taylor로 테일러 전개(그래프로 비교 가능)",
+    "Taylor series": "테일러 전개",
+    "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "중심 x = a 주변에서 n차(최대 20)까지의 다항식을 가능한 한 정확한 계수로 보여 줍니다",
+    "center {0} =": "중심 {0} =",
+    "degree": "차수",
+    "Compare in a graph": "그래프로 비교",
+    "Compare f and the polynomial in a graph": "f와 다항식을 그래프로 비교",
+    "The Taylor series took too long: try a lower degree": "테일러 전개에 시간이 너무 걸렸습니다. 차수를 낮춰 보세요",
+    "Could not draw the Taylor polynomial": "테일러 다항식을 그릴 수 없습니다",
+    "It takes long: press \"Calculate\" (with the time limit of the settings), or try a lower degree": "시간이 걸립니다. ‘계산하기’를 누르거나(설정의 제한 시간까지 계산) 차수를 낮춰 보세요",
+    "(A Taylor series of a lower degree is faster)": "(테일러 전개는 차수를 낮추면 빨라집니다)",
     " (Not available: {0})": " (가져오지 못한 곳: {0})",
     " (checking for an exact value…)": " (정확한 값을 확인하는 중…)",
     " (no values)": " (값 없음)",
@@ -1728,6 +1740,9 @@
     "2 to 200000 digits (default 15). Higher values take longer to calculate": "계산 정밀도(2~200000자리, 기본 15). 클수록 계산에 시간이 걸립니다",
   },
   messages: {
+    "taylor-degree": (p1) => "테일러 전개의 차수는 " + p1 + "까지입니다",
+    "taylor-value": (p1, p2) => "테일러 전개할 수 없습니다: " + p1 + " = " + p2 + "에서 함수의 값이 유한하지 않습니다",
+    "taylor-derivative": (p1, p2, p3) => "테일러 전개할 수 없습니다: " + p2 + " = " + p3 + "에서 " + p1 + "계 도함수의 값이 유한하지 않습니다(그 점에서 미분할 수 없음)",
     "rates-old": (p1) => "환율이 " + p1 + "일 동안 업데이트되지 않았습니다(설정 → ‘지금 환율 업데이트’)",
     "extra-operator": (p1) => "불필요한 연산자 ‘" + p1 + "’을(를) 무시했습니다",
     "extra-sign": (p1) => "불필요한 ‘" + p1 + "’을(를) 무시했습니다",
@@ -1796,6 +1811,7 @@
     "argument-kind": (p1, p2, p3, p4) => p3 + "()의 " + p1 + "번째 인수가 맞지 않습니다(" + p4 + ")"
   },
   keys: {
+    "taylor": "테일러 전개",
     "⌫": "한 글자 지우기",
     "AC": "모두 지우기",
     "◀": "커서를 왼쪽으로",

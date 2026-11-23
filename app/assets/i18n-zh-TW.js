@@ -2,6 +2,18 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    // (1.15.0) the Taylor series
+    "Taylor series: taylor on the Calculus page, with a graph to compare": "「微積分」頁的 taylor 可做泰勒展開（可用圖形比較）",
+    "Taylor series": "泰勒展開",
+    "The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can": "以 x = a 為中心、到 n 次（最多 20）的多項式，係數盡量以精確值表示",
+    "center {0} =": "中心 {0} =",
+    "degree": "次數",
+    "Compare in a graph": "用圖形比較",
+    "Compare f and the polynomial in a graph": "用圖形比較 f 與多項式",
+    "The Taylor series took too long: try a lower degree": "泰勒展開花太久時間，請試著降低次數",
+    "Could not draw the Taylor polynomial": "無法畫出泰勒多項式",
+    "It takes long: press \"Calculate\" (with the time limit of the settings), or try a lower degree": "需要較久時間：請按「計算」（以設定的時間上限計算），或試著降低次數",
+    "(A Taylor series of a lower degree is faster)": "（泰勒展開降低次數會比較快）",
     " (Not available: {0})": "（無法取得：{0}）",
     " (checking for an exact value…)": "（正在確認精確值…）",
     " (no values)": "（無值）",
@@ -1729,6 +1741,9 @@
     "2 to 200000 digits (default 15). Higher values take longer to calculate": "計算精確度（2～200000 位，預設 15）。數值越大，計算越久",
   },
   messages: {
+    "taylor-degree": (p1) => "泰勒展開的次數最多為 " + p1,
+    "taylor-value": (p1, p2) => "無法泰勒展開：函數在 " + p1 + " = " + p2 + " 的值不是有限值",
+    "taylor-derivative": (p1, p2, p3) => "無法泰勒展開：" + p1 + " 階導函數在 " + p2 + " = " + p3 + " 的值不是有限值（在該點不可微）",
     "rates-old": (p1) => "匯率已有 " + p1 + " 天沒有更新（設定 →「立即更新匯率」）",
     "extra-operator": (p1) => "已忽略多餘的運算子「" + p1 + "」",
     "extra-sign": (p1) => "已忽略多餘的「" + p1 + "」",
@@ -1797,6 +1812,7 @@
     "argument-kind": (p1, p2, p3, p4) => p3 + "() 的第 " + p1 + " 個引數類型不符（" + p4 + "）"
   },
   keys: {
+    "taylor": "泰勒展開",
     "⌫": "刪除一個字",
     "AC": "全部清除",
     "◀": "游標左移",

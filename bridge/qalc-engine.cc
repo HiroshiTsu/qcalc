@@ -640,6 +640,133 @@ static void adaptive_interval_display(PrintOptions &po, const string &expr, cons
 	else po.interval_display = INTERVAL_DISPLAY_SIGNIFICANT_DIGITS;
 }
 
+// (1.15.0) taylor(f, x = x, a = 0, n = 5): the Taylor polynomial of f about x = a, up to degree n (20 at most): the
+// sum of f⁽ᵏ⁾(a)/k! · (x − a)ᵏ, the derivatives taken one after another by the engine and their values at a kept
+// exact where they can be (fractions, roots, π). When a derivative has no finite value at a (√x at 0, 1/x at 0) it says
+// so instead of giving a wrong polynomial. A calculation of taylor(…) alone prints its terms from the lowest degree
+// up, with the remainder O((x − a)ⁿ⁺¹) at the end (calculate_once); its value (ans, insert) is the polynomial.
+static const int TAYLOR_MAX = 20;
+struct TaylorLast { bool valid = false; MathStructure x, a; int n = 0; vector<MathStructure> c; };
+static TaylorLast g_taylor_last;
+class TaylorFunction : public MathFunction {
+  public:
+	TaylorFunction() : MathFunction("taylor", 1, 4, "Calculus", "Taylor polynomial", "The Taylor polynomial of f about x = a, up to degree n (at most 20).") {
+		setArgumentDefinition(2, new SymbolicArgument());
+		setDefaultValue(2, "x");
+		setDefaultValue(3, "0");
+		IntegerArgument *iarg = new IntegerArgument("", ARGUMENT_MIN_MAX_NONNEGATIVE, true, true, INTEGER_TYPE_SINT);
+		iarg->setHandleVector(false);
+		setArgumentDefinition(4, iarg);
+		setDefaultValue(4, "5");
+	}
+	TaylorFunction(const TaylorFunction *function) {set(function);}
+	ExpressionItem *copy() const {return new TaylorFunction(this);}
+	int calculate(MathStructure &mstruct, const MathStructure &vargs, const EvaluationOptions &eo) {
+		const MathStructure &x = vargs[1], &a = vargs[2];
+		int n = vargs[3].number().intValue();
+		if(n > TAYLOR_MAX) {
+			CALCULATOR->error(true, "Taylor series: the degree can be at most %s", i2s(TAYLOR_MAX).c_str(), NULL);
+			return 0;
+		}
+		if(a.contains(x)) return 0;
+		EvaluationOptions eo2 = eo;
+		eo2.approximation = APPROXIMATION_EXACT;
+		eo2.calculate_functions = true;
+		EvaluationOptions eod = eo2;
+		eod.calculate_functions = false;
+		MathStructure d(vargs[0]), sum(m_zero);
+		vector<MathStructure> cs;
+		Number fact(1, 1);
+		// a value of a derivative at a: substituted, or (0/0, as sin(x)/x at 0) its limit; NULL-like: false
+		auto bad = [&](const MathStructure &v) { return v.contains(x) || v.containsInfinity(true) || v.contains(m_undefined, true) || v.containsFunctionId(FUNCTION_ID_DIFFERENTIATE) || v.containsFunctionId(FUNCTION_ID_LIMIT) || v.isAborted(); };
+		for(int k = 0; k <= n; k++) {
+			if(CALCULATOR->aborted()) return 0;
+			if(k > 0) {
+				// as diff() does between its steps: exact, functions kept, factorized (the derivatives stay small)
+				if(!d.differentiate(x, eo2)) return 0;
+				d.eval(eod);
+				d.factorize(eod, false, 0, 0, false, 1, NULL, m_undefined, false, true);
+				fact *= k;
+			}
+			MathStructure v(d);
+			v.replace(x, a);
+			int nmsg = 0, nwarn = 0;
+			CALCULATOR->beginTemporaryStopMessages();
+			v.eval(eo2);
+			CALCULATOR->endTemporaryStopMessages(&nmsg, &nwarn);
+			if(CALCULATOR->aborted()) return 0;
+			if(nmsg > 0 || bad(v)) {
+				v = d;
+				CALCULATOR->beginTemporaryStopMessages();
+				bool lim = v.calculateLimit(x, a, eo2);
+				CALCULATOR->endTemporaryStopMessages(&nmsg, &nwarn);
+				if(CALCULATOR->aborted()) return 0;
+				if(!lim || nmsg > 0 || bad(v)) {
+					if(k == 0) CALCULATOR->error(true, "Taylor series: the function has no finite value at %s = %s", x.print().c_str(), a.print().c_str(), NULL);
+					else CALCULATOR->error(true, "Taylor series: the derivative of order %s has no finite value at %s = %s", i2s(k).c_str(), x.print().c_str(), a.print().c_str(), NULL);
+					return 0;
+				}
+			}
+			v.calculateDivide(fact, eo);
+			if(eo.approximation != APPROXIMATION_EXACT && eo.approximation != APPROXIMATION_TRY_EXACT) v.eval(eo);
+			cs.push_back(v);
+			if(v.isZero()) continue;
+			MathStructure term(v);
+			if(k > 0) {
+				MathStructure u(x);
+				if(!a.isZero()) u.subtract(a);
+				if(k > 1) u.raise(Number(k, 1));
+				term.multiply(u);
+			}
+			sum.add(term, true);
+		}
+		g_taylor_last.valid = true; g_taylor_last.x = x; g_taylor_last.a = a; g_taylor_last.n = n; g_taylor_last.c = cs;
+		mstruct = sum;
+		return 1;
+	}
+};
+static MathFunction *g_taylor = NULL;
+// the polynomial of the last taylor() from its lowest degree up, and + O((x − a)ⁿ⁺¹)
+static string taylor_ascending(const PrintOptions &po, const EvaluationOptions &eo) {
+	const TaylorLast &T = g_taylor_last;
+	string out;
+	MathStructure u(T.x);
+	if(!T.a.isZero()) u.subtract(T.a);
+	for(size_t k = 0; k < T.c.size(); k++) {
+		if(T.c[k].isZero()) continue;
+		// (a negative coefficient: " − " and the term with the coefficient made positive)
+		bool neg = T.c[k].representsNegative(true);
+		MathStructure term(T.c[k]);
+		if(neg) term.calculateNegate(eo);
+		if(k > 0) {
+			MathStructure p(u);
+			if(k > 1) p.raise(Number((long) k, 1));
+			term.multiply(p);
+		}
+		EvaluationOptions eo2 = eo;
+		eo2.expand = false;
+		eo2.approximation = APPROXIMATION_EXACT;
+		if(T.a.isZero()) term.eval(eo2);
+		PrintOptions po2 = po;
+		if(!term.isApproximate()) {po2.number_fraction_format = FRACTION_FRACTIONAL; po2.restrict_fraction_length = false;}
+		term.removeDefaultAngleUnit(eo);
+		term.format(po2);
+		string s = term.print(po2);
+		if(neg) s = SIGN_MINUS + s;
+		if(out.empty()) out = s;
+		else if(s.compare(0, strlen(SIGN_MINUS), SIGN_MINUS) == 0) out += " " SIGN_MINUS " " + s.substr(strlen(SIGN_MINUS));
+		else if(!s.empty() && s[0] == '-') out += " " SIGN_MINUS " " + s.substr(1);
+		else out += " + " + s;
+	}
+	if(out.empty()) out = "0";
+	MathStructure rem(u);
+	if(T.n + 1 > 1) rem.raise(Number(T.n + 1, 1));
+	PrintOptions po2 = po;
+	rem.format(po2);
+	out += " + O(" + rem.print(po2) + ")";
+	return out;
+}
+
 struct CalcResult {
 	string result, parsed;
 	bool approx = false, comparison = false, timed_out = false, forced = false, have_value = false;
@@ -693,6 +820,7 @@ static void calculate_once(string str, int msecs, EvaluationOptions evalops, Pri
 	transform_expression_for_equals_save(str, evalops.parse_options);
 
 	MathStructure mstruct, parsed_struct;
+	g_taylor_last.valid = false;
 	bool finished = CALCULATOR->calculate(&mstruct, str, msecs, evalops, &parsed_struct);
 	if(!finished) {
 		r.timed_out = true;
@@ -814,6 +942,12 @@ static void calculate_once(string str, int msecs, EvaluationOptions evalops, Pri
 				}
 			}
 			r.approx = (exact_comparison || !alt_results.empty()) ? false : (is_approx || r.value.isApproximate());
+			// (1.15.0) taylor(…) alone: its terms from the lowest degree up, and the remainder O(…)
+			if(g_taylor && g_taylor_last.valid && !had_to && !do_bases && !do_factors && parsed_struct.isFunction() && parsed_struct.function() == g_taylor && !CALCULATOR->aborted()) {
+				result = taylor_ascending(printops, evalops);
+				r.approx = false;
+				for(size_t ic = 0; ic < g_taylor_last.c.size(); ic++) if(g_taylor_last.c[ic].isApproximate()) r.approx = true;
+			}
 			if(CALCULATOR->getPrecision() != prec_set) CALCULATOR->setPrecision(prec_set);
 			printops.min_exp = min_exp_set;
 			if(CALCULATOR->aborted()) r.timed_out = true;
@@ -1582,10 +1716,15 @@ class TraceFunction : public MathFunction {
 		return 1;
 	}
 };
+
 static void add_matrix_functions() {
 	if(CALCULATOR->getActiveFunction("trace")) return;
 	MathFunction *f = CALCULATOR->addFunction(new TraceFunction());
 	if(f) f->setChanged(false);
+	if(!CALCULATOR->getActiveFunction("taylor")) {
+		g_taylor = CALCULATOR->addFunction(new TaylorFunction());
+		if(g_taylor) g_taylor->setChanged(false);
+	}
 }
 
 // --------------------------------------------------------------------- main

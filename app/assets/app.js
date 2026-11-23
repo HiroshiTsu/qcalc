@@ -810,7 +810,7 @@
     calc: [
       ['d/dx', { form: 'diff', ins: 'diff(□)' }], ['d²/dx²', { form: 'diff', init: { n: '2' }, ins: 'diff(□, x, 2)', cls: 'fn sm' }], ['∂/∂y', { form: 'diff', init: { v: 'y' }, ins: 'diff(□, y)' }], ['⌫', { act: 'del', cls: 'ctl', repeat: true }], ['AC', { act: 'clear', cls: 'ctl' }],
       ['∫', { form: 'int', ins: 'integrate(□)' }], ['∫ₐᵇ', { form: 'int', init: { focus: 'a', order: ['a', 'b', 'f', 'v'] }, ins: 'integrate(□, □, □)', html: '∫<sub>a</sub><sup>b</sup>' }], ['lim', { form: 'lim', ins: 'limit(□, □)' }], ['Σ', { form: 'sum', ins: 'sum(□, □, □)' }], ['Π', { form: 'prod', ins: 'product(□, □, □)' }],
-      ['dsolve', { form: 'dsolve', ins: 'dsolve(diff(y, x) = □)', cls: 'fn sm' }], [tr('max/min', '極値'), { ins: 'extremum()', back: 1, cls: tr('fn sm', undefined) }], ['solve', { form: 'solve', ins: 'solve()', back: 1 }], ['∞', { ins: '∞' }], ['y', { ins: 'y' }],
+      ['dsolve', { form: 'dsolve', ins: 'dsolve(diff(y, x) = □)', cls: 'fn sm' }], ['taylor', { form: 'taylor', ins: 'taylor(□, x, 0, 5)', cls: 'fn sm' }], ['solve', { form: 'solve', ins: 'solve()', back: 1 }], ['∞', { ins: '∞' }], ['y', { ins: 'y' }],
       ['(', { ins: '(' }], [')', { ins: ')' }], ['xʸ', { ins: '^', op: true, cls: 'op' }], ['√', { ins: '√()', back: 1, cls: 'op' }], ['π', { ins: 'π', cls: 'op' }],
       ['sin', { ins: 'sin()', back: 1 }], ['ln', { ins: 'ln()', back: 1 }], ['e', { ins: 'e' }], [tr('more…', 'ほか…'), { act: 'more', cls: 'fn sm' }], ['=', { act: 'eq', cls: 'eq' }]
     ],
@@ -852,7 +852,7 @@
     'eˣ': 'eのべき乗', '∫': '積分', 'd/dx': '微分', 'Σ': '総和', ',': 'カンマ',
     '°': '度', '%': 'パーセント', '(': '左かっこ', ')': '右かっこ', '.': '小数点',
     'd²/dx²': '2階微分', '∂/∂y': 'yで偏微分', '∫ₐᵇ': '定積分', 'lim': '極限', 'Π': '総乗', 'dsolve': '微分方程式を解く',
-    '極値': '極値', 'solve': '方程式を解く', '∞': '無限大', 'ほか…': 'ほかの関数を一覧から選ぶ',
+    '極値': '極値', 'solve': '方程式を解く', 'taylor': 'テイラー展開', '∞': '無限大', 'ほか…': 'ほかの関数を一覧から選ぶ',
     '[': '左角かっこ（行列の始まり）', ']': '右角かっこ（行列の終わり）', ';': 'セミコロン（行列の行の区切り）',
     'det': '行列式', 'Aᵀ': '転置行列', 'A⁻¹': '逆行列', '▦': '行列を入力する画面を開く', 'a/b': '分数（分子と分母の欄）'
   } : I18N.keys || {
@@ -862,7 +862,7 @@
     'eˣ': 'e to the power', '∫': 'Integral', 'd/dx': 'Derivative', 'Σ': 'Sum', ',': 'Comma',
     '°': 'Degrees', '%': 'Percent', '(': 'Left parenthesis', ')': 'Right parenthesis', '.': 'Decimal point',
     'd²/dx²': 'Second derivative', '∂/∂y': 'Partial derivative with respect to y', '∫ₐᵇ': 'Definite integral', 'lim': 'Limit',
-    'Π': 'Product', 'dsolve': 'Solve a differential equation', 'max/min': 'Extremum (maximum or minimum)', 'solve': 'Solve an equation',
+    'Π': 'Product', 'dsolve': 'Solve a differential equation', 'max/min': 'Extremum (maximum or minimum)', 'solve': 'Solve an equation', 'taylor': 'Taylor series',
     '∞': 'Infinity', 'more…': 'Choose another function from the list',
     '[': 'Left bracket (start of a matrix)', ']': 'Right bracket (end of a matrix)', ';': 'Semicolon (end of a matrix row)',
     'det': 'Determinant', 'Aᵀ': 'Transpose', 'A⁻¹': 'Inverse matrix', '▦': 'Open the matrix form', 'a/b': 'Fraction (boxes for the numerator and the denominator)'
@@ -1609,6 +1609,10 @@
     [/^Misplaced operator\(s\) "(.+)" ignored\.?$/, (m, o) => '余分な演算子「' + o + '」を無視しました', 'extra-operator'],
     [/^Misplaced '(.+)' ignored\.?$/, (m, o) => '余分な「' + o + '」を無視しました', 'extra-sign'],
     [/^Division by zero\.?$/, () => 'ゼロで割っています', 'division-by-zero'],
+    // (1.15.0) taylor()
+    [/^Taylor series: the degree can be at most (\d+)\.?$/, (m, n) => 'テイラー展開の次数は ' + n + ' までです', 'taylor-degree'],
+    [/^Taylor series: the function has no finite value at (.+?) = (.+?)\.?$/, (m, v, a) => 'テイラー展開できません：' + v + ' = ' + a + ' で関数の値が有限になりません', 'taylor-value'],
+    [/^Taylor series: the derivative of order (\d+) has no finite value at (.+?) = (.+?)\.?$/, (m, k, v, a) => 'テイラー展開できません：' + v + ' = ' + a + ' で ' + k + ' 階の導関数の値が有限になりません（その点で微分できません）', 'taylor-derivative'],
     [/^Misplaced decimal separator ignored\.?$/, () => '余分な小数点を無視しました', 'extra-decimal-point'],
     [/^Floating point overflow\.?$/, () => '数が大きすぎて、小数では表せません', 'overflow'],
     [/^Floating point underflow\.?$/, () => '数が小さすぎて、小数では表せません', 'underflow'],
@@ -1778,7 +1782,8 @@
     if (r.timeout) {
       previewEl.textContent = '';
       msgEl.textContent = trf('The calculation took longer than the time limit ({0} s) and was stopped. The time limit can be changed in Settings',
-        '制限時間（{0} 秒）を過ぎたため計算を中止しました。制限時間は設定で変えられます', limit);
+        '制限時間（{0} 秒）を過ぎたため計算を中止しました。制限時間は設定で変えられます', limit)
+        + (/(^|[^\p{L}\p{N}_])taylor\(/u.test(raw) ? ' ' + tr('(A Taylor series of a lower degree is faster)', '（テイラー展開は次数を下げると速くなります）') : '');
       msgEl.className = 'msg error';
       return;
     }
@@ -1999,6 +2004,21 @@
       matrix: true,
       boxes: [],
       build: () => matrixExpr()
+    },
+    // (1.15.0) the Taylor polynomial: taylor(f, x, a, n) of the engine (qalc-engine.cc), its terms from the lowest degree
+    // up with O(…) at the end; 📈 compares f with the polynomial in the 2D graph
+    taylor: {
+      title: tr('Taylor series', 'テイラー展開'),
+      boxes: [['f', 'f(x)', true], ['v', 'x', false, 'x'], ['a', '0', false, '0'], ['n', '5', false, '5']],
+      hint: tr('The polynomial up to degree n (20 at most) about x = a, with exact coefficients where it can', '中心 x = a のまわりの n 次までの多項式を、できるだけ正確な係数で出します（次数は 20 まで）'),
+      layout: (B, N) => [cfRow(N.op = el('span', { class: 'cf-tex' }), B.f),
+        el('div', { class: 'cf-opts' }, cfLbl(tr('variable', '変数'), B.v), cfLbl(N.at = el('span', { text: tr('center x =', '中心 x =') }), B.a), cfLbl(tr('degree', '次数'), B.n))],
+      update: (g, N) => {
+        const v = g('v').replace(/^\\/, ''), n = g('n');
+        renderTeX(N.op, 'T_{' + n + '}', 'T' + n);
+        N.at.textContent = trf('center {0} =', '中心 {0} =', v);
+      },
+      build: (g) => `taylor(${g('f')}, ${g('v')}, ${g('a')}, ${g('n')})`
     },
     subst: {
       title: tr('Substitute a value', '値を代入'),
@@ -2236,6 +2256,7 @@
         CF.nodes.graph = tapButton({ class: 'btn cf-graph', text: '📈', title: tr('Graph', 'グラフ'), 'aria-label': tr('Draw a graph', 'グラフに描く') }, () => formGraph()),
         tapButton({ class: 'btn', text: tr('Insert', '式に入れる') }, () => formInsert(false)),
         tapButton({ class: 'btn primary', text: tr('Calculate', '計算する') }, () => formCalculate())));
+    if (id === 'taylor') { CF.nodes.graph.textContent = '📈 ' + tr('Compare in a graph', 'グラフで比べる'); CF.nodes.graph.setAttribute('aria-label', tr('Compare f and the polynomial in a graph', 'f と多項式をグラフで比べる')); }
     cformEl.hidden = false;
     document.body.classList.add('cform-open');
     const first = init.focus || formMissing()[0] || CF.order[0];
@@ -2662,6 +2683,7 @@
       const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
       CF.nodes.msg.className = 'cf-msg error';
       if (!r.ok) { CF.nodes.res.textContent = ''; CF.nodes.msg.textContent = localMessage(r.error) || ''; }
+      else if (r.timeout && CF.id === 'taylor') { CF.nodes.res.textContent = ''; CF.nodes.msg.className = 'cf-msg'; CF.nodes.msg.textContent = tr('It takes long: press "Calculate" (with the time limit of the settings), or try a lower degree', '時間がかかります。「計算する」を押す（設定の制限時間まで計算します）か、次数を下げてみてください'); }
       else if (r.timeout) { CF.nodes.res.textContent = ''; CF.nodes.msg.className = 'cf-msg'; CF.nodes.msg.textContent = tr('Press "Calculate" to calculate it (it takes longer)', '時間がかかるため「計算する」で計算してください'); }
       else if (err || !r.result) { CF.nodes.res.textContent = ''; CF.nodes.msg.textContent = err ? localMessage(err.text) : tr('Check the boxes', '欄を確認してください'); markFaultyBox(seq); }
       else {
@@ -2959,6 +2981,7 @@
     switch (id) {
       case 'int': a = args('integrate'); return a && a.length <= 4 && a[0] ? { f: a[0], a: opt(a[1]), b: opt(a[2]), v: letter(a[3]) } : null;
       case 'diff': a = args('diff'); return a && a.length <= 4 && a[0] ? { f: a[0], v: letter(a[1]), n: a[2] || '', at: a[3] || '' } : null;
+      case 'taylor': a = args('taylor'); return a && a.length <= 4 && a[0] ? { f: a[0], v: letter(a[1]), a: a[2] || '', n: a[3] || '' } : null;
       case 'lim': a = args('limit'); return a && a.length >= 2 && a.length <= 4 ? { f: a[0], a: a[1], v: letter(a[2]), dir: a[3] === '1' ? '1' : /^[−-]1$/.test(a[3] || '') ? '−1' : '' } : null;
       case 'sum': case 'prod': a = args(id === 'sum' ? 'sum' : 'product'); return a && (a.length === 3 || a.length === 4) ? { f: a[0], a: a[1], b: a[2], v: letter(a[3]) } : null;
       case 'dsolve': {
@@ -3030,7 +3053,7 @@
     }
     if (CF.boxes.v && formValue('v') !== 'x') return false;
     if (CF.id === 'dsolve') return true;
-    return ['int', 'diff', 'lim', 'subst'].indexOf(CF.id) >= 0 && hasX(formValue('f'));
+    return ['int', 'diff', 'lim', 'subst', 'taylor'].indexOf(CF.id) >= 0 && hasX(formValue('f'));
   }
   // the numbers in a result ("[4/5; 7/5] = [0.8; 1.4]", "[3  2]", "x = 2"), or null
   async function resultNumbers(expr) {
@@ -3099,6 +3122,16 @@
       const p = await near(at, 3);
       if (n === '1') return openPlotWith(exprs, { tangentAt: at, range: p && p.range });
       return openPlotWith(exprs, { marks: [{ x: at, label: 'x = ' + at }], range: p && p.range });
+    }
+    if (id === 'taylor') {
+      // f and its Taylor polynomial (the polynomial as the engine writes it to be typed in), around the center
+      const r = await Bridge.send('calc', { expr: F.build(g), opts: Object.assign(engineOpts(), { grouping: false }), timeout: timeLimit() * 1000, input: true });
+      const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
+      if (!r.ok || r.timeout || err || !r.input) return toast(err ? localMessage(err.text) : r.timeout ? tr('The Taylor series took too long: try a lower degree', 'テイラー展開に時間がかかりすぎました。次数を下げてみてください') : tr('Could not draw the Taylor polynomial', 'テイラー多項式を描けませんでした'), 3200);
+      const p = await near(g('a'), 3);
+      // (the polynomial from its lowest degree up, as the result shows it, without O(…); else as the engine writes it)
+      const asc = String(r.result || '').replace(/ \+ O\(.*\)$/, '');
+      return openPlotWith([f, asc && asc !== r.result ? asc : r.input], { range: p && p.range });
     }
     if (id === 'lim' || id === 'subst') {
       const a = g('a');
@@ -4134,7 +4167,7 @@
   const FUNC_JA = {
     solve: '方程式を解く', multisolve: '連立方程式を解く', solve2: '2元連立方程式を解く', dsolve: '微分方程式を解く',
     newtonsolve: 'ニュートン法で解く', secantsolve: '割線法で解く', sum: '総和 シグマ', product: '総乗',
-    diff: '微分', integrate: '積分', limit: '極限', extremum: '極値', romberg: '数値積分（ロンバーグ法）',
+    diff: '微分', integrate: '積分', limit: '極限', taylor: 'テイラー展開 テイラー級数 マクローリン展開', extremum: '極値', romberg: '数値積分（ロンバーグ法）',
     sqrt: '平方根 ルート', cbrt: '立方根', root: 'n乗根', sq: '2乗', exp: '指数関数', ln: '自然対数', log: '対数（底を指定）',
     log2: '2を底とする対数', log10: '常用対数', exp2: '2のべき乗', exp10: '10のべき乗',
     sin: '正弦 サイン', cos: '余弦 コサイン', tan: '正接 タンジェント', arcsin: '逆正弦 アークサイン', arccos: '逆余弦 アークコサイン',
@@ -15208,6 +15241,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     history.length ? ['✏️', tr('Edit a line of the history in place (touch its expression)', '履歴の行をその場で直せます（式の行をタップ）'), () => startHistEdit(history[history.length - 1])] : null,
     ['🎚️', tr('The precision at the top: press its chip to choose 10 to 100 digits or another', '有効桁数を上のボタンですぐ変えられます（10〜100 桁ほか）'), () => precisionSheet()],
     ['📥', tr('Calculation notes: open a .txt or .csv file, or share text to QCalc', '計算メモに .txt・.csv のファイルや、ほかのアプリから共有した文字を読み込めます'), () => { const p = openNotesTool(); const d = p.body.querySelector('.note-more'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ block: 'center' }), 350); } }],
+    ['📐', tr('Taylor series: taylor on the Calculus page, with a graph to compare', '「解析」のページの taylor でテイラー展開（グラフで比べられます）'), () => openForm('taylor', { f: 'sin(x)' })],
     ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
     try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
   ].filter(Boolean);

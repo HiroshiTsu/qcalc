@@ -28,6 +28,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 ## new-1-15 | Nouveautés de la 1.15.0
 - **Résultats plus lisibles** : les résultats ont 15 chiffres significatifs, par groupes de trois. Les téléphones qui avaient encore les anciennes valeurs par défaut (10 chiffres, sans groupes) changent une fois avec cette version. [[Precision (significant digits)]] et [[Digit grouping (1,000)]] dans les [[Settings]] permettent de revenir ([Lire le résultat](#results)).
 - **Lire dans les notes de calcul** : [[More ▾]] → [[Open a file]] dans les notes lit un fichier .txt ou .csv, et le texte ou le fichier qu’une autre application envoie avec « Partager » → QCalc est aussi reçu ([Notes de calcul](#notes)).
+- **Série de Taylor** : taylor sur la page [[Calculus]] donne le polynôme de Taylor autour d’un centre jusqu’à un degré (coefficients exacts ; on peut aussi saisir `taylor(sin(x), x, 0, 5)`). [[Compare in a graph]] le trace avec la fonction ([Dérivées, intégrales, limites, sommes](#calculus)).
 - **Deux lignes** : un résultat exact avec sa valeur approchée affiche « = exact » sur une ligne et « ≈ valeur approchée » sur la suivante. Les fractions et les racines sont dessinées dans la même écriture que les autres résultats.
 - **Nombres** : pas de zéros finaux dans les valeurs approchées ; les très grands ou très petits nombres s’affichent comme 1,606 938 × 10⁶⁰ (copiés sous la forme 1.606938E60) ; les entiers et les décimaux exacts s’affichent en entier jusqu’à 60 chiffres, même au-delà de la précision (par exemple 30!).
 - **Résultats longs et unités** : un résultat trop long pour une ligne s’affiche un peu plus petit, et seulement ensuite passe à la ligne entre des groupes de trois chiffres ; un résultat avec des unités reste sur une ligne (m/s).
@@ -476,6 +477,9 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :shot: form | Le formulaire d'une intégrale
 :example: ∫ x² sin(x) dx de 0 à π → `= π² − 4`, dessous `≈ 5,869 604 401 089 36`
 :tip: Une limite peut être [[Both sides]], [[From the right (+)]] ou [[From the left (−)]].
+:step: taylor ([[Taylor series]]) sur la page [[Calculus]] prend une fonction f(x), un centre a (0 au départ) et un degré n (5 au départ, jusqu’à 20) et donne le polynôme de Taylor à partir du plus petit degré, comme `x − x³/6 + x⁵/120 + O(x⁶)`. Les coefficients restent exacts si possible (fractions, √, π). Saisir `taylor(sin(x), x, 0, 5)` dans le champ marche aussi.
+:step: [[Compare in a graph]] trace la fonction et son polynôme de Taylor ensemble sur le graphique 2D.
+:tip: Si la fonction ou une dérivée n’a pas de valeur finie au centre (√x ou 1/x en x = 0), l’application le signale ; une valeur donnée par une limite, comme sin(x)/x en x = 0, fonctionne. Si c’est long, essayez un degré plus petit.
 
 ## equations | Équations
 :what: Résout des équations et des systèmes d'équations.
