@@ -14211,6 +14211,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     // stays smooth across the rim, where the two halves meet.
     // (fewer while the graph is turned)
     const RS = Q3.turning ? 2 : 3, rsub = new Array((RS + 1) * (RS + 2) / 2), upN = camN(0, 0, 2);
+    // (how many were cut into strips or left whole, below: for the tests, data-surf)
+    const rimCut = { strip: 0, flat: 0 };
     // (fix/3d-first-colors) A side whose two corners are not rounded (LAM 0 in rimModel: the last grid points with G, next
     // to cells drawn flat) is not cut either: it is also the side of a flat cell, and points in the middle of a side of
     // one triangle only (T-junctions) left cracks a pixel wide, through which the inside of the solid showed as dark
@@ -14218,11 +14220,12 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const rimTri = (s, A, B, C) => {
       const flat = (P, Q) => !(P.lam > 0) && !(Q.lam > 0);
       const fAB = flat(A, B), fBC = flat(B, C), fCA = flat(C, A);
-      if (fAB && fBC && fCA) { tb.add(rimPt(s, A, B, C, 1, 0, 0), rimPt(s, A, B, C, 0, 1, 0), rimPt(s, A, B, C, 0, 0, 1)); return; }
+      if (fAB && fBC && fCA) { rimCut.flat++; tb.add(rimPt(s, A, B, C, 1, 0, 0), rimPt(s, A, B, C, 0, 1, 0), rimPt(s, A, B, C, 0, 0, 1)); return; }
       if (fBC) { rimTri(s, B, C, A); return; }
       if (fCA) { rimTri(s, C, A, B); return; }
       if (fAB) {
         // (strips from the whole side AB toward C: the points on AC and on BC, as the triangles beside them have them)
+        rimCut.strip++;
         for (let i = 0; i < RS; i++) {
           const c0 = i / RS, c1 = (i + 1) / RS;
           const P0 = rimPt(s, A, B, C, 1 - c0, 0, c0), Q0 = rimPt(s, A, B, C, 0, 1 - c0, c0), P1 = rimPt(s, A, B, C, 1 - c1, 0, c1), Q1 = rimPt(s, A, B, C, 0, 1 - c1, c1);
@@ -14340,7 +14343,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     else if (!Q3.turning && !shadows) Q3.lastShade = null;
     // (what was drawn, for the tests; shadow: the pixels in a shadow and at the soft edge of one, the
     // size of the lamp's map and the time to make it; floor: the cells of the floor's layer in a shadow)
-    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor, shk: Math.round(shK * 1000) / 1000, turnMs: Q3.turning ? Math.round(Q3.turnMs || 0) : null, turnL: Q3.turning ? (Q3.turnList || []).map(Math.round) : null, shSlow: !!Q3.shSlow, drawMs: Math.round(Q3.lastDrawMs || 0),
+    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, rimStrips: rimCut.strip, rimFlat: rimCut.flat, rimRS: RS, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor, shk: Math.round(shK * 1000) / 1000, turnMs: Q3.turning ? Math.round(Q3.turnMs || 0) : null, turnL: Q3.turning ? (Q3.turnList || []).map(Math.round) : null, shSlow: !!Q3.shSlow, drawMs: Math.round(Q3.lastDrawMs || 0),
       rims: (D.series || []).reduce((n, s) => n + (s.rim ? Object.keys(s.rim).length : 0), 0),
       // (1.12.0, BG09: for each surface, the grid lines across its edge without an edge point; and the
       // most grid points at which two surfaces have the same value)
