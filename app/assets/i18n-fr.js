@@ -1,6 +1,16 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    "#{0}: that line is no longer in the history": "#{0} : cette ligne n’est plus dans l’historique (supprimée)",
+    "The answer of #{0} cannot be used in a calculation (too long, or text)": "Le résultat de #{0} ne peut pas servir dans un calcul (trop long, ou texte)",
+    "#{0} is no longer in the history: this answer is the one from before": "#{0} a été supprimée : ce résultat est celui d’avant",
+    "Insert #{0} (this line by its number)": "Insérer #{0} (cette ligne par son numéro)",
+    "Select: sum and average": "Choisir : somme et moyenne",
+    "{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?": "{0} lignes en dessous continuent de cette ligne (son ans, #{1} ou sa variable). Les recalculer aussi ?",
+    "Copy as a table": "Copier en tableau",
+    "Copying lines as a table is a QCalc Pro feature, as exporting the history": "Copier des lignes en tableau est, comme l’export de l’historique, une fonction de QCalc Pro",
+    "{0} lines copied as a table: paste them into a spreadsheet": "{0} lignes copiées en tableau : collez-les dans un tableur",
+    "Save the history as a CSV file, or copy the lines you choose as a table, for a spreadsheet": "Enregistrer l’historique dans un fichier CSV, ou copier en tableau les lignes choisies, pour un tableur",
     "The solid whose volume is measured": "Solide dont on mesure le volume",
     "(its answer is in the expression)": "(son résultat est dans l’expression)",
     // (1.16.0) the card of what is new: the stocks and the notes
@@ -962,7 +972,6 @@
     "= adds a new line": "= ajoute une nouvelle ligne",
     "Editing stopped, nothing changed": "Modification arrêtée, rien n’a changé",
     "The time limit was reached": "Le temps limite a été atteint",
-    "{0} lines below go on from this line (its ans or its variable). Work them out again too?": "{0} lignes en dessous continuent de cette ligne (son ans ou sa variable). Les recalculer aussi ?",
     "Also the {0} lines below": "Aussi les {0} lignes en dessous",
     "Only this line": "Cette ligne seulement",
     "Not worked out again: {0}": "Non recalculée : {0}",
@@ -1092,7 +1101,6 @@
     "Samples": "Exemples",
     "Samples (tap one to draw it)": "Exemples (touchez-en un pour le tracer)",
     "Save function": "Enregistrer la fonction",
-    "Save the history as a CSV file that spreadsheets can open": "Enregistrer l’historique dans un fichier CSV que les tableurs peuvent ouvrir",
     "Save variable": "Enregistrer la variable",
     "Saved": "Enregistré",
     "Scientific (exponent from about 1000)": "Scientifique (exposant à partir d’environ 1000)",

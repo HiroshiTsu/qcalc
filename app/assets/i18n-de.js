@@ -1,6 +1,16 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    "#{0}: that line is no longer in the history": "#{0}: Diese Zeile ist nicht mehr im Verlauf (gelöscht)",
+    "The answer of #{0} cannot be used in a calculation (too long, or text)": "Das Ergebnis von #{0} kann nicht in einer Rechnung verwendet werden (zu lang oder Text)",
+    "#{0} is no longer in the history: this answer is the one from before": "#{0} wurde gelöscht: Dieses Ergebnis ist der Wert von vorher",
+    "Insert #{0} (this line by its number)": "#{0} einfügen (diese Zeile über ihre Nummer)",
+    "Select: sum and average": "Auswählen: Summe und Mittelwert",
+    "{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?": "{0} Zeilen darunter rechnen mit dieser Zeile weiter (ihr ans, #{1} oder ihre Variable). Auch neu berechnen?",
+    "Copy as a table": "Als Tabelle kopieren",
+    "Copying lines as a table is a QCalc Pro feature, as exporting the history": "Zeilen als Tabelle kopieren ist wie der Export des Verlaufs eine Funktion von QCalc Pro",
+    "{0} lines copied as a table: paste them into a spreadsheet": "{0} Zeilen als Tabelle kopiert: in eine Tabellenkalkulation einfügen",
+    "Save the history as a CSV file, or copy the lines you choose as a table, for a spreadsheet": "Den Verlauf als CSV-Datei speichern oder ausgewählte Zeilen als Tabelle kopieren, für eine Tabellenkalkulation",
     "The solid whose volume is measured": "Körper, dessen Volumen gemessen wird",
     "(its answer is in the expression)": "(sein Ergebnis steht im Ausdruck)",
     // (1.16.0) the card of what is new: the stocks and the notes
@@ -962,7 +972,6 @@
     "= adds a new line": "= fügt eine neue Zeile hinzu",
     "Editing stopped, nothing changed": "Bearbeiten beendet, nichts geändert",
     "The time limit was reached": "Das Zeitlimit wurde erreicht",
-    "{0} lines below go on from this line (its ans or its variable). Work them out again too?": "{0} Zeilen darunter rechnen mit dieser Zeile weiter (ihr ans oder ihre Variable). Auch neu berechnen?",
     "Also the {0} lines below": "Auch die {0} Zeilen darunter",
     "Only this line": "Nur diese Zeile",
     "Not worked out again: {0}": "Nicht neu berechnet: {0}",
@@ -1092,7 +1101,6 @@
     "Samples": "Beispiele",
     "Samples (tap one to draw it)": "Beispiele (tippe auf eines, um es zu zeichnen)",
     "Save function": "Funktion speichern",
-    "Save the history as a CSV file that spreadsheets can open": "Den Verlauf als CSV-Datei speichern, die Tabellenkalkulationen öffnen können",
     "Save variable": "Variable speichern",
     "Saved": "Gespeichert",
     "Scientific (exponent from about 1000)": "Wissenschaftlich (Exponent ab etwa 1000)",
