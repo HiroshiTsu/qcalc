@@ -4990,7 +4990,7 @@
           }
           rangeVar = rv;
           const ab = rv === 'x' ? [store.get('qalc.plot.min', '-10'), store.get('qalc.plot.max', '10')] : tRange(rv);
-          xmin.value = toDisplay(String(ab[0])); xmax.value = toDisplay(String(ab[1]));
+          xmin.value = String(ab[0]); xmax.value = String(ab[1]); // (kept as typed, in the number format: BG14)
         }
         const v = rv === 'param' ? 't' : rv === 'polar' ? 'θ' : 'x';
         rangeLbl.textContent = trf('{0}:', '{0}：', v);
