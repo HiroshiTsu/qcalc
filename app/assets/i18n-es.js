@@ -13,6 +13,7 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "The solid whose volume is measured": "Sólido cuyo volumen se mide",
     "(its answer is in the expression)": "(su resultado está en la expresión)",
     // (1.16.0) the card of what is new: the stocks and the notes
     "Stocks and investing: profit and loss with tax, average cost, the margin-call price, yield and more": "Acciones e inversión: ganancias y pérdidas con impuestos, precio medio, precio de llamada de margen, rentabilidad y más",

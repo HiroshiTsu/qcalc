@@ -1,6 +1,7 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "The solid whose volume is measured": "부피를 재고 있는 입체",
     "(its answer is in the expression)": "(이 결과를 식에서 쓰고 있습니다)",
     // (1.16.0) the card of what is new: the stocks and the notes
     "Stocks and investing: profit and loss with tax, average cost, the margin-call price, yield and more": "주식·투자 도구: 세금을 포함한 손익, 평균 매입 단가, 추가 증거금 주가, 수익률 등",

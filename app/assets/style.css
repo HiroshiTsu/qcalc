@@ -1510,6 +1510,8 @@ body.hselect #history { padding-bottom: 150px; }
 .legend .msw.glass::before { background: rgba(120, 160, 205, .16); border: 1.5px solid rgba(45, 62, 90, .7); box-sizing: border-box; }
 .dark .legend .msw.glass::before { background: rgba(190, 215, 255, .1); border-color: rgba(215, 228, 250, .7); }
 .legend .note::before { display: none; }
+/* (1.16.0, fix/vol-legend) the solid measured by "Volume and surface": a square of its pale color in its deeper edge */
+.legend .lg-vol::before { background: var(--c); border: 1.5px solid var(--cl, transparent); box-sizing: border-box; }
 .plot-form[hidden], .smp-wrap[hidden], .area-wrap[hidden], .tank-level[hidden] { display: none; }
 .rev3d-vol > div + div { font-size: 16px; font-weight: 600; }
 /* the solid: the volume first and large, the method small below it, the surfaces under "More ▾" */

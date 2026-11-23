@@ -14502,6 +14502,16 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     // the color of the solid in the box, and what was drawn (for the tests)
     const lg = Q3.volUI && Q3.volUI.legend;
     if (lg) { lg.hidden = !vc; if (vc) { lg.firstChild.style.background = vc.swatch; lg.firstChild.style.borderColor = vc.line; } }
+    // (1.16.0, fix/vol-legend, the owner's note of 11-24 06:22) the legend under the graph has the measured solid too, in its
+    // color, while "Volume and surface" is open: its pink (with the colors of the heights) did not match the bar of the heights
+    // and looked like a fault
+    if (Q3.legend) {
+      let vs = Q3.legend.querySelector(':scope > .lg-vol');
+      if (vc) {
+        if (!vs) { vs = el('span', { class: 'msw lg-vol', text: tr('The solid whose volume is measured', '体積を測っている立体') }); Q3.legend.append(vs); }
+        vs.style.setProperty('--c', vc.css); vs.style.setProperty('--cl', vc.line);
+      } else if (vs) vs.remove();
+    }
     if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: lmesh.walls, floor: lmesh.floor, tris: lmesh.tris, jelly, liquid: liquid.shown, thick: liquid.thick, odd: liquid.odd, q: liquid.q, faded, shadow: shadowFaces, shadowArea: Number(shadowArea.toFixed(4)), shadowFade: Math.round(volFade * 1000) / 1000 });
     else delete c.dataset.vol;
     // axes on the front edges of the floor and the leftmost vertical edge, with labels (not the numbers and
