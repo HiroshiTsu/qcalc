@@ -1695,7 +1695,7 @@
     "← Back to the profile": "← 윤곽으로 돌아가기",
     "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "3D 그래프의 ‘부피·겉넓이’를 열면 지금 그린 곡면 아래(곡면이 둘이면 그 사이)의 부피와 겉넓이가 바로 나옵니다. 범위는 직사각형이나 원 x² + y² ≤ R²입니다. 2D 그래프(⟳ 3D), ‘윤곽에서 회전체’, ‘도형’(⟳ 3D)에서 만든 입체에서는 거기서 구한 값이 나옵니다. 아래의 ‘도형 예시’에서는 ‘도형’의 모든 입체를 그 값 그대로 3D로 그릴 수 있습니다(‘수 바꾸기’로 ‘도형’이 열립니다).",
     // (1.15.0) calculation notes read in (a file opened, text or a file shared to QCalc)
-    "Calculation notes: open a .txt or .csv file, or share text to QCalc": "계산 메모에 .txt・.csv 파일이나 다른 앱에서 공유한 텍스트를 읽어 들일 수 있습니다",
+    "Calculation notes: open a .txt or .csv file, or share text to QCalc": "계산 메모에 .txt·.csv 파일이나 다른 앱에서 공유한 텍스트를 읽어 들일 수 있습니다",
     "This file is too large to read (up to 1 MB)": "파일이 너무 커서 읽지 않았습니다(1MB까지)",
     "A memo holds up to {0} lines: this has {1}": "메모 하나는 {0}줄까지입니다. 읽으려는 내용은 {1}줄입니다",
     "A line is too long to read": "너무 긴 줄이 있어서 읽지 않았습니다",

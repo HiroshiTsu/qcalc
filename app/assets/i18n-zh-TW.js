@@ -1696,7 +1696,7 @@
     "← Back to the profile": "← 回到輪廓",
     "In the 3D graph, \"Volume and surface\" shows the volume under the surface that is drawn (or between two surfaces) and the surface area as soon as it is opened, over the rectangle or over a disk x² + y² ≤ R². For a solid made in the 2D graph (⟳ 3D), in \"Solid from a profile\" or in \"Shapes\" (⟳ 3D), it shows the values found there. Under \"Example\" at the bottom, every solid of \"Shapes\" can be drawn in 3D with its values (\"Change the numbers\" opens \"Shapes\").": "在 3D 圖形中，開啟「體積與表面積」就會立即顯示所畫曲面下方（或兩個曲面之間）的體積與表面積，範圍是長方形或圓盤 x² + y² ≤ R²。在 2D 圖形（⟳ 3D）、「由輪廓求旋轉體」或「幾何圖形」（⟳ 3D）中做出的立體，會顯示在那裡求出的值。下方的「圖形範例」可以用幾何圖形的值，以 3D 繪製任何立體（「更改數值」會開啟幾何圖形）。",
     // (1.15.0) calculation notes read in (a file opened, text or a file shared to QCalc)
-    "Calculation notes: open a .txt or .csv file, or share text to QCalc": "計算筆記可讀取 .txt・.csv 檔，或從其他 App 分享來的文字",
+    "Calculation notes: open a .txt or .csv file, or share text to QCalc": "計算筆記可讀取 .txt、.csv 檔，或從其他 App 分享來的文字",
     "This file is too large to read (up to 1 MB)": "檔案太大，因此未讀取（上限 1 MB）",
     "A memo holds up to {0} lines: this has {1}": "一則筆記最多 {0} 行，要讀取的內容有 {1} 行",
     "A line is too long to read": "有一行太長，因此未讀取",
