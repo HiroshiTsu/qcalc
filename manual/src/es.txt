@@ -31,6 +31,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 - **Números**: sin ceros finales en las aproximaciones; los números muy grandes o pequeños como 1.606 938 × 10⁶⁰ (se copian como 1.606938E60); los enteros y decimales exactos se muestran completos hasta 60 cifras, aunque superen la precisión (por ejemplo 30!).
 - **Resultados largos y unidades**: un resultado que no cabe en una línea se hace algo más pequeño y solo entonces se parte entre grupos de tres cifras; un resultado con unidades queda en una línea (m/s).
 - **El historial**: sus expresiones se escriben con ×, √, π y exponentes elevados (2^10 → 2¹⁰).
+- **Editar una línea del historial**: toca la expresión de una línea para editarla en su lugar; = pone allí el nuevo resultado, y las líneas de abajo se pueden calcular de nuevo ([Editar una línea del historial](#edit-line)).
 - **3D casi real**: el 3D se dibuja con la GPU del dispositivo (WebGL 2), con luz y sombras reales: la gráfica 3D, [[!⟳ 3D]] en la gráfica 2D, los sólidos y depósitos de las figuras y el sólido a partir de un perfil ([Gráfica 3D](#graph-3d)).
 - **Transparente**: con [[See-through]] se ve a través de superficies y sólidos: sus caras de atrás e interiores y dónde se cortan dos superficies. El control deslizante ajusta la opacidad y, si lo mueve con [[See-through]] desactivado, lo activa; con dos cosas o más, elija cuáles son transparentes (por ejemplo, solo el [[Container]] de un depósito).
 - **Gire en cualquier dirección**: un dedo gira el 3D en cualquier dirección, también por encima y por debajo. El botón del cubo elige al instante [[From the front]], [[From above]] o [[From the side]].
@@ -127,6 +128,15 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :step: 🕘 ofrece [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] y [[Clear the whole history]].
 :shot: history | El menú del historial de 🕘
 :tip: Las líneas fijadas con estrella se quedan aunque el historial esté lleno.
+
+## edit-line | Editar una línea del historial
+:what: Toca la expresión de una línea (la pequeña sobre su resultado), o [[Edit expression]] en su ⋯, para editarla. La expresión pasa al campo de entrada, con la banda «[[Editing a line of the history]]» encima.
+:step: Cambia la expresión y pulsa [[!=]]. La línea recibe la nueva expresión y el nuevo resultado en el mismo lugar. ★ y la nota corta se mantienen, y el menú ⋯ muestra la hora del cambio junto a la hora de la línea.
+:step: Durante unos segundos aparecen «[[Edited]]» y [[Undo]]. [[Undo]] devuelve la expresión y el resultado de antes.
+:step: Si las líneas de abajo usan el resultado de esta línea (ans) o una variable que define, la app pregunta si calcularlas de nuevo («También las 2 líneas de abajo») o [[Only this line]]. [[Undo]] devuelve también esas líneas.
+:step: Para calcularla como una línea nueva abajo, pulsa [[As a new line]] en la banda y luego [[!=]]. La ✕ de la banda o el botón Atrás dejan de editar sin cambiar nada.
+:tip: La línea se calcula con los ajustes de ahora (unidad de ángulo, base y los demás). Una línea calculada en otra base lo indica en la banda y recibe la base de ahora.
+:tip: Tocar el resultado de una línea sigue poniéndolo en la expresión o copiándolo, como antes.
 
 ## pins-notes | Fijar, notas y búsqueda
 :step: Elige [[☆ Pin at the top]] en el ⋯ de una línea: sube junto a las otras líneas fijadas.
