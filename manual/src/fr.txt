@@ -510,11 +510,31 @@ Les formules :
 :shot: notes | [[Calculation notes]] avec un exemple
 :example: loyer 85000, électricité 6200, eau 3100 (JPY) → la ligne du total affiche ¥94300
 :pro: La première note est gratuite, de même qu’y lire un fichier ou un partage (dans une note vide ou à la fin). Plus de notes (y compris lire comme nouvelle note) et leur enregistrement en texte ou CSV sont des fonctions de QCalc Pro.
-:tip: Une ligne qui commence par # ou // est un commentaire (non calculée).
+:tip: Une ligne qui commence par # (mais pas # suivi d’un chiffre) ou par // est un commentaire (non calculée). #3, avec un chiffre juste après #, est le résultat de la ligne 3.
 :step: Pour lire un fichier, appuyez sur [[Open a file]] sous [[More ▾]] et choisissez un fichier .txt ou .csv. Un .txt donne une ligne par ligne ; un .csv enregistré par QCalc donne sa colonne « Calcul », un autre .csv sa première colonne. L’UTF-8 et le Shift_JIS (un CSV japonais fait avec Excel) peuvent être lus.
 :step: Dans une autre application (notes, e-mail…), choisissez du texte ou un fichier .txt ou .csv, puis QCalc dans « Partager » de cette application : les notes de calcul s’ouvrent.
 :step: Choisissez ensuite [[As a new memo]] ou [[At the end of this memo]] ; pour une seule ligne, aussi [[Put it into the input field]]. Une nouvelle note prend le nom du fichier (sans extension).
 :tip: Ce qui est lu n’est que du texte, calculé selon les mêmes règles que les lignes saisies. Un fichier de plus de 1 Mo, ou de plus de 300 lignes (ce que contient une note), n’est pas lu, et l’application le signale.
+
+### notes-refs | Numéros de ligne et #3
+:what: Les lignes des notes ont leur numéro. #3 utilise le résultat de la ligne 3 (une ligne au-dessus). Quand une ligne au-dessus change, les lignes qui l’utilisent sont recalculées aussitôt.
+:step: Touchez le numéro d’une ligne pour [[Insert a line above]], [[Insert a line below]], [[Move up]], [[Move down]] et [[Delete this line]].
+:step: Pendant que vous écrivez une autre ligne, touchez un numéro de ligne pour y écrire #3 (ou son numéro).
+:example: lignes 1 à 3 loyer, électricité et eau, ligne 4 « total », ligne 5 `#4 / 2` → ¥47,150 (94 300 / 2)
+:tip: Quand des lignes sont insérées, supprimées ou déplacées, les numéros écrits dans les lignes suivent et désignent toujours les mêmes lignes. Un renvoi à une ligne supprimée devient #?, et la ligne le dit.
+:note: #3 ne peut désigner qu’une ligne au-dessus de celle où il se trouve.
+
+### notes-table | Mode tableau
+:what: Un mémo en tableau : des colonnes avec un nom, une colonne calculée à partir des autres par une formule (comme Montant = Quantité × Prix), et le total et la moyenne de chaque colonne. Une cellule peut avoir une unité ou une monnaie, comme 3 kg ou 120 JPY.
+:step: Appuyez sur [[Table]] au-dessus du mémo. Il commence par un exemple : Article, Quantité, Prix et Montant (Quantité × Prix).
+:step: Tapez une valeur dans une cellule : les colonnes à formule, les totaux et les moyennes sont recalculés aussitôt.
+:step: Touchez le nom d’une colonne pour [[Rename]], [[Work it out by a formula]] (par exemple Quantité × Prix), et pour insérer, déplacer ou supprimer une colonne ; touchez un numéro de ligne pour insérer, déplacer ou supprimer une ligne.
+:step: [[+ Row]] et [[+ Column]] ajoutent une ligne et une colonne. Une colonne ajoutée comme « Montant = Quantité × Prix » est une colonne à formule.
+:example: 3 pommes à 120 JPY, 2 pains à 250 JPY, 1 lait à 180 JPY → montants ¥360, ¥500, ¥180, total ¥1040, moyenne ≈ ¥346.67
+:tip: Une cellule qui ne contient que des mots (le nom d’un article) ne compte pas dans les totaux. Des valeurs en unités différentes d’une même grandeur (3 kg et 500 g) sont additionnées ensemble.
+:step: [[Save as CSV]] sous [[More ▾]] enregistre le tableau en fichier CSV (les numéros de ligne, les noms des colonnes, les valeurs, le total et la moyenne). Un fichier CSV choisi avec [[Open a file]] peut être lu [[As a table (the first row: the names of the columns)]].
+:tip: Sur un écran étroit, faites glisser le tableau sur le côté pour les autres colonnes ; la colonne des numéros de ligne reste à gauche.
+:pro: Le mode tableau (avec l’enregistrement en CSV et la lecture d’un CSV en tableau) est une fonction de QCalc Pro. Les numéros de ligne et #3 sont gratuits.
 
 # graphs | Graphiques
 
@@ -702,6 +722,7 @@ L'intégration numérique (aires, longueurs et volumes du graphique) est sûre �
 | Plus de notes de calcul, enregistrées en fichier | [Notes de calcul](#notes) |
 | Courbes de régression (sauf la droite) | [Statistiques](#stats) |
 | Marge et taille de position (ratio de maintien et appel de marge, taille de position depuis le stop, intérêts et frais d’emprunt) | [Marge : ratio de maintien](#margin) |
+| Mode tableau des notes de calcul (colonnes à formule, totaux et moyennes, CSV) | [Mode tableau](#notes-table) |
 :tip: [[How to use ›]] sur une ligne des fonctions Pro ouvre sa section de ce manuel.
 
 ## pro-buy | Acheter et restaurer

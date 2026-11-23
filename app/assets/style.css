@@ -1873,3 +1873,28 @@ body.hselect #history { padding-bottom: 150px; }
 /* (1.16.0) a box of a tool shown only for some choices (when): hidden really hides it. Since 1.12.0 .geo-size's display: flex
    kept such boxes on the screen (the discount of "Price: discount and tax" with "with tax" chosen) */
 .geo-size[hidden] { display: none; }
+/* 1.16.0 (feature/notes-table): the numbers of the lines of a memo (a tap: insert, move, delete, "#n"), and a memo as a table */
+.note-line .note-no { flex: 0 0 auto; min-width: 40px; min-height: 48px; padding: 0 4px; border: 0; border-radius: 10px; background: none; color: var(--muted); font: inherit; font-size: calc(13px * var(--fs)); font-variant-numeric: tabular-nums; text-align: right; }
+.note-line .note-no:focus-visible, .note-tbl .note-no:focus-visible { outline: 2px solid var(--accent); }
+.note-line input { flex-basis: 8em; }
+.note-mode { display: flex; margin: 6px 0; }
+.note-mode button { flex: 1 1 0; min-height: 44px; }
+.note-table[hidden], .note-lines[hidden], .tool-chips[hidden] { display: none; }
+.note-tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; margin: 6px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.note-tbl-wrap:focus-visible { outline: 2px solid var(--accent); }
+.note-tbl { border-collapse: separate; border-spacing: 0; min-width: 100%; font-size: calc(15px * var(--fs)); }
+.note-tbl th, .note-tbl td { padding: 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.note-tbl tbody tr:last-child th, .note-tbl tbody tr:last-child td { border-bottom: 2px solid var(--line); }
+.note-tbl tfoot tr:last-child th, .note-tbl tfoot tr:last-child td { border-bottom: 0; }
+.note-tbl .note-no-c { position: sticky; left: 0; z-index: 1; min-width: 44px; background: var(--surface); color: var(--muted); font-weight: 400; font-size: calc(13px * var(--fs)); text-align: center; border-right: 1px solid var(--line); white-space: nowrap; padding: 0 4px; }
+.note-tbl .note-no { min-width: 40px; min-height: 48px; border: 0; background: none; color: var(--muted); font: inherit; }
+.note-tbl .note-col { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 6.5em; min-height: 52px; padding: 4px 8px; border: 0; background: none; color: var(--text); font: inherit; font-weight: 600; text-align: left; }
+.note-tbl .note-col-n { white-space: nowrap; }
+.note-tbl .note-col-f { font-size: calc(12px * var(--fs)); font-weight: 400; color: var(--accent); white-space: nowrap; }
+.note-tbl input { box-sizing: border-box; width: 7.5em; min-width: 6em; min-height: 48px; padding: 6px 8px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: max(16px, calc(15px * var(--fs))); }
+.note-tbl input:focus { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--surface-2); }
+.note-tbl .note-fx { display: block; width: 100%; min-width: 6.5em; min-height: 48px; padding: 4px 8px; border: 0; background: none; color: var(--text); font: inherit; font-weight: 600; text-align: right; white-space: nowrap; }
+.note-tbl .note-fx.bad { color: var(--danger); font-weight: 400; font-size: calc(12px * var(--fs)); white-space: normal; }
+.note-tbl .note-fxc { background: var(--surface-2); }
+.note-tbl tfoot th, .note-tbl tfoot td { background: var(--surface-2); }
+.note-tbl tfoot .note-no-c { font-weight: 600; color: var(--text); font-size: calc(13px * var(--fs)); }

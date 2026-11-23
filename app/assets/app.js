@@ -261,7 +261,7 @@
     precision: 'results', '3d': 'graph-3d', themes: 'settings', export: 'history', tables: 'loan', tank_heads: 'tank-heads',
     profile: 'profile', stl: 'stl', share_pro: 'share', notes: 'notes', enclosed: 'area-length', tanks: 'tanks',
     revolution: 'solid', regions: 'volume-3d', sections: 'measured', history_tools: 'history', memkeys: 'memory-keys',
-    cross_sections: 'cross-sections', rev_lines: 'solid', everyday: 'price', convert: 'convert', quick: 'widget', stats: 'stats', stats_fit: 'stats', trading: 'margin'
+    cross_sections: 'cross-sections', rev_lines: 'solid', everyday: 'price', convert: 'convert', quick: 'widget', stats: 'stats', stats_fit: 'stats', trading: 'margin', notes_table: 'notes-table'
   };
   const FORM_HELP = { int: 'calculus', diff: 'calculus', lim: 'calculus', sum: 'calculus', prod: 'calculus', dsolve: 'calculus', subst: 'calculus', solve: 'equations', mat: 'matrices' };
   // every id the app links to (for the test of the links; '' is the top of the manual)
@@ -573,6 +573,7 @@
     share: 'free',         // sharing a picture of a graph, with a small "QCalc" in the corner (1.12 D4)
     share_pro: 'pro',      // the moving picture (GIF) of the 3D graph and of a slider, and pictures without the mark at full resolution (1.12 D4; sliders 1.15): Pro
     sliders3d: 'pro',      // the sliders of the letters in the 3D graph (1.15; in 2D free): Pro
+    notes_table: 'pro',    // calculation notes as a table: columns with a formula, totals and averages with units, a CSV file in and out (1.16; the numbers of the lines and "#3" are free): Pro
     trading: 'pro',        // stocks: the maintenance ratio of a margin account, the position size from a stop, the margin interest and lending fees by the day (1.16; the profit and loss, the average cost, the yields and growth, the foreign stocks are free): Pro, the tools of a trader on margin
     stats_fit: 'pro',      // statistics: choosing a curve other than the line for two columns (degree 2 to 4, exponential, power, log) with its prediction and graph (1.16; the line, the distributions, the histogram, the box plot, reading a CSV file, and the formulas and R² of the curves under "More" as in 1.15 are free): Pro
     notes: 'pro'           // calculation notes: the second memo and more, and saving them as text or CSV (1.12 D5): Pro; the first memo, copying and sharing it are free
@@ -18413,9 +18414,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   function importParse(text, name, mime) {
     text = String(text).replace(/^﻿/, '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
     const csv = /\.(csv|tsv)$/i.test(name || '') || /csv|tab-separated/i.test(mime || '');
-    let lines, kind = '';
+    let lines, kind = '', rows = null;
     if (csv) {
-      const rows = importCsvRows(text);
+      rows = importCsvRows(text);
       const h = rows[0] || [];
       if (h.length >= 2 && CSV_LINE_NAMES.indexOf(String(h[0]).trim().toLowerCase()) >= 0 && CSV_CALC_NAMES.indexOf(String(h[1]).trim().toLowerCase()) >= 0) {
         kind = 'qcalc';
@@ -18435,7 +18436,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (!lines.length || lines.every((l) => !l.trim())) return { error: 'empty' };
     if (lines.length > NOTE_MAX) return { error: 'lines', n: lines.length };
     if (lines.some((l) => l.length > MAX_INPUT)) return { error: 'long' };
-    return { lines, csv: kind };
+    // (1.16.0: the rows of a CSV, for "As a table"; the empty rows at the end left out)
+    if (rows) { while (rows.length && rows[rows.length - 1].every((c) => !String(c).trim())) rows.pop(); if (rows.length > NOTE_MAX + 1) rows = rows.slice(0, NOTE_MAX + 1); }
+    return { lines, csv: kind, rows };
   }
   function importFailText(e, n) {
     return e === 'big' || e === 'too-big' ? tr('This file is too large to read (up to 1 MB)', 'ファイルが大きすぎるので読み込みませんでした（1 MB まで）')
@@ -18532,15 +18535,42 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     }
     importPicker.click();
   }
+  // (1.16.0, feature/notes-table, the owner's request of 11-24) "#3" in a line is the result of line 3, a line above it;
+  // the numbers of the lines are shown beside them. When a line is inserted, deleted or moved, the numbers written in
+  // the lines follow (noteRenumber: map(n) gives the new number of line n, or 0 when it is gone: "#?", which says so).
+  // A line that starts with "#" and a digit is a reference, not a note (a note: "#" and anything else, or "//").
+  const NOTE_REF = /#(\d{1,3}|\?)(?!\d)/g;
+  const noteRenumber = (lines, map) => lines.map((l) => String(l).replace(NOTE_REF, (all, k) => { if (k === '?') return all; const n = map(Number(k)); return n ? '#' + n : '#?'; }));
+  const NOTE_COMMENT = /^\s*(#(?![\d?])|\/\/)/;
+  // A memo as a table (QCalc Pro, 'notes_table'): columns with names, the cells typed (numbers with units or currencies,
+  // or words, as the name of an item), and columns worked out by a formula of the others ("Qty × Price"); under them the
+  // total and the average of each column of values. The table is kept with its memo ({ kind: 'table', table: { cols:
+  // [{ n, f }], rows: [[…]] } }); its lines stay as they were.
+  const NOTE_COLS = 12;
+  const NOTE_TABLE_EX = () => ({ cols: [{ n: tr('Item', '品目'), f: '' }, { n: tr('Qty', '数量'), f: '' }, { n: tr('Price', '単価'), f: '' }, { n: tr('Amount', '金額'), f: tr('Qty × Price', '数量 × 単価') }],
+    rows: [[tr('apples', 'りんご'), '3', decSign(MONEY().dec ? '1.2 ' : '120 ') + MONEY().cur, ''], [tr('bread', 'パン'), '2', decSign(MONEY().dec ? '2.5 ' : '250 ') + MONEY().cur, ''], [tr('milk', '牛乳'), '1', decSign(MONEY().dec ? '1.8 ' : '180 ') + MONEY().cur, '']] });
+  // a cell without a digit is a word (the name of an item), not a value: left out of the totals
+  const noteWord = (s) => !/[0-9０-９]/.test(s);
+  // the names of the columns that a formula uses (as whole words)
+  function noteUses(f, cols, j) {
+    const isCh = (c) => !!c && new RegExp('[' + NOTE_NAME_CH + '0-9]').test(c);
+    return cols.map((c, k) => k).filter((k) => {
+      const n = cols[k].n;
+      if (k === j || !n) return false;
+      for (let i = f.indexOf(n); i >= 0; i = f.indexOf(n, i + 1)) if (!isCh(f[i - 1]) && !isCh(f[i + n.length])) return true;
+      return false;
+    });
+  }
   function openNotesTool() {
     const p = panel('notes', tr('Calculation notes', '計算メモ'), (p) => {
       const saved = store.get('qalc.notes', null) || {};
-      const N = { memos: Array.isArray(saved.memos) && saved.memos.length ? saved.memos.slice(0, 50) : [{ id: 1, title: tr('Memo 1', 'メモ 1'), lines: NOTE_EX()[0][1].map(decSign) }], cur: saved.cur || 1, seq: 0, cache: [] };
+      const N = { memos: Array.isArray(saved.memos) && saved.memos.length ? saved.memos.slice(0, 50) : [{ id: 1, title: tr('Memo 1', 'メモ 1'), lines: NOTE_EX()[0][1].map(decSign) }], cur: saved.cur || 1, seq: 0, cache: [], focus: null };
       if (!N.memos.some((m) => m.id === N.cur)) N.cur = N.memos[0].id;
       const memo = () => N.memos.find((m) => m.id === N.cur) || N.memos[0];
+      const isTable = () => memo().kind === 'table' && memo().table && Array.isArray(memo().table.cols);
       const save = () => store.set('qalc.notes', { memos: N.memos, cur: N.cur });
       const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
-        ...NOTE_EX().map(([label, lines]) => tapButton({ class: 'area-chip', text: label }, () => { memo().lines = lines.map(decSign); save(); build(); run(0); }))); // (BG17: 3,6 m with a decimal comma)
+        ...NOTE_EX().map(([label, lines]) => tapButton({ class: 'area-chip', text: label }, () => { memo().kind = ''; memo().lines = lines.map(decSign); N.cache = []; save(); build(); run(0); }))); // (BG17: 3,6 m with a decimal comma)
       const pick = el('select', { 'aria-label': tr('Memo', 'メモ') });
       const fillPick = () => { pick.textContent = ''; for (const m of N.memos) pick.append(el('option', { value: String(m.id), text: m.title })); pick.value = String(N.cur); };
       pick.addEventListener('change', () => { N.cur = Number(pick.value); N.cache = []; save(); build(); run(0); });
@@ -18550,34 +18580,87 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         N.memos.push({ id, title: trf('Memo {0}', 'メモ {0}', N.memos.length + 1), lines: [''] }); N.cur = id; N.cache = []; save(); fillPick(); build(); run(0);
         const f = list.querySelector('input'); if (f) f.focus();
       });
+      // (1.16.0) lines or a table: a switch above the memo
+      const tlock = () => (PRO_GATES.notes_table === 'pro' && !hasPro() ? '  ⭐ Pro' : '');
+      const modeBtns = [['lines', tr('Lines', '行')], ['table', tr('Table', '表')]].map(([k, label]) => tapButton({ 'data-mode': k, text: label + (k === 'table' ? tlock() : ''), 'aria-pressed': 'false' }, () => setMode(k)));
+      const modeSeg = el('div', { class: 'seg mini note-mode', role: 'group', 'aria-label': tr('Lines or table', '行か表か') }, ...modeBtns);
+      const setMode = (k) => {
+        if (k === 'table' && !isTable()) {
+          if (!proGate('notes_table')) return;
+          const m = memo();
+          if (!m.table || !Array.isArray(m.table.cols)) m.table = NOTE_TABLE_EX();
+          m.kind = 'table';
+        } else if (k === 'lines') memo().kind = '';
+        save(); build(); run(0);
+      };
       const list = el('div', { class: 'note-lines', role: 'list' });
+      const tbox = el('div', { class: 'note-table' });
       const msg = el('div', { class: 'geo-msg', role: 'alert' });
-      // one line: the field and its result
+      // the lines of the memo changed in place, the numbers in them following (map), and the results again from line `from`
+      const relines = (L, map, from) => { memo().lines = map ? noteRenumber(L, map) : L; N.cache.length = Math.min(N.cache.length, from); save(); build(); run(from); };
+      const insertLine = (at) => { const L = memo().lines.slice(); if (L.length >= NOTE_MAX) return; const L2 = noteRenumber(L, (k) => (k >= at + 1 ? k + 1 : k)); L2.splice(at, 0, ''); relines(L2, null, at); };
+      const deleteLine = (d) => { const L = noteRenumber(memo().lines, (k) => (k === d + 1 ? 0 : k > d + 1 ? k - 1 : k)); L.splice(d, 1); relines(L, null, d); };
+      const moveLine = (i, to) => { const L = noteRenumber(memo().lines, (k) => (k === i + 1 ? to + 1 : k === to + 1 ? i + 1 : k)); const t = L[i]; L[i] = L[to]; L[to] = t; relines(L, null, Math.min(i, to)); };
+      // the number of a line: what can be done with the line (a reference to it in the line being edited, insert, move, delete)
+      const lineSheet = async (i) => {
+        const L = memo().lines, f = N.focus, acts = [];
+        if (f !== null && f > i && f < L.length) acts.push(['ref', trf('Write #{0} in line {1}', '{1} 行目に #{0} を書く', i + 1, f + 1), 'accent']);
+        acts.push(['above', tr('Insert a line above', '上に行を入れる')], ['below', tr('Insert a line below', '下に行を入れる')]);
+        if (i > 0) acts.push(['up', tr('Move up', '上へ移す')]);
+        if (i < L.length - 1) acts.push(['down', tr('Move down', '下へ移す')]);
+        if (L.length > 1) acts.push(['del', tr('Delete this line', 'この行を消す'), 'danger']);
+        const k = await sheet(trf('Line {0}', '{0} 行目', i + 1) + (L[i] ? '：' + clip(String(L[i]), 40) : ''), acts);
+        if (k === 'ref') {
+          const inp = list.querySelectorAll('input')[f];
+          if (!inp) return;
+          const s = inp.value, at = typeof N.caret === 'number' && N.caret <= s.length ? N.caret : s.length, add = (at && !/\s$/.test(s.slice(0, at)) ? ' ' : '') + '#' + (i + 1);
+          inp.value = s.slice(0, at) + add + s.slice(at); memo().lines[f] = inp.value; save(); run(f);
+          inp.focus(); inp.setSelectionRange(at + add.length, at + add.length);
+        } else if (k === 'above') insertLine(i);
+        else if (k === 'below') insertLine(i + 1);
+        else if (k === 'up') moveLine(i, i - 1);
+        else if (k === 'down') moveLine(i, i + 1);
+        else if (k === 'del') deleteLine(i);
+      };
+      // one line: its number, the field and its result
       const lineRow = (i) => {
         const inp = el('input', { inputmode: 'text', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false', value: memo().lines[i] || '', placeholder: i === 0 ? tr('e.g. rent = 85000 JPY', '例：家賃 = 85000 JPY') : '', 'aria-label': trf('Line {0}', '{0} 行目', i + 1), enterkeyhint: 'next' });
+        const no = tapButton({ class: 'note-no', text: String(i + 1), 'aria-label': trf('Line {0}: insert, move, delete, or use it as #{0}', '{0} 行目：行を入れる・移す・消す、#{0} として使う', i + 1) }, () => lineSheet(i));
         const res = tapButton({ class: 'note-res', 'aria-label': trf('Result of line {0}', '{0} 行目の結果', i + 1) }, () => { const c = N.cache[i]; if (c && c.ok) resultSheet(memo().lines[i], c.expr, c.shown); });
         inp.addEventListener('input', () => { memo().lines[i] = inp.value; save(); run(i); });
+        const keep = () => { N.focus = i; N.caret = inp.selectionStart; };
+        inp.addEventListener('focus', keep); inp.addEventListener('keyup', keep); inp.addEventListener('click', keep); inp.addEventListener('blur', keep);
         inp.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') { e.preventDefault(); const L = memo().lines; if (L.length >= NOTE_MAX) return; const at = inp.selectionStart === 0 && inp.value ? i : i + 1; L.splice(at, 0, ''); save(); build(); run(at); const f = list.querySelectorAll('input')[at === i ? i + 1 : at]; if (f) f.focus(); }
-          else if (e.key === 'Backspace' && !inp.value && memo().lines.length > 1) { e.preventDefault(); memo().lines.splice(i, 1); save(); build(); run(i); const f = list.querySelectorAll('input')[Math.max(0, i - 1)]; if (f) f.focus(); }
+          if (e.key === 'Enter') { e.preventDefault(); if (memo().lines.length >= NOTE_MAX) return; const at = inp.selectionStart === 0 && inp.value ? i : i + 1; insertLine(at); const f = list.querySelectorAll('input')[at === i ? i + 1 : at]; if (f) f.focus(); }
+          else if (e.key === 'Backspace' && !inp.value && memo().lines.length > 1) { e.preventDefault(); deleteLine(i); const f = list.querySelectorAll('input')[Math.max(0, i - 1)]; if (f) f.focus(); }
         });
         inp.addEventListener('paste', (e) => {
           const t = (e.clipboardData || window.clipboardData).getData('text');
           if (!/\n/.test(t.trim())) return;
           e.preventDefault();
-          const add = t.replace(/\r/g, '').split('\n'), L = memo().lines;
+          const add = t.replace(/\r/g, '').split('\n'), L0 = memo().lines;
           const before = inp.value.slice(0, inp.selectionStart), after = inp.value.slice(inp.selectionEnd);
           add[0] = before + add[0]; add[add.length - 1] += after;
-          L.splice(i, 1, ...add.slice(0, NOTE_MAX - L.length + 1)); save(); build(); run(i);
+          const put = add.slice(0, NOTE_MAX - L0.length + 1);
+          // (the lines below move down: their numbers in the lines follow; the lines pasted keep theirs)
+          const L = noteRenumber(L0, (k) => (k > i + 1 ? k + put.length - 1 : k));
+          L.splice(i, 1, ...put); relines(L, null, i);
         });
         // (the result already known, when the lines are laid out again)
         const c = N.cache[i];
         if (c && c.done && c.text === inp.value) { res.textContent = c.ok ? (c.total ? tr('Total ', '合計 ') : '') + c.shown : c.err || ''; res.classList.toggle('bad', !c.ok && !!c.err); }
-        return el('div', { class: 'note-line', role: 'listitem' }, inp, res);
+        return el('div', { class: 'note-line', role: 'listitem' }, no, inp, res);
       };
-      const build = () => { list.textContent = ''; memo().lines.forEach((l, i) => list.append(lineRow(i))); };
+      const build = () => {
+        const tb = isTable();
+        modeBtns.forEach((b) => { const on = b.dataset.mode === (tb ? 'table' : 'lines'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+        list.hidden = tb; tbox.hidden = !tb; chips.hidden = tb;
+        list.textContent = ''; tbox.textContent = '';
+        if (tb) buildTable(); else memo().lines.forEach((l, i) => list.append(lineRow(i)));
+      };
       // the results from line `from` on (the lines above keep theirs)
       const run = async (from) => {
+        if (isTable()) { runTable(); return; }
         const seq = ++N.seq, L = memo().lines, rows = list.querySelectorAll('.note-line');
         // (what the lines above give: their names, the value of the line above, the start of the sum)
         const names = {};
@@ -18594,7 +18677,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           if (seq !== N.seq) return;
           const text = String(L[i] || ''), res = rows[i] && rows[i].querySelector('.note-res'), c = { text };
           N.cache[i] = c;
-          if (!text.trim() || /^\s*(#|\/\/)/.test(text)) { c.done = true; if (res) { res.textContent = ''; res.classList.remove('bad'); } continue; }
+          if (!text.trim() || NOTE_COMMENT.test(text)) { c.done = true; if (res) { res.textContent = ''; res.classList.remove('bad'); } continue; }
           let body = text, name = null;
           if (NOTE_TOTAL.test(text)) {
             const parts = [];
@@ -18604,7 +18687,22 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
             const m = NOTE_ASSIGN.exec(text);
             if (m && !/^(ans)$/i.test(m[1])) { name = m[1]; body = m[2]; }
           }
-          const ex = c.total ? { expr: body } : noteExpand(normalizeExpr(body), names, prev);
+          let ex = c.total ? { expr: body } : noteExpand(normalizeExpr(body), names, prev);
+          // (#n: the result of line n, a line above this one)
+          let refErr = '';
+          if (!c.total) ex = { expr: ex.expr.replace(NOTE_REF, (all, k) => {
+            if (refErr) return '0';
+            if (k === '?') { refErr = tr('#?: the line it referred to was deleted', '#?：参照していた行は消されました'); return '0'; }
+            const n = Number(k), q = N.cache[n - 1];
+            if (!(n >= 1 && n <= i)) { refErr = trf('#{0} is not a line above this one', '#{0} はこの行より上の行ではありません', n); return '0'; }
+            if (!q || !q.ok) { refErr = trf('Line {0} has no result', '{0} 行目に結果がありません', n); return '0'; }
+            return '(' + q.expr + ')';
+          }) };
+          if (refErr) {
+            c.done = true; c.ok = false; c.err = refErr;
+            if (res) { res.textContent = refErr; res.classList.add('bad'); }
+            continue;
+          }
           const r = await Bridge.send('calc', { expr: ex.expr, opts: engineOpts(), timeout: 4000 });
           if (seq !== N.seq) return;
           c.done = true;
@@ -18623,8 +18721,188 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         N.cache.length = L.length;
         msg.textContent = '';
       };
+      // ---- the table (1.16.0): the columns, the cells, the formula columns and the totals worked out
+      const TB = { seq: 0, calc: new Map(), fx: [], foot: [] };
+      // (a cell shows its value without "= "; an average with 8 significant digits at most: 1040 / 3 ≈ 346.66667)
+      const calcOne = async (expr, prec) => {
+        const key = (prec || '') + '|' + expr;
+        if (TB.calc.has(key)) return TB.calc.get(key);
+        const r = await Bridge.send('calc', { expr, opts: prec ? Object.assign(engineOpts(), { precision: Math.min(prec, Number(S.precision) || prec) }) : engineOpts(), timeout: 4000 });
+        const v = r.ok && r.result && !r.timeout && !(r.messages || []).some((q) => q.type === 'error') ? { ok: true, expr, shown: groupText(resultText(r)).replace(/^=\s*/, '') }
+          : { ok: false, err: r.timeout ? tr('took too long', '時間がかかりすぎました') : localMessage(((r.messages || []).find((q) => q.type === 'error') || {}).text || r.error) || tr('could not be calculated', '計算できませんでした') };
+        if (TB.calc.size > 3000) TB.calc.clear();
+        TB.calc.set(key, v);
+        return v;
+      };
+      const colName = (j) => memo().table.cols[j].n || String.fromCharCode(65 + j);
+      const colSheet = async (j) => {
+        const t = memo().table, c = t.cols[j], acts = [['name', tr('Rename', '名前を変える')], ['f', c.f ? tr('Change the formula', '式を変える') : tr('Work it out by a formula', '式で計算する列にする')]];
+        if (c.f) acts.push(['typed', tr('Type its values instead', '式をやめて値を入れる')]);
+        if (t.cols.length < NOTE_COLS) acts.push(['left', tr('Insert a column to the left', '左に列を入れる')], ['right', tr('Insert a column to the right', '右に列を入れる')]);
+        if (j > 0) acts.push(['mleft', tr('Move left', '左へ移す')]);
+        if (j < t.cols.length - 1) acts.push(['mright', tr('Move right', '右へ移す')]);
+        if (t.cols.length > 1) acts.push(['del', tr('Delete this column', 'この列を消す'), 'danger']);
+        const k = await sheet(trf('Column “{0}”', '列「{0}」', colName(j)) + (c.f ? ' = ' + c.f : ''), acts);
+        if (!k) return;
+        if (k === 'name') {
+          const v = await promptSheet(tr('Name of the column', '列の名前'), c.n, tr('e.g. Qty', '例：数量'), tr('Save', '保存'));
+          if (v === null || !v.trim()) return;
+          // (the formulas that use the old name use the new one)
+          const old = c.n, nn = v.trim().slice(0, 24);
+          for (const o of t.cols) if (o.f && old) o.f = noteExpand(o.f, { [old]: nn }, null).expr.split('(' + nn + ')').join(nn);
+          c.n = nn;
+        } else if (k === 'f') {
+          const v = await promptSheet(trf('Formula of “{0}”', '「{0}」の式', colName(j)), c.f, tr('e.g. Qty × Price', '例：数量 × 単価'), tr('Save', '保存'));
+          if (v === null) return;
+          // ("Amount = Qty × Price": the name before "=" names the column)
+          const m = NOTE_ASSIGN.exec(v);
+          if (m && t.cols.every((o, q) => q === j || o.n !== m[1])) { c.n = m[1]; c.f = m[2].trim(); } else c.f = v.trim();
+        } else if (k === 'typed') c.f = '';
+        else if (k === 'left' || k === 'right') {
+          const at = k === 'left' ? j : j + 1;
+          let n = 1; while (t.cols.some((o) => o.n === trf('Column {0}', '列{0}', n))) n++;
+          t.cols.splice(at, 0, { n: trf('Column {0}', '列{0}', n), f: '' });
+          t.rows.forEach((r) => r.splice(at, 0, ''));
+        } else if (k === 'mleft' || k === 'mright') {
+          const to = k === 'mleft' ? j - 1 : j + 1;
+          [t.cols[j], t.cols[to]] = [t.cols[to], t.cols[j]];
+          t.rows.forEach((r) => { [r[j], r[to]] = [r[to], r[j]]; });
+        } else if (k === 'del') {
+          const sure = await sheet(trf('Delete the column “{0}”?', '列「{0}」を消しますか？', colName(j)), [['del', tr('Delete', '消す'), 'danger']]);
+          if (sure !== 'del') return;
+          t.cols.splice(j, 1); t.rows.forEach((r) => r.splice(j, 1));
+        }
+        save(); build(); runTable();
+      };
+      const rowSheet = async (i) => {
+        const t = memo().table, acts = [];
+        if (t.rows.length < NOTE_MAX) acts.push(['above', tr('Insert a row above', '上に行を入れる')], ['below', tr('Insert a row below', '下に行を入れる')]);
+        if (i > 0) acts.push(['up', tr('Move up', '上へ移す')]);
+        if (i < t.rows.length - 1) acts.push(['down', tr('Move down', '下へ移す')]);
+        if (t.rows.length > 1) acts.push(['del', tr('Delete this row', 'この行を消す'), 'danger']);
+        const k = await sheet(trf('Row {0}', '{0} 行目', i + 1), acts);
+        if (!k) return;
+        const blank = () => t.cols.map(() => '');
+        if (k === 'above') t.rows.splice(i, 0, blank());
+        else if (k === 'below') t.rows.splice(i + 1, 0, blank());
+        else if (k === 'up' || k === 'down') { const to = k === 'up' ? i - 1 : i + 1; [t.rows[i], t.rows[to]] = [t.rows[to], t.rows[i]]; }
+        else if (k === 'del') t.rows.splice(i, 1);
+        save(); build(); runTable();
+      };
+      const buildTable = () => {
+        const t = memo().table, nc = t.cols.length;
+        t.rows = t.rows.map((r) => { const a = Array.isArray(r) ? r.slice(0, nc) : []; while (a.length < nc) a.push(''); return a.map((v) => String(v === null || v === undefined ? '' : v)); });
+        if (!t.rows.length) t.rows.push(t.cols.map(() => ''));
+        TB.fx = t.rows.map(() => []); TB.foot = [];
+        const head = el('tr', {}, el('th', { class: 'note-no-c', scope: 'col', 'aria-label': tr('Row', '行'), text: '#' }),
+          ...t.cols.map((c, j) => el('th', { scope: 'col' }, tapButton({ class: 'note-col', 'aria-label': trf('Column “{0}”: rename, formula, insert, move, delete', '列「{0}」：名前・式・列を入れる・移す・消す', colName(j)) + (c.f ? ' = ' + c.f : '') }, () => colSheet(j))
+            .appendChild(el('span', { class: 'note-col-n', text: colName(j) })).parentNode
+            .appendChild(c.f ? el('span', { class: 'note-col-f', text: '= ' + c.f }) : document.createTextNode('')).parentNode)));
+        const body = t.rows.map((r, i) => el('tr', {}, el('th', { class: 'note-no-c', scope: 'row' }, tapButton({ class: 'note-no', text: String(i + 1), 'aria-label': trf('Row {0}: insert, move, delete', '{0} 行目：行を入れる・移す・消す', i + 1) }, () => rowSheet(i))),
+          ...t.cols.map((c, j) => {
+            if (c.f) {
+              const b = tapButton({ class: 'note-fx', 'aria-label': trf('{0}, row {1}', '{0}、{1} 行目', colName(j), i + 1) }, () => { const v = b._v; if (v && v.ok) resultSheet(colName(j) + ' ' + trf('(row {0})', '（{0} 行目）', i + 1), v.expr, v.shown); });
+              TB.fx[i][j] = b;
+              return el('td', { class: 'note-fxc' }, b);
+            }
+            const inp = el('input', { inputmode: 'text', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false', value: r[j], 'aria-label': trf('{0}, row {1}', '{0}、{1} 行目', colName(j), i + 1), enterkeyhint: 'next' });
+            inp.addEventListener('input', () => { memo().table.rows[i][j] = inp.value; save(); runTableSoon(); });
+            inp.addEventListener('keydown', (e) => {
+              if (e.key !== 'Enter') return;
+              e.preventDefault();
+              // (Enter: the cell below; at the last row, a new row)
+              if (i === t.rows.length - 1 && t.rows.length < NOTE_MAX) { t.rows.push(t.cols.map(() => '')); save(); build(); runTable(); }
+              const next = tbox.querySelectorAll('tbody tr')[i + 1];
+              const f = next && next.querySelectorAll('td')[j] && next.querySelectorAll('td')[j].querySelector('input');
+              if (f) f.focus();
+            });
+            return el('td', {}, inp);
+          })));
+        const footRow = (kind, label) => el('tr', { class: 'note-foot' }, el('th', { class: 'note-no-c', scope: 'row', text: label }),
+          ...t.cols.map((c, j) => {
+            const b = tapButton({ class: 'note-fx note-tot', 'aria-label': trf('{0}: {1}', '{0}：{1}', label, colName(j)) }, () => { const v = b._v; if (v && v.ok) resultSheet(label + ' ' + colName(j), v.expr, v.shown); });
+            (TB.foot[j] || (TB.foot[j] = {}))[kind] = b;
+            return el('td', {}, b);
+          }));
+        const tbl = el('table', { class: 'note-tbl' }, el('thead', {}, head), el('tbody', {}, ...body), el('tfoot', {}, footRow('tot', tr('Total', '合計')), footRow('avg', tr('Average', '平均'))));
+        const wrap = el('div', { class: 'note-tbl-wrap', role: 'region', tabindex: '0', 'aria-label': tr('Table: swipe sideways for more columns', '表：横にずらすとほかの列') }, tbl);
+        const addRow = tapButton({ class: 'btn', text: tr('+ Row', '＋ 行') }, () => { if (t.rows.length >= NOTE_MAX) return; t.rows.push(t.cols.map(() => '')); save(); build(); runTable(); const last = tbox.querySelector('tbody tr:last-child input'); if (last) last.focus(); });
+        const addCol = tapButton({ class: 'btn', text: tr('+ Column', '＋ 列') }, async () => {
+          if (t.cols.length >= NOTE_COLS) { messageSheet(trf('A table has up to {0} columns', '表の列は {0} 列までです', NOTE_COLS)); return; }
+          const v = await promptSheet(tr('Name of the column', '列の名前'), '', tr('e.g. Qty', '例：数量'), tr('Add', '足す'));
+          if (v === null) return;
+          let n = 1; while (t.cols.some((o) => o.n === trf('Column {0}', '列{0}', n))) n++;
+          const m = NOTE_ASSIGN.exec(v);
+          t.cols.push(m ? { n: m[1], f: m[2].trim() } : { n: v.trim().slice(0, 24) || trf('Column {0}', '列{0}', n), f: '' }); t.rows.forEach((r) => r.push(''));
+          save(); build(); runTable();
+        });
+        tbox.append(wrap, el('div', { class: 'tool-tbl-btns' }, addRow, addCol),
+          el('div', { class: 'form-hint', text: tr('A cell can have a unit or a currency (3 kg, 120 JPY). Tap the name of a column for its formula ("Qty × Price"), a row number or a column name to insert, move or delete; tap a result or a total for the three actions. Words (the name of an item) are left out of the totals.', 'セルには単位や通貨も書けます（3 kg、120 JPY）。列の名前をタップすると式（「数量 × 単価」）、行の番号や列の名前で行・列を入れる・移す・消す。結果や合計をタップすると 3 つの操作。言葉（品目の名前など）は合計に入りません。') }));
+      };
+      const runTableSoon = debounce(() => runTable(), 150);
+      const paint = (b, v, blank) => {
+        if (!b) return;
+        b._v = v || null;
+        b.textContent = blank || !v ? '' : v.ok ? v.shown : v.err;
+        b.classList.toggle('bad', !!v && !v.ok && !blank);
+      };
+      const runTable = async () => {
+        if (!isTable()) return;
+        const seq = ++TB.seq, t = memo().table, nr = t.rows.length, nc = t.cols.length;
+        // the cells as expressions: the cells typed (with their units), the formula cells worked out; null: empty or a word
+        const ex = t.rows.map(() => new Array(nc).fill(null));
+        for (let j = 0; j < nc; j++) {
+          const c = t.cols[j];
+          if (!c.f) {
+            for (let i = 0; i < nr; i++) { const s = String(t.rows[i][j] || '').trim(); ex[i][j] = s && !noteWord(s) ? normalizeExpr(s) : null; }
+            continue;
+          }
+          // (a formula uses the columns typed and the formula columns to its left, by their names, in each row)
+          const uses = noteUses(c.f, t.cols, j);
+          for (let i = 0; i < nr; i++) {
+            const b = TB.fx[i] && TB.fx[i][j];
+            const names = {};
+            let blank = false, word = '';
+            for (const k of uses) {
+              if (t.cols[k].f && k > j) { blank = true; break; }
+              const s = String(t.rows[i][k] || '').trim();
+              if (!t.cols[k].f && !s) { blank = true; break; }
+              if (!t.cols[k].f && noteWord(s)) { word = word || t.cols[k].n; continue; }
+              if (ex[i][k] === null) { blank = true; break; }
+              names[t.cols[k].n] = ex[i][k];
+            }
+            if (blank || !uses.length && !c.f.trim()) { paint(b, null, true); continue; }
+            if (word) { paint(b, { ok: false, err: trf('“{0}” is not a value', '「{0}」が値ではありません', word) }); continue; }
+            const v = await calcOne(noteExpand(normalizeExpr(c.f), names, null).expr);
+            if (seq !== TB.seq) return;
+            ex[i][j] = v.ok ? v.expr : null;
+            paint(b, v);
+          }
+        }
+        // the total and the average of each column of values (the words and the empty cells left out)
+        for (let j = 0; j < nc; j++) {
+          const f = TB.foot[j] || {}, parts = [];
+          for (let i = 0; i < nr; i++) if (ex[i][j] !== null) parts.push('(' + ex[i][j] + ')');
+          if (!parts.length) { paint(f.tot, null, true); paint(f.avg, null, true); continue; }
+          const tot = await calcOne(parts.join(' + '));
+          if (seq !== TB.seq) return;
+          paint(f.tot, tot);
+          const avg = await calcOne('(' + parts.join(' + ') + ') / ' + parts.length, 8);
+          if (seq !== TB.seq) return;
+          paint(f.avg, avg);
+        }
+        TB.ex = ex;
+      };
+      // the table as rows of text: the names of the columns, the rows (the values typed, the results of the formulas), the
+      // total and the average; the first column, "#", the number of the row
+      const tableRows = () => {
+        const t = memo().table, out = [['#'].concat(t.cols.map((c, j) => colName(j)))];
+        t.rows.forEach((r, i) => out.push([String(i + 1)].concat(t.cols.map((c, j) => (c.f ? (TB.fx[i] && TB.fx[i][j] && TB.fx[i][j]._v && TB.fx[i][j]._v.ok ? TB.fx[i][j]._v.shown : '') : r[j])))));
+        for (const [k, label] of [['tot', tr('Total', '合計')], ['avg', tr('Average', '平均')]]) out.push([label].concat(t.cols.map((c, j) => { const b = TB.foot[j] && TB.foot[j][k]; return b && b._v && b._v.ok ? b._v.shown : ''; })));
+        return out;
+      };
       // copy, share, and under "More": rename, save as text or CSV (Pro), delete
-      const asText = () => memo().lines.map((l, i) => { const c = N.cache[i]; return c && c.ok ? l + '  →  ' + c.shown : l; }).join('\n');
+      const asText = () => (isTable() ? tableRows().map((r) => r.join('\t')).join('\n') : memo().lines.map((l, i) => { const c = N.cache[i]; return c && c.ok ? l + '  →  ' + c.shown : l; }).join('\n'));
       const copyBtn = tapButton({ class: 'btn', text: tr('Copy', 'コピー') }, () => { copyText(asText()); reviewMoment('tool'); });
       const shareBtn = tapButton({ class: 'btn', text: tr('Share', '共有') }, () => {
         if (window.QalcNative && QalcNative.shareText) QalcNative.shareText(asText());
@@ -18633,10 +18911,12 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         reviewMoment('tool');
       });
       const exp = (kind) => {
-        if (!proGate('notes')) return;
+        // (a table as CSV: 'notes_table', as the table itself; the lines: 'notes')
+        if (!proGate(isTable() && kind === 'csv' ? 'notes_table' : 'notes')) return;
         const d = new Date(), z = (q) => String(q).padStart(2, '0'), stamp = d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate());
         const sep = commaMode ? ';' : ',', cell = (v) => '"' + String(v).replace(/"/g, '""') + '"';
-        const text = kind === 'csv' ? '﻿' + [[tr('Line', '行'), tr('Calculation', '計算'), tr('Result', '結果')].map(cell).join(sep)].concat(memo().lines.map((l, i) => [i + 1, l, N.cache[i] && N.cache[i].ok ? N.cache[i].shown : ''].map(cell).join(sep))).join('\r\n') + '\r\n' : asText() + '\n';
+        const text = kind === 'csv' ? '﻿' + (isTable() ? tableRows().map((r) => r.map(cell).join(sep))
+          : [[tr('Line', '行'), tr('Calculation', '計算'), tr('Result', '結果')].map(cell).join(sep)].concat(memo().lines.map((l, i) => [i + 1, l, N.cache[i] && N.cache[i].ok ? N.cache[i].shown : ''].map(cell).join(sep)))).join('\r\n') + '\r\n' : asText() + '\n';
         const name = 'QCalc-notes-' + stamp + (kind === 'csv' ? '.csv' : '.txt');
         savingWhat = 'notes';
         if (kind === 'csv' && window.QalcNative && QalcNative.saveFile) { QalcNative.saveFile(name, 'text/csv', text); return; }
@@ -18656,14 +18936,18 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         N.cur = N.memos[0].id; N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
       });
       // (1.15.0) what was read: as a new memo (an empty memo takes it; a second memo is QCalc Pro), at the end of this memo,
-      // or one line into the input field
+      // or one line into the input field; (1.16.0) a CSV file with two columns or more also as a table (its first row: the
+      // names of the columns; QCalc Pro, as tables are)
       p.importLines = async (got) => {
-        const L = memo().lines, empty = L.every((l) => !String(l).trim()), n = got.lines.length;
+        const L = memo().lines, empty = !isTable() && L.every((l) => !String(l).trim()), n = got.lines.length;
         const lock = PRO_GATES.notes === 'pro' && !hasPro() && !empty;
         const head = got.name ? trf('Read “{0}”: {1} lines', '「{0}」を読み込みます（{1} 行）', got.name, n) : trf('Text received: {0} lines', '受け取った文字（{0} 行）', n);
-        const note = got.csv === 'first' ? '\n' + tr('A CSV file: its first column is read', 'CSV の 1 列目を読み込みます') : '';
+        const asTable = got.csv === 'first' && got.rows && got.rows.length >= 2 && got.rows[0].length >= 2;
+        const note = got.csv === 'first' ? '\n' + (asTable ? tr('A CSV file: as a table, or its first column as lines', 'CSV のファイル：表にするか、1 列目を行として読み込みます') : tr('A CSV file: its first column is read', 'CSV の 1 列目を読み込みます')) : '';
         const peek = '\n' + clip(got.lines.filter((l) => l.trim()).slice(0, 3).join(' / '), 90);
-        const acts = [['new', tr('As a new memo', '新しいメモにする') + (lock ? '  ⭐ Pro' : ''), 'accent'], ['add', tr('At the end of this memo', '今のメモの最後に足す')]];
+        const acts = [];
+        if (asTable) acts.push(['table', tr('As a table (the first row: the names of the columns)', '表にする（1 行目を列の名前に）') + tlock(), 'accent']);
+        acts.push(['new', tr('As a new memo', '新しいメモにする') + (lock ? '  ⭐ Pro' : ''), asTable ? '' : 'accent'], ['add', tr('At the end of this memo', '今のメモの最後に足す')]);
         if (n === 1) acts.push(['field', tr('Put it into the input field', '入力欄に入れる')]);
         const k = await sheet(head + note + peek, acts);
         if (!k) return;
@@ -18673,7 +18957,29 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           exprChanged(); focusExpr();
           return;
         }
-        const into = (m) => { m.lines = got.lines.slice(); if (got.title) m.title = got.title; };
+        const into = (m) => { m.kind = ''; m.lines = got.lines.slice(); if (got.title) m.title = got.title; };
+        if (k === 'table') {
+          if (!proGate('notes_table')) return;
+          let rows = got.rows.map((r) => r.map((v) => String(v).replace(/\s+/g, ' ').trim()));
+          // (a table saved by QCalc: its first column is the number of the row, and its last rows the total and the average)
+          if (rows[0][0] === '#') { rows = rows.filter((r, i) => i === 0 || /^\d+$/.test(r[0])).map((r) => r.slice(1)); }
+          const nc = Math.min(NOTE_COLS, Math.max(...rows.map((r) => r.length)));
+          const cols = [];
+          for (let j = 0; j < nc; j++) { let nm = (rows[0][j] || '').slice(0, 24) || trf('Column {0}', '列{0}', j + 1); while (cols.some((c) => c.n === nm)) nm += '′'; cols.push({ n: nm, f: '' }); }
+          const body = rows.slice(1, NOTE_MAX + 1).map((r) => cols.map((c, j) => r[j] || ''));
+          const tbl = { cols, rows: body.length ? body : [cols.map(() => '')] };
+          const blankNow = !isTable() && L.every((l) => !String(l).trim());
+          if (blankNow) { memo().kind = 'table'; memo().table = tbl; if (got.title) memo().title = got.title; }
+          else {
+            if (!proGate('notes')) return;
+            if (N.memos.length >= 50) { messageSheet(tr('There can be up to 50 memos', 'メモは 50 個までです')); return; }
+            const id = Math.max(...N.memos.map((m) => m.id)) + 1;
+            N.memos.push({ id, title: got.title || trf('Memo {0}', 'メモ {0}', N.memos.length + 1), lines: [''], kind: 'table', table: tbl }); N.cur = id;
+          }
+          N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
+          toast(trf('Read into “{0}” as a table: {1} rows, {2} columns', '「{0}」に表として読み込みました（{1} 行、{2} 列）', memo().title, tbl.rows.length, cols.length), 2500);
+          return;
+        }
         if (k === 'new') {
           if (empty) into(memo());
           else {
@@ -18686,7 +18992,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           toast(trf('Read into “{0}”: {1} lines', '「{0}」に {1} 行を読み込みました', memo().title, n), 2500);
           return;
         }
-        // at the end of this memo (its empty lines at the end go)
+        // at the end of this memo (its empty lines at the end go; a table memo shows its lines again)
+        memo().kind = '';
         let end = L.length;
         while (end > 0 && !String(L[end - 1]).trim()) end--;
         if (end + n > NOTE_MAX) { messageSheet(trf('A memo holds up to {0} lines: with these it would have {1}', '1 つのメモは {0} 行までです。足すと {1} 行になります', NOTE_MAX, end + n)); return; }
@@ -18698,6 +19005,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       p.showMemo = (id, line) => {
         if (!N.memos.some((m) => m.id === id)) return;
         if (N.cur !== id) { N.cur = id; N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0); }
+        if (isTable()) { memo().kind = ''; save(); build(); run(0); }
         setTimeout(() => { const f = list.querySelectorAll('input')[line]; if (f) { f.scrollIntoView({ block: 'center' }); f.classList.add('note-flash'); setTimeout(() => f.classList.remove('note-flash'), 1800); } }, 150);
       };
       const openBtn = tapButton({ class: 'btn', text: tr('Open a file', 'ファイルを開く') }, () => { statImport = null; openImportFile(); });
@@ -18706,8 +19014,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const more = el('details', { class: 'sec-more note-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }),
         el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Name', '名前') }), titleIn), el('div', { class: 'tool-tbl-btns' }, openBtn, txtBtn, csvBtn), delBtn);
       more.addEventListener('toggle', () => { if (more.open) titleIn.value = memo().title; });
-      const hint = el('div', { class: 'form-hint', text: tr('One calculation on each line. "name = …" gives a name for the lines below (in this memo), "ans" is the line above, and "total" adds the lines above. Tap a result for the three actions.', '1 行に 1 つの計算。「名前 = 式」で下の行で使える名前（このメモの中だけ）、「ans」は上の行の値、「合計」で上の行を足します。結果をタップすると 3 つの操作。') });
-      p.body.append(chips, el('div', { class: 'geo-size note-pick' }, pick, addBtn), list, msg, el('div', { class: 'tool-tbl-btns' }, copyBtn, shareBtn), more, hint);
+      const hint = el('div', { class: 'form-hint', text: tr('One calculation on each line. "name = …" gives a name for the lines below (in this memo), "ans" is the line above, "#3" is the result of line 3, and "total" adds the lines above. Tap a line number to insert, move or delete a line; tap a result for the three actions.', '1 行に 1 つの計算。「名前 = 式」で下の行で使える名前（このメモの中だけ）、「ans」は上の行の値、「#3」は 3 行目の結果、「合計」で上の行を足します。行の番号をタップすると行を入れる・移す・消す、結果をタップすると 3 つの操作。') });
+      p.body.append(chips, el('div', { class: 'geo-size note-pick' }, pick, addBtn), modeSeg, list, tbox, msg, el('div', { class: 'tool-tbl-btns' }, copyBtn, shareBtn), more, hint);
       fillPick(); build(); run(0);
     });
     return p;
@@ -20136,7 +20444,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     notes: tr('Keep several memos and save them as files', 'メモをいくつも作って、ファイルに保存できます'),
     sliders3d: tr('Move the letters of a 3D graph with sliders, and watch it change', '3D グラフの文字をスライダーで動かして、形の変わり方を見られます'),
     stats_fit: tr('Fit a curve of degree 2 to 4, exponential, power or logarithmic to your data, with its graph', 'データに 2〜4 次・指数・累乗・対数の曲線を当てはめ、グラフで見られます'),
-    trading: tr('See the price of a margin call before it comes, and size a trade to the loss you allow', '追証になる株価を前もって知り、許す損失に合わせて株数を決められます')
+    trading: tr('See the price of a margin call before it comes, and size a trade to the loss you allow', '追証になる株価を前もって知り、許す損失に合わせて株数を決められます'),
+    notes_table: tr('Lists with a column worked out (amount = qty × price), totals and averages, and CSV files', '列を式で計算する表（金額 = 数量 × 単価）と合計・平均、CSV の読み書き')
   });
   // the features that PRO_GATES can make Pro: icon, name, what it gives
   const PRO_INFO = () => ({
@@ -20160,6 +20469,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     notes: ['📝', tr('More calculation notes, saved as files', '計算メモの 2 つ目以降と書き出し'), tr('Several memos of calculations, and saving them as text or CSV (the first memo is free)', '計算メモをいくつも作り、テキストや CSV で保存（1 つ目のメモは無料）')],
     share_pro: ['🎞', tr('GIF and pictures without the mark', 'GIF と透かしなしの共有'), tr('The 3D graph and a slider moving as a moving picture (GIF), and pictures of the graphs at full resolution without "QCalc" in the corner', '3D グラフやスライダーの動きを動く画像（GIF）で、グラフの画像を高い解像度・透かしなしで共有')],
     sliders3d: ['🎛', tr('Sliders in 3D', '3D のスライダー'), tr('Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)', '3D グラフで a sin(x) cos(y) の a などをスライダーで動かす（2D は無料）')],
+    notes_table: ['▦', tr('Table mode of the calculation notes', '計算メモの表'), tr('Columns with names and a formula (amount = qty × price), the total and the average of each column with units, CSV files read in and saved', '名前と式のある列（金額 = 数量 × 単価）、列ごとの単位つきの合計と平均、CSV の読み込みと保存')],
     trading: ['🛡', tr('Margin and position sizing', '信用取引と建玉の計算'), tr('The maintenance ratio and the margin-call price, the shares from a stop with risk:reward, the interest and lending fee by the day', '委託保証金維持率と追証の株価、損切りからの株数とリスクリワード、金利・貸株料の日割り')],
     stats_fit: ['📈', tr('Regression curves', '回帰曲線'), tr('For two columns, choose a polynomial of degree 2 to 4, an exponential, a power or a logarithmic curve: its formula, R², prediction and graph (the line stays free)', '2 列のデータで、2〜4 次の多項式・指数・累乗・対数の曲線を選び、式・決定係数・予測・グラフを出す（直線は無料）')]
   });
@@ -20185,6 +20495,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     share_pro: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.2l5 2.8-5 2.8z"/><path d="M3 8.5h2M3 15.5h2M19 8.5h2M19 15.5h2"/>',
     notes: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
     future: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>',
+    notes_table: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M10 4.5v15"/><path d="M13.5 12h4M15.5 10v4" />',
     trading: '<path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M8.5 14l2.5-2.5 2 2 3-3.5"/>',
     stats_fit: '<path d="M3.5 3.5v17h17"/><circle cx="7.5" cy="15" r="1.1"/><circle cx="11" cy="12.5" r="1.1"/><circle cx="14.5" cy="12" r="1.1"/><circle cx="18" cy="7" r="1.1"/><path d="M5.5 17c4-6 8-5 13.5-12"/>'
   };

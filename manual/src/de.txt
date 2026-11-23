@@ -510,11 +510,31 @@ Die Formeln:
 :shot: notes | [[Calculation notes]] mit einem Beispiel
 :example: Miete 85000, Strom 6200, Wasser 3100 (JPY) → die Summenzeile zeigt ¥94300
 :pro: Die erste Notiz ist kostenlos, ebenso das Einlesen einer Datei oder einer Freigabe in sie (in eine leere Notiz oder an ihr Ende). Weitere Notizen (auch als neue Notiz einlesen) und das Speichern als Text oder CSV sind Funktionen von QCalc Pro.
-:tip: Eine Zeile, die mit # oder // beginnt, ist eine Bemerkung (sie wird nicht berechnet).
+:tip: Eine Zeile, die mit # (aber nicht # und einer Ziffer) oder // beginnt, ist eine Bemerkung (sie wird nicht berechnet). #3, mit einer Ziffer direkt nach #, ist das Ergebnis von Zeile 3.
 :step: Um eine Datei einzulesen, drücken Sie [[Open a file]] unter [[More ▾]] und wählen eine .txt- oder .csv-Datei. Eine .txt gibt eine Zeile je Zeile; eine von QCalc gespeicherte .csv ihre Spalte „Rechnung“, eine andere .csv ihre erste Spalte. UTF-8 und Shift_JIS (eine japanische CSV aus Excel) können gelesen werden.
 :step: Wählen Sie in einer anderen App (Notizen, E-Mail …) Text oder eine .txt- oder .csv-Datei und dann QCalc unter „Teilen“ dieser App: Die Rechennotizen öffnen sich.
 :step: Wählen Sie dann [[As a new memo]] oder [[At the end of this memo]]; bei einer einzigen Zeile auch [[Put it into the input field]]. Eine neue Notiz bekommt den Namen der Datei (ohne Endung).
 :tip: Eingelesenes ist nur Text und wird nach denselben Regeln wie getippte Zeilen berechnet. Eine Datei über 1 MB oder mit mehr als 300 Zeilen (so viel fasst eine Notiz) wird nicht eingelesen, und die App sagt es.
+
+### notes-refs | Zeilennummern und #3
+:what: Die Zeilen der Notizen haben ihre Nummern. #3 verwendet das Ergebnis von Zeile 3 (einer Zeile darüber). Ändert sich eine Zeile darüber, werden die Zeilen, die sie verwenden, sofort neu berechnet.
+:step: Tippen Sie auf die Nummer einer Zeile für [[Insert a line above]], [[Insert a line below]], [[Move up]], [[Move down]] und [[Delete this line]].
+:step: Während eine andere Zeile geschrieben wird, tippen Sie auf eine Zeilennummer, um #3 (oder ihre Nummer) hineinzuschreiben.
+:example: Zeilen 1 bis 3 Miete, Strom und Wasser, Zeile 4 „Summe“, Zeile 5 `#4 / 2` → ¥47,150 (94.300 / 2)
+:tip: Werden Zeilen eingefügt, gelöscht oder verschoben, folgen die in den Zeilen geschriebenen Nummern und meinen weiter dieselben Zeilen. Ein Verweis auf eine gelöschte Zeile wird zu #?, und die Zeile sagt es.
+:note: #3 kann nur eine Zeile über der Zeile sein, in der es steht.
+
+### notes-table | Tabellenmodus
+:what: Eine Notiz als Tabelle: Spalten mit Namen, eine Spalte, die per Formel aus den anderen berechnet wird (z. B. Betrag = Menge × Preis), und Summe und Mittelwert jeder Spalte. Eine Zelle kann eine Einheit oder Währung haben, z. B. 3 kg oder 120 JPY.
+:step: Drücken Sie [[Table]] über der Notiz. Sie beginnt mit einem Beispiel: Artikel, Menge, Preis und Betrag (Menge × Preis).
+:step: Geben Sie einen Wert in eine Zelle ein: Formelspalten, Summen und Mittelwerte werden sofort neu berechnet.
+:step: Tippen Sie auf den Namen einer Spalte für [[Rename]], [[Work it out by a formula]] (zum Beispiel Menge × Preis) und zum Einfügen, Verschieben oder Löschen einer Spalte; auf eine Zeilennummer zum Einfügen, Verschieben oder Löschen einer Zeile.
+:step: [[+ Row]] und [[+ Column]] fügen eine Zeile und eine Spalte hinzu. Eine als „Betrag = Menge × Preis“ hinzugefügte Spalte ist eine Formelspalte.
+:example: 3 Äpfel zu 120 JPY, 2 Brot zu 250 JPY, 1 Milch zu 180 JPY → Beträge ¥360, ¥500, ¥180, Summe ¥1040, Mittelwert ≈ ¥346.67
+:tip: Eine Zelle nur mit Wörtern (der Name eines Artikels) zählt nicht zu den Summen. Werte in verschiedenen Einheiten derselben Größe (3 kg und 500 g) werden zusammengezählt.
+:step: [[Save as CSV]] unter [[More ▾]] speichert die Tabelle als CSV-Datei (Zeilennummern, Spaltennamen, Werte, Summe und Mittelwert). Eine mit [[Open a file]] gewählte CSV-Datei kann [[As a table (the first row: the names of the columns)]] gelesen werden.
+:tip: Auf einem schmalen Bildschirm wischen Sie die Tabelle seitlich für die anderen Spalten; die Spalte der Zeilennummern bleibt links.
+:pro: Der Tabellenmodus (mit Speichern als CSV und Lesen einer CSV-Datei als Tabelle) ist eine Funktion von QCalc Pro. Zeilennummern und #3 sind kostenlos.
 
 # graphs | Graphen
 
@@ -702,6 +722,7 @@ Numerische Integration (Flächen, Längen und Volumen im Graphen) ist auf etwa 2
 | Weitere Rechennotizen, als Datei gespeichert | [Rechennotizen](#notes) |
 | Regressionskurven (außer der Geraden) | [Statistik](#stats) |
 | Margin und Positionsgröße (Erhaltungsquote und Nachschuss, Positionsgröße aus dem Stop, Zinsen und Leihgebühr) | [Margin: Erhaltungsquote](#margin) |
+| Tabellenmodus der Rechennotizen (Formelspalten, Summen und Mittelwerte, CSV) | [Tabellenmodus](#notes-table) |
 :tip: [[How to use ›]] in einer Zeile der Pro-Funktionen öffnet den Abschnitt dieser Anleitung.
 
 ## pro-buy | Kaufen und wiederherstellen
