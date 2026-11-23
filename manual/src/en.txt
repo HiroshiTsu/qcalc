@@ -510,11 +510,31 @@ The formulas:
 :shot: notes | [[Calculation notes]] with an example
 :example: rent 85000, electricity 6200, water 3100 (JPY) → the line "total" shows "total = ¥94300"
 :pro: The first memo is free, and so is reading a file or a share into it (into an empty memo, or at its end). More memos (also reading in as a new memo), and saving as text or CSV, are QCalc Pro features.
-:tip: A line that begins with # or // is a note (it is not calculated).
+:tip: A line that begins with # (but not # and a digit) or with // is a note (it is not calculated). #3, with a digit just after #, is the result of line 3.
 :step: To read a file, press [[Open a file]] under [[More ▾]] and choose a .txt or .csv file. A .txt gives one line for each line; a .csv saved by QCalc gives its column “Calculation”, another .csv its first column. UTF-8 and Shift_JIS (a Japanese CSV made by Excel) can be read.
 :step: In another app (a notes app, mail …), choose some text or a .txt or .csv file, then QCalc in that app’s “Share”: the calculation notes open.
 :step: Then choose [[As a new memo]] or [[At the end of this memo]]; for a single line, [[Put it into the input field]] too. A new memo is named after the file (without its extension).
 :tip: What is read is only text, worked out by the same rules as typed lines. A file over 1 MB, or more than 300 lines (what a memo holds), is not read, and the app says so.
+
+### notes-refs | Line numbers and #3
+:what: The lines of the notes have their numbers. #3 uses the result of line 3 (a line above). When a line above changes, the lines that use it are worked out again at once.
+:step: Tap the number of a line for [[Insert a line above]], [[Insert a line below]], [[Move up]], [[Move down]] and [[Delete this line]].
+:step: While another line is being written, tap a line number to write #3 (or its own number) in it.
+:example: lines 1 to 3 rent, electricity and water, line 4 "total", line 5 `#4 / 2` → ¥47,150 (94,300 / 2)
+:tip: When lines are inserted, deleted or moved, the numbers written in the lines follow, so they still mean the same lines. A reference to a deleted line becomes #?, and the line says so.
+:note: #3 can only be a line above the line it is in.
+
+### notes-table | Table mode
+:what: A memo as a table: columns with names, a column worked out from the others by a formula (such as Amount = Qty × Price), and the total and the average of each column. A cell can have a unit or a currency, such as 3 kg or 120 JPY.
+:step: Press [[Table]] above the memo. It starts with an example: Item, Qty, Price and Amount (Qty × Price).
+:step: Type a value in a cell: the formula columns, the totals and the averages are worked out again at once.
+:step: Tap the name of a column for [[Rename]], [[Work it out by a formula]] (for example Qty × Price), and to insert, move or delete a column; tap a row number to insert, move or delete a row.
+:step: [[+ Row]] and [[+ Column]] add a row and a column. A column added as "Amount = Qty × Price" is a formula column.
+:example: 3 apples at 120 JPY, 2 bread at 250 JPY, 1 milk at 180 JPY → amounts ¥360, ¥500, ¥180, total ¥1040, average ≈ ¥346.67
+:tip: A cell with words only (the name of an item) is left out of the totals. Values in different units (3 kg and 500 g) of the same kind are added up together.
+:step: [[Save as CSV]] under [[More ▾]] saves the table as a CSV file (the row numbers, the names of the columns, the values, the total and the average). A CSV file chosen with [[Open a file]] can be read [[As a table (the first row: the names of the columns)]].
+:tip: On a narrow screen, swipe the table sideways for the other columns; the column of the row numbers stays on the left.
+:pro: The table mode (with saving as CSV and reading a CSV file as a table) is a QCalc Pro feature. The line numbers and #3 are free.
 
 # graphs | Graphs
 
@@ -702,6 +722,7 @@ Numeric integration (areas, lengths and volumes of the graph) is certain to abou
 | More calculation notes, saved as files | [Calculation notes](#notes) |
 | Regression curves (other than the line) | [Statistics](#stats) |
 | Margin and position sizing (maintenance ratio and margin call, position size from a stop, interest and lending fee) | [Margin: maintenance ratio](#margin) |
+| Table mode of the calculation notes (formula columns, totals and averages, CSV) | [Table mode](#notes-table) |
 :tip: [[How to use ›]] on a row of the Pro features opens its section of this manual.
 
 ## pro-buy | Buying and restoring

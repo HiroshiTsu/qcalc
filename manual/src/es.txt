@@ -510,11 +510,31 @@ Las fórmulas:
 :shot: notes | [[Calculation notes]] con un ejemplo
 :example: alquiler 85000, luz 6200, agua 3100 (JPY) → la línea del total muestra ¥94300
 :pro: La primera nota es gratis, y también leer en ella un archivo o algo compartido (en una nota vacía o al final). Más notas (también leer como nota nueva) y guardarlas como texto o CSV son funciones de QCalc Pro.
-:tip: Una línea que empieza por # o // es un comentario (no se calcula).
+:tip: Una línea que empieza por # (pero no # y una cifra) o por // es un comentario (no se calcula). #3, con una cifra justo después de #, es el resultado de la línea 3.
 :step: Para leer un archivo, pulsa [[Open a file]] en [[More ▾]] y elige un archivo .txt o .csv. Un .txt da una línea por cada línea; un .csv guardado por QCalc da su columna «Cálculo», otro .csv su primera columna. Se pueden leer UTF-8 y Shift_JIS (un CSV japonés hecho con Excel).
 :step: En otra app (notas, correo…), elige un texto o un archivo .txt o .csv y luego QCalc en «Compartir» de esa app: se abren las notas de cálculo.
 :step: Después elige [[As a new memo]] o [[At the end of this memo]]; con una sola línea, también [[Put it into the input field]]. Una nota nueva recibe el nombre del archivo (sin extensión).
 :tip: Lo leído es solo texto y se calcula con las mismas reglas que las líneas escritas. Un archivo de más de 1 MB, o de más de 300 líneas (lo que cabe en una nota), no se lee, y la app lo indica.
+
+### notes-refs | Números de línea y #3
+:what: Las líneas de las notas tienen su número. #3 usa el resultado de la línea 3 (una línea de arriba). Cuando cambia una línea de arriba, las líneas que la usan se calculan de nuevo al momento.
+:step: Toca el número de una línea para [[Insert a line above]], [[Insert a line below]], [[Move up]], [[Move down]] y [[Delete this line]].
+:step: Mientras escribes otra línea, toca un número de línea para escribir #3 (o su número) en ella.
+:example: líneas 1 a 3 alquiler, luz y agua, línea 4 «total», línea 5 `#4 / 2` → ¥47,150 (94,300 / 2)
+:tip: Al insertar, eliminar o mover líneas, los números escritos en las líneas las siguen y siguen indicando las mismas líneas. Una referencia a una línea eliminada pasa a #? y la línea lo dice.
+:note: #3 solo puede ser una línea por encima de la línea en la que está.
+
+### notes-table | Modo tabla
+:what: Una nota como tabla: columnas con nombre, una columna calculada a partir de las otras con una fórmula (como Importe = Cantidad × Precio), y el total y la media de cada columna. Una celda puede tener una unidad o una moneda, como 3 kg o 120 JPY.
+:step: Pulsa [[Table]] encima de la nota. Empieza con un ejemplo: Artículo, Cantidad, Precio e Importe (Cantidad × Precio).
+:step: Escribe un valor en una celda: las columnas con fórmula, los totales y las medias se calculan de nuevo al momento.
+:step: Toca el nombre de una columna para [[Rename]], [[Work it out by a formula]] (por ejemplo Cantidad × Precio) y para insertar, mover o eliminar una columna; toca un número de fila para insertar, mover o eliminar una fila.
+:step: [[+ Row]] y [[+ Column]] añaden una fila y una columna. Una columna añadida como «Importe = Cantidad × Precio» es una columna con fórmula.
+:example: 3 manzanas a 120 JPY, 2 pan a 250 JPY, 1 leche a 180 JPY → importes ¥360, ¥500, ¥180, total ¥1040, media ≈ ¥346.67
+:tip: Una celda solo con palabras (el nombre de un artículo) no entra en los totales. Los valores en unidades distintas de la misma magnitud (3 kg y 500 g) se suman juntos.
+:step: [[Save as CSV]] en [[More ▾]] guarda la tabla como archivo CSV (los números de fila, los nombres de las columnas, los valores, el total y la media). Un archivo CSV elegido con [[Open a file]] se puede leer [[As a table (the first row: the names of the columns)]].
+:tip: En una pantalla estrecha, desliza la tabla de lado para ver las otras columnas; la columna de los números de fila queda a la izquierda.
+:pro: El modo tabla (con guardar como CSV y leer un CSV como tabla) es una función de QCalc Pro. Los números de línea y #3 son gratis.
 
 # graphs | Gráficas
 
@@ -702,6 +722,7 @@ La integración numérica (áreas, longitudes y volúmenes del gráfico) es segu
 | Más notas de cálculo, guardadas como archivo | [Notas de cálculo](#notes) |
 | Curvas de regresión (salvo la recta) | [Estadística](#stats) |
 | Margen y tamaño de posición (ratio de mantenimiento y llamada de margen, tamaño de posición desde el stop, intereses y comisión de préstamo) | [Margen: ratio de mantenimiento](#margin) |
+| Modo tabla de las notas de cálculo (columnas con fórmula, totales y medias, CSV) | [Modo tabla](#notes-table) |
 :tip: [[How to use ›]] en una fila de las funciones Pro abre su sección de este manual.
 
 ## pro-buy | Comprar y restaurar
