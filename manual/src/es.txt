@@ -310,6 +310,78 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Abre [[Savings and compound interest]] y escribe el importe mensual (o la suma inicial), el interés anual y los años.
 :example: 30,000 al mes, 3 %, 20 años → 9,849,059.94 (aportado 7,200,000; intereses 2,649,059.94)
 
+## invest | Acciones e inversión
+:what: Ganancias y pérdidas con impuestos, precio medio de compra, ratio de mantenimiento de una cuenta con margen y su llamada de margen, tamaño de posición desde el stop, rentabilidad, PER, P/VC e interés compuesto, intereses de margen y comisión de préstamo, y acciones extranjeras en tu moneda. No se descargan precios: todo sale de los números que escribes.
+:step: En [[Tools]], elige una herramienta de [[Stocks and investing]].
+:step: Toca un ejemplo o escribe los números. Los resultados aparecen al momento.
+:step: Toca un resultado para poner su expresión en el campo de entrada, guardarlo en el historial o copiarlo. ⋯ arriba a la derecha cambia los dígitos mostrados.
+:note: Un cálculo orientativo, no un consejo de inversión. Los brókeres pueden contar los impuestos y el margen de otra forma.
+:pro: El ratio de mantenimiento y la llamada de margen, el tamaño de posición desde el stop y los intereses y la comisión de préstamo por día son funciones de QCalc Pro. Ganancias y pérdidas, precio medio, rentabilidad/PER/P/VC/crecimiento y acciones extranjeras son gratis.
+
+### pnl | Ganancias y pérdidas de acciones
+:what: Con los precios de compra y venta, las acciones y las comisiones de compra y venta: la ganancia o pérdida, en %, el impuesto, después de impuestos, lo que se recibe por la venta y el precio de equilibrio.
+:step: Abre [[Stock profit and loss]] y escribe los precios y las acciones.
+:step: Una comisión puede ser un importe (500) o una parte de la operación (0,1%).
+:step: Elige [[Taxed]] o [[Tax-free account]]. El tipo impositivo es 20,315 % (el de Japón) salvo que escribas otro.
+:example: Comprada a 1000, vendida a 1200, 100 acciones, sin comisiones → +20,000.00, impuesto 4,063.00, después de impuestos +15,937.00
+:tip: El % es sobre lo pagado, con la comisión. El precio de equilibrio es aquel al que vender no deja pérdida tras las comisiones.
+:note: El impuesto se calcula solo para esta operación y se redondea hacia abajo; no se tienen en cuenta la compensación de pérdidas del año ni el redondeo del bróker.
+
+### avg-cost | Precio medio de compra
+:what: El precio medio de acciones compradas en varias veces, y cuántas acciones a qué precio llevan el promedio a un objetivo.
+:step: Abre [[Average cost]] y elige [[The average of the buys]] o [[How to reach an average]].
+:step: Promedio de las compras: una compra por línea, «precio acciones» (por ejemplo 1000 100).
+:step: Llegar a un promedio: escribe las acciones en cartera, su promedio y el objetivo; luego el precio o las acciones a comprar.
+:example: 100 a 1000 y 200 a 900 → promedio 933.33 (300 acciones, 280,000.00)
+:example: 100 a un promedio de 1200 → comprando a 900, 200 acciones llevan el promedio a 1000
+- Promedio = (precio × acciones + …) / todas las acciones
+- Acciones para un objetivo T = N × (A − T) / (T − P) (N: acciones en cartera, A: su promedio, P: el precio; redondeado hacia arriba al lote)
+:tip: El lote es de 100 acciones salvo que escribas otro; para acciones que se negocian de una en una, escribe 1.
+
+### margin | Margen: ratio de mantenimiento
+:what: Con la garantía y la posición: el ratio de mantenimiento y el precio al que cae a la llamada de margen.
+:step: Abre [[Margin: maintenance ratio]] y escribe el efectivo y, si hay, las acciones en garantía (tras el descuento).
+:step: Elige [[Bought]] o [[Sold short]] y escribe el precio de entrada, las acciones y el precio actual. También se pueden escribir los costes (intereses, comisiones).
+:step: La línea de llamada de margen es 20 % salvo que escribas otra.
+:example: 1,000,000 en efectivo, 3000 acciones compradas a 1000, ahora 900 → 23.33 %, llamada de margen a 866.67 (−3.70 % desde ahora)
+Las fórmulas:
+- Ratio = (efectivo + acciones en garantía + ganancia o pérdida − costes) / valor de las posiciones × 100
+- Valor de las posiciones = precio de entrada × acciones (en [[More ▾]] se pueden sumar otras posiciones con su ganancia o pérdida)
+- Ganancia o pérdida: compra (actual − entrada) × acciones, venta en corto (entrada − actual) × acciones. Una ganancia no se cuenta salvo que se elija en [[More ▾]], [[Unrealized gains]]
+- Precio de llamada de margen: compra, entrada − (efectivo + acciones en garantía − costes − línea × valor) / acciones; venta en corto, entrada + (lo mismo) / acciones
+:note: Los brókeres cuentan de forma distinta las ganancias, los descuentos y los costes, y comprueban a horas distintas (normalmente al cierre).
+:pro:
+
+### position-size | Tamaño de posición desde el stop
+:what: Con el capital, la pérdida permitida en una operación (% del capital), la entrada y el stop: las acciones (redondeadas hacia abajo al lote) y la pérdida en el stop. Con una toma de ganancias, la relación riesgo:beneficio.
+:step: Abre [[Position size from a stop]] y escribe el capital, el riesgo, la entrada y el stop.
+:step: Un stop por debajo de la entrada es una compra; por encima, una venta en corto.
+:example: Capital 3,000,000, 1 %, compra a 1000, stop a 950 (lote 100) → 600 acciones, pérdida en el stop 30,000.00; toma de ganancias a 1150: riesgo:beneficio 1 : 3.00
+- Acciones = capital × riesgo % / |entrada − stop| (redondeado hacia abajo al lote)
+- Riesgo:beneficio = 1 : |toma de ganancias − entrada| / |entrada − stop|
+:pro:
+
+### yield | Rentabilidad, PER, P/VC, crecimiento
+:what: La rentabilidad por dividendo, el PER, el P/VC y el ROE; el interés compuesto con un ahorro mensual; el crecimiento anual entre dos valores.
+:step: Abre [[Yield, PER, PBR, growth]], elige qué buscar y escribe los números.
+:example: Precio 2000, dividendo 60, BPA 150, VC por acción 1600 → rentabilidad 3.00 %, PER 13.33 ×, P/VC 1.25 ×, ROE 9.38 %
+:example: 1,000,000 → 1,800,000 en 6 años → +10.29 % al año
+:tip: El crecimiento puede capitalizarse una vez al año o cada mes; una vez al año, un mes crece (1 + rentabilidad anual)^(1/12).
+
+### carry | Intereses de margen y comisión de préstamo
+:what: Los intereses de una compra con margen, o la comisión de préstamo de una venta en corto, por día.
+:step: Abre [[Margin interest and lending fee]] y escribe el valor de la posición, el tipo anual y los días.
+:step: Elige los días del año (365 o 360).
+:example: 3,000,000 al 2,8 % durante 30 días → 6,904.10 (230.14 al día)
+- Coste = valor × tipo anual × días / días del año (redondeado hacia abajo)
+:pro:
+
+### fx-stock | Acciones extranjeras en su moneda
+:what: El valor de una acción extranjera en tu moneda, con los tipos de cambio de la app o uno que escribas; con el precio y el cambio de compra, la ganancia o pérdida separada en la parte del precio y la del cambio.
+:step: Abre [[Foreign stocks in your money]] y escribe la moneda (USD, por ejemplo), el precio actual y las acciones.
+:step: Si dejas el cambio vacío se usan los tipos de cambio de la app (como en [[Convert units and currencies]]).
+:example: 10 acciones a 150, cambio 155; compradas a 120 con un cambio de 140 → valor 232,500.00, ganancia +64,500.00 (+42,000.00 por el precio, +22,500.00 por el cambio)
+
 ## dates | Fechas
 :what: Los días entre dos fechas, n días después o antes, una edad, el día de la semana.
 :step: Abre [[Dates]] y elige qué calcular.
@@ -629,6 +701,7 @@ La integración numérica (áreas, longitudes y volúmenes del gráfico) es segu
 | GIF e imágenes sin la marca | [Compartir](#share) |
 | Más notas de cálculo, guardadas como archivo | [Notas de cálculo](#notes) |
 | Curvas de regresión (salvo la recta) | [Estadística](#stats) |
+| Margen y tamaño de posición (ratio de mantenimiento y llamada de margen, tamaño de posición desde el stop, intereses y comisión de préstamo) | [Margen: ratio de mantenimiento](#margin) |
 :tip: [[How to use ›]] en una fila de las funciones Pro abre su sección de este manual.
 
 ## pro-buy | Comprar y restaurar

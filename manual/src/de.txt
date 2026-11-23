@@ -310,6 +310,78 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Öffnen Sie [[Savings and compound interest]] und geben Sie Monatsbetrag (oder Anfangsbetrag), Jahreszins und Jahre ein.
 :example: 30.000 im Monat, 3 %, 20 Jahre → 9.849.059,94 (eingezahlt 7.200.000; Zinsen 2.649.059,94)
 
+## invest | Aktien und Anlage
+:what: Gewinn und Verlust mit Steuer, durchschnittlicher Einstandskurs, Erhaltungsquote eines Margin-Kontos und Nachschuss, Positionsgröße aus dem Stop, Rendite, KGV, KBV und Zinseszins, Sollzinsen und Leihgebühr sowie ausländische Aktien in Ihrer Währung. Es werden keine Kurse abgerufen: alles kommt aus den eingegebenen Zahlen.
+:step: Wählen Sie in [[Tools]] ein Werkzeug unter [[Stocks and investing]].
+:step: Tippen Sie auf ein Beispiel oder geben Sie die Zahlen ein. Die Ergebnisse erscheinen sofort.
+:step: Tippen Sie auf ein Ergebnis, um seinen Ausdruck ins Eingabefeld zu setzen, ihn im Verlauf zu behalten oder zu kopieren. ⋯ oben rechts ändert die angezeigten Stellen.
+:note: Eine Rechnung zur Orientierung, keine Anlageberatung. Broker rechnen Steuer und Margin unterschiedlich.
+:pro: Erhaltungsquote und Nachschuss, Positionsgröße aus dem Stop sowie Zinsen und Leihgebühr je Tag sind Funktionen von QCalc Pro. Gewinn und Verlust, Einstandskurs, Rendite/KGV/KBV/Wachstum und ausländische Aktien sind kostenlos.
+
+### pnl | Aktien: Gewinn und Verlust
+:what: Aus Kauf- und Verkaufskurs, Aktien und Gebühren beim Kauf und Verkauf: Gewinn oder Verlust, in %, die Steuer, nach Steuern, den Verkaufserlös und die Gewinnschwelle.
+:step: Öffnen Sie [[Stock profit and loss]] und geben Sie die Kurse und die Aktien ein.
+:step: Eine Gebühr kann ein Betrag (500) oder ein Anteil des Handels (0,1%) sein.
+:step: Wählen Sie [[Taxed]] oder [[Tax-free account]]. Der Steuersatz ist 20,315 % (der japanische), wenn Sie keinen anderen eingeben.
+:example: Gekauft zu 1000, verkauft zu 1200, 100 Aktien, ohne Gebühren → +20.000,00, Steuer 4.063,00, nach Steuern +15.937,00
+:tip: Der %-Wert bezieht sich auf den gezahlten Betrag mit Gebühr. Die Gewinnschwelle ist der Kurs, bei dem nach den Gebühren kein Verlust bleibt.
+:note: Die Steuer wird nur für diesen Handel berechnet und abgerundet; Verlustverrechnung im Jahr und die Rundung des Brokers werden nicht berücksichtigt.
+
+### avg-cost | Durchschnittlicher Einstandskurs
+:what: Der Durchschnittskurs von Aktien aus mehreren Käufen, und wie viele Aktien zu welchem Kurs den Durchschnitt auf ein Ziel bringen.
+:step: Öffnen Sie [[Average cost]] und wählen Sie [[The average of the buys]] oder [[How to reach an average]].
+:step: Durchschnitt der Käufe: ein Kauf je Zeile, „Kurs Aktien“ (zum Beispiel 1000 100).
+:step: Ziel-Durchschnitt: gehaltene Aktien, ihren Durchschnitt und das Ziel eingeben, dann den Kaufkurs oder die Aktien.
+:example: 100 zu 1000 und 200 zu 900 → Durchschnitt 933,33 (300 Aktien, 280.000,00)
+:example: 100 zu durchschnittlich 1200 → mit 200 Aktien zu 900 wird der Durchschnitt 1000
+- Durchschnitt = (Kurs × Aktien + …) / alle Aktien
+- Aktien für ein Ziel T = N × (A − T) / (T − P) (N: gehaltene Aktien, A: ihr Durchschnitt, P: Kaufkurs; auf die Handelseinheit aufgerundet)
+:tip: Die Handelseinheit ist 100 Aktien, wenn Sie keine andere eingeben; für Aktien, die einzeln gehandelt werden, geben Sie 1 ein.
+
+### margin | Margin: Erhaltungsquote
+:what: Aus Sicherheit und Position: die Erhaltungsquote und der Kurs, bei dem sie auf die Nachschusslinie fällt.
+:step: Öffnen Sie [[Margin: maintenance ratio]] und geben Sie die Bareinlage und, falls vorhanden, Aktien als Sicherheit (nach Abschlag) ein.
+:step: Wählen Sie [[Bought]] oder [[Sold short]] und geben Sie Einstiegskurs, Aktien und aktuellen Kurs ein. Kosten (Zinsen, Gebühren) können auch eingegeben werden.
+:step: Die Nachschusslinie ist 20 %, wenn Sie keine andere eingeben.
+:example: 1.000.000 bar, 3.000 Aktien zu 1000 gekauft, jetzt 900 → 23,33 %, Nachschuss bei 866,67 (−3,70 % vom aktuellen Kurs)
+Die Formeln:
+- Quote = (Bareinlage + Aktien als Sicherheit + Gewinn oder Verlust − Kosten) / Wert der Positionen × 100
+- Wert der Positionen = Einstiegskurs × Aktien (unter [[More ▾]] lassen sich andere Positionen mit ihrem Gewinn oder Verlust hinzufügen)
+- Gewinn oder Verlust: Kauf (aktuell − Einstieg) × Aktien, Leerverkauf (Einstieg − aktuell) × Aktien. Ein Buchgewinn zählt nur, wenn unter [[More ▾]], [[Unrealized gains]] gewählt
+- Nachschusskurs: Kauf Einstieg − (Bareinlage + Aktien als Sicherheit − Kosten − Linie × Wert) / Aktien; Leerverkauf Einstieg + (dasselbe) / Aktien
+:note: Broker zählen Buchgewinne, Abschläge und Kosten unterschiedlich und prüfen zu unterschiedlichen Zeiten (meist zum Schluss).
+:pro:
+
+### position-size | Positionsgröße aus dem Stop
+:what: Aus Kapital, dem erlaubten Verlust je Trade (% des Kapitals), Einstieg und Stop: die Aktien (auf die Handelseinheit abgerundet) und der Verlust am Stop. Mit einem Gewinnziel auch das Chance-Risiko-Verhältnis.
+:step: Öffnen Sie [[Position size from a stop]] und geben Sie Kapital, Risiko, Einstieg und Stop ein.
+:step: Ein Stop unter dem Einstieg ist ein Kauf, darüber ein Leerverkauf.
+:example: Kapital 3.000.000, 1 %, Kauf zu 1000, Stop 950 (Einheit 100) → 600 Aktien, Verlust am Stop 30.000,00; Gewinnziel 1150: Chance-Risiko 1 : 3,00
+- Aktien = Kapital × Risiko % / |Einstieg − Stop| (auf die Handelseinheit abgerundet)
+- Chance-Risiko = 1 : |Gewinnziel − Einstieg| / |Einstieg − Stop|
+:pro:
+
+### yield | Rendite, KGV, KBV, Wachstum
+:what: Dividendenrendite, KGV, KBV und ROE; Zinseszins mit monatlichem Sparen; das jährliche Wachstum zwischen zwei Werten.
+:step: Öffnen Sie [[Yield, PER, PBR, growth]], wählen Sie, was gesucht ist, und geben Sie die Zahlen ein.
+:example: Kurs 2000, Dividende 60, EPS 150, BPS 1600 → Rendite 3,00 %, KGV 13,33 ×, KBV 1,25 ×, ROE 9,38 %
+:example: 1.000.000 → 1.800.000 in 6 Jahren → +10,29 % im Jahr
+:tip: Die Verzinsung kann jährlich oder monatlich sein; jährlich wächst ein Monat um (1 + Jahresrendite)^(1/12).
+
+### carry | Sollzinsen und Leihgebühr
+:what: Die Zinsen auf einen Margin-Kauf oder die Leihgebühr eines Leerverkaufs, je Tag.
+:step: Öffnen Sie [[Margin interest and lending fee]] und geben Sie den Wert der Position, den Jahressatz und die Tage ein.
+:step: Wählen Sie die Tage im Jahr (365 oder 360).
+:example: 3.000.000 zu 2,8 % für 30 Tage → 6.904,10 (230,14 pro Tag)
+- Kosten = Wert × Jahressatz × Tage / Tage im Jahr (abgerundet)
+:pro:
+
+### fx-stock | Ausländische Aktien in Ihrer Währung
+:what: Der Wert einer ausländischen Aktie in Ihrer Währung, mit den Wechselkursen der App oder einem eingegebenen Kurs; mit Kaufkurs und damaligem Wechselkurs der Gewinn oder Verlust, aufgeteilt in Kurs- und Wechselkursanteil.
+:step: Öffnen Sie [[Foreign stocks in your money]] und geben Sie die Währung (zum Beispiel USD), den aktuellen Kurs und die Aktien ein.
+:step: Ohne eingegebenen Kurs werden die Wechselkurse der App verwendet (wie in [[Convert units and currencies]]).
+:example: 10 Aktien zu 150, Kurs 155; gekauft zu 120 bei einem Kurs von 140 → Wert 232.500,00, Gewinn +64.500,00 (+42.000,00 aus dem Kurs, +22.500,00 aus dem Wechselkurs)
+
 ## dates | Daten
 :what: Die Tage zwischen zwei Daten, n Tage danach oder davor, ein Alter, der Wochentag.
 :step: Öffnen Sie [[Dates]] und wählen Sie die Rechnung.
@@ -629,6 +701,7 @@ Numerische Integration (Flächen, Längen und Volumen im Graphen) ist auf etwa 2
 | GIF und Bilder ohne Kennzeichnung | [Teilen](#share) |
 | Weitere Rechennotizen, als Datei gespeichert | [Rechennotizen](#notes) |
 | Regressionskurven (außer der Geraden) | [Statistik](#stats) |
+| Margin und Positionsgröße (Erhaltungsquote und Nachschuss, Positionsgröße aus dem Stop, Zinsen und Leihgebühr) | [Margin: Erhaltungsquote](#margin) |
 :tip: [[How to use ›]] in einer Zeile der Pro-Funktionen öffnet den Abschnitt dieser Anleitung.
 
 ## pro-buy | Kaufen und wiederherstellen
