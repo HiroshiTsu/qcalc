@@ -1,6 +1,8 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    // (1.15.0) the 3D graph: a surface waiting for its edges
+    "Working out where a surface leaves the box…": "Es wird berechnet, wo eine Fläche die Box verlässt …",
     // (1.15.0) the sliders of the letters of the graphs
     "Sliders": "Schieberegler",
     "Value of {0}": "Wert von {0}",
