@@ -11238,8 +11238,10 @@
     const seeNote = el('span', { class: 'see-note', id: 'see-note', hidden: true, text: tr('Not available on this device', 'この端末では使えません') });
     // (what is see-through: a chip for each formula, the solid, the container and the liquid of a tank)
     const seeChips = el('div', { class: 'see-chips', role: 'group', 'aria-label': tr('See-through: what', '透明にするもの'), hidden: true });
-    const seeRow = el('div', { class: 'plot-range rev-angle see-row', hidden: true }, seeBtn, seeLbl, seeRange, seeVal, boxBtn, seeNote, seeChips);
-    Object.assign(Q3, { seeRow, seeBtn, seeLbl, seeRange, seeVal, boxBtn, seeNote, seeChips, saveSee });
+    // (the words, the slider and its value kept together on one line, as the row wraps on a phone)
+    const seeOp = el('span', { class: 'see-op' }, seeLbl, seeRange, seeVal);
+    const seeRow = el('div', { class: 'plot-range rev-angle see-row', hidden: true }, seeBtn, seeOp, boxBtn, seeNote, seeChips);
+    Object.assign(Q3, { seeRow, seeBtn, seeOp, seeLbl, seeRange, seeVal, boxBtn, seeNote, seeChips, saveSee });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
@@ -11430,7 +11432,7 @@
     if (ok) Q3.seeBtn.removeAttribute('aria-describedby'); else Q3.seeBtn.setAttribute('aria-describedby', 'see-note');
     Q3.seeNote.hidden = ok;
     Q3.seeRange.disabled = !ok; Q3.seeRange.hidden = !ok; Q3.seeRange.value = String(pc);
-    Q3.seeVal.hidden = !ok; Q3.seeVal.textContent = pc + '%'; Q3.seeLbl.hidden = !ok;
+    Q3.seeVal.hidden = !ok; Q3.seeVal.textContent = pc + '%'; Q3.seeLbl.hidden = !ok; Q3.seeOp.hidden = !ok;
     const box = Q3.see.box !== false;
     Q3.boxBtn.setAttribute('aria-pressed', String(box)); Q3.boxBtn.classList.toggle('on', box);
     // the chips (only when there are two things or more to choose from)
