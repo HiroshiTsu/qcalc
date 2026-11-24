@@ -2,6 +2,11 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "#{0}: put it into the expression (this line by its number)": "#{0}：放入算式（以編號使用這一行）",
+    "Expression and answer (2 columns)": "算式與結果（2 欄）",
+    "Answers only (1 column)": "只有結果（1 欄）",
+    "Copy {0} lines as a table": "以表格複製 {0} 行",
+    "{0} answers copied as a column: paste them into a spreadsheet": "已將 {0} 個結果複製成 1 欄（可貼到試算表）",
     "Could not calculate: it divides by zero": "無法計算（除以零）",
     "#{0} has “{1}” right after it": "#{0} 後面緊接著「{1}」",
     "There is no line numbered #{0}": "沒有編號為 #{0} 的行",

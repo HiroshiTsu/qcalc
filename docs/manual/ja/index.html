@@ -222,6 +222,7 @@ th { background: var(--box); }
 <div class="m-box m-ex"><div class="m-lbl">例</div><p><code>120</code> の行をタップし、× を押して <code>3</code> の行をタップ → 入力欄は <code>120 × 3</code>、答えは <code>= 360</code></p></div>
 <div class="m-box m-tip"><div class="m-lbl">ヒント</div><p>√ や π を含む答えは、近似値ではなく厳密な形で入ります。<code>sqrt(8)</code> の答えは <code>(2 × √(2))</code> と入るので、2 乗すると <code>= 8</code> です。厳密な形がない答えは、有効桁数の桁がすべて入ります。</p></div>
 <div class="m-box m-tip"><div class="m-lbl">ヒント</div><p>番号で行を使うときは ⋯ の「#12 を式に入れる」、答えをコピーするときは ⋯ の <b class="ui">結果をコピー</b> を使います（桁の区切りなしでコピーします）。</p></div>
+<div class="m-box m-tip"><div class="m-lbl">ヒント</div><p>行の左の番号（#12）をタップすると、値ではなく #12 が式に入ります（表計算ソフトでセルを指すのと同じです。<a href="#hist-refs">履歴の行の番号と #12</a>）。</p></div>
 </section>
 <section class="m-sec" id="edit-line">
 <h3>履歴の行を直す</h3>
@@ -247,7 +248,7 @@ th { background: var(--box); }
 </section>
 <section class="m-sec" id="select-sum">
 <h3>行を選んで合計・平均</h3>
-<div class="m-steps"><div class="m-lbl">手順</div><ol><li>🕘 から <b class="ui">行を選んで合計・平均・コピー</b> を選びます。行の ⋯ から <b class="ui">選ぶ（合計・平均）</b> を選ぶと、その行を選んだところから始まり、すぐに合計が出ます。</li><li>足したい行をタップして選びます。行を長押しすると、最後に選んだ行からその行までをまとめて選べます。</li><li>下に合計と平均が出ます。単位がそろっていれば単位つきで出ます。小数で出ている行どうしは、合計も小数で出ます。<b class="ui">コピー</b> で選んだ行をコピーできます（桁の区切りなし）。</li><li><b class="ui">表でコピー</b> は、選んだ行の式と答えを 2 列（タブ区切り）でコピーします。表計算ソフトに貼ると、式の列と答えの列になります。</li></ol></div>
+<div class="m-steps"><div class="m-lbl">手順</div><ol><li>🕘 から <b class="ui">行を選んで合計・平均・コピー</b> を選びます。行の ⋯ から <b class="ui">選ぶ（合計・平均）</b> を選ぶと、その行を選んだところから始まり、すぐに合計が出ます。</li><li>足したい行をタップして選びます。行を長押しすると、最後に選んだ行からその行までをまとめて選べます。</li><li>下に合計と平均が出ます。単位がそろっていれば単位つきで出ます。小数で出ている行どうしは、合計も小数で出ます。<b class="ui">コピー</b> で選んだ行をコピーできます（桁の区切りなし）。</li><li><b class="ui">表でコピー</b> は、選んだ行の式と答えを 2 列（タブ区切り）でコピーします。表計算ソフトに貼ると、式の列と答えの列になります。</li><li><b class="ui">表でコピー</b> では、「式と答え（2 列）」か「答えだけ（1 列）」を選べます。前に選んだほうが上に出ます。</li></ol></div>
 <div class="m-box m-tip"><div class="m-lbl">ヒント</div><p><b class="ui">表でコピー</b> は無料です。履歴をまとめて CSV ファイルに保存する <a href="#export">履歴の書き出し</a> は QCalc Pro の機能です。</p></div>
 <div class="m-box m-mis"><div class="m-lbl">よくある間違い</div><ul><li>単位が違う行（m と kg など）は足せません。理由が表示されます。</li></ul></div>
 </section>

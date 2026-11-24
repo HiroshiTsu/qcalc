@@ -1,6 +1,11 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "#{0}: put it into the expression (this line by its number)": "#{0}: 식에 넣기(번호로 이 줄을 사용)",
+    "Expression and answer (2 columns)": "식과 결과(2열)",
+    "Answers only (1 column)": "결과만(1열)",
+    "Copy {0} lines as a table": "{0}줄을 표로 복사",
+    "{0} answers copied as a column: paste them into a spreadsheet": "결과 {0}개를 1열로 복사했습니다(스프레드시트에 붙여 넣을 수 있습니다)",
     "Could not calculate: it divides by zero": "계산할 수 없습니다(0으로 나눕니다)",
     "#{0} has “{1}” right after it": "#{0} 바로 뒤에 「{1}」이(가) 있습니다",
     "There is no line numbered #{0}": "#{0}이라는 번호의 줄은 없습니다",

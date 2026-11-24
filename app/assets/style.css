@@ -1305,7 +1305,12 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 }
 .h-more::before { content: "⋯"; font-size: 20px; line-height: 1; }
 /* (1.16.0, feature/hist-excel) the number of the line ("#12" in an expression is its answer), under the ⋯ */
-.h-no { position: absolute; left: 2px; top: 42px; max-width: 46px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px * var(--fs)); color: var(--muted); font-variant-numeric: tabular-nums; pointer-events: none; text-align: left; }
+.h-no { position: absolute; left: 2px; top: 42px; max-width: 46px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px * var(--fs)); color: var(--muted); font-variant-numeric: tabular-nums; text-align: left; background: none; border: 0; padding: 0; margin: 0; font-family: inherit; line-height: 1.3; cursor: pointer; }
+/* (1.16.0, feature/hist-ux, U1) a tap on the number puts "#12" in: the area to touch goes beyond the small number, under the ⋯ */
+.h-no::before { content: ""; position: absolute; left: -6px; right: -10px; top: -2px; bottom: -14px; }
+.h-no { overflow: visible; }
+.h-no:active { color: var(--accent); }
+body.hselect .h-no { pointer-events: none; }
 .h-more:active { background: var(--surface-2); }
 #btn-hist { flex: 0 0 auto; color: var(--text); }
 .bar .title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

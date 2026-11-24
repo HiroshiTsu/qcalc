@@ -222,6 +222,7 @@ th { background: var(--box); }
 <div class="m-box m-ex"><div class="m-lbl">例子</div><p>點 <code>120</code> 這一行，按 ×，再點 <code>3</code> 這一行 → 輸入欄是 <code>120 × 3</code>，結果是 <code>= 360</code></p></div>
 <div class="m-box m-tip"><div class="m-lbl">提示</div><p>含有 √ 或 π 的結果會以精確的形式放入，而不是四捨五入的小數：<code>sqrt(8)</code> 的結果會放入 <code>(2 × √(2))</code>，所以平方後是 <code>= 8</code>。沒有精確形式的結果，會放入有效位數的所有位數。</p></div>
 <div class="m-box m-tip"><div class="m-lbl">提示</div><p>要以編號使用一行，請選 ⋯ 中的「將 #12 插入運算式」；要複製結果，請用 ⋯ 中的 <b class="ui">複製結果</b>（複製時不含千位分隔符號）。</p></div>
+<div class="m-box m-tip"><div class="m-lbl">提示</div><p>點一下行左側的編號（#12），會把 #12 而不是值放入算式，和在試算表中指向儲存格一樣（<a href="#hist-refs">歷史紀錄的行號與 #12</a>）。</p></div>
 </section>
 <section class="m-sec" id="edit-line">
 <h3>修改歷史紀錄的一行</h3>
@@ -247,7 +248,7 @@ th { background: var(--box); }
 </section>
 <section class="m-sec" id="select-sum">
 <h3>加總多行</h3>
-<div class="m-steps"><div class="m-lbl">步驟</div><ol><li>在 🕘 中選 <b class="ui">選取多行：合計、平均、複製</b>。在一行的 ⋯ 中選 <b class="ui">選取（合計、平均）</b>，會從選好那一行開始，並立刻顯示合計。</li><li>點選要加總的行。長按一行，會選取從最後選的行到那一行的所有行。</li><li>下方顯示合計和平均；單位一致時也會加上單位。以小數顯示的行，合計也以小數顯示。<b class="ui">複製</b> 複製這些行（不含千位分隔符號）。</li><li><b class="ui">以表格複製</b> 把所選各行的算式和結果複製成兩欄（以 Tab 分隔）；貼到試算表後，會成為算式欄和結果欄。</li></ol></div>
+<div class="m-steps"><div class="m-lbl">步驟</div><ol><li>在 🕘 中選 <b class="ui">選取多行：合計、平均、複製</b>。在一行的 ⋯ 中選 <b class="ui">選取（合計、平均）</b>，會從選好那一行開始，並立刻顯示合計。</li><li>點選要加總的行。長按一行，會選取從最後選的行到那一行的所有行。</li><li>下方顯示合計和平均；單位一致時也會加上單位。以小數顯示的行，合計也以小數顯示。<b class="ui">複製</b> 複製這些行（不含千位分隔符號）。</li><li><b class="ui">以表格複製</b> 把所選各行的算式和結果複製成兩欄（以 Tab 分隔）；貼到試算表後，會成為算式欄和結果欄。</li><li><b class="ui">以表格複製</b> 可選「算式與結果（2 欄）」或「只有結果（1 欄）」；上次選的會排在前面。</li></ol></div>
 <div class="m-box m-tip"><div class="m-lbl">提示</div><p><b class="ui">以表格複製</b> 是免費的。把整個歷史紀錄存成 CSV 檔（<a href="#export">匯出歷史紀錄</a>）是 QCalc Pro 的功能。</p></div>
 <div class="m-box m-mis"><div class="m-lbl">常見錯誤</div><ul><li>單位不同的行（m 和 kg）無法相加；會顯示原因。</li></ul></div>
 </section>

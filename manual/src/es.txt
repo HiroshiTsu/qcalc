@@ -163,6 +163,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :example: Toca la línea `120`, pulsa ×, toca la línea `3` → el campo tiene `120 × 3` y el resultado es `= 360`
 :tip: Los resultados con √ o π entran en su forma exacta, no como decimales redondeados: el resultado de `sqrt(8)` entra como `(2 × √(2))`, así que su cuadrado es `= 8`. Un resultado sin forma exacta entra con todas las cifras de la precisión.
 :tip: Para usar una línea por su número, elige «Insertar #12» en su ⋯; para copiar un resultado, [[Copy result]] en ⋯ (se copia sin separadores de miles).
+:tip: Tocar el número a la izquierda de una línea (#12) pone #12 en la expresión en vez del valor, como señalar una celda en una hoja de cálculo ([Números de línea y #12](#hist-refs)).
 
 ## edit-line | Editar una línea del historial
 :what: Toca la expresión de una línea (la pequeña sobre su resultado), o [[Edit expression]] en su ⋯, para editarla. La expresión pasa al campo de entrada, con la banda «[[Editing a line of the history]]» encima. El historial se desplaza para que la línea y su resultado sigan a la vista.
@@ -196,6 +197,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :step: Toca las líneas que quieres sumar. Mantener pulsada una línea elige todas las líneas desde la última elegida hasta ella.
 :step: La suma y el promedio aparecen abajo, con su unidad si las unidades coinciden. Las líneas mostradas como decimales suman un decimal. [[Copy]] copia las líneas (sin separadores de miles).
 :step: [[Copy as a table]] copia las expresiones y los resultados de las líneas elegidas en dos columnas, separadas por un tabulador: pegadas en una hoja de cálculo, forman una columna de expresiones y otra de resultados.
+:step: En [[Copy as a table]] puedes elegir «Expresión y resultado (2 columnas)» o «Solo los resultados (1 columna)»; la última elegida sale primero.
 :tip: [[Copy as a table]] es gratis. Guardar todo el historial como archivo CSV ([Exportar el historial](#export)) es una función de QCalc Pro.
 :mistake: No se pueden sumar líneas con unidades distintas (m y kg); se muestra el motivo.
 
