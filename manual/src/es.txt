@@ -172,7 +172,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :tip: Tocar el número a la izquierda de una línea (#12) pone #12 en la expresión en vez del valor, como señalar una celda en una hoja de cálculo ([Números de línea y #12](#hist-refs)).
 
 ## edit-line | Editar una línea del historial
-:what: Toca la expresión de una línea (la pequeña sobre su resultado), o [[Edit expression]] en su ⋯, para editarla. La expresión pasa al campo de entrada, con la banda «[[Editing a line of the history]]» encima. El historial se desplaza para que la línea y su resultado sigan a la vista.
+:what: Toca la expresión de una línea (la pequeña sobre su resultado), o [[Edit expression]] en su ⋯, para editarla. La expresión pasa al campo de entrada, con la banda «Editando #12» encima (12: el número de la línea). El historial se desplaza para que la línea y su resultado sigan a la vista.
 :step: Cambia la expresión y pulsa [[!=]]. La línea recibe la nueva expresión y el nuevo resultado en el mismo lugar. ★ y la nota corta se mantienen, y el menú ⋯ muestra la hora del cambio junto a la hora de la línea.
 :step: Mientras escribes, la línea muestra en su lugar la expresión y su nuevo resultado, y debajo, en letra pequeña y gris, la línea como era («Antes: …»). Una línea se puede editar en la propia línea o en el campo de abajo: toca la expresión en la línea para poner allí el cursor; las teclas, ◀ ▶, ⌫, ⌨, pegar y tocar otros resultados funcionan allí. Toca el campo para seguir escribiendo en él. Lo que se escribe en uno aparece al momento en el otro. El historial solo cambia al pulsar [[!=]].
 :step: Durante unos segundos aparecen «[[Edited]]» y [[Undo]]. [[Undo]] devuelve la expresión y el resultado de antes.

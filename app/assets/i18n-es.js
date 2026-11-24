@@ -13,6 +13,7 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "Touching an expression edits its line; = replaces it.": "Tocar una expresión edita su línea; = la sustituye.",
     "Expression of #{0} (editing)": "Expresión de #{0} (editando)",
     ", …": ", …",
     "Make them lines of the history (worked out one by one)": "Convertirlos en líneas del historial (calculadas una a una)",
@@ -89,7 +90,6 @@
     "Could not calculate: the factorial of a negative integer is not defined": "No se pudo calcular: el factorial de un entero negativo no está definido",
     "Birthday": "Fecha de nacimiento",
     "Age on this date (empty: today)": "Edad en esta fecha (vacío: hoy)",
-    "Touching an expression edits its line: = puts the new result in its place. For a new line, press \"As a new line\".": "Tocar una expresión edita su línea: = la sustituye por el nuevo resultado. Para una línea nueva, pulsa «Como línea nueva».",
     "This line was worked out in {0}: it is worked out in {0} again": "Esta línea se calculó en {0}: se vuelve a calcular en {0}",
     "The angle unit of this line was not kept: it is worked out in {0}, as set now": "No se guardó la unidad de ángulo de esta línea: se calcula en {0}, como está ajustado ahora",
     "Nothing changed: still editing the line": "No se cambió nada: se sigue editando la línea",

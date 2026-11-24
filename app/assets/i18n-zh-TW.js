@@ -2,6 +2,7 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "Touching an expression edits its line; = replaces it.": "點按算式會修改那一行，按 = 取代。",
     "Expression of #{0} (editing)": "#{0} 的算式（修改中）",
     ", …": " 等",
     "Make them lines of the history (worked out one by one)": "放入歷史紀錄（逐列計算）",
@@ -78,7 +79,6 @@
     "Could not calculate: the factorial of a negative integer is not defined": "無法計算（負整數的階乘沒有定義）",
     "Birthday": "生日",
     "Age on this date (empty: today)": "這一天的年齡（空白則為今天）",
-    "Touching an expression edits its line: = puts the new result in its place. For a new line, press \"As a new line\".": "點按算式會修改那一行：按 = 會以新結果取代那一行。若要新增一行，請按「改為新的一列」。",
     "This line was worked out in {0}: it is worked out in {0} again": "這一行是以{0}計算的，仍以{0}計算",
     "The angle unit of this line was not kept: it is worked out in {0}, as set now": "這一行沒有保留角度單位，因此以目前的設定（{0}）計算",
     "Nothing changed: still editing the line": "沒有任何變更（回到修改中的狀態）",

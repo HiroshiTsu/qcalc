@@ -4585,12 +4585,16 @@
   // worked out again when an older one was).
   let histEdit = null; // { h, keep: what the field held before }
   const editBand = el('div', { id: 'hist-edit', class: 'hedit', role: 'region', hidden: true, 'aria-label': tr('Editing a line of the history', '履歴の行を直しています') });
-  editBand.append(el('span', { class: 'hedit-t', text: tr('Editing a line of the history', '履歴の行を直しています') }),
+  // (1.16.2, K1 and K3, the review of 11-24 20:53 at 360 × 780) The words and the button in one part that wraps (.hedit-main),
+  // ✕ at the right of the first row: on a narrow phone ✕ went alone to a second row, and with the long heading and the tip
+  // the band, the tip and the field filled the room above the keys (the line being edited was cut). The heading is short,
+  // "Editing #51" (the region keeps its name); the tip of the first time is short and goes when the line is changed.
+  editBand.append(el('span', { class: 'hedit-main' }, el('span', { class: 'hedit-t', text: tr('Editing a line of the history', '履歴の行を直しています') }),
+    tapButton({ class: 'btn hedit-new', type: 'button', text: tr('As a new line', '新しい行にする') }, () => endHistEdit(true))),
+    tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Stop editing (nothing changes)', '直すのをやめる（何も変わりません）') }, () => endHistEdit(false)),
     el('span', { class: 'hedit-n', hidden: true }),
     // (1.16.0, the review of 11-24, R9: until 1.14 touching an expression put it into the field for a new line; shown once)
-    el('span', { class: 'hedit-tip', hidden: true, text: tr('Touching an expression edits its line: = puts the new result in its place. For a new line, press "As a new line".', '式のタップは、その行を直します。= でその行が置き換わります。新しい行にするには「新しい行にする」を押してください。') }),
-    tapButton({ class: 'btn hedit-new', type: 'button', text: tr('As a new line', '新しい行にする') }, () => endHistEdit(true)),
-    tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Stop editing (nothing changes)', '直すのをやめる（何も変わりません）') }, () => endHistEdit(false)));
+    el('span', { class: 'hedit-tip', hidden: true, text: tr('Touching an expression edits its line; = replaces it.', '式のタップはその行を直します。= で置き換わります。') }));
   $('.entry').insertBefore(editBand, $('.entry').firstChild);
   // (1.16.2, M1, the owner's report of 11-24 18:50) An answer tapped into the empty field makes a new line with its value
   // (= adds a line), but where the answer looks like its expression (a matrix of x/… with x not defined) it could not be
@@ -4599,8 +4603,8 @@
   // line edited: its expression in the field, or what the field holds when it was changed since the tap) and ✕. It goes
   // with =, AC, the field emptied, ✕, and the line edited or gone; not for a tap while a formula is typed (a click on a cell).
   const fromEl = el('div', { id: 'hist-from', class: 'hedit hfrom', role: 'region', hidden: true, 'aria-label': tr('A new line from an answer', '答えから新しい行') });
-  fromEl.append(el('span', { class: 'hedit-t' }),
-    tapButton({ class: 'btn hfrom-edit', type: 'button', text: tr('Edit this line', 'この行を直す') }, () => editFromBand()),
+  fromEl.append(el('span', { class: 'hedit-main' }, el('span', { class: 'hedit-t' }),
+    tapButton({ class: 'btn hfrom-edit', type: 'button', text: tr('Edit this line', 'この行を直す') }, () => editFromBand())),
     tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Close (the field stays as it is)', '閉じる（入力欄はそのまま）') }, () => hideFromBand()));
   $('.entry').insertBefore(fromEl, editBand.nextSibling);
   function showFromBand(h, after) {
@@ -4642,6 +4646,7 @@
     const n = editBand.querySelector('.hedit-n'), b = Number(h.base || 10), now = Number(S.base);
     n.textContent = [b !== now ? trf('This line was in {0}; it is worked out in {1}, as set now', 'この行は {0} でした。今の設定の {1} で計算します', BASE_NAME[b] || String(b), BASE_NAME[now] || String(now)) : '', angleNote(h)].filter(Boolean).join(' ');
     n.hidden = !n.textContent;
+    editBand.querySelector('.hedit-t').textContent = trf('Editing #{0}', '#{0} 直しています', h.n);
     // (1.16.0, R9) the first time: what touching an expression does
     const tip = editBand.querySelector('.hedit-tip');
     if (tip) { tip.hidden = store.get('qalc.hedittip', false) === true; store.set('qalc.hedittip', true); }
@@ -4690,6 +4695,9 @@
     it.classList.add('live');
     box.querySelector('.h-live-t').textContent = trf('Editing #{0}', '#{0} 直しています', H.n);
     const v = exprEl.value;
+    // (K1) the tip of the first time, once the line is changed: the room for the line
+    const tip = editBand.querySelector('.hedit-tip');
+    if (!tip.hidden && v !== toDisplay(H.expr)) tip.hidden = true;
     if (!liveComposing) {
       if (cell.value !== v) cell.value = v;
       if (liveCellOn && document.activeElement === cell && (cell.selectionStart !== exprEl.selectionStart || cell.selectionEnd !== exprEl.selectionEnd)) cell.setSelectionRange(exprEl.selectionStart, exprEl.selectionEnd);
@@ -4721,6 +4729,17 @@
     const c = el('textarea', { class: 'h-cell h-live-e', rows: 1, inputmode: exprEl.inputMode === 'text' ? 'text' : 'none', enterkeyhint: 'go', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
     // (the line's own taps and long touch, which keep the focus in the field, are not for the box)
     for (const ev of ['pointerdown', 'pointerup', 'contextmenu', 'click']) c.addEventListener(ev, (e) => e.stopPropagation());
+    // (1.16.2, K2, the review of 11-24 20:53) the box is right-aligned: a tap on the empty part left of the text put the
+    // caret at the start of the line (1200*1.1 and 5 gave 51200*1.1). A tap where there is no text: the caret at the end
+    c.addEventListener('click', (e) => {
+      if (c.selectionStart !== c.selectionEnd || !c.value) return;
+      const r = c.getBoundingClientRect(), s = cellSpot(c, c.selectionStart);
+      if (e.clientX - r.left < s.x - 8) {
+        const n = c.value.length;
+        c.setSelectionRange(n, n); exprEl.setSelectionRange(n, n);
+        updateSuggest(false); updateNextBox();
+      }
+    });
     c.addEventListener('focus', () => {
       liveCellOn = true;
       document.body.classList.add('cell-on');
@@ -4778,18 +4797,23 @@
   }
   // where the caret is in the box of the line stays in sight above the keys when the line grows (the line as tall as it
   // is: from a copy of the box's text up to the caret)
+  // where a position of the box is drawn, from a copy of its text with a mark there: { x, y, h } in the box
+  function cellSpot(c, pos) {
+    const cs = getComputedStyle(c), m = document.createElement('div');
+    for (const k of ['width', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderLeftWidth', 'borderRightWidth', 'borderTopStyle', 'borderLeftStyle', 'borderRightStyle', 'boxSizing', 'textAlign']) m.style[k] = cs[k];
+    Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', top: '0', left: '-9999px' });
+    const mk = document.createElement('span'); mk.textContent = '\u200b';
+    m.append(document.createTextNode(c.value.slice(0, pos)), mk, document.createTextNode(c.value.slice(pos)));
+    document.body.append(m);
+    const s = { x: mk.offsetLeft, y: mk.offsetTop, h: mk.offsetHeight || parseFloat(cs.fontSize) * 1.3 };
+    m.remove();
+    return s;
+  }
   function revealCaret() {
     const run = () => {
       const c = histEdit && histEdit.cell;
       if (!liveCellOn || !c || !c.isConnected || !histEl.clientHeight) return;
-      const cs = getComputedStyle(c), m = document.createElement('div');
-      for (const k of ['width', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderLeftWidth', 'borderRightWidth', 'boxSizing', 'textAlign']) m.style[k] = cs[k];
-      Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', top: '0', left: '-9999px' });
-      m.textContent = c.value.slice(0, c.selectionEnd || 0);
-      const mk = document.createElement('span'); mk.textContent = '​'; m.append(mk);
-      document.body.append(m);
-      const y0 = mk.offsetTop, lh = mk.offsetHeight || parseFloat(cs.fontSize) * 1.3;
-      m.remove();
+      const sp = cellSpot(c, c.selectionEnd || 0), y0 = sp.y, lh = sp.h;
       const r = c.getBoundingClientRect(), b = histEl.getBoundingClientRect(), y = r.top + y0, pad = 8;
       let d = 0;
       if (y < b.top + pad) d = y - b.top - pad;
@@ -4896,10 +4920,22 @@
       if (!histReveal || histReveal.h !== h) return;
       const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === h);
       if (!it || !histEl.clientHeight) return;
-      const r = it.getBoundingClientRect(), b = histEl.getBoundingClientRect(), m = 8;
+      let r = it.getBoundingClientRect();
+      const b = histEl.getBoundingClientRect(), m = 8;
       let bottom = b.bottom;
       const t = $('#toast');
       if (t.classList.contains('show')) { const q = t.getBoundingClientRect(); if (q.top < b.bottom && q.bottom > b.top && q.top - b.top > r.height + 2 * m) bottom = q.top; }
+      // (1.16.2, K1) a line being edited taller than the room (a narrow phone): from its box to type in down to "Before",
+      // or down to the new answer, or the box alone; its heading may go above
+      const live = it.classList.contains('live') && it.querySelector(':scope > .h-live'), room = bottom - b.top - 2 * m;
+      if (live && r.height > room) {
+        const c = live.querySelector('.h-cell'), a = live.querySelector('.h-live-a');
+        const top = c.getBoundingClientRect().top;
+        let bot = r.bottom;
+        if (bot - top > room) bot = (a && a.textContent ? a : c).getBoundingClientRect().bottom;
+        if (bot - top > room) bot = top + room;
+        r = { top, bottom: bot, height: bot - top };
+      }
       let d = 0;
       if (r.height > bottom - b.top - 2 * m) d = r.top - b.top - m;
       else if (r.top < b.top + m) d = r.top - b.top - m;

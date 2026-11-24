@@ -1,6 +1,7 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    "Touching an expression edits its line; = replaces it.": "Ein Tippen auf einen Ausdruck bearbeitet seine Zeile; = ersetzt sie.",
     "Expression of #{0} (editing)": "Ausdruck von #{0} (wird bearbeitet)",
     ", …": ", …",
     "Make them lines of the history (worked out one by one)": "Als Zeilen in den Verlauf (einzeln berechnet)",
@@ -77,7 +78,6 @@
     "Could not calculate: the factorial of a negative integer is not defined": "Nicht berechenbar: Die Fakultät einer negativen ganzen Zahl ist nicht definiert",
     "Birthday": "Geburtstag",
     "Age on this date (empty: today)": "Alter an diesem Tag (leer: heute)",
-    "Touching an expression edits its line: = puts the new result in its place. For a new line, press \"As a new line\".": "Ein Tippen auf einen Ausdruck bearbeitet seine Zeile: = ersetzt sie durch das neue Ergebnis. Für eine neue Zeile „Als neue Zeile“ drücken.",
     "This line was worked out in {0}: it is worked out in {0} again": "Diese Zeile wurde in {0} berechnet: Sie wird wieder in {0} berechnet",
     "The angle unit of this line was not kept: it is worked out in {0}, as set now": "Die Winkeleinheit dieser Zeile ist nicht gespeichert: Sie wird wie jetzt eingestellt in {0} berechnet",
     "Nothing changed: still editing the line": "Nichts geändert: Die Zeile wird weiter bearbeitet",

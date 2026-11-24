@@ -172,7 +172,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :tip: A tap on the number at the left of a line (#12) puts #12 into the expression instead of the value, as pointing at a cell in a spreadsheet ([Line numbers and #12](#hist-refs)).
 
 ## edit-line | Editing a line of the history
-:what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "[[Editing a line of the history]]" above it. The history scrolls so that the line and its answer stay in sight.
+:what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "Editing #12" above it (12: the number of the line). The history scrolls so that the line and its answer stay in sight.
 :step: Change the expression and press [[!=]]. The line gets the new expression and answer in the same place. ★ and the short note stay, and the menu ⋯ shows the time of the change beside the time of the line.
 :step: While you type, the line shows the expression and its new answer in its place, with the line as it was in small grey letters below it (“Before: …”). A line can be edited in the line itself or in the field below: tap the expression in the line to put the caret there, and the keys, ◀ ▶, ⌫, ⌨, pasting and taps on other answers work there; tap the field to go on typing there. What is typed in one shows at once in the other. The history itself changes only when you press [[!=]].
 :step: "[[Edited]]" and [[Undo]] show for a few seconds. [[Undo]] brings back the expression and answer as they were.
