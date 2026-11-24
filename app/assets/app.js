@@ -18304,20 +18304,22 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           return row;
         }
         // (1.16.0: f.area, a box of several lines, as the buys of "Average cost")
-        const inp = f.area ? el('textarea', { rows: 4, inputmode: 'decimal', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), 'aria-label': f.label }) : el('input', { inputmode: f.kind === 'date' || f.kind === 'time' ? 'text' : 'decimal', type: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), value: typeof saved[f.k] === 'string' ? saved[f.k] : (typeof f.def === 'function' ? f.def() : f.def || ''), 'aria-label': f.label });
-        if (f.area) inp.value = typeof saved[f.k] === 'string' ? saved[f.k] : f.def || '';
+        const inp = f.area ? el('textarea', { rows: 4, inputmode: 'decimal', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), 'aria-label': f.label }) : el('input', { inputmode: f.kind === 'date' || f.kind === 'time' ? 'text' : 'decimal', type: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), value: typeof saved[f.k] === 'string' ? saved[f.k] : decSign(typeof f.def === 'function' ? f.def() : f.def || ''), 'aria-label': f.label });
+        if (f.area) inp.value = typeof saved[f.k] === 'string' ? saved[f.k] : decSign(f.def || '');
         inp.addEventListener('input', () => { inp.removeAttribute('aria-invalid'); save(); run(); });
         inp.addEventListener('focus', () => inp.select()); // (F, task 3: a value is replaced by typing, as in the shapes)
         inputs[f.k] = inp;
         const row = el('label', { class: 'geo-size' + (f.area ? ' tool-area' : ''), 'data-k': f.k }, el('span', { class: 'geo-lbl', text: f.label }), inp);
-        if (f.chips) row.append(el('span', { class: 'tool-mini-chips' }, ...f.chips().map((c) => tapButton({ class: 'area-chip', text: c }, () => { inp.value = c; save(); run(); }))));
+        if (f.chips) row.append(el('span', { class: 'tool-mini-chips' }, ...f.chips().map((c) => tapButton({ class: 'area-chip', text: decSign(c) }, () => { inp.value = decSign(c); save(); run(); }))));
         row._f = f;
         return row;
       };
       const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
         ...spec.chips.map(([label, vals]) => tapButton({ class: 'area-chip', text: label }, () => {
+          // (1.16.0, BG17G of the full suite: with a decimal comma the examples and the defaults of the stock tools put 20.315,
+          // 0.1% and 2.8 with a point; as typed in the number format, as the placeholders already were)
           for (const [k, v] of Object.entries(vals)) {
-            if (inputs[k]) inputs[k].value = v;
+            if (inputs[k]) inputs[k].value = decSign(v);
             else if (chosen[k] !== undefined) { chosen[k] = v; const row = rows.find((r) => r._f.k === k); if (row) row.querySelectorAll('button').forEach((b, i) => { const on = row._f.opts[i][0] === v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); }
           }
           save(); showFields(); run();
