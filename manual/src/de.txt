@@ -258,6 +258,9 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 | `solve(x^2 − 5x + 6 = 0)` | Gleichung lösen |
 | `diff(x^3)` | Ableitung |
 | `integrate(x^2; 0; 1)` | Bestimmtes Integral (mit Dezimalkomma Argumente mit „;“ trennen) |
+| `integrate(x^2; x)`, `sum(k; k; 1; 10)` | Unbestimmtes Integral, Summe. Mit der Variablen an zweiter Stelle wird in der Reihenfolge integrate(Ausdruck; untere Grenze; obere Grenze; Variable) gelesen |
+| `5!`, `(5!)!` | Fakultät (5 × 4 × 3 × 2 × 1), Fakultät einer Fakultät |
+| `9!!`, `9!!!` | Doppelfakultät (9 × 7 × 5 × 3 × 1), Mehrfachfakultät (9 × 6 × 3); „!!“ ist keine zweimal genommene Fakultät |
 | `ans` | Das letzte Ergebnis |
 :tip: Zehn traditionelle japanische Einheiten (tsubo, shaku, shō, kan und andere) funktionieren auch: `30 tsubo to m^2`.
 

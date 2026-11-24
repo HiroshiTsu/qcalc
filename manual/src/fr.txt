@@ -258,6 +258,9 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 | `solve(x^2 − 5x + 6 = 0)` | Résoudre une équation |
 | `diff(x^3)` | Dérivée |
 | `integrate(x^2; 0; 1)` | Intégrale définie (avec la virgule décimale, séparez les arguments par « ; ») |
+| `integrate(x^2; x)`, `sum(k; k; 1; 10)` | Intégrale indéfinie, somme. Avec la variable en deuxième, l’ordre lu est integrate(expression ; borne inférieure ; borne supérieure ; variable) |
+| `5!`, `(5!)!` | factorielle (5 × 4 × 3 × 2 × 1), factorielle d’une factorielle |
+| `9!!`, `9!!!` | double factorielle (9 × 7 × 5 × 3 × 1), multifactorielle (9 × 6 × 3) ; « !! » n’est pas une factorielle prise deux fois |
 | `ans` | Le dernier résultat |
 :tip: Dix unités japonaises traditionnelles (tsubo, shaku, shō, kan et d'autres) fonctionnent aussi : `30 tsubo to m^2`.
 

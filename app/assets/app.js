@@ -722,7 +722,15 @@
   };
   // (V2, V3) the forms of an answer: a fraction with a denominator of 5 digits or more is not the first form, its decimal is
   // (2^−20 ≈ 0.000000954; 1/1048576 is the next step "As a fraction"); at most two forms (10/4 = 5/2 = 2.5, not 5/2 = 2 + 1/2 = 2.5)
+  // (1.16.0, the review of 11-24 (6), W1) the notes of the reading of the expression (the order of the arguments) go with its messages
+  function addNotes(r, notes) {
+    if (r && r.ok && notes && notes.length) r.messages = notes.map((text) => ({ type: 'warning', text })).concat(r.messages || []);
+    return r;
+  }
   function plainerForms(r) {
+    // (W6) "limit() is incomplete and unreliable" with every limit, also a right one (limit(sin(x)/x, 0) = 1): not said when the
+    // answer is a number (a limit not found is said as such: undoneMessage)
+    if (r && r.result && (r.messages || []).some((m) => /^limit\(\) is incomplete/.test(String(m.text || ''))) && /^[−+-]?(?:[\d.]+(?:E[−+-]?\d+)?|∞|\(\+∞\)|e|π)$/.test(String(r.result).split(/ [=≈] /).pop().trim())) r.messages = r.messages.filter((m) => !/^limit\(\) is incomplete/.test(String(m.text || '')));
     if (!r || !r.result || r.comparison || S.fraction !== 'auto' || /[\[\]]/.test(r.result)) return r;
     const parts = String(r.result).split(/( = | ≈ )/);
     if (parts.length < 3) return r;
@@ -1391,18 +1399,29 @@
         }
         callKind.set(n, fn);
       }
-      if (!callKind.get(n)) notes.push(trf('"{0}" is not a function: it was read as letters multiplied (units and constants). Check the spelling', '「{0}」という関数はありません（文字ごとの掛け算＝単位や定数として計算しました）。つづりを確認してください', n));
+      // (1.16.0, G8: marked, so that = does not make a line of the letters multiplied: prime(10^15) = 0)
+      if (!callKind.get(n)) notes.push(Object.assign(new String(trf('"{0}" is not a function: check the spelling', '「{0}」という関数はありません。つづりを確認してください', n)), { unknownFn: n }));
     }
     // (1.16.0, the review of 11-24, C2) a negative number to the power 1/odd: its principal value is complex ((−8)^(1/3) = 1 + 1.73…i);
     // the real root is cbrt or root
     const neg = /\(\s*[−-]\s*(\d+(?:\.\d+)?)\s*\)\s*\^\s*\(\s*1\s*\/\s*(\d*[13579])\s*\)/.exec(expr);
     if (neg) notes.push(neg[2] === '3' ? trf('This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)', 'これは主値（複素数）です。実数の立方根は cbrt(−{0})（∛）で求められます', neg[1])
       : trf('This is the principal value (a complex number). The real root is root(−{0}, {1})', 'これは主値（複素数）です。実数の {1} 乗根は root(−{0}, {1}) で求められます', neg[1], neg[2]));
+    // (1.16.0, the owner's note F2 of 11-24) "!!" is the double factorial and "!!!…" a multifactorial, not a factorial taken twice:
+    // said, with how a factorial of a factorial is written
+    const mf = /((?:\d+(?:\.\d+)?)|\))(!{2,})(?!!)/.exec(expr);
+    if (mf) {
+      const k = mf[2].length, n = /^\d+$/.test(mf[1]) ? Number(mf[1]) : null;
+      if (k === 2) notes.push(n !== null ? trf('{0}!! is the double factorial ({0} × {1} × … × {2}); a factorial of a factorial is written ({0}!)!', '{0}!! は二重階乗（{0} × {1} × … × {2}）です。階乗の階乗は ({0}!)! と書きます', n, Math.max(n - 2, 0), n % 2 ? 1 : 2)
+        : tr('!! is the double factorial (every second number); a factorial of a factorial is written (n!)!', '!! は二重階乗（1 つおきに掛けます）です。階乗の階乗は (n!)! と書きます'));
+      else notes.push(n !== null ? trf('{0}{1} is a multifactorial: every {2}th number multiplied ({0} × {3} × …)', '{0}{1} は {2} つおきに掛ける多重階乗（{0} × {3} × …）です', n, mf[2], k, Math.max(n - k, 0))
+        : trf('{0} is a multifactorial: every {1}th number multiplied', '{0} は {1} つおきに掛ける多重階乗です', mf[2], k));
+    }
     // (C4) in solve, diff, integrate …, a single letter that the engine reads as a unit (a: are, m: metre, g: gram, s: second, h: hour,
     // t: tonne …), probably meant as a variable: said, with the unit it was taken for
     if (/(^|[^\p{L}])(solve|diff|integrate|dsolve|limit|taylor|newtonsolve|secantsolve|multisolve)\s*\(/u.test(expr)) {
       const seen = new Set();
-      for (const m of expr.matchAll(/(^|[^\p{L}\p{N}_°])([a-wA-WΩ])(?![\p{L}\p{N}_(])/gu)) {
+      for (const m of expr.matchAll(/(^|[^\p{L}\p{N}_°\\'])([a-wA-WΩ])(?![\p{L}\p{N}_('])/gu)) {
         const c = m[2];
         if (seen.has(c) || 'ei'.indexOf(c) >= 0) continue;
         seen.add(c);
@@ -1419,7 +1438,8 @@
     if (!r || !r.ok || r.deferred) return r;
     let notes = [];
     try { notes = await inputNotes(expr); } catch (e) { notes = []; }
-    if (notes.length) r.messages = notes.map((text) => ({ type: 'warning', text })).concat(r.messages || []);
+    if (notes.length) r.messages = notes.map((text) => Object.assign({ type: 'warning', text: String(text) }, text.unknownFn ? { unknownFn: text.unknownFn } : {})).concat(r.messages || []);
+    r.srcExpr = expr;
     return r;
   }
   async function runPreview() {
@@ -1442,7 +1462,7 @@
     // (1.16.0, R3: the line being edited is previewed with the angle unit it keeps, as = works it out; until then the preview of
     // sin(30) worked out in degrees said ≈ −0.988 while the band said degrees)
     const edH = histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
-    const r = plainerForms(await withNotes(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr, edH ? lineOpts(edH) : undefined), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), rx.expr));
+    const r = addNotes(await fixIntegral(plainerForms(await withNotes(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr, edH ? lineOpts(edH) : undefined), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), rx.expr)), rx.expr), rx.notes);
     previewBusy = false;
     if (exprEl.value.trim() === raw && !committing) showPreview(r);
     if (previewAgain) { previewAgain = false; runPreview(); }
@@ -1775,6 +1795,7 @@
     [/^Argument (\d+), (.+), in (.+)\(\) must be an unknown variable\/symbol\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は、x のような変数（文字）でなければなりません', 'argument-variable'],
     [/^Argument (\d+), (.+), in (.+)\(\) must be an integer >= (-?\d+)(?: and <= \d+)?\.?$/, (m, n, a, f, lo) => f + '() の ' + n + ' 番目の引数は、' + lo + ' 以上の整数でなければなりません', 'argument-integer-from'],
     [/^Argument (\d+), (.+), in (.+)\(\) must be an integer\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は整数でなければなりません（∞ は使えません）', 'argument-integer'],
+    [/^Argument (\d+), (.+), in (.+)\(\) must be a free value that is rational \(polynomial\)\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は、有理数（または多項式）でなければなりません', 'argument-rational'],
     // matrices and vectors
     [/^Inverse of singular matrix\.?$/, () => '逆行列がありません（行列式が 0 の行列です）', 'singular-matrix'],
     [/^Please use the cross\(\), dot\(\), and hadamard\(\) functions for vector multiplication\.?$/,
@@ -1869,13 +1890,158 @@
   }
   // (1.16.0, the review of 11-24, C5) a result that is the calculation itself, left undone by the engine without a message: said
   // instead of "= [1  2] + [1  2  3]" or "= factorial(−1)"
-  function undoneMessage(result, messages) {
-    const t = String(result || '').split(' ≈ ')[0];
+  // A result that is not an answer (the reviews of 11-24: C5, H8; (5): F1, G1–G4, G8): said as "Could not calculate (why)" and not
+  // made a line; a line that uses it by #12 or ans gets the same, as its answer has it too. expr: what the engine was given.
+  // Kept as they are: the answers of solve (x = …) and the answers that are right as symbols (sin(x), √(2), ln(2) ≈ 0.69…).
+  const POLE = () => tr('Could not calculate: it is a point with no value (tan(π/2), gamma(−1), zeta(1))', '計算できませんでした（答えのない点です（tan(π/2)、gamma(−1)、zeta(1) など））');
+  const TOO_LARGE = () => tr('Could not calculate: the number is too large', '計算できませんでした（大きすぎます）');
+  const UNEVAL_FN = new RegExp('(?:^|[^\\p{L}\\p{N}_])(factorial|factorial2|multifactorial|gamma|lgamma|digamma|beta|zeta|tan|sin|cos|sec|csc|cot|mod|rem|fibonacci|lucas)\\(\\s*([−-]?(?:\\d[\\d.]*(?:E[−+-]?\\d+)?|π))\\s*(?:,\\s*([−-]?(?:\\d[\\d.]*(?:E[−+-]?\\d+)?|π))\\s*)?\\)', 'u');
+  function undoneMessage(result, messages, expr) {
+    const all = String(result || ''), t = all.split(' ≈ ')[0], last = all.split(/ [=≈] /).pop();
+    const M = messages || [];
     // (1.16.0, the review of 11-24 (4), H8) 1/0 stayed "= 1/0" with a warning, and the lines with it went on (#1 × 2 = 2/0)
-    if ((messages || []).some((m) => /^Division by zero/.test(String(m.text || ''))) && /\/\s*0(?![\d.,])/.test(t)) return tr('Could not calculate: it divides by zero', '計算できませんでした（ゼロで割っています）');
+    if (M.some((m) => /^Division by zero/.test(String(m.text || ''))) && /\/\s*0(?![\d.,])/.test(t)) return tr('Could not calculate: it divides by zero', '計算できませんでした（ゼロで割っています）');
     if (/\]\s*[+−-]\s*\[/.test(t)) return tr('Could not calculate: the vectors or matrices are not the same size', '計算できませんでした（ベクトルや行列の大きさが違います）');
     if (/^factorial\(\s*[−-]\s*\d+\s*\)$|^\(\s*[−-]\s*\d+\s*\)!$/.test(t)) return tr('Could not calculate: the factorial of a negative integer is not defined', '計算できませんでした（負の整数の階乗は定義されていません）');
+    // (G8, G2) an error of the engine: no answer (until then = made a line of it: prime(10^15) = 0, 2.5!! = factorial2(2.5)); a name that
+    // is not a function says so
+    const err = M.find((m) => m.type === 'error');
+    if (err) {
+      if (/in (?:factorial2|multifactorial)\(\)/.test(String(err.text))) return tr('Could not calculate: !! is for integers from −1 only', '計算できませんでした（!! は −1 以上の整数だけです）');
+      const unk = M.find((m) => m.unknownFn);
+      return unk ? unk.text : localMessage(err.text) || tr('Could not calculate: check the expression', '計算できませんでした（式を確認してください）');
+    }
+    // (G1) ∞ − ∞, 0⁰, ∞/∞, 0 × ∞: not defined
+    if (/∞\)?\s*[−+-]\s*\(?[+−-]?∞/.test(last) || /(^|[^\d., ])0⁰/.test(last) || /∞\)?\s*\/\s*\(?[+−-]?∞/.test(last) || /(^|[^\d.,])0\s*×\s*\(?[+−-]?∞|∞\)?\s*×\s*0(?![\d.,])/.test(last)) return tr('Could not calculate: it is not defined (∞ − ∞, 0⁰)', '計算できませんでした（定まりません（∞ − ∞、0⁰ など））');
+    // (F1, G1) a function of numbers left as it is: why, where it can be told
+    const fn = UNEVAL_FN.exec(last);
+    if (fn) {
+      const f = fn[1], num = (x) => (x === 'π' ? Math.PI : Number(String(x).replace('−', '-'))), a = num(fn[2]), b = fn[3] === undefined ? null : num(fn[3]);
+      if ((f === 'mod' || f === 'rem') && b === 0) return tr('Could not calculate: it divides by zero', '計算できませんでした（ゼロで割っています）');
+      if (!isFinite(a) || Math.abs(a) >= 1e15) return TOO_LARGE();
+      if (/^(gamma|lgamma|digamma)$/.test(f) && Number.isInteger(a) && a <= 0) return POLE();
+      if (f === 'factorial' && Number.isInteger(a) && a < 0) return POLE();
+      if (f === 'zeta' && a === 1) return POLE();
+      if (/^(tan|sec|cot|csc)$/.test(f)) return POLE();
+      if (/^(factorial|gamma|lgamma|fibonacci|lucas)$/.test(f)) return TOO_LARGE();
+      return tr('Could not calculate: no answer was found', '計算できませんでした（答えを求められませんでした）');
+    }
+    if (/\d(?:E[−+-]?\d+)?\)?\s*!(?!=)/.test(all)) return TOO_LARGE();
+    // (W5) an integral, a sum or a limit left as it is, a power of a matrix the engine leaves (√([1 2; 3 4]))
+    if (/∫\(|(?:^|[^\p{L}\p{N}_])integrate\(/u.test(last)) return tr('Could not calculate: the integral could not be found', '計算できませんでした（積分できませんでした）');
+    if (/[Σ∏]\(|(?:^|[^\p{L}\p{N}_])(?:sum|product)\(/u.test(last)) return tr('Could not calculate: the sum could not be worked out', '計算できませんでした（和を計算できませんでした）');
+    if (/(?:^|[^\p{L}\p{N}_])limit\(/u.test(last)) return tr('The limit does not exist or could not be found', '極限は存在しないか、求められませんでした');
+    if (/√\(\s*\[|\]\s*\)?\s*\^\s*\(?[−-]?\d*\.\d/.test(last)) return tr('Could not calculate: this power of a matrix cannot be worked out', '計算できませんでした（行列のこの累乗は計算できません）');
+    // (G1: fibonacci(10^12)) an overflow left the formula with its decimals
+    if (M.some((m) => /^Floating point (?:overflow|underflow)/.test(String(m.text || ''))) && !/^[−-]?[\d.]+(?:E[−+-]?\d+)?$/.test(last.trim())) return TOO_LARGE();
+    // (G4) a limit not found: the answer still has the variable (limit(sin(1/x), x, 0) = sin(1/x))
+    const lim = expr && /^\s*limit\(/.test(expr) ? topArgs(expr.slice(expr.indexOf('(') + 1)) : null;
+    const lv = lim ? (lim.length >= 3 ? lim[2].trim().replace(/^\\/, '') : 'x') : '';
+    if (lim && /^[\p{L}_][\p{L}\p{N}_]*$/u.test(lv) && (usesName(last, lv) || last.indexOf("'" + lv + "'") >= 0)) return tr('The limit does not exist or could not be found', '極限は存在しないか、求められませんでした');
     return '';
+  }
+  // the arguments at the top of a call, from just after its "(" to its ")": ['f', 'x', '0'] (null when the parentheses do not close)
+  function topArgs(rest) {
+    const out = []; let d = 0, cur = '';
+    for (const c of rest) {
+      if ('([{'.indexOf(c) >= 0) d++;
+      else if (')]}'.indexOf(c) >= 0) { if (d === 0) { out.push(cur); return out; } d--; }
+      if (c === ',' && d === 0) { out.push(cur); cur = ''; continue; }
+      cur += c;
+    }
+    return null;
+  }
+  // (1.16.0, the review of 11-24 (5)) the expression as the engine is given it (the line keeps what was typed): G5 inf as ∞; G2 the
+  // factorial of a decimal as Γ(x + 1) (0.5! = √π/2); G6 sum(f, n, 1, 10) → sum(f, 1, 10, n), as product and integrate (the
+  // variable second, a common way); G9 gcd and lcm of whole numbers worked out here (the engine refused a 0: gcd(0, 5));
+  // G7 the factorial of a number of 10^8 or more: too large at once (until then 20 s and no word)
+  function engineForm(e) {
+    let s = String(e || '');
+    const notes = [];
+    s = s.replace(/(^|[^\p{L}\p{N}_])inf(?![\p{L}\p{N}_])/gu, '$1∞');
+    // (1.16.0, the review of 11-24 (6), W2) a date written as it is (2026-12-31, 2026/11/24) is a date, not a subtraction or a division
+    s = s.replace(/(^|[^\d.,"\p{L}_])(\d{4})([-/])(\d{1,2})\3(\d{1,2})(?![\d.,"\p{L}_])/gu, (all, pre, y, sep, mo, d) =>
+      (Number(mo) >= 1 && Number(mo) <= 12 && Number(d) >= 1 && Number(d) <= 31 ? pre + '"' + y + '-' + mo.padStart(2, '0') + '-' + d.padStart(2, '0') + '"' : all));
+    // (W3) "30% of 200": 30/100 × 200
+    s = s.replace(/(\d+(?:\.\d+)?)\s*%\s*of\s+/gi, '($1/100) × ');
+    // (W4) solve with a list of equations and a list of variables: multisolve
+    s = s.replace(/(^|[^\p{L}\p{N}_\\])solve\((?=\s*\[)/gu, (all, pre, at, str) => { const a = topArgs(str.slice(at + all.length)); return a && a.length === 2 && /^\s*\[/.test(a[1]) ? pre + 'multisolve(' : all; });
+    const big = (x) => { const m = /^10\s*\^\s*(\d+)$/.exec(x.replace(/[()\s]/g, '').replace('^', ' ^ ').trim()) || /^10\^(\d+)$/.exec(x.replace(/[()\s]/g, '')); const v = m ? Math.pow(10, Number(m[1])) : Number(x.replace(/[()\s]/g, '')); return v >= 1e8; };
+    for (const m of s.matchAll(/(\d[\d.]*(?:E\d+)?|\(\s*10\s*\^\s*\d+\s*\))\s*!+(?!=)|factorial2?\(\s*(\d[\d.]*(?:E\d+)?|10\s*\^\s*\d+)\s*\)/g)) {
+      const x = m[1] || m[2];
+      if (x && big(x)) return { expr: s, error: TOO_LARGE(), notes };
+    }
+    s = s.replace(/(^|[^\d.])(\d+\.\d+|\(\s*[−-]?\s*\d+\.\d+\s*\))!(?![!=])/g, (all, pre, x) => pre + 'gamma(' + x + ' + 1)');
+    s = s.replace(/(^|[^\p{L}\p{N}_])factorial\(\s*([−-]?\d+\.\d+)\s*\)/gu, (all, pre, x) => pre + 'gamma(' + x + ' + 1)');
+    // (W1, G6) the variable second, as in other calculators and Wolfram Alpha (the engine read it as the lower limit or the value
+    // approached, and gave wrong answers without a word: integrate(x^2, x) = +∞, sum(k, k, 1, 10) = 0, limit(sin(x)/x, x, 0) =
+    // sin(x)/x): when the second argument is a one-letter name used in the expression, it is the variable. integrate(f, x) is the
+    // indefinite integral in x; integrate(f, x, a, b), sum(f, n, a, b), product(…) → (f, a, b, x); limit(f, x, a) → limit(f, a, x);
+    // the variable as an unknown (\t, not the tonne). From the last call to the first, so that the calls inside are done first.
+    const calls = Array.from(s.matchAll(/(^|[^\p{L}\p{N}_\\])(integrate|sum|product|limit)\(/gu)).map((m) => ({ f: m[2], at: m.index + m[1].length + m[2].length + 1 })).reverse();
+    for (const { f, at } of calls) {
+      const args = topArgs(s.slice(at));
+      if (!args || args.length < 2) continue;
+      const v = args[1].trim();
+      if (!/^[a-zA-Z]$/.test(v) || v === 'e' || v === 'i' || !usesName(args[0], v)) continue;
+      const u = 'xyz'.indexOf(v) >= 0 ? v : '\\' + v;
+      const esc = (x) => (u === v ? x : x.replace(new RegExp('(^|[^\\p{L}\\p{N}_\\\\])' + v + '(?![\\p{L}\\p{N}_])', 'gu'), '$1' + u));
+      let rep = null;
+      if (f === 'integrate' && args.length === 2) rep = v === 'x' ? [args[0]] : [esc(args[0]), 'undefined', 'undefined', u];
+      else if (f !== 'limit' && args.length === 4) rep = [esc(args[0]), args[2].trim(), args[3].trim(), u];
+      else if (f === 'limit' && args.length === 3) rep = [esc(args[0]), args[2].trim(), u];
+      if (!rep) continue;
+      s = s.slice(0, at) + rep.join(', ') + s.slice(at + args.join(',').length);
+      if (f === 'integrate' && args.length === 2) continue; // the indefinite integral: its "+ C" says so
+      notes.push(f === 'integrate' ? tr('Read in the order integrate(expression, lower limit, upper limit, variable)', 'integrate(式, 下端, 上端, 変数) の順に読み替えました')
+        : f === 'limit' ? tr('Read in the order limit(expression, value approached, variable)', 'limit(式, 近づける値, 変数) の順に読み替えました')
+          : trf('Read in the order {0}(expression, lower limit, upper limit, variable)', '{0}(式, 下限, 上限, 変数) の順に読み替えました', f));
+    }
+    // (W5) a sum or a product to ∞: not worked out by the engine (it says that the limit must be an integer)
+    for (const m of s.matchAll(/(^|[^\p{L}\p{N}_\\])(sum|product)\(/gu)) {
+      const args = topArgs(s.slice(m.index + m[0].length));
+      if (args && args.length >= 3 && /^\s*\+?\s*(?:∞|infinity)\s*$/.test(args[2])) return { expr: s, error: tr('An infinite sum cannot be worked out (with a large upper limit you get a close value)', '無限の和は計算できません（上端を大きな数にすると近い値が出ます）'), notes };
+    }
+    // G9
+    s = s.replace(/(^|[^\p{L}\p{N}_])(gcd|lcm)\(\s*([−-]?\d+(?:\s*,\s*[−-]?\d+)+)\s*\)/gu, (all, pre, f, list) => {
+      const ns = list.split(',').map((x) => { const v = BigInt(x.trim().replace('−', '-')); return v < 0n ? -v : v; });
+      const g2 = (a, b) => { while (b) { [a, b] = [b, a % b]; } return a; };
+      const v = f === 'gcd' ? ns.reduce(g2) : ns.reduce((a, b) => (a === 0n || b === 0n ? 0n : (a / g2(a, b)) * b));
+      return pre + v.toString();
+    });
+    return { expr: s, error: '', notes };
+  }
+  // (G3) an indefinite integral with an infinite constant from the engine (∫ e^(x²) dx = (+∞) − i√π erf(ix)/2): the constant left out
+  // (an antiderivative is up to a constant), erf(i·z) as i·erfi(z), and worked out again: √π/2 × erfi(x) + C
+  async function fixIntegral(r, expr) {
+    if (!r || !r.ok || !r.result || !/^\s*integrate\(/.test(String(expr || ''))) return r;
+    // an indefinite integral: its exact form only (≈ −(0.367 879 441 171 442)^x + C for −1/e^x + C says nothing more)
+    const forms = String(r.result).split(/ ≈ /);
+    if (forms.length > 1 && /\+\s*C$/.test(forms[0].trim())) { r.result = forms[0].trim(); r.approx = false; }
+    if (!/∞|erf\(\s*i/.test(String(r.result) + (r.input || ''))) return r;
+    // the exact form as shown (the text to insert has −0.5i for −i/2, and would be worked out again as a decimal)
+    let e = r.approx ? String(r.input || '').trim() : String(r.result).split(/ = | ≈ /)[0].trim();
+    if (!e) {
+      // the preview and = do not ask for the text to insert: asked here (only for these integrals)
+      const r1 = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 3000, store: false, preview: false, input: true });
+      e = String((r1 && r1.ok && r1.input) || '').trim();
+    }
+    if (!/∞/.test(e) && !/erf\(\s*i/.test(e)) return r;
+    const args = topArgs(String(expr).slice(String(expr).indexOf('(') + 1));
+    if (!args || (/∞/.test(e) && args.length > 2 && !/undefined/.test(args[1] || ''))) return r;
+    const withC = /\+\s*C\s*$/.test(e);
+    e = e.replace(/\s*\+\s*C\s*$/, '');
+    e = e.replace(/^\(\s*[+−-]?∞\s*\)\s*([+−-])\s*/, (m, sg) => (sg === '+' ? '' : '−')).replace(/\s*[+−-]\s*\(\s*[+−-]?∞\s*\)\s*$/, '');
+    if (/∞/.test(e) || !e) return r;
+    e = e.replace(/erf\(\s*i\s*(?:×\s*)?('[^']+'|[\p{L}_][\p{L}\p{N}_]*|\([^()]*\))\s*\)/gu, '(i × erfi($1))');
+    const r2 = await Bridge.send('calc', { expr: e, opts: engineOpts(), timeout: 3000, store: false, preview: false, input: true });
+    if (!r2.ok || !r2.result || r2.timeout || /∞/.test(r2.result)) return r;
+    const plus = withC || /∞/.test(r.result) ? ' + C' : '';
+    // the exact form only, as above
+    r.result = (r2.approx ? String(r2.result) : String(r2.result).split(/ ≈ /)[0].trim()) + plus;
+    if (r2.input) r.input = r2.input + plus;
+    r.approx = r2.approx;
+    return r;
   }
   function showPreview(r) {
     msgEl.textContent = '';
@@ -1886,8 +2052,8 @@
     const err = (r.messages || []).find((m) => m.type === 'error');
     if (r.deferred) previewEl.textContent = tr('Press = to run it (definitions are not previewed)', '＝ を押すと実行します（定義など）');
     else if (r.timeout) previewEl.textContent = '…';
+    else if (undoneMessage(r.result, r.messages, r.srcExpr)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result, r.messages, r.srcExpr); msgEl.className = 'msg error'; }
     else if (err) { previewEl.textContent = ''; msgEl.textContent = localMessage(err.text); msgEl.className = 'msg error'; }
-    else if (undoneMessage(r.result, r.messages)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result, r.messages); msgEl.className = 'msg error'; }
     else {
       showResult(previewEl, resultText(r));
       fitMatrices(previewEl);
@@ -1944,7 +2110,7 @@
     const rx = editing ? null : expandHistRefs(expr, histNo + 1);
     if (rx && rx.error) { committing = false; clearInterval(busyTimer); previewEl.textContent = ''; msgEl.textContent = rx.error; msgEl.className = 'msg error'; return; }
     const r = editing ? Object.assign(await recalcLine(history.indexOf(editing), expr), { editRun: true })
-      : plainerForms(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }));
+      : addNotes(await fixIntegral(plainerForms(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT })), rx.expr), rx.notes);
     if (editing) {
       committing = false; clearInterval(busyTimer); clearInterval(cancelTimer);
       if (r.error) { previewEl.textContent = ''; msgEl.textContent = r.error; msgEl.className = 'msg error'; return; }
@@ -1979,7 +2145,7 @@
       msgEl.className = 'msg error';
       return;
     }
-    if (undoneMessage(r.result, r.messages)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result, r.messages); msgEl.className = 'msg error'; return; } // (C5, H8)
+    if (undoneMessage(r.result, r.messages, rx.expr)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result, r.messages, rx.expr); msgEl.className = 'msg error'; return; } // (C5, H8, F1, G)
     const entry = {
       expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), angle: S.angle, // (angle: 1.16.0, R3)
       msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3), t: Date.now()
@@ -3559,7 +3725,9 @@
       if (v && typeof v === 'object') { error = v.error; return '0'; }
       return '(' + v + ')';
     });
-    return { expr: out, error };
+    if (error) return { expr: out, error, notes: [] };
+    const ef = engineForm(out); // (1.16.0, the reviews of 11-24 (5), (6): G2, G5, G6, G7, G9, W1–W5)
+    return { expr: ef.expr, error: ef.error, notes: ef.notes };
   }
   // in the history: the line with that number, above the line own (the number of the line being worked out)
   function expandHistRefs(expr, own) {
@@ -4297,13 +4465,14 @@
   async function recalcLine(i, expr) {
     const rx = refsAt(expr, i);
     if (rx.error) return { error: rx.error };
-    const r = plainerForms(await Bridge.send('calc', { expr: withAns(expr, i), opts: optsFor(expr, lineOpts(history[i])), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }));
+    const r = addNotes(await fixIntegral(plainerForms(await Bridge.send('calc', { expr: withAns(expr, i), opts: optsFor(expr, lineOpts(history[i])), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT })), withAns(expr, i)), rx.notes);
     if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
     if (!r.ok || r.timeout || !r.result) {
       const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
       return { error: r.timeout ? tr('The time limit was reached', '制限時間を過ぎました') : localMessage(err ? err.text : r.error) || tr('Check the expression', '式を確認してください') };
     }
-    if (undoneMessage(r.result, r.messages)) return { error: undoneMessage(r.result, r.messages) }; // (1.16.0, H8)
+    const und = undoneMessage(r.result, r.messages, withAns(expr, i));
+    if (und) return { error: und }; // (1.16.0, H8, F1, G)
     const s = { expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), angle: (history[i] && history[i].angle) || S.angle, msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3) };
     if (r.truncated) { s.cut = true; if (typeof r.tail === 'string' && r.tail) s.tail = r.tail; s.msgs.push({ type: 'warning', text: cutMessage(r) }); }
     if (typeof r.input === 'string' && r.input) { if (r.input.length > MAX_INPUT) s.big = true; else s.input = r.input; }

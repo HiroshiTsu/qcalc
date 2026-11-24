@@ -258,6 +258,9 @@ QCalc is a calculator where you type an expression as you would write it on pape
 | `solve(x^2 − 5x + 6 = 0)` | Solve an equation |
 | `diff(x^3)` | Derivative |
 | `integrate(x^2, 0, 1)` | Definite integral |
+| `integrate(x^2, x)`, `sum(k, k, 1, 10)` | Indefinite integral, sum. With the variable second, it is read in the order integrate(expression, lower limit, upper limit, variable) |
+| `5!`, `(5!)!` | factorial (5 × 4 × 3 × 2 × 1), a factorial of a factorial |
+| `9!!`, `9!!!` | double factorial (9 × 7 × 5 × 3 × 1), multifactorial (9 × 6 × 3); "!!" is not a factorial taken twice |
 | `ans` | The last answer |
 :tip: Ten traditional Japanese units (tsubo, shaku, shō, kan and others) work too: `30 tsubo to m^2`.
 
