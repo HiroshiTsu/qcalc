@@ -727,8 +727,10 @@ html.dark .plot-ms { background: rgba(0, 0, 0, .6); color: #e5e7eb; }
 }
 .sheet.open { transform: none; }
 .sheet .stitle {
-  /* no padding at the bottom: the clamped lines are cut at the edge of the padding */
-  color: var(--muted); font-size: 13px; padding: 8px 12px 0; margin-bottom: 10px; word-break: break-all; white-space: pre-wrap;
+  /* no padding at the bottom: the clamped lines are cut at the edge of the padding. (1.16.2) Between words, and inside
+     a word only when it is longer than the line (a long number or expression): break-all cut the sentences of the
+     sheets inside their words ("…of the device, i|t is in English" in the sheet of the languages) */
+  color: var(--muted); font-size: 13px; padding: 8px 12px 0; margin-bottom: 10px; word-break: normal; overflow-wrap: anywhere; white-space: pre-wrap;
   display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
 }
 .sheet button {
