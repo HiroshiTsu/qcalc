@@ -17545,7 +17545,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['▦', tr('Calculation notes: line numbers and #3, and tables with a formula column and totals', '計算メモ：行の番号と #3、式の列と合計のある表'), () => { const p = openNotesTool(); if (hasPro() && p.showTable) p.showTable(); }],
     // (1.16.0, 11-24: the history with the ways of a spreadsheet; Try it puts the newest line into the field by its number, with
     // its colored mark and the preview of the answer)
-    ['🕘', tr('History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up', '履歴：答えをタップで挿入（続けてタップで入れ替え）、行の番号と #12、選んで合計'), () => { const h = history[history.length - 1]; if (h && h.n) { setExpr(''); insertResult(h, true); } focusExpr(); }],
+    ['🕘', tr('History like a spreadsheet: tap an answer for its value, its number for #12; select to add up, copy as a table', '履歴を表計算のように：答えのタップで値、番号のタップで #12。選んで合計、表でコピー'), () => { const h = history[history.length - 1]; if (h && h.n) { setExpr(''); insertResult(h, true); } focusExpr(); }],
     ['🔤', tr('Your variables and functions on one screen: the button "Variables" above the input field', '自分の変数と関数を 1 つの画面で：入力欄の上の「変数」のボタン'), () => { if (defCount) { store.set('qalc.lists.tab', 'defs'); openDefs(); return; } setExpr('k := 2'); Promise.resolve(commit()).then(() => { store.set('qalc.lists.tab', 'defs'); openDefs(); }); }],
     ['💡', tr('The arguments of a function shown as you type it, under the input field', '入力中の関数の引数を、入力欄の下に表示'), () => { setExpr('normdist('); focusExpr(); }],
     ['🎲', tr('Probability distributions: normal, binomial, Poisson, t and χ², the range shaded in a graph', '確率分布：正規・二項・ポアソン・t・χ²（範囲をグラフに色で表示）'), () => statsWith({ mode: 'dist' })],

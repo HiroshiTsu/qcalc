@@ -18,7 +18,7 @@
     "Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down (at 20.315 %, the income taxes of 15.315 % and the resident tax of 5 % each rounded down, as a broker withholds them); \"Break-even\" is the price at which selling leaves no loss after the fees.": "損益 ＝（賣出價 − 買入價）× 股數 − 手續費。手續費可輸入金額或交易金額的 %。稅只對獲利課徵，無條件捨去（20.315% 時，和券商代扣一樣，所得稅與復興特別所得稅 15.315% 及住民稅 5% 分別捨去後相加）；「損益兩平賣價」是扣除手續費後不虧損的賣價。",
     "The tax is worked out on this trade alone (20.315 %: Japan's rate for listed stocks, its parts of 15.315 % and 5 % rounded down one by one); losses offset in the year are not taken into account.": "稅只就這筆交易計算（20.315%：日本上市股票的稅率，15.315% 與 5% 分別無條件捨去）；不考慮年度損益相抵。",
     "15.315 % and 5 % of the profit, each rounded down": "獲利的 15.315% 與 5%（分別無條件捨去）",
-    "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "歷史紀錄：點一下結果即可插入（再點會替換）、行號與 #12、選取後加總",
+    "History like a spreadsheet: tap an answer for its value, its number for #12; select to add up, copy as a table": "像試算表一樣的歷史紀錄：點結果放入值、點編號放入 #12；選取後加總、以表格複製",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "這是主值（複數）。實數立方根請用 cbrt(−{0})（∛）",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "這是主值（複數）。實數方根請用 root(−{0}, {1})",
     "\"{0}\" was taken as the unit {1}; for an unknown, use x, y or z": "「{0}」被當作單位「{1}」計算。未知數請用 x、y、z",
