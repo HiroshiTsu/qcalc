@@ -2,6 +2,17 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "Fill in the boxes □": "請填入 □ 欄位",
+    "#{0}: view whole": "#{0}：檢視全部",
+    "Expression (editing)": "算式（修改中）",
+    "This line is no longer in the history": "這一列已不在歷史紀錄中",
+    "Wrap": "換行",
+    "\"After a number of characters\": as many digits wide; it can be longer than the screen, and what goes past the right edge scrolls sideways. A matrix is not wrapped: it gets smaller or scrolls sideways": "「依字數換行」以數字的寬度在該字數處換行，可比畫面右緣更長，超出的部分可左右捲動。矩陣不換行，會縮小或左右捲動",
+    "At the right edge": "在右緣換行",
+    "Never (scroll sideways)": "不換行（左右捲動）",
+    "Characters in a line": "每列字數",
+    "({0} to {1})": "（{0}～{1}）",
+    "After {0} characters": "{0} 字換行",
     "View whole": "檢視全部",
     "The expression and its answer": "算式與結果",
     "Other forms": "其他形式",

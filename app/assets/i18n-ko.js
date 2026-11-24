@@ -1,6 +1,17 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "Fill in the boxes □": "□ 칸을 채우세요",
+    "#{0}: view whole": "#{0}: 전체 보기",
+    "Expression (editing)": "식(고치는 중)",
+    "This line is no longer in the history": "이 줄은 이제 기록에 없습니다",
+    "Wrap": "줄 바꿈",
+    "\"After a number of characters\": as many digits wide; it can be longer than the screen, and what goes past the right edge scrolls sideways. A matrix is not wrapped: it gets smaller or scrolls sideways": "‘글자 수에서 줄 바꿈’은 숫자 그만큼의 폭에서 줄을 바꿉니다. 화면 오른쪽 끝보다 길게 할 수 있고, 넘친 부분은 옆으로 스크롤합니다. 행렬은 줄을 바꾸지 않고 작게 하거나 옆으로 스크롤합니다",
+    "At the right edge": "오른쪽 끝에서 줄 바꿈",
+    "Never (scroll sideways)": "줄 바꾸지 않음(옆으로 스크롤)",
+    "Characters in a line": "한 줄의 글자 수",
+    "({0} to {1})": "({0}~{1})",
+    "After {0} characters": "{0}자에서 줄 바꿈",
     "View whole": "전체 보기",
     "The expression and its answer": "식과 결과",
     "Other forms": "다른 형태",
