@@ -22,8 +22,23 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Tippen Sie nun `60 mph to km/h` („to“ liegt auf der Taste →). Es erscheint „= 96,560 64 km/h“.
 :step: Die dritte Rechnung ist `sqrt(8)`, auch über die Taste √: „= 2√2“ und darunter „≈ 2,828 427 124 746 19“, der exakte Wert und die Näherung in zwei Zeilen.
 :example: `1/3 + 1/4` → `= 7/12`, darunter `≈ 0,583 333 333 333 333`
-:tip: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu übernehmen oder zu kopieren.
+:tip: Tippen Sie auf ein Ergebnis im Verlauf: Es kommt an der Cursorposition ins Eingabefeld ([Ergebnis durch Tippen einfügen](#tap-insert)).
 :mistake: Der Buchstabe x ist eine Variable, kein „mal“. Multiplizieren Sie mit der Taste × (oder *).
+
+## new-1-16 | Neu in 1.16.0
+- **Aktien und Anlage**: [[Stocks and investing]] in [[Tools]] bietet Gewinn und Verlust einer Aktie mit Steuer (auch steuerfrei), den Einstandskurs, Erhaltungsquote und Nachschusskurs eines Margin-Kontos, die Positionsgröße aus dem Stop, Rendite, KGV, KBV und Zinseszins, Sollzinsen und Leihgebühr je Tag sowie ausländische Aktien in Ihrer Währung. Es zählt nur, was Sie eingeben ([Aktien und Anlage](#invest)).
+- **Zeilennummern, #3 und Tabellen in den Notizen**: Die Zeilen haben Nummern, #3 verwendet das Ergebnis von Zeile 3; die Nummern folgen beim Einfügen, Löschen oder Verschieben. Im Tabellenmodus (QCalc Pro): Formelspalten (Betrag = Menge × Preis), Summe und Mittelwert jeder Spalte, CSV-Dateien lesen und speichern ([Zeilennummern und #3](#notes-refs), [Tabellenmodus](#notes-table)).
+- **Verbessert**: In Formen und Behältern ist das Gewicht die letzte Zeile der Ergebnisse (ohne Einheit wählt ein Tippen eine). Im 3D-Graphen sind Kugel und Torus von der ersten Zeichnung an ein Körper in den Farben der Höhe.
+- **Eigene Variablen und Funktionen**: Die mit `k := 2` und Ähnlichem festgelegten Variablen und Funktionen mit ihren Werten auf einem Bildschirm. Öffnen Sie ihn mit der Schaltfläche [[Variables]] über dem Eingabefeld; ein Tippen auf einen Namen setzt ihn ins Eingabefeld, und ⋯ ändert den Wert oder den Namen oder löscht (alles lässt sich rückgängig machen) ([Eigene Variablen und Funktionen](#variables)).
+- **Wahrscheinlichkeitsverteilungen**: [[Distributions]] in [[Statistics]] gibt die Wahrscheinlichkeit eines Bereichs, die Dichte und die Quantile der Normal-, Binomial-, Poisson-, t- und χ²-Verteilung, mit dem Bereich farbig im Graphen ([Wahrscheinlichkeitsverteilungen](#distributions)).
+- **Histogramm und Boxplot**: für eine Spalte ein Histogramm (mit änderbarer Klassenbreite) und ein Boxplot (Ausreißer als Punkte) ([Statistik](#stats)).
+- **Regressionskurven und CSV**: für zwei Spalten eine Kurve vom Grad 2 bis 4, eine Exponential-, Logarithmus- oder Potenzkurve wählen (außer der Geraden: QCalc Pro). [[Read a CSV file]] liest eine Spalte einer CSV-Datei ([Statistik](#stats)).
+- **Hinweise zu den Argumenten**: Nach einem Funktionsnamen und „(“ erscheinen unter dem Eingabefeld die Argumente (das aktuelle fett), was die Funktion tut und ein Beispiel. Für etwa 60 Funktionen; ✕ schließt den Hinweis ([Hinweise zu den Argumenten](#arg-hints)).
+- **Ergebnis durch Tippen einfügen**: Ein Tippen auf ein Ergebnis im Verlauf setzt es an der Cursorposition ein, wie ein Klick auf eine Zelle in einer Tabellenkalkulation. Ein weiteres Tippen, bevor Sie etwas eingeben, ersetzt es, und direkt nach einer Zahl kommt zuerst ein sichtbares × dazu. Die verwendeten Zeilen bekommen farbige Markierungen. Ergebnisse mit √ oder π kommen in ihrer exakten Form, nicht als gerundete Dezimalzahl ([Ergebnis durch Tippen einfügen](#tap-insert)).
+- **Zeilennummern und #12 im Verlauf**: Die Zeilen des Verlaufs haben Nummern, und `#12` in einem Ausdruck ist das Ergebnis von Zeile 12; wird Zeile 12 bearbeitet, können die Zeilen mit #12 neu berechnet werden. [[Select: sum and average]] im ⋯ beginnt mit dieser Zeile und zeigt sofort die Summe; langes Drücken auf eine Zeile wählt einen Bereich. [[Copy as a table]] kopiert Ausdrücke und Ergebnisse als zwei Spalten für eine Tabellenkalkulation ([Zeilennummern und #12](#hist-refs), [Zeilen addieren](#select-sum)). Ein Tippen auf die Nummer einer Zeile setzt #12 ein, und Als Tabelle kopieren kann auch nur die Ergebnisse (1 Spalte) kopieren.
+- **Formen der Ergebnisse**: Ein Ausdruck nur aus Dezimalzahlen behält ein dezimales Ergebnis (123456,789, 2,5, 0,5; der Bruch mit [[As a fraction]]), und ein Ergebnis hat höchstens zwei Formen (10/4 = 5/2 = 2,5) ([Ergebnisse lesen](#results)).
+- **Eine Zeile bearbeiten**: Die Zeile und ihr Ergebnis bleiben sichtbar, neu berechnete Zeilen leuchten kurz auf. Eine Zeile behält die Winkeleinheit, mit der sie berechnet wurde, und wird damit bearbeitet. Auch AC beendet das Bearbeiten, und [[Cancel]] bei der Frage nach den Zeilen darunter kehrt zum Bearbeiten zurück ([Eine Zeile des Verlaufs bearbeiten](#edit-line)).
+- **Weitere Korrekturen**: Solange „Volumen und Oberfläche“ im 3D-Graphen offen ist, zeigt die Legende die Farbe des gemessenen Körpers. Geldbeträge runden einen halben Cent richtig auf (manche Summen waren einen Cent zu klein). Ergebnisse werden ohne Zifferngruppierung kopiert. `nPr(5, 2)` und `nCr(5, 2)` funktionieren. Weitere Meldungen der Rechen-Engine (der Hinweis zu 6/2(1+2) und andere) erscheinen auf Deutsch. Der Umrechner lässt selten genutzte Einheiten weg (eingeben lassen sie sich weiterhin).
 
 ## new-1-15 | Neu in 1.15.0
 - **Besser lesbare Ergebnisse**: Ergebnisse mit 15 gültigen Stellen, in Dreiergruppen. Geräte, die noch die bisherigen Standardwerte hatten (10 Stellen, ohne Gruppen), wechseln mit dieser Version einmal. [[Precision (significant digits)]] und [[Digit grouping (1,000)]] in den [[Settings]] stellen es zurück ([Das Ergebnis lesen](#results)).
@@ -99,6 +114,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Drücken Sie [[!=]], um zu rechnen.
 :example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
 :tip: ÷ × + und Ähnliches in einem leeren Eingabefeld rechnen mit dem letzten Ergebnis „ans“ weiter.
+:tip: Eine in einer Tabellenkalkulation (Excel, Google Tabellen) kopierte Spalte oder Tabelle – zwei oder mehr Werte in Zeilen oder mit Tabs – fragt beim Einfügen ins Eingabefeld, was damit geschehen soll: mit + addieren, als Zeilen in die Rechennotizen, als Daten der Statistik oder als Matrix (ab zwei Spalten). Zellen nur mit Wörtern (Überschriften) werden weggelassen. Eine Zeile wird wie bisher eingefügt.
 :mistake: Klammern, die nicht paarweise stehen, führen zu einem Fehler. Die Meldung sagt, was zu korrigieren ist.
 
 ## results | Das Ergebnis lesen: exakt, genähert, Brüche
@@ -107,11 +123,13 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 - `sqrt(8)` → `= 2√2`, darunter `≈ 2,828 427 124 746 19`
 - `30!` → `= 265.252.859.812.191.058.636.308.480.000.000` (ganze Zahlen bis 60 Stellen vollständig)
 - `2^200` → `≈ 1,606 938 044 258 99 × 10⁶⁰` (eine sehr große Zahl)
+- `2,5`, `0,1 + 0,2` → `= 2,5`, `= 0,3` (ein Ausdruck nur aus Dezimalzahlen hat ein dezimales Ergebnis; [[As a fraction]] zeigt den Bruch)
+- `10/4` → `= 5/2 = 2,5` (höchstens zwei Formen)
 :step: Der Schalter oben wechselt zwischen exakt, genähert und automatisch.
 :step: Die Genauigkeit (Standard 15 Stellen) lässt sich mit dem Feld „15 St.“ in der Zeile oben ändern. Es bietet 10, 15, 20, 30, 50, 100 und Andere … (eine Zahl eingeben); das Ergebnis des Ausdrucks in der Eingabe wird sofort neu berechnet, die Ergebnisse im Verlauf bleiben, wie sie sind. Auch [[Precision (significant digits)]] in den [[Settings]] ändert sie. Ergebnisse erscheinen mit Dreiergruppen ([[Digit grouping (1,000)]] schaltet es aus).
 :step: Um eine Zeile des Verlaufs mit mehr Stellen zu sehen, wählen Sie in ihrem ⋯ → [[Work it out with other digits]] 30, 50, 100 oder Andere …. Das Ergebnis erscheint in einem Blatt mit [[Put the expression into the input field]], [[Keep it in the history]] und [[Copy the result]]. Die Genauigkeit der Einstellungen und die Zeile bleiben, wie sie sind.
 :pro: Bis 1000 Stellen kostenlos. Mehr als 1000, bis 200000 Stellen, ist eine Funktion von QCalc Pro.
-:tip: Ein sehr langes Ergebnis lässt sich im Verlauf scrollen, sodass jede Stelle lesbar ist; beim Kopieren wird jede Stelle kopiert.
+:tip: Ein sehr langes Ergebnis lässt sich im Verlauf scrollen, sodass jede Stelle lesbar ist; beim Kopieren wird jede Stelle kopiert, ohne Zifferngruppierung.
 :step: Unter der neuesten Antwort erscheinen Schaltflächen für das, was oft als Nächstes kommt (höchstens 6): bei einem Ausdruck in x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]; bei einer Zahl [[Details]], [[As a fraction]], [[Scientific]] (bei einer ganzen Zahl [[Prime factors]], [[In hex]]); mit Einheit [[Convert…]]; bei einer Matrix [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. Die Rechnung einer Schaltfläche wird eine neue Zeile im Verlauf.
 :step: [[Details]] (oder ⋯ → [[Details]]) zeigt die anderen Formen der Antwort zusammen: bei einer Zahl den exakten Wert, die Dezimalzahl, den Bruch, den gemischten Bruch und die wissenschaftliche Schreibweise (ganze Zahlen in den Basen 2, 8 und 16 und ihre Primfaktoren; mit Einheit andere Einheiten); bei einem Ausdruck in x einen kleinen Graphen, die Nullstellen, die Ableitung, das Integral, die Taylorreihe und die faktorisierte Form. Eine Zeile antippen für [[Put the expression in the field]], [[Keep it in the history]] oder [[Copy result]].
 :tip: Ohne diese Schaltflächen: [[Settings]] → [[Suggest the next steps under the newest answer]] aus.
@@ -134,20 +152,43 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 
 # history | Verlauf und Speicher
 :what: Ausdrücke und Ergebnisse bleiben im Verlauf, bis zu 300 Zeilen. 🕘 oben rechts sucht, summiert ausgewählte Zeilen, exportiert und löscht.
-:step: Tippen Sie auf ein Ergebnis im Verlauf, um [[Put the expression into the input field]], [[Copy the result]] und Ähnliches zu wählen.
-:step: ⋯ rechts an einer Zeile bietet [[☆ Pin at the top]] und [[Add a short note]].
+:step: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu setzen ([Ergebnis durch Tippen einfügen](#tap-insert)); ein Tippen auf den Ausdruck bearbeitet die Zeile ([Eine Zeile des Verlaufs bearbeiten](#edit-line)).
+:step: ⋯ links an einer Zeile bietet [[☆ Pin at the top]] und [[Add a short note]].
 :step: 🕘 bietet [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] und [[Clear the whole history]].
 :shot: history | Das Verlaufsmenü von 🕘
 :tip: Mit Stern angeheftete Zeilen bleiben erhalten, wenn der Verlauf voll ist.
 
+## tap-insert | Ergebnis durch Tippen einfügen
+:what: Ein Tippen auf ein Ergebnis im Verlauf setzt es an der Cursorposition ins Eingabefeld, so wie ein Klick auf eine Zelle, während Sie in einer Tabellenkalkulation eine Formel eingeben.
+:step: Ist das Feld leer oder wurde gerade gerechnet, kommt das Ergebnis einfach hinein.
+:step: Ein weiteres Tippen auf ein Ergebnis, bevor Sie etwas eingeben, ersetzt das zuvor angetippte.
+:step: Nach einem Operator wie + oder × kommt das Ergebnis dahinter. Direkt nach einer Zahl, einem Buchstaben oder „)“ kommt zuerst ein sichtbares × dazu.
+:step: Die im Ausdruck verwendeten Zeilen bekommen farbige Markierungen; wird das Ergebnis aus dem Feld gelöscht, verschwindet seine Markierung.
+:example: Tippen Sie auf die Zeile `120`, drücken Sie ×, tippen Sie auf die Zeile `3` → im Feld steht `120 × 3`, das Ergebnis ist `= 360`
+:tip: Ergebnisse mit √ oder π kommen in ihrer exakten Form, nicht als gerundete Dezimalzahl: Das Ergebnis von `sqrt(8)` kommt als `(2 × √(2))`, sein Quadrat ist also `= 8`. Ein Ergebnis ohne exakte Form kommt mit allen Stellen der eingestellten Genauigkeit.
+:tip: Um eine Zeile über ihre Nummer zu verwenden, wählen Sie „#12 einfügen“ in ihrem ⋯; zum Kopieren eines Ergebnisses [[Copy result]] im ⋯ (ohne Zifferngruppierung kopiert).
+:tip: Ein Tippen auf die Nummer links an einer Zeile (#12) setzt statt des Werts #12 in den Ausdruck, wie das Zeigen auf eine Zelle in einer Tabellenkalkulation ([Zeilennummern und #12](#hist-refs)).
+
 ## edit-line | Eine Zeile des Verlaufs bearbeiten
-:what: Tippen Sie auf den Ausdruck einer Zeile (den kleinen über dem Ergebnis) oder auf [[Edit expression]] in ihrem ⋯, um die Zeile zu bearbeiten. Der Ausdruck kommt ins Eingabefeld, darüber erscheint das Band „[[Editing a line of the history]]“.
+:what: Tippen Sie auf den Ausdruck einer Zeile (den kleinen über dem Ergebnis) oder auf [[Edit expression]] in ihrem ⋯, um die Zeile zu bearbeiten. Der Ausdruck kommt ins Eingabefeld, darüber erscheint das Band „[[Editing a line of the history]]“. Der Verlauf scrollt so, dass die Zeile und ihr Ergebnis sichtbar bleiben.
 :step: Ändern Sie den Ausdruck und drücken Sie [[!=]]. Die Zeile bekommt an derselben Stelle den neuen Ausdruck und das neue Ergebnis. ★ und die kurze Notiz bleiben; das Menü ⋯ zeigt neben der Zeit der Zeile die Zeit der Änderung.
 :step: Einige Sekunden lang erscheinen „[[Edited]]“ und [[Undo]]. [[Undo]] stellt Ausdruck und Ergebnis wieder her.
-:step: Wenn Zeilen darunter das Ergebnis dieser Zeile (ans) oder eine hier definierte Variable verwenden, fragt die App, ob sie neu berechnet werden sollen („Auch die 2 Zeilen darunter“) oder [[Only this line]]. [[Undo]] nimmt auch diese Zeilen zurück.
-:step: Um stattdessen eine neue Zeile darunter zu rechnen, drücken Sie [[As a new line]] im Band und dann [[!=]]. ✕ im Band oder die Zurück-Taste beendet das Bearbeiten, ohne etwas zu ändern.
-:tip: Gerechnet wird mit den Einstellungen von jetzt (Winkeleinheit, Zahlensystem und die anderen). Eine Zeile aus einem anderen Zahlensystem sagt das im Band und bekommt das Zahlensystem von jetzt.
-:tip: Ein Tippen auf das Ergebnis einer Zeile setzt es wie bisher in den Ausdruck ein oder kopiert es.
+:step: Wenn Zeilen darunter das Ergebnis dieser Zeile (ans oder #12) oder eine hier definierte Variable verwenden, fragt die App, ob sie neu berechnet werden sollen („Auch die 2 Zeilen darunter“) oder [[Only this line]]. Neu berechnete Zeilen leuchten kurz auf, und [[Undo]] nimmt auch sie zurück. Bei [[Only this line]] bekommen die Zeilen darunter einen Hinweis, dass ihr Ergebnis veraltet sein kann. [[Cancel]] ändert nichts: Der neue Ausdruck bleibt im Feld, und Sie bearbeiten weiter.
+:step: Um stattdessen eine neue Zeile darunter zu rechnen, drücken Sie [[As a new line]] im Band und dann [[!=]]. ✕ im Band, AC oder die Zurück-Taste beendet das Bearbeiten, ohne etwas zu ändern.
+:tip: Eine Zeile behält die Winkeleinheit (Grad, Bogenmaß), mit der sie berechnet wurde. Beim Bearbeiten, beim Neuberechnen der Zeilen darunter und mit anderen Stellen wird diese Einheit verwendet, und das Band sagt es. Zeilen von vor 1.16 verwenden die jetzt eingestellte Einheit; bei einer Winkelfunktion sagt das Band es.
+:tip: Die anderen Einstellungen (Zahlensystem und Ähnliches) sind die von jetzt. Eine Zeile aus einem anderen Zahlensystem sagt das im Band und bekommt das Zahlensystem von jetzt.
+:tip: Wird die bearbeitete Zeile gelöscht oder der ganze Verlauf geleert, endet das Bearbeiten; der Ausdruck im Feld wird dann als neue Zeile gerechnet.
+:tip: Ein Tippen auf das Ergebnis einer Zeile setzt es ins Eingabefeld ([Ergebnis durch Tippen einfügen](#tap-insert)).
+
+## hist-refs | Zeilennummern und #12
+:what: Jede Zeile des Verlaufs hat eine Nummer (das kleine „#12“ unter ihrem ⋯). `#12` in einem Ausdruck ist das Ergebnis von Zeile 12, wie ein Bezug auf eine Zelle in einer Tabellenkalkulation.
+:step: Wählen Sie „#12 einfügen (diese Zeile über ihre Nummer)“ im ⋯ einer Zeile: `#12` kommt ins Eingabefeld. `#` und die Nummer einzutippen geht auch.
+:step: Während Sie tippen, erscheint das Ergebnis mit `#12` unter dem Eingabefeld.
+:step: Eine Nummer gehört zu ihrer Zeile: Das Löschen anderer Zeilen ändert sie nicht, und keine Nummer wird zweimal vergeben.
+:step: Wird Zeile 12 bearbeitet, fragt die App, ob die Zeilen darunter, die `#12` verwenden, neu berechnet werden sollen ([Eine Zeile des Verlaufs bearbeiten](#edit-line)).
+:example: Zeile 12 ist `= 250` und Zeile 13 ist `= 3`: `#12 × #13` → `= 750`
+:mistake: Die Nummer einer gelöschten Zeile oder einer Zeile unter der gerade bearbeiteten lässt sich nicht verwenden; eine Meldung sagt es. Wird eine verwendete Zeile gelöscht, sagt es ein Hinweis unter der Zeile.
+:tip: Es ist dieselbe Schreibweise wie #3 in den Notizen ([Zeilennummern und #3](#notes-refs)).
 
 ## pins-notes | Anheften, Notizen und Suche
 :step: Wählen Sie [[☆ Pin at the top]] im ⋯ einer Zeile: Sie rückt zu den anderen angehefteten Zeilen nach oben.
@@ -156,9 +197,12 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :example: Eine Zeile mit der Notiz „Miete“ findet die Suche nach „Miete“.
 
 ## select-sum | Zeilen addieren
-:step: Wählen Sie [[Select lines: sum, average, copy]] in 🕘.
-:step: Tippen Sie auf die Zeilen, die addiert werden sollen.
-:step: Summe und Mittelwert erscheinen unten, mit Einheit, wenn die Einheiten passen. [[Copy]] kopiert die Zeilen.
+:step: Wählen Sie [[Select lines: sum, average, copy]] in 🕘. [[Select: sum and average]] im ⋯ einer Zeile beginnt mit dieser Zeile ausgewählt und zeigt sofort die Summe.
+:step: Tippen Sie auf die Zeilen, die addiert werden sollen. Langes Drücken auf eine Zeile wählt alle Zeilen von der zuletzt gewählten bis zu ihr.
+:step: Summe und Mittelwert erscheinen unten, mit Einheit, wenn die Einheiten passen. Als Dezimalzahl angezeigte Zeilen ergeben eine Dezimalzahl. [[Copy]] kopiert die Zeilen (ohne Zifferngruppierung).
+:step: [[Copy as a table]] kopiert Ausdrücke und Ergebnisse der gewählten Zeilen in zwei Spalten mit einem Tabulator dazwischen: In eine Tabellenkalkulation eingefügt, ergeben sie eine Spalte der Ausdrücke und eine Spalte der Ergebnisse.
+:step: Bei [[Copy as a table]] wählen Sie „Ausdruck und Ergebnis (2 Spalten)“ oder „Nur die Ergebnisse (1 Spalte)“; die zuletzt gewählte Möglichkeit steht oben.
+:tip: [[Copy as a table]] ist kostenlos. Den ganzen Verlauf als CSV-Datei zu speichern ([Den Verlauf exportieren](#export)) ist eine Funktion von QCalc Pro.
 :mistake: Zeilen mit verschiedenen Einheiten (m und kg) lassen sich nicht addieren; der Grund wird angezeigt.
 
 ## export | Den Verlauf exportieren (CSV)
@@ -166,6 +210,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :what: Speichert den Verlauf als CSV-Datei, die Tabellenkalkulationen öffnen können.
 :step: Wählen Sie [[Export the history (CSV file)]] in 🕘.
 :step: Wählen Sie im Speichern-Bildschirm von Android den Ort.
+:tip: Um nur die gewählten Zeilen in eine Tabellenkalkulation einzufügen, verwenden Sie [[Copy as a table]] ([Zeilen addieren](#select-sum)).
 
 ## memory-keys | Speichertasten (M+ M− MR MC)
 :what: Die Speichertasten eines Taschenrechners. Der Wert wird in seiner exakten Form gespeichert.
@@ -196,6 +241,14 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Tippen Sie `5 km to`: mi, m, ft und andere werden vorgeschlagen.
 :step: Tippen Sie auf einen Vorschlag, um ihn einzufügen.
 
+### arg-hints | Hinweise zu den Argumenten
+:what: Nach einem Funktionsnamen und „(“ erscheinen dort, wo die Vorschläge stehen (unter dem Eingabefeld, über den Tasten), die Argumente, was die Funktion tut und ein Beispiel. Das Argument, das Sie gerade eingeben, ist fett.
+:step: Tippen Sie `round(`: „round(Wert, [Nachkommastellen])“ erscheint, der Wert fett.
+:step: Nach dem Trennzeichen ist das nächste Argument (die Nachkommastellen) fett. Ein Argument in [ ] kann wegfallen.
+:step: ✕ rechts schließt den Hinweis dieser Funktion. [[Show the arguments of a function while typing]] in den [[Settings]] schaltet die Hinweise aus.
+:example: `round(3.14159, 2)` → 3,14 (wie im Beispiel des Hinweises)
+:tip: Etwa 60 Funktionen haben Hinweise: Trigonometrie, Logarithmen, Wurzeln, Runden, Reste, größter gemeinsamer Teiler, Summen, Ableitungen, Integrale, Grenzwerte, Gleichungen, Taylorreihen, Matrizen, Statistik und Verteilungen. Ein Hinweis liest nur das Eingabefeld und ändert den Ausdruck nie.
+
 ## writing | Funktionen, Einheiten und Währungen schreiben
 :what: Ausdrücke werden wie in Qalculate! geschrieben. Die üblichen Schreibweisen:
 | Schreibweise | Bedeutung |
@@ -206,6 +259,9 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 | `solve(x^2 − 5x + 6 = 0)` | Gleichung lösen |
 | `diff(x^3)` | Ableitung |
 | `integrate(x^2; 0; 1)` | Bestimmtes Integral (mit Dezimalkomma Argumente mit „;“ trennen) |
+| `integrate(x^2; x)`, `sum(k; k; 1; 10)` | Unbestimmtes Integral, Summe. Mit der Variablen an zweiter Stelle wird in der Reihenfolge integrate(Ausdruck; untere Grenze; obere Grenze; Variable) gelesen |
+| `5!`, `(5!)!` | Fakultät (5 × 4 × 3 × 2 × 1), Fakultät einer Fakultät |
+| `9!!`, `9!!!` | Doppelfakultät (9 × 7 × 5 × 3 × 1), Mehrfachfakultät (9 × 6 × 3); „!!“ ist keine zweimal genommene Fakultät |
 | `ans` | Das letzte Ergebnis |
 :tip: Zehn traditionelle japanische Einheiten (tsubo, shaku, shō, kan und andere) funktionieren auch: `30 tsubo to m^2`.
 
@@ -214,7 +270,18 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Öffnen Sie [[Lists: functions, units, constants]] über ☰.
 :step: Wählen Sie einen Reiter und tippen Sie einen Teil eines Namens in das Feld oben.
 :step: Tippen Sie auf einen Eintrag, um die Beschreibung zu lesen; [[Insert]] setzt ihn ins Eingabefeld.
-:tip: Im Reiter der eigenen Definitionen speichern Sie Variablen (r = 5 cm) und Funktionen; sie bleiben für das nächste Mal erhalten.
+:tip: Der Reiter der eigenen Definitionen ist die Liste Ihrer Variablen und Funktionen ([Eigene Variablen und Funktionen](#variables)). Mit den Feldern unten gespeicherte Variablen (r = 5 cm) und Funktionen bleiben für das nächste Mal erhalten.
+
+## variables | Eigene Variablen und Funktionen
+:what: Die Variablen, die Sie mit `k := 2` oder `r = 5 cm` festlegen, und die Funktionen, die Sie mit `f(x) := x^2 + 1` festlegen, mit ihren Werten auf einem Bildschirm. Sobald es mindestens eine gibt, steht über dem Eingabefeld eine Schaltfläche wie [[!Variablen 2]] (die Zahl der Variablen und Funktionen).
+:step: Drücken Sie die Schaltfläche [[Variables]] über dem Eingabefeld. Der Reiter [[My own]] von [[Lists: functions, units, constants]] im Menü ist derselbe Bildschirm.
+:step: Die Variablen stehen oben, mit ihren Werten. Eine Variable mit einem Ausdruck zeigt auch den ausgerechneten Wert (w = 3 k = 6).
+:step: Tippen Sie auf einen Namen, um ihn ins Eingabefeld zu setzen (eine Funktion mit dem Cursor zwischen den Klammern).
+:step: ⋯ rechts: [[Change the value]] ([[Change the expression]] bei einer Funktion), [[Rename]] oder [[Delete]]. Alles lässt sich gleich danach mit [[Undo]] zurücknehmen.
+:example: `k := 2` → [[Variables]] → ⋯ von k → [[Change the value]] → 3. Jetzt ist `k + 1` gleich 4.
+:tip: Was `:=` oder `=` festlegt, ist als „vorübergehend“ markiert und verschwindet, wenn die App geschlossen wird. Was Sie mit [[Save variable]] in den Feldern unten speichern, bleibt. Eine Änderung des Werts oder des Namens ändert daran nichts.
+:tip: Die Namen in den Rechennotizen (`Miete = 850 EUR`) gelten nur in ihrer Notiz und sind keine Variablen des Rechners. Sie stehen unten, nach Notizen geordnet; ein Tippen öffnet die Notiz an dieser Zeile.
+:mistake: Einen Namen, den QCalc schon verwendet (m für den Meter, pi …), können Sie nicht vergeben: Wählen Sie einen anderen.
 
 ## currencies | Währungen und Wechselkurse
 :what: Währungen werden wie `100 USD to EUR` umgerechnet. Die Wechselkurse werden beim Öffnen der App von selbst aktualisiert (beim Start oder wenn Sie zur App zurückkehren; eine Internetverbindung ist nötig). Beim Roaming im Ausland und im Datensparmodus geschieht das nicht von selbst; drücken Sie bei Bedarf [[Update now]].
@@ -284,6 +351,78 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Öffnen Sie [[Savings and compound interest]] und geben Sie Monatsbetrag (oder Anfangsbetrag), Jahreszins und Jahre ein.
 :example: 30.000 im Monat, 3 %, 20 Jahre → 9.849.059,94 (eingezahlt 7.200.000; Zinsen 2.649.059,94)
 
+## invest | Aktien und Anlage
+:what: Gewinn und Verlust mit Steuer, durchschnittlicher Einstandskurs, Erhaltungsquote eines Margin-Kontos und Nachschuss, Positionsgröße aus dem Stop, Rendite, KGV, KBV und Zinseszins, Sollzinsen und Leihgebühr sowie ausländische Aktien in Ihrer Währung. Es werden keine Kurse abgerufen: alles kommt aus den eingegebenen Zahlen.
+:step: Wählen Sie in [[Tools]] ein Werkzeug unter [[Stocks and investing]].
+:step: Tippen Sie auf ein Beispiel oder geben Sie die Zahlen ein. Die Ergebnisse erscheinen sofort.
+:step: Tippen Sie auf ein Ergebnis, um seinen Ausdruck ins Eingabefeld zu setzen, ihn im Verlauf zu behalten oder zu kopieren. ⋯ oben rechts ändert die angezeigten Stellen.
+:note: Eine Rechnung zur Orientierung, keine Anlageberatung. Broker rechnen Steuer und Margin unterschiedlich.
+:pro: Erhaltungsquote und Nachschuss, Positionsgröße aus dem Stop sowie Zinsen und Leihgebühr je Tag sind Funktionen von QCalc Pro. Gewinn und Verlust, Einstandskurs, Rendite/KGV/KBV/Wachstum und ausländische Aktien sind kostenlos.
+
+### pnl | Aktien: Gewinn und Verlust
+:what: Aus Kauf- und Verkaufskurs, Aktien und Gebühren beim Kauf und Verkauf: Gewinn oder Verlust, in %, die Steuer, nach Steuern, den Verkaufserlös und die Gewinnschwelle.
+:step: Öffnen Sie [[Stock profit and loss]] und geben Sie die Kurse und die Aktien ein.
+:step: Eine Gebühr kann ein Betrag (500) oder ein Anteil des Handels (0,1%) sein.
+:step: Wählen Sie [[Taxed]] oder [[Tax-free account]]. Der Steuersatz ist 20,315 % (der japanische), wenn Sie keinen anderen eingeben.
+:example: Gekauft zu 1000, verkauft zu 1200, 100 Aktien, ohne Gebühren → +20.000,00, Steuer 4.063,00, nach Steuern +15.937,00
+:tip: Der %-Wert bezieht sich auf den gezahlten Betrag mit Gebühr. Die Gewinnschwelle ist der Kurs, bei dem nach den Gebühren kein Verlust bleibt.
+:note: Die Steuer wird nur für diesen Handel berechnet. Bei 20,315 % werden die Einkommensteuern (15,315 %) und die Einwohnersteuer (5 %) je für sich abgerundet und addiert, wie ein Broker sie einbehält (ein Gewinn von 19 Yen zahlt 2). Verlustverrechnung im Jahr wird nicht berücksichtigt.
+
+### avg-cost | Durchschnittlicher Einstandskurs
+:what: Der Durchschnittskurs von Aktien aus mehreren Käufen, und wie viele Aktien zu welchem Kurs den Durchschnitt auf ein Ziel bringen.
+:step: Öffnen Sie [[Average cost]] und wählen Sie [[The average of the buys]] oder [[How to reach an average]].
+:step: Durchschnitt der Käufe: ein Kauf je Zeile, „Kurs Aktien“ (zum Beispiel 1000 100).
+:step: Ziel-Durchschnitt: gehaltene Aktien, ihren Durchschnitt und das Ziel eingeben, dann den Kaufkurs oder die Aktien.
+:example: 100 zu 1000 und 200 zu 900 → Durchschnitt 933,33 (300 Aktien, 280.000,00)
+:example: 100 zu durchschnittlich 1200 → mit 200 Aktien zu 900 wird der Durchschnitt 1000
+- Durchschnitt = (Kurs × Aktien + …) / alle Aktien
+- Aktien für ein Ziel T = N × (A − T) / (T − P) (N: gehaltene Aktien, A: ihr Durchschnitt, P: Kaufkurs; auf die Handelseinheit aufgerundet)
+:tip: Die Handelseinheit ist 100 Aktien, wenn Sie keine andere eingeben; für Aktien, die einzeln gehandelt werden, geben Sie 1 ein.
+
+### margin | Margin: Erhaltungsquote
+:what: Aus Sicherheit und Position: die Erhaltungsquote und der Kurs, bei dem sie auf die Nachschusslinie fällt.
+:step: Öffnen Sie [[Margin: maintenance ratio]] und geben Sie die Bareinlage und, falls vorhanden, Aktien als Sicherheit (nach Abschlag) ein.
+:step: Wählen Sie [[Bought]] oder [[Sold short]] und geben Sie Einstiegskurs, Aktien und aktuellen Kurs ein. Kosten (Zinsen, Gebühren) können auch eingegeben werden.
+:step: Die Nachschusslinie ist 20 %, wenn Sie keine andere eingeben.
+:example: 1.000.000 bar, 3.000 Aktien zu 1000 gekauft, jetzt 900 → 23,33 %, Nachschuss bei 866,67 (−3,70 % vom aktuellen Kurs)
+Die Formeln:
+- Quote = (Bareinlage + Aktien als Sicherheit + Gewinn oder Verlust − Kosten) / Wert der Positionen × 100
+- Wert der Positionen = Einstiegskurs × Aktien (unter [[More ▾]] lassen sich andere Positionen mit ihrem Gewinn oder Verlust hinzufügen)
+- Gewinn oder Verlust: Kauf (aktuell − Einstieg) × Aktien, Leerverkauf (Einstieg − aktuell) × Aktien. Ein Buchgewinn zählt nur, wenn unter [[More ▾]], [[Unrealized gains]] gewählt
+- Nachschusskurs: Kauf Einstieg − (Bareinlage + Aktien als Sicherheit − Kosten − Linie × Wert) / Aktien; Leerverkauf Einstieg + (dasselbe) / Aktien
+:note: Broker zählen Buchgewinne, Abschläge und Kosten unterschiedlich und prüfen zu unterschiedlichen Zeiten (meist zum Schluss).
+:pro:
+
+### position-size | Positionsgröße aus dem Stop
+:what: Aus Kapital, dem erlaubten Verlust je Trade (% des Kapitals), Einstieg und Stop: die Aktien (auf die Handelseinheit abgerundet) und der Verlust am Stop. Mit einem Gewinnziel auch das Chance-Risiko-Verhältnis.
+:step: Öffnen Sie [[Position size from a stop]] und geben Sie Kapital, Risiko, Einstieg und Stop ein.
+:step: Ein Stop unter dem Einstieg ist ein Kauf, darüber ein Leerverkauf.
+:example: Kapital 3.000.000, 1 %, Kauf zu 1000, Stop 950 (Einheit 100) → 600 Aktien, Verlust am Stop 30.000,00; Gewinnziel 1150: Chance-Risiko 1 : 3,00
+- Aktien = Kapital × Risiko % / |Einstieg − Stop| (auf die Handelseinheit abgerundet)
+- Chance-Risiko = 1 : |Gewinnziel − Einstieg| / |Einstieg − Stop|
+:pro:
+
+### yield | Rendite, KGV, KBV, Wachstum
+:what: Dividendenrendite, KGV, KBV und ROE; Zinseszins mit monatlichem Sparen; das jährliche Wachstum zwischen zwei Werten.
+:step: Öffnen Sie [[Yield, PER, PBR, growth]], wählen Sie, was gesucht ist, und geben Sie die Zahlen ein.
+:example: Kurs 2000, Dividende 60, EPS 150, BPS 1600 → Rendite 3,00 %, KGV 13,33 ×, KBV 1,25 ×, ROE 9,38 %
+:example: 1.000.000 → 1.800.000 in 6 Jahren → +10,29 % im Jahr
+:tip: Die Verzinsung kann jährlich oder monatlich sein; jährlich wächst ein Monat um (1 + Jahresrendite)^(1/12).
+
+### carry | Sollzinsen und Leihgebühr
+:what: Die Zinsen auf einen Margin-Kauf oder die Leihgebühr eines Leerverkaufs, je Tag.
+:step: Öffnen Sie [[Margin interest and lending fee]] und geben Sie den Wert der Position, den Jahressatz und die Tage ein.
+:step: Wählen Sie die Tage im Jahr (365 oder 360).
+:example: 3.000.000 zu 2,8 % für 30 Tage → 6.904,10 (230,14 pro Tag)
+- Kosten = Wert × Jahressatz × Tage / Tage im Jahr (abgerundet)
+:pro:
+
+### fx-stock | Ausländische Aktien in Ihrer Währung
+:what: Der Wert einer ausländischen Aktie in Ihrer Währung, mit den Wechselkursen der App oder einem eingegebenen Kurs; mit Kaufkurs und damaligem Wechselkurs der Gewinn oder Verlust, aufgeteilt in Kurs- und Wechselkursanteil.
+:step: Öffnen Sie [[Foreign stocks in your money]] und geben Sie die Währung (zum Beispiel USD), den aktuellen Kurs und die Aktien ein.
+:step: Ohne eingegebenen Kurs werden die Wechselkurse der App verwendet (wie in [[Convert units and currencies]]).
+:example: 10 Aktien zu 150, Kurs 155; gekauft zu 120 bei einem Kurs von 140 → Wert 232.500,00, Gewinn +64.500,00 (+42.000,00 aus dem Kurs, +22.500,00 aus dem Wechselkurs)
+
 ## dates | Daten
 :what: Die Tage zwischen zwei Daten, n Tage danach oder davor, ein Alter, der Wochentag.
 :step: Öffnen Sie [[Dates]] und wählen Sie die Rechnung.
@@ -305,6 +444,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :shot: convert | Der Umrechnungsbildschirm
 :example: 5 km → 3,106856 mi
 :tip: Tippen Sie auf die Ergebniszeile, um „5 km to mi“ ins Eingabefeld zu setzen oder im Verlauf abzulegen.
+:tip: Selten genutzte Einheiten (Planck-Einheiten, atomare Einheiten, alte französische Maße und Ähnliches) stehen nicht in den Listen; im Eingabefeld getippt, funktionieren sie weiterhin.
 
 ## shapes | Formen: Fläche, Volumen, Länge
 :what: Wählen Sie eine Form nach ihrem Bild und geben Sie die Maße ein: Fläche, Umfang, Volumen und Oberfläche erscheinen.
@@ -313,7 +453,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Geben Sie die im Bild genannten Maße ein (r, h). Runde Maße als Radius oder Durchmesser.
 :step: Die Ergebnisse ändern sich beim Tippen; ein Tippen übernimmt oder kopiert den Ausdruck.
 :example: Kugel mit Radius 2 → Volumen 32π/3 ≈ 33,5103, Oberfläche 16π
-:tip: Wählen Sie ein Material, um das Gewicht zu erhalten.
+:tip: Das Gewicht steht in der letzten Zeile der Ergebnisse (Volumen × Dichte). Wählen Sie gleich darunter unter [[Material (density)]] ein Material oder geben Sie mit [[Another density…]] eine Dichte ein. Haben die Längen keine Einheit, steht dort „Erscheint, wenn die Längen eine Einheit haben“: Tippen Sie darauf und wählen Sie eine Einheit. Wie die anderen Zeilen lässt sich das Gewicht antippen, um den Ausdruck in die Eingabe zu setzen oder ihn zu kopieren.
 :tip: [[!⟳ 3D]] oben links am Bild zeigt den Körper in 3D zum Drehen ([Körper und Tanks in 3D](#shapes-3d)).
 
 ## tanks | Tanks: Füllmenge und Füllhöhe
@@ -326,6 +466,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :example: Liegend, Durchmesser 1 m, Länge 2 m, Füllhöhe 30 cm → 0,396337 m³ (etwa 396 L)
 :tip: [[Quick-reference table ▾]] listet die Menge zu jeder Höhe.
 :mistake: Ein Radius im Feld für den Durchmesser ergibt etwa ein Viertel der Menge. Prüfen Sie Radius oder Durchmesser.
+:tip: Wählen Sie ein Material (Wasser, Meerwasser, Kerosin, Benzin und andere): Das Gewicht der Flüssigkeit steht in der letzten Zeile der Ergebnisse (Flüssigkeit × Dichte).
 
 ## tank-heads | Tankböden und Tabellen
 :pro:
@@ -381,14 +522,26 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :tip: Prüfen Sie vor dem Drucken Größe und Wände in Ihrem Slicer.
 
 ## stats | Statistik
-:what: Für eine Spalte: Mittelwert, Median, Standardabweichung, Quartile und mehr; für zwei Spalten: Regressionsgerade und Korrelation.
+:what: Für eine Spalte: Mittelwert, Median, Standardabweichung, Quartile und mehr, mit Histogramm und Boxplot; für zwei Spalten: Regressionsgerade und Korrelation. [[Distributions]] oben gibt die Wahrscheinlichkeiten von Verteilungen ([Wahrscheinlichkeitsverteilungen](#distributions)).
 :step: Öffnen Sie [[Statistics]] in den [[Tools]].
-:step: Geben Sie die Werte ein oder fügen Sie sie aus einer Tabellenkalkulation ein.
-:step: Bei zwei Spalten zeichnet [[📈 Show in a graph]] die Punkte und die Gerade.
+:step: Geben Sie die Werte ein, fügen Sie sie aus einer Tabellenkalkulation ein oder lesen Sie mit [[Read a CSV file]] eine Spalte einer CSV-Datei (eine Überschriftenzeile und Zellen, die keine Zahlen sind, werden übersprungen).
+:step: Bei einer Spalte stehen [[Histogram]] und [[Box plot]] unter den Ergebnissen. − und + ändern die [[Width of the bins]] des Histogramms; [[Auto]] geht zur Breite nach der Sturges-Regel zurück.
+:step: Bei zwei Spalten zeichnet [[📈 Show in a graph]] die Punkte und die Gerade (oder die gewählte Kurve).
 :shot: stats | [[Statistics]] mit einem Beispiel
-:example: Testergebnisse von 10 Personen → Mittelwert 73,90, Median 74,00, Standardabweichung (Stichprobe) 9,94
-:tip: Die Quartile kommen zuerst nach der Methode japanischer Schulbücher; die Methode der Tabellenkalkulationen steht unter „Mehr“.
+:example: Testergebnisse von 10 Personen → Mittelwert 73,90, Median 74,00, Standardabweichung (Stichprobe) 9,94; das Histogramm hat 5 Klassen der Breite 10
+:tip: Die Quartile kommen zuerst nach der Methode japanischer Schulbücher; die Methode der Tabellenkalkulationen steht unter „Mehr“. Die Whisker des Boxplots reichen bis zu den äußersten Werten von Q1 − 1,5 × IQR bis Q3 + 1,5 × IQR; Werte darüber hinaus sind Ausreißer und werden als Punkte gezeichnet (× ist der Mittelwert).
+:tip: Bei zwei Spalten wählen Sie oberhalb der Ergebnisse eine Kurve: Gerade, Grad 2, 3 oder 4, Exponential, Log oder Potenz. Formel, R² und Vorhersage werden gezeigt, und [[📈 Show in a graph]] zeichnet sie.
+:pro: Eine andere Kurve als die Gerade zu wählen und die Tabelle als CSV-Datei zu speichern sind Funktionen von QCalc Pro (Formeln und R² der anderen Kurven stehen auch ohne Pro unter „Mehr“).
 :mistake: Ein Wert, der keine Zahl ist, wird mit Zeile und Korrekturhinweis angezeigt.
+
+### distributions | Wahrscheinlichkeitsverteilungen
+:what: Für die Normal-, Binomial-, Poisson-, t- und χ²-Verteilung: die Wahrscheinlichkeit eines Bereichs a ≤ X ≤ b, die Dichte (P(X = a) bei Binomial und Poisson) und das Quantil, mit dem Bereich farbig im Graphen.
+:step: Drücken Sie [[Distributions]] oben in [[Statistics]] und wählen Sie eine Verteilung.
+:step: Geben Sie die Parameter ein (Mittelwert μ und Standardabweichung σ bei der Normalverteilung, Versuche n und Erfolgswahrscheinlichkeit p bei der Binomialverteilung).
+:step: Geben Sie a und b des Bereichs ein. Ein leeres Feld heißt keine Grenze auf dieser Seite (P(X ≤ b) oder P(a ≤ X)).
+:step: Eine kumulierte Wahrscheinlichkeit nach [[Quantile: P(X ≤ x) =]] gibt ihr x (bei Binomial und Poisson das kleinste k mit P(X ≤ k) mindestens so groß), gestrichelt im Graphen.
+:example: Normal, μ = 0, σ = 1, von −1,96 bis 1,96 → 0,950004; x mit P(X ≤ x) = 0,975 → 1,95996
+:tip: Dieselben Funktionen gehen im Eingabefeld: `normdist(1.96, 0, 1, 1)` (P(X ≤ 1,96)), `normdistinv(0.975, 0, 1)`, `binomdist(3, 10, 0.5)` (P(X = 3)), `poisson(2, 3, 1)`, `tdist(2, 10, 1)`, `tdistinv(0.975, 10)`, `chisqdist(7.81, 3, 1)`, `chisqdistinv(0.95, 3)`. Ohne die letzte 1 geben sie die Dichte. Tippen Sie auf ein Ergebnis, um seinen Ausdruck ins Eingabefeld zu setzen.
 
 ## notes | Rechennotizen
 :what: Eine Notiz mit einer Rechnung pro Zeile und ihrem Ergebnis rechts. Geben Sie einem Wert einen Namen und verwenden Sie ihn in den Zeilen darunter.
@@ -399,11 +552,35 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :shot: notes | [[Calculation notes]] mit einem Beispiel
 :example: Miete 85000, Strom 6200, Wasser 3100 (JPY) → die Summenzeile zeigt ¥94300
 :pro: Die erste Notiz ist kostenlos, ebenso das Einlesen einer Datei oder einer Freigabe in sie (in eine leere Notiz oder an ihr Ende). Weitere Notizen (auch als neue Notiz einlesen) und das Speichern als Text oder CSV sind Funktionen von QCalc Pro.
-:tip: Eine Zeile, die mit # oder // beginnt, ist eine Bemerkung (sie wird nicht berechnet).
+:tip: Eine Zeile, die mit # (aber nicht # und einer Ziffer) oder // beginnt, ist eine Bemerkung (sie wird nicht berechnet). #3, mit einer Ziffer direkt nach #, ist das Ergebnis von Zeile 3.
 :step: Um eine Datei einzulesen, drücken Sie [[Open a file]] unter [[More ▾]] und wählen eine .txt- oder .csv-Datei. Eine .txt gibt eine Zeile je Zeile; eine von QCalc gespeicherte .csv ihre Spalte „Rechnung“, eine andere .csv ihre erste Spalte. UTF-8 und Shift_JIS (eine japanische CSV aus Excel) können gelesen werden.
 :step: Wählen Sie in einer anderen App (Notizen, E-Mail …) Text oder eine .txt- oder .csv-Datei und dann QCalc unter „Teilen“ dieser App: Die Rechennotizen öffnen sich.
 :step: Wählen Sie dann [[As a new memo]] oder [[At the end of this memo]]; bei einer einzigen Zeile auch [[Put it into the input field]]. Eine neue Notiz bekommt den Namen der Datei (ohne Endung).
 :tip: Eingelesenes ist nur Text und wird nach denselben Regeln wie getippte Zeilen berechnet. Eine Datei über 1 MB oder mit mehr als 300 Zeilen (so viel fasst eine Notiz) wird nicht eingelesen, und die App sagt es.
+
+### notes-refs | Zeilennummern und #3
+:what: Die Zeilen der Notizen haben ihre Nummern. #3 verwendet das Ergebnis von Zeile 3 (einer Zeile darüber). Ändert sich eine Zeile darüber, werden die Zeilen, die sie verwenden, sofort neu berechnet.
+:step: Tippen Sie auf die Nummer einer Zeile für [[Insert a line above]], [[Insert a line below]], [[Move up]], [[Move down]] und [[Delete this line]].
+:step: Während eine andere Zeile geschrieben wird, tippen Sie auf eine Zeilennummer, um #3 (oder ihre Nummer) hineinzuschreiben.
+:example: Zeilen 1 bis 3 Miete, Strom und Wasser, Zeile 4 „Summe“, Zeile 5 `#4 / 2` → ¥47,150 (94.300 / 2)
+:tip: Werden Zeilen eingefügt, gelöscht oder verschoben, folgen die in den Zeilen geschriebenen Nummern und meinen weiter dieselben Zeilen. Ein Verweis auf eine gelöschte Zeile wird zu #?, und die Zeile sagt es.
+:note: #3 kann nur eine Zeile über der Zeile sein, in der es steht.
+:tip: Eine Zeile, die über eine von ihr verwendete Zeile (ihr #4) verschoben wird, lässt sich nicht berechnen: Die App sagt es („Zeile 1 verwendet #2 und lässt sich deshalb nicht über #2 berechnen“) und bietet [[Undo]] an.
+
+### notes-table | Tabellenmodus
+:what: Eine Notiz als Tabelle: Spalten mit Namen, eine Spalte, die per Formel aus den anderen berechnet wird (z. B. Betrag = Menge × Preis), und Summe und Mittelwert jeder Spalte. Eine Zelle kann eine Einheit oder Währung haben, z. B. 3 kg oder 120 JPY.
+:step: Drücken Sie [[Table]] über der Notiz. Sie beginnt mit einem Beispiel: Artikel, Menge, Preis und Betrag (Menge × Preis).
+:step: Geben Sie einen Wert in eine Zelle ein: Formelspalten, Summen und Mittelwerte werden sofort neu berechnet.
+:step: Tippen Sie auf den Namen einer Spalte für [[Rename]], [[Work it out by a formula]] (zum Beispiel Menge × Preis) und zum Einfügen, Verschieben oder Löschen einer Spalte; auf eine Zeilennummer zum Einfügen, Verschieben oder Löschen einer Zeile.
+:step: [[+ Row]] und [[+ Column]] fügen eine Zeile und eine Spalte hinzu. Eine als „Betrag = Menge × Preis“ hinzugefügte Spalte ist eine Formelspalte.
+:example: 3 Äpfel zu 120 JPY, 2 Brot zu 250 JPY, 1 Milch zu 180 JPY → Beträge ¥360, ¥500, ¥180, Summe ¥1040, Mittelwert ≈ ¥346.67
+:tip: Eine Zelle nur mit Wörtern (der Name eines Artikels) zählt nicht zu den Summen. Werte in verschiedenen Einheiten derselben Größe (3 kg und 500 g) werden zusammengezählt.
+:tip: Eine Zelle mit einer Ziffer, die sich nicht als Wert lesen lässt („Äpfel 2 Stück“), zählt ebenfalls nicht zu Summe und Durchschnitt.
+:tip: Eine in einer Tabellenkalkulation kopierte Tabelle, in eine Zelle eingefügt, verteilt sich von dort nach rechts und unten auf die Zellen; fehlende Zeilen und Spalten kommen hinzu (bis 12 Spalten). In die Zelle oben links eingefügt, mit einer ersten Zeile aus Überschriften (ohne Ziffern), wird die Tabelle die eingefügte, ihre erste Zeile die Namen der Spalten. Eine Formelspalte behält ihre Formel.
+:tip: Werte verschiedener Art in einer Spalte (3 kg und 2): Summe und Mittelwert zeigen „Werte mit verschiedenen Einheiten gemischt“. Der Mittelwert einer Spalte mit Geld hat 2 Nachkommastellen (≈ ¥346,67).
+:step: [[Save as CSV]] unter [[More ▾]] speichert die Tabelle als CSV-Datei (Zeilennummern, Spaltennamen, Werte, Summe und Mittelwert). Eine mit [[Open a file]] gewählte CSV-Datei kann [[As a table (the first row: the names of the columns)]] gelesen werden.
+:tip: Auf einem schmalen Bildschirm wischen Sie die Tabelle seitlich für die anderen Spalten; die Spalte der Zeilennummern bleibt links.
+:pro: Der Tabellenmodus (mit Speichern als CSV und Lesen einer CSV-Datei als Tabelle) ist eine Funktion von QCalc Pro. Zeilennummern und #3 sind kostenlos.
 
 # graphs | Graphen
 
@@ -589,6 +766,9 @@ Numerische Integration (Flächen, Längen und Volumen im Graphen) ist auf etwa 2
 | Schieberegler in 3D | [3D-Graph](#graph-3d) |
 | GIF und Bilder ohne Kennzeichnung | [Teilen](#share) |
 | Weitere Rechennotizen, als Datei gespeichert | [Rechennotizen](#notes) |
+| Regressionskurven (außer der Geraden) | [Statistik](#stats) |
+| Margin und Positionsgröße (Erhaltungsquote und Nachschuss, Positionsgröße aus dem Stop, Zinsen und Leihgebühr) | [Margin: Erhaltungsquote](#margin) |
+| Tabellenmodus der Rechennotizen (Formelspalten, Summen und Mittelwerte, CSV) | [Tabellenmodus](#notes-table) |
 :tip: [[How to use ›]] in einer Zeile der Pro-Funktionen öffnet den Abschnitt dieser Anleitung.
 
 ## pro-buy | Kaufen und wiederherstellen

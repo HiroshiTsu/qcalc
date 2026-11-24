@@ -22,8 +22,23 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Next type `60 mph to km/h` ("to" is on the → key). "= 96.560 64 km/h" shows.
 :step: The third one is `sqrt(8)`, also on the √ key: "= 2√2" and under it "≈ 2.828 427 124 746 19", the exact value and the approximation on two lines.
 :example: `1/3 + 1/4` → `= 7/12`, then `≈ 0.583 333 333 333 333`
-:tip: Tap an answer in the history to put it into the input field or to copy it.
+:tip: Tap an answer in the history: it goes into the input field at the cursor ([Tap to insert a result](#tap-insert)).
 :mistake: The letter x is a variable, not "times". Multiply with the × key (or *).
+
+## new-1-16 | New in 1.16.0
+- **Stocks and investing**: [[Stocks and investing]] in [[Tools]] has the profit and loss of a stock with its tax (tax-free too), the average cost, the maintenance ratio and margin-call price of a margin account, the position size from a stop, yield, PER, PBR and compound growth, margin interest and lending fees by the day, and foreign stocks in your money. Only what you type is used ([Stocks and investing](#invest)).
+- **Line numbers, #3 and tables in the notes**: the lines have numbers, and #3 uses the result of line 3; the numbers follow when lines are inserted, deleted or moved. In the table mode (QCalc Pro): formula columns (Amount = Qty × Price), the total and the average of each column, CSV files read and saved ([Line numbers and #3](#notes-refs), [Table mode](#notes-table)).
+- **Fixed**: in Shapes and Tanks the weight is the last row of the results (without a unit, a tap chooses one). In the 3D graph, the sphere and the doughnut are one solid colored by height from the first drawing.
+- **Your variables and functions**: the variables and functions you set with `k := 2` and the like, with their values, on one screen. Open it with the button [[Variables]] above the input field; a tap on a name puts it into the input field, and ⋯ changes the value or the name or deletes it (each can be undone) ([Your variables and functions](#variables)).
+- **Probability distributions**: [[Distributions]] in [[Statistics]] gives the probability of a range, the density and the quantiles of the normal, binomial, Poisson, t and χ² distributions, with the range shaded in a graph ([Probability distributions](#distributions)).
+- **Histogram and box plot**: for one column of data, a histogram (with a bin width you can change) and a box plot (outliers as points) ([Statistics](#stats)).
+- **Regression curves and CSV**: for two columns, choose a curve of degree 2 to 4, an exponential, a logarithmic or a power curve (other than the line: QCalc Pro). [[Read a CSV file]] reads a column of a CSV file ([Statistics](#stats)).
+- **Hints for the arguments of functions**: after a function name and "(", its arguments (the current one in bold), what it does and an example show under the input field. For about 60 functions; ✕ closes it ([Hints for the arguments](#arg-hints)).
+- **Tap to insert a result**: a tap on an answer in the history puts it at the cursor, as a click on a cell does in a spreadsheet. Another tap before you type anything replaces it, and right after a number a visible × goes in first. The lines used get colored marks. Answers with √ or π go in in their exact form, not as rounded decimals ([Tap to insert a result](#tap-insert)).
+- **Line numbers and #12 in the history**: the lines of the history have numbers, and `#12` in an expression is the answer of line 12; editing line 12 can work out again the lines that use #12. [[Select: sum and average]] in ⋯ starts with that line and shows the sum at once, and touching and holding a line chooses a range. [[Copy as a table]] copies the expressions and answers as two columns for a spreadsheet ([Line numbers and #12](#hist-refs), [Adding up lines](#select-sum)). A tap on the number of a line puts #12 in, and Copy as a table can copy the answers only (1 column).
+- **The forms of answers**: an expression of decimals only keeps a decimal answer (123456.789, 2.5, 0.5; the fraction with [[As a fraction]]), and an answer has two forms at most (10/4 = 5/2 = 2.5) ([Reading the answer](#results)).
+- **Editing a line**: the line and its answer stay in sight, and the lines worked out again flash for a moment. A line keeps the angle unit it was worked out with and is edited with it. AC stops editing too, and [[Cancel]] in the question about the lines below goes back to editing ([Editing a line of the history](#edit-line)).
+- **Other fixes**: while "Volume and surface" is open in the 3D graph, the legend shows the color of the solid being measured. Money rounds a half cent up correctly (some sums were one cent short). Results are copied without digit grouping. `nPr(5, 2)` and `nCr(5, 2)` work. More messages of the engine (the note on 6/2(1+2) and others) are in your language. The converter leaves out rarely used units (they can still be typed).
 
 ## new-1-15 | What is new in 1.15.0
 - **Easier results**: results have 15 significant digits, in groups of three. Phones that still had the earlier defaults (10 digits, no groups) change once with this version. [[Precision (significant digits)]] and [[Digit grouping (1,000)]] in the [[Settings]] set them back ([Reading the answer](#results)).
@@ -99,6 +114,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Press [[!=]] to calculate.
 :example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
 :tip: ÷ × + and the like in an empty input field continue from the last answer, "ans".
+:tip: A column or a table copied in a spreadsheet (Excel, Google Sheets) — two or more values on lines or with tabs — pasted into the input field asks what to do: add them up with +, put them into the calculation notes as lines, use them as data of the statistics, or make a matrix (two or more columns). Cells of words only (headings) are left out. One line pastes as it is.
 :mistake: Parentheses that do not pair up give an error. The message says what to fix.
 
 ## results | Reading the answer: exact, approximate, fractions
@@ -107,11 +123,13 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - `sqrt(8)` → `= 2√2`, then `≈ 2.828 427 124 746 19`
 - `30!` → `= 265,252,859,812,191,058,636,308,480,000,000` (whole numbers in full up to 60 digits)
 - `2^200` → `≈ 1.606 938 044 258 99 × 10⁶⁰` (a very large number)
+- `2.5`, `0.1 + 0.2` → `= 2.5`, `= 0.3` (an expression of decimals only has a decimal answer; [[As a fraction]] shows the fraction)
+- `10/4` → `= 5/2 = 2.5` (two forms at most)
 :step: The chip at the top switches between [[!EXACT]], approximate and automatic.
 :step: The precision (15 digits by default) can be changed with the chip “15 dig” in the row at the top. It offers 10, 15, 20, 30, 50, 100 and Other… (type a number); the answer of the expression being typed is worked out again at once, and the answers in the history stay as they are. [[Precision (significant digits)]] in [[Settings]] changes it too. Results are shown with their digits in groups of three ([[Digit grouping (1,000)]] turns it off).
 :step: To see one line of the history with more digits, choose 30, 50, 100 or Other… in its ⋯ → [[Work it out with other digits]]. The answer shows in a sheet with [[Put the expression into the input field]], [[Keep it in the history]] and [[Copy the result]]. The precision of the settings and the line stay as they are.
 :pro: Up to 1000 digits are free. More than 1000, up to 200000 digits, is a QCalc Pro feature.
-:tip: A very long answer scrolls in the history so that every digit can be read; copying it copies every digit.
+:tip: A very long answer scrolls in the history so that every digit can be read; copying it copies every digit, without digit grouping.
 :step: Under the newest answer, buttons for what is often done next (6 at most): for an expression in x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]; for a number [[Details]], [[As a fraction]], [[Scientific]] (an integer: [[Prime factors]], [[In hex]]); with a unit [[Convert…]]; for a matrix [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. A button's calculation becomes a new line of the history.
 :step: [[Details]] (or ⋯ → [[Details]]) shows the other forms of the answer together: for a number the exact value, the decimal, the fraction, the mixed fraction and the scientific notation (an integer in bases 2, 8 and 16 and its prime factors; with a unit, other units); for an expression in x a small graph, the zeros, the derivative, the integral, the Taylor series and the factored form. Tap a row for [[Put the expression in the field]], [[Keep it in the history]] or [[Copy result]].
 :tip: Without these buttons: [[Settings]] → [[Suggest the next steps under the newest answer]] off.
@@ -134,20 +152,43 @@ QCalc is a calculator where you type an expression as you would write it on pape
 
 # history | History and memory
 :what: The expressions and answers stay in the history, up to 300 lines. 🕘 at the top right searches, adds up chosen lines, exports and clears.
-:step: Tap an answer in the history to choose [[Put the expression into the input field]], [[Copy the result]] and the like.
-:step: ⋯ at the right of a line offers [[☆ Pin at the top]] and [[Add a short note]].
+:step: Tap an answer in the history to put it into the input field ([Tap to insert a result](#tap-insert)); tap its expression to edit the line ([Editing a line of the history](#edit-line)).
+:step: ⋯ at the left of a line offers [[☆ Pin at the top]] and [[Add a short note]].
 :step: 🕘 offers [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] and [[Clear the whole history]].
 :shot: history | The history menu of 🕘
 :tip: Lines pinned with a star stay when the history is full.
 
+## tap-insert | Tap to insert a result
+:what: A tap on an answer in the history puts it into the input field at the cursor, as a click on a cell does while you type a formula in a spreadsheet.
+:step: When the field is empty, or right after a calculation, the answer simply goes in.
+:step: Another tap on an answer before you type anything replaces the one tapped before.
+:step: After an operator such as + or ×, the answer goes in after it. Right after a number, a letter or ")", a visible × goes in first.
+:step: The lines used in the expression get colored marks; deleting the answer from the field removes its mark.
+:example: Tap the line `120`, press ×, tap the line `3` → the field holds `120 × 3`, and the answer is `= 360`
+:tip: Answers with √ or π go in in their exact form, not as rounded decimals: the answer of `sqrt(8)` goes in as `(2 × √(2))`, so its square is `= 8`. An answer without an exact form goes in with all the digits of the precision.
+:tip: To use a line by its number, choose "Insert #12" in its ⋯; to copy an answer, [[Copy result]] in ⋯ (copied without digit grouping).
+:tip: A tap on the number at the left of a line (#12) puts #12 into the expression instead of the value, as pointing at a cell in a spreadsheet ([Line numbers and #12](#hist-refs)).
+
 ## edit-line | Editing a line of the history
-:what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "[[Editing a line of the history]]" above it.
+:what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "[[Editing a line of the history]]" above it. The history scrolls so that the line and its answer stay in sight.
 :step: Change the expression and press [[!=]]. The line gets the new expression and answer in the same place. ★ and the short note stay, and the menu ⋯ shows the time of the change beside the time of the line.
 :step: "[[Edited]]" and [[Undo]] show for a few seconds. [[Undo]] brings back the expression and answer as they were.
-:step: When the lines below use the answer of this line (ans) or a variable it defines, the app asks whether to work them out again ("Also the 2 lines below") or [[Only this line]]. [[Undo]] takes those lines back too.
-:step: To work it out as a new line below instead, press [[As a new line]] in the band, then [[!=]]. ✕ in the band, or the back button, stops editing and changes nothing.
-:tip: The line is worked out with the settings of now (angle unit, base and the others). A line worked out in another base says so in the band and gets the base of now.
-:tip: Tapping the answer of a line still puts the answer into the expression or copies it, as before.
+:step: When the lines below use the answer of this line (ans or #12) or a variable it defines, the app asks whether to work them out again ("Also the 2 lines below") or [[Only this line]]. The lines worked out again flash for a moment, and [[Undo]] takes them back too. With [[Only this line]], the lines below get a note that their answer may be out of date. [[Cancel]] changes nothing: the new expression stays in the field and you go on editing.
+:step: To work it out as a new line below instead, press [[As a new line]] in the band, then [[!=]]. ✕ in the band, AC or the back button stops editing and changes nothing.
+:tip: A line keeps the angle unit (degrees, radians) it was worked out with. Editing it, working out the lines below again and other digits use that unit, and the band says so. Lines worked out before 1.16 use the unit set now; with a function of angles the band says so.
+:tip: The other settings (base and the like) are those of now. A line worked out in another base says so in the band and gets the base of now.
+:tip: Deleting the line being edited, or clearing the history, ends the editing; the expression in the field is then worked out as a new line.
+:tip: A tap on the answer of a line puts it into the input field ([Tap to insert a result](#tap-insert)).
+
+## hist-refs | Line numbers and #12
+:what: Every line of the history has a number (the small "#12" under its ⋯). `#12` in an expression is the answer of line 12, as a reference to a cell in a spreadsheet.
+:step: Choose "Insert #12 (this line by its number)" in the ⋯ of a line: `#12` goes into the input field. Typing `#` and the number works too.
+:step: The answer with `#12` shows under the input field while you type.
+:step: A number belongs to its line: deleting other lines does not change it, and no number is given twice.
+:step: When line 12 is edited, the app asks whether to work out again the lines below that use `#12` ([Editing a line of the history](#edit-line)).
+:example: Line 12 is `= 250` and line 13 is `= 3`: `#12 × #13` → `= 750`
+:mistake: The number of a deleted line, or of a line below the one being edited, cannot be used; a message says so. When a line used is deleted, a note under the line says so.
+:tip: It is written as #3 is in the notes ([Line numbers and #3](#notes-refs)).
 
 ## pins-notes | Pins, notes and search
 :step: Choose [[☆ Pin at the top]] in the ⋯ of a line: it moves up with the other pinned lines.
@@ -156,9 +197,12 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :example: A line noted "rent" is found by searching for "rent".
 
 ## select-sum | Adding up lines
-:step: Choose [[Select lines: sum, average, copy]] in 🕘.
-:step: Tap the lines to add up.
-:step: The sum and the average show below, with their unit when the units agree. [[Copy]] copies the lines.
+:step: Choose [[Select lines: sum, average, copy]] in 🕘. [[Select: sum and average]] in the ⋯ of a line starts with that line chosen and shows the sum at once.
+:step: Tap the lines to add up. Touching and holding a line chooses all the lines from the one chosen last to it.
+:step: The sum and the average show below, with their unit when the units agree. Lines shown as decimals add up to a decimal. [[Copy]] copies the lines (without digit grouping).
+:step: [[Copy as a table]] copies the expressions and answers of the chosen lines in two columns, with a tab between them: pasted into a spreadsheet, they make a column of expressions and a column of answers.
+:step: [[Copy as a table]] lets you choose "Expression and answer (2 columns)" or "Answers only (1 column)"; the one chosen last comes first.
+:tip: [[Copy as a table]] is free. Saving the whole history as a CSV file ([Exporting the history](#export)) is a QCalc Pro feature.
 :mistake: Lines in different units (m and kg) cannot be added; the reason is shown.
 
 ## export | Exporting the history (CSV)
@@ -166,6 +210,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :what: Saves the history as a CSV file that spreadsheets can open.
 :step: Choose [[Export the history (CSV file)]] in 🕘.
 :step: Choose where to save it on Android's save screen.
+:tip: To paste only the chosen lines into a spreadsheet, use [[Copy as a table]] ([Adding up lines](#select-sum)).
 
 ## memory-keys | Memory keys (M+ M− MR MC)
 :what: The memory keys of a pocket calculator. The value is kept in its exact form.
@@ -196,6 +241,14 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Type `5 km to`: mi, m, ft and others are suggested.
 :step: Tap one to type it.
 
+### arg-hints | Hints for the arguments
+:what: After a function name and "(", its arguments, what it does and an example show where the suggestions are (under the input field, above the keys). The argument you are typing is in bold.
+:step: Type `round(`: "round(value, [decimals])" shows, with the value in bold.
+:step: After ",", the next argument (the decimals) is in bold. An argument in [ ] can be left out.
+:step: ✕ on the right closes the hint of that function. [[Show the arguments of a function while typing]] in [[Settings]] turns the hints off.
+:example: `round(3.14159, 2)` → 3.14 (as in the example of the hint)
+:tip: About 60 functions have hints: trigonometry, logarithms, roots, rounding, remainders, the greatest common divisor, sums, derivatives, integrals, limits, equations, Taylor series, matrices, statistics and distributions. A hint only reads the input field: it never changes the expression.
+
 ## writing | Writing functions, units and currencies
 :what: Expressions are written as in Qalculate!. The common ways:
 | Write | Meaning |
@@ -206,6 +259,9 @@ QCalc is a calculator where you type an expression as you would write it on pape
 | `solve(x^2 − 5x + 6 = 0)` | Solve an equation |
 | `diff(x^3)` | Derivative |
 | `integrate(x^2, 0, 1)` | Definite integral |
+| `integrate(x^2, x)`, `sum(k, k, 1, 10)` | Indefinite integral, sum. With the variable second, it is read in the order integrate(expression, lower limit, upper limit, variable) |
+| `5!`, `(5!)!` | factorial (5 × 4 × 3 × 2 × 1), a factorial of a factorial |
+| `9!!`, `9!!!` | double factorial (9 × 7 × 5 × 3 × 1), multifactorial (9 × 6 × 3); "!!" is not a factorial taken twice |
 | `ans` | The last answer |
 :tip: Ten traditional Japanese units (tsubo, shaku, shō, kan and others) work too: `30 tsubo to m^2`.
 
@@ -214,7 +270,18 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Open [[Lists: functions, units, constants]] from ☰.
 :step: Choose a tab and type part of a name in the box at the top.
 :step: Tap an item to read about it; [[Insert]] puts it into the input field.
-:tip: In the tab of your own definitions you can save variables (r = 5 cm) and functions; they are kept for the next time.
+:tip: The tab of your own definitions is the list of your variables and functions ([Your variables and functions](#variables)). Variables (r = 5 cm) and functions saved with the fields at its bottom are kept for the next time.
+
+## variables | Your variables and functions
+:what: The variables you set with `k := 2` or `r = 5 cm` and the functions you set with `f(x) := x^2 + 1`, with their values, on one screen. When you have at least one, a button such as [[!Variables 2]] (the number of variables and functions) is above the input field.
+:step: Press the button [[Variables]] above the input field. The tab [[My own]] of [[Lists: functions, units, constants]] in the menu is the same screen.
+:step: The variables come first, with their values. A variable set to an expression shows the value worked out too (w = 3 k = 6).
+:step: Tap a name to put it into the input field (a function with the caret between its parentheses).
+:step: ⋯ on the right: [[Change the value]] ([[Change the expression]] for a function), [[Rename]] or [[Delete]]. Each can be taken back with [[Undo]] right after.
+:example: `k := 2` → [[Variables]] → ⋯ of k → [[Change the value]] → 3. Now `k + 1` is 4.
+:tip: What `:=` or `=` sets is marked "temporary" and is gone when the app is closed. What you save with [[Save variable]] in the fields at the bottom stays. A change of the value or the name keeps it temporary or saved.
+:tip: The names in the calculation notes (`rent = 85000 JPY`) work only in their memo and are not variables of the calculator. They are listed at the bottom, memo by memo; a tap opens the memo at that line.
+:mistake: A name that QCalc already uses (m for the meter, pi …) cannot be given: choose another.
 
 ## currencies | Currencies and exchange rates
 :what: Currencies convert like `100 USD to EUR`. The exchange rates are updated by themselves when the app is opened (when it starts or when you come back to it; an internet connection is needed). While roaming abroad or in Data Saver they are not updated by themselves; press [[Update now]] when you need new rates.
@@ -284,6 +351,78 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Open [[Savings and compound interest]] and type the monthly amount (or the starting sum), the yearly rate and the years.
 :example: 30,000 a month, 3 %, 20 years → 9,849,059.94 (put in 7,200,000; interest 2,649,059.94)
 
+## invest | Stocks and investing
+:what: Profit and loss with the tax, the average cost, the maintenance ratio of a margin account and its margin call, the position size from a stop, yields, PER, PBR and compound growth, margin interest and lending fees, and foreign stocks in your money. No prices are fetched: everything comes from the numbers you type.
+:step: In [[Tools]], choose a tool under [[Stocks and investing]].
+:step: Tap an example or type the numbers. The results come at once.
+:step: Tap a result to put its expression into the input field, keep it in the history or copy it. ⋯ at the top right changes the digits shown.
+:note: A calculation for reference, not investment advice. Brokers may count tax and margin differently.
+:pro: The maintenance ratio and margin call, the position size from a stop and the interest and lending fee by the day are QCalc Pro features. Profit and loss, average cost, yield/PER/PBR/growth and foreign stocks are free.
+
+### pnl | Stock profit and loss
+:what: From the prices bought and sold, the shares and the fees of buying and selling: the profit or loss, in %, the tax, after tax, what the sale brings in, and the break-even price.
+:step: Open [[Stock profit and loss]] and type the prices and the shares.
+:step: A fee can be an amount (500) or a share of the trade (0.1%).
+:step: Choose [[Taxed]] or [[Tax-free account]]. The tax rate is 20.315 % (Japan's) unless you type another.
+:example: Bought at 1000, sold at 1200, 100 shares, no fees → +20,000.00, tax 4,063.00, after tax +15,937.00
+:tip: The % is of what was paid, with the fee. The break-even price is where selling leaves no loss after the fees.
+:note: The tax is worked out on this trade alone. At 20.315 %, the income taxes (15.315 %) and the resident tax (5 %) are each rounded down and added, as a broker withholds them (a profit of 19 yen pays 2). Offsetting losses in the year is not taken into account.
+
+### avg-cost | Average cost
+:what: The average cost of shares bought in several buys, and how many shares at what price bring the average to a target.
+:step: Open [[Average cost]] and choose [[The average of the buys]] or [[How to reach an average]].
+:step: The average of the buys: one buy to a line, "price shares" (for example 1000 100).
+:step: To reach an average: type the shares held, their average and the target, then the price or the shares to buy.
+:example: 100 at 1000 and 200 at 900 → average 933.33 (300 shares, 280,000.00)
+:example: 100 at an average of 1200 → buying at 900, 200 shares bring the average to 1000
+- Average = (price × shares + …) / all the shares
+- Shares to reach a target T = N × (A − T) / (T − P) (N: shares held, A: their average, P: the price; rounded up to the trading unit)
+:tip: The trading unit is 100 shares unless you type another; for stocks traded one by one, type 1.
+
+### margin | Margin: maintenance ratio
+:what: From the margin and the position: the maintenance ratio, and the price at which it falls to the margin call.
+:step: Open [[Margin: maintenance ratio]] and type the cash and, if any, the stocks as margin (after the haircut).
+:step: Choose [[Bought]] or [[Sold short]], and type the entry price, the shares and the price now. Costs (interest, fees) can be typed too.
+:step: The line of the margin call is 20 % unless you type another.
+:example: 1,000,000 cash, 3,000 shares bought at 1000, now 900 → 23.33 %, margin call at 866.67 (−3.70 % from now)
+The formulas:
+- Ratio = (cash + stocks as margin + profit or loss − costs) / value of the positions × 100
+- Value of the positions = entry price × shares (under [[More ▾]], other positions can be added with their profit or loss)
+- Profit or loss: bought (now − entry) × shares, sold short (entry − now) × shares. A gain is not counted unless chosen under [[More ▾]], [[Unrealized gains]]
+- Margin-call price: bought, entry − (cash + stocks as margin − costs − line × value) / shares; sold short, entry + (the same) / shares
+:note: Brokers count gains, haircuts and costs differently, and check at different times (usually the close).
+:pro:
+
+### position-size | Position size from a stop
+:what: From the capital, the loss you allow in one trade (% of the capital), the entry and the stop: the shares (rounded down to the trading unit) and the loss at the stop. With a take-profit price, the risk:reward ratio.
+:step: Open [[Position size from a stop]] and type the capital, the risk, the entry and the stop.
+:step: A stop below the entry is a buy; above it, a short.
+:example: 3,000,000 capital, 1 %, buy at 1000, stop at 950 (unit 100) → 600 shares, loss at the stop 30,000.00; take profit at 1150: risk:reward 1 : 3.00
+- Shares = capital × risk % / |entry − stop| (rounded down to the trading unit)
+- Risk:reward = 1 : |take profit − entry| / |entry − stop|
+:pro:
+
+### yield | Yield, PER, PBR, growth
+:what: The dividend yield, PER, PBR and ROE; compound growth with a monthly saving; the growth a year between two values.
+:step: Open [[Yield, PER, PBR, growth]], choose what to find and type the numbers.
+:example: Price 2000, dividend 60, EPS 150, BPS 1600 → yield 3.00 %, PER 13.33 ×, PBR 1.25 ×, ROE 9.38 %
+:example: 1,000,000 → 1,800,000 in 6 years → +10.29 % a year
+:tip: Growth can be compounded once a year or monthly; once a year, a month grows by (1 + the yearly return)^(1/12).
+
+### carry | Margin interest and lending fee
+:what: The interest on a margin buy, or the lending fee of a short, by the day.
+:step: Open [[Margin interest and lending fee]] and type the value of the position, the yearly rate and the days.
+:step: Choose the days in a year (365 or 360).
+:example: 3,000,000 at 2.8 % for 30 days → 6,904.10 (230.14 a day)
+- Cost = value × yearly rate × days / days in a year (rounded down)
+:pro:
+
+### fx-stock | Foreign stocks in your money
+:what: The value of a foreign stock in your money, with the exchange rates of the app or a rate you type; with the price and the rate when bought, the profit or loss split into the part of the price and the part of the exchange rate.
+:step: Open [[Foreign stocks in your money]] and type the currency (EUR, for example), the price now and the shares.
+:step: With the rate left empty, the app's exchange rates are used (as in [[Convert units and currencies]]).
+:example: 10 shares at 150, rate 155; bought at 120 at a rate of 140 → value 232,500.00, profit +64,500.00 (+42,000.00 from the price, +22,500.00 from the rate)
+
 ## dates | Dates
 :what: The days between two dates, n days after or before, an age, the weekday.
 :step: Open [[Dates]] and choose what to work out.
@@ -305,6 +444,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :shot: convert | The conversion screen
 :example: 5 km → 3.106856 mi
 :tip: Tap the result row to put "5 km to mi" into the input field or keep it in the history.
+:tip: Rarely used units (Planck units, atomic units, old French measures and the like) are left out of the lists; typed in the input field, they still work.
 
 ## shapes | Shapes: area, volume, length
 :what: Choose a shape from its picture and type its sizes: the area, the perimeter, the volume and the surface area appear.
@@ -313,7 +453,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Type the sizes named in the picture (r, h). Round sizes can be a radius or a diameter.
 :step: The results change while you type; tap one to use or copy its expression.
 :example: A sphere of radius 2 → volume 32π/3 ≈ 33.5103, surface 16π
-:tip: Choose a material to get the weight.
+:tip: The weight is the last row of the results (volume × density). Choose a material just under it in [[Material (density)]], or type a density with [[Another density…]]. When the lengths have no unit, the row says "Shown when the lengths have a unit": tap it and choose a unit. Like the other rows, a tap on the weight puts its expression into the input field or copies it.
 :tip: [[!⟳ 3D]] at the top left of the picture shows the solid in 3D, to turn it ([Solids and tanks in 3D](#shapes-3d)).
 
 ## tanks | Tanks: liquid and level
@@ -326,6 +466,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :example: Lying, diameter 1 m, length 2 m, liquid 30 cm → 0.396337 m³ (about 396 L)
 :tip: [[Quick-reference table ▾]] lists the amount for each height.
 :mistake: A radius typed in the diameter box gives about a quarter of the amount. Check radius or diameter.
+:tip: Choose a material (water, seawater, kerosene, gasoline and others): the weight of the liquid is the last row of the results (liquid × density).
 
 ## tank-heads | Tank heads and quick-reference tables
 :pro:
@@ -381,14 +522,26 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :tip: Before printing, check the size and the walls in your slicer.
 
 ## stats | Statistics
-:what: For one column: the mean, the median, the standard deviation, the quartiles and more; for two columns: the regression line and the correlation.
+:what: For one column: the mean, the median, the standard deviation, the quartiles and more, with a histogram and a box plot; for two columns: the regression line and the correlation. [[Distributions]] at the top gives the probabilities of distributions ([Probability distributions](#distributions)).
 :step: Open [[Statistics]] in [[Tools]].
-:step: Type the values, or paste them from a spreadsheet.
-:step: With two columns, [[📈 Show in a graph]] draws the points and the line.
+:step: Type the values, paste them from a spreadsheet, or read a column of a CSV file with [[Read a CSV file]] (a row of headings and cells that are not numbers are skipped).
+:step: With one column, a [[Histogram]] and a [[Box plot]] are under the results. − and + change the [[Width of the bins]] of the histogram; [[Auto]] goes back to the width from Sturges' rule.
+:step: With two columns, [[📈 Show in a graph]] draws the points and the line (or the curve chosen).
 :shot: stats | [[Statistics]] with an example
-:example: Test scores of 10 people → mean 73.90, median 74.00, standard deviation (sample) 9.94
-:tip: The quartiles come first by the method of Japanese high school textbooks; the method of spreadsheets is under "More".
+:example: Test scores of 10 people → mean 73.90, median 74.00, standard deviation (sample) 9.94; the histogram has 5 bins of width 10
+:tip: The quartiles come first by the method of Japanese high school textbooks; the method of spreadsheets is under "More". The whiskers of the box plot reach the furthest values from Q1 − 1.5 × IQR to Q3 + 1.5 × IQR; values beyond are outliers, drawn as points (× is the mean).
+:tip: With two columns, choose a curve above the results: line, degree 2, 3 or 4, exponential, logarithmic or power. Its formula, R² and prediction are shown, and [[📈 Show in a graph]] draws it.
+:pro: Choosing a curve other than the line and saving the table as a CSV file are QCalc Pro features (the formulas and R² of the other curves are under "More" also without it).
 :mistake: A value that is not a number is shown with its row and how to fix it.
+
+### distributions | Probability distributions
+:what: For the normal, binomial, Poisson, t and χ² distributions: the probability of a range a ≤ X ≤ b, the density (P(X = a) for the binomial and Poisson) and the quantile, with the range shaded in a graph.
+:step: Press [[Distributions]] at the top of [[Statistics]] and choose a distribution.
+:step: Type its parameters (the mean μ and the standard deviation σ for the normal, the trials n and the probability of success p for the binomial).
+:step: Type a and b of the range. Leave one empty for no limit on that side (P(X ≤ b) or P(a ≤ X)).
+:step: Type a cumulative probability after [[Quantile: P(X ≤ x) =]] for its x (for the binomial and Poisson the smallest k with P(X ≤ k) at least that), dashed in the graph.
+:example: Normal, μ = 0, σ = 1, from −1.96 to 1.96 → 0.950004; x with P(X ≤ x) = 0.975 → 1.95996
+:tip: The same functions work in the input field: `normdist(1.96, 0, 1, 1)` (P(X ≤ 1.96)), `normdistinv(0.975, 0, 1)`, `binomdist(3, 10, 0.5)` (P(X = 3)), `poisson(2, 3, 1)`, `tdist(2, 10, 1)`, `tdistinv(0.975, 10)`, `chisqdist(7.81, 3, 1)`, `chisqdistinv(0.95, 3)`. Without the last 1 they give the density. Tap a result to put its expression into the input field.
 
 ## notes | Calculation notes
 :what: A memo with one calculation on each line and its answer on the right. Give a value a name and use it in the lines below.
@@ -399,11 +552,35 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :shot: notes | [[Calculation notes]] with an example
 :example: rent 85000, electricity 6200, water 3100 (JPY) → the line "total" shows "total = ¥94300"
 :pro: The first memo is free, and so is reading a file or a share into it (into an empty memo, or at its end). More memos (also reading in as a new memo), and saving as text or CSV, are QCalc Pro features.
-:tip: A line that begins with # or // is a note (it is not calculated).
+:tip: A line that begins with # (but not # and a digit) or with // is a note (it is not calculated). #3, with a digit just after #, is the result of line 3.
 :step: To read a file, press [[Open a file]] under [[More ▾]] and choose a .txt or .csv file. A .txt gives one line for each line; a .csv saved by QCalc gives its column “Calculation”, another .csv its first column. UTF-8 and Shift_JIS (a Japanese CSV made by Excel) can be read.
 :step: In another app (a notes app, mail …), choose some text or a .txt or .csv file, then QCalc in that app’s “Share”: the calculation notes open.
 :step: Then choose [[As a new memo]] or [[At the end of this memo]]; for a single line, [[Put it into the input field]] too. A new memo is named after the file (without its extension).
 :tip: What is read is only text, worked out by the same rules as typed lines. A file over 1 MB, or more than 300 lines (what a memo holds), is not read, and the app says so.
+
+### notes-refs | Line numbers and #3
+:what: The lines of the notes have their numbers. #3 uses the result of line 3 (a line above). When a line above changes, the lines that use it are worked out again at once.
+:step: Tap the number of a line for [[Insert a line above]], [[Insert a line below]], [[Move up]], [[Move down]] and [[Delete this line]].
+:step: While another line is being written, tap a line number to write #3 (or its own number) in it.
+:example: lines 1 to 3 rent, electricity and water, line 4 "total", line 5 `#4 / 2` → ¥47,150 (94,300 / 2)
+:tip: When lines are inserted, deleted or moved, the numbers written in the lines follow, so they still mean the same lines. A reference to a deleted line becomes #?, and the line says so.
+:note: #3 can only be a line above the line it is in.
+:tip: A line moved above a line it uses (its #4) cannot be worked out: the app says so ("Line 1 uses #2, so it cannot be worked out above #2") with [[Undo]].
+
+### notes-table | Table mode
+:what: A memo as a table: columns with names, a column worked out from the others by a formula (such as Amount = Qty × Price), and the total and the average of each column. A cell can have a unit or a currency, such as 3 kg or 120 JPY.
+:step: Press [[Table]] above the memo. It starts with an example: Item, Qty, Price and Amount (Qty × Price).
+:step: Type a value in a cell: the formula columns, the totals and the averages are worked out again at once.
+:step: Tap the name of a column for [[Rename]], [[Work it out by a formula]] (for example Qty × Price), and to insert, move or delete a column; tap a row number to insert, move or delete a row.
+:step: [[+ Row]] and [[+ Column]] add a row and a column. A column added as "Amount = Qty × Price" is a formula column.
+:example: 3 apples at 120 JPY, 2 bread at 250 JPY, 1 milk at 180 JPY → amounts ¥360, ¥500, ¥180, total ¥1040, average ≈ ¥346.67
+:tip: A cell with words only (the name of an item) is left out of the totals. Values in different units (3 kg and 500 g) of the same kind are added up together.
+:tip: A cell with a digit that cannot be read as a value ("apples 2 pcs") is also left out of the total and the average.
+:tip: A table copied in a spreadsheet and pasted into one cell goes into the cells from there to the right and down; the rows and columns missing are added (up to 12 columns). Pasted into the top left cell with a first row of headings (no digits), the table becomes the one pasted, its first row the names of the columns. A formula column keeps its formula.
+:tip: Values of different kinds in a column (3 kg and 2) make the total and the average say "Values of different units are mixed". The average of a column of money has 2 decimals (≈ ¥346.67).
+:step: [[Save as CSV]] under [[More ▾]] saves the table as a CSV file (the row numbers, the names of the columns, the values, the total and the average). A CSV file chosen with [[Open a file]] can be read [[As a table (the first row: the names of the columns)]].
+:tip: On a narrow screen, swipe the table sideways for the other columns; the column of the row numbers stays on the left.
+:pro: The table mode (with saving as CSV and reading a CSV file as a table) is a QCalc Pro feature. The line numbers and #3 are free.
 
 # graphs | Graphs
 
@@ -589,6 +766,9 @@ Numeric integration (areas, lengths and volumes of the graph) is certain to abou
 | Sliders in 3D | [3D graph](#graph-3d) |
 | GIF and pictures without the mark | [Sharing](#share) |
 | More calculation notes, saved as files | [Calculation notes](#notes) |
+| Regression curves (other than the line) | [Statistics](#stats) |
+| Margin and position sizing (maintenance ratio and margin call, position size from a stop, interest and lending fee) | [Margin: maintenance ratio](#margin) |
+| Table mode of the calculation notes (formula columns, totals and averages, CSV) | [Table mode](#notes-table) |
 :tip: [[How to use ›]] on a row of the Pro features opens its section of this manual.
 
 ## pro-buy | Buying and restoring

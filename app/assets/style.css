@@ -1,3 +1,6 @@
+/* (1.16.0, the review of 11-24, T1) an element with "hidden" is never shown, whatever display its class gives it (until then .geo-size {
+   display: flex } kept the fields of other choices of the tools in sight: "Days" with an age, the discount with a price with tax) */
+[hidden] { display: none !important; }
 :root {
   --bg: #f6f7f9;
   --surface: #ffffff;
@@ -1163,6 +1166,11 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 .geo-out { margin: 10px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
 .geo-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 12px; text-align: left; background: none; border: 0; color: var(--text); }
 .geo-row + .geo-row { border-top: 1px solid var(--line); }
+/* (1.16.0) the weight row: what to do when it has no value yet (a unit, a material, a density), in the accent color
+   with ›; "(typical)" small after the value; the material and the density just under it */
+.geo-wrow .geo-val.geo-todo { color: var(--accent); font-size: 14px; font-weight: 600; text-align: right; }
+.geo-wrow .geo-wt { font-size: 12.5px; color: var(--muted); font-weight: 400; margin-left: 2px; }
+.geo-out + .geo-weight { margin-top: 6px; }
 .geo-row:active { background: var(--surface-2); }
 .geo-name { flex: 0 1 auto; max-width: 48%; font-size: 14px; font-weight: 600; }
 .geo-name small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); margin-top: 1px; }
@@ -1296,6 +1304,13 @@ body.cform-open #history, body.cform-open .entry { display: none; }
   border: 0; border-radius: 20px; background: transparent; color: var(--muted);
 }
 .h-more::before { content: "⋯"; font-size: 20px; line-height: 1; }
+/* (1.16.0, feature/hist-excel) the number of the line ("#12" in an expression is its answer), under the ⋯ */
+.h-no { position: absolute; left: 2px; top: 42px; max-width: 46px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px * var(--fs)); color: var(--muted); font-variant-numeric: tabular-nums; text-align: left; background: none; border: 0; padding: 0; margin: 0; font-family: inherit; line-height: 1.3; cursor: pointer; }
+/* (1.16.0, feature/hist-ux, U1) a tap on the number puts "#12" in: the area to touch goes beyond the small number, under the ⋯ */
+.h-no::before { content: ""; position: absolute; left: -6px; right: -10px; top: -2px; bottom: -14px; }
+.h-no { overflow: visible; }
+.h-no:active { color: var(--accent); }
+body.hselect .h-no { pointer-events: none; }
 .h-more:active { background: var(--surface-2); }
 #btn-hist { flex: 0 0 auto; color: var(--text); }
 .bar .title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1416,17 +1431,20 @@ body.hselect .h-item.sel::after { content: "✓"; position: absolute; left: 15px
 body.hselect .h-item .h-more { visibility: hidden; }
 .hselbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(0,0,0,.12); padding: 8px 12px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: flex-end; }
 .hselbar[hidden] { display: none; }
-.hs-info { flex: 1 1 auto; min-width: 0; }
+/* (1.16.0, fix/hist-selbar: with "Copy as a table" the three buttons left the sum and the average 8 px in German, 88 px in
+   Japanese on a phone 360 px wide; the buttons go under the numbers when these would have less than 200 px) */
+.hselbar { flex-wrap: wrap; row-gap: 8px; }
+.hs-info { flex: 1 1 200px; min-width: 0; }
 .hs-n { font-size: 13px; color: var(--muted); }
 .hs-row { display: flex; gap: 8px; align-items: baseline; font-size: 15px; }
 .hs-row.sum { font-size: 20px; font-weight: 700; }
 .hs-l { color: var(--muted); font-size: 13px; font-weight: 400; flex: 0 0 auto; }
 .hs-v { min-width: 0; overflow-wrap: anywhere; }
-.hs-btns { display: flex; gap: 6px; flex: 0 0 auto; }
+.hs-btns { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; flex: 0 1 auto; margin-left: auto; }
 .hs-btns .btn { min-height: 48px; }
 /* while choosing lines: the keys and the field make room for the history (the bar covers its bottom) */
 body.hselect .keypad, body.hselect .entry { display: none; }
-body.hselect #history { padding-bottom: 150px; }
+body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 .sheet-input { display: block; width: 100%; box-sizing: border-box; height: 48px; font-size: 16px; padding: 0 12px; margin: 0 0 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
 /* memory keys */
 .memrow { display: grid; grid-template-columns: repeat(4, 1fr) 1.6fr; gap: 5px; margin-bottom: 5px; align-items: center; }
@@ -1505,6 +1523,8 @@ body.hselect #history { padding-bottom: 150px; }
 .legend .msw.glass::before { background: rgba(120, 160, 205, .16); border: 1.5px solid rgba(45, 62, 90, .7); box-sizing: border-box; }
 .dark .legend .msw.glass::before { background: rgba(190, 215, 255, .1); border-color: rgba(215, 228, 250, .7); }
 .legend .note::before { display: none; }
+/* (1.16.0, fix/vol-legend) the solid measured by "Volume and surface": a square of its pale color in its deeper edge */
+.legend .lg-vol::before { background: var(--c); border: 1.5px solid var(--cl, transparent); box-sizing: border-box; }
 .plot-form[hidden], .smp-wrap[hidden], .area-wrap[hidden], .tank-level[hidden] { display: none; }
 .rev3d-vol > div + div { font-size: 16px; font-weight: 600; }
 /* the solid: the volume first and large, the method small below it, the surfaces under "More ▾" */
@@ -1758,9 +1778,17 @@ body.hselect #history { padding-bottom: 150px; }
 .hedit .hedit-t { flex: 1 1 auto; font-weight: 600; }
 .hedit .hedit-n { flex-basis: 100%; order: 3; font-size: .9em; color: var(--muted); }
 .hedit .hedit-n[hidden] { display: none; }
-.hedit .hedit-new { min-height: 44px; padding: 6px 12px; background: var(--surface); }
+.hedit .hedit-new { min-height: 48px; padding: 6px 16px; background: var(--accent); color: var(--accent-text); border: 1px solid var(--accent); border-radius: 24px; font-weight: 700; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); } /* (1.16.0, R9: a button that stands out) */
+.hedit .hedit-tip { flex-basis: 100%; order: 4; font-size: .92em; line-height: 1.45; padding: 6px 8px; border-radius: 8px; background: var(--surface); }
+.hedit .hedit-tip[hidden] { display: none; }
 .hedit .hedit-x { width: 48px; height: 48px; border: 0; border-radius: 24px; background: transparent; color: inherit; font-size: 18px; }
 .h-item.editing { box-shadow: inset 3px 0 0 var(--accent); background: var(--accent-soft); border-radius: 8px; }
+/* (1.16.0, fix/hist-tap) a line whose answer is in the expression: framed in its color, as a cell a formula refers to */
+/* (1.16.0, fix/hist-edit-scroll) a line worked out again after the line above it was edited: marked for 3 s, fading */
+.h-item.h-flash { animation: hflash 3s ease-out; border-radius: 8px; }
+@keyframes hflash { 0%, 60% { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); } 100% { background: transparent; box-shadow: inset 3px 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .h-item.h-flash { animation: none; background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); } }
+.h-item.h-ref { outline: 2px solid var(--ref, var(--accent)); outline-offset: -2px; border-radius: 8px; box-shadow: inset 5px 0 0 var(--ref, var(--accent)); }
 
 /* (1.15.0) the chip of the precision; on a narrow phone the title gives way first, then the chips get narrower */
 .bar.notitle .title { visibility: hidden; min-width: 0; overflow: hidden; }
@@ -1776,7 +1804,7 @@ body.hselect #history { padding-bottom: 150px; }
 /* (1.15.0) the kinds of lines of the 2D graph, and the length and area of a parametric or polar line */
 /* (one row when the labels fit, each as wide as it needs and the rest shared; two rows rather than a label cut) */
 .seg.mini.plot-kinds { display: flex; width: 100%; margin: 0 0 8px; flex-wrap: wrap; }
-.seg.mini.plot-kinds button { flex: 1 1 auto; min-width: 48px; font-size: 13px; padding: 7px 6px; min-height: 40px; white-space: nowrap; }
+.seg.mini.plot-kinds button { flex: 1 1 auto; min-width: 48px; font-size: 13px; padding: 7px 6px; min-height: 48px; white-space: nowrap; } /* (a touch area of 48 dp: UX01) */
 .curve-tools:empty { display: none; }
 .curve-tools { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 8px; }
 .ct-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13.5px; }
@@ -1813,3 +1841,83 @@ body.hselect #history { padding-bottom: 150px; }
 .sheet .dt-val { font-size: 16px; overflow-wrap: anywhere; }
 .sheet .dt-graph { display: block; width: 100%; height: 110px; }
 .sheet .dt-none { padding: 12px 8px; color: var(--muted); font-size: 14px; }
+/* (1.16.0) the list of the user's variables and functions ("My own", and the button "Variables" above the input field):
+   a row is the name with its value (a tap puts the name into the input field) and ⋯, 48 px high */
+.undo.vars { font-weight: 600; }
+.dv-list { margin-bottom: 6px; }
+.dv-row { display: flex; align-items: center; gap: 2px; border-bottom: 1px solid var(--line); }
+.dv-main { flex: 1 1 auto; min-width: 0; min-height: 48px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 8px 4px; border: 0; background: transparent; color: inherit; text-align: left; font: inherit; }
+.dv-main:active { background: var(--line); }
+.dv-name { font-weight: 700; font-size: 17px; overflow-wrap: anywhere; }
+.dv-name.mono { font-family: ui-monospace, "Roboto Mono", "Noto Sans Mono", monospace; }
+.dv-val { min-width: 0; font-size: 15px; color: var(--muted); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.dv-tag { font-size: 11.5px; line-height: 18px; padding: 0 7px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); white-space: nowrap; }
+.dv-more { flex: 0 0 auto; width: 48px; height: 48px; font-size: 20px; color: var(--accent); }
+.dv-memo { margin: 10px 0 0; font-size: 14px; font-weight: 600; color: var(--muted); }
+.dv-noteline .dv-name { font-size: 16px; }
+.dv-empty { margin: 8px 0; }
+.note-flash { outline: 2px solid var(--accent); outline-offset: 2px; transition: outline-color 0.6s; }
+/* (1.16.0) statistics: data or distributions; the curve chosen; the histogram and the box plot; the distributions */
+.seg.stat-mode { display: flex; margin: 0 0 10px; }
+.seg.stat-mode button { flex: 1 1 0; min-height: 48px; }
+.seg.mini.stat-models, .seg.mini.stat-dists { display: flex; flex-wrap: wrap; margin: 4px 0 8px; }
+.seg.mini.stat-models button, .seg.mini.stat-dists button { flex: 1 1 auto; min-height: 44px; }
+.seg.mini.stat-models button.off { color: var(--muted); text-decoration: line-through; }
+.stat-charts { margin: 8px 0; }
+.stat-charts .seg.mini { display: flex; margin-bottom: 6px; }
+.stat-charts .seg.mini button { flex: 1 1 0; min-height: 44px; }
+.stat-chart { width: 100%; }
+.stat-chart canvas.st-chart { display: block; width: 100%; border: 1px solid var(--line); border-radius: 8px; }
+.stat-bwrow .stat-bw { flex: 1 1 0; }
+.stat-bw-btn { flex: 0 0 auto; min-width: 48px; min-height: 44px; padding: 0 10px; }
+.stat-cap { margin: 4px 0; }
+.stat-csv { margin: 6px 0; }
+.stat-dpars .geo-lbl small { color: var(--muted); font-size: 12.5px; }
+.stat-range input { flex: 1 1 0; min-width: 0; }
+.stat-tilde { flex: 0 0 auto; color: var(--muted); }
+.stat-dist .geo-out { margin-top: 6px; }
+.stat-bwrow[hidden], .stat-models[hidden], .stat-charts[hidden], .stat-data[hidden], .stat-dist[hidden] { display: none; }
+/* (1.16.0) the arguments of the function being typed, where the suggestions are (above the keys) */
+.arghint { margin: 5px -14px -6px; padding: 4px 6px 6px 14px; border-top: 1px solid var(--line); background: var(--bg); font-size: 13px; line-height: 1.35; }
+.arghint[hidden] { display: none; }
+.arghint + .suggest { margin-top: 6px; }
+.ah-top { display: flex; align-items: center; gap: 6px; }
+.ah-sig { flex: 1 1 auto; min-width: 0; font-family: ui-monospace, "Roboto Mono", "Noto Sans Mono", monospace; font-size: 14px; overflow-wrap: anywhere; }
+.ah-sig b { color: var(--accent); font-weight: 700; }
+.ah-name { font-weight: 600; }
+.ah-x { flex: 0 0 auto; width: 40px; height: 36px; margin: -4px 0; border: 0; border-radius: 18px; background: transparent; color: var(--muted); font-size: 16px; }
+.ah-desc { color: var(--text); }
+.ah-ex { color: var(--muted); font-family: ui-monospace, "Roboto Mono", "Noto Sans Mono", monospace; font-size: 12.5px; overflow-wrap: anywhere; }
+/* 1.16.0 (feature/trading-tools): a box of several lines in a tool (the buys of "Average cost"), under its label */
+.geo-size.tool-area { flex-direction: column; align-items: stretch; }
+.geo-size.tool-area textarea { width: 100%; min-height: 104px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 16px; font-family: inherit; line-height: 1.45; resize: vertical; box-sizing: border-box; }
+.geo-size.tool-area textarea::placeholder { color: var(--muted); opacity: 1; font-style: italic; }
+.geo-size.tool-area textarea[aria-invalid="true"] { border-color: var(--danger, #dc2626); }
+/* (1.16.0) a box of a tool shown only for some choices (when): hidden really hides it. Since 1.12.0 .geo-size's display: flex
+   kept such boxes on the screen (the discount of "Price: discount and tax" with "with tax" chosen) */
+.geo-size[hidden] { display: none; }
+/* 1.16.0 (feature/notes-table): the numbers of the lines of a memo (a tap: insert, move, delete, "#n"), and a memo as a table */
+.note-line .note-no { flex: 0 0 auto; min-width: 40px; min-height: 48px; padding: 0 4px; border: 0; border-radius: 10px; background: none; color: var(--muted); font: inherit; font-size: calc(13px * var(--fs)); font-variant-numeric: tabular-nums; text-align: right; }
+.note-line .note-no:focus-visible, .note-tbl .note-no:focus-visible { outline: 2px solid var(--accent); }
+.note-line input { flex-basis: 8em; }
+.note-mode { display: flex; margin: 6px 0; }
+.note-mode button { flex: 1 1 0; min-height: 44px; }
+.note-table[hidden], .note-lines[hidden], .tool-chips[hidden] { display: none; }
+.note-tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; margin: 6px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.note-tbl-wrap:focus-visible { outline: 2px solid var(--accent); }
+.note-tbl { border-collapse: separate; border-spacing: 0; min-width: 100%; font-size: calc(15px * var(--fs)); }
+.note-tbl th, .note-tbl td { padding: 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.note-tbl tbody tr:last-child th, .note-tbl tbody tr:last-child td { border-bottom: 2px solid var(--line); }
+.note-tbl tfoot tr:last-child th, .note-tbl tfoot tr:last-child td { border-bottom: 0; }
+.note-tbl .note-no-c { position: sticky; left: 0; z-index: 1; min-width: 44px; background: var(--surface); color: var(--muted); font-weight: 400; font-size: calc(13px * var(--fs)); text-align: center; border-right: 1px solid var(--line); white-space: nowrap; padding: 0 4px; }
+.note-tbl .note-no { min-width: 40px; min-height: 48px; border: 0; background: none; color: var(--muted); font: inherit; }
+.note-tbl .note-col { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 6.5em; min-height: 52px; padding: 4px 8px; border: 0; background: none; color: var(--text); font: inherit; font-weight: 600; text-align: left; }
+.note-tbl .note-col-n { white-space: nowrap; }
+.note-tbl .note-col-f { font-size: calc(12px * var(--fs)); font-weight: 400; color: var(--accent); white-space: nowrap; }
+.note-tbl input { box-sizing: border-box; width: 7.5em; min-width: 6em; min-height: 48px; padding: 6px 8px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: max(16px, calc(15px * var(--fs))); }
+.note-tbl input:focus { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--surface-2); }
+.note-tbl .note-fx { display: block; width: 100%; min-width: 6.5em; min-height: 48px; padding: 4px 8px; border: 0; background: none; color: var(--text); font: inherit; font-weight: 600; text-align: right; white-space: nowrap; }
+.note-tbl .note-fx.bad { color: var(--danger); font-weight: 400; font-size: calc(12px * var(--fs)); white-space: normal; }
+.note-tbl .note-fxc { background: var(--surface-2); }
+.note-tbl tfoot th, .note-tbl tfoot td { background: var(--surface-2); }
+.note-tbl tfoot .note-no-c { font-weight: 600; color: var(--text); font-size: calc(13px * var(--fs)); }

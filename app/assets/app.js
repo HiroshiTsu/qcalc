@@ -250,17 +250,18 @@
   // the section of the manual for each panel and tool (a panel can give its own with p.help, as the
   // graph does for its tools); PRO_HELP: for each feature of QCalc Pro; FORM_HELP: for each form
   const HELP = {
-    examples: 'examples', 'cat-functions': 'lists', 'cat-units': 'lists', 'cat-variables': 'lists', defs: 'lists',
+    examples: 'examples', 'cat-functions': 'lists', 'cat-units': 'lists', 'cat-variables': 'lists', defs: 'variables',
     rates: 'currencies', plot: 'graph-2d', shapes: 'shapes', profile: 'profile', sections: 'measured', notes: 'notes',
     stats: 'stats', convert: 'convert', tools: 'find-tools', settings: 'settings', about: 'about', licenses: 'about',
     pro: 'pro', price: 'price', percent: 'percent', unitprice: 'unit-price', split: 'split', loan: 'loan',
-    savings: 'savings', date: 'dates', time: 'times'
+    savings: 'savings', date: 'dates', time: 'times',
+    pnl: 'pnl', avgcost: 'avg-cost', margin: 'margin', possize: 'position-size', yield: 'yield', carry: 'carry', fxstock: 'fx-stock'
   };
   const PRO_HELP = {
     precision: 'results', '3d': 'graph-3d', themes: 'settings', export: 'history', tables: 'loan', tank_heads: 'tank-heads',
     profile: 'profile', stl: 'stl', share_pro: 'share', notes: 'notes', enclosed: 'area-length', tanks: 'tanks',
     revolution: 'solid', regions: 'volume-3d', sections: 'measured', history_tools: 'history', memkeys: 'memory-keys',
-    cross_sections: 'cross-sections', rev_lines: 'solid', everyday: 'price', convert: 'convert', quick: 'widget', stats: 'stats'
+    cross_sections: 'cross-sections', rev_lines: 'solid', everyday: 'price', convert: 'convert', quick: 'widget', stats: 'stats', stats_fit: 'stats', trading: 'margin', notes_table: 'notes-table'
   };
   const FORM_HELP = { int: 'calculus', diff: 'calculus', lim: 'calculus', sum: 'calculus', prod: 'calculus', dsolve: 'calculus', subst: 'calculus', solve: 'equations', mat: 'matrices' };
   // every id the app links to (for the test of the links; '' is the top of the manual)
@@ -339,7 +340,7 @@
     angle: 'rad', approx: 'auto', fraction: 'auto', precision: 15, max_decimals: -1, time_limit: 20, math_view: true,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: true, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
-    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false, next_steps: true
+    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false, next_steps: true, arg_hints: true
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
   const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
@@ -572,6 +573,9 @@
     share: 'free',         // sharing a picture of a graph, with a small "QCalc" in the corner (1.12 D4)
     share_pro: 'pro',      // the moving picture (GIF) of the 3D graph and of a slider, and pictures without the mark at full resolution (1.12 D4; sliders 1.15): Pro
     sliders3d: 'pro',      // the sliders of the letters in the 3D graph (1.15; in 2D free): Pro
+    notes_table: 'pro',    // calculation notes as a table: columns with a formula, totals and averages with units, a CSV file in and out (1.16; the numbers of the lines and "#3" are free): Pro
+    trading: 'pro',        // stocks: the maintenance ratio of a margin account, the position size from a stop, the margin interest and lending fees by the day (1.16; the profit and loss, the average cost, the yields and growth, the foreign stocks are free): Pro, the tools of a trader on margin
+    stats_fit: 'pro',      // statistics: choosing a curve other than the line for two columns (degree 2 to 4, exponential, power, log) with its prediction and graph (1.16; the line, the distributions, the histogram, the box plot, reading a CSV file, and the formulas and R² of the curves under "More" as in 1.15 are free): Pro
     notes: 'pro'           // calculation notes: the second memo and more, and saving them as text or CSV (1.12 D5): Pro; the first memo, copying and sharing it are free
   };
   // the test page only (dev.js): a gate can be set to 'pro' to try the Pro sheet (qalc.dev.gates)
@@ -704,6 +708,40 @@
       : ev.state === 'none' ? tr('This build has no in-app review (the build for Google Play has it)', 'このビルドにはアプリ内レビューがありません（Google Play 版にあります）')
         : tr('Google Play did not take the request (as when the app is not installed from Google Play)', 'Google Play は要求を受けませんでした（Google Play から入れていないときなど）'), 6000);
   }
+  // (1.16.0, the review of 11-24, C3) "… to mi" with one unit: the result in that unit as a decimal (≈ 3.106 86 mi), not split into
+  // mixed units (3 mi + 188 yd + 2.39 in), as the converter gives it
+  const TO_ONE = /(?:\bto|→|->)\s*[\p{L}°µΩ'"][\p{L}\p{N}°µΩ²³⁴/·⋅^_'"]*\s*$/u;
+  // (1.16.0, fix/result-forms, the review of 11-24 (4), V1) an expression of decimal numbers only (123456.789, 2.5, 0.1 + 0.2,
+  // 1.5 × 2.25): decimals, not fractions, when the setting is automatic (until then 123456.789 = 123,456 + 789/1000 and
+  // 0.5 = 1/2); a fraction is the next step "As a fraction"
+  const DEC_ONLY = /^[\s\d.+\-−×*^()]+$/;
+  const decimalsOnly = (expr) => S.fraction === 'auto' && DEC_ONLY.test(String(expr || '')) && /\d\.\d/.test(String(expr || ''));
+  const optsFor = (expr, base) => {
+    const o = TO_ONE.test(String(expr || '')) ? Object.assign(base || engineOpts(), { mixed_units: false }) : base || engineOpts();
+    return decimalsOnly(expr) ? Object.assign(o, { fraction: 'decimal' }) : o;
+  };
+  // (V2, V3) the forms of an answer: a fraction with a denominator of 5 digits or more is not the first form, its decimal is
+  // (2^−20 ≈ 0.000000954; 1/1048576 is the next step "As a fraction"); at most two forms (10/4 = 5/2 = 2.5, not 5/2 = 2 + 1/2 = 2.5)
+  // (1.16.0, the review of 11-24 (6), W1) the notes of the reading of the expression (the order of the arguments) go with its messages
+  function addNotes(r, notes) {
+    if (r && r.ok && notes && notes.length) r.messages = notes.map((text) => ({ type: 'warning', text })).concat(r.messages || []);
+    return r;
+  }
+  function plainerForms(r) {
+    // (W6) "limit() is incomplete and unreliable" with every limit, also a right one (limit(sin(x)/x, 0) = 1): not said when the
+    // answer is a number (a limit not found is said as such: undoneMessage)
+    if (r && r.result && (r.messages || []).some((m) => /^limit\(\) is incomplete/.test(String(m.text || ''))) && /^[−+-]?(?:[\d.]+(?:E[−+-]?\d+)?|∞|\(\+∞\)|e|π)$/.test(String(r.result).split(/ [=≈] /).pop().trim())) r.messages = r.messages.filter((m) => !/^limit\(\) is incomplete/.test(String(m.text || '')));
+    if (!r || !r.result || r.comparison || S.fraction !== 'auto' || /[\[\]]/.test(r.result)) return r;
+    const parts = String(r.result).split(/( = | ≈ )/);
+    if (parts.length < 3) return r;
+    const forms = parts.filter((x, i) => i % 2 === 0), seps = parts.filter((x, i) => i % 2 === 1);
+    const last = forms[forms.length - 1], lastSep = seps[seps.length - 1];
+    if (/\d\s*\/\s*\d{5,}/.test(forms[0]) && !/\//.test(last)) {
+      r.result = last;
+      if (lastSep === ' ≈ ') r.approx = true;
+    } else if (forms.length > 2) r.result = forms[0] + lastSep + last;
+    return r;
+  }
   function engineOpts() {
     return {
       angle: S.angle, approx: S.approx, fraction: S.fraction, precision: Math.min(Number(S.precision) || DEFAULTS.precision, maxPrecision()),
@@ -750,12 +788,24 @@
   let history = store.get('qalc.history', []);
   if (!Array.isArray(history)) history = [];
   fitHistory();
+  // (1.16.0, feature/hist-excel, the owner's request of 11-24 05:50) Every line has a number of its own, h.n, shown beside it
+  // and written "#12" in an expression for its answer (expandHistRefs). A number is never given twice: when old lines go
+  // (deleted, or past 300 lines), the others keep theirs (qalc.histno: the last number given). Lines of earlier versions
+  // get theirs in order at the first start.
+  let histNo = Math.max(Number(store.get('qalc.histno', 0)) || 0, ...history.map((h) => (h && Number(h.n)) || 0));
+  function numberLines() {
+    let changed = false;
+    for (const h of history) if (h && typeof h === 'object' && !h.n) { h.n = ++histNo; changed = true; }
+    if (changed) store.set('qalc.histno', histNo);
+    return changed;
+  }
+  if (numberLines()) store.set('qalc.history', history);
   // the page was used before this start (a history or settings were saved): the notes on what moved
   // in 1.12.0 are for those users only; a new user is marked as having seen them
   const usedBefore = history.length > 0 || store.get('qalc.settings', null) !== null;
   if (!usedBefore && !store.get('qalc.moved112', false)) store.set('qalc.moved112', true);
   // (1.12.0) and the widget on the home screen shows the newest line (syncWidget)
-  const saveHistory = debounce(() => { store.set('qalc.history', trimHistory(history)); syncWidget(); }, 300);
+  const saveHistory = debounce(() => { numberLines(); store.set('qalc.history', trimHistory(history)); syncWidget(); }, 300);
   // the history cut to 300 lines: the oldest lines go, but not those pinned with a star (1.12.0)
   function trimHistory(list) {
     const extra = list.length - 300;
@@ -783,8 +833,22 @@
   // Keep the newest result in view when the history area gets smaller (a long preview, a taller
   // input box, the phone keyboard), unless the history has been scrolled up to read older results.
   let histPinned = true;
+  // (1.16.0, fix/hist-tap: the last value put in by a tap on an answer { f, before, at, after, end, h }, and the lines whose
+  // answers are in the expression { h, text, color }: insertResult, tapMarks)
+  let tapRef = null, tapMarks = [];
+  // (1.16.0, fix/hist-edit-scroll: the line of the history kept in sight for a moment { h, until, run }, revealHistLine; the
+  // lines just worked out again, marked for a moment: line → time it ends, flashLines)
+  let histReveal = null;
+  const histFlash = new Map();
   histEl.addEventListener('scroll', () => { histPinned = histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight < 24; }, { passive: true });
-  if (window.ResizeObserver) new ResizeObserver(() => { fitMatrices(histEl); if (histPinned) histEl.scrollTop = histEl.scrollHeight; }).observe(histEl);
+  if (window.ResizeObserver) new ResizeObserver(() => {
+    fitMatrices(histEl);
+    // (1.16.0, fix/hist-edit-scroll: a line being kept in sight is kept there, not the end of the history)
+    if (histReveal && performance.now() < histReveal.until) histReveal.run();
+    else { histReveal = null; if (histPinned) histEl.scrollTop = histEl.scrollHeight; }
+  }).observe(histEl);
+  // (a finger or a wheel on the history: it is the person's to scroll from then on)
+  for (const ev of ['pointerdown', 'wheel', 'touchstart']) histEl.addEventListener(ev, () => { histReveal = null; }, { passive: true });
 
   // ============================================================ keypad
   // a fraction: numerator and denominator as boxes to fill in (a selection becomes the numerator)
@@ -1100,6 +1164,9 @@
         targetChanged();
         break;
       case 'clear':
+        // (1.16.0, the review of 11-24, R2: AC while a line of the history is edited stops the editing, as ✕ does: the history
+        // stays as it was, the field is empty; until then the editing went on, and the next new calculation took that line's place)
+        if (f === exprEl && histEdit) { endHistEdit(false); f.value = ''; targetChanged(); break; }
         if (f === exprEl) offerUndo(v); // AC is next to ⌫: a long expression cleared by mistake can be brought back
         f.value = '';
         targetChanged();
@@ -1180,12 +1247,21 @@
       const t = /^[=≈]/.test(pv) ? pv : last;
       if (!t) return;
       e.preventDefault();
-      copyText(t.replace(/^= /, ''));
+      copyText(ungroupText(t.replace(/^= /, ''))); // (1.16.0, R8: without the groups of digits)
     }
   });
   // some keyboards send a line break as text instead of an Enter key press
   exprEl.addEventListener('beforeinput', (e) => {
     if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') { e.preventDefault(); commit(); }
+  });
+  // (1.16.0, the owner's note of 11-24, P1) a column or a table copied from a spreadsheet (values on lines, or with tabs)
+  // became one line, "1200 850 -300", its spaces read as groups of digits (= 1,200,550, without a word): two or more values
+  // pasted are asked about (add them up, lines of the notes, data of the statistics, a matrix). One line pastes as before.
+  exprEl.addEventListener('paste', (e) => {
+    const P = pastedValues(e.clipboardData ? e.clipboardData.getData('text') : '');
+    if (!P) return;
+    e.preventDefault();
+    pasteChoice(P);
   });
   exprEl.addEventListener('input', (e) => {
     dropUndo();
@@ -1233,7 +1309,9 @@
       .replace(/(^|[\d)\s])ー(?=[\d(\s]|$)/g, '$1−');
   }
   function normalizeExpr(s) {
-    return toInternal(normalizeJa(s)).trim();
+    // (1.16.0, the review of 11-24, C1: nPr(5, 2) and nCr(5, 2), the names of the calculators, as perm and comb; until then nPr was
+    // read as n·P·r (units and constants) and nCr as an unknown r)
+    return toInternal(normalizeJa(s)).trim().replace(/(^|[^\p{L}\p{N}_])n([PC])r\s*\(/gu, (m, p, k) => p + (k === 'P' ? 'perm(' : 'comb('));
   }
   function normalizeField() {
     const v = exprEl.value, n = normalizeJa(v);
@@ -1274,6 +1352,7 @@
     return true;
   }
   function exprChanged(typed) {
+    pruneTapMarks(); // (1.16.0, fix/hist-tap)
     noteField();
     saveDraft();
     autosize();
@@ -1329,7 +1408,37 @@
         }
         callKind.set(n, fn);
       }
-      if (!callKind.get(n)) notes.push(trf('"{0}" is not a function: it was read as letters multiplied (units and constants). Check the spelling', '「{0}」という関数はありません（文字ごとの掛け算＝単位や定数として計算しました）。つづりを確認してください', n));
+      // (1.16.0, G8: marked, so that = does not make a line of the letters multiplied: prime(10^15) = 0)
+      if (!callKind.get(n)) notes.push(Object.assign(new String(trf('"{0}" is not a function: check the spelling', '「{0}」という関数はありません。つづりを確認してください', n)), { unknownFn: n }));
+    }
+    // (1.16.0, the review of 11-24, C2) a negative number to the power 1/odd: its principal value is complex ((−8)^(1/3) = 1 + 1.73…i);
+    // the real root is cbrt or root
+    const neg = /\(\s*[−-]\s*(\d+(?:\.\d+)?)\s*\)\s*\^\s*\(\s*1\s*\/\s*(\d*[13579])\s*\)/.exec(expr);
+    if (neg) notes.push(neg[2] === '3' ? trf('This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)', 'これは主値（複素数）です。実数の立方根は cbrt(−{0})（∛）で求められます', neg[1])
+      : trf('This is the principal value (a complex number). The real root is root(−{0}, {1})', 'これは主値（複素数）です。実数の {1} 乗根は root(−{0}, {1}) で求められます', neg[1], neg[2]));
+    // (1.16.0, the owner's note F2 of 11-24) "!!" is the double factorial and "!!!…" a multifactorial, not a factorial taken twice:
+    // said, with how a factorial of a factorial is written
+    const mf = /((?:\d+(?:\.\d+)?)|\))(!{2,})(?!!)/.exec(expr);
+    if (mf) {
+      const k = mf[2].length, n = /^\d+$/.test(mf[1]) ? Number(mf[1]) : null;
+      if (k === 2) notes.push(n !== null ? trf('{0}!! is the double factorial ({0} × {1} × … × {2}); a factorial of a factorial is written ({0}!)!', '{0}!! は二重階乗（{0} × {1} × … × {2}）です。階乗の階乗は ({0}!)! と書きます', n, Math.max(n - 2, 0), n % 2 ? 1 : 2)
+        : tr('!! is the double factorial (every second number); a factorial of a factorial is written (n!)!', '!! は二重階乗（1 つおきに掛けます）です。階乗の階乗は (n!)! と書きます'));
+      else notes.push(n !== null ? trf('{0}{1} is a multifactorial: every {2}th number multiplied ({0} × {3} × …)', '{0}{1} は {2} つおきに掛ける多重階乗（{0} × {3} × …）です', n, mf[2], k, Math.max(n - k, 0))
+        : trf('{0} is a multifactorial: every {1}th number multiplied', '{0} は {1} つおきに掛ける多重階乗です', mf[2], k));
+    }
+    // (C4) in solve, diff, integrate …, a single letter that the engine reads as a unit (a: are, m: metre, g: gram, s: second, h: hour,
+    // t: tonne …), probably meant as a variable: said, with the unit it was taken for
+    if (/(^|[^\p{L}])(solve|diff|integrate|dsolve|limit|taylor|newtonsolve|secantsolve|multisolve)\s*\(/u.test(expr)) {
+      const seen = new Set();
+      for (const m of expr.matchAll(/(^|[^\p{L}\p{N}_°\\'])([a-wA-WΩ])(?![\p{L}\p{N}_('])/gu)) {
+        const c = m[2];
+        if (seen.has(c) || 'ei'.indexOf(c) >= 0) continue;
+        seen.add(c);
+        try { if (!sugData) await loadSugData(); } catch (e) { }
+        const u = sugData && sugData.byText.get(c);
+        if (u && !definedVars.has(c)) notes.push(trf('"{0}" was taken as the unit {1}; for an unknown, use x, y or z', '「{0}」は単位の「{1}」として計算しました。未知数には x、y、z を使ってください', c, (JA && u._ja ? u._ja.split(' ')[0] : '') || u.title || u.name));
+        if (notes.length > 4) break;
+      }
     }
     return notes;
   }
@@ -1338,7 +1447,8 @@
     if (!r || !r.ok || r.deferred) return r;
     let notes = [];
     try { notes = await inputNotes(expr); } catch (e) { notes = []; }
-    if (notes.length) r.messages = notes.map((text) => ({ type: 'warning', text })).concat(r.messages || []);
+    if (notes.length) r.messages = notes.map((text) => Object.assign({ type: 'warning', text: String(text) }, text.unknownFn ? { unknownFn: text.unknownFn } : {})).concat(r.messages || []);
+    r.srcExpr = expr;
     return r;
   }
   async function runPreview() {
@@ -1354,8 +1464,14 @@
       msgEl.textContent = tr('Fill in the boxes □ ("Next box ▶" goes to the next one)', '□ の欄を埋めてください（「次の欄 ▶」で次の欄へ）');
       return;
     }
+    // (1.16.0, feature/hist-excel: "#12" as the answer of line 12; the line being edited sees only the lines above it)
+    const rx = expandHistRefs(expr, histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h.n : histNo + 1);
+    if (rx.error) { showPreview(null); msgEl.textContent = rx.error; msgEl.className = 'msg error'; return; }
     previewBusy = true;
-    const r = await withNotes(await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), expr);
+    // (1.16.0, R3: the line being edited is previewed with the angle unit it keeps, as = works it out; until then the preview of
+    // sin(30) worked out in degrees said ≈ −0.988 while the band said degrees)
+    const edH = histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
+    const r = addNotes(await fixIntegral(plainerForms(await withNotes(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr, edH ? lineOpts(edH) : undefined), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), rx.expr)), rx.expr), rx.notes);
     previewBusy = false;
     if (exprEl.value.trim() === raw && !committing) showPreview(r);
     if (previewAgain) { previewAgain = false; runPreview(); }
@@ -1393,6 +1509,24 @@
     const t = shownText(h);
     if (h.cmp) return t;
     return (h.approx && t.indexOf('≈') < 0 ? '≈ ' : '= ') + t;
+  }
+  // (1.16.0, the review of 11-24, R8) an answer as it is copied: as shown, but without the groups of digits (24690, not 24,690,
+  // which pasted back into QCalc is read as two values; a spreadsheet reads both)
+  function copyResultText(h) {
+    const plain = (x) => displayText(String(x || '').replace(/(\d)[\u202f\u2009](?=\d)/g, '$1'));
+    const t = plain(h.result);
+    return typeof h.tail === 'string' && h.tail ? t.replace(/…$/, '') + ' … ' + plain(h.tail) : t;
+  }
+  // a text as shown without the groups of digits (1,234,567.5 → 1234567.5; 1.234,5 → 1234,5), for the results that are copied
+  function ungroupText(t) {
+    let x = String(t || '').replace(/(\d)[\u202f\u2009\u00a0](?=\d)/g, '$1');
+    const g = NF.group === '.' ? '\\.' : NF.group === ',' ? ',' : NF.group === ' ' ? ' ' : null;
+    if (g) x = x.replace(new RegExp('(\\d)' + g + '(?=\\d{3}(?!\\d))', 'g'), '$1');
+    return x;
+  }
+  function copyDisplayResult(h) {
+    const t = copyResultText(h);
+    return h.cmp ? t : (h.approx && t.indexOf('≈') < 0 ? '≈ ' : '= ') + t;
   }
   function resultText(r) {
     if (!r || !r.result) return '';
@@ -1560,11 +1694,13 @@
   function groupText(t) {
     if (!S.grouping || Number(S.base) !== 10 || !t || t.length > 20000) return t;
     const re = new RegExp('\\d+(?:' + (NF.dec === '.' ? '\\.' : ',') + '\\d+)?', 'g');
+    // (1.16.0, the review of 11-24, N1: an amount of money from 4 digits, ¥6,200 as ¥85,000 beside it in the notes)
+    const minG = /[¥$€£₩₹]|(?:^|[\s\d])(?:JPY|USD|EUR|GBP|KRW|TWD|CNY|MXN|CHF|INR|CAD|AUD)\b/.test(t) ? 4 : 5;
     return t.replace(re, (num, at, all) => {
       const b = all[at - 1] || '';
       if (/[\p{L}_\d]/u.test(b) || (b === NF.dec || b === NF.group) || ((b === '-' || b === '−' || b === '+') && all[at - 2] === 'E')) return num;
       const k = num.indexOf(NF.dec), i = k < 0 ? num : num.slice(0, k), f = k < 0 ? '' : num.slice(k + 1);
-      const gi = i.length >= 5 ? i.replace(/\B(?=(\d{3})+$)/g, NF.group) : i;
+      const gi = i.length >= minG ? i.replace(/\B(?=(\d{3})+$)/g, NF.group) : i;
       const gf = f.length >= 5 ? f.replace(/(\d{3})(?=\d)/g, '$1\u202f') : f;
       return k < 0 ? gi : gi + NF.dec + gf;
     });
@@ -1668,6 +1804,7 @@
     [/^Argument (\d+), (.+), in (.+)\(\) must be an unknown variable\/symbol\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は、x のような変数（文字）でなければなりません', 'argument-variable'],
     [/^Argument (\d+), (.+), in (.+)\(\) must be an integer >= (-?\d+)(?: and <= \d+)?\.?$/, (m, n, a, f, lo) => f + '() の ' + n + ' 番目の引数は、' + lo + ' 以上の整数でなければなりません', 'argument-integer-from'],
     [/^Argument (\d+), (.+), in (.+)\(\) must be an integer\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は整数でなければなりません（∞ は使えません）', 'argument-integer'],
+    [/^Argument (\d+), (.+), in (.+)\(\) must be a free value that is rational \(polynomial\)\.?$/, (m, n, a, f) => f + '() の ' + n + ' 番目の引数は、有理数（または多項式）でなければなりません', 'argument-rational'],
     // matrices and vectors
     [/^Inverse of singular matrix\.?$/, () => '逆行列がありません（行列式が 0 の行列です）', 'singular-matrix'],
     [/^Please use the cross\(\), dot\(\), and hadamard\(\) functions for vector multiplication\.?$/,
@@ -1707,6 +1844,43 @@
     [/^The middle of this long result is not shown \(([\d,]+) digits\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 桁）', 'result-cut-digits'],
     [/^The middle of this long result is not shown \(([\d,]+) characters\)$/, (m, n) => '長い結果のため、途中を省略しています（全 ' + n + ' 文字）', 'result-cut-characters'],
     [/^The middle of this long result is not shown$/, () => '長い結果のため、途中を省略しています', 'result-cut'],
+    // (1.16.0, the review of 11-24, T7) more of the engine's messages that people see
+    [/^The expression is ambiguous \(be careful when combining implicit multiplication and division\)\.?$/, (m) => '式があいまいです。省略した掛け算は割り算より先に計算します（6/2(1+2) は 6/(2(1+2))）。かっこで書くと確実です', 'ambiguous'],
+    [/^The (?:returned )?value is probably a prime number, but it is not (?:completely )?certain\.?$/, (m) => 'おそらく素数ですが、確実ではありません（確率的な判定です）', 'probably-prime'],
+    [/^(.+) interpreted as 10\^(.+) \(1(.+)\)\.?$/, (m, p1, p2, p3) => p1 + ' は 10^' + p2 + '（1' + p3 + '）として計算しました', 'exp-notation'],
+    [/^0\^0 was assumed equal to 1, but might be considered undefined\.?$/, (m) => '0^0 は 1 として計算しました（定義されないと考えることもあります）', 'zero-power-zero'],
+    [/^Required assumption: (.+)\.$/, (m, p1) => '前提とした条件：' + p1, 'required-assumption'],
+    [/^Solution (.+) requires that (.+)\.$/, (m, p1, p2) => '解 ' + p1 + ' は ' + p2 + ' のときだけです', 'solution-requires'],
+    [/^The solution requires that (.+)\.$/, (m, p1) => 'この解は ' + p1 + ' のときだけです', 'the-solution-requires'],
+    [/^The comparison is true for all (.+) \(with current assumptions\)\.?$/, (m, p1) => 'すべての ' + p1 + ' で成り立ちます', 'comparison-always'],
+    [/^The comparison is true for all (.+) if (.+)\.$/, (m, p1, p2) => p2 + ' のとき、すべての ' + p1 + ' で成り立ちます', 'comparison-always-if'],
+    [/^Unable to isolate (.+?)\.(?:\s[\s\S]*)?$/, (m, p1) => p1 + ' について解けませんでした', 'unable-to-isolate'],
+    [/^Not all complex roots were calculated for (.+)\.$/, (m, p1) => p1 + ' の複素数の解は、すべては求めていません', 'not-all-complex-roots'],
+    [/^Only one or two of the roots were calculated for (.+)\.$/, (m, p1) => p1 + ' の解は 1〜2 個だけ求めました', 'some-roots'],
+    [/^Limit for (.+) determined graphically\.?$/, (m, p1) => p1 + ' の極限は、グラフから数値的に求めた値です', 'limit-graphical'],
+    [/^Too large exponent\.?$/, (m) => '指数が大きすぎます', 'too-large-exponent'],
+    [/^Insufficient precision\.?$/, (m) => '有効桁数が足りません（設定で桁数を増やしてください）', 'insufficient-precision'],
+    [/^Vector size mismatch\.?$/, (m) => 'ベクトルの大きさが合いません', 'vector-size-mismatch'],
+    [/^Horizontal concatenation requires equal number of rows\.?$/, (m) => '横に並べるには、行の数が同じでなければなりません', 'horizontal-concatenation'],
+    [/^Vertical concatenation requires equal number of columns\.?$/, (m) => '縦に並べるには、列の数が同じでなければなりません', 'vertical-concatenation'],
+    [/^Trailing characters "(.+)" \(not a valid variable\/function\/unit\) in number "(.+)" were ignored\.?$/, (m, p1, p2) => '数「' + p2 + '」のあとの「' + p1 + '」は、変数・関数・単位ではないので無視しました', 'trailing-characters'],
+    [/^The determinant can only be calculated for square matrices\.?$/, (m) => '行列式は正方行列（行と列の数が同じ行列）でしか計算できません', 'determinant-square'],
+    [/^Maximum recursive depth reached\.?$/, (m) => '計算の入れ子が深くなりすぎました', 'max-recursion'],
+    [/^No equality or inequality to solve\.[\s\S]*$/, (m) => '解く等式・不等式がありません（例：x + 5 = 3）', 'no-equation-to-solve'],
+    [/^Calculations involving conversion of units without proportional linear relationship might give unexpected results[\s\S]*$/, (m) => '比例しない単位（°C や °F など）の計算は、思わぬ結果になることがあります', 'nonlinear-units'],
+    [/^Logarithmic ratio units are treated as other units[\s\S]*$/, (m) => '対数の比の単位（dB など）は普通の単位として扱うので、思わぬ結果になることがあります', 'log-ratio-units'],
+    [/^Because of time constraints only a limited number of combinations of terms were tried during factorization\.[\s\S]*$/, (m) => '時間の都合で、因数分解は一部の組み合わせだけ試しました（もう一度実行すると別の組み合わせを試します）', 'factor-limited'],
+    [/^Can only display rational numbers as roman numerals\.?$/, (m) => 'ローマ数字で表せるのは有理数だけです', 'roman-rational'],
+    [/^Cannot display numbers greater than 9999 or less than -9999 as roman numerals\.?$/, (m) => 'ローマ数字で表せるのは −9999〜9999 の数です', 'roman-range'],
+    [/^Too many elements \((\d+)\) for the dimensions \((\d+)x(\d+)\) of the matrix\.?$/, (m, p1, p2, p3) => '要素が多すぎます（' + p1 + ' 個、行列は ' + p2 + ' × ' + p3 + '）', 'matrix-too-many'],
+    [/^Too few elements \((\d+)\) in vector \((\d+) required\)\.?$/, (m, p1, p2) => 'ベクトルの要素が足りません（' + p1 + ' 個、' + p2 + ' 個必要）', 'vector-too-few'],
+    [/^Recursive variable: (.+) = (.+)$/, (m, p1, p2) => '変数が自分自身を使っています：' + p1 + ' = ' + p2, 'recursive-variable'],
+    [/^(.+)\(\) is incomplete and unreliable\.?$/, (m, p1) => p1 + '() は完全ではなく、結果が正しくない場合があります', 'incomplete-unreliable'],
+    [/^Unexpected unit in logarithm\.?$/, (m) => '対数の中に単位があります', 'unit-in-logarithm'],
+    [/^Inequalities are not allowed in (.+)\(\)\.?$/, (m, p1) => p1 + '() では不等式は使えません', 'inequality-not-allowed'],
+    [/^Error\(s\) in unit expression\.?$/, (m) => '単位の書き方に誤りがあります', 'unit-expression-errors'],
+    [/^Name "(.+)" is in use\. Replacing with "(.+)"\.?$/, (m, p1, p2) => '名前「' + p1 + '」は使われているので、「' + p2 + '」にしました', 'name-in-use'],
+    [/^(Element|Row|Column) (\d+) does not exist in (?:vector|matrix)\.?$/, (m, p1, p2) => (({ Element: '要素', Row: '行', Column: '列' })[p1] || p1) + ' ' + p2 + ' はありません', 'item-not-there'],
     // (after the more exact ones above) an argument of another kind than the function takes
     [/^Argument (\d+), (.+), in (.+)\(\) must be (.+?)\.?$/, (m, n, a, f, c) => f + '() の ' + n + ' 番目の引数が合っていません（' + c + '）', 'argument-kind'],
   ];
@@ -1723,6 +1897,180 @@
     }
     return text;
   }
+  // (1.16.0, the review of 11-24, C5) a result that is the calculation itself, left undone by the engine without a message: said
+  // instead of "= [1  2] + [1  2  3]" or "= factorial(−1)"
+  // A result that is not an answer (the reviews of 11-24: C5, H8; (5): F1, G1–G4, G8): said as "Could not calculate (why)" and not
+  // made a line; a line that uses it by #12 or ans gets the same, as its answer has it too. expr: what the engine was given.
+  // Kept as they are: the answers of solve (x = …) and the answers that are right as symbols (sin(x), √(2), ln(2) ≈ 0.69…).
+  // (1.16.0, the owner's note of 11-24 13:13) the reason with the expression it is about ("gamma(−1) is a point with no value"),
+  // not the examples of the owner's note in brackets in brackets; a long expression: the reason alone
+  const SAY_MAX = 24;
+  const sayable = (x) => { const v = String(x || '').trim(); return v && v.length <= SAY_MAX && !/\d[.,]\d{5,}/.test(v) ? v : ''; };
+  const POLE = (x) => (sayable(x) ? trf('Could not calculate: {0} is a point with no value', '計算できませんでした（{0} は値のない点です）', sayable(x)) : tr('Could not calculate: it is a point with no value', '計算できませんでした（値のない点です）'));
+  const UNDEFINED = (x) => (sayable(x) ? trf('Could not calculate: {0} is not defined', '計算できませんでした（{0} は定まりません）', sayable(x)) : tr('Could not calculate: it is not defined', '計算できませんでした（定まりません）'));
+  // the call of the function f in an expression as typed (tan(pi/2) + 1 → tan(π/2)), as shown above the input field
+  function typedCall(expr, f) {
+    const s = String(expr || ''), m = new RegExp('(?:^|[^\\p{L}\\p{N}_])' + f + '\\(', 'u').exec(s);
+    if (!m) return '';
+    const at = m.index + m[0].length - f.length - 1;
+    let d = 0;
+    for (let i = at + f.length; i < s.length; i++) {
+      if (s[i] === '(') d++;
+      else if (s[i] === ')' && --d === 0) return prettyExpr(toDisplay(s.slice(at, i + 1))).replace(/(^|[(,\s])-(?=[\d(πp])/g, '$1−');
+    }
+    return '';
+  }
+  const TOO_LARGE = () => tr('Could not calculate: the number is too large', '計算できませんでした（大きすぎます）');
+  const UNEVAL_FN = new RegExp('(?:^|[^\\p{L}\\p{N}_])(factorial|factorial2|multifactorial|gamma|lgamma|digamma|beta|zeta|tan|sin|cos|sec|csc|cot|mod|rem|fibonacci|lucas)\\(\\s*([−-]?(?:\\d[\\d.]*(?:E[−+-]?\\d+)?|π))\\s*(?:,\\s*([−-]?(?:\\d[\\d.]*(?:E[−+-]?\\d+)?|π))\\s*)?\\)', 'u');
+  function undoneMessage(result, messages, expr) {
+    const all = String(result || ''), t = all.split(' ≈ ')[0], last = all.split(/ [=≈] /).pop();
+    const M = messages || [];
+    // (1.16.0, the review of 11-24 (4), H8) 1/0 stayed "= 1/0" with a warning, and the lines with it went on (#1 × 2 = 2/0)
+    if (M.some((m) => /^Division by zero/.test(String(m.text || ''))) && /\/\s*0(?![\d.,])/.test(t)) return tr('Could not calculate: it divides by zero', '計算できませんでした（ゼロで割っています）');
+    if (/\]\s*[+−-]\s*\[/.test(t)) return tr('Could not calculate: the vectors or matrices are not the same size', '計算できませんでした（ベクトルや行列の大きさが違います）');
+    if (/^factorial\(\s*[−-]\s*\d+\s*\)$|^\(\s*[−-]\s*\d+\s*\)!$/.test(t)) return tr('Could not calculate: the factorial of a negative integer is not defined', '計算できませんでした（負の整数の階乗は定義されていません）');
+    // (G8, G2) an error of the engine: no answer (until then = made a line of it: prime(10^15) = 0, 2.5!! = factorial2(2.5)); a name that
+    // is not a function says so
+    const err = M.find((m) => m.type === 'error');
+    if (err) {
+      if (/in (?:factorial2|multifactorial)\(\)/.test(String(err.text))) return tr('Could not calculate: !! is for integers from −1 only', '計算できませんでした（!! は −1 以上の整数だけです）');
+      const unk = M.find((m) => m.unknownFn);
+      return unk ? unk.text : localMessage(err.text) || tr('Could not calculate: check the expression', '計算できませんでした（式を確認してください）');
+    }
+    // (G1) ∞ − ∞, 0⁰, ∞/∞, 0 × ∞: not defined
+    if (/∞\)?\s*[−+-]\s*\(?[+−-]?∞/.test(last) || /(^|[^\d., ])0⁰/.test(last) || /∞\)?\s*\/\s*\(?[+−-]?∞/.test(last) || /(^|[^\d.,])0\s*×\s*\(?[+−-]?∞|∞\)?\s*×\s*0(?![\d.,])/.test(last)) return UNDEFINED(prettyExpr(last.trim()));
+    // (F1, G1) a function of numbers left as it is: why, where it can be told
+    const fn = UNEVAL_FN.exec(last);
+    if (fn) {
+      const f = fn[1], num = (x) => (x === 'π' ? Math.PI : Number(String(x).replace('−', '-'))), a = num(fn[2]), b = fn[3] === undefined ? null : num(fn[3]);
+      if ((f === 'mod' || f === 'rem') && b === 0) return tr('Could not calculate: it divides by zero', '計算できませんでした（ゼロで割っています）');
+      if (!isFinite(a) || Math.abs(a) >= 1e15) return TOO_LARGE();
+      // (the call as worked out, gamma(−1), or as typed when the engine has its decimals: tan(1.5707963267949) → tan(π/2))
+      const call = sayable(fn[0].replace(/^[^\p{L}]+/u, '')) || typedCall(expr, f);
+      if (/^(gamma|lgamma|digamma)$/.test(f) && Number.isInteger(a) && a <= 0) return POLE(call);
+      if (f === 'factorial' && Number.isInteger(a) && a < 0) return POLE(call);
+      if (f === 'zeta' && a === 1) return POLE(call);
+      if (/^(tan|sec|cot|csc)$/.test(f)) return POLE(call);
+      if (/^(factorial|gamma|lgamma|fibonacci|lucas)$/.test(f)) return TOO_LARGE();
+      return tr('Could not calculate: no answer was found', '計算できませんでした（答えを求められませんでした）');
+    }
+    if (/\d(?:E[−+-]?\d+)?\)?\s*!(?!=)/.test(all)) return TOO_LARGE();
+    // (W5) an integral, a sum or a limit left as it is, a power of a matrix the engine leaves (√([1 2; 3 4]))
+    if (/∫\(|(?:^|[^\p{L}\p{N}_])integrate\(/u.test(last)) return tr('Could not calculate: the integral could not be found', '計算できませんでした（積分できませんでした）');
+    if (/[Σ∏]\(|(?:^|[^\p{L}\p{N}_])(?:sum|product)\(/u.test(last)) return tr('Could not calculate: the sum could not be worked out', '計算できませんでした（和を計算できませんでした）');
+    if (/(?:^|[^\p{L}\p{N}_])limit\(/u.test(last)) return tr('The limit does not exist or could not be found', '極限は存在しないか、求められませんでした');
+    if (/√\(\s*\[|\]\s*\)?\s*\^\s*\(?[−-]?\d*\.\d/.test(last)) return tr('Could not calculate: this power of a matrix cannot be worked out', '計算できませんでした（行列のこの累乗は計算できません）');
+    // (G1: fibonacci(10^12)) an overflow left the formula with its decimals
+    if (M.some((m) => /^Floating point (?:overflow|underflow)/.test(String(m.text || ''))) && !/^[−-]?[\d.]+(?:E[−+-]?\d+)?$/.test(last.trim())) return TOO_LARGE();
+    // (G4) a limit not found: the answer still has the variable (limit(sin(1/x), x, 0) = sin(1/x))
+    const lim = expr && /^\s*limit\(/.test(expr) ? topArgs(expr.slice(expr.indexOf('(') + 1)) : null;
+    const lv = lim ? (lim.length >= 3 ? lim[2].trim().replace(/^\\/, '') : 'x') : '';
+    if (lim && /^[\p{L}_][\p{L}\p{N}_]*$/u.test(lv) && (usesName(last, lv) || last.indexOf("'" + lv + "'") >= 0)) return tr('The limit does not exist or could not be found', '極限は存在しないか、求められませんでした');
+    return '';
+  }
+  // the arguments at the top of a call, from just after its "(" to its ")": ['f', 'x', '0'] (null when the parentheses do not close)
+  function topArgs(rest) {
+    const out = []; let d = 0, cur = '';
+    for (const c of rest) {
+      if ('([{'.indexOf(c) >= 0) d++;
+      else if (')]}'.indexOf(c) >= 0) { if (d === 0) { out.push(cur); return out; } d--; }
+      if (c === ',' && d === 0) { out.push(cur); cur = ''; continue; }
+      cur += c;
+    }
+    return null;
+  }
+  // (1.16.0, the review of 11-24 (5)) the expression as the engine is given it (the line keeps what was typed): G5 inf as ∞; G2 the
+  // factorial of a decimal as Γ(x + 1) (0.5! = √π/2); G6 sum(f, n, 1, 10) → sum(f, 1, 10, n), as product and integrate (the
+  // variable second, a common way); G9 gcd and lcm of whole numbers worked out here (the engine refused a 0: gcd(0, 5));
+  // G7 the factorial of a number of 10^8 or more: too large at once (until then 20 s and no word)
+  function engineForm(e) {
+    let s = String(e || '');
+    const notes = [];
+    s = s.replace(/(^|[^\p{L}\p{N}_])inf(?![\p{L}\p{N}_])/gu, '$1∞');
+    // (1.16.0, the review of 11-24 (6), W2) a date written as it is (2026-12-31, 2026/11/24) is a date, not a subtraction or a division
+    s = s.replace(/(^|[^\d.,"\p{L}_])(\d{4})([-/])(\d{1,2})\3(\d{1,2})(?![\d.,"\p{L}_])/gu, (all, pre, y, sep, mo, d) =>
+      (Number(mo) >= 1 && Number(mo) <= 12 && Number(d) >= 1 && Number(d) <= 31 ? pre + '"' + y + '-' + mo.padStart(2, '0') + '-' + d.padStart(2, '0') + '"' : all));
+    // (W3) "30% of 200": 30/100 × 200
+    s = s.replace(/(\d+(?:\.\d+)?)\s*%\s*of\s+/gi, '($1/100) × ');
+    // (W4) solve with a list of equations and a list of variables: multisolve
+    s = s.replace(/(^|[^\p{L}\p{N}_\\])solve\((?=\s*\[)/gu, (all, pre, at, str) => { const a = topArgs(str.slice(at + all.length)); return a && a.length === 2 && /^\s*\[/.test(a[1]) ? pre + 'multisolve(' : all; });
+    const big = (x) => { const m = /^10\s*\^\s*(\d+)$/.exec(x.replace(/[()\s]/g, '').replace('^', ' ^ ').trim()) || /^10\^(\d+)$/.exec(x.replace(/[()\s]/g, '')); const v = m ? Math.pow(10, Number(m[1])) : Number(x.replace(/[()\s]/g, '')); return v >= 1e8; };
+    for (const m of s.matchAll(/(\d[\d.]*(?:E\d+)?|\(\s*10\s*\^\s*\d+\s*\))\s*!+(?!=)|factorial2?\(\s*(\d[\d.]*(?:E\d+)?|10\s*\^\s*\d+)\s*\)/g)) {
+      const x = m[1] || m[2];
+      if (x && big(x)) return { expr: s, error: TOO_LARGE(), notes };
+    }
+    s = s.replace(/(^|[^\d.])(\d+\.\d+|\(\s*[−-]?\s*\d+\.\d+\s*\))!(?![!=])/g, (all, pre, x) => pre + 'gamma(' + x + ' + 1)');
+    s = s.replace(/(^|[^\p{L}\p{N}_])factorial\(\s*([−-]?\d+\.\d+)\s*\)/gu, (all, pre, x) => pre + 'gamma(' + x + ' + 1)');
+    // (W1, G6) the variable second, as in other calculators and Wolfram Alpha (the engine read it as the lower limit or the value
+    // approached, and gave wrong answers without a word: integrate(x^2, x) = +∞, sum(k, k, 1, 10) = 0, limit(sin(x)/x, x, 0) =
+    // sin(x)/x): when the second argument is a one-letter name used in the expression, it is the variable. integrate(f, x) is the
+    // indefinite integral in x; integrate(f, x, a, b), sum(f, n, a, b), product(…) → (f, a, b, x); limit(f, x, a) → limit(f, a, x);
+    // the variable as an unknown (\t, not the tonne). From the last call to the first, so that the calls inside are done first.
+    const calls = Array.from(s.matchAll(/(^|[^\p{L}\p{N}_\\])(integrate|sum|product|limit)\(/gu)).map((m) => ({ f: m[2], at: m.index + m[1].length + m[2].length + 1 })).reverse();
+    for (const { f, at } of calls) {
+      const args = topArgs(s.slice(at));
+      if (!args || args.length < 2) continue;
+      const v = args[1].trim();
+      if (!/^[a-zA-Z]$/.test(v) || v === 'e' || v === 'i' || !usesName(args[0], v)) continue;
+      const u = 'xyz'.indexOf(v) >= 0 ? v : '\\' + v;
+      const esc = (x) => (u === v ? x : x.replace(new RegExp('(^|[^\\p{L}\\p{N}_\\\\])' + v + '(?![\\p{L}\\p{N}_])', 'gu'), '$1' + u));
+      let rep = null;
+      if (f === 'integrate' && args.length === 2) rep = v === 'x' ? [args[0]] : [esc(args[0]), 'undefined', 'undefined', u];
+      else if (f !== 'limit' && args.length === 4) rep = [esc(args[0]), args[2].trim(), args[3].trim(), u];
+      else if (f === 'limit' && args.length === 3) rep = [esc(args[0]), args[2].trim(), u];
+      if (!rep) continue;
+      s = s.slice(0, at) + rep.join(', ') + s.slice(at + args.join(',').length);
+      if (f === 'integrate' && args.length === 2) continue; // the indefinite integral: its "+ C" says so
+      notes.push(f === 'integrate' ? tr('Read in the order integrate(expression, lower limit, upper limit, variable)', 'integrate(式, 下端, 上端, 変数) の順に読み替えました')
+        : f === 'limit' ? tr('Read in the order limit(expression, value approached, variable)', 'limit(式, 近づける値, 変数) の順に読み替えました')
+          : trf('Read in the order {0}(expression, lower limit, upper limit, variable)', '{0}(式, 下限, 上限, 変数) の順に読み替えました', f));
+    }
+    // (W5) a sum or a product to ∞: not worked out by the engine (it says that the limit must be an integer)
+    for (const m of s.matchAll(/(^|[^\p{L}\p{N}_\\])(sum|product)\(/gu)) {
+      const args = topArgs(s.slice(m.index + m[0].length));
+      if (args && args.length >= 3 && /^\s*\+?\s*(?:∞|infinity)\s*$/.test(args[2])) return { expr: s, error: tr('An infinite sum cannot be worked out (with a large upper limit you get a close value)', '無限の和は計算できません（上端を大きな数にすると近い値が出ます）'), notes };
+    }
+    // G9
+    s = s.replace(/(^|[^\p{L}\p{N}_])(gcd|lcm)\(\s*([−-]?\d+(?:\s*,\s*[−-]?\d+)+)\s*\)/gu, (all, pre, f, list) => {
+      const ns = list.split(',').map((x) => { const v = BigInt(x.trim().replace('−', '-')); return v < 0n ? -v : v; });
+      const g2 = (a, b) => { while (b) { [a, b] = [b, a % b]; } return a; };
+      const v = f === 'gcd' ? ns.reduce(g2) : ns.reduce((a, b) => (a === 0n || b === 0n ? 0n : (a / g2(a, b)) * b));
+      return pre + v.toString();
+    });
+    return { expr: s, error: '', notes };
+  }
+  // (G3) an indefinite integral with an infinite constant from the engine (∫ e^(x²) dx = (+∞) − i√π erf(ix)/2): the constant left out
+  // (an antiderivative is up to a constant), erf(i·z) as i·erfi(z), and worked out again: √π/2 × erfi(x) + C
+  async function fixIntegral(r, expr) {
+    if (!r || !r.ok || !r.result || !/^\s*integrate\(/.test(String(expr || ''))) return r;
+    // an indefinite integral: its exact form only (≈ −(0.367 879 441 171 442)^x + C for −1/e^x + C says nothing more)
+    const forms = String(r.result).split(/ ≈ /);
+    if (forms.length > 1 && /\+\s*C$/.test(forms[0].trim())) { r.result = forms[0].trim(); r.approx = false; }
+    if (!/∞|erf\(\s*i/.test(String(r.result) + (r.input || ''))) return r;
+    // the exact form as shown (the text to insert has −0.5i for −i/2, and would be worked out again as a decimal)
+    let e = r.approx ? String(r.input || '').trim() : String(r.result).split(/ = | ≈ /)[0].trim();
+    if (!e) {
+      // the preview and = do not ask for the text to insert: asked here (only for these integrals)
+      const r1 = await Bridge.send('calc', { expr, opts: engineOpts(), timeout: 3000, store: false, preview: false, input: true });
+      e = String((r1 && r1.ok && r1.input) || '').trim();
+    }
+    if (!/∞/.test(e) && !/erf\(\s*i/.test(e)) return r;
+    const args = topArgs(String(expr).slice(String(expr).indexOf('(') + 1));
+    if (!args || (/∞/.test(e) && args.length > 2 && !/undefined/.test(args[1] || ''))) return r;
+    const withC = /\+\s*C\s*$/.test(e);
+    e = e.replace(/\s*\+\s*C\s*$/, '');
+    e = e.replace(/^\(\s*[+−-]?∞\s*\)\s*([+−-])\s*/, (m, sg) => (sg === '+' ? '' : '−')).replace(/\s*[+−-]\s*\(\s*[+−-]?∞\s*\)\s*$/, '');
+    if (/∞/.test(e) || !e) return r;
+    e = e.replace(/erf\(\s*i\s*(?:×\s*)?('[^']+'|[\p{L}_][\p{L}\p{N}_]*|\([^()]*\))\s*\)/gu, '(i × erfi($1))');
+    const r2 = await Bridge.send('calc', { expr: e, opts: engineOpts(), timeout: 3000, store: false, preview: false, input: true });
+    if (!r2.ok || !r2.result || r2.timeout || /∞/.test(r2.result)) return r;
+    const plus = withC || /∞/.test(r.result) ? ' + C' : '';
+    // the exact form only, as above
+    r.result = (r2.approx ? String(r2.result) : String(r2.result).split(/ ≈ /)[0].trim()) + plus;
+    if (r2.input) r.input = r2.input + plus;
+    r.approx = r2.approx;
+    return r;
+  }
   function showPreview(r) {
     msgEl.textContent = '';
     msgEl.className = 'msg';
@@ -1732,6 +2080,7 @@
     const err = (r.messages || []).find((m) => m.type === 'error');
     if (r.deferred) previewEl.textContent = tr('Press = to run it (definitions are not previewed)', '＝ を押すと実行します（定義など）');
     else if (r.timeout) previewEl.textContent = '…';
+    else if (undoneMessage(r.result, r.messages, r.srcExpr)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result, r.messages, r.srcExpr); msgEl.className = 'msg error'; }
     else if (err) { previewEl.textContent = ''; msgEl.textContent = localMessage(err.text); msgEl.className = 'msg error'; }
     else {
       showResult(previewEl, resultText(r));
@@ -1752,11 +2101,14 @@
 
   // ============================================================ commit
   let committing = false, stopping = false, busyTimer = null, commitWaiting = false;
-  async function commit() {
-    const raw = exprEl.value.trim();
+  // given (1.16.0, the review of 11-24, R5): an expression worked out as a new line without the field being read or changed
+  // (the next steps under an answer); until then they were put into the field and what was being typed was lost
+  async function commit(given) {
+    const raw = given !== undefined ? String(given).trim() : exprEl.value.trim();
     if (!raw || committing) return;
     // 1.12.0: "=" while the engine is starting is kept, and the expression in the field then is
     // calculated as soon as the engine is ready (startEngine); until 1.11.0 it only said so
+    if (!engineReady && given !== undefined) { toast(tr('The calculation engine is starting', '計算エンジンを準備中です'), 1500); return; }
     if (!engineReady) { commitWaiting = true; previewEl.textContent = tr('Starting the calculation engine… the result follows', '計算エンジンを準備中です。準備ができたら計算します'); return; }
     const expr = withoutOpenTo(normalizeExpr(raw));
     if (!expr) return;
@@ -1780,17 +2132,20 @@
       if (s >= 1) previewEl.textContent = trf('Calculating… {0} s (tap here to stop)', '計算中… {0} 秒（ここをタップで中止）', s);
     }, 1000);
     // (1.15.0) a line of the history being edited: worked out in its place (ans of the lines above it, not stored)
-    const editing = histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
-    if (histEdit && !editing) endHistEdit(true); // (the line was deleted meanwhile: a new line)
+    const editing = given === undefined && histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
+    if (given === undefined && histEdit && !editing) endHistEdit(true); // (the line was deleted meanwhile: a new line)
+    // (1.16.0, feature/hist-excel: "#12", the answer of line 12, for the engine)
+    const rx = editing ? null : expandHistRefs(expr, histNo + 1);
+    if (rx && rx.error) { committing = false; clearInterval(busyTimer); previewEl.textContent = ''; msgEl.textContent = rx.error; msgEl.className = 'msg error'; return; }
     const r = editing ? Object.assign(await recalcLine(history.indexOf(editing), expr), { editRun: true })
-      : await Bridge.send('calc', { expr, opts: engineOpts(), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+      : addNotes(await fixIntegral(plainerForms(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT })), rx.expr), rx.notes);
     if (editing) {
       committing = false; clearInterval(busyTimer); clearInterval(cancelTimer);
       if (r.error) { previewEl.textContent = ''; msgEl.textContent = r.error; msgEl.className = 'msg error'; return; }
       await applyHistEdit(editing, r);
       return;
     }
-    if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
+    if (r.ok && r.result && !r.timeout) await withNotes(r, rx.expr);
     committing = false;
     clearInterval(busyTimer);
     clearInterval(cancelTimer);
@@ -1818,8 +2173,9 @@
       msgEl.className = 'msg error';
       return;
     }
+    if (undoneMessage(r.result, r.messages, rx.expr)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result, r.messages, rx.expr); msgEl.className = 'msg error'; return; } // (C5, H8, F1, G)
     const entry = {
-      expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base),
+      expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), angle: S.angle, // (angle: 1.16.0, R3)
       msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3), t: Date.now()
     };
     if (r.truncated) { // longer than MAX_RESULT: the engine ended it with "…" and sent its end
@@ -1840,14 +2196,18 @@
     if (over) history = trimHistory(history);
     const shortened = fitHistory();
     saveHistory();
-    dropUndo();
-    if (exprEl.value.trim() === raw) {
+    if (given === undefined) dropUndo();
+    if (given !== undefined) {
+      // (the field as it was: its own preview again)
+      if (exprEl.value.trim()) exprChanged(); else previewEl.textContent = '';
+    } else if (exprEl.value.trim() === raw) {
       exprEl.value = '';
       showPreview(null);
       autosize();
       updateSuggest(false);
       updateMathView(); // (1.15.0) the expression in math notation above the field goes with it (it stayed after Enter on a keyboard)
       plotBtnEl.hidden = true;
+      pruneTapMarks();
     } else {
       previewEl.textContent = '';
       exprChanged(); // something was typed while the calculation ran: keep it
@@ -1876,11 +2236,24 @@
   // it (x is 5 in the forms too), which is easy to do by mistake when an equation was meant: a
   // message says so and offers to take the definition back.
   const definedVars = new Set(); // the names of the user's variables
+  // (1.16.0) the functions made with f(x) := … (temporary: the engine does not list them in user_defs, see userDefs):
+  // name → { sig: "f(x)" as typed, expr: its expression as the engine wrote it }. Kept for the page's session (a page
+  // opened again keeps the engine, and with it these functions; a new start of the app has neither)
+  const tempFuncs = (() => {
+    const m = new Map();
+    try { for (const [k, v] of JSON.parse(sessionStorage.getItem('qalc.tempfuncs') || '[]')) if (v && typeof v.sig === 'string' && typeof v.expr === 'string') m.set(String(k), v); } catch (e) { }
+    const keep = () => { try { sessionStorage.setItem('qalc.tempfuncs', JSON.stringify(Array.from(m))); } catch (e) { } };
+    return { get size() { return m.size; }, has: (k) => m.has(k), get: (k) => m.get(k), entries: () => Array.from(m),
+      set: (k, v) => { m.set(k, v); keep(); }, delete: (k) => { m.delete(k); keep(); } };
+  })();
+  let defCount = 0; // variables and functions of the user (the button "Variables" above the input field)
   async function refreshDefined() {
     const r = await Bridge.send('user_defs');
     if (!r.ok) return;
     definedVars.clear();
     for (const v of r.variables || []) definedVars.add(v.name);
+    defCount = (r.variables || []).length + (r.functions || []).filter((f) => !tempFuncs.has(f.name)).length + tempFuncs.size;
+    updateVarsBtn();
   }
   // the arguments of save(…) as the engine writes it, split at the commas outside brackets and quotes; null for
   // anything else (save(2, 'k') + 1, or a bracket not closed)
@@ -1912,6 +2285,7 @@
     const fm = /^\s*([^\s(]+)\s*\(/.exec(nm[2]);
     const name = fm ? fm[1] : nm[2].trim();
     const kind = fm || new RegExp('^\\s*' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(').test(expr) ? 'function' : 'variable';
+    if (kind === 'function') tempFuncs.set(name, { sig: fm ? nm[2].trim() : name + '(x)', expr: args[0] });
     invalidateCatalogs();
     const shown = kind === 'function' ? name + '()' : name;
     toast(kind === 'function' ? trf('{0} is defined', '{0} を定義しました', shown)
@@ -1919,6 +2293,7 @@
     [tr('Undo', '取り消す'), async () => {
       const d = await Bridge.send('delete_def', { kind, name });
       if (!d.ok) { toast(localMessage(d.error)); return; }
+      if (kind === 'function') tempFuncs.delete(name);
       invalidateCatalogs();
       await refreshDefined();
       toast(trf('The definition of {0} was taken back', '{0} の定義を取り消しました', shown));
@@ -2953,6 +3328,83 @@
     if (!cells.length || cells.some((x) => /,\d{3}$/.test(x))) return rows;
     return rows.map((r) => r.map((x) => (/^[−+-]?\d+,\d+$/.test(x) ? x.replace(',', '.') : x)));
   }
+  // (P1) a pasted cell as a value in the engine's form, or null for a word (a heading, the name of an item): the groups of
+  // digits of a spreadsheet left out (1,200 / 1.200,50 with a decimal comma / 1 200), (300) of accounting as −300
+  function pasteValue(x) {
+    let s = ungroupPasted(x);
+    if (!/[0-9]/.test(s)) return null;
+    s = normalizeExpr(s).replace(/^-(?=[\d¥$€£₩(])/, '−');
+    return s || null;
+  }
+  // (P1, P2) a cell of a spreadsheet as typed: its groups of digits left out (1,200 → 1200; 1.200,50 → 1200,50 with a decimal
+  // comma; 1 200 → 1200), and (300) of accounting as −300; a cell that is not a number with groups stays as it is
+  function ungroupPasted(x) {
+    let s = normalizeJa(String(x || '').replace(/[\u00a0\u202f\u2009]/g, ' ').trim());
+    const acc = /^\(\s*([¥$€£₩]?\s*\d[\d.,\s]*)\)$/.exec(s);
+    if (acc) s = '−' + acc[1];
+    return s.replace(/^([−+-]?[¥$€£₩]?\s*)(\d{1,3}(?:([,.\s])\d{3})(?:\3\d{3})*)(?=$|[.,]\d+$|\s*[%A-Za-z¥$€£₩])/, (all, pre, n, g) => {
+      // (a group sign that is not the decimal sign of the number format)
+      if (g === (commaMode ? ',' : '.')) return all;
+      return pre + n.split(g).join('');
+    });
+  }
+  // (P1) text pasted into the input field: its rows and cells (lines and tabs), when it holds two or more values; else null
+  function pastedValues(text) {
+    const t = String(text || '').replace(/\r\n?/g, '\n').replace(/^\n+/, '').replace(/[\s]+$/, '');
+    if (!/[\n\t]/.test(t)) return null;
+    const rows = pastedDecimals(t.split('\n').filter((l) => l.trim() !== '').map((l) => l.split('\t').map((c) => c.trim())));
+    const vals = rows.map((r) => r.map(pasteValue));
+    const n = [].concat(...vals).filter((v) => v !== null).length;
+    if (n < 2) return null;
+    // the columns that hold values (a heading row and the names of the items left out)
+    const valCols = Math.max(...vals.map((r) => r.filter((v) => v !== null).length));
+    return { rows, vals, n, valCols };
+  }
+  async function pasteChoice(P) {
+    const flat = [].concat(...P.vals).filter((v) => v !== null);
+    const peek = clip(flat.slice(0, 4).map(toDisplay).join(', ') + (flat.length > 4 ? ', …' : ''), 60);
+    const acts = [['sum', tr('Add them up with + (headings and other words left out)', '＋でつないで合計（見出しなどの文字は飛ばす）'), 'accent'],
+      ['notes', tr('Put them into the calculation notes as lines (a new memo)', '計算メモに行として入れる（新しいメモ）')],
+      ['stats', P.valCols >= 2 ? tr('Use them as data of the statistics (x and y)', '統計のデータにする（x と y）') : tr('Use them as data of the statistics (values)', '統計のデータにする（値）')]];
+    if (P.valCols >= 2) acts.push(['mat', tr('Make a matrix of them', '行列にする')]);
+    const k = await sheet(trf('{0} values pasted ({1}): what to do with them?', '{0} 個の値を貼り付けました（{1}）。どうしますか？', P.n, peek), acts);
+    if (!k) { focusExpr(); return; }
+    if (k === 'sum') {
+      // 1200 + 850 + (−300): a value with a sign or a space (12 kg) in parentheses
+      const sum = flat.map((v, i) => (/^[−+-]|\s/.test(v) && (i > 0 || /\s/.test(v)) ? '(' + v + ')' : v)).join(' + ');
+      exprEl.focus();
+      insert(toDisplay(sum));
+      exprChanged(true);
+      return;
+    }
+    // the rows with values only (a heading row left out); in each row its values
+    const valueRows = P.vals.map((r) => r.filter((v) => v !== null)).filter((r) => r.length);
+    if (k === 'stats') {
+      const two = P.valCols >= 2;
+      const rows = (two ? valueRows.filter((r) => r.length >= 2).map((r) => [r[0], r[1]]) : [].concat(...valueRows).map((v) => [v])).slice(0, STAT_MAX).map((r) => r.map(toDisplay));
+      statsWith({ cols: two ? 2 : 1, rows, mode: 'data' });
+      return;
+    }
+    if (k === 'mat') {
+      const w = Math.min(MAT_MAX, P.valCols), rows = valueRows.slice(0, MAT_MAX).map((r) => { const a = r.slice(0, w); while (a.length < w) a.push('0'); return a; });
+      openForm('mat', { matrix: '[' + rows.map((r) => r.join(', ')).join('; ') + ']' });
+      if (valueRows.length > MAT_MAX || P.valCols > MAT_MAX) toast(tr('The part that did not fit was left out', '入りきらない分は入れていません'), 2600);
+      return;
+    }
+    // the notes: a line for each row; a row of words (a heading) as a note ("# Item Amount"), the name of an item and its value
+    // as "apples = 1200" (the name usable in the lines below), a row of several values a line for each value
+    const lines = [];
+    for (let i = 0; i < P.rows.length && lines.length < NOTE_MAX; i++) {
+      const words = P.rows[i].filter((c, j) => c && P.vals[i][j] === null), vs = P.vals[i].filter((v) => v !== null).map(toDisplay);
+      if (!vs.length) { lines.push('# ' + words.join(' ')); continue; }
+      const name = words.join('_').replace(new RegExp('[^' + NOTE_NAME_CH + '0-9]+', 'g'), '_').replace(/^_+|_+$/g, '').slice(0, 24);
+      if (vs.length === 1 && name && NOTE_ASSIGN.test(name + ' = 1')) { lines.push(name + ' = ' + vs[0]); continue; }
+      if (words.length) lines.push('# ' + words.join(' '));
+      lines.push(...vs);
+    }
+    const p = openNotesTool();
+    if (p.importLines) await p.importLines({ lines: lines.slice(0, NOTE_MAX), csv: '', rows: null, title: '', name: '', direct: 'new', pasted: true });
+  }
   function parseBlock(text) {
     const t = text.replace(/\r\n?/g, '\n').replace(/[\s;]+$/, '');
     const m = parseMatrix(normalizeExpr(t));
@@ -3361,6 +3813,39 @@
     const cut = result.split(/ [≈=] /)[0];
     return cut || result;
   }
+  // (1.16.0) "#n" in an expression: the answer of line n, in the calculation notes (n: the line's place, feature/notes-table)
+  // and in the history (n: the line's own number, feature/hist-excel). get(n) gives the value in the engine's form, or
+  // { error } (n is "?" for a line of the notes that was deleted). The engine itself reads "#" as the start of a comment, so
+  // every expression with a reference is expanded before it goes to the engine.
+  const LINE_REF = /#(\d{1,6}|\?)(?!\d)/g;
+  const lineRefs = (e) => Array.from(String(e || '').matchAll(LINE_REF)).map((m) => (m[1] === '?' ? '?' : Number(m[1])));
+  function expandLineRefs(expr, get) {
+    let error = '';
+    const out = String(expr).replace(LINE_REF, (all, k, at, str) => {
+      if (error) return '0';
+      // (1.16.0, the review of 11-24 (4), H6) "#1.5" was (100).5 = 50 without a word
+      const nx = str[at + all.length];
+      if ((nx === '.' || nx === NF.dec) && /\d/.test(str[at + all.length + 1] || '')) { error = trf('#{0} has “{1}” right after it', '#{0} のすぐ後に「{1}」があります', k, nx); return '0'; }
+      const v = get(k === '?' ? '?' : Number(k));
+      if (v && typeof v === 'object') { error = v.error; return '0'; }
+      return '(' + v + ')';
+    });
+    if (error) return { expr: out, error, notes: [] };
+    const ef = engineForm(out); // (1.16.0, the reviews of 11-24 (5), (6): G2, G5, G6, G7, G9, W1–W5)
+    return { expr: ef.expr, error: ef.error, notes: ef.notes };
+  }
+  // in the history: the line with that number, above the line own (the number of the line being worked out)
+  function expandHistRefs(expr, own) {
+    return expandLineRefs(expr, (n) => {
+      const line = n === '?' ? null : history.find((x) => x && x.n === n);
+      // (1.16.0, H7) a number never given (#999): no line has that number; one given before: the line was deleted
+      if (!line && n !== '?' && n > histNo) return { error: trf('There is no line numbered #{0}', '#{0} という番号の行はありません', n) };
+      if (!line) return { error: trf('#{0}: that line is no longer in the history', '#{0}：その行は履歴にありません（消されました）', n === '?' ? '?' : n) };
+      if (own && n >= own) return { error: trf('#{0} is not a line above this one', '#{0} はこの行より上の行ではありません', n) };
+      const v = insertText(line);
+      return v ? v.replace(/^\((.*)\)$/, '$1') : { error: trf('The answer of #{0} cannot be used in a calculation (too long, or text)', '#{0} の答えは計算に使えません（長すぎる・文字）', n) };
+    });
+  }
   // Text to insert when a history result is reused. Normally the engine's exact text ("7/3"
   // where the screen shows "2 + 1/3 ≈ 2.333333333", "255" for a result shown as 0xFF), in
   // parentheses unless it is a single number or name. Returns null when it cannot be reused.
@@ -3371,7 +3856,16 @@
     return legacyInsertText(h);
   }
   function wrapValue(t) {
-    return /^[−-]?(?:\d[\d.]*(?:E[−-]?\d+)?|[\p{L}_][\p{L}\p{N}_]*|\[[^\]]*\]|"[^"]*")$/u.test(t) ? t : '(' + t + ')';
+    if (/^[−-]?(?:\d[\d.]*(?:E[−-]?\d+)?|[\p{L}_][\p{L}\p{N}_]*|\[[^\]]*\]|"[^"]*")$/u.test(t)) return t;
+    // (1.16.0, fix/insert-exact) one call of a function, as the exact form of an answer often is (cbrt(2), ln(2), sin(1 rad)):
+    // without more parentheses around it
+    const f = /^[\p{L}_][\p{L}\p{N}_]*\(/u.exec(t);
+    if (f && t[t.length - 1] === ')') {
+      let d = 0, i = f[0].length - 1;
+      for (; i < t.length; i++) { if (t[i] === '(') d++; else if (t[i] === ')' && --d === 0) break; }
+      if (i === t.length - 1) return t;
+    }
+    return '(' + t + ')';
   }
   // for history saved by older versions, which has only the displayed text
   function legacyInsertText(h) {
@@ -3391,11 +3885,98 @@
     }
     return wrapValue(t.replace(/[\u202f\u2009]/g, ''));
   }
-  function insertResult(h) {
-    const t = insertText(h);
-    if (t === null) { toast(tr('This result is too long to insert (use the ans key)', 'この結果はそのまま挿入できません（ans キーで使えます）'), 2600); return; }
-    insert(toDisplay(t), 0, false);
+  // (1.16.0, fix/hist-tap, the owner's report of 11-24 05:50) A tap on an answer works as a click on a cell while a formula
+  // is typed in a spreadsheet:
+  //  - the answer's value goes in at the caret; a tap on another answer with nothing typed since takes the place of the
+  //    value the tap before put in (until 1.15.0 each tap was added after the last: [7 15; 10 22](1/5523)[7 15; 10 22] …,
+  //    hidden multiplications);
+  //  - after an operator (+, ×, "(", ",", "to" …) it goes after it; right after a number, a name, ")" or "]" a × is put in
+  //    first, as it is seen in the field (and before a number, a name or "(" right after the caret, a × after it);
+  //  - into an empty field (and so right after "=") as before;
+  //  - the lines whose answers are in the expression are marked in color, as the cells a formula refers to (tapMarks).
+  // (tapRef, the last value put in by a tap, and tapMarks are declared with histPinned, above)
+  const TAP_OPS = /^(?:to|mod|rem|per|and|or|xor|not)$/i; // (the words that are operators; "in" is the inch)
+  // the expression up to the caret ends with a value (so a value put after it would be multiplied without a sign)
+  function endsWithValue(t) {
+    const b = t.replace(/\s+$/, '');
+    if (!b) return false;
+    const w = /([\p{L}_][\p{L}\p{N}_]*)$/u.exec(b);
+    if (w) {
+      if (TAP_OPS.test(w[1]) && (b.length === w[1].length || /\s$/.test(b.slice(0, -w[1].length)))) return false;
+      if (isFunctionName(w[1])) return false; // "sqrt" typed: the value is its argument, in parentheses (insertResult)
+      return true;
+    }
+    return /[\p{N})\]}!%‰°′″'"π∞⁰¹²³⁴⁵⁶⁷⁸⁹]$/u.test(b);
   }
+  // the text after the caret begins with a value (so a value put before it would be multiplied without a sign)
+  function startsWithValue(t) {
+    if (!t || /^\s/.test(t)) return false;
+    const w = /^([\p{L}_][\p{L}\p{N}_]*)/u.exec(t);
+    if (w) return !TAP_OPS.test(w[1]);
+    return /^[\p{N}(\[√∛∜π∞]/u.test(t);
+  }
+  function isFunctionName(n) {
+    if (own(ARG_FUNCS(), n) || own(ARG_ALIAS, n)) return true;
+    return !!(catalogs.functions && catalogs.functions.some((it) => it.name === n));
+  }
+  // (asRef, 1.16.0 feature/hist-excel: "#12", the line by its number, instead of its value; the same taps and marks)
+  function insertResult(h, asRef) {
+    const t = asRef ? '#' + h.n : insertText(h);
+    if (t === null) { toast(tr('This result is too long to insert (use the ans key)', 'この結果はそのまま挿入できません（ans キーで使えます）'), 2600); return; }
+    const f = tgt(), text = asRef ? t : toDisplay(t);
+    if (f === exprEl) dropUndo();
+    // the value of the tap before, with nothing typed and the caret not moved since: the field as it was before it
+    let replaced = null;
+    if (tapRef && tapRef.f === f && f.value === tapRef.after && f.selectionStart === tapRef.end && f.selectionEnd === tapRef.end) {
+      replaced = tapRef.h;
+      f.value = tapRef.before;
+      f.setSelectionRange(tapRef.at, tapRef.at);
+    } else if (boxSelected(f)) f.value = ''; // (a box of a form chosen as a whole: the value takes its place, as insert does)
+    const before = f.value;
+    let s = f.selectionStart, e = f.selectionEnd;
+    if (s === undefined || s === null) { s = e = before.length; }
+    const pre = before.trim() && endsWithValue(before.slice(0, s)) ? '×' : '', post = startsWithValue(before.slice(e)) ? '×' : '';
+    const fn = /([\p{L}_][\p{L}\p{N}_]*)$/u.exec(before.slice(0, s)), arg = fn && isFunctionName(fn[1]) && !/^[(#]/.test(text) ? '(' + text + ')' : fn && isFunctionName(fn[1]) ? '(' + text + ')' : text;
+    // (a selection is replaced; the caret ends right after the value, before the × that may follow it)
+    f.value = before.slice(0, s) + pre + arg + post + before.slice(e);
+    const pos = s + pre.length + arg.length;
+    f.setSelectionRange(pos, pos);
+    tapRef = { f, before, at: s, after: f.value, end: pos, h };
+    targetChanged();
+    if (f === exprEl) {
+      if (replaced && replaced !== h) dropTapMark(replaced);
+      addTapMark(h, text);
+    }
+  }
+  // ---- the marks in color of the lines whose answers are in the expression (tapMarks)
+  const TAP_COLORS = ['#2563eb', '#dc2626', '#7c3aed', '#059669', '#d97706', '#db2777'];
+  function addTapMark(h, text) {
+    const m = tapMarks.find((x) => x.h === h);
+    if (m) m.text = text;
+    else {
+      const used = new Set(tapMarks.map((x) => x.color));
+      tapMarks.push({ h, text, color: TAP_COLORS.find((c) => !used.has(c)) || TAP_COLORS[tapMarks.length % TAP_COLORS.length] });
+    }
+    paintTapMarks();
+  }
+  function dropTapMark(h) { tapMarks = tapMarks.filter((x) => x.h !== h); paintTapMarks(); }
+  // (after each change of the field: a value that is no longer in it, or a line no longer in the history, loses its mark)
+  function pruneTapMarks() {
+    if (!tapMarks.length) return;
+    const v = exprEl.value;
+    const keep = tapMarks.filter((x) => v.indexOf(x.text) >= 0 && history.indexOf(x.h) >= 0);
+    if (keep.length !== tapMarks.length) { tapMarks = keep; paintTapMarks(); }
+  }
+  function tapMarkOf(h) { return tapMarks.find((x) => x.h === h) || null; }
+  function paintTapMark(it) {
+    const m = tapMarkOf(it._h);
+    it.classList.toggle('h-ref', !!m);
+    if (m) it.style.setProperty('--ref', m.color); else it.style.removeProperty('--ref');
+    let tag = it.querySelector(':scope > .h-ref-tag');
+    if (m && !tag) { tag = el('span', { class: 'sr-only h-ref-tag', text: tr('(its answer is in the expression)', '（この答えを式で使っています）') }); it.append(tag); }
+    else if (!m && tag) tag.remove();
+  }
+  function paintTapMarks() { for (const it of histEl.querySelectorAll('.h-item')) paintTapMark(it); }
   // The history is drawn in chunks (1.12.0): the newest HIST_CHUNK lines at once, then the older
   // ones a chunk at a time, at the top, when the page is idle, keeping what is on the screen in
   // place. Drawing all 300 lines (fractions and roots in math notation) took about a second on a
@@ -3478,14 +4059,26 @@
     showResult(res, displayResult(h));
     const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: prettyExpr(toDisplay(h.expr)) }), res);
     item._h = h;
+    // (1.16.0, feature/hist-excel) its number, and a line it refers to (#12) that is no longer in the history
+    if (!h.n) numberLines();
+    // (1.16.0, feature/hist-ux, U1) the number is a button: a tap puts "#12" into the expression, as pointing at a cell in a
+    // spreadsheet (a tap on the answer puts its value); touching and holding it opens the menu of the line as elsewhere
+    item.append(el('button', { class: 'h-no', type: 'button', text: '#' + h.n, 'aria-label': trf('#{0}: put it into the expression (this line by its number)', '#{0}：式に入れる（番号でこの行を使う）', h.n) }));
+    const gone = lineRefs(h.expr).filter((n) => n === '?' || !history.some((x) => x && x.n === n));
+    if (gone.length) item.append(el('div', { class: 'h-msg warning h-gone', text: trf('#{0} is no longer in the history: this answer is the one from before', '#{0} の行は消されました（この答えは消える前の値です）', gone[0]) }));
+    if (tapMarks.length) paintTapMark(item);
+    if (histFlash.size && histFlash.get(h) > Date.now()) item.classList.add('h-flash');
     if (h.note) item.insertBefore(el('div', { class: 'h-note', text: h.note }), item.firstChild);
     for (const m of h.msgs || []) item.append(el('div', { class: 'h-msg ' + m.type, text: localMessage(m.text) }));
     // ⋯ opens the same menu as touching and holding the line (1.12.0: nothing only by a long touch);
     // the dots are drawn by style.css, so that the text of the line stays the expression and the result
     item.append(el('button', { class: 'h-more', type: 'button', 'aria-label': tr('Menu of this result', 'この結果のメニュー') }));
-    bindLongPress(item, () => { if (!histSel) historyMenu(h); }, (target) => {
+    // (1.16.0, feature/hist-excel: while choosing lines, touching and holding one chooses all the lines from the one chosen
+    // last to it, as a range of cells)
+    bindLongPress(item, () => { if (!histSel) historyMenu(h); else selectRange(item); }, (target) => {
       if (histSel) { toggleSelected(item); return; }
       if (target.closest('.h-more')) { historyMenu(h); return; }
+      if (target.closest('.h-no')) { insertResult(h, true); focusExpr(); return; } // (U1)
       if (target.closest('.h-expr')) startHistEdit(h); // (1.15.0: the line edited in place)
       else insertResult(h);
       focusExpr();
@@ -3560,6 +4153,8 @@
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['digits', tr('Work it out with other digits', '桁数を変えて計算し直す')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')],
+      ['ins-ref', trf('Insert #{0} (this line by its number)', '#{0} を式に入れる（番号でこの行を使う）', h.n)],
+      ['select', tr('Select: sum and average', '選ぶ（合計・平均）')],
       ['star', h.star ? tr('★ Unpin', '★ 固定を外す') : tr('☆ Pin at the top', '☆ 上に固定')],
       ['note', h.note ? tr('Change the note', 'メモを変える') : tr('Add a short note', 'ひとことメモ')],
       ['del', tr('Delete this line', 'この行を削除'), 'danger']
@@ -3573,14 +4168,19 @@
     else if (a === 'f-solve') openForm('solve', { eqs: [fx + ' = 0'] });
     else if (a === 'f-subst') openForm('subst', { f: fx, focus: 'a' });
     else if (a === 'details') openDetails(h);
-    else if (a === 'copy-res') copyText(shownText(h));
+    else if (a === 'copy-res') copyText(copyResultText(h));
     else if (a === 'copy-expr') copyText(h.expr);
     else if (a === 'edit') startHistEdit(h);
     else if (a === 'digits') recalcWithDigits(h);
     else if (a === 'ins-ans') insertResult(h);
+    else if (a === 'ins-ref') { insertResult(h, true); focusExpr(); }
+    else if (a === 'select') openHistSelect(h);
     else if (a === 'del') {
       const i = history.indexOf(h);
       if (i < 0) return; // the history changed while the menu was open
+      // (1.16.0, the review of 11-24, R7: the line being edited is deleted: the editing ends, its expression stays in the field
+      // as a new line; Undo brings the line back, not the editing)
+      if (histEdit && histEdit.h === h) endHistEdit(true);
       history.splice(i, 1);
       historyChanged();
       toast(tr('Line deleted', '1 行を削除しました'), 5000, [tr('Undo', '元に戻す'), () => {
@@ -3666,7 +4266,8 @@
         return out;
       }
       const out = [D];
-      if (!/ ≈ /.test(h.result) && !h.approx) out.push({ id: 'frac', label: tr('As a fraction', '分数で'), expr: t, opts: { fraction: 'fraction', approx: 'exact' }, note: tr('As a fraction', '分数で') });
+      // (1.16.0, R6: also for a decimal that was approximated when its value is a fraction, 2/3 ≈ 0.666…, h.input "2/3")
+      if ((!/ ≈ /.test(h.result) && !h.approx) || (/^\(?[−-]?\d+\/\d+\)?$/.test(t) && !/\//.test(h.result))) out.push({ id: 'frac', label: tr('As a fraction', '分数で'), expr: t, opts: { fraction: 'fraction', approx: 'exact' }, note: tr('As a fraction', '分数で') });
       // (the scientific notation only where it changes something: from 10 000, and below 0.001)
       const v = Math.abs(Number(num));
       if (v >= 1e4 || (v > 0 && v < 1e-3)) out.push(SCI);
@@ -3681,8 +4282,7 @@
     if (s.id === 'graph') { const fx = functionOfX(h); if (fx && !(await graphOf(fx))) openPlotWith(fx); return; }
     if (s.id === 'convert') { openConverter(); return; }
     if (s.opts) { await keepWithOpts(s.expr, s.opts, s.note); return; }
-    setExpr(s.expr);
-    commit();
+    commit(s.expr); // (1.16.0, R5: the field is not touched)
   }
   // a value worked out with other settings of the display, kept as a line of the history with a note
   async function keepWithOpts(expr, opts, note) {
@@ -3872,7 +4472,7 @@
     const a = await sheet(row.label + '\n' + clip(row.shown, 200), [['ins', tr('Put the expression in the field', '式を入力欄に入れる')], ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy result', '結果をコピー')]]);
     if (a === 'ins') { setExpr(row.expr); focusExpr(); }
     else if (a === 'keep') { if (row.opts) await keepWithOpts(row.expr, row.opts, row.note); else { setExpr(row.expr); commit(); } }
-    else if (a === 'copy') copyText(row.shown);
+    else if (a === 'copy') copyText(ungroupText(row.shown)); // (1.16.0, R8)
   }
   function historyChanged() {
     fitHistory();
@@ -3892,25 +4492,43 @@
   const editBand = el('div', { id: 'hist-edit', class: 'hedit', role: 'region', hidden: true, 'aria-label': tr('Editing a line of the history', '履歴の行を直しています') });
   editBand.append(el('span', { class: 'hedit-t', text: tr('Editing a line of the history', '履歴の行を直しています') }),
     el('span', { class: 'hedit-n', hidden: true }),
+    // (1.16.0, the review of 11-24, R9: until 1.14 touching an expression put it into the field for a new line; shown once)
+    el('span', { class: 'hedit-tip', hidden: true, text: tr('Touching an expression edits its line: = puts the new result in its place. For a new line, press "As a new line".', '式のタップは、その行を直します。= でその行が置き換わります。新しい行にするには「新しい行にする」を押してください。') }),
     tapButton({ class: 'btn hedit-new', type: 'button', text: tr('As a new line', '新しい行にする') }, () => endHistEdit(true)),
     tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Stop editing (nothing changes)', '直すのをやめる（何も変わりません）') }, () => endHistEdit(false)));
   $('.entry').insertBefore(editBand, $('.entry').firstChild);
+  // (1.16.0, the review of 11-24, R3) The angle unit a line was worked out with (h.angle, kept from 1.16.0): editing it, working it
+  // out again (the lines below, other digits) and making its definitions again use it, not the setting of now (until then
+  // sin(30) worked out in degrees gave −0.988… after the setting went back to radians, without a word). A line of an earlier
+  // version has none: the setting of now, and the band says so when its expression has a function of angles.
+  const ANGLE_FN = /(^|[^\p{L}\p{N}_])(?:a|arc)?(?:sin|cos|tan|sec|csc|cot)(?!h)\s*\(|atan2\s*\(|arg\s*\(|cis\b|°/u;
+  const ANGLE_NAME = () => ({ rad: tr('radians', 'ラジアン'), deg: tr('degrees', '度'), gra: tr('gradians', 'グラード') });
+  const lineOpts = (h) => Object.assign(engineOpts(), h && h.angle ? { angle: h.angle } : {});
+  function angleNote(h) {
+    const N = ANGLE_NAME();
+    if (h.angle && h.angle !== S.angle) return trf('This line was worked out in {0}: it is worked out in {0} again', 'この行は{0}で計算しました。{0}のまま計算します', N[h.angle] || h.angle);
+    if (!h.angle && ANGLE_FN.test(String(h.expr || ''))) return trf('The angle unit of this line was not kept: it is worked out in {0}, as set now', 'この行の角度の単位は残っていないので、今の設定（{0}）で計算します', N[S.angle] || S.angle);
+    return '';
+  }
   function startHistEdit(h) {
     if (history.indexOf(h) < 0) return;
     if (histSel) closeHistSelect();
     if (!histEdit) histEdit = { h, keep: exprEl.value };
     else histEdit.h = h;
     const n = editBand.querySelector('.hedit-n'), b = Number(h.base || 10), now = Number(S.base);
-    n.textContent = b !== now ? trf('This line was in {0}; it is worked out in {1}, as set now', 'この行は {0} でした。今の設定の {1} で計算します', BASE_NAME[b] || String(b), BASE_NAME[now] || String(now)) : '';
+    n.textContent = [b !== now ? trf('This line was in {0}; it is worked out in {1}, as set now', 'この行は {0} でした。今の設定の {1} で計算します', BASE_NAME[b] || String(b), BASE_NAME[now] || String(now)) : '', angleNote(h)].filter(Boolean).join(' ');
     n.hidden = !n.textContent;
+    // (1.16.0, R9) the first time: what touching an expression does
+    const tip = editBand.querySelector('.hedit-tip');
+    if (tip) { tip.hidden = store.get('qalc.hedittip', false) === true; store.set('qalc.hedittip', true); }
     editBand.hidden = false;
     exprEl.value = toDisplay(h.expr);
     exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length);
     exprChanged();
     markEditing();
     refreshSteps();
-    const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === h);
-    if (it) it.scrollIntoView({ block: 'nearest' });
+    // (1.16.0: in sight once the band is up and the field has grown, fix/hist-edit-scroll)
+    revealHistLine(h);
     $('#status').textContent = tr('Editing a line of the history: = puts the new result in its place', '履歴の行を直しています。= で、その行を新しい式と答えに置き換えます');
     focusExpr();
   }
@@ -3934,24 +4552,33 @@
   const usesName = (e, name) => new RegExp('(^|[^\\p{L}\\p{N}_])' + escRe(name) + '(?![\\p{L}\\p{N}_])', 'u').test(e || '');
   const ansUses = (e) => Array.from(String(e || '').matchAll(/(^|[^\p{L}\p{N}_])ans(\d?)(?![\p{L}\p{N}_])/gu)).map((m) => (m[2] ? Number(m[2]) : 1));
   // the expression of line i with ans (ans2 …) as the results of the lines above it then (not the newest ans)
+  // (1.16.0, feature/hist-excel) "#12" in the expression of line i: the answer of line 12 as the history has it now, or the
+  // error (a line that is gone, or not above line i)
+  const refsAt = (expr, i) => expandHistRefs(expr, history[i] ? history[i].n : histNo + 1);
   function withAns(expr, i) {
+    const rx = refsAt(expr, i);
+    if (!rx.error) expr = rx.expr;
     return String(expr).replace(/(^|[^\p{L}\p{N}_])ans(\d?)(?![\p{L}\p{N}_])/gu, (m, pre, d) => {
       const p = history[i - (d ? Number(d) : 1)], v = p ? insertText(p) : null;
       return v ? pre + '(' + v + ')' : m;
     });
   }
-  const ENTRY_KEYS = ['expr', 'result', 'approx', 'cmp', 'base', 'msgs', 'cut', 'tail', 'input', 'big', 'edited'];
+  const ENTRY_KEYS = ['expr', 'result', 'approx', 'cmp', 'base', 'angle', 'msgs', 'cut', 'tail', 'input', 'big', 'edited'];
   const snapEntry = (h) => { const s = {}; for (const k of ENTRY_KEYS) if (k in h) s[k] = h[k]; return s; };
   function putEntry(h, s) { for (const k of ENTRY_KEYS) delete h[k]; Object.assign(h, s); }
   // a line worked out again in place (the settings of now): its new fields, or { error }
   async function recalcLine(i, expr) {
-    const r = await Bridge.send('calc', { expr: withAns(expr, i), opts: engineOpts(), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    const rx = refsAt(expr, i);
+    if (rx.error) return { error: rx.error };
+    const r = addNotes(await fixIntegral(plainerForms(await Bridge.send('calc', { expr: withAns(expr, i), opts: optsFor(expr, lineOpts(history[i])), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT })), withAns(expr, i)), rx.notes);
     if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
     if (!r.ok || r.timeout || !r.result) {
       const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
       return { error: r.timeout ? tr('The time limit was reached', '制限時間を過ぎました') : localMessage(err ? err.text : r.error) || tr('Check the expression', '式を確認してください') };
     }
-    const s = { expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3) };
+    const und = undoneMessage(r.result, r.messages, withAns(expr, i));
+    if (und) return { error: und }; // (1.16.0, H8, F1, G)
+    const s = { expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), angle: (history[i] && history[i].angle) || S.angle, msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3) };
     if (r.truncated) { s.cut = true; if (typeof r.tail === 'string' && r.tail) s.tail = r.tail; s.msgs.push({ type: 'warning', text: cutMessage(r) }); }
     if (typeof r.input === 'string' && r.input) { if (r.input.length > MAX_INPUT) s.big = true; else s.input = r.input; }
     return s;
@@ -3960,9 +4587,12 @@
   // changed line defines (until a line defines it again)
   function editDependents(i, names) {
     const changed = new Set([i]), list = [];
+    // (1.16.0, feature/hist-excel: and "#12" of a changed line, by its number)
+    const changedNo = new Set([history[i] && history[i].n]);
     for (let j = i + 1; j < history.length; j++) {
       const e = history[j].expr, dn = defName(e), body = dn ? String(e).replace(/^[^=]*=/, '') : e;
-      const dep = ansUses(e).some((n) => changed.has(j - n)) || Array.from(names).some((nm) => usesName(body, nm));
+      const dep = ansUses(e).some((n) => changed.has(j - n)) || Array.from(names).some((nm) => usesName(body, nm)) || lineRefs(e).some((n) => changedNo.has(n));
+      if (dep) changedNo.add(history[j].n);
       if (dep) { changed.add(j); list.push(j); if (dn) names.add(dn); } else if (dn) names.delete(dn);
     }
     return list;
@@ -3973,7 +4603,7 @@
     for (const nm of names) {
       let k = -1;
       for (let j = history.length - 1; j >= 0; j--) if (defName(history[j].expr) === nm) { k = j; break; }
-      if (k >= 0) await Bridge.send('calc', { expr: withAns(history[k].expr, k), opts: engineOpts(), timeout: timeLimit() * 1000, store: false, preview: false });
+      if (k >= 0) await Bridge.send('calc', { expr: withAns(history[k].expr, k), opts: lineOpts(history[k]), timeout: timeLimit() * 1000, store: false, preview: false });
     }
     if (names.size) { invalidateCatalogs(); await refreshDefined(); }
   }
@@ -3986,41 +4616,125 @@
     markEditing();
     if (histFiltered()) filterHistory();
   }
+  // (1.16.0, fix/hist-edit-scroll) Keeps line h of the history in sight for a moment (1.5 s, or until a finger is put on the
+  // history): all of it inside the history's box with a margin (its top when it is taller than the box), and above the toast
+  // when the toast is over the history. Done at once, in the next two frames, after 250 ms, and whenever the history's size
+  // changes meanwhile (the band, the field and the keys come and go; the ResizeObserver above).
+  function revealHistLine(h, ms) {
+    const run = () => {
+      if (!histReveal || histReveal.h !== h) return;
+      const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === h);
+      if (!it || !histEl.clientHeight) return;
+      const r = it.getBoundingClientRect(), b = histEl.getBoundingClientRect(), m = 8;
+      let bottom = b.bottom;
+      const t = $('#toast');
+      if (t.classList.contains('show')) { const q = t.getBoundingClientRect(); if (q.top < b.bottom && q.bottom > b.top && q.top - b.top > r.height + 2 * m) bottom = q.top; }
+      let d = 0;
+      if (r.height > bottom - b.top - 2 * m) d = r.top - b.top - m;
+      else if (r.top < b.top + m) d = r.top - b.top - m;
+      else if (r.bottom > bottom - m) d = r.bottom - bottom + m;
+      if (Math.abs(d) >= 1) histEl.scrollTop += d;
+      histPinned = histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight < 24;
+    };
+    histReveal = { h, until: performance.now() + (ms || 1500), run };
+    run();
+    requestAnimationFrame(() => { run(); requestAnimationFrame(run); });
+    setTimeout(run, 250);
+  }
+  // the lines worked out again after an edit: marked for 3 s (h-flash in style.css), also when they are drawn again meanwhile
+  function flashLines(list) {
+    if (!list.length) return;
+    const until = Date.now() + 3000;
+    for (const x of list) histFlash.set(x, until);
+    for (const it of histEl.querySelectorAll('.h-item')) if (histFlash.has(it._h)) it.classList.add('h-flash');
+    setTimeout(() => {
+      const now = Date.now();
+      for (const [x, u] of histFlash) if (u <= now) histFlash.delete(x);
+      for (const it of histEl.querySelectorAll('.h-item.h-flash')) if (!histFlash.has(it._h)) it.classList.remove('h-flash');
+    }, 3050);
+  }
   // "=" while a line is edited: that line gets the new expression and result (s: the fields of recalcLine)
   async function applyHistEdit(h, s) {
-    const i = history.indexOf(h);
+    const i = history.indexOf(h), keepField = histEdit ? histEdit.keep : '';
     const before = new Map([[h, snapEntry(h)]]);
     const names = new Set([defName(h.expr), defName(s.expr)].filter(Boolean));
     const touched = new Set(names);
     putEntry(h, Object.assign(s, { edited: Date.now() }));
     histEdit = null; editBand.hidden = true;
-    exprEl.value = ''; showPreview(null); autosize(); updateSuggest(false); saveDraft();
+    exprEl.value = ''; showPreview(null); autosize(); updateSuggest(false); saveDraft(); pruneTapMarks();
     saveHistory();
     redrawEntries(new Set([h]));
+    // (1.16.0, fix/hist-edit-scroll: as a cell after Enter, the line and its answer stay in sight while the band goes, the
+    // field gets small and the history grows; until then it could go to the end of the history, out of sight)
+    revealHistLine(h);
     // the lines below that went on from it
     const deps = editDependents(i, new Set(names));
     let done = 0;
     if (deps.length) {
-      const a = await sheet(trf('{0} lines below go on from this line (its ans or its variable). Work them out again too?', '下の {0} 行は、この行の答え（ans）や変数を使っています。計算し直しますか？', deps.length),
+      const a = await sheet(trf('{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?', '下の {0} 行は、この行の答え（ans や #{1}）や変数を使っています。計算し直しますか？', deps.length, h.n),
         [['all', trf('Also the {0} lines below', '下の {0} 行も計算し直す', deps.length)], ['one', tr('Only this line', 'この行だけ')]]);
-      if (a === 'all') {
+      if (a === null) {
+        // (1.16.0, the review of 11-24, R4) Cancel: nothing changes, as before "=", and the line is being edited again with the new
+        // expression in the field (until then the line stayed edited, its variable changed, and the lines below were not
+        // worked out again, while the toast said "Edited")
+        putEntry(h, before.get(h));
+        saveHistory();
+        redrawEntries(new Set([h]));
+        await engineAsHistory(history.indexOf(h) === history.length - 1, touched);
+        histEdit = { h, keep: keepField };
+        startHistEdit(h);
+        exprEl.value = toDisplay(s.expr); exprEl.setSelectionRange(exprEl.value.length, exprEl.value.length); exprChanged();
+        toast(tr('Nothing changed: still editing the line', '何も変えていません（直している途中に戻しました）'), 2500);
+        return;
+      }
+      if (a === 'one') {
+        // (R4) the lines below that were not worked out again: a note that their answers may be out of date
         for (const j of deps) {
           const d = history[j];
           if (!d) continue;
-          const n = await recalcLine(j, d.expr);
           if (!before.has(d)) before.set(d, snapEntry(d));
-          if (n.error) { d.msgs = [{ type: 'error', text: trf('Not worked out again: {0}', '計算し直せませんでした：{0}', n.error) }]; continue; }
+          d.msgs = (d.msgs || []).filter((m) => !m.stale).concat([{ type: 'warning', text: tr('A line above was edited: this answer may be out of date', '上の行が直されたので、この答えは古いかもしれません'), stale: true }]);
+        }
+        saveHistory();
+        redrawEntries(new Set(before.keys()));
+      }
+      if (a === 'all') {
+        // (1.16.0, the review of 11-24 (4), H5) a line that could not be worked out again: the lines that use it (its #, its ans,
+        // its variable) are not worked out again with its old answer, as #REF! in a spreadsheet; they keep their answers, marked
+        const failIdx = new Set(), failNo = new Map(), failNames = new Map();
+        for (const j of deps) {
+          const d = history[j];
+          if (!d) continue;
+          if (!before.has(d)) before.set(d, snapEntry(d));
+          const dn0 = defName(d.expr), body = dn0 ? String(d.expr).replace(/^[^=]*=/, '') : d.expr;
+          const viaA = ansUses(d.expr).map((k) => j - k).find((x) => failIdx.has(x)), via = viaA === undefined ? -1 : viaA;
+          const viaNo = lineRefs(d.expr).find((k) => failNo.has(k));
+          const viaName = Array.from(failNames.keys()).find((nm) => usesName(body, nm));
+          const from = viaNo !== undefined ? viaNo : via >= 0 ? history[via].n : viaName !== undefined ? failNames.get(viaName) : null;
+          if (from !== null && from !== undefined) {
+            // (the line that could not be worked out first is named, also through a line in between: #5 = ans of #4 = #3 × 2)
+            const root = failNo.get(from) || from;
+            d.msgs = (d.msgs || []).filter((m) => !m.stale && !m.notAgain).concat([{ type: 'error', text: trf('Not worked out again (#{0} could not be worked out again)', '計算し直せませんでした（#{0} が計算し直せないため）', root), notAgain: true }]);
+            failIdx.add(j); failNo.set(d.n, root); if (dn0) failNames.set(dn0, d.n);
+            continue;
+          }
+          const n = await recalcLine(j, d.expr);
+          if (n.error) { d.msgs = [{ type: 'error', text: trf('Not worked out again: {0}', '計算し直せませんでした：{0}', n.error), notAgain: true }]; failIdx.add(j); failNo.set(d.n, d.n); if (dn0) failNames.set(dn0, d.n); continue; }
           const dn = defName(d.expr); if (dn) touched.add(dn);
           putEntry(d, Object.assign(n, { edited: Date.now() }));
           done++;
         }
         saveHistory();
         redrawEntries(new Set(before.keys()));
+        flashLines(Array.from(before.keys()).filter((x) => x !== h && history.indexOf(x) >= 0));
+        revealHistLine(h);
       }
     }
     const lastIdx = history.length - 1, lastChanged = Array.from(before.keys()).some((x) => history.indexOf(x) === lastIdx);
     await engineAsHistory(lastChanged, touched);
     announce(h);
+    refreshSteps(); // (the next steps under the newest answer again, when it was the line edited)
+    revealHistLine(h); // (again with the toast up: the line not under it)
     toast(done ? trf('Edited, and {0} lines below worked out again', '直しました（下の {0} 行も計算し直しました）', done) : tr('Edited', '直しました'), 7000,
       [tr('Undo', '元に戻す'), async () => {
         for (const [x, snap] of before) if (history.indexOf(x) >= 0) putEntry(x, snap);
@@ -4158,6 +4872,7 @@
     else if (k === 'clear') {
       if (!history.length) { toast(tr('The history is empty', '履歴はありません'), 1400); return; }
       if (!(await confirmSheet(tr('Clear the whole history?', '計算履歴をすべて消去しますか？'), tr('Clear', '消去する')))) return;
+      if (histEdit) endHistEdit(true); // (1.16.0, R7: as for a deleted line)
       const old = history;
       history = [];
       historyChanged();
@@ -4474,8 +5189,51 @@
     V: 'ボルト', A: 'アンペア', ohm: 'オーム', F: 'ファラド', C: 'クーロン', Hz: 'ヘルツ', T: 'テスラ',
     bit: 'ビット', B: 'バイト', kbyte_c: 'キロバイト', Mbyte_c: 'メガバイト', Gbyte_c: 'ギガバイト', Tbyte_c: 'テラバイト',
     rad: 'ラジアン', deg: '度', gra: 'グラード', rpm: '回転毎分', lx: 'ルクス', lm: 'ルーメン', cd: 'カンデラ', mol: 'モル',
-    Bq: 'ベクレル', Sv: 'シーベルト', Gy: 'グレイ', dB: 'デシベル', km_p_l: 'キロメートル毎リットル 燃費', pt: 'ポイント'
+    Bq: 'ベクレル', Sv: 'シーベルト', Gy: 'グレイ', dB: 'デシベル', km_p_l: 'キロメートル毎リットル 燃費', pt: 'ポイント',
+    // (1.16.0, the review of 11-24, T6: the units of the converter that were shown with their English names)
+    dm_c: 'デシメートル', micron: 'ミクロン', 'Å': 'オングストローム', US_in: '米国測量インチ', hand: 'ハンド', US_ft: '米国測量フィート', li: 'リンク',
+    rd: 'ロッド', fathom: 'ファゾム 尋', ch: 'チェーン', fur: 'ハロン ファーロング', US_mi: '米国測量マイル', thou: 'ミル（1/1000インチ）', light_second: '光秒',
+    light_minute: '光分', light_hour: '光時',
+    hg_c: 'ヘクトグラム', gr: 'グレーン', pwt: 'ペニーウェイト', oz_t: 'トロイオンス', lb_t: 'トロイポンド', dr: 'ドラム', cwt: 'ショートハンドレッドウェイト',
+    l_cwt: 'ロングハンドレッドウェイト', s_ton: 'ショートトン 米トン', l_ton: 'ロングトン 英トン', stone: 'ストーン', u: '統一原子質量単位', Da: 'ダルトン',
+    kDa_c: 'キロダルトン', slug: 'スラグ',
+    cl_c: 'センチリットル', cuin: '立方インチ', UK_fl_oz: '英液量オンス', UK_gi: '英ジル', UK_pt: '英パイント', UK_qt: '英クォート', UK_gal: '英ガロン',
+    UK_bu: '英ブッシェル', fl_oz: '米液量オンス', gi: '米ジル', liq_pt: '米液量パイント', liq_qt: '米液量クォート', dry_pt: '米乾量パイント', dry_qt: '米乾量クォート',
+    pk: '米ペック', bu: '米ブッシェル', acre_ft: 'エーカーフィート', US_teaspoon: '米小さじ', US_tablespoon: '米大さじ', cup_US: '米カップ',
+    decare: 'デカール（10アール）', rood: 'ルード', sqin: '平方インチ', sqmi: '平方マイル', oR: 'ランキン度',
+    nautical_mile_p_h: '海里毎時', min_p_km: 'ペース（1kmあたりの分）', min_p_mile: 'ペース（1マイルあたりの分）', fortnight: '2週間',
+    RON: 'ルーマニア・レウ', ISK: 'アイスランド・クローナ', eurocent: 'ユーロセント', US_cent: 'セント（米ドル）',
+    cal_IT: '国際カロリー', Calorie: '大カロリー（キロカロリー）', gTNT: 'TNT火薬グラム', tTNT: 'TNT火薬トン', Btu: '英熱量単位', therm: 'サーム', erg: 'エルグ',
+    ft_lbf: 'フィート重量ポンド', PS: '仏馬力', dBm: 'ミリワット基準のデシベル', dBW: 'ワット基準のデシベル',
+    arcmin: '分（角度）', arcsec: '秒（角度）', turn: '回転', tex_point: 'TeXポイント', pica: 'パイカ', twip: 'トゥイップ', ata_point: 'アメリカンポイント',
+    cd_p_sqm: 'カンデラ毎平方メートル 輝度', fc: 'フートカンデラ', W_p_sr: 'ワット毎ステラジアン', W_p_sqm: 'ワット毎平方メートル',
+    A_p_m: 'アンペア毎メートル', Oe: 'エルステッド', Wb: 'ウェーバ', Mx: 'マクスウェル', gauss: 'ガウス',
+    nibble: 'ニブル', word: 'ワード（16ビット）', Pbyte_c: 'ペタバイト', Ebyte_c: 'エクサバイト', Kibyte_c: 'キビバイト', Mibyte_c: 'メビバイト',
+    Gibyte_c: 'ギビバイト', Tibyte_c: 'テビバイト', kbit_c: 'キロビット', Mbit_c: 'メガビット', Gbit_c: 'ギガビット', Tbit_c: 'テラビット', Pbit_c: 'ペタビット',
+    Kibit_c: 'キビビット', Mibit_c: 'メビビット', Gibit_c: 'ギビビット',
+    S: 'ジーメンス', V_p_m: 'ボルト毎メートル', N_p_C: 'ニュートン毎クーロン', H: 'ヘンリー',
+    mol_p_cum: 'モル毎立方メートル', mol_p_cudm: 'モル毎立方デシメートル', kat: 'カタール', mol_p_L: 'モル毎リットル', molar: 'モーラー（mol/L）',
+    Ci: 'キュリー', rem_radioactivity: 'レム', mrem_c: 'ミリレム', C_p_kg: 'クーロン毎キログラム', R: 'レントゲン', Gy_p_s: 'グレイ毎秒', mrem_p_h: 'ミリレム毎時',
+    dyn: 'ダイン', lbf: '重量ポンド', ozf: '重量オンス', pond: '重量グラム', kpond_c: '重量キログラム', kpond_p_sqcm: '重量キログラム毎平方センチメートル',
+    psi: '重量ポンド毎平方インチ', ksi: '重量キロポンド毎平方インチ', Torr: 'トル', inHg: '水銀柱インチ', mTorr_c: 'ミリトル', mWC: '水柱メートル',
+    mmWC_c: '水柱ミリメートル', cmWC_c: '水柱センチメートル', inWC: '水柱インチ', bel: 'ベル'
   };
+  // (1.16.0, the review of 11-24, T6) units left out of the lists of the converter, in every language: units of physics in natural or
+  // atomic units, of astronomy and old French measures, and the quantities of another kind in a list (flows among the volumes,
+  // accelerations among the speeds, densities among the masses); they can still be typed in an expression
+  const CONV_HIDE = new Set(('pied_du_roi pouce ligne toise planck_length bohr_unit rack_unit planck_c_p_eV l_N solar_radius US_rd ' +
+    'pfund zentner planck_mass electron_unit eV_p_sqc kg_p_kg solar_mass kg_p_cum g_p_cudm g_p_cucm g_p_mol ' +
+    'imperial_minim imperial_fluid_scruple UK_fl_dr minim fl_dr sverdrup cum_p_kg l_p_km l_p_s l_p_min l_p_h cum_p_s cucm_p_min cuf_p_min cfm cuf_p_s cfs gpm gph gal_p_s acre_ft_p_d mpg US_dessertspoon dessertspoon ' +
+    'cmil kcmil b section township darcy millidarcy planck_temperature eV_p_kB ' +
+    'c_unit m_p_sqs Gal gee m_p_scu gee_p_s m_p_sfourth m_p_sfifth m_p_ssixth bohr_Ha_p_planck ' +
+    'planck_time planck_p_Ha planck_p_electron_sqc planck_p_eV a_g a_t ' +
+    'electron_sqc Ha Ry foe boltzmann_unit planck_unit J_p_K J_p_kg_K W_p_m_K J_p_cum J_p_mol J_p_mol_K J_s erg_p_s solar_luminosity cal_fifteen cal_mean therm_ISO therm_US thermie kcal_p_g J_p_kg ton_refrigaration ' +
+    'sqdeg sr rad_p_sqs rad_p_s tex_scaled_point agate ata_pica new_didot didot cicero ' +
+    'erg_p_sqcm_p_s W_p_sqm_sr sb lambert foot_lambert ph planck_p_e_sqbohr e_planck_p_electron kayser recm A_sqm ' +
+    'tribble nonet declet octal_digit hartley trit nat ' +
+    'abampere abcoulomb statcoulomb planck_charge e_unit C_p_cum C_m D C_p_sqm statvolt abvolt Ha_p_e V_p_C recF daraf abohm statohm Ha_p_e_bohr F_p_m abhenry H_p_m A_p_sqm ' +
+    'einstein einstein_p_sqm_p_s microeinstein_p_sqm_p_s micromol_p_sqm_p_s mol_p_sqm_p_s kat_p_cum Rd rad_radioactivity erg_p_g ' +
+    'electron_c Ha_p_bohr eV_p_c planck_p_bohr kg_m_p_s poundal Ba sqm_p_s N_p_m Pa_s P cP_c St cSt_c N_m Np').split(' '));
   // functions and variables (constants): the first word is shown, all words are found by the search
   const FUNC_JA = {
     solve: '方程式を解く', multisolve: '連立方程式を解く', solve2: '2元連立方程式を解く', dsolve: '微分方程式を解く',
@@ -4862,10 +5620,166 @@
     showSuggest([]);
     focusExpr();
   }
+  // ---- (1.16.0, feature/arg-hints, the owner's request of 11-23 11:16) the arguments of a function while it is typed:
+  // after a name of ARG_FUNCS and "(", a row where the suggestions are (above the keys) shows its arguments (the one
+  // the caret is in, bold), what it does and an example; ✕ hides it for this call; the setting "arg_hints" turns it
+  // off. It only reads the field (the caret and the text before it): nothing is typed, and the row takes no focus.
+  // The words of the arguments; the functions: [arguments ('?' optional, '…' more of the same), what it does, example]
+  const ARG_WORDS = () => ({
+    angle: tr('angle', '角度'),
+    value: tr('value', '値'),
+    base: tr('base', '底'),
+    exponent: tr('exponent', '指数'),
+    decimals: tr('decimals', '小数の桁数'),
+    dividend: tr('number', '割られる数'),
+    divisor: tr('divisor', '割る数'),
+    term: tr('term', '項の式'),
+    factorx: tr('factor', '因数の式'),
+    from: tr('from', '始め'),
+    to: tr('to', '終わり'),
+    variable: tr('variable', '変数'),
+    expr: tr('expression', '式'),
+    order: tr('order', '階数'),
+    lower: tr('lower limit', '下端'),
+    upper: tr('upper limit', '上端'),
+    approach: tr('value approached', '近づける値'),
+    direction: tr('direction', '向き'),
+    equation: tr('equation', '方程式'),
+    center: tr('center', '中心'),
+    degree: tr('degree', '次数'),
+    matrix: tr('matrix', '行列'),
+    vector1: tr('vector 1', 'ベクトル 1'),
+    vector2: tr('vector 2', 'ベクトル 2'),
+    data: tr('data', 'データ'),
+    mean: tr('mean μ', '平均 μ'),
+    sd: tr('standard deviation σ', '標準偏差 σ'),
+    cumulative: tr('cumulative (1)', '累積（1）'),
+    prob: tr('probability P', '確率 P'),
+    successes: tr('successes k', '成功の回数 k'),
+    trials: tr('trials n', '試行の回数 n'),
+    p: tr('probability p', '確率 p'),
+    rate: tr('mean number λ', '平均の回数 λ'),
+    dfv: tr('degrees of freedom ν', '自由度 ν'),
+    dfk: tr('degrees of freedom k', '自由度 k'),
+    percent: tr('percent', 'パーセント'),
+    sidea: tr('side a', '辺 a'),
+    sideb: tr('side b', '辺 b'),
+  });
+  const ARG_FUNCS = () => ({
+    sin: ['angle', tr('Sine of an angle (radians or degrees: the chip at the top)', '角度の正弦（ラジアンか度かは上のボタンのとおり）'), 'sin(π/6) = 1/2'],
+    cos: ['angle', tr('Cosine of an angle', '角度の余弦'), 'cos(π/3) = 1/2'],
+    tan: ['angle', tr('Tangent of an angle', '角度の正接'), 'tan(π/4) = 1'],
+    asin: ['value', tr('The angle whose sine is the value', '正弦がその値になる角度'), 'asin(1/2) = π/6'],
+    acos: ['value', tr('The angle whose cosine is the value', '余弦がその値になる角度'), 'acos(1/2) = π/3'],
+    atan: ['value', tr('The angle whose tangent is the value', '正接がその値になる角度'), 'atan(1) = π/4'],
+    atan2: ['y x', tr('The angle of the point (x, y) from the x axis', '点 (x, y) の x 軸からの角度'), 'atan2(1, 1) = π/4'],
+    sinh: ['value', tr('Hyperbolic sine', '双曲線正弦'), 'sinh(0) = 0'],
+    cosh: ['value', tr('Hyperbolic cosine', '双曲線余弦'), 'cosh(0) = 1'],
+    tanh: ['value', tr('Hyperbolic tangent', '双曲線正接'), 'tanh(0) = 0'],
+    ln: ['value', tr('Natural logarithm (base e)', '自然対数（底は e）'), 'ln(e^2) = 2'],
+    log: ['value base?', tr('Logarithm in a base (e when left out)', '底を決めた対数（省くと底は e）'), 'log(8, 2) = 3'],
+    log10: ['value', tr('Common logarithm (base 10)', '常用対数（底は 10）'), 'log10(1000) = 3'],
+    log2: ['value', tr('Logarithm in base 2', '底が 2 の対数'), 'log2(8) = 3'],
+    exp: ['exponent', tr('e to the power of the exponent', 'e の指数乗'), 'exp(1) = e'],
+    sqrt: ['value', tr('Square root', '平方根'), 'sqrt(16) = 4'],
+    cbrt: ['value', tr('Cube root (also of a negative number)', '立方根（負の数も）'), 'cbrt(−27) = −3'],
+    root: ['value n', tr('The n-th root', 'n 乗根'), 'root(32, 5) = 2'],
+    abs: ['value', tr('Absolute value (distance from 0)', '絶対値（0 からの距離）'), 'abs(−3) = 3'],
+    round: ['value decimals?', tr('Rounds to that many decimals (0 when left out)', 'その桁数の小数に四捨五入（省くと整数）'), 'round(3.14159, 2) = 3.14'],
+    floor: ['value', tr('Rounds down to a whole number', '小さいほうの整数に切り捨て'), 'floor(2.7) = 2'],
+    ceil: ['value', tr('Rounds up to a whole number', '大きいほうの整数に切り上げ'), 'ceil(2.1) = 3'],
+    trunc: ['value', tr('Drops the decimals (toward 0)', '小数を切り捨て（0 の向きへ）'), 'trunc(−2.7) = −2'],
+    mod: ['dividend divisor', tr('Remainder of a division (with the sign of the divisor)', '割り算の余り（符号は割る数と同じ）'), 'mod(17, 5) = 2'],
+    rem: ['dividend divisor', tr('Remainder of a division (with the sign of the number)', '割り算の余り（符号は割られる数と同じ）'), 'rem(−7, 3) = −1'],
+    gcd: ['a b …', tr('Greatest common divisor', '最大公約数'), 'gcd(12, 18) = 6'],
+    lcm: ['a b …', tr('Least common multiple', '最小公倍数'), 'lcm(4, 6) = 12'],
+    comb: ['n k', tr('Combinations: ways to choose k of n (nCk)', '組合せ：n 個から k 個を選ぶ数（nCk）'), 'comb(5, 2) = 10'],
+    binomial: ['n k', tr('Binomial coefficient (n choose k)', '二項係数（nCk）'), 'binomial(5, 2) = 10'],
+    perm: ['n k', tr('Permutations: ways to line up k of n (nPk)', '順列：n 個から k 個を並べる数（nPk）'), 'perm(5, 2) = 20'],
+    factorial: ['n', tr('Factorial n! = 1 × 2 × … × n', '階乗 n! = 1 × 2 × … × n'), 'factorial(5) = 120'],
+    sum: ['term from to variable?', tr('Sum of the term with the variable from … to … (x when left out)', '変数を始めから終わりまで変えた項の和（変数を省くと x）'), 'sum(x^2, 1, 10) = 385'],
+    product: ['factorx from to variable?', tr('Product of the factor with the variable from … to …', '変数を始めから終わりまで変えた因数の積'), 'product(x, 1, 5) = 120'],
+    diff: ['expr variable? order?', tr('Derivative (the order: 2 for the second derivative)', '導関数（階数を 2 にすると 2 階微分）'), 'diff(x^3, x) = 3x²'],
+    integrate: ['expr lower? upper? variable?', tr('Integral: with the limits a number, without them a function + C', '積分：上下端があれば定積分、なければ不定積分（+ C）'), 'integrate(x^2, 0, 1) = 1/3'],
+    limit: ['expr approach variable? direction?', tr('Limit as the variable approaches the value (direction 1: from above, −1: from below)', '変数を値に近づけたときの極限（向き 1 は上から、−1 は下から）'), 'limit(sin(x)/x, 0) = 1'],
+    solve: ['equation variable?', tr('Solves an equation (for x when the variable is left out)', '方程式を解く（変数を省くと x について）'), 'solve(2x + 1 = 7) = 3'],
+    dsolve: ['equation', tr('Solves a differential equation in y and x', 'y と x の微分方程式を解く'), 'dsolve(diff(y, x) = 2y) = C e^(2x)'],
+    factor: ['value', tr('Factors a number into primes, or a polynomial', '数を素因数に、多項式を因数に分解'), 'factor(x^2 − 1) = (x + 1)(x − 1)'],
+    taylor: ['expr variable? center? degree?', tr('Taylor polynomial (x, 0 and 5 when left out)', 'テイラー多項式（省くと x、中心 0、次数 5）'), 'taylor(sin(x), x, 0, 5) = x − x³/6 + x⁵/120'],
+    det: ['matrix', tr('Determinant of a square matrix', '正方行列の行列式'), 'det([1, 2; 3, 4]) = −2'],
+    inverse: ['matrix', tr('Inverse of a square matrix', '正方行列の逆行列'), 'inverse([1, 2; 3, 4]) = [−2, 1; 3/2, −1/2]'],
+    transpose: ['matrix', tr('Rows and columns swapped', '行と列を入れ替えた行列'), 'transpose([1, 2; 3, 4]) = [1, 3; 2, 4]'],
+    dot: ['vector1 vector2', tr('Dot product of two vectors', '2 つのベクトルの内積'), 'dot([1, 2, 3], [4, 5, 6]) = 32'],
+    cross: ['vector1 vector2', tr('Cross product of two 3D vectors', '2 つの 3 次元ベクトルの外積'), 'cross([1, 0, 0], [0, 1, 0]) = [0, 0, 1]'],
+    mean: ['data', tr('Mean (average) of the data', 'データの平均'), 'mean([1, 2, 3, 4]) = 2.5'],
+    median: ['data', tr('Median: the middle value', '中央値：真ん中の値'), 'median([3, 1, 2]) = 2'],
+    stdev: ['data', tr('Standard deviation of a sample (divided by n − 1)', '標本の標準偏差（n − 1 で割る）'), 'stdev([2, 4, 4, 4, 5, 5, 7, 9]) ≈ 2.138'],
+    var: ['data', tr('Variance of a sample (divided by n − 1)', '標本の分散（n − 1 で割る）'), 'var([1, 2, 3, 4]) = 5/3'],
+    min: ['data', tr('The smallest value', 'いちばん小さい値'), 'min([3, 1, 2]) = 1'],
+    max: ['data', tr('The largest value', 'いちばん大きい値'), 'max([3, 1, 2]) = 3'],
+    percentile: ['data percent', tr('The value below which that percent of the data lies', 'データのその割合（%）が下にある値'), 'percentile([1, 2, 3, 4, 5], 50) = 3'],
+    normdist: ['value mean? sd? cumulative?', tr('Normal distribution: the density, or P(X ≤ x) with 1 at the end', '正規分布：密度、最後を 1 にすると P(X ≤ x)'), 'normdist(1.96, 0, 1, 1) ≈ 0.975'],
+    normdistinv: ['prob mean? sd?', tr('The x with P(X ≤ x) = P in a normal distribution', '正規分布で P(X ≤ x) = P となる x'), 'normdistinv(0.975) ≈ 1.96'],
+    binomdist: ['successes trials p cumulative?', tr('Binomial distribution: P(X = k), or P(X ≤ k) with 1 at the end', '二項分布：P(X = k)、最後を 1 にすると P(X ≤ k)'), 'binomdist(3, 10, 0.5) ≈ 0.117'],
+    poisson: ['value rate cumulative?', tr('Poisson distribution: P(X = k), or P(X ≤ k) with 1 at the end', 'ポアソン分布：P(X = k)、最後を 1 にすると P(X ≤ k)'), 'poisson(2, 3) ≈ 0.224'],
+    tdist: ['value dfv cumulative?', tr('Student’s t distribution: the density, or P(X ≤ x) with 1 at the end', 't 分布：密度、最後を 1 にすると P(X ≤ x)'), 'tdist(2, 10, 1) ≈ 0.963'],
+    chisqdist: ['value dfk cumulative?', tr('χ² distribution: the density, or P(X ≤ x) with 1 at the end', 'χ² 分布：密度、最後を 1 にすると P(X ≤ x)'), 'chisqdist(7.81, 3, 1) ≈ 0.950'],
+    hypot: ['sidea sideb', tr('The hypotenuse √(a² + b²)', '斜辺 √(a² + b²)'), 'hypot(3, 4) = 5'],
+    isprime: ['n', tr('1 when the number is prime, else 0', '素数なら 1、そうでなければ 0'), 'isprime(97) = 1'],
+  });
+  const ARG_ALIAS = {'arcsin': 'asin', 'arccos': 'acos', 'arctan': 'atan', 'inv': 'inverse'};
+  const ahEl = $('#arghint');
+  let ahHidden = ''; // the call whose hint was closed with ✕ ("name@position of its parenthesis")
+  // the function call the caret is in: { name, open (the index of its "("), arg (which argument, from 0) } or null
+  function argContext() {
+    const v = exprEl.value, s = exprEl.selectionStart;
+    if (s === undefined || s === null || s !== exprEl.selectionEnd || s > 2000) return null;
+    const sep = commaMode ? ';' : ',';
+    let depth = 0, commas = 0;
+    for (let i = s - 1; i >= 0; i--) {
+      const c = v[i];
+      if (c === ')' || c === ']') depth++;
+      else if (c === '[') { if (depth) depth--; else commas = 0; } // (inside a vector: the argument it is)
+      else if (c === '(') {
+        if (depth) { depth--; continue; }
+        const m = /([\p{L}_][\p{L}\p{N}_]*)\s*$/u.exec(v.slice(Math.max(0, i - 40), i));
+        if (!m) { commas = 0; continue; } // (a plain parenthesis: the call around it)
+        return { name: m[1], open: i, arg: commas };
+      } else if (c === sep && !depth) commas++;
+    }
+    return null;
+  }
+  function updateArgHint() {
+    if (!ahEl) return;
+    const cx = S.arg_hints === false || CF.id || histSel ? null : argContext();
+    const F = cx ? ARG_FUNCS() : null;
+    const key = cx ? (own(F, cx.name) ? cx.name : own(ARG_ALIAS, cx.name) ? ARG_ALIAS[cx.name] : '') : '';
+    const id = cx ? cx.name + '@' + cx.open : '';
+    if (ahHidden && id !== ahHidden) ahHidden = ''; // (closed for that call only: once the caret leaves it, it shows again)
+    if (!key || id === ahHidden) { if (!ahEl.hidden) { ahEl.hidden = true; ahEl.textContent = ''; } return; }
+    const [args, desc, ex] = F[key], W = ARG_WORDS();
+    const parts = args.split(' '), more = parts[parts.length - 1] === '…';
+    const at = more && cx.arg >= parts.length - 1 ? parts.length - 2 : cx.arg;
+    const sig = el('div', { class: 'ah-sig' }, el('span', { class: 'ah-name', text: cx.name }), '(');
+    parts.forEach((p, i) => {
+      if (i) sig.append(commaMode ? '; ' : ', ');
+      const opt = /\?$/.test(p), w = p.replace(/\?$/, ''), word = p === '…' ? '…' : own(W, w) ? W[w] : w;
+      const t = opt ? '[' + word + ']' : word;
+      sig.append(i === at ? el('b', { text: t }) : t);
+    });
+    sig.append(')');
+    const close = tapButton({ class: 'ah-x', type: 'button', text: '✕', 'aria-label': tr('Close the hint', 'ヒントを閉じる') }, () => { ahHidden = id; ahEl.hidden = true; ahEl.textContent = ''; });
+    ahEl.textContent = '';
+    ahEl.append(el('div', { class: 'ah-top' }, sig, close), el('div', { class: 'ah-desc', text: desc }), el('div', { class: 'ah-ex', text: tr('e.g. ', '例：') + toDisplay(ex) }));
+    ahEl.hidden = false;
+  }
+  // (a touch on the row keeps the caret in the field)
+  if (ahEl) ahEl.addEventListener('pointerdown', (e) => { if (!e.target.closest('.ah-x')) e.preventDefault(); });
   // typed: the last change was typed with the phone's keyboard. The on-screen keys write whole
   // names, so for them only the conversions after "to" are offered.
   function updateSuggest(typed) {
     const seq = ++sugSeq;
+    updateArgHint(); // (1.16.0: the arguments of the function the caret is in)
     const cx = sugContext();
     if (!cx || /^to$/i.test(cx.word) || (!cx.conv && (!typed || cx.word.length < 2))) { showSuggest([]); return; }
     if (!sugData) {
@@ -9629,9 +10543,9 @@
     { t: tr('Egg carton', '波（卵パック）'), e: ['sin(x@) cos(y@)'], r: ['-5', '5', '-5', '5'], f: [(x, y) => Math.sin(x) * Math.cos(y)] },
     { t: tr('Ripple', '波紋'), e: ['cos(√(x^2 + y^2)@) e^(−(x^2 + y^2) / 60)'], r: ['-10', '10', '-10', '10'], res: '61', n: 29,
       f: [(x, y) => Math.cos(hyp(x, y)) * Math.exp(-(x * x + y * y) / 60)] },
-    { t: tr('Sphere', '球'), e: ['√(4 − x^2 − y^2)', '−√(4 − x^2 − y^2)'], r: ['-2.2', '2.2', '-2.2', '2.2'], res: '61', eq: true, disk: '2', n: 41, one: true,
+    { t: tr('Sphere', '球'), e: ['√(4 − x^2 − y^2)', '−√(4 − x^2 − y^2)'], r: ['-2.2', '2.2', '-2.2', '2.2'], res: '61', eq: true, disk: '2', n: 41, one: true, rims: { kind: 'ring', c: 0, R: 2, groups: [[0, 1]] },
       f: [(x, y) => Math.sqrt(4 - x * x - y * y), (x, y) => -Math.sqrt(4 - x * x - y * y)] },
-    { t: tr('Doughnut', 'ドーナツ'), e: ['√(1 − (√(x^2 + y^2) − 2)^2)', '−√(1 − (√(x^2 + y^2) − 2)^2)'], r: ['-3.3', '3.3', '-3.3', '3.3'], res: '61', eq: true, n: 45, one: true,
+    { t: tr('Doughnut', 'ドーナツ'), e: ['√(1 − (√(x^2 + y^2) − 2)^2)', '−√(1 − (√(x^2 + y^2) − 2)^2)'], r: ['-3.3', '3.3', '-3.3', '3.3'], res: '61', eq: true, n: 45, one: true, rims: { kind: 'ring', c: 2, R: 1, groups: [[0, 1]] },
       f: [(x, y) => Math.sqrt(1 - (hyp(x, y) - 2) ** 2), (x, y) => -Math.sqrt(1 - (hyp(x, y) - 2) ** 2)] },
     { t: tr('Saddle', '鞍（くら）'), e: ['x^2 − y^2'], r: ['-2', '2', '-2', '2'], f: [(x, y) => x * x - y * y] },
     { t: tr('Bowl and lid', 'おわんとふた'), e: ['x^2 + y^2', '4'], r: ['-2', '2', '-2', '2'], disk: '2', f: [(x, y) => x * x + y * y, () => 4] },
@@ -9804,6 +10718,9 @@
     Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(d.r[i])); });
     if (Q3.resEl) Q3.resEl.value = d.res || '41';
     Q3.points = null; Q3.pending = null;
+    // (fix/3d-first-colors: the sphere and the doughnut have their edges from their shape, as a solid of revolution, and are
+    // one solid from the first drawing; for the expressions as the graph reads them from the box, while they are drawn)
+    Q3.sampleRims = d.rims ? Object.assign({ exprs: plotExprs(Q3.ta.value, 4).join('\n') }, d.rims) : null;
     Q3.equalOnce = !!d.eq; // round for this drawing; the 1:1 setting itself stays as it was
     // "Volume and surface" measures over the region that fits the sample (a disk for a sphere)
     const U = Q3.volUI;
@@ -10643,14 +11560,21 @@
     // does not appear torn first and whole a moment later; if that takes more than 2.5 seconds, it is
     // shown as it is and drawn again afterwards. (Until 1.11.0 every surface with an edge waited for
     // refineRims, up to 2.5 seconds, and was then shown with saw teeth, in two colors.)
-    const spec = Q3.rimSpec && Q3.rimSpec.exprs === Q3.exprs.join('\n') ? Q3.rimSpec : null;
+    const spec = [Q3.rimSpec, Q3.sampleRims].find((q) => q && q.exprs === Q3.exprs.join('\n')) || null;
     let refined = !!spec && specRims(series, r.x, r.y, spec);
     const guessed = refined ? null : guessRims(series, r.x, r.y);
     function rimsReady() { return refined || !guessed || !guessed.length; }
-    const settle = () => {
+    // (fix/3d-first-colors) surfaces that differ only in their sign, f and −f, with an edge: one solid from the first
+    // drawing, their first guesses of the edge meeting at the middle; until then they were two surfaces in two colors
+    // until the engine had found their edges, and their guesses, a little apart, left saw teeth along the edge
+    const mirrors = spec && spec.groups ? [] : mirroredPairs(series, z0, z1);
+    if (guessed && mirrors.length) meetMirrored(series, mirrors, z0, z1);
+    const settle = (final) => {
       // (surfaces that close up into one solid are known when their edges are, 1.9.3; those of a solid
-      // of revolution from its shape)
+      // of revolution from its shape; f and −f are taken as one until their edges are found, and are two
+      // only when the edges found do not meet)
       data.groups = spec && spec.groups ? spec.groups : joinedSolid(series, r.x, r.y, z0, z1);
+      if (!final) data.groups = withPairs(data.groups, mirrors);
       solidColors(data);
       // the range of z reaches the edges (half a sphere alone: its rim at z = 0 lies below the lowest
       // grid value, and was cut off; 1.9.3), unless that would widen it by more than half
@@ -10658,7 +11582,7 @@
       for (const s of series) for (const key in s.rim || {}) { const v = s.rim[key].z; if (v === v && v !== undefined) { if (v < lo) lo = v; if (v > hi) hi = v; } }
       if ((lo < data.z0 || hi > data.z1) && hi - lo <= 1.5 * (data.z1 - data.z0)) { data.z0 = lo; data.z1 = hi; }
     };
-    settle();
+    settle(false);
     if (quick) { if (Q3.slZ) { data.z0 = Math.min(data.z0, Q3.slZ[0]); data.z1 = Math.max(data.z1, Q3.slZ[1]); Q3.slZ = [data.z0, data.z1]; } show(); return; }
     const tolZ = (data.z1 - data.z0) * 4e-5, leaves = series.some((q) => q.z.some((v) => v === v && (v < data.z0 - tolZ || v > data.z1 + tolZ)));
     if (!leaves) show();
@@ -10666,7 +11590,7 @@
     const tR = Date.now();
     if (!refined && !devFlag('norefine')) refined = await refineRims(series, r.x, r.y, seq, guessed);
     if (seq !== Q3.seq) { clearTimeout(late); return; }
-    if (!spec) settle();
+    if (!spec) settle(true);
     // where the surfaces leave the box at its top or bottom (1.9.5)
     const tC = Date.now();
     const clipped = devFlag('norefine') ? false : await refineClips(series, r.x, r.y, data.z0, data.z1, seq);
@@ -10735,6 +11659,53 @@
     const groups = new Map();
     series.forEach((s, i) => { const r = find(i); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(i); });
     return [...groups.values()].filter((g) => g.length >= 2 && g.every((i) => whole[i]));
+  }
+  // (fix/3d-first-colors) The pairs of surfaces that differ only in their sign, as f and −f (the two halves of a sphere or
+  // of a doughnut typed as two formulas): no value at the same grid points, and opposite values at all the others, some
+  // not 0. Only surfaces with an edge (grid points without a value next to ones with: refineRims has edges to find) count:
+  // the two halves of a double cone, which have none, stay two surfaces. Gives [[i, j], …].
+  function mirroredPairs(series, z0, z1) {
+    const pairs = [], used = new Set(), big = Math.max(Math.abs(z0), Math.abs(z1), 1e-300);
+    const edged = (s) => Object.keys(s.rim || {}).length >= 4;
+    for (let a = 0; a < series.length; a++) {
+      for (let b = a + 1; b < series.length && !used.has(a); b++) {
+        if (used.has(b) || !edged(series[a]) || !edged(series[b])) continue;
+        const za = series[a].z, zb = series[b].z;
+        let ok = za.length === zb.length, some = false;
+        for (let k = 0; ok && k < za.length; k++) {
+          const p = za[k] === za[k], q = zb[k] === zb[k];
+          if (p !== q) ok = false;
+          else if (p) { if (Math.abs(za[k] + zb[k]) > 1e-9 * big) ok = false; else if (Math.abs(za[k]) > 1e-9 * big) some = true; }
+        }
+        if (ok && some) { pairs.push([a, b]); used.add(a); used.add(b); }
+      }
+    }
+    return pairs;
+  }
+  // The first guesses of the edges of f and −f (guessRims), the same places at opposite heights, made to meet at the middle
+  // (0) where they are near it (within 15 % of the range of z): a surface that ends as a square root there is near its edge
+  // at the last grid point. Two that end apart (±(√(1 − x² − y²) + 1)) keep their guesses.
+  function meetMirrored(series, pairs, z0, z1) {
+    const near = 0.3 * (z1 - z0);
+    for (const [a, b] of pairs) {
+      const ra = series[a].rim || {}, rb = series[b].rim || {};
+      for (const key in ra) {
+        const e = ra[key], o = rb[key];
+        if (!o || !isFinite(e.z) || !isFinite(o.z) || Math.abs(e.x - o.x) + Math.abs(e.y - o.y) > 1e-12 * (1 + Math.abs(e.x) + Math.abs(e.y)) || Math.abs(e.z - o.z) > near) continue;
+        e.z = o.z = (e.z + o.z) / 2;
+      }
+    }
+  }
+  // the solids found, with the pairs f and −f not in one yet
+  function withPairs(groups, pairs) {
+    const out = groups.map((g) => g.slice());
+    for (const [a, b] of pairs) {
+      const ga = out.find((g) => g.includes(a)), gb = out.find((g) => g.includes(b));
+      if (!ga && !gb) out.push([a, b]);
+      else if (ga && !gb) ga.push(b);
+      else if (gb && !ga) gb.push(a);
+    }
+    return out;
   }
   // The colors of the surfaces (1.9.5): one surface alone, or surfaces that all make one solid, are
   // colored by height (oneSolid); the surfaces of a solid drawn with others share the color of its
@@ -10839,6 +11810,10 @@
   //   present where ρ = √(x² + y²) is in its intervals: its edges are the circles ρ = a and ρ = b,
   //   crossed by the grid lines where the circle is, at the heights given (from the engine, at the ends
   //   of the region)
+  // - { kind: 'ring', c, R } (fix/3d-first-colors) a sphere (c = 0) or a doughnut about the z axis, the samples: the
+  //   surfaces ±√(R² − (ρ − c)²), whose edges are the circles ρ = c − R (when above 0) and ρ = c + R, at z = 0, where
+  //   they stand upright. Until then the samples' edges were guessed first and found with the engine (refineRims): the
+  //   sphere and the doughnut were first drawn with saw teeth along their edges, and in two colors.
   // Sets s.rim as refineRims does; returns false when it could not (another kind of surface).
   function specRims(series, xs, ys, spec) {
     const nx = xs.length, ny = ys.length, jobs = rimJobs(series, nx, ny);
@@ -10881,6 +11856,18 @@
         s.rim[jb.key] = { x: xa + (xb - xa) * f, y: ya, z: sg * Math.sqrt(Math.max(0, (qx === qx ? qx * qx : 0) - yy * yy)) };
         continue;
       }
+      if (spec.kind === 'ring') {
+        // (the circle that the line leaves through: the inner one into the hole of a doughnut, else the outer one)
+        const lo = spec.c - spec.R, hi = spec.c + spec.R, rb = Math.hypot(xb, yb);
+        const edge = rb <= lo ? lo : rb >= hi ? hi : NaN;
+        if (!(edge > 0)) continue;
+        const dx = xb - xa, dy = yb - ya, A = dx * dx + dy * dy, B = 2 * (xa * dx + ya * dy), C = xa * xa + ya * ya - edge * edge, D = B * B - 4 * A * C;
+        let t = 0;
+        if (A > 0 && D >= 0) { const r1 = (-B - Math.sqrt(D)) / (2 * A), r2 = (-B + Math.sqrt(D)) / (2 * A); t = r1 >= -1e-9 && r1 <= 1 + 1e-9 ? r1 : r2; }
+        t = Math.max(0, Math.min(1, t));
+        s.rim[jb.key] = { x: xa + dx * t, y: ya + dy * t, z: 0 };
+        continue;
+      }
       if (spec.kind === 'v') {
         const sp = spec.surf && spec.surf[jb.si];
         if (!sp) continue;
@@ -10899,7 +11886,7 @@
         s.rim[jb.key] = { x: xa + dx * t, y: ya + dy * t, z: zk === undefined || !(zk === zk) ? zin : zk, slant: true };
       }
     }
-    return spec.kind === 'h' || spec.kind === 'v';
+    return spec.kind === 'h' || spec.kind === 'v' || spec.kind === 'ring';
   }
   // First guesses of the edges of other surfaces (1.12.0, BG09), without the engine, so that a surface
   // with an edge (a sphere) is not shown with saw teeth while refineRims looks for it: near its edge z²
@@ -11997,6 +12984,24 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const c3 = camN(nu / l, nv / l, nw / l);
       CN[3 * k] = c3[0]; CN[3 * k + 1] = c3[1]; CN[3 * k + 2] = c3[2];
     }
+    // (fix/3d-first-colors) How much of the rounding a grid point has: 1 where all the grid points around it have G on the
+    // same side of the edge (every cell there is cut into rounded triangles), 0 at the last of them, next to cells drawn
+    // flat. The rounded triangles lift the middle of their sides above the straight line between the corners, and
+    // where such a side was also the side of a flat cell, a crack opened between the two, a pixel wide: with WebGL 2 it
+    // showed as dark specks in short rows, three cells from the edge (the 2D canvas filled such cracks)
+    const LAM = new Float32Array(n);
+    for (let k = 0; k < n; k++) {
+      if (!(G[k] >= 0)) continue;
+      const i = k % nx, j = (k / nx) | 0;
+      let all = 1;
+      for (let jj = Math.max(0, j - 1); jj <= Math.min(ny - 1, j + 1) && all; jj++) {
+        for (let ii = Math.max(0, i - 1); ii <= Math.min(nx - 1, i + 1); ii++) {
+          const q = jj * nx + ii;
+          if (st[q] === 1 ? !(G[q] >= 0) || SG[q] !== SG[k] : st[q] !== 0) { all = 0; break; }
+        }
+      }
+      LAM[k] = all;
+    }
     // the edge points: G = 0, and the level part from the slopes of G, carried on in a straight line
     // from the two grid points inside on the same grid line (G changes smoothly; on a sphere its slopes
     // change in a straight line, so this is exact), or from the one there is
@@ -12010,10 +13015,10 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (t >= 0 && t < 1.5) { gu += t * (GU[kin] - GU[k2]); gv += t * (GV[kin] - GV[k2]); }
       }
       const h = Math.hypot(gu, gv);
-      e.G = 0; e.sg = SG[kin]; e.L = camN(gu, gv, 0); e.zr = e.w;
+      e.G = 0; e.sg = SG[kin]; e.L = camN(gu, gv, 0); e.zr = e.w; e.lam = LAM[kin];
       if (h > 1e-9) e.n = camN(gu / h, gv / h, 0);
     }
-    return (s.rm = { G, SG, ZR, L: (k) => camN(GU[k], GV[k], 0) });
+    return (s.rm = { G, SG, ZR, LAM, L: (k) => camN(GU[k], GV[k], 0) });
   }
 
   // ---- the measured solid as a real liquid (1.9.1), a pale gelatin in a deep-colored skin (1.9.2)
@@ -13812,14 +14817,23 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     // where two surfaces end at the same place (the two halves of a sphere at its rim), their edges are
     // made to meet exactly: the edges found for each surface differ a little in height (a square root
     // near 0), which left a hair-thin gap through which the far side of the solid showed (1.9.2)
+    // (fix/3d-first-colors) The surfaces of one solid meet also a little farther apart, up to 12 % of the half height of
+    // the box: the engine finds the last point with a value within 1/256 of a grid step of the edge, where a surface that
+    // ends as a square root is still some way above it (the doughnut of the samples: ±0.022 of ±1 at 16 places, 4.5 %
+    // apart), and the gaps left showed the inside of the solid as dark dots along its equator. (rimGaps: those left apart,
+    // for the tests.)
+    let rimGaps = 0;
     if (D.series.length > 1) {
+      const grp = new Map();
+      (D.groups || []).forEach((gr, n) => gr.forEach((i) => grp.set(D.series[i], n)));
       const byKey = new Map();
-      for (const s of D.series) if (s.rimP) for (const key in s.rimP) { const a = byKey.get(key); if (a) a.push(s.rimP[key]); else byKey.set(key, [s.rimP[key]]); }
+      for (const s of D.series) if (s.rimP) for (const key in s.rimP) { const a = byKey.get(key), it = { p: s.rimP[key], g: grp.has(s) ? grp.get(s) : -1 - D.series.indexOf(s) }; if (a) a.push(it); else byKey.set(key, [it]); }
       for (const ps of byKey.values()) {
         for (let a = 0; a < ps.length; a++) {
           for (let b = a + 1; b < ps.length; b++) {
-            const p = ps[a], r = ps[b];
-            if (!(Math.abs(p.u - r.u) + Math.abs(p.v - r.v) < 2e-3 && Math.abs(p.w - r.w) < 0.04 * EZ)) continue;
+            const p = ps[a].p, r = ps[b].p, one = ps[a].g === ps[b].g;
+            if (!(Math.abs(p.u - r.u) + Math.abs(p.v - r.v) < 2e-3)) continue;
+            if (!(Math.abs(p.w - r.w) < (one ? 0.12 : 0.04) * EZ)) { if (one) rimGaps++; continue; }
             const u = (p.u + r.u) / 2, v = (p.v + r.v) / 2, w = (p.w + r.w) / 2;
             proj(u, v, w);
             for (const o of [p, r]) { o.u = u; o.v = v; o.w = w; o.x = T[0]; o.y = T[1]; o.d = T[2]; o.gi = giOf(u); o.gj = gjOf(v); }
@@ -13920,12 +14934,12 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const vtxK = (s, k) => {
       const P = s.proj, N = s.cnrm, c3 = colorAt(s, P.pw[k]), rm = s.rm;
       const v = [P.px[k], P.py[k], P.pd[k], N[3 * k], N[3 * k + 1], N[3 * k + 2], c3[0], c3[1], c3[2], k % D.nx, (k / D.nx) | 0, LKS ? lockLitK(s, k) : 1];
-      if (rm && rm.G[k] >= 0) { v.G = rm.G[k]; v.sg = rm.SG[k]; v.L = rm.L(k); v.zr = rm.ZR[k]; v.u = U(xs[k % D.nx]); v.v = V(ys[(k / D.nx) | 0]); }
+      if (rm && rm.G[k] >= 0) { v.G = rm.G[k]; v.sg = rm.SG[k]; v.L = rm.L(k); v.zr = rm.ZR[k]; v.lam = rm.LAM[k]; v.u = U(xs[k % D.nx]); v.v = V(ys[(k / D.nx) | 0]); }
       return v;
     };
     const vtxP = (s, p) => {
       const c3 = colorAt(s, p.w), v = [p.x, p.y, p.d, p.n[0], p.n[1], p.n[2], c3[0], c3[1], c3[2], p.gi, p.gj, LKS ? (p.k !== undefined ? lockLitK(s, p.k) : lockLitN(p.u, p.v, p.w, p.n)) : 1];
-      if (p.G >= 0 && p.L) { v.G = p.G; v.sg = p.sg; v.L = p.L; v.zr = p.zr; v.u = p.u; v.v = p.v; }
+      if (p.G >= 0 && p.L) { v.G = p.G; v.sg = p.sg; v.L = p.L; v.zr = p.zr; v.lam = p.lam === undefined ? 1 : p.lam; v.u = p.u; v.v = p.v; }
       return v;
     };
     // a triangle near the edge of a surface (rimModel), cut into RS × RS smaller ones whose corners lie
@@ -13936,16 +14950,32 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     // stays smooth across the rim, where the two halves meet.
     // (fewer while the graph is turned)
     const RS = Q3.turning ? 2 : 3, rsub = new Array((RS + 1) * (RS + 2) / 2), upN = camN(0, 0, 2);
+    // (how many were cut into strips or left whole, below: for the tests, data-surf)
+    const rimCut = { strip: 0, flat: 0 };
+    // (fix/3d-first-colors) A side whose two corners are not rounded (LAM 0 in rimModel: the last grid points with G, next
+    // to cells drawn flat) is not cut either: it is also the side of a flat cell, and points in the middle of a side of
+    // one triangle only (T-junctions) left cracks a pixel wide, through which the inside of the solid showed as dark
+    // specks with WebGL 2. Such a triangle is cut into strips between its other two sides instead.
     const rimTri = (s, A, B, C) => {
+      const flat = (P, Q) => !(P.lam > 0) && !(Q.lam > 0);
+      const fAB = flat(A, B), fBC = flat(B, C), fCA = flat(C, A);
+      if (fAB && fBC && fCA) { rimCut.flat++; tb.add(rimPt(s, A, B, C, 1, 0, 0), rimPt(s, A, B, C, 0, 1, 0), rimPt(s, A, B, C, 0, 0, 1)); return; }
+      if (fBC) { rimTri(s, B, C, A); return; }
+      if (fCA) { rimTri(s, C, A, B); return; }
+      if (fAB) {
+        // (strips from the whole side AB toward C: the points on AC and on BC, as the triangles beside them have them)
+        rimCut.strip++;
+        for (let i = 0; i < RS; i++) {
+          const c0 = i / RS, c1 = (i + 1) / RS;
+          const P0 = rimPt(s, A, B, C, 1 - c0, 0, c0), Q0 = rimPt(s, A, B, C, 0, 1 - c0, c0), P1 = rimPt(s, A, B, C, 1 - c1, 0, c1), Q1 = rimPt(s, A, B, C, 0, 1 - c1, c1);
+          tb.add(P0, Q0, Q1);
+          if (i + 1 < RS) tb.add(P0, Q1, P1);
+        }
+        return;
+      }
       let m = 0;
       for (let j = 0; j <= RS; j++) {
-        for (let i = 0; i + j <= RS; i++) {
-          const b = i / RS, c = j / RS, a = 1 - b - c, L3 = (o) => a * A[o] + b * B[o] + c * C[o];
-          const G = a * A.G + b * B.G + c * C.G, w = a * A.zr + b * B.zr + c * C.zr + A.sg * Math.sqrt(G > 0 ? G : 0);
-          proj(a * A.u + b * B.u + c * C.u, a * A.v + b * B.v + c * C.v, w);
-          const c3 = colorAt(s, w), h = Math.sqrt(G > 0 ? G : 0);
-          rsub[m++] = [T[0], T[1], T[2], a * A.L[0] + b * B.L[0] + c * C.L[0] + h * upN[0], a * A.L[1] + b * B.L[1] + c * C.L[1] + h * upN[1], a * A.L[2] + b * B.L[2] + c * C.L[2] + h * upN[2], c3[0], c3[1], c3[2], L3(9), L3(10), L3(11)];
-        }
+        for (let i = 0; i + j <= RS; i++) { const b = i / RS, c = j / RS; rsub[m++] = rimPt(s, A, B, C, 1 - b - c, b, c); }
       }
       // (the point (i, j) is number j·(RS + 1) − j·(j − 1)/2 + i)
       const at = (i, j) => rsub[j * (RS + 1) - (j * (j - 1)) / 2 + i];
@@ -13955,6 +14985,16 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           if (i + j + 1 < RS) tb.add(at(i + 1, j), at(i + 1, j + 1), at(i, j + 1));
         }
       }
+    };
+    // a point of such a triangle, by its weights a, b, c of the corners
+    const rimPt = (s, A, B, C, a, b, c) => {
+      const L3 = (o) => a * A[o] + b * B[o] + c * C[o];
+      // (rounded as much as its corners are: straight, as the flat cell beside it, where they are not, LAM in rimModel)
+      const G = a * A.G + b * B.G + c * C.G, lam = a * A.lam + b * B.lam + c * C.lam, rt = (x) => Math.sqrt(x > 0 ? x : 0);
+      const w = a * A.zr + b * B.zr + c * C.zr + A.sg * (lam * rt(G) + (1 - lam) * (a * rt(A.G) + b * rt(B.G) + c * rt(C.G)));
+      proj(a * A.u + b * B.u + c * C.u, a * A.v + b * B.v + c * C.v, w);
+      const c3 = colorAt(s, w), h = rt(G);
+      return [T[0], T[1], T[2], a * A.L[0] + b * B.L[0] + c * C.L[0] + h * upN[0], a * A.L[1] + b * B.L[1] + c * C.L[1] + h * upN[1], a * A.L[2] + b * B.L[2] + c * C.L[2] + h * upN[2], c3[0], c3[1], c3[2], L3(9), L3(10), L3(11)];
     };
     let jelly = 0, faded = 0, rimTris = 0;
     // (the group of each triangle: the number of its surface, for the see-through of each with WebGL 2)
@@ -14042,18 +15082,28 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     else if (!Q3.turning && !shadows) Q3.lastShade = null;
     // (what was drawn, for the tests; shadow: the pixels in a shadow and at the soft edge of one, the
     // size of the lamp's map and the time to make it; floor: the cells of the floor's layer in a shadow)
-    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor, shk: Math.round(shK * 1000) / 1000, turnMs: Q3.turning ? Math.round(Q3.turnMs || 0) : null, turnL: Q3.turning ? (Q3.turnList || []).map(Math.round) : null, shSlow: !!Q3.shSlow, drawMs: Math.round(Q3.lastDrawMs || 0),
+    c.dataset.surf = JSON.stringify({ tris: tb.n, shown: surf.shown, q: surf.q, mesh, rimTris, rimStrips: rimCut.strip, rimFlat: rimCut.flat, rimRS: RS, groups: D.groups || [], oneSolid: !!D.oneSolid, shadow: surf.shadow || null, floor, shk: Math.round(shK * 1000) / 1000, turnMs: Q3.turning ? Math.round(Q3.turnMs || 0) : null, turnL: Q3.turning ? (Q3.turnList || []).map(Math.round) : null, shSlow: !!Q3.shSlow, drawMs: Math.round(Q3.lastDrawMs || 0),
       rims: (D.series || []).reduce((n, s) => n + (s.rim ? Object.keys(s.rim).length : 0), 0),
       // (1.12.0, BG09: for each surface, the grid lines across its edge without an edge point; and the
       // most grid points at which two surfaces have the same value)
       rimMiss: (D.series || []).map((s) => { let m = 0; const z = s.z, nx = D.nx; for (let k = 0; k < z.length; k++) { const a = z[k] === z[k]; if ((k + 1) % nx && a !== (z[k + 1] === z[k + 1]) && !(s.rim && s.rim['h' + k])) m++; if (k + nx < z.length && a !== (z[k + nx] === z[k + nx]) && !(s.rim && s.rim['v' + k])) m++; } return m; }),
-      same: D.same || 0, seq: D.seq || 0, cut: GR ? { points: D.series.reduce((n, s) => n + (s.angP ? Object.keys(s.angP).length : 0), 0), dropped: cutLost } : null });
+      same: D.same || 0, seq: D.seq || 0, rimGaps, cut: GR ? { points: D.series.reduce((n, s) => n + (s.angP ? Object.keys(s.angP).length : 0), 0), dropped: cutLost } : null });
     // the liquid, over what is drawn behind it (fewer pixels while the graph is turned)
     let liquid = null;
     if (vc) liquid = liquidPaint(g, c, { proj, T, U, V, dpr, W, H, RV, S }, lmesh, cells.filter((q) => !q.inR), vc, dark, Q3.turning ? Math.min(dpr, 1) : Math.min(dpr, 2));
     // the color of the solid in the box, and what was drawn (for the tests)
     const lg = Q3.volUI && Q3.volUI.legend;
     if (lg) { lg.hidden = !vc; if (vc) { lg.firstChild.style.background = vc.swatch; lg.firstChild.style.borderColor = vc.line; } }
+    // (1.16.0, fix/vol-legend, the owner's note of 11-24 06:22) the legend under the graph has the measured solid too, in its
+    // color, while "Volume and surface" is open: its pink (with the colors of the heights) did not match the bar of the heights
+    // and looked like a fault
+    if (Q3.legend) {
+      let vs = Q3.legend.querySelector(':scope > .lg-vol');
+      if (vc) {
+        if (!vs) { vs = el('span', { class: 'msw lg-vol', text: tr('The solid whose volume is measured', '体積を測っている立体') }); Q3.legend.append(vs); }
+        vs.style.setProperty('--c', vc.css); vs.style.setProperty('--cl', vc.line);
+      } else if (vs) vs.remove();
+    }
     if (vc) c.dataset.vol = JSON.stringify({ hue: vc.hue, color: vc.css, walls: lmesh.walls, floor: lmesh.floor, tris: lmesh.tris, jelly, liquid: liquid.shown, thick: liquid.thick, odd: liquid.odd, q: liquid.q, faded, shadow: shadowFaces, shadowArea: Number(shadowArea.toFixed(4)), shadowFade: Math.round(volFade * 1000) / 1000 });
     else delete c.dataset.vol;
     // axes on the front edges of the floor and the leftmost vertical edge, with labels (not the numbers and
@@ -14734,8 +15784,15 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       dens.append(el('option', { value: 'own', text: tr('Another density…', 'ほかの密度…') }));
       dens.value = G.dens;
       const densIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(tr('e.g. 0.9 g/cm³', '例：0.9 g/cm³')), value: G.dv, 'aria-label': tr('Density', '密度') });
-      const weightVal = el('span', { class: 'geo-val' });
-      const weightRow = el('div', { class: 'geo-weight' }, dens, densIn, weightVal);
+      // (1.16.0, fix/geo-weight: the owner looked for the weight) the weight is the last row of the results, as the others
+      // are (its formula, its value; a tap gives the sheet of a result), with the material and a density typed just
+      // under it; without a unit or a material its value says what to do, and a tap does it (the units in a sheet, or
+      // the material chosen)
+      const wVal = el('span', { class: 'geo-val' });
+      const wName = el('span', { class: 'geo-name' }), wRow = { state: '', expr: '', shown: '', copy: '' };
+      wRow.node = tapButton({ class: 'geo-row geo-wrow' }, () => weightTap());
+      wRow.node.append(wName, wVal);
+      const weightRow = el('div', { class: 'geo-weight' }, dens, densIn);
       const amtIn = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: tr('e.g. 1000 L', '例：1000 L'), 'aria-label': tr('Amount of liquid', '液量') });
       const amtVal = el('span', { class: 'geo-val' });
       const amtRow = el('label', { class: 'geo-amt' }, el('span', { class: 'geo-lbl', text: tr('Height for the amount', '液量から高さ') }), amtIn, amtVal);
@@ -14866,20 +15923,47 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         amtVal.textContent = 'h ≈ ' + fmtDigits('shapes', h, null, 'len') + (base ? ' ' + base : '') + tr(' (', '（') + fmtDigits('shapes', want / full * 100, null, 'pct') + ' %' + tr(' full)', '）');
       };
       // the weight of the first volume of the list (the liquid of a tank) with the density chosen
+      const wTitle = () => (cur().d === 4 ? tr('Weight of the liquid', '液の重さ') : tr('Weight', '重さ'));
+      const showWeight = (state, text, extra) => {
+        wRow.state = state; wVal.classList.toggle('geo-todo', state !== 'ok' && state !== 'busy' && state !== '');
+        wVal.textContent = text;
+        if (wVal.classList.contains('geo-todo')) wVal.append(el('span', { class: 'geo-todo-go', 'aria-hidden': 'true', text: ' ›' }));
+        if (extra) wVal.append(el('small', { class: 'geo-wt', text: extra }));
+        // (said whole by a screen reader: the name, the value, and what a tap does when it shows no value)
+        wRow.node.setAttribute('aria-label', wTitle() + ': ' + text + (extra || '') + (state === 'unit' ? tr(' — tap to choose a unit', '。押すと単位を選べます') : state === 'mat' ? tr(' — tap to choose a material', '。押すと材料を選べます') : state === 'own' || state === 'dens' ? tr(' — tap to type the density', '。押すと密度を入れられます') : ''));
+      };
       const weight = async (rows, seq) => {
-        weightVal.textContent = '';
+        wRow.expr = ''; wRow.shown = ''; wRow.copy = '';
         const d = G.dens === 'own' ? normalizeExpr(densIn.value) : (DENSITIES.find((x) => x[0] === G.dens) || [])[2];
-        if (!d) return;
         const row = rows.find((r) => r.def[3] === 3 && r.vol);
-        if (!row) { weightVal.textContent = tr('Give the lengths a unit to get the weight', '重さは、長さに単位を付けると出ます'); return; }
-        const r = await Bridge.send('calc', { expr: `(${row.vol}) × (${d}) to kg`, opts: Object.assign(engineOpts(), { approx: 'approx', precision: digitsPrecision('shapes', null, null, 'mass') }), timeout: 4000 });
+        if (!G.dens) { showWeight('mat', tr('Choose a material just below', 'すぐ下で材料を選ぶと出ます')); return; }
+        if (!d) { showWeight('own', tr('Type the density just below', 'すぐ下で密度を入れると出ます')); return; }
+        if (!row) { showWeight('unit', tr('Shown when the lengths have a unit', '単位を付けると出ます')); return; }
+        showWeight('busy', '…');
+        const expr = `(${row.vol}) × (${d}) to kg`;
+        const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), { approx: 'approx', precision: digitsPrecision('shapes', null, null, 'mass') }), timeout: 4000 });
         if (seq !== G.seq) return;
         const ok = r.ok && r.result && !r.timeout && !(r.messages || []).some((m) => m.type === 'error') && / kg$/.test(r.result);
-        if (!ok) { weightVal.textContent = decSign(tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）')); return; }
+        if (!ok) { showWeight('dens', decSign(tr('Check the density (for example 0.9 g/cm³)', '密度を確かめてください（例：0.9 g/cm³）'))); return; }
         const kg = Number(numberPart(r.result.replace(/ kg$/, '')));
         // (D7: the weight with the digits set for weights; feature/screen-digits: the engine's answer rounded as a string)
         const wtxt = resultText(Object.assign({}, r, { result: digitsText('shapes', r.result, null, 'mass', false, !!r.approx) }));
-        weightVal.textContent = tr('Weight ', '重さ ') + wtxt + (kg >= 1000 ? tr(' = ', ' = ') + fmtDigits('shapes', kg / 1000, null, 'mass') + ' t' : '') + (G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '');
+        const tons = kg >= 1000 ? ' = ' + fmtDigits('shapes', kg / 1000, null, 'mass') + ' t' : '';
+        const typical = G.dens !== 'own' && G.dens !== 'water' ? tr(' (typical)', '（目安）') : '';
+        wRow.expr = expr; wRow.shown = wtxt + tons + typical; wRow.copy = wtxt.replace(/^[=≈]\s*/, '');
+        showWeight('ok', wtxt + tons, typical);
+      };
+      // a tap on the weight row: its sheet (into the input field, kept in the history, copied), or what it needs
+      const weightTap = async () => {
+        if (wRow.state === 'ok' && wRow.expr) { resultSheet(wTitle(), wRow.expr, wRow.shown, wRow.copy); return; }
+        if (wRow.state === 'mat') { dens.scrollIntoView({ block: 'center' }); dens.focus(); try { dens.showPicker(); } catch (e) { } return; }
+        if (wRow.state === 'own' || wRow.state === 'dens') { densIn.hidden = false; densIn.scrollIntoView({ block: 'center' }); densIn.focus(); return; }
+        if (wRow.state === 'unit') {
+          // the units of the lengths in a sheet (one tap; the sizes keep their numbers in the unit chosen)
+          const k = await sheet(tr('The unit of the lengths (the weight is shown with it)', '長さの単位（選ぶと重さが出ます）'), GEO_UNITS.filter((u) => u).map((u) => [u, u]));
+          if (!k) return;
+          unit.value = k; G.unit = k; typed(); choose(G.k);
+        }
       };
       const svg = (sh, v, small) => {
         let t = typeof sh.pic === 'function' ? sh.pic(v || {}) : sh.pic;
@@ -14906,7 +15990,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         outs.classList.toggle('bad', !!problem);
         msg.textContent = problem;
         for (const row of rows) { row.expr = ''; row.vol = ''; row.result = ''; row.node.dataset.value = ''; if (problem) { row.val.textContent = '—'; row.val.classList.remove('math'); } }
-        if (problem) { weightVal.textContent = ''; amtVal.textContent = ''; return; }
+        if (problem) { showWeight('', '—'); amtVal.textContent = ''; return; }
         // Units: sizes that are plain numbers are calculated as numbers, so that exact values stay
         // (12π), and the unit of the panel is written after the result (cm³). Sizes with units of
         // their own are calculated with them; the result is asked for in their unit when they all
@@ -15008,6 +16092,12 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         });
         outs.textContent = '';
         for (const row of rows) outs.append(row.node);
+        if (sh.d >= 3) {
+          wName.textContent = '';
+          wName.append(wTitle(), el('small', { text: sh.d === 4 ? tr('liquid × density', '液量 × 密度') : tr('volume × density', '体積 × 密度') }));
+          showWeight('busy', '…');
+          outs.append(wRow.node);
+        }
         graph.hidden = !sh.graph;
         if (sh.k === 'sphere') graph.dataset.pro = ''; else delete graph.dataset.pro;
         // (D6) "⟳ 3D" for solids and tanks
@@ -15142,7 +16232,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       p.body.append(el('div', { class: 'seg', role: 'group', 'aria-label': tr('Kind of shape', '図形の種類') }, b2, b3, b4), chips, headRow,
         el('div', { class: 'geo-main' }, picBox, el('div', { class: 'geo-side' }, rdSeg, sizes,
           el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Unit', '単位') }), unit))),
-        outUnits, msg, exNote, proRow3d, outs, amtRow, quick, weightRow, cautionTank, cautionHead, cautionWeight, graph,
+        outUnits, msg, exNote, proRow3d, outs, weightRow, cautionWeight, amtRow, quick, cautionTank, cautionHead, graph,
         // 1.11.0: the volume from measured values (a table of cross sections, a grid of heights)
         tapButton({ class: 'btn geo-link', text: tr('Volume from measured values (cross sections, grid of heights) ›', '測った値から体積（断面積の表・点高法）›') }, () => openSections()),
         el('div', { class: 'form-hint', text: tr('The results follow the sizes as you type. A size can be an expression or have its own unit (1/3, √2, 2 cm, 5 in). Tap a result to put its expression into the input field or to copy it.', '大きさを入れると、結果がすぐに出ます。大きさには式や単位も使えます（1/3、√2、2 cm、5 in）。結果をタップすると、その式を入力欄に入れたり、結果をコピーしたりできます。') }));
@@ -16183,42 +17273,193 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   }
 
   // ----------------------------------------------------- user definitions
+  // (1.16.0, feature/variables, the owner's request of 11-23 11:16: like the Environment of RStudio) "My own" in Lists
+  // lists the user's variables with their values first, then the functions, then the names in the calculation notes;
+  // the button "Variables" above the input field (shown when there is at least one definition) opens it too. A tap on
+  // a variable or a function puts its name into the input field; ⋯ changes its value (or expression), renames or
+  // deletes it, with Undo after each. What k := 2, x = 5 and f(x) := … make is temporary (save(): gone when the app is
+  // closed, marked "temporary"), and stays temporary when it is changed, renamed or brought back: save() again, run as
+  // "=" runs it but not kept as ans (preview false, store false); what the fields below save is kept (define_var,
+  // define_func). Functions made with := are not in the engine's user_defs: the app keeps their expressions from the
+  // definition (tempFuncs) and checks in the engine's list of functions that they are still there. The names of the
+  // calculation notes ("rent = 85000 JPY") are no variables of the calculator (a name stands for its expression in its
+  // memo only, nothing is defined in the engine): they are listed under their memo, and a tap opens the memo there.
+  async function userDefs() {
+    const r = await Bridge.send('user_defs');
+    if (!r.ok) return r;
+    const variables = r.variables || [], functions = (r.functions || []).map((f) => Object.assign({ sig: f.name + '(' + ['x', 'y', 'z'].filter((v) => hasVar(f.expr, v)).join(', ') + ')' }, f, { temporary: false }));
+    if (tempFuncs.size) {
+      let cat = null;
+      try { cat = await loadCatalog('functions'); } catch (e) { }
+      for (const [name, t] of tempFuncs.entries()) {
+        if (cat && !cat.some((it) => it.name === name && it.local)) { tempFuncs.delete(name); continue; }
+        if (!functions.some((f) => f.name === name)) functions.push({ name, sig: t.sig, expr: t.expr, temporary: true });
+      }
+    }
+    return { ok: true, variables, functions };
+  }
+  // the names in the calculation notes, memo by memo: [{ id, title, names: [{ name, expr, line }] }]
+  function noteNames() {
+    const saved = store.get('qalc.notes', null) || {};
+    const out = [];
+    for (const m of Array.isArray(saved.memos) ? saved.memos : []) {
+      const names = [];
+      (m.lines || []).forEach((l, i) => { const a = NOTE_ASSIGN.exec(String(l)); if (a && names.length < 30) names.push({ name: a[1], expr: a[2].trim(), line: i }); });
+      if (names.length) out.push({ id: m.id, title: m.title || '', names });
+    }
+    return out;
+  }
+  // a variable or function defined (again): '' when it worked, else the message. temp: with save(), as := does (shadow:
+  // a built-in name may be hidden, as x = 5 hides the unknown x: only to bring back what was deleted)
+  async function defineAgain(kind, name, sig, value, temp, shadow) {
+    if (!temp) {
+      const r = await Bridge.send(kind === 'function' ? 'define_func' : 'define_var', kind === 'function' ? { name, expr: value } : { name, value });
+      if (!r.ok) return localMessage(r.error) || tr('Could not save it', '保存できませんでした');
+      const err = (r.messages || []).find((m) => m.type === 'error');
+      return err ? localMessage(err.text) : '';
+    }
+    if (/["'\\]/.test(sig) || /"/.test(value)) return tr('The name cannot have quotes', '名前に引用符は使えません');
+    const r = await Bridge.send('calc', { expr: 'save((' + value + '), "' + sig + '")', opts: engineOpts(), timeout: 3000, store: false, preview: false });
+    if (!r.ok) return localMessage(r.error) || tr('Could not save it', '保存できませんでした');
+    const msgs = r.messages || [];
+    if (!shadow && msgs.some((m) => /deactivated/.test(m.text))) {
+      await Bridge.send('delete_def', { kind, name });
+      return trf('"{0}" is already a name in QCalc (a unit, a constant or a function): choose another', '「{0}」は QCalc の中ですでに使われている名前です（単位・定数・関数）。別の名前にしてください', name);
+    }
+    const err = msgs.find((m) => m.type === 'error');
+    if (err) return localMessage(err.text);
+    if (kind === 'function') tempFuncs.set(name, { sig, expr: value });
+    return '';
+  }
   function openDefs() {
-    const p = panel('defs', tr('User-defined variables and functions', 'ユーザー定義の変数・関数'), (p) => {
-      const list = el('div');
+    const p = panel('defs', tr('Your variables and functions', '自分の変数と関数'), (p) => {
+      const list = el('div', { class: 'dv-list' });
       const vName = el('input', { placeholder: tr('e.g. r', '例：r'), autocapitalize: 'off' });
       const vVal = el('input', { placeholder: tr('e.g. 5 cm, 2*pi', '例：5 cm、2*pi'), autocapitalize: 'off' });
       const fName = el('input', { placeholder: tr('e.g. hyp', '例：hyp'), autocapitalize: 'off' });
       const fExpr = el('input', { placeholder: tr('e.g. pi*x^2 (arguments x, y, z)', '例：pi*x^2（引数は x, y, z）'), autocapitalize: 'off' });
       const addVar = el('button', { class: 'btn primary', text: tr('Save variable', '変数を保存') });
       const addFn = el('button', { class: 'btn primary', text: tr('Save function', '関数を保存') });
-      p.body.append(listTabs('defs'),
-        el('div', { class: 'section-title', text: tr('Saved', '保存済み') }), list,
+      p.body.append(listTabs('defs'), list,
         el('div', { class: 'section-title', text: tr('Add or change a variable', '変数を追加・変更') }),
         el('div', { class: 'form-row' }, el('label', { text: tr('Name', '名前') }), vName),
         el('div', { class: 'form-row' }, el('label', { text: tr('Value (an expression is fine)', '値（式も可）') }), vVal), addVar,
         el('div', { class: 'section-title', text: tr('Add or change a function', '関数を追加・変更') }),
         el('div', { class: 'form-row' }, el('label', { text: tr('Name', '名前') }), fName),
         el('div', { class: 'form-row' }, el('label', { text: tr('Expression', '式') }), fExpr,
-          el('div', { class: 'form-hint', text: tr('Write the arguments as x, y and z. Example: save sqrt(x^2 + y^2) as "hyp", and hyp(3, 4) = 5.', '引数は x, y, z で書きます。例：「hyp」に sqrt(x^2 + y^2) を保存すると hyp(3, 4) = 5。') })), addFn);
+          el('div', { class: 'form-hint', text: tr('Write the arguments as x, y and z. Example: save sqrt(x^2 + y^2) as "hyp", and hyp(3, 4) = 5.', '引数は x, y, z で書きます。例：「hyp」に sqrt(x^2 + y^2) を保存すると hyp(3, 4) = 5。') })), addFn,
+        el('div', { class: 'form-hint', text: tr('A tap on a name puts it into the input field; ⋯ changes, renames or deletes it. What k := 2 or f(x) := … makes is temporary: it is gone when the app is closed. What is saved here stays.', '名前をタップすると入力欄に入ります。⋯ で値の変更・名前の変更・削除ができます。k := 2 や f(x) := … で決めたものは一時的で、アプリを閉じると消えます。ここで保存したものは残ります。') }));
+      let seq = 0;
+      const changed = async () => { invalidateCatalogs(); await refreshDefined(); refresh(); if (CF.id) formChanged(); else exprChanged(); };
+      // ⋯ of a variable or a function
+      const actions = async (kind, d) => {
+        const fn = kind === 'function', shown = fn ? d.sig : d.name;
+        const acts = [['val', fn ? tr('Change the expression', '式を変える') : tr('Change the value', '値を変える')], ['ren', tr('Rename', '名前を変える')]];
+        if (fn && hasVar(d.expr, 'x') && !hasVar(d.expr, 'z')) acts.push(['graph', tr('Graph', 'グラフ')]);
+        acts.push(['del', tr('Delete', '削除'), 'danger']);
+        const k = await sheet(shown + ' = ' + clip(toDisplay(fn ? d.expr : d.value), 60) + (d.temporary ? '  ' + tr('(temporary)', '（一時的）') : ''), acts);
+        if (k === 'graph') { graphOf(d.name + (hasVar(d.expr, 'y') ? '(x, y)' : '(x)')); return; }
+        if (k === 'val') {
+          const old = fn ? d.expr : d.value;
+          const nv = await promptSheet(fn ? trf('Expression of {0}', '{0} の式', shown) : trf('Value of {0}', '{0} の値', d.name), toDisplay(old), fn ? tr('e.g. x^2 + 1', '例：x^2 + 1') : tr('e.g. 5 cm, 2 π', '例：5 cm、2 π'), tr('Change', '変える'));
+          if (nv === null || !nv.trim() || normalizeExpr(nv) === old) return;
+          const e = await defineAgain(kind, d.name, d.sig || d.name, normalizeExpr(nv), d.temporary);
+          if (e) { toast(e, 4000); return; }
+          await changed();
+          toast(trf('{0} is now {1}', '{0} を {1} にしました', shown, clip(nv.trim(), 24)), 6000, [tr('Undo', '元に戻す'), async () => {
+            const e2 = await defineAgain(kind, d.name, d.sig || d.name, old, d.temporary, true);
+            if (e2) toast(e2, 4000); else { await changed(); toast(trf('{0} is back to {1}', '{0} を元の {1} に戻しました', shown, clip(toDisplay(old), 24)), 2500); }
+          }]);
+        } else if (k === 'ren') {
+          const nn = await promptSheet(trf('New name of {0}', '{0} の新しい名前', shown), d.name, tr('e.g. rate', '例：rate'), tr('Rename', '変える'));
+          const to = nn === null ? '' : nn.trim();
+          if (!to || to === d.name) return;
+          if (!/^[\p{L}_][\p{L}\p{N}_]*$/u.test(to)) { toast(tr('A name is letters, digits and _, and does not start with a digit', '名前は文字・数字・_ で、数字で始めません'), 4000); return; }
+          const all = await userDefs();
+          if (all.ok && (fn ? all.functions : all.variables).some((x) => x.name === to)
+            && !(await confirmSheet(trf('"{0}" exists already. Replace it?', '「{0}」はもうあります。置き換えますか？', to), tr('Replace', '置き換える')))) return;
+          const sig = fn ? to + d.sig.slice(d.sig.indexOf('(')) : to;
+          const e = await defineAgain(kind, to, sig, fn ? d.expr : d.value, d.temporary);
+          if (e) { toast(e, 4500); return; }
+          await Bridge.send('delete_def', { kind, name: d.name });
+          if (fn) tempFuncs.delete(d.name);
+          await changed();
+          toast(trf('{0} is now called {1}', '{0} の名前を {1} にしました', shown, fn ? sig : to), 6000, [tr('Undo', '元に戻す'), async () => {
+            const e2 = await defineAgain(kind, d.name, d.sig || d.name, fn ? d.expr : d.value, d.temporary, true);
+            if (e2) { toast(e2, 4000); return; }
+            await Bridge.send('delete_def', { kind, name: to });
+            if (fn) tempFuncs.delete(to);
+            await changed();
+          }]);
+        } else if (k === 'del') {
+          const d0 = await Bridge.send('delete_def', { kind, name: d.name });
+          if (!d0.ok) { toast(localMessage(d0.error)); return; }
+          if (fn) tempFuncs.delete(d.name);
+          await changed();
+          toast(trf('{0} was deleted', '{0} を削除しました', shown), 7000, [tr('Undo', '元に戻す'), async () => {
+            const e2 = await defineAgain(kind, d.name, d.sig || d.name, fn ? d.expr : d.value, d.temporary, true);
+            if (e2) toast(e2, 4000); else { await changed(); toast(trf('{0} is back', '{0} を元に戻しました', shown), 2000); }
+          }]);
+        }
+      };
+      const row = (kind, d, valueText) => {
+        const fn = kind === 'function';
+        const val = el('span', { class: 'dv-val', text: valueText });
+        const main = tapButton({ class: 'dv-main', 'aria-label': trf('Insert {0}', '{0} を入力欄に入れる', fn ? d.name + '()' : d.name) + ' ' + valueText },
+          () => useItem(fn ? d.name + '()' : d.name, fn ? 1 : 0));
+        main.append(el('span', { class: 'dv-name mono', text: fn ? d.sig : d.name }), val,
+          d.temporary ? el('span', { class: 'dv-tag', text: tr('temporary', '一時的') }) : '');
+        const more = tapButton({ class: 'icon-btn dv-more', text: '⋯', 'aria-label': trf('Change, rename or delete {0}', '{0} の変更・名前・削除', fn ? d.sig : d.name) }, () => actions(kind, d));
+        const r = el('div', { class: 'dv-row', role: 'listitem' }, main, more);
+        r.dataset.kind = kind; r.dataset.name = d.name;
+        return { node: r, val };
+      };
       const refresh = async () => {
+        const my = ++seq;
+        const r = await userDefs();
+        if (my !== seq) return;
         list.textContent = '';
-        const r = await Bridge.send('user_defs');
-        if (!r.ok) { list.textContent = localMessage(r.error); return; }
-        if (!r.variables.length && !r.functions.length) list.append(el('div', { class: 'card muted', text: tr('None yet.', 'まだありません。') }));
-        const row = (kind, name, body) => el('div', { class: 'item' }, el('div', { class: 'row1' },
-          el('div', { class: 't' }, el('span', { class: 'mono', text: kind === 'function' ? name + '()' : name }), el('div', { class: 'n', text: body })),
-          el('div', { class: 'acts' },
-            // a function of x (and y): its graph, 2D or 3D (1.8.4)
-            kind === 'function' && hasVar(body, 'x') && !hasVar(body, 'z') ? el('button', { class: 'btn', text: tr('Graph', 'グラフ'), onclick: () => graphOf(name + (hasVar(body, 'y') ? '(x, y)' : '(x)')) }) : '',
-            el('button', { class: 'btn', text: tr('Insert', '挿入'), onclick: () => useItem(kind === 'function' ? name + '()' : name, kind === 'function' ? 1 : 0) }),
-            el('button', { class: 'btn danger', text: tr('Delete', '削除'), onclick: async () => {
-              if (!(await confirmSheet(trf('Delete "{0}"?', '「{0}」を削除しますか？', name), tr('Delete', '削除する')))) return;
-              const d = await Bridge.send('delete_def', { kind, name });
-              if (!d.ok) toast(localMessage(d.error)); else { invalidateCatalogs(); refresh(); }
-            } }))));
-        for (const v of r.variables) list.append(row('variable', v.name, '= ' + v.value + (v.temporary ? tr(' (temporary: gone when the app is closed)', '（一時的：アプリを閉じると消えます）') : '')));
-        for (const f of r.functions) list.append(row('function', f.name, f.expr));
+        if (!r.ok) { list.append(el('div', { class: 'card muted', text: localMessage(r.error) })); return; }
+        if (!r.variables.length && !r.functions.length) {
+          list.append(el('div', { class: 'card muted dv-empty', text: tr('No variables or functions yet. Calculate k := 2 (or f(x) := x^2 + 1) and they are listed here; or save one with the fields below.', 'まだ変数・関数はありません。k := 2（関数は f(x) := x^2 + 1）のように計算すると、ここに出ます。下の欄で保存することもできます。') }));
+        }
+        if (r.variables.length) {
+          const box = el('div', { role: 'list', 'aria-label': tr('Variables', '変数') });
+          list.append(el('div', { class: 'section-title', text: trf('Variables ({0})', '変数（{0}）', r.variables.length) }), box);
+          const vals = [];
+          for (const v of r.variables) {
+            const x = row('variable', v, '= ' + displayText(v.value));
+            box.append(x.node);
+            vals.push([v, x.val]);
+          }
+          // the value worked out (2 π ≈ 6.28…, a value that has other names in it), one at a time
+          for (const [v, node] of vals) {
+            const c = await Bridge.send('calc', { expr: v.name, opts: engineOpts(), timeout: 1500 });
+            if (my !== seq) return;
+            if (!c.ok || !c.result || c.timeout || c.deferred || (c.messages || []).some((m) => m.type === 'error')) continue;
+            const flat = (t) => String(t).replace(/[\s\u202f\u2009()]/g, '');
+            if (flat(c.result) !== flat(toDisplay(v.value)) && flat(c.result) !== flat(v.value)) node.textContent = '= ' + displayText(v.value) + '  ' + (c.approx ? '≈ ' : '= ') + displayText(clip(c.result, 40));
+          }
+        }
+        if (r.functions.length) {
+          const box = el('div', { role: 'list', 'aria-label': tr('Functions', '関数') });
+          list.append(el('div', { class: 'section-title', text: trf('Functions ({0})', '関数（{0}）', r.functions.length) }), box);
+          for (const f of r.functions) box.append(row('function', f, '= ' + displayText(f.expr)).node);
+        }
+        const nn = noteNames();
+        if (nn.length) {
+          list.append(el('div', { class: 'section-title', text: tr('Names in the calculation notes', '計算メモの中の名前') }),
+            el('div', { class: 'form-hint dv-note-hint', text: tr('These work only in their memo, not in the calculator. A tap opens the memo there.', 'そのメモの中だけで使える名前で、電卓の変数ではありません。タップするとメモのその行を開きます。') }));
+          for (const m of nn) {
+            const box = el('div', { role: 'list', 'aria-label': m.title });
+            list.append(el('div', { class: 'dv-memo', text: '📝 ' + m.title }), box);
+            for (const x of m.names) {
+              const b = tapButton({ class: 'dv-main dv-noteline', 'aria-label': trf('Open “{0}” at {1}', '「{0}」の {1} を開く', m.title, x.name) }, () => { const np = openNotesTool(); if (np.showMemo) np.showMemo(m.id, x.line); });
+              b.append(el('span', { class: 'dv-name', text: x.name }), el('span', { class: 'dv-val', text: '= ' + x.expr }));
+              box.append(el('div', { class: 'dv-row', role: 'listitem' }, b));
+            }
+          }
+        }
       };
       const save = async (cmd, params, clear) => {
         const r = await Bridge.send(cmd, params);
@@ -16226,7 +17467,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         const err = (r.messages || []).find((m) => m.type === 'error');
         toast(err ? localMessage(err.text) : (r.saved === false ? tr('Set, but it could not be saved to a file', '設定しましたが、ファイルに保存できませんでした') : tr('Saved', '保存しました')));
         clear.forEach((i) => { i.value = ''; });
+        if (cmd === 'define_func') tempFuncs.delete(params.name); // (saved now: no longer temporary)
         invalidateCatalogs();
+        await refreshDefined();
         refresh();
       };
       addVar.addEventListener('click', () => save('define_var', { name: normalizeExpr(vName.value), value: normalizeExpr(vVal.value) }, [vName, vVal]));
@@ -16236,6 +17479,15 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     p.refresh();
     return p;
   }
+  // the button "Variables n" above the input field: shown when the user has variables or functions
+  function updateVarsBtn() {
+    const b = $('#varsbtn');
+    if (!b) return;
+    b.hidden = !defCount;
+    b.textContent = trf('Variables {0}', '変数 {0}', defCount);
+    b.setAttribute('aria-label', trf('Your variables and functions ({0})', '自分の変数と関数（{0}）', defCount));
+  }
+  if ($('#varsbtn')) $('#varsbtn').addEventListener('click', () => { vibrate(); store.set('qalc.lists.tab', 'defs'); openDefs(); });
   function invalidateCatalogs() {
     callKind.clear();
     exactCache.clear(); // (a name in a kept integral may mean something else now)
@@ -16342,12 +17594,23 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   }
   const selBar = el('div', { class: 'hselbar', hidden: true, role: 'region', 'aria-label': tr('Selected lines', '選んだ行') });
   const selInfo = el('div', { class: 'hs-info', 'aria-live': 'polite' });
+  // (1.16.0, feature/hist-excel) "Copy as a table": the expression and the answer of each line in two columns (tab between),
+  // to paste into a spreadsheet (Excel, Google Sheets); free (the owner's decision of 11-24: copying is free and saving a file
+  // is Pro everywhere, as Copy the table of the tools and Copy as a table of the matrix form; exporting the history stays Pro)
+  const tblBtn = el('button', { class: 'btn', type: 'button', text: tr('Copy as a table', '表でコピー'), onclick: () => copySelectedTable() });
   selBar.append(selInfo, el('div', { class: 'hs-btns' },
     el('button', { class: 'btn', type: 'button', text: tr('Copy', 'コピー'), onclick: () => copySelected() }),
+    tblBtn,
     el('button', { class: 'btn primary', type: 'button', text: tr('Done', '終わる'), onclick: () => closeHistSelect() })));
   document.body.append(selBar);
-  function openHistSelect() {
+  // (1.16.0, fix/hist-selbar) the history ends above the bar however high it is (its buttons beside the numbers or under them,
+  // the text size): until then 150 px, and the last line stayed under a bar 220 px high
+  if (window.ResizeObserver) new ResizeObserver(() => { if (!selBar.hidden) histEl.style.setProperty('--selbar-h', selBar.offsetHeight + 'px'); }).observe(selBar);
+  // first: a line to choose at once (1.16.0, feature/hist-excel: ⋯ "Select" of a line: its sum and average at once)
+  let selLast = null;
+  function openHistSelect(first) {
     if (!proGate('history_tools')) return;
+    selLast = null;
     closeHistSearch();
     endHistEdit(true); // (1.15.0: selecting lines ends the editing of one; its expression stays in the field)
     drawAllOlder();
@@ -16356,7 +17619,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     selBar.hidden = false;
     for (const it of histEl.querySelectorAll('.h-item')) it.classList.remove('sel');
     refreshSteps();
-    updateSelected();
+    const it0 = first ? Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === first) : null;
+    if (it0) toggleSelected(it0); else updateSelected();
   }
   function closeHistSelect() {
     if (!histSel) return false;
@@ -16375,7 +17639,19 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (histSel.has(h)) histSel.delete(h); else histSel.add(h);
     item.classList.toggle('sel', histSel.has(h));
     item.setAttribute('aria-selected', String(histSel.has(h)));
+    selLast = h;
     vibrate();
+    updateSelected();
+  }
+  // all the lines from the one chosen last to this one (in the order of the history)
+  function selectRange(item) {
+    const h = item._h;
+    if (!h || !histSel) return;
+    const a = selLast ? history.indexOf(selLast) : -1, b = history.indexOf(h);
+    if (a < 0 || b < 0) { toggleSelected(item); return; }
+    for (let k = Math.min(a, b); k <= Math.max(a, b); k++) histSel.add(history[k]);
+    for (const it of histEl.querySelectorAll('.h-item')) { const on = histSel.has(it._h); it.classList.toggle('sel', on); it.setAttribute('aria-selected', String(on)); }
+    selLast = h;
     updateSelected();
   }
   async function updateSelected() {
@@ -16387,13 +17663,20 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (!list.length) return;
     const vals = list.map((h) => insertText(h));
     if (vals.some((v) => !v)) { selInfo.append(el('div', { class: 'form-hint warn', text: tr('A result that cannot be used in a calculation is selected (too long, or text)', '計算に使えない結果（長すぎる・文字）が選ばれています') })); return; }
+    // (1.16.0, the review of 11-24 (4), H4) money with numbers or units, matrices with anything but matrices: not added up (until
+    // then "= (¥2050 + 1) (¥2050 + 2)" or "≈ €1.200 + 1.230,67": the check of the units saw only letters)
+    const kindOf = (h) => { const t = String(h.result || '').split(/ [=≈] /).pop(); return /^\s*\[/.test(t) ? 'matrix' : /[¥$€£₩₹]|(?:^|[\s\d])(?:JPY|USD|EUR|GBP|KRW|TWD|CNY|MXN|CHF|INR|CAD|AUD)\b/.test(t) ? 'money' : 'other'; };
+    if (new Set(list.map(kindOf)).size > 1) { selInfo.append(el('div', { class: 'form-hint warn', text: tr('The units or kinds (money, matrices) do not match, so they cannot be added up', '単位や種類（お金・行列）がそろっていないので、合計できません') })); return; }
     const sum = vals.map((v) => '(' + v + ')').join(' + ');
-    const r = await Bridge.send('calc', { expr: sum, opts: engineOpts(), timeout: 3000 });
+    // (1.16.0, feature/hist-excel: lines shown as decimals add up to a decimal, as in a spreadsheet: 52.8, not 52 + 4/5)
+    const dec = list.every((h) => !/\//.test(String(h.result || '')));
+    const r = await Bridge.send('calc', { expr: sum, opts: Object.assign(engineOpts(), dec ? { fraction: 'decimal' } : {}), timeout: 3000 });
     if (seq !== selSeq) return;
     if (!r.ok || !r.result || r.timeout) { selInfo.append(el('div', { class: 'form-hint warn', text: localMessage(r.error) || tr('Could not add them up', '合計を計算できませんでした') })); return; }
     // a sum of different kinds of units stays a sum ("5 km + 3 kg"): said, not given as a total
     const exact = r.result.split(' ≈ ')[0];
-    if (/[A-Za-z]/.test(exact) && /\s[+−]\s/.test(exact.replace(/\([^()]*\)/g, ''))) {
+    if (undoneMessage(r.result, r.messages)) { selInfo.append(el('div', { class: 'form-hint warn', text: undoneMessage(r.result, r.messages) })); return; }
+    if (/[A-Za-z¥$€£₩₹]/.test(exact) && /\s[+−]\s/.test(exact.replace(/\([^()]*\)/g, ''))) {
       selInfo.append(el('div', { class: 'form-hint warn', text: tr('The units do not match, so they cannot be added up', '単位がそろっていないので、合計できません') }));
       return;
     }
@@ -16407,7 +17690,56 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   function copySelected() {
     const list = history.filter((h) => histSel && histSel.has(h));
     if (!list.length) { toast(tr('Nothing is selected', '何も選ばれていません'), 1500); return; }
-    copyText(list.map((h) => toDisplay(h.expr) + ' ' + displayResult(h)).join('\n'));
+    copyText(list.map((h) => toDisplay(h.expr) + ' ' + copyDisplayResult(h)).join('\n'));
+  }
+  // the answer of a line as a cell of a spreadsheet: the decimal value when there is one (1/5523 ≈ 0.000181… → 0.000181…, as
+  // a spreadsheet would read 1/5523 as a date), without the groups of digits, with the decimal sign of the number format.
+  // (1.16.0, the review of 11-24 (4)) H3: a fraction (1234 + 1/2, the answer of 1234.5 typed) worked out as a decimal by the
+  // engine; H1: the minus sign "-" (Excel and Google Sheets read −5 with U+2212 as text) and 1.2E+20 for 1.2 × 10^20
+  const SHEET_SUP = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', '⁻': '-', '⁺': '+', '−': '-' };
+  const sheetNumber = (t) => String(t)
+    .replace(/\s*×\s*10\^?\s*([⁻⁺]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+|[−+-]?\d+)/g, (m, e) => { const d = e.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺−]/g, (c) => SHEET_SUP[c]); return 'E' + (d[0] === '-' ? '-' : '+') + d.replace(/^[-+]/, ''); })
+    .replace(/(\d)E([−+-]?)(\d+)/g, (m, a, sg, d) => a + 'E' + (sg === '-' || sg === '−' ? '-' : '+') + d)
+    .replace(/−/g, '-');
+  async function tableAnswer(h) {
+    const t = h.cut ? shownText(h) : String(h.result || '');
+    let last = t.split(/ [=≈] /).pop().replace(/(\d)[\u202f\u2009](?=\d)/g, '$1');
+    if (!h.cut && /\d\s*\/\s*\d/.test(last) && !/^\s*\[/.test(last)) {
+      const src = insertText(h);
+      const r = src ? await Bridge.send('calc', { expr: src, opts: Object.assign(lineOpts(h), { fraction: 'decimal', approx: 'approx' }), timeout: 2000, store: false, preview: false }) : null;
+      if (r && r.ok && r.result && !r.timeout) last = String(r.result).split(/ [=≈] /).pop().replace(/(\d)[\u202f\u2009](?=\d)/g, '$1');
+    }
+    return sheetNumber(displayText(last).replace(/(\d)[\u202f\u2009](?=\d)/g, '$1').replace(/[\t\n]+/g, ' '));
+  }
+  // the expression as a cell: not read as a formula by the spreadsheet (a minus sign first as −, "=" or "+" first with ').
+  // (1.16.0, H2) only digits with / - : (1/2, 3-4, 12:30): with the signs of the screen, ÷ and −, and ∶ for the colon, so that
+  // the spreadsheet reads text, not the date 2 January or the time 12:30 (LibreOffice: 1/2 a date, 12:30 a time, 1 ÷ 2 text)
+  const tableExpr = (h) => {
+    let t = toDisplay(String(h.expr || '')).replace(/[\t\n]+/g, ' ');
+    if (/^[\d\s.,:\/÷−-]+$/.test(t) && !/^[−-]?\d+(?:[.,]\d+)?$/.test(t.trim())) t = t.replace(/\s*\/\s*/g, ' ÷ ').replace(/(\S)\s*[−-]\s*/g, '$1 − ').replace(/\s*:\s*/g, '∶');
+    return /^-/.test(t) ? '−' + t.slice(1) : /^[=+@]/.test(t) ? "'" + t : t;
+  };
+  async function copySelectedTable() {
+    const list = history.filter((h) => histSel && histSel.has(h));
+    if (!list.length) { toast(tr('Nothing is selected', '何も選ばれていません'), 1500); return; }
+    // (1.16.0, feature/hist-ux, U2) the expressions and the answers, or the answers only (one column of numbers to paste); the
+    // choice made last comes first
+    const last = store.get('qalc.tablecopy', 'both');
+    const ch = [['both', tr('Expression and answer (2 columns)', '式と答え（2 列）')], ['ans', tr('Answers only (1 column)', '答えだけ（1 列）')]];
+    const how = await sheet(trf('Copy {0} lines as a table', '{0} 行を表でコピー', list.length), last === 'ans' ? ch.reverse() : ch);
+    if (!how) return;
+    store.set('qalc.tablecopy', how);
+    if (how === 'ans') {
+      const col = [];
+      for (const h of list) col.push(await tableAnswer(h));
+      copyText(col.join('\n'));
+      toast(trf('{0} answers copied as a column: paste them into a spreadsheet', '{0} 個の答えを 1 列でコピーしました（表計算ソフトに貼れます）', list.length), 2500);
+      return;
+    }
+    const rows = [];
+    for (const h of list) rows.push(tableExpr(h) + '\t' + await tableAnswer(h));
+    copyText(rows.join('\n'));
+    toast(trf('{0} lines copied as a table: paste them into a spreadsheet', '{0} 行を表としてコピーしました（表計算ソフトに貼れます）', list.length), 2500);
   }
   // a dialog with one line of text: the text, or null when cancelled
   function promptSheet(title, value, placeholder, okText, numeric) {
@@ -16472,22 +17804,27 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // On the first start of a new version, a card with what is new, once (1.12.0): to those who used
   // an earlier version, each with "Try it". Closed, it does not come again.
   // (1.14.0: a card again, as what is seen changes much: the 3D drawn by the GPU with see-through, and the free trial of
-  // 3D for those without QCalc Pro while it is left; 1.13.0 had none. 1.15.0: 1.14.0 was not given out, so the card
+  // 3D for those without QCalc Pro while it is left; 1.13.0 had none. 1.15.0: 1.14.0 went to the selected testers only on 11-23, before the fix of See-through, so the card
   // has both: the results easier to read, with the precision of the settings to set them back, a line of the history
   // edited in place (Try it: the newest line), and the 3D)
-  const NEWS_VERSION = '1.15';
+  const NEWS_VERSION = '1.16';
+  // (1.16.0) the card of what is new: the list of variables, the hints of the arguments, and more statistics (each row
+  // with Try it: the list (k := 2 first when there is nothing in it), a function typed with its hint, the statistics
+  // tool on its distributions, on one column (histogram) and on two (the curves))
+  const statsWith = (o) => { const s = store.get('qalc.stats', null) || {}; store.set('qalc.stats', Object.assign(s, o)); openStatsTool(); };
+  // (1.16.0, 11-24: first the tools of stocks and investing, and the notes with "#3" and tables: Try it opens "Stock profit
+  // and loss", and the notes (as a table with QCalc Pro))
   const NEWS = () => [
-    ['🔢', tr('Easier results: 15 digits in groups of 3 (Settings → Precision to change)', '答えが見やすく：15 桁、3 桁ごとに区切り（設定の「有効桁数」で戻せます）'), () => { setExpr('exp(pi*sqrt(163))'); commit(); }],
-    history.length ? ['✏️', tr('Edit a line of the history in place (touch its expression)', '履歴の行をその場で直せます（式の行をタップ）'), () => startHistEdit(history[history.length - 1])] : null,
-    ['🎚️', tr('The precision at the top: press its chip to choose 10 to 100 digits or another', '有効桁数を上のボタンですぐ変えられます（10〜100 桁ほか）'), () => precisionSheet()],
-    ['📥', tr('Calculation notes: open a .txt or .csv file, or share text to QCalc', '計算メモに .txt・.csv のファイルや、ほかのアプリから共有した文字を読み込めます'), () => { const p = openNotesTool(); const d = p.body.querySelector('.note-more'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ block: 'center' }), 350); } }],
-    ['📐', tr('Taylor series: taylor on the Calculus page, with a graph to compare', '「解析」のページの taylor でテイラー展開（グラフで比べられます）'), () => openForm('taylor', { f: 'sin(x)' })],
-    ['🌀', tr('2D graph: parametric, polar and implicit curves', '2D グラフで媒介変数・極座標・陰関数の曲線'), () => openPlotWith(['r = 1 + cos(θ)'])],
-    ['🎛️', tr('Sliders: letters such as a in a sin(b x) get sliders in the graph', 'グラフの式の a・b などの文字をスライダーで動かせます'), () => openPlotWith(['a sin(b x)'])],
-    ['⏭️', tr('Next steps under the newest answer: details, graph, factor and more', '答えの下に次の操作の候補（詳しく・グラフ・因数分解など）'), () => { setExpr('x^2 - 1'); commit(); }],
-    ['🔍', tr('Details: the other forms of an answer on one sheet', '「詳しく見る」で答えのいろいろな形を 1 画面に'), () => { setExpr('x^3 - x'); Promise.resolve(commit()).then(() => { const h = history[history.length - 1]; if (h) openDetails(h); }); }],
-    ['🧊', tr('3D: real light and shadows, and See-through', '3D：本物に近い光と影、「透明」'), () => openPlot3dWith(['x^2/4 + y^2/4 - 2', '2 - x^2/4 - y^2/4'])],
-    try3dLeft() ? ['🎁', tr('Without QCalc Pro, open 3D once for free', 'QCalc Pro がなくても、3D を 1 回だけ無料で'), () => openPlot3dWith(['sin(x)*cos(y)'])] : null
+    ['💹', tr('Stocks and investing: profit and loss with tax, average cost, the margin-call price, yield and more', '株・投資の道具：損益と税、平均取得単価、追証の株価、利回りなど'), () => { const t = TOOLS.find((x) => x[0] === 'pnl'); if (t) useTool(t); }],
+    ['▦', tr('Calculation notes: line numbers and #3, and tables with a formula column and totals', '計算メモ：行の番号と #3、式の列と合計のある表'), () => { const p = openNotesTool(); if (hasPro() && p.showTable) p.showTable(); }],
+    // (1.16.0, 11-24: the history with the ways of a spreadsheet; Try it puts the newest line into the field by its number, with
+    // its colored mark and the preview of the answer)
+    ['🕘', tr('History like a spreadsheet: tap an answer for its value, its number for #12; select to add up, copy as a table', '履歴を表計算のように：答えのタップで値、番号のタップで #12。選んで合計、表でコピー'), () => { const h = history[history.length - 1]; if (h && h.n) { setExpr(''); insertResult(h, true); } focusExpr(); }],
+    ['🔤', tr('Your variables and functions on one screen: the button "Variables" above the input field', '自分の変数と関数を 1 つの画面で：入力欄の上の「変数」のボタン'), () => { if (defCount) { store.set('qalc.lists.tab', 'defs'); openDefs(); return; } setExpr('k := 2'); Promise.resolve(commit()).then(() => { store.set('qalc.lists.tab', 'defs'); openDefs(); }); }],
+    ['💡', tr('The arguments of a function shown as you type it, under the input field', '入力中の関数の引数を、入力欄の下に表示'), () => { setExpr('normdist('); focusExpr(); }],
+    ['🎲', tr('Probability distributions: normal, binomial, Poisson, t and χ², the range shaded in a graph', '確率分布：正規・二項・ポアソン・t・χ²（範囲をグラフに色で表示）'), () => statsWith({ mode: 'dist' })],
+    ['📊', tr('Statistics: a histogram and a box plot of one column; a column read from a CSV file', '統計：1 列のデータのヒストグラムと箱ひげ図。CSV ファイルの列も読み込めます'), () => statsWith({ mode: 'data', cols: 1, chart: 'hist', rows: STAT_EX()[0][2] })],
+    ['📈', tr('Regression curves for two columns: degree 2 to 4, exponential, power and logarithmic', '2 列のデータの回帰曲線：2〜4 次・指数・累乗・対数'), () => statsWith({ mode: 'data', cols: 2, model: 'linear', rows: STAT_EX()[1][2] })]
   ].filter(Boolean);
   // the card is the last thing in the history, just above the field (it covers nothing); it goes
   // with the first calculation, its ×, or a "Try it"
@@ -16504,7 +17841,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         el('button', { class: 'btn news-try', type: 'button', text: tr('Try it', '試す'), 'aria-label': tr('Try it', '試す') + ': ' + text, onclick: () => { closeNews(); run(); } })));
     }
     // (1.12.0, H) everything new, step by step: the section of the user manual
-    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.15.0 (user manual) ›', '1.15.0 の新しい機能（説明書）›') }, () => openManual('new-1-15'))));
+    card.append(el('div', { class: 'news-more' }, tapButton({ class: 'linkish', text: tr('What is new in 1.16.0 (user manual) ›', '1.16.0 の新しい機能（説明書）›') }, () => openManual('new-1-16'))));
     newsCard = card;
     histEl.append(card);
     // its title and × in sight, also when the history is short (memory keys, a small screen)
@@ -16532,6 +17869,13 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['split', tr('Split the bill', '割り勘'), 'js'],
     ['loan', tr('Loan', 'ローン'), 'js'],
     ['savings', tr('Savings and compound interest', '積立と複利'), 'js'],
+    ['pnl', tr('Stock profit and loss', '株の損益と税'), 'js'],
+    ['avgcost', tr('Average cost', '平均取得単価'), 'js'],
+    ['margin', tr('Margin: maintenance ratio', '信用取引：維持率と追証'), 'js'],
+    ['possize', tr('Position size from a stop', '損切りから株数'), 'js'],
+    ['yield', tr('Yield, PER, PBR, growth', '利回り・PER・PBR・複利'), 'js'],
+    ['carry', tr('Margin interest and lending fee', '金利・貸株料（日割り）'), 'js'],
+    ['fxstock', tr('Foreign stocks in your money', '外国株を自国通貨で'), 'js'],
     ['stats', tr('Statistics', '統計'), 'js'],
     ['convert', tr('Convert units and currencies', '単位・通貨の換算'), 'engine'],
     ['sections', tr('Volume from measured values', '測った値から体積'), 'engine'],
@@ -16756,6 +18100,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         return { m: 'dec', n: M.dec, zeros: true, why: trf('{0} decimals: the smallest unit of {1} (the calculation is exact in it)', '小数 {0} 桁：{1} の最小の単位（計算はこの単位で正確）', M.dec, M.cur) };
       case 'unitprice': return { m: 'dec', n: M.dec + 1, zeros: true, why: trf('{0} decimals: one more than the smallest unit of {1} (two more below 1)', '小数 {0} 桁：{1} の最小の単位より 1 桁多め（1 より小さい単価は 2 桁）', M.dec + 1, M.cur) };
       case 'percent': return { m: 'dec', n: 3, why: tr('3 decimals (without the zeros at the end)', '小数 3 桁（末尾の 0 は出さない）') };
+      case 'pnl': case 'avgcost': case 'margin': case 'possize': case 'yield': case 'carry': case 'fxstock':
+        return { m: 'dec', n: M.dec, zeros: true, why: trf('Money: {0} decimals, the smallest unit of {1}; prices and averages: {2}; % and ratios: 2', '金額は小数 {0} 桁（{1} の最小の単位）、株価と平均は {2} 桁、% と倍率は 2 桁', M.dec, M.cur, Math.max(2, M.dec)) };
       case 'stats': return { m: 'dec', n: 2, zeros: true, why: tr('The decimals of the data + 2 (the smallest, the largest and the sum: as the data; r and R²: 4)', 'データの小数の桁 ＋ 2 桁（最小・最大・合計はデータと同じ、r と R² は 4 桁）') };
       case 'convert': return { m: 'sig', n: 8, why: tr('8 significant digits (all of an exact answer); currencies: the smallest unit + 2 decimals; fuel economy: 2 decimals', '有効 8 桁（ぴったりの答えは全部）、通貨は最小の単位 ＋ 2 桁、燃費は小数 2 桁') };
       default: return { m: 'sig', n: 6, why: tr('6 significant digits', '有効 6 桁') };
@@ -16916,7 +18262,16 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   function boxNum(t) {
     let s = String(t || '').trim().replace(/[\s ]/g, '').replace(/[，]/g, ',').replace(/[．]/g, '.').replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[−–]/g, '-');
     let scale = 1;
-    if (/割$/.test(s)) { s = s.slice(0, -1); scale = 10; } else if (/%$/.test(s)) s = s.slice(0, -1);
+    // (1.16.0, the review of 11-24, T3: also 3割引, 3割引き; 3000万, 1億, 1億2000万, 5千 and 円 after a sum; the owner's note
+    // L1: 100株, 100 shares and the like in the boxes of shares, as 1,200円 in those of prices)
+    s = s.replace(/円$/, '').replace(/(?:株|shares?|Aktien|Stück|Stk\.?|acciones|actions|주|股)$/i, '');
+    if (/割(?:引き?)?$/.test(s)) { s = s.replace(/割(?:引き?)?$/, ''); scale = 10; } else if (/%$/.test(s)) s = s.slice(0, -1);
+    const big = /^(?:([\d.,]+)億)?(?:([\d.,]+)万)?(?:([\d.,]+)千)?([\d.,]*)$/.exec(s);
+    if (big && /[億万千]/.test(s)) {
+      const part = (t) => (t ? boxNum(t) : 0);
+      const v = part(big[1]) * 1e8 + part(big[2]) * 1e4 + part(big[3]) * 1e3 + part(big[4]);
+      return isFinite(v) ? v * scale : NaN;
+    }
     if (commaMode) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, '');
     return /^-?\d+(\.\d+)?$|^-?\.\d+$/.test(s) ? Number(s) * scale : NaN;
   }
@@ -16939,28 +18294,32 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (f.opts) {
           // a choice of a few: a switch (aria-pressed)
           chosen[f.k] = f.opts.some((o) => o[0] === saved[f.k]) ? saved[f.k] : f.def;
-          const btns = f.opts.map(([v, label]) => tapButton({ text: decSign(label), 'aria-pressed': String(v === chosen[f.k]), class: v === chosen[f.k] ? 'on' : '' }, () => {
+          const btns = f.opts.map(([v, label]) => tapButton({ text: decSign(label), 'aria-pressed': String(v === chosen[f.k]), class: v === chosen[f.k] ? 'on' : '', 'data-v': v }, () => {
             chosen[f.k] = v;
             btns.forEach((b, i) => { const on = f.opts[i][0] === v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
             save(); showFields(); run();
           }));
-          const row = el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: f.label }), el('span', { class: 'seg mini', role: 'group', 'aria-label': f.label }, ...btns));
+          const row = el('div', { class: 'geo-size tool-choice', 'data-k': f.k }, el('span', { class: 'geo-lbl', text: f.label }), el('span', { class: 'seg mini', role: 'group', 'aria-label': f.label }, ...btns));
           row._f = f;
           return row;
         }
-        const inp = el('input', { inputmode: f.kind === 'date' || f.kind === 'time' ? 'text' : 'decimal', type: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), value: typeof saved[f.k] === 'string' ? saved[f.k] : (typeof f.def === 'function' ? f.def() : f.def || ''), 'aria-label': f.label });
+        // (1.16.0: f.area, a box of several lines, as the buys of "Average cost")
+        const inp = f.area ? el('textarea', { rows: 4, inputmode: 'decimal', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), 'aria-label': f.label }) : el('input', { inputmode: f.kind === 'date' || f.kind === 'time' ? 'text' : 'decimal', type: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: decSign(f.ph || ''), value: typeof saved[f.k] === 'string' ? saved[f.k] : decSign(typeof f.def === 'function' ? f.def() : f.def || ''), 'aria-label': f.label });
+        if (f.area) inp.value = typeof saved[f.k] === 'string' ? saved[f.k] : decSign(f.def || '');
         inp.addEventListener('input', () => { inp.removeAttribute('aria-invalid'); save(); run(); });
         inp.addEventListener('focus', () => inp.select()); // (F, task 3: a value is replaced by typing, as in the shapes)
         inputs[f.k] = inp;
-        const row = el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: f.label }), inp);
-        if (f.chips) row.append(el('span', { class: 'tool-mini-chips' }, ...f.chips().map((c) => tapButton({ class: 'area-chip', text: c }, () => { inp.value = c; save(); run(); }))));
+        const row = el('label', { class: 'geo-size' + (f.area ? ' tool-area' : ''), 'data-k': f.k }, el('span', { class: 'geo-lbl', text: f.label }), inp);
+        if (f.chips) row.append(el('span', { class: 'tool-mini-chips' }, ...f.chips().map((c) => tapButton({ class: 'area-chip', text: decSign(c) }, () => { inp.value = decSign(c); save(); run(); }))));
         row._f = f;
         return row;
       };
       const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
         ...spec.chips.map(([label, vals]) => tapButton({ class: 'area-chip', text: label }, () => {
+          // (1.16.0, BG17G of the full suite: with a decimal comma the examples and the defaults of the stock tools put 20.315,
+          // 0.1% and 2.8 with a point; as typed in the number format, as the placeholders already were)
           for (const [k, v] of Object.entries(vals)) {
-            if (inputs[k]) inputs[k].value = v;
+            if (inputs[k]) inputs[k].value = decSign(v);
             else if (chosen[k] !== undefined) { chosen[k] = v; const row = rows.find((r) => r._f.k === k); if (row) row.querySelectorAll('button').forEach((b, i) => { const on = row._f.opts[i][0] === v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); }
           }
           save(); showFields(); run();
@@ -16972,9 +18331,16 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const msg = el('div', { class: 'geo-msg', role: 'alert' });
       const outs = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
       const tableBox = el('div', { class: 'tool-table' });
-      const caution = spec.caution ? cautionLine(spec.caution) : null;
+      const caution = spec.invest ? investLine(spec.caution) : spec.caution ? cautionLine(spec.caution) : null;
       // fields shown only for some choices (when: values → boolean)
-      const showFields = () => { const v = values(); for (const r of rows) if (r._f.when) r.hidden = !r._f.when(v); };
+      // (labelFor, 1.16.0 T5: a name that follows the choices, as the dates of an age: "Birthday")
+      const showFields = () => {
+        const v = values();
+        for (const r of rows) {
+          if (r._f.when) r.hidden = !r._f.when(v);
+          if (r._f.labelFor) { const t = r._f.labelFor(v), l = r.querySelector('.geo-lbl'), i = r.querySelector('input'); if (l) l.textContent = t; if (i) i.setAttribute('aria-label', t); }
+        }
+      };
       const values = () => { const v = {}; for (const f of spec.fields) v[f.k] = f.opts ? chosen[f.k] : inputs[f.k].value; return v; };
       let seq = 0;
       const run = debounce(async () => {
@@ -17032,7 +18398,13 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     fileSaved({ ok: true });
   }
-  const roundBy = (x, mode, u) => { const q = x / u; const r = mode === 'down' ? Math.floor(q + 1e-9) : mode === 'up' ? Math.ceil(q - 1e-9) : Math.round(q); return r * u; };
+  // (1.16.0, the review of 11-24, T2) the quotient read as a decimal of 12 significant digits first: 1,234.50 × 1.19 / 0.01 was
+  // 146905.49999999997 and was rounded down to 1,469.05 (1,212 prices up to 2,000.00 with the usual tax rates were one cent off);
+  // half rounded away from zero; the result again without the error of the binary fractions
+  const roundBy = (x, mode, u) => {
+    const q = Number((x / u).toPrecision(12)), r = mode === 'down' ? Math.floor(q) : mode === 'up' ? Math.ceil(q) : Math.sign(q) * Math.round(Math.abs(q));
+    return Number((r * u).toPrecision(15));
+  };
   const roundFn = (mode) => (mode === 'down' ? 'floor' : mode === 'up' ? 'ceil' : 'round');
   const ROUNDING = () => [['down', tr('Down', '切り捨て')], ['near', tr('Nearest', '四捨五入')], ['up', tr('Up', '切り上げ')]];
   const unitWord = () => (MONEY().cur === 'JPY' ? tr('', '円') : '');
@@ -17252,6 +18624,423 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       }
     });
   }
+  // ---- Stocks and investing (1.16.0, feature/trading-tools; the owner's request of 11-24): calculations with what is
+  // typed only. No prices are fetched, nothing is advised, no permission or library is needed. Each tool has the note
+  // "A calculation for reference, not investment advice" (investLine) with what it assumes. The money is that of the
+  // region (MONEY), the shares whole numbers. QCalc Pro ('trading'): the maintenance ratio of a margin account, the
+  // position size from a stop and the interest and lending fees by the day (the tools of a trader who trades on margin);
+  // the profit and loss, the average cost, the yields and growth and the foreign stocks stay free.
+  function investLine(premise) {
+    return el('div', { class: 'caution invest-note', role: 'note' }, el('span', { class: 'caution-i', 'aria-hidden': 'true', text: 'ⓘ' }),
+      el('span', { class: 'caution-t', text: joinSentences(tr('A calculation for reference, not investment advice.', '計算の目安で、投資の助言ではありません。'), premise) }));
+  }
+  // the digits of the investing screens: money in the smallest unit of the currency, prices and averages with 2 decimals
+  // (or those of the currency), % and ratios with 2
+  const INVEST = ['pnl', 'avgcost', 'margin', 'possize', 'yield', 'carry', 'fxstock'];
+  const priceAuto = () => ({ m: 'dec', n: Math.max(2, MONEY().dec), zeros: MONEY().dec > 0 });
+  const pctAuto = { m: 'dec', n: 2, zeros: true };
+  const money = (id, v) => fmtDigits(id, v) + unitWord();
+  const signed = (s, v) => (v > 0 ? '+' : '') + s;
+  const shares = (n) => fmtNum(n) + tr('', ' 株');
+  // a money amount rounded down to the smallest unit of the currency, as an expression
+  const floorMoneyE = (e) => (MONEY().dec ? `floor((${e}) × ${Math.pow(10, MONEY().dec)}) / ${Math.pow(10, MONEY().dec)}` : `floor(${e})`);
+  const floorMoney = (x) => Math.floor(x * Math.pow(10, MONEY().dec) + 1e-7) / Math.pow(10, MONEY().dec);
+  // a fee: an amount (500) or a share of the trade ("0.1%"); { amt, rate } or null when it is not a number
+  function feeOf(t) {
+    const s = String(t || '').trim();
+    if (!s) return { amt: 0, rate: 0 };
+    const v = boxNum(s);
+    if (!(v >= 0)) return null;
+    return /[%％]$/.test(s) ? { amt: 0, rate: v / 100 } : { amt: v, rate: 0 };
+  }
+  const shareCount = (v) => v > 0 && Math.abs(v - Math.round(v)) < 1e-9;
+
+  // (1) profit and loss with the fees of buying and selling, the tax (20.315 %: Japan's income tax, the special income
+  // tax for reconstruction and the resident tax on gains from listed stocks; another rate can be typed) or none (NISA)
+  function openPnlTool() {
+    return simpleTool('pnl', tr('Stock profit and loss', '株の損益と税'), {
+      invest: true,
+      chips: [[tr('1000 → 1200, 100 shares', '1000 円で買い 1200 円で売る・100 株'), { buy: '1000', sell: '1200', n: '100', feeBuy: '', feeSell: '', account: 'taxed' }],
+        [tr('Fees 0.1 %, tax-free', '手数料 0.1%・NISA'), { buy: '2500', sell: '2350', n: '200', feeBuy: '0.1%', feeSell: '0.1%', account: 'nisa' }]],
+      fields: [
+        { k: 'buy', label: tr('Bought at (a share)', '買値（1 株）'), def: '', ph: tr('e.g. 1000', '例：1000') },
+        { k: 'sell', label: tr('Sold at (a share)', '売値（1 株）'), def: '', ph: tr('e.g. 1200', '例：1200') },
+        { k: 'n', label: tr('Shares', '株数'), def: '', ph: tr('e.g. 100', '例：100') },
+        { k: 'feeBuy', label: tr('Fee when buying', '買うときの手数料'), def: '', ph: tr('0, 500 or 0.1%', '0、500、0.1%') },
+        { k: 'feeSell', label: tr('Fee when selling', '売るときの手数料'), def: '', ph: tr('0, 500 or 0.1%', '0、500、0.1%') },
+        { k: 'account', label: tr('Tax', '税'), opts: [['taxed', tr('Taxed', '課税')], ['nisa', tr('Tax-free account', '非課税（NISA）')]], def: 'taxed' },
+        { k: 'tax', label: tr('Tax rate (%)', '税率（%）'), def: '20.315', ph: '20.315', when: (v) => v.account === 'taxed' }
+      ],
+      hint: tr('Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down (at 20.315 %, the income taxes of 15.315 % and the resident tax of 5 % each rounded down, as a broker withholds them); "Break-even" is the price at which selling leaves no loss after the fees.', '損益 ＝（売値 − 買値）× 株数 − 手数料。手数料は額でも、売買代金の % でも入れられます。税は利益にだけかかり、1 円未満は切り捨てです（20.315 % のときは、証券会社の源泉徴収と同じく、所得税と復興特別所得税の 15.315 % と住民税の 5 % を別々に切り捨てて足します）。「損益ゼロの売値」は、手数料を引いても損が出ない売値です。'),
+      caution: tr('The tax is worked out on this trade alone (20.315 %: Japan\'s rate for listed stocks, its parts of 15.315 % and 5 % rounded down one by one); losses offset in the year are not taken into account.', '前提：税はこの取引だけで計算します（20.315 % は上場株式の税率で、15.315 % と 5 % を別々に切り捨て）。年間の損益通算は考えません。'),
+      run: async (v) => {
+        if (!v.buy || !v.sell || !v.n) return { msg: tr('Enter the prices and the shares', '買値・売値・株数を入れてください') };
+        const b = boxNum(v.buy), s = boxNum(v.sell), n = boxNum(v.n), fb = feeOf(v.feeBuy), fs = feeOf(v.feeSell), rate = v.account === 'taxed' ? (v.tax === '' ? NaN : boxNum(v.tax)) : 0;
+        if (!(b > 0)) return { msg: tr('The price bought at must be a number above 0', '買値は 0 より大きい数にしてください'), bad: 'buy' };
+        if (!(s >= 0)) return { msg: tr('The price sold at must be a number', '売値は数にしてください'), bad: 'sell' };
+        if (!shareCount(n)) return { msg: tr('The shares must be a whole number above 0', '株数は 1 以上の整数にしてください'), bad: 'n' };
+        if (!fb) return { msg: tr('A fee is an amount (500) or a % (0.1%)', '手数料は 500 のような額か、0.1% のような割合にしてください'), bad: 'feeBuy' };
+        if (!fs) return { msg: tr('A fee is an amount (500) or a % (0.1%)', '手数料は 500 のような額か、0.1% のような割合にしてください'), bad: 'feeSell' };
+        if (!(rate >= 0 && rate < 100)) return { msg: tr('The tax rate must be from 0 to 100 %', '税率は 0〜100 % にしてください'), bad: 'tax' };
+        const feeB = fb.amt + fb.rate * b * n, feeS = fs.amt + fs.rate * s * n;
+        const pl = (s - b) * n - feeB - feeS, cost = b * n + feeB;
+        // (1.16.0, the owner's note of 11-24, L2) at 20.315 % the income tax with the special income tax for reconstruction
+        // (15.315 %) and the resident tax (5 %) are each rounded down, as a broker withholds them: a profit of 19 yen pays 2, not 3
+        const jp = Math.abs(rate - 20.315) < 1e-9;
+        const tax = v.account === 'taxed' && pl > 0 ? (jp ? floorMoney(pl * 0.15315) + floorMoney(pl * 0.05) : floorMoney(pl * rate / 100)) : 0;
+        const net = pl - tax, got = s * n - feeS - tax;
+        const plE = `(${exprNum(s)} − ${exprNum(b)}) × ${exprNum(n)}${feeB ? ' − ' + exprNum(feeB) : ''}${feeS ? ' − ' + exprNum(feeS) : ''}`;
+        const be = (b * n + feeB + fs.amt) / (n * (1 - fs.rate));
+        const rows = [
+          { name: tr('Profit or loss', '損益'), small: tr('before tax, after the fees', '税引前・手数料を引いたあと'), value: signed(money('pnl', pl), pl), expr: plE },
+          { name: tr('Profit or loss in %', '損益率'), small: tr('of what was paid (with the fee)', '買った額（手数料込み）に対して'), value: signed(fmtDigits('pnl', pl / cost * 100, pctAuto) + ' %', pl), expr: `(${plE}) / (${exprNum(b)} × ${exprNum(n)}${feeB ? ' + ' + exprNum(feeB) : ''}) to %` }];
+        if (v.account === 'taxed') rows.push({ name: tr('Tax', '税'), small: pl > 0 ? (jp ? tr('15.315 % and 5 % of the profit, each rounded down', '利益の 15.315 % と 5 %（それぞれ切り捨て）') : trf('{0} % of the profit, rounded down', '利益の {0} %（切り捨て）', fmtNum(rate, 4))) : tr('none on a loss', '損失のため 0'), value: money('pnl', tax), expr: pl > 0 ? (jp ? floorMoneyE(`(${plE}) × 15.315%`) + ' + ' + floorMoneyE(`(${plE}) × 5%`) : floorMoneyE(`(${plE}) × ${exprNum(rate)}%`)) : '' });
+        rows.push({ name: tr('After tax', '税引後の損益（手取り）'), value: signed(money('pnl', net), net), expr: tax ? `${exprNum(pl)} − ${exprNum(tax)}` : plE },
+          { name: tr('Received from the sale', '売って受け取る額'), small: tr('after the fee and the tax', '手数料と税を引いたあと'), value: money('pnl', got), expr: `${exprNum(s)} × ${exprNum(n)}${feeS ? ' − ' + exprNum(feeS) : ''}${tax ? ' − ' + exprNum(tax) : ''}` },
+          { name: tr('Break-even price', '損益ゼロの売値'), small: tr('the fees paid back', '手数料の分を取り戻す売値'), value: fmtDigits('pnl', be, priceAuto()), expr: `(${exprNum(b)} × ${exprNum(n)}${feeB ? ' + ' + exprNum(feeB) : ''}${fs.amt ? ' + ' + exprNum(fs.amt) : ''}) / (${exprNum(n)}${fs.rate ? ' × (1 − ' + exprNum(fs.rate * 100) + '%)' : ''})` });
+        return { rows };
+      }
+    });
+  }
+  // the buys typed one to a line ("1000 100", "1000 × 100", "1000円 100株"): [{ p, n }] or the number of the line that is wrong
+  function buyLines(t) {
+    const out = [], lines = String(t || '').split(/\r?\n|;/).map((s) => s.trim()).filter(Boolean);
+    for (let i = 0; i < lines.length; i++) {
+      const s = lines[i].replace(/[円株$€£¥]|shares?|Aktien|acciones|actions|주|股/gi, ' ').trim();
+      let parts = s.split(/\s*[×xX*@]\s*|\s+|\t/).filter(Boolean);
+      if (parts.length === 1 && !commaMode && /,/.test(s)) parts = s.split(/\s*,\s*/);
+      const p = parts.length === 2 ? boxNum(parts[0]) : NaN, n = parts.length === 2 ? boxNum(parts[1]) : NaN;
+      if (!(p > 0) || !shareCount(n)) return { bad: i + 1 };
+      out.push({ p, n });
+    }
+    return { buys: out };
+  }
+  // (2) the average cost of several buys, and the other way round: how many shares at which price make a target average
+  function openAvgCostTool() {
+    return simpleTool('avgcost', tr('Average cost', '平均取得単価'), {
+      invest: true,
+      chips: [[tr('1000 × 100, 900 × 200', '1000 円 100 株・900 円 200 株'), { mode: 'avg', buys: '1000 100\n900 200', fees: '' }],
+        [tr('100 at 1200 → average 1000 by buying at 900', '1200 円 100 株 → 900 円で買って平均 1000 円'), { mode: 'target', n0: '100', a0: '1200', goal: '1000', find: 'n', p: '900', lot: '100' }]],
+      fields: [
+        { k: 'mode', label: tr('Find', '求めるもの'), opts: [['avg', tr('The average of the buys', '買いの平均')], ['target', tr('How to reach an average', '目標の平均にするには')]], def: 'avg' },
+        { k: 'buys', area: true, label: tr('Buys: price and shares, one to a line', '買い：株価と株数（1 行に 1 回）'), def: '', ph: tr('1000 100\n900 200', '1000 100\n900 200'), when: (v) => v.mode === 'avg' },
+        { k: 'fees', label: tr('Fees in all', '手数料の合計'), def: '', ph: '0', more: true, when: (v) => v.mode === 'avg' },
+        { k: 'n0', label: tr('Shares held', '持っている株数'), def: '', ph: tr('e.g. 100', '例：100'), when: (v) => v.mode === 'target' },
+        { k: 'a0', label: tr('Their average cost', '今の平均取得単価'), def: '', ph: tr('e.g. 1200', '例：1200'), when: (v) => v.mode === 'target' },
+        { k: 'goal', label: tr('Target average', '目標の平均'), def: '', ph: tr('e.g. 1000', '例：1000'), when: (v) => v.mode === 'target' },
+        { k: 'find', label: tr('Given', '決めるもの'), opts: [['n', tr('Price → shares', '買値 → 株数')], ['p', tr('Shares → price', '株数 → 買値')]], def: 'n', when: (v) => v.mode === 'target' },
+        { k: 'p', label: tr('Buy at (a share)', '買値（1 株）'), def: '', ph: tr('e.g. 900', '例：900'), when: (v) => v.mode === 'target' && v.find === 'n' },
+        { k: 'x', label: tr('Shares to buy', '買う株数'), def: '', ph: tr('e.g. 200', '例：200'), when: (v) => v.mode === 'target' && v.find === 'p' },
+        { k: 'lot', label: tr('Trading unit (shares)', '単元（株）'), def: '100', ph: '100', chips: () => ['1', '100'], when: (v) => v.mode === 'target' && v.find === 'n' }
+      ],
+      hint: tr('Average = (price × shares + …) / all the shares. To reach a target T from N shares at A, buying at P: N × (A − T) / (T − P) shares, rounded up to the trading unit.', '平均 ＝（株価 × 株数 ＋ …）÷ 株数の合計。N 株・平均 A から目標 T にするには、買値 P で N ×（A − T）÷（T − P）株（単元で切り上げ）。'),
+      caution: tr('The average here is what was paid a share (with the fees typed); a broker\'s average for tax may be worked out another way.', '前提：ここでの平均は 1 株あたりに払った額（入れた手数料を含む）です。税のための取得価額の計算は、証券会社で違うことがあります。'),
+      run: async (v) => {
+        if (v.mode === 'avg') {
+          if (!v.buys.trim()) return { msg: tr('Enter the buys: a price and the shares on each line', '買いを、1 行に株価と株数で入れてください') };
+          const L = buyLines(v.buys), fees = v.fees === '' ? 0 : boxNum(v.fees);
+          if (L.bad) return { msg: trf('Line {0}: write a price and the shares, such as 1000 100', '{0} 行目：1000 100 のように、株価と株数を書いてください', L.bad), bad: 'buys' };
+          if (!(fees >= 0)) return { msg: tr('The fees must be a number', '手数料は数にしてください'), bad: 'fees' };
+          let sum = 0, cnt = 0;
+          for (const q of L.buys) { sum += q.p * q.n; cnt += q.n; }
+          const avg = (sum + fees) / cnt;
+          const e = `(${L.buys.map((q) => exprNum(q.p) + ' × ' + exprNum(q.n)).join(' + ')}${fees ? ' + ' + exprNum(fees) : ''}) / (${L.buys.map((q) => exprNum(q.n)).join(' + ')})`;
+          return { rows: [{ name: tr('Average cost', '平均取得単価'), small: trf('{0} buys', '{0} 回の買い', L.buys.length), value: fmtDigits('avgcost', avg, priceAuto()), expr: e },
+            { name: tr('Shares in all', '株数の合計'), value: shares(cnt), expr: L.buys.map((q) => exprNum(q.n)).join(' + ') },
+            { name: tr('Paid in all', '取得額の合計'), small: fees ? tr('with the fees', '手数料を含む') : '', value: money('avgcost', sum + fees), expr: `${L.buys.map((q) => exprNum(q.p) + ' × ' + exprNum(q.n)).join(' + ')}${fees ? ' + ' + exprNum(fees) : ''}` }] };
+        }
+        if (!v.n0 || !v.a0 || !v.goal) return { msg: tr('Enter the shares held, their average and the target', '持っている株数、今の平均、目標の平均を入れてください') };
+        const N = boxNum(v.n0), A = boxNum(v.a0), Tg = boxNum(v.goal);
+        if (!shareCount(N)) return { msg: tr('The shares must be a whole number above 0', '株数は 1 以上の整数にしてください'), bad: 'n0' };
+        if (!(A > 0)) return { msg: tr('The average must be a number above 0', '平均は 0 より大きい数にしてください'), bad: 'a0' };
+        if (!(Tg > 0) || Tg === A) return { msg: tr('The target must be a number above 0, other than the average now', '目標は 0 より大きく、今の平均と違う数にしてください'), bad: 'goal' };
+        const down = Tg < A;
+        if (v.find === 'n') {
+          if (!v.p) return { msg: tr('Enter the price to buy at', '買値を入れてください') };
+          const P = boxNum(v.p), lot = v.lot === '' ? 1 : boxNum(v.lot);
+          if (!(P > 0)) return { msg: tr('The price must be a number above 0', '買値は 0 より大きい数にしてください'), bad: 'p' };
+          if (!shareCount(lot)) return { msg: tr('The trading unit must be a whole number, such as 100', '単元は 100 のような整数にしてください'), bad: 'lot' };
+          if (down ? !(P < Tg) : !(P > Tg)) return { msg: down ? tr('To bring the average down to the target, buy below the target', '平均を目標まで下げるには、目標より安い買値にしてください') : tr('To bring the average up to the target, buy above the target', '平均を目標まで上げるには、目標より高い買値にしてください'), bad: 'p' };
+          const x = N * (A - Tg) / (Tg - P), xr = Math.ceil(x / lot - 1e-9) * lot, after = (N * A + xr * P) / (N + xr);
+          return { rows: [{ name: tr('Shares to buy', '買う株数'), small: lot > 1 ? trf('rounded up to {0} shares', '{0} 株単位で切り上げ', fmtNum(lot)) : '', value: shares(xr), expr: `ceil(${exprNum(N)} × (${exprNum(A)} − ${exprNum(Tg)}) / (${exprNum(Tg)} − ${exprNum(P)}) / ${exprNum(lot)}) × ${exprNum(lot)}` },
+            { name: tr('Cost of the buy', '買う額'), value: money('avgcost', xr * P), expr: `${exprNum(xr)} × ${exprNum(P)}` },
+            { name: tr('Average after it', '買ったあとの平均'), value: fmtDigits('avgcost', after, priceAuto()), expr: `(${exprNum(N)} × ${exprNum(A)} + ${exprNum(xr)} × ${exprNum(P)}) / (${exprNum(N)} + ${exprNum(xr)})` },
+            { name: tr('Shares after it', '買ったあとの株数'), value: shares(N + xr), expr: '' }] };
+        }
+        if (!v.x) return { msg: tr('Enter the shares to buy', '買う株数を入れてください') };
+        const X = boxNum(v.x);
+        if (!shareCount(X)) return { msg: tr('The shares must be a whole number above 0', '株数は 1 以上の整数にしてください'), bad: 'x' };
+        const P = Tg - N * (A - Tg) / X;
+        if (!(P > 0)) return { msg: tr('With these shares no price above 0 reaches the target: buy more shares', 'この株数では、0 より大きい買値で目標に届きません。株数を増やしてください'), bad: 'x' };
+        return { rows: [{ name: down ? tr('Buy at or below', 'この株価以下で買う') : tr('Buy at or above', 'この株価以上で買う'), value: fmtDigits('avgcost', P, priceAuto()), expr: `${exprNum(Tg)} − ${exprNum(N)} × (${exprNum(A)} − ${exprNum(Tg)}) / ${exprNum(X)}` },
+          { name: tr('Cost of the buy', '買う額'), value: money('avgcost', X * P), expr: '' },
+          { name: tr('Shares after it', '買ったあとの株数'), value: shares(N + X), expr: '' }] };
+      }
+    });
+  }
+  // (3) the maintenance ratio of a margin account (Japan's 委託保証金維持率) and the price at which it falls to the
+  // margin call (20 % unless another is typed):
+  //   ratio = (cash + collateral + profit or loss counted − costs) / (entry price × shares) × 100
+  //   the margin-call price c: entry − s × (M − t × C) / n, with s = 1 bought (the price falls), −1 sold short (it rises),
+  //   M = cash + collateral − costs (+ the other positions' profit or loss), C the value of the positions at entry, t the
+  //   ratio of the margin call. Unrealized gains count only when chosen (many brokers leave them out).
+  function openMarginTool() {
+    return simpleTool('margin', tr('Margin: maintenance ratio', '信用取引：維持率と追証'), {
+      invest: true,
+      chips: [[tr('1,000,000 cash, bought 3,000 shares at 1000', '保証金 100 万円・1000 円で 3000 株買建'), { cash: '1000000', coll: '', side: 'long', entry: '1000', n: '3000', now: '900', cost: '', th: '20' }],
+        [tr('Sold short 1000 at 2500', '2500 円で 1000 株売建'), { cash: '800000', coll: '', side: 'short', entry: '2500', n: '1000', now: '2700', cost: '5000', th: '20' }]],
+      fields: [
+        { k: 'cash', label: tr('Cash as margin', '保証金（現金）'), def: '', ph: tr('e.g. 1000000', '例：1000000') },
+        { k: 'coll', label: tr('Stocks as margin (after the haircut)', '代用有価証券（掛目をかけた額）'), def: '', ph: '0' },
+        { k: 'side', label: tr('Position', '建玉'), opts: [['long', tr('Bought', '買建')], ['short', tr('Sold short', '売建')]], def: 'long' },
+        { k: 'entry', label: tr('Price at entry', '建値（1 株）'), def: '', ph: tr('e.g. 1000', '例：1000') },
+        { k: 'n', label: tr('Shares', '株数'), def: '', ph: tr('e.g. 3000', '例：3000') },
+        { k: 'now', label: tr('Price now', '現在値'), def: '', ph: tr('e.g. 900', '例：900') },
+        { k: 'cost', label: tr('Costs (interest, fees…)', '諸経費（金利・手数料など）'), def: '', ph: '0' },
+        { k: 'th', label: tr('Margin call below (%)', '追証のライン（%）'), def: '20', ph: '20', chips: () => ['20', '25', '30'] },
+        { k: 'gains', label: tr('Unrealized gains', '評価益'), opts: [['no', tr('Not counted', '含めない')], ['yes', tr('Counted', '含める')]], def: 'no', more: true },
+        { k: 'oPl', label: tr('Other positions: profit or loss', 'ほかの建玉の評価損益'), def: '', ph: '0', more: true },
+        { k: 'oAmt', label: tr('Other positions: value at entry', 'ほかの建玉の建玉金額'), def: '', ph: '0', more: true }
+      ],
+      hint: tr('Ratio = (cash + stocks as margin ± profit or loss − costs) / (entry price × shares). The margin-call price is where the ratio reaches the line: below the entry for a buy, above it for a short.', '維持率 ＝（保証金 ＋ 代用有価証券 ± 評価損益 − 諸経費）÷（建値 × 株数）。追証の株価は維持率がラインになる株価で、買建は建値より下、売建は上です。'),
+      caution: tr('The way a broker counts gains, the haircut and the costs, and the time of the check (the close), differ; check with your broker.', '前提：評価益や掛目、諸経費の扱いと判定の時刻（大引け）は証券会社で違います。証券会社の画面で確かめてください。'),
+      run: async (v) => {
+        if (!v.cash || !v.entry || !v.n || !v.now) return { msg: tr('Enter the cash, the entry price, the shares and the price now', '保証金、建値、株数、現在値を入れてください') };
+        const num0 = (t) => (t === '' ? 0 : boxNum(t));
+        const cash = boxNum(v.cash), coll = num0(v.coll), e = boxNum(v.entry), n = boxNum(v.n), now = boxNum(v.now), cost = num0(v.cost), th = v.th === '' ? 20 : boxNum(v.th), oPl = num0(v.oPl), oAmt = num0(v.oAmt);
+        if (!(cash >= 0)) return { msg: tr('The cash must be a number', '保証金は数にしてください'), bad: 'cash' };
+        if (!(coll >= 0)) return { msg: tr('The stocks as margin must be a number', '代用有価証券は数にしてください'), bad: 'coll' };
+        if (!(e > 0)) return { msg: tr('The entry price must be a number above 0', '建値は 0 より大きい数にしてください'), bad: 'entry' };
+        if (!shareCount(n)) return { msg: tr('The shares must be a whole number above 0', '株数は 1 以上の整数にしてください'), bad: 'n' };
+        if (!(now >= 0)) return { msg: tr('The price now must be a number', '現在値は数にしてください'), bad: 'now' };
+        if (!(cost >= 0)) return { msg: tr('The costs must be a number', '諸経費は数にしてください'), bad: 'cost' };
+        if (!(th > 0 && th < 100)) return { msg: tr('The line of the margin call must be from 0 to 100 %', '追証のラインは 0〜100 % にしてください'), bad: 'th' };
+        if (!isFinite(oPl)) return { msg: tr('The profit or loss must be a number', '評価損益は数にしてください'), bad: 'oPl' };
+        if (!(oAmt >= 0)) return { msg: tr('The value must be a number', '建玉金額は数にしてください'), bad: 'oAmt' };
+        const sg = v.side === 'short' ? -1 : 1, gains = v.gains === 'yes';
+        const pl = sg * (now - e) * n, counted = (x) => (gains ? x : Math.min(0, x));
+        const C = e * n + oAmt, base = cash + coll - cost + counted(oPl), M = base + counted(pl), ratio = M / C * 100;
+        const sE = (x) => (x ? (x > 0 ? ' + ' : ' − ') + exprNum(Math.abs(x)) : '');
+        const ratioE = `(${exprNum(cash)}${coll ? ' + ' + exprNum(coll) : ''}${sE(counted(pl))}${cost ? ' − ' + exprNum(cost) : ''}${sE(counted(oPl))}) / (${exprNum(e)} × ${exprNum(n)}${oAmt ? ' + ' + exprNum(oAmt) : ''}) to %`;
+        const rows = [{ name: tr('Maintenance ratio', '委託保証金維持率'), small: ratio < th ? tr('below the line: a margin call', 'ラインを下回っています（追証）') : trf('the line: {0} %', 'ライン {0} %', fmtNum(th, 3)), value: fmtDigits('margin', ratio, pctAuto) + ' %', expr: ratioE },
+          { name: tr('Profit or loss of the position', '建玉の評価損益'), small: !gains && pl > 0 ? tr('the gain is not counted', '評価益は維持率に含めない') : '', value: signed(money('margin', pl), pl), expr: `${sg > 0 ? `(${exprNum(now)} − ${exprNum(e)})` : `(${exprNum(e)} − ${exprNum(now)})`} × ${exprNum(n)}` }];
+        // the price of the margin call: on the side of a loss (with gains counted, a gain may also hold the ratio up)
+        const room = base - th / 100 * C;
+        if (room <= 0 && !gains) rows.push({ name: tr('Margin-call price', '追証の株価'), small: tr('below the line whatever the price (the costs and losses are larger than the margin allows)', '株価によらずラインを下回ります（諸経費と損失が保証金を超えています）'), value: '—', expr: '' });
+        else {
+          const c = e - sg * room / n;
+          if (sg > 0 && c <= 0) rows.push({ name: tr('Margin-call price', '追証の株価'), small: tr('none: even at 0 the ratio stays above the line', 'なし：株価が 0 でもラインを下回りません'), value: '—', expr: '' });
+          else {
+            const move = (c - now) / now * 100;
+            rows.push({ name: tr('Margin-call price', '追証の株価'), small: now > 0 ? trf('{0} % from now', '現在値から {0} %', (move > 0 ? '+' : '') + fmtDigits('margin', move, pctAuto)) : '', value: fmtDigits('margin', c, priceAuto()), expr: `${exprNum(e)} ${sg > 0 ? '−' : '+'} (${exprNum(cash)}${coll ? ' + ' + exprNum(coll) : ''}${cost ? ' − ' + exprNum(cost) : ''}${sE(counted(oPl))} − ${exprNum(th)}% × (${exprNum(e)} × ${exprNum(n)}${oAmt ? ' + ' + exprNum(oAmt) : ''})) / ${exprNum(n)}` });
+          }
+          rows.push({ name: tr('Loss it can still take', '追証まで耐えられる損失'), small: tr('from the price now', '現在値から'), value: money('margin', Math.max(0, M - th / 100 * C)), expr: '' });
+        }
+        rows.push({ name: tr('Value of the positions', '建玉金額'), small: tr('at the entry price', '建値で'), value: money('margin', C), expr: `${exprNum(e)} × ${exprNum(n)}${oAmt ? ' + ' + exprNum(oAmt) : ''}` });
+        return { rows };
+      }
+    });
+  }
+  // (4) the position size from the capital, the risk of a trade (% of the capital), the entry and the stop: the shares
+  // in whole trading units, the loss at the stop; with a take-profit price, the risk:reward ratio
+  function openPosSizeTool() {
+    return simpleTool('possize', tr('Position size from a stop', '損切りから株数'), {
+      invest: true,
+      chips: [[tr('3,000,000, 1 %, 1000 → stop 950', '資金 300 万円・1%・1000 円で買い 950 円で損切り'), { capital: '3000000', risk: '1', entry: '1000', stop: '950', tp: '1150', lot: '100' }],
+        [tr('Short at 2000, stop 2080', '2000 円で売り・2080 円で損切り'), { capital: '1000000', risk: '2', entry: '2000', stop: '2080', tp: '1800', lot: '100' }]],
+      fields: [
+        { k: 'capital', label: tr('Capital', '資金'), def: '', ph: tr('e.g. 3000000', '例：3000000') },
+        { k: 'risk', label: tr('Risk of a trade (%)', '1 回で許す損失（資金の %）'), def: '1', ph: '1', chips: () => ['0.5', '1', '2'] },
+        { k: 'entry', label: tr('Entry price', 'エントリーの株価'), def: '', ph: tr('e.g. 1000', '例：1000') },
+        { k: 'stop', label: tr('Stop (loss cut)', '損切りの株価'), def: '', ph: tr('e.g. 950', '例：950') },
+        { k: 'tp', label: tr('Take profit (optional)', '利確の株価（なくても可）'), def: '', ph: tr('e.g. 1150', '例：1150') },
+        { k: 'lot', label: tr('Trading unit (shares)', '単元（株）'), def: '100', ph: '100', chips: () => ['1', '100'] }
+      ],
+      hint: tr('Shares = capital × risk % / |entry − stop|, rounded down to the trading unit. A stop below the entry is a buy, above it a short. Risk:reward = 1 : |take profit − entry| / |entry − stop|.', '株数 ＝ 資金 × 許す損失 % ÷｜エントリー − 損切り｜（単元で切り捨て）。損切りがエントリーより下なら買い、上なら売りです。リスクリワード ＝ 1 :｜利確 − エントリー｜÷｜エントリー − 損切り｜。'),
+      caution: tr('Without the fees, and with the stop filled at its price (a gap can make the loss larger).', '前提：手数料は考えず、損切りはその株価で約定するとします（窓をあけると損失は大きくなります）。'),
+      run: async (v) => {
+        if (!v.capital || !v.entry || !v.stop) return { msg: tr('Enter the capital, the entry and the stop', '資金、エントリー、損切りを入れてください') };
+        const cap = boxNum(v.capital), r = v.risk === '' ? NaN : boxNum(v.risk), e = boxNum(v.entry), st = boxNum(v.stop), tp = v.tp === '' ? NaN : boxNum(v.tp), lot = v.lot === '' ? 1 : boxNum(v.lot);
+        if (!(cap > 0)) return { msg: tr('The capital must be a number above 0', '資金は 0 より大きい数にしてください'), bad: 'capital' };
+        if (!(r > 0 && r <= 100)) return { msg: tr('The risk must be from 0 to 100 %', '許す損失は 0〜100 % にしてください'), bad: 'risk' };
+        if (!(e > 0)) return { msg: tr('The entry price must be a number above 0', 'エントリーの株価は 0 より大きい数にしてください'), bad: 'entry' };
+        if (!(st >= 0) || st === e) return { msg: tr('The stop must be a price other than the entry', '損切りは、エントリーと違う株価にしてください'), bad: 'stop' };
+        if (!shareCount(lot)) return { msg: tr('The trading unit must be a whole number, such as 100', '単元は 100 のような整数にしてください'), bad: 'lot' };
+        const long = st < e, per = Math.abs(e - st), riskAmt = cap * r / 100;
+        if (v.tp !== '' && (!(tp > 0) || (long ? tp <= e : tp >= e))) return { msg: long ? tr('For a buy the take-profit price must be above the entry', '買いの利確の株価は、エントリーより上にしてください') : tr('For a short the take-profit price must be below the entry', '売りの利確の株価は、エントリーより下にしてください'), bad: 'tp' };
+        const sh = Math.floor(riskAmt / per / lot + 1e-9) * lot;
+        if (!sh) return { msg: trf('One trading unit already loses {0} at the stop, more than the {1} allowed', '1 単元でも損切りで {0} の損失になり、許す損失 {1} を超えます', money('possize', per * lot), money('possize', riskAmt)) };
+        const pos = sh * e;
+        const rows = [{ name: tr('Shares', '株数'), small: long ? tr('a buy (the stop below)', '買い（損切りは下）') : tr('a short (the stop above)', '売り（損切りは上）'), value: shares(sh), expr: `floor(${exprNum(cap)} × ${exprNum(r)}% / ${exprNum(per)} / ${exprNum(lot)}) × ${exprNum(lot)}` },
+          { name: tr('Loss at the stop', '損切りでの損失'), small: trf('allowed: {0}', '許す損失 {0}', money('possize', riskAmt)), value: money('possize', sh * per), expr: `${exprNum(sh)} × ${exprNum(per)}` },
+          { name: tr('Value of the position', '建てる額'), small: pos > cap ? trf('{0} times the capital (margin)', '資金の {0} 倍（信用取引）', fmtDigits('possize', pos / cap, pctAuto)) : trf('{0} % of the capital', '資金の {0} %', fmtDigits('possize', pos / cap * 100, { m: 'dec', n: 1, zeros: true })), value: money('possize', pos), expr: `${exprNum(sh)} × ${exprNum(e)}` }];
+        if (v.tp !== '') {
+          const rew = Math.abs(tp - e);
+          rows.push({ name: tr('Risk : reward', 'リスクリワード'), value: '1 : ' + fmtDigits('possize', rew / per, pctAuto), expr: `${exprNum(rew)} / ${exprNum(per)}` },
+            { name: tr('Profit at the take profit', '利確での利益'), value: '+' + money('possize', sh * rew), expr: `${exprNum(sh)} × ${exprNum(rew)}` });
+        }
+        return { rows };
+      }
+    });
+  }
+  // (5) the dividend yield, PER and PBR (and ROE) from the price, the dividend, EPS and BPS; compound growth with a monthly
+  // saving; the growth a year between two values
+  function openYieldTool() {
+    return simpleTool('yield', tr('Yield, PER, PBR, growth', '利回り・PER・PBR・複利'), {
+      invest: true,
+      chips: [[tr('Price 2000, dividend 60, EPS 150, BPS 1600', '株価 2000 円・配当 60 円・EPS 150・BPS 1600'), { mode: 'value', price: '2000', div: '60', eps: '150', bps: '1600' }],
+        [tr('1,000,000 + 30,000 a month, 5 %, 20 years', '100 万円＋月 3 万円・年 5%・20 年'), { mode: 'grow', start: '1000000', monthly: '30000', rate: '5', years: '20', comp: 'year' }],
+        [tr('1,000,000 → 1,800,000 in 6 years', '100 万円が 6 年で 180 万円'), { mode: 'cagr', from: '1000000', to: '1800000', years: '6' }]],
+      fields: [
+        { k: 'mode', label: tr('Find', '求めるもの'), opts: [['value', tr('Yield, PER, PBR', '利回り・PER・PBR')], ['grow', tr('Compound and saving', '複利・積立')], ['cagr', tr('Growth a year', '年平均の伸び率')]], def: 'value' },
+        { k: 'price', label: tr('Price (a share)', '株価'), def: '', ph: tr('e.g. 2000', '例：2000'), when: (v) => v.mode === 'value' },
+        { k: 'div', label: tr('Dividend a year (a share)', '年間配当（1 株）'), def: '', ph: tr('e.g. 60', '例：60'), when: (v) => v.mode === 'value' },
+        { k: 'eps', label: tr('EPS (earnings a share)', 'EPS（1 株あたり利益）'), def: '', ph: tr('e.g. 150', '例：150'), when: (v) => v.mode === 'value' },
+        { k: 'bps', label: tr('BPS (book value a share)', 'BPS（1 株あたり純資産）'), def: '', ph: tr('e.g. 1600', '例：1600'), when: (v) => v.mode === 'value' },
+        { k: 'start', label: tr('At the start', '最初の額'), def: '', ph: '0', when: (v) => v.mode === 'grow' },
+        { k: 'monthly', label: tr('Each month', '毎月の積立'), def: '', ph: '0', when: (v) => v.mode === 'grow' },
+        { k: 'rate', label: tr('Return a year (%)', '年利回り（%）'), def: '', ph: tr('e.g. 5', '例：5'), when: (v) => v.mode === 'grow' },
+        { k: 'years', label: tr('Years', '年数'), def: '', ph: tr('e.g. 20', '例：20'), when: (v) => v.mode === 'grow' || v.mode === 'cagr' },
+        { k: 'comp', label: tr('Compounded', '複利の回数'), opts: [['year', tr('Once a year', '年 1 回')], ['month', tr('Monthly', '毎月')]], def: 'year', when: (v) => v.mode === 'grow' },
+        { k: 'from', label: tr('Value at the start', '最初の値'), def: '', ph: tr('e.g. 1000000', '例：1000000'), when: (v) => v.mode === 'cagr' },
+        { k: 'to', label: tr('Value at the end', '最後の値'), def: '', ph: tr('e.g. 1800000', '例：1800000'), when: (v) => v.mode === 'cagr' }
+      ],
+      hint: tr('Yield = dividend / price; PER = price / EPS; PBR = price / BPS; ROE = EPS / BPS. Compounded once a year, a month grows by (1 + r)^(1/12); monthly, by 1 + r/12. Growth a year = (end / start)^(1 / years) − 1.', '配当利回り ＝ 配当 ÷ 株価、PER ＝ 株価 ÷ EPS、PBR ＝ 株価 ÷ BPS、ROE ＝ EPS ÷ BPS。年 1 回の複利では 1 か月に (1 + r)^(1/12) 倍、毎月の複利では 1 + r/12 倍とします。年平均の伸び率 ＝（最後 ÷ 最初）^(1 ÷ 年数) − 1。'),
+      caution: tr('Before tax and costs; the return is taken as the same every year, which real prices are not.', '前提：税と費用は引いていません。利回りは毎年同じとしますが、実際の値動きはそうなりません。'),
+      run: async (v) => {
+        if (v.mode === 'value') {
+          if (!v.price) return { msg: tr('Enter the price, and the dividend, EPS or BPS', '株価と、配当・EPS・BPS のどれかを入れてください') };
+          const P = boxNum(v.price);
+          if (!(P > 0)) return { msg: tr('The price must be a number above 0', '株価は 0 より大きい数にしてください'), bad: 'price' };
+          const rows = [], get = (k) => (v[k] === '' ? null : boxNum(v[k]));
+          const dv = get('div'), eps = get('eps'), bps = get('bps');
+          if (dv !== null && !(dv >= 0)) return { msg: tr('The dividend must be a number', '配当は数にしてください'), bad: 'div' };
+          if (eps !== null && !isFinite(eps)) return { msg: tr('EPS must be a number', 'EPS は数にしてください'), bad: 'eps' };
+          if (bps !== null && !isFinite(bps)) return { msg: tr('BPS must be a number', 'BPS は数にしてください'), bad: 'bps' };
+          if (dv !== null) rows.push({ name: tr('Dividend yield', '配当利回り'), value: fmtDigits('yield', dv / P * 100, pctAuto) + ' %', expr: `${exprNum(dv)} / ${exprNum(P)} to %` });
+          if (eps !== null) rows.push({ name: 'PER', small: eps <= 0 ? tr('no meaning with a loss', '赤字のため意味がありません') : tr('times the earnings', '利益の何倍か'), value: eps > 0 ? fmtDigits('yield', P / eps, pctAuto) + tr(' ×', ' 倍') : '—', expr: eps > 0 ? `${exprNum(P)} / ${exprNum(eps)}` : '' });
+          if (bps !== null) rows.push({ name: 'PBR', small: tr('times the book value', '純資産の何倍か'), value: bps > 0 ? fmtDigits('yield', P / bps, pctAuto) + tr(' ×', ' 倍') : '—', expr: bps > 0 ? `${exprNum(P)} / ${exprNum(bps)}` : '' });
+          if (eps !== null && bps !== null && bps > 0) rows.push({ name: 'ROE', small: 'EPS / BPS', value: fmtDigits('yield', eps / bps * 100, pctAuto) + ' %', expr: `${exprNum(eps)} / ${exprNum(bps)} to %` });
+          if (!rows.length) return { msg: tr('Enter the dividend, EPS or BPS too', '配当・EPS・BPS のどれかも入れてください') };
+          return { rows };
+        }
+        if (v.mode === 'cagr') {
+          if (!v.from || !v.to || !v.years) return { msg: tr('Enter the two values and the years', '最初の値、最後の値、年数を入れてください') };
+          const a = boxNum(v.from), b = boxNum(v.to), y = boxNum(v.years);
+          if (!(a > 0)) return { msg: tr('The value at the start must be above 0', '最初の値は 0 より大きくしてください'), bad: 'from' };
+          if (!(b >= 0)) return { msg: tr('The value at the end must be a number', '最後の値は数にしてください'), bad: 'to' };
+          if (!(y > 0)) return { msg: tr('The years must be above 0', '年数は 0 より大きくしてください'), bad: 'years' };
+          const g = (Math.pow(b / a, 1 / y) - 1) * 100;
+          return { rows: [{ name: tr('Growth a year', '年平均の伸び率'), small: 'CAGR', value: signed(fmtDigits('yield', g, pctAuto) + ' %', g), expr: `((${exprNum(b)} / ${exprNum(a)})^(1 / ${exprNum(y)}) − 1) to %` },
+            { name: tr('Growth in all', '全体の伸び'), value: signed(fmtDigits('yield', (b / a - 1) * 100, pctAuto) + ' %', b - a), expr: `(${exprNum(b)} / ${exprNum(a)} − 1) to %` }] };
+        }
+        const s0 = v.start === '' ? 0 : boxNum(v.start), m = v.monthly === '' ? 0 : boxNum(v.monthly), R = v.rate === '' ? NaN : boxNum(v.rate), y = boxNum(v.years);
+        if (v.rate === '' || !v.years || (v.start === '' && v.monthly === '')) return { msg: tr('Enter the amount at the start or each month, the return and the years', '最初の額か毎月の積立、年利回り、年数を入れてください') };
+        if (!(s0 >= 0)) return { msg: tr('The amount at the start must be a number', '最初の額は数にしてください'), bad: 'start' };
+        if (!(m >= 0)) return { msg: tr('The amount each month must be a number', '毎月の積立は数にしてください'), bad: 'monthly' };
+        if (!(R > -100 && R < 100)) return { msg: tr('The return must be from −100 to 100 %', '年利回りは −100〜100 % にしてください'), bad: 'rate' };
+        if (!(y > 0 && y <= 100) || Math.round(y * 12) !== y * 12) return { msg: tr('The years must be a number of months: 20, or 2.5', '年数は 20 や 2.5 のように、月の数になる値にしてください'), bad: 'years' };
+        const n = Math.round(y * 12), i = v.comp === 'month' ? R / 100 / 12 : Math.pow(1 + R / 100, 1 / 12) - 1;
+        let bal = s0, paid = s0;
+        const rowsT = [];
+        for (let k = 1; k <= n; k++) { bal = bal * (1 + i) + m; paid += m; if (k % 12 === 0 || k === n) rowsT.push([String(Math.ceil(k / 12)), fmtDigits('yield', paid), fmtDigits('yield', bal - paid), fmtDigits('yield', bal)]); }
+        const iE = v.comp === 'month' ? `${exprNum(R)}% / 12` : `(1 + ${exprNum(R)}%)^(1/12) − 1`;
+        const expr = i ? `${exprNum(s0)} × (1 + ${iE})^${n} + ${exprNum(m)} × ((1 + ${iE})^${n} − 1) / (${iE})` : `${exprNum(s0)} + ${exprNum(m)} × ${n}`;
+        return { rows: [{ name: tr('At the end', '最後の額'), value: money('yield', bal), expr },
+          { name: tr('Put in', '入れた額'), value: money('yield', paid), expr: m ? `${exprNum(s0)} + ${exprNum(m)} × ${n}` : '' },
+          { name: tr('Gain', '増えた額'), value: signed(money('yield', bal - paid), bal - paid), expr: '' }],
+          table: { title: tr('Year by year', '年ごと'), name: 'growth', head: [tr('Year', '年'), tr('Put in', '入れた額'), tr('Gain', '増えた額'), tr('Amount', '額')], rows: rowsT } };
+      }
+    });
+  }
+  // (6) the interest on a margin buy, or the lending fee of a short, by the day: amount × rate a year × days / 365 (or 360)
+  function openCarryTool() {
+    return simpleTool('carry', tr('Margin interest and lending fee', '金利・貸株料（日割り）'), {
+      invest: true,
+      chips: [[tr('3,000,000 at 2.8 % for 30 days', '300 万円・年 2.8%・30 日'), { kind: 'interest', amount: '3000000', rate: '2.8', days: '30', basis: '365' }],
+        [tr('Lending fee 1.1 %, 2,500,000, 14 days', '貸株料 年 1.1%・250 万円・14 日'), { kind: 'lend', amount: '2500000', rate: '1.1', days: '14', basis: '365' }]],
+      fields: [
+        { k: 'kind', label: tr('For', '種類'), opts: [['interest', tr('Interest (bought)', '買方金利')], ['lend', tr('Lending fee (short)', '貸株料（売建）')]], def: 'interest' },
+        { k: 'amount', label: tr('Value of the position', '建玉金額'), def: '', ph: tr('e.g. 3000000', '例：3000000') },
+        { k: 'rate', label: tr('Rate a year (%)', '年率（%）'), def: '', ph: tr('e.g. 2.8', '例：2.8') },
+        { k: 'days', label: tr('Days', '日数'), def: '', ph: tr('e.g. 30', '例：30') },
+        { k: 'basis', label: tr('Days in a year', '1 年の日数'), opts: [['365', '365'], ['360', '360']], def: '365' },
+        { k: 'n', label: tr('Shares (for a share)', '株数（1 株あたりを出す）'), def: '', ph: tr('e.g. 3000', '例：3000'), more: true }
+      ],
+      hint: tr('Cost = value × rate a year × days / days in a year, rounded down. The days are those your broker counts (often from the settlement day of the opening to that of the closing).', '費用 ＝ 建玉金額 × 年率 × 日数 ÷ 1 年の日数（切り捨て）。日数は証券会社の数え方によります（建てた日と返した日の受渡日の間など）。'),
+      caution: tr('Rates and the way days are counted differ by broker and change.', '前提：金利・貸株料の率と日数の数え方は、証券会社や時期で違います。'),
+      run: async (v) => {
+        if (!v.amount || v.rate === '' || !v.days) return { msg: tr('Enter the value, the rate and the days', '建玉金額、年率、日数を入れてください') };
+        const A = boxNum(v.amount), R = boxNum(v.rate), d = boxNum(v.days), B = Number(v.basis) || 365, n = v.n === '' ? 0 : boxNum(v.n);
+        if (!(A > 0)) return { msg: tr('The value must be a number above 0', '建玉金額は 0 より大きい数にしてください'), bad: 'amount' };
+        if (!(R >= 0 && R < 100)) return { msg: tr('The rate must be from 0 to 100 %', '年率は 0〜100 % にしてください'), bad: 'rate' };
+        if (!(d > 0) || d !== Math.floor(d)) return { msg: tr('The days must be a whole number above 0', '日数は 1 以上の整数にしてください'), bad: 'days' };
+        if (v.n !== '' && !shareCount(n)) return { msg: tr('The shares must be a whole number above 0', '株数は 1 以上の整数にしてください'), bad: 'n' };
+        const raw = A * R / 100 * d / B, cost = floorMoney(raw);
+        const e = `${exprNum(A)} × ${exprNum(R)}% × ${exprNum(d)} / ${B}`;
+        const rows = [{ name: v.kind === 'lend' ? tr('Lending fee', '貸株料') : tr('Interest', '金利'), small: trf('{0} days, rounded down', '{0} 日分（切り捨て）', fmtNum(d)), value: money('carry', cost), expr: floorMoneyE(e) },
+          { name: tr('A day', '1 日あたり'), value: fmtDigits('carry', A * R / 100 / B, priceAuto()) + unitWord(), expr: `${exprNum(A)} × ${exprNum(R)}% / ${B}` }];
+        if (n) rows.push({ name: tr('A share', '1 株あたり'), small: v.kind === 'lend' ? tr('the price must fall this much more to break even', '損益ゼロにはこの分さらに下がる必要') : tr('the price must rise this much more to break even', '損益ゼロにはこの分さらに上がる必要'), value: fmtDigits('carry', cost / n, priceAuto()) + unitWord(), expr: `${exprNum(cost)} / ${exprNum(n)}` });
+        return { rows };
+      }
+    });
+  }
+  // (7) a foreign stock in the money of the region, with the exchange rates of the app (the converter's, updated as set
+  // in the settings) or a rate typed: its value now, and with the price and the rate when it was bought, the profit or
+  // loss split into the part of the price and the part of the exchange rate
+  const FX_CURS = ['USD', 'EUR', 'GBP', 'CNY', 'HKD', 'KRW', 'TWD', 'AUD', 'CAD', 'CHF', 'SGD', 'INR', 'JPY'];
+  async function fxRate(cur, home) {
+    const r = await Bridge.send('calc', { expr: `(1 (${cur})) / (1 (${home}))`, opts: Object.assign(engineOpts(), { approx: 'approx', grouping: false, base: 10, notation: 'auto', fraction: 'decimal', units: 'none', precision: 16 }), timeout: 3000 });
+    const t = r.ok && r.result ? r.result.split(' ≈ ').pop().replace(/^[≈=]\s*/, '').replace(/−/g, '-') : '';
+    const v = /^-?[\d.]+(E[-+]?\d+)?$/.test(t) ? Number(t) : NaN;
+    return v > 0 ? v : NaN;
+  }
+  function openFxStockTool() {
+    // (the money of the region by its code, the yen as 円 in Japanese)
+    const home = MONEY().cur, def = home === 'USD' ? 'EUR' : 'USD', homeName = JA && home === 'JPY' ? '円' : home;
+    return simpleTool('fxstock', tr('Foreign stocks in your money', '外国株を自国通貨で'), {
+      invest: true,
+      chips: [[tr('10 shares at 150 USD', '150 ドルの株を 10 株'), { cur: def, price: '150', n: '10', rate: '', bought: '', boughtRate: '' }],
+        [tr('Bought at 120 (rate 140), now 150 (rate 155)', '120 ドル（140 円）で買い、今 150 ドル（155 円）'), { cur: def, price: '150', n: '10', rate: '155', bought: '120', boughtRate: '140' }]],
+      fields: [
+        { k: 'cur', label: tr('Currency of the stock', '株の通貨'), def, ph: 'USD', chips: () => FX_CURS.filter((c) => c !== home).slice(0, 3) },
+        { k: 'price', label: tr('Price now (in it)', '現在の株価（外貨）'), def: '', ph: tr('e.g. 150', '例：150') },
+        { k: 'n', label: tr('Shares', '株数'), def: '', ph: tr('e.g. 10', '例：10') },
+        { k: 'rate', label: trf('Rate now (1 = … {0})', '今のレート（1 = … {0}）', homeName), def: '', ph: tr('the app\'s rate', 'アプリのレート') },
+        { k: 'bought', label: tr('Bought at (in it)', '買値（外貨）'), def: '', ph: tr('e.g. 120', '例：120'), more: true },
+        { k: 'boughtRate', label: tr('Rate when bought', '買ったときのレート'), def: '', ph: tr('e.g. 140', '例：140'), more: true }
+      ],
+      hint: tr('Value = price × shares × rate. With the price and the rate when bought: profit = shares × (price × rate − bought × rate then), of which the price gives shares × (price − bought) × rate then, and the rate the rest.', '評価額 ＝ 株価 × 株数 × レート。買値と買ったときのレートを入れると、損益 ＝ 株数 ×（株価 × レート − 買値 × 当時のレート）。うち株価の分は 株数 ×（株価 − 買値）× 当時のレート、残りが為替の分です。'),
+      caution: tr('With the exchange rates of the app (not a broker\'s, which adds a spread), without fees or tax.', '前提：アプリの為替レート（証券会社の為替手数料は含みません）で、手数料と税は考えません。'),
+      run: async (v) => {
+        const cur = String(v.cur || '').trim().toUpperCase();
+        if (!/^[A-Z]{3}$/.test(cur)) return { msg: tr('Write the currency as its code, such as USD', '通貨は USD のようなコードで書いてください'), bad: 'cur' };
+        if (cur === home) return { msg: tr('Choose a currency other than your own', '自国通貨と違う通貨を選んでください'), bad: 'cur' };
+        if (!v.price || !v.n) return { msg: tr('Enter the price and the shares', '株価と株数を入れてください') };
+        const p = boxNum(v.price), n = boxNum(v.n);
+        if (!(p >= 0)) return { msg: tr('The price must be a number', '株価は数にしてください'), bad: 'price' };
+        if (!(n > 0)) return { msg: tr('The shares must be a number above 0', '株数は 0 より大きい数にしてください'), bad: 'n' };
+        let r = v.rate === '' ? NaN : boxNum(v.rate);
+        const typed = v.rate !== '';
+        if (typed && !(r > 0)) return { msg: tr('The rate must be a number above 0', 'レートは 0 より大きい数にしてください'), bad: 'rate' };
+        if (!typed) { r = await fxRate(cur, home); if (!(r > 0)) return { msg: trf('No exchange rate for {0}: type the rate', '{0} の為替レートがありません。レートを入れてください', cur), bad: 'cur' }; }
+        const homeDec = { m: 'dec', n: MONEY().dec, zeros: true };
+        const rows = [{ name: tr('Value now', '評価額'), small: typed ? trf('at the rate typed: 1 {0} = {1} {2}', '入れたレート：1 {0} = {1} {2}', cur, fmtNum(r, 4), homeName) : trf('1 {0} = {1} {2} (the app\'s rate, {3})', '1 {0} = {1} {2}（アプリのレート、{3}）', cur, fmtNum(r, 4), homeName, fmtTime(ratesTime)),
+          value: fmtDigits('fxstock', p * n * r, homeDec) + unitWord(), expr: typed ? `${exprNum(p)} × ${exprNum(n)} × ${exprNum(r)}` : `${exprNum(p)} ${cur} × ${exprNum(n)} to ${home}` },
+          { name: trf('In {0}', '{0} で', cur), value: fmtNum(p * n, 4) + ' ' + cur, expr: `${exprNum(p)} × ${exprNum(n)}` }];
+        if (v.bought !== '' || v.boughtRate !== '') {
+          const b = boxNum(v.bought), rb = boxNum(v.boughtRate);
+          if (!(b >= 0)) return { msg: tr('The price bought at must be a number', '買値は数にしてください'), bad: 'bought' };
+          if (!(rb > 0)) return { msg: tr('Enter the rate when bought too', '買ったときのレートも入れてください'), bad: 'boughtRate' };
+          const pl = n * (p * r - b * rb), byPrice = n * (p - b) * rb, byRate = n * p * (r - rb);
+          rows.push({ name: trf('Profit or loss in {0}', '損益（{0}）', homeName), value: signed(fmtDigits('fxstock', pl, homeDec) + unitWord(), pl), expr: `${exprNum(n)} × (${exprNum(p)} × ${exprNum(r)} − ${exprNum(b)} × ${exprNum(rb)})` },
+            { name: tr('From the price', 'うち株価の分'), value: signed(fmtDigits('fxstock', byPrice, homeDec) + unitWord(), byPrice), expr: `${exprNum(n)} × (${exprNum(p)} − ${exprNum(b)}) × ${exprNum(rb)}` },
+            { name: tr('From the exchange rate', 'うち為替の分'), value: signed(fmtDigits('fxstock', byRate, homeDec) + unitWord(), byRate), expr: `${exprNum(n)} × ${exprNum(p)} × (${exprNum(r)} − ${exprNum(rb)})` });
+        }
+        return { rows };
+      }
+    });
+  }
   // ---- Dates: days between, a date after n days, an age; in Japanese also the era and the zodiac
   // (the eras from their first day: 1989-01-07 is Shōwa 64, 1989-01-08 Heisei 1)
   const ERAS = [['令和', 'Reiwa', 2019, 5, 1], ['平成', 'Heisei', 1989, 1, 8], ['昭和', 'Shōwa', 1926, 12, 25], ['大正', 'Taishō', 1912, 7, 30], ['明治', 'Meiji', 1868, 1, 25]];
@@ -17292,9 +19081,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       chips: [[tr('100 days from today', '今日から 100 日後'), { mode: 'after', d1: today(), n: '100' }], [tr('Days to 2027-01-01', '2027 年 1 月 1 日までの日数'), { mode: 'between', d1: today(), d2: '2027-01-01' }]].concat(JA ? [['昭和64年1月7日', { mode: 'era', d1: '1989-01-07' }]] : []),
       fields: [
         { k: 'mode', label: tr('Find', '求めるもの'), opts: modes, def: 'after' },
-        { k: 'd1', label: tr('Date', '日付'), def: today, ph: JA ? '2026-11-19、令和8年11月19日' : '2026-11-19', kind: 'date', chips: () => [tr('today', '今日')] },
+        { k: 'd1', label: tr('Date', '日付'), labelFor: (v) => (v.mode === 'age' ? tr('Birthday', '誕生日') : tr('Date', '日付')), def: today, ph: JA ? '2026-11-19、令和8年11月19日' : '2026-11-19', kind: 'date', chips: () => [tr('today', '今日')] },
         { k: 'n', label: tr('Days', '日数'), def: '100', ph: tr('e.g. 100 or −30', '例：100、−30'), when: (v) => v.mode === 'after' },
-        { k: 'd2', label: tr('Second date', 'もう 1 つの日付'), def: '', ph: '2027-01-01', kind: 'date', when: (v) => v.mode === 'between' || v.mode === 'age' }
+        { k: 'd2', label: tr('Second date', 'もう 1 つの日付'), labelFor: (v) => (v.mode === 'age' ? tr('Age on this date (empty: today)', 'この日の年齢（空なら今日）') : tr('Second date', 'もう 1 つの日付')), def: '', ph: '2027-01-01', kind: 'date', when: (v) => v.mode === 'between' || v.mode === 'age' }
       ],
       hint: tr('Dates as 2026-11-19 (or "today"). Days between counts the days from the first date to the second; an age is in full years on the second date (today if empty).', '日付は 2026-11-19 か「今日」（日本語では 令和8年11月19日 も）。日数の差は 1 つめから 2 つめまでの日数、年齢は 2 つめの日（空なら今日）の満年齢です。'),
       run: async (v) => {
@@ -17316,7 +19105,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (!b || b.bad) return { msg: tr('Write the second date as 2027-01-01', 'もう 1 つの日付は 2027-01-01 のように書いてください'), bad: 'd2' };
         if (v.mode === 'between') {
           const n = dayNum(b) - dayNum(a);
-          return { rows: [{ name: tr('Days', '日数'), small: tr('from the first date to the second', '1 つめから 2 つめまで'), value: fmtNum(n) + tr(' days', ' 日'), expr: '' }, { name: tr('Weeks', '週'), value: trf('{0} weeks {1} days', '{0} 週 {1} 日', fmtNum(Math.trunc(n / 7)), Math.abs(n % 7)), expr: '' }] };
+          return { rows: [{ name: tr('Days', '日数'), small: tr('from the first date to the second', '1 つめから 2 つめまで'), value: fmtNum(n) + tr(' days', ' 日'), expr: '' }, { name: tr('Weeks', '週'), value: trf('{0} weeks {1} days', '{0} 週 {1} 日', (n < 0 ? '−' : '') + fmtNum(Math.trunc(Math.abs(n) / 7)), (n < 0 && n % 7 ? '−' : '') + Math.abs(n % 7)), expr: '' }] };
         }
         let age = b.y - a.y;
         if (b.m < a.m || (b.m === a.m && b.d < a.d)) age--;
@@ -17332,8 +19121,13 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     const s = String(t || '').trim().replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[：]/g, ':');
     let m = s.match(/^(\d{1,3}):(\d{1,2})$/);
     if (m && +m[2] < 60) return +m[1] * 60 + +m[2];
-    m = s.match(/^(\d{1,3})\s*(h|時間?)\s*(?:(\d{1,2})\s*(m|min|分)?)?$/i);
-    if (m && (!m[3] || +m[3] < 60)) return +m[1] * 60 + (m[3] ? +m[3] : 0);
+    // (1.16.0, T3: 17時半, 午後5時, 午前9時30分 as times)
+    const pm = /^午後/.test(s) ? 12 * 60 : 0;
+    const s2 = s.replace(/^午[前後]\s*/, '');
+    m = s2.match(/^(\d{1,2})\s*時半$/);
+    if (m) return +m[1] * 60 + 30 + (+m[1] < 12 ? pm : 0);
+    m = s2.match(/^(\d{1,3})\s*(h|時間?)\s*(?:(\d{1,2})\s*(m|min|分)?)?$/i);
+    if (m && (!m[3] || +m[3] < 60)) return +m[1] * 60 + (m[3] ? +m[3] : 0) + (+m[1] < 12 ? pm : 0);
     m = s.match(/^(\d{1,4})\s*(m|min|分)$/i);
     if (m) return +m[1];
     return NaN;
@@ -17471,9 +19265,10 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // the models of two columns: [key, name, equation shown, expression (in x), f, R²] or [key, name, why not]
   function statModels(xs, ys) {
     const out = [], N = (v) => statNum(v), E = exprNum;
-    // (a term that is 0 is left out: y = 2x², y = 3x)
-    const signed = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + N(-v) + t : ' + ' + N(v) + t), signedE = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + E(-v) + t : ' + ' + E(v) + t);
-    const lead = (v, t, rest, restE) => (v === 0 ? [(rest.replace(/^ \+ /, '').replace(/^ − /, '−') || '0'), (restE.replace(/^ \+ /, '').replace(/^ − /, '−') || '0')] : [N(v) + t + rest, E(v) + t + restE]);
+    // (a term that is 0 is left out: y = 2x², y = 3x; 1.16.0: a coefficient 1 too, y = x² rather than y = 1x²)
+    const co = (f, v, t) => { const c = f(v); return t && c === '1' ? t.trim() : t && c === '−1' ? '−' + t.trim() : c + t; };
+    const signed = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + co(N, -v, t) : ' + ' + co(N, v, t)), signedE = (v, t) => (v === 0 ? '' : v < 0 ? ' − ' + co(E, -v, t) : ' + ' + co(E, v, t));
+    const lead = (v, t, rest, restE) => (v === 0 ? [(rest.replace(/^ \+ /, '').replace(/^ − /, '−') || '0'), (restE.replace(/^ \+ /, '').replace(/^ − /, '−') || '0')] : [co(N, v, t) + rest, co(E, v, t) + restE]);
     // a coefficient that is only rounding (its term below 1e-10 of the largest y) is 0: y = 2x², not 2x² + 3.1 × 10^−15
     const ymax = Math.max(...ys.map(Math.abs)) || 1, xmax = Math.max(...xs.map(Math.abs)) || 1;
     const snap = (v, k) => (Math.abs(v) * Math.pow(xmax, k) < 1e-10 * ymax ? 0 : v);
@@ -17500,15 +19295,26 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const [sh, ex] = lead(p2, 'x²', signed(p1, 'x') + signed(p0, ''), signedE(p1, 'x') + signedE(p0, ''));
       if ([p0, p1, p2].every(isFinite)) out.push(['quad', tr('Quadratic', '2 次式'), 'y = ' + sh, ex.replace('x²', 'x^2'), f, statR2(xs, ys, f)]);
     } else out.push(['quad', tr('Quadratic', '2 次式'), tr('needs three different x', '異なる x が 3 つ必要です')]);
+    // (1.16.0) polynomials of degree 3 and 4 (choosing them above the results is QCalc Pro: PRO_GATES.stats_fit)
+    const SUP = ['', 'x', 'x²', 'x³', 'x⁴'], POW = ['', 'x', 'x^2', 'x^3', 'x^4'];
+    for (const [key, d, name] of [['cubic', 3, tr('Cubic', '3 次式')], ['quartic', 4, tr('Quartic', '4 次式')]]) {
+      const c0 = distinct > d ? statPoly(xs, ys, d) : null;
+      if (!c0) { out.push([key, name, distinct > d ? tr('cannot be worked out for these values', 'この値では求められません') : trf('needs {0} different x', '異なる x が {0} 個必要です', d + 1)]); continue; }
+      const c = c0.map((v, k) => snap(v, k)), f = (x) => c.reduceRight((acc, v) => acc * x + v, 0);
+      let rest = '', restE = '';
+      for (let k = d - 1; k >= 0; k--) { rest += signed(c[k], SUP[k]); restE += signedE(c[k], POW[k]); }
+      const [sh, ex] = lead(c[d], SUP[d], rest, restE);
+      out.push([key, name, 'y = ' + sh, c[d] ? ex.replace(SUP[d], POW[d]) : ex, f, statR2(xs, ys, f)]);
+    }
     const ypos = ys.every((y) => y > 0), xpos = xs.every((x) => x > 0);
     const Le = ypos ? statLine(xs, ys.map(Math.log)) : null;
-    if (Le) { const a = Math.exp(Le.b), b = Le.a, f = (x) => a * Math.exp(b * x); out.push(['exp', tr('Exponential', '指数'), 'y = ' + N(a) + ' e^(' + N(b) + 'x)', E(a) + ' e^(' + E(b) + 'x)', f, statR2(xs, ys, f)]); }
+    if (Le) { const a = Math.exp(Le.b), b = Le.a, f = (x) => a * Math.exp(b * x); out.push(['exp', tr('Exponential', '指数'), 'y = ' + co(N, a, ' e^(' + co(N, b, 'x') + ')'), co(E, a, ' e^(' + co(E, b, 'x') + ')'), f, statR2(xs, ys, f)]); }
     else out.push(['exp', tr('Exponential', '指数'), ypos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every y must be above 0', 'y がすべて 0 より大きいときだけ使えます')]);
     const Ll = xpos ? statLine(xs.map(Math.log), ys) : null;
-    if (Ll) { const a = Ll.b, b = Ll.a, f = (x) => a + b * Math.log(x); out.push(['log', tr('Logarithmic', '対数'), 'y = ' + N(a) + signed(b, ' ln x'), E(a) + signedE(b, ' ln(x)'), f, statR2(xs, ys, f)]); }
+    if (Ll) { const a = Ll.b, b = Ll.a, f = (x) => a + b * Math.log(x); out.push(['log', tr('Logarithmic', '対数'), 'y = ' + lead(a, '', signed(b, ' ln x'), '')[0], lead(a, '', '', signedE(b, ' ln(x)'))[1], f, statR2(xs, ys, f)]); }
     else out.push(['log', tr('Logarithmic', '対数'), xpos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every x must be above 0', 'x がすべて 0 より大きいときだけ使えます')]);
     const Lp = xpos && ypos ? statLine(xs.map(Math.log), ys.map(Math.log)) : null;
-    if (Lp) { const a = Math.exp(Lp.b), b = Lp.a, f = (x) => a * Math.pow(x, b); out.push(['power', tr('Power', '累乗'), 'y = ' + N(a) + ' x^' + N(b), E(a) + ' x^(' + E(b) + ')', f, statR2(xs, ys, f)]); }
+    if (Lp) { const a = Math.exp(Lp.b), b = Lp.a, f = (x) => a * Math.pow(x, b); out.push(['power', tr('Power', '累乗'), 'y = ' + co(N, a, ' x^' + N(b)), co(E, a, ' x^(' + E(b) + ')'), f, statR2(xs, ys, f)]); }
     else out.push(['power', tr('Power', '累乗'), xpos && ypos ? tr('needs two different x', '異なる x が 2 つ必要です') : tr('every x and y must be above 0', 'x と y がすべて 0 より大きいときだけ使えます')]);
     return out;
   }
@@ -17602,9 +19408,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   function importParse(text, name, mime) {
     text = String(text).replace(/^﻿/, '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
     const csv = /\.(csv|tsv)$/i.test(name || '') || /csv|tab-separated/i.test(mime || '');
-    let lines, kind = '';
+    let lines, kind = '', rows = null;
     if (csv) {
-      const rows = importCsvRows(text);
+      rows = importCsvRows(text);
       const h = rows[0] || [];
       if (h.length >= 2 && CSV_LINE_NAMES.indexOf(String(h[0]).trim().toLowerCase()) >= 0 && CSV_CALC_NAMES.indexOf(String(h[1]).trim().toLowerCase()) >= 0) {
         kind = 'qcalc';
@@ -17624,7 +19430,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (!lines.length || lines.every((l) => !l.trim())) return { error: 'empty' };
     if (lines.length > NOTE_MAX) return { error: 'lines', n: lines.length };
     if (lines.some((l) => l.length > MAX_INPUT)) return { error: 'long' };
-    return { lines, csv: kind };
+    // (1.16.0: the rows of a CSV, for "As a table"; the empty rows at the end left out)
+    if (rows) { while (rows.length && rows[rows.length - 1].every((c) => !String(c).trim())) rows.pop(); if (rows.length > NOTE_MAX + 1) rows = rows.slice(0, NOTE_MAX + 1); }
+    return { lines, csv: kind, rows };
   }
   function importFailText(e, n) {
     return e === 'big' || e === 'too-big' ? tr('This file is too large to read (up to 1 MB)', 'ファイルが大きすぎるので読み込みませんでした（1 MB まで）')
@@ -17647,10 +19455,14 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       sh.inert = false;
     });
   }
+  // (1.16.0) a file picked for the statistics ("Read a CSV file"): its text goes there, not to the calculation notes
+  let statImport = null;
   // the event "import" (from the phone, or from the browser's file picker in the same form)
   async function importArrived(ev) {
-    if (!ev || ev.cancelled) return;
+    if (!ev || ev.cancelled) { statImport = null; return; }
     const share = ev.from === 'share';
+    const forStats = !share && statImport;
+    statImport = null;
     // (shared from another app: the notes come to the top, as the widget opens its place)
     if (share) {
       if (!varPopEl.hidden) closeVarPop();
@@ -17660,6 +19472,22 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       for (let i = 0; i < 20 && panelStack.length; i++) closePanel();
     }
     const fail = (e, n) => { if (share) openNotesTool(); messageSheet(importFailText(e, n)); };
+    if (forStats) {
+      let t = typeof ev.text === 'string' ? ev.text : null;
+      if (ev.error) { fail(ev.error); return; }
+      if (t === null) {
+        let bytes = ev.bytes;
+        if (!bytes && typeof ev.b64 === 'string') { try { const s0 = atob(ev.b64); bytes = new Uint8Array(s0.length); for (let i = 0; i < s0.length; i++) bytes[i] = s0.charCodeAt(i); } catch (e) { fail('read'); return; } }
+        if (!bytes) return;
+        if (bytes.length > IMPORT_MAX_BYTES) { fail('big'); return; }
+        const d = importDecode(bytes);
+        if (d.error) { fail(d.error); return; }
+        t = d.text;
+      }
+      if (t.length > IMPORT_MAX_BYTES) { fail('big'); return; }
+      forStats(t, ev.name ? String(ev.name).slice(0, 80) : '');
+      return;
+    }
     if (ev.error) { fail(ev.error); return; }
     let text;
     if (typeof ev.text === 'string') {
@@ -17701,15 +19529,42 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     }
     importPicker.click();
   }
+  // (1.16.0, feature/notes-table, the owner's request of 11-24) "#3" in a line is the result of line 3, a line above it;
+  // the numbers of the lines are shown beside them. When a line is inserted, deleted or moved, the numbers written in
+  // the lines follow (noteRenumber: map(n) gives the new number of line n, or 0 when it is gone: "#?", which says so).
+  // A line that starts with "#" and a digit is a reference, not a note (a note: "#" and anything else, or "//").
+  const NOTE_REF = LINE_REF; // (the same "#n" as in the history, expandLineRefs)
+  const noteRenumber = (lines, map) => lines.map((l) => String(l).replace(NOTE_REF, (all, k) => { if (k === '?') return all; const n = map(Number(k)); return n ? '#' + n : '#?'; }));
+  const NOTE_COMMENT = /^\s*(#(?![\d?])|\/\/)/;
+  // A memo as a table (QCalc Pro, 'notes_table'): columns with names, the cells typed (numbers with units or currencies,
+  // or words, as the name of an item), and columns worked out by a formula of the others ("Qty × Price"); under them the
+  // total and the average of each column of values. The table is kept with its memo ({ kind: 'table', table: { cols:
+  // [{ n, f }], rows: [[…]] } }); its lines stay as they were.
+  const NOTE_COLS = 12;
+  const NOTE_TABLE_EX = () => ({ cols: [{ n: tr('Item', '品目'), f: '' }, { n: tr('Qty', '数量'), f: '' }, { n: tr('Price', '単価'), f: '' }, { n: tr('Amount', '金額'), f: tr('Qty × Price', '数量 × 単価') }],
+    rows: [[tr('apples', 'りんご'), '3', decSign(MONEY().dec ? '1.2 ' : '120 ') + MONEY().cur, ''], [tr('bread', 'パン'), '2', decSign(MONEY().dec ? '2.5 ' : '250 ') + MONEY().cur, ''], [tr('milk', '牛乳'), '1', decSign(MONEY().dec ? '1.8 ' : '180 ') + MONEY().cur, '']] });
+  // a cell without a digit is a word (the name of an item), not a value: left out of the totals
+  const noteWord = (s) => !/[0-9０-９]/.test(s);
+  // the names of the columns that a formula uses (as whole words)
+  function noteUses(f, cols, j) {
+    const isCh = (c) => !!c && new RegExp('[' + NOTE_NAME_CH + '0-9]').test(c);
+    return cols.map((c, k) => k).filter((k) => {
+      const n = cols[k].n;
+      if (k === j || !n) return false;
+      for (let i = f.indexOf(n); i >= 0; i = f.indexOf(n, i + 1)) if (!isCh(f[i - 1]) && !isCh(f[i + n.length])) return true;
+      return false;
+    });
+  }
   function openNotesTool() {
     const p = panel('notes', tr('Calculation notes', '計算メモ'), (p) => {
       const saved = store.get('qalc.notes', null) || {};
-      const N = { memos: Array.isArray(saved.memos) && saved.memos.length ? saved.memos.slice(0, 50) : [{ id: 1, title: tr('Memo 1', 'メモ 1'), lines: NOTE_EX()[0][1].map(decSign) }], cur: saved.cur || 1, seq: 0, cache: [] };
+      const N = { memos: Array.isArray(saved.memos) && saved.memos.length ? saved.memos.slice(0, 50) : [{ id: 1, title: tr('Memo 1', 'メモ 1'), lines: NOTE_EX()[0][1].map(decSign) }], cur: saved.cur || 1, seq: 0, cache: [], focus: null };
       if (!N.memos.some((m) => m.id === N.cur)) N.cur = N.memos[0].id;
       const memo = () => N.memos.find((m) => m.id === N.cur) || N.memos[0];
+      const isTable = () => memo().kind === 'table' && memo().table && Array.isArray(memo().table.cols);
       const save = () => store.set('qalc.notes', { memos: N.memos, cur: N.cur });
       const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
-        ...NOTE_EX().map(([label, lines]) => tapButton({ class: 'area-chip', text: label }, () => { memo().lines = lines.map(decSign); save(); build(); run(0); }))); // (BG17: 3,6 m with a decimal comma)
+        ...NOTE_EX().map(([label, lines]) => tapButton({ class: 'area-chip', text: label }, () => { memo().kind = ''; memo().lines = lines.map(decSign); N.cache = []; save(); build(); run(0); }))); // (BG17: 3,6 m with a decimal comma)
       const pick = el('select', { 'aria-label': tr('Memo', 'メモ') });
       const fillPick = () => { pick.textContent = ''; for (const m of N.memos) pick.append(el('option', { value: String(m.id), text: m.title })); pick.value = String(N.cur); };
       pick.addEventListener('change', () => { N.cur = Number(pick.value); N.cache = []; save(); build(); run(0); });
@@ -17719,34 +19574,96 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         N.memos.push({ id, title: trf('Memo {0}', 'メモ {0}', N.memos.length + 1), lines: [''] }); N.cur = id; N.cache = []; save(); fillPick(); build(); run(0);
         const f = list.querySelector('input'); if (f) f.focus();
       });
+      // (1.16.0) lines or a table: a switch above the memo
+      const tlock = () => (PRO_GATES.notes_table === 'pro' && !hasPro() ? '  ⭐ Pro' : '');
+      const modeBtns = [['lines', tr('Lines', '行')], ['table', tr('Table', '表')]].map(([k, label]) => tapButton({ 'data-mode': k, text: label + (k === 'table' ? tlock() : ''), 'aria-pressed': 'false' }, () => setMode(k)));
+      const modeSeg = el('div', { class: 'seg mini note-mode', role: 'group', 'aria-label': tr('Lines or table', '行か表か') }, ...modeBtns);
+      const setMode = (k) => {
+        if (k === 'table' && !isTable()) {
+          if (!proGate('notes_table')) return;
+          const m = memo();
+          if (!m.table || !Array.isArray(m.table.cols)) m.table = NOTE_TABLE_EX();
+          m.kind = 'table';
+        } else if (k === 'lines') memo().kind = '';
+        save(); build(); run(0);
+      };
       const list = el('div', { class: 'note-lines', role: 'list' });
+      const tbox = el('div', { class: 'note-table' });
       const msg = el('div', { class: 'geo-msg', role: 'alert' });
-      // one line: the field and its result
+      // the lines of the memo changed in place, the numbers in them following (map), and the results again from line `from`
+      const relines = (L, map, from) => { memo().lines = map ? noteRenumber(L, map) : L; N.cache.length = Math.min(N.cache.length, from); save(); build(); run(from); };
+      const insertLine = (at) => { const L = memo().lines.slice(); if (L.length >= NOTE_MAX) return; const L2 = noteRenumber(L, (k) => (k >= at + 1 ? k + 1 : k)); L2.splice(at, 0, ''); relines(L2, null, at); };
+      const deleteLine = (d) => { const L = noteRenumber(memo().lines, (k) => (k === d + 1 ? 0 : k > d + 1 ? k - 1 : k)); L.splice(d, 1); relines(L, null, d); };
+      const moveLine = (i, to) => {
+        const before = memo().lines.slice(), from = Math.min(i, to);
+        const L = noteRenumber(memo().lines, (k) => (k === i + 1 ? to + 1 : k === to + 1 ? i + 1 : k)); const t = L[i]; L[i] = L[to]; L[to] = t; relines(L, null, from);
+        // (1.16.0, the owner's note of 11-24, L3) a line moved above a line it uses (its #4 now below it) cannot be worked out:
+        // said, with Undo (only the two lines swapped change their order)
+        for (const j of [from, Math.max(i, to)]) {
+          const n = lineRefs(L[j]).find((k) => typeof k === 'number' && k >= j + 1);
+          if (n) { toast(trf('Line {1} uses #{0}, so it cannot be worked out above #{0}', '{1} 行目は #{0} を使っているので、#{0} より上では計算できません', n, j + 1), 7000, [tr('Undo', '元に戻す'), () => relines(before, null, from)]); break; }
+        }
+      };
+      // the number of a line: what can be done with the line (a reference to it in the line being edited, insert, move, delete)
+      const lineSheet = async (i) => {
+        const L = memo().lines, f = N.focus, acts = [];
+        if (f !== null && f > i && f < L.length) acts.push(['ref', trf('Write #{0} in line {1}', '{1} 行目に #{0} を書く', i + 1, f + 1), 'accent']);
+        acts.push(['above', tr('Insert a line above', '上に行を入れる')], ['below', tr('Insert a line below', '下に行を入れる')]);
+        if (i > 0) acts.push(['up', tr('Move up', '上へ移す')]);
+        if (i < L.length - 1) acts.push(['down', tr('Move down', '下へ移す')]);
+        if (L.length > 1) acts.push(['del', tr('Delete this line', 'この行を消す'), 'danger']);
+        const k = await sheet(trf('Line {0}', '{0} 行目', i + 1) + (L[i] ? '：' + clip(String(L[i]), 40) : ''), acts);
+        if (k === 'ref') {
+          const inp = list.querySelectorAll('input')[f];
+          if (!inp) return;
+          const s = inp.value, at = typeof N.caret === 'number' && N.caret <= s.length ? N.caret : s.length, add = (at && !/\s$/.test(s.slice(0, at)) ? ' ' : '') + '#' + (i + 1);
+          inp.value = s.slice(0, at) + add + s.slice(at); memo().lines[f] = inp.value; save(); run(f);
+          inp.focus(); inp.setSelectionRange(at + add.length, at + add.length);
+        } else if (k === 'above') insertLine(i);
+        else if (k === 'below') insertLine(i + 1);
+        else if (k === 'up') moveLine(i, i - 1);
+        else if (k === 'down') moveLine(i, i + 1);
+        else if (k === 'del') deleteLine(i);
+      };
+      // one line: its number, the field and its result
       const lineRow = (i) => {
         const inp = el('input', { inputmode: 'text', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false', value: memo().lines[i] || '', placeholder: i === 0 ? tr('e.g. rent = 85000 JPY', '例：家賃 = 85000 JPY') : '', 'aria-label': trf('Line {0}', '{0} 行目', i + 1), enterkeyhint: 'next' });
+        const no = tapButton({ class: 'note-no', text: String(i + 1), 'aria-label': trf('Line {0}: insert, move, delete, or use it as #{0}', '{0} 行目：行を入れる・移す・消す、#{0} として使う', i + 1) }, () => lineSheet(i));
         const res = tapButton({ class: 'note-res', 'aria-label': trf('Result of line {0}', '{0} 行目の結果', i + 1) }, () => { const c = N.cache[i]; if (c && c.ok) resultSheet(memo().lines[i], c.expr, c.shown); });
         inp.addEventListener('input', () => { memo().lines[i] = inp.value; save(); run(i); });
+        const keep = () => { N.focus = i; N.caret = inp.selectionStart; };
+        inp.addEventListener('focus', keep); inp.addEventListener('keyup', keep); inp.addEventListener('click', keep); inp.addEventListener('blur', keep);
         inp.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') { e.preventDefault(); const L = memo().lines; if (L.length >= NOTE_MAX) return; const at = inp.selectionStart === 0 && inp.value ? i : i + 1; L.splice(at, 0, ''); save(); build(); run(at); const f = list.querySelectorAll('input')[at === i ? i + 1 : at]; if (f) f.focus(); }
-          else if (e.key === 'Backspace' && !inp.value && memo().lines.length > 1) { e.preventDefault(); memo().lines.splice(i, 1); save(); build(); run(i); const f = list.querySelectorAll('input')[Math.max(0, i - 1)]; if (f) f.focus(); }
+          if (e.key === 'Enter') { e.preventDefault(); if (memo().lines.length >= NOTE_MAX) return; const at = inp.selectionStart === 0 && inp.value ? i : i + 1; insertLine(at); const f = list.querySelectorAll('input')[at === i ? i + 1 : at]; if (f) f.focus(); }
+          else if (e.key === 'Backspace' && !inp.value && memo().lines.length > 1) { e.preventDefault(); deleteLine(i); const f = list.querySelectorAll('input')[Math.max(0, i - 1)]; if (f) f.focus(); }
         });
         inp.addEventListener('paste', (e) => {
           const t = (e.clipboardData || window.clipboardData).getData('text');
           if (!/\n/.test(t.trim())) return;
           e.preventDefault();
-          const add = t.replace(/\r/g, '').split('\n'), L = memo().lines;
+          const add = t.replace(/\r/g, '').split('\n'), L0 = memo().lines;
           const before = inp.value.slice(0, inp.selectionStart), after = inp.value.slice(inp.selectionEnd);
           add[0] = before + add[0]; add[add.length - 1] += after;
-          L.splice(i, 1, ...add.slice(0, NOTE_MAX - L.length + 1)); save(); build(); run(i);
+          const put = add.slice(0, NOTE_MAX - L0.length + 1);
+          // (the lines below move down: their numbers in the lines follow; the lines pasted keep theirs)
+          const L = noteRenumber(L0, (k) => (k > i + 1 ? k + put.length - 1 : k));
+          L.splice(i, 1, ...put); relines(L, null, i);
         });
         // (the result already known, when the lines are laid out again)
         const c = N.cache[i];
         if (c && c.done && c.text === inp.value) { res.textContent = c.ok ? (c.total ? tr('Total ', '合計 ') : '') + c.shown : c.err || ''; res.classList.toggle('bad', !c.ok && !!c.err); }
-        return el('div', { class: 'note-line', role: 'listitem' }, inp, res);
+        return el('div', { class: 'note-line', role: 'listitem' }, no, inp, res);
       };
-      const build = () => { list.textContent = ''; memo().lines.forEach((l, i) => list.append(lineRow(i))); };
+      const build = () => {
+        const tb = isTable();
+        modeBtns.forEach((b) => { const on = b.dataset.mode === (tb ? 'table' : 'lines'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+        list.hidden = tb; tbox.hidden = !tb; chips.hidden = tb;
+        list.textContent = ''; tbox.textContent = '';
+        if (tb) buildTable(); else memo().lines.forEach((l, i) => list.append(lineRow(i)));
+      };
       // the results from line `from` on (the lines above keep theirs)
       const run = async (from) => {
+        if (isTable()) { runTable(); return; }
         const seq = ++N.seq, L = memo().lines, rows = list.querySelectorAll('.note-line');
         // (what the lines above give: their names, the value of the line above, the start of the sum)
         const names = {};
@@ -17763,7 +19680,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           if (seq !== N.seq) return;
           const text = String(L[i] || ''), res = rows[i] && rows[i].querySelector('.note-res'), c = { text };
           N.cache[i] = c;
-          if (!text.trim() || /^\s*(#|\/\/)/.test(text)) { c.done = true; if (res) { res.textContent = ''; res.classList.remove('bad'); } continue; }
+          if (!text.trim() || NOTE_COMMENT.test(text)) { c.done = true; if (res) { res.textContent = ''; res.classList.remove('bad'); } continue; }
           let body = text, name = null;
           if (NOTE_TOTAL.test(text)) {
             const parts = [];
@@ -17773,7 +19690,24 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
             const m = NOTE_ASSIGN.exec(text);
             if (m && !/^(ans)$/i.test(m[1])) { name = m[1]; body = m[2]; }
           }
-          const ex = c.total ? { expr: body } : noteExpand(normalizeExpr(body), names, prev);
+          let ex = c.total ? { expr: body } : noteExpand(normalizeExpr(body), names, prev);
+          // (#n: the result of line n, a line above this one)
+          let refErr = '';
+          if (!c.total) {
+            const rx = expandLineRefs(ex.expr, (n) => {
+              if (n === '?') return { error: tr('#?: the line it referred to was deleted', '#?：参照していた行は消されました') };
+              const q = N.cache[n - 1];
+              if (!(n >= 1 && n <= i)) return { error: trf('#{0} is not a line above this one', '#{0} はこの行より上の行ではありません', n) };
+              if (!q || !q.ok) return { error: trf('Line {0} has no result', '{0} 行目に結果がありません', n) };
+              return q.expr;
+            });
+            ex = { expr: rx.expr }; refErr = rx.error;
+          }
+          if (refErr) {
+            c.done = true; c.ok = false; c.err = refErr;
+            if (res) { res.textContent = refErr; res.classList.add('bad'); }
+            continue;
+          }
           const r = await Bridge.send('calc', { expr: ex.expr, opts: engineOpts(), timeout: 4000 });
           if (seq !== N.seq) return;
           c.done = true;
@@ -17792,8 +19726,257 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         N.cache.length = L.length;
         msg.textContent = '';
       };
+      // ---- the table (1.16.0): the columns, the cells, the formula columns and the totals worked out
+      const TB = { seq: 0, calc: new Map(), fx: [], foot: [] };
+      // (a cell shows its value without "= "; an average with 8 significant digits at most: 1040 / 3 ≈ 346.66667)
+      const calcOne = async (expr, prec, more) => {
+        const key = (prec || '') + '|' + (more ? JSON.stringify(more) : '') + '|' + expr;
+        if (TB.calc.has(key)) return TB.calc.get(key);
+        const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), prec ? { precision: Math.min(prec, Number(S.precision) || prec) } : {}, more || {}), timeout: 4000 });
+        const v = r.ok && r.result && !r.timeout && !(r.messages || []).some((q) => q.type === 'error') ? { ok: true, expr, shown: groupText(resultText(r)).replace(/^=\s*/, '') }
+          : { ok: false, err: r.timeout ? tr('took too long', '時間がかかりすぎました') : localMessage(((r.messages || []).find((q) => q.type === 'error') || {}).text || r.error) || tr('could not be calculated', '計算できませんでした') };
+        if (TB.calc.size > 3000) TB.calc.clear();
+        TB.calc.set(key, v);
+        return v;
+      };
+      const colName = (j) => memo().table.cols[j].n || String.fromCharCode(65 + j);
+      const colSheet = async (j) => {
+        const t = memo().table, c = t.cols[j], acts = [['name', tr('Rename', '名前を変える')], ['f', c.f ? tr('Change the formula', '式を変える') : tr('Work it out by a formula', '式で計算する列にする')]];
+        if (c.f) acts.push(['typed', tr('Type its values instead', '式をやめて値を入れる')]);
+        if (t.cols.length < NOTE_COLS) acts.push(['left', tr('Insert a column to the left', '左に列を入れる')], ['right', tr('Insert a column to the right', '右に列を入れる')]);
+        if (j > 0) acts.push(['mleft', tr('Move left', '左へ移す')]);
+        if (j < t.cols.length - 1) acts.push(['mright', tr('Move right', '右へ移す')]);
+        if (t.cols.length > 1) acts.push(['del', tr('Delete this column', 'この列を消す'), 'danger']);
+        const k = await sheet(trf('Column “{0}”', '列「{0}」', colName(j)) + (c.f ? ' = ' + c.f : ''), acts);
+        if (!k) return;
+        if (k === 'name') {
+          const v = await promptSheet(tr('Name of the column', '列の名前'), c.n, tr('e.g. Qty', '例：数量'), tr('Save', '保存'));
+          if (v === null || !v.trim()) return;
+          // (the formulas that use the old name use the new one)
+          const old = c.n, nn = v.trim().slice(0, 24);
+          for (const o of t.cols) if (o.f && old) o.f = noteExpand(o.f, { [old]: nn }, null).expr.split('(' + nn + ')').join(nn);
+          c.n = nn;
+        } else if (k === 'f') {
+          const v = await promptSheet(trf('Formula of “{0}”', '「{0}」の式', colName(j)), c.f, tr('e.g. Qty × Price', '例：数量 × 単価'), tr('Save', '保存'));
+          if (v === null) return;
+          // ("Amount = Qty × Price": the name before "=" names the column)
+          const m = NOTE_ASSIGN.exec(v);
+          if (m && t.cols.every((o, q) => q === j || o.n !== m[1])) { c.n = m[1]; c.f = m[2].trim(); } else c.f = v.trim();
+        } else if (k === 'typed') c.f = '';
+        else if (k === 'left' || k === 'right') {
+          const at = k === 'left' ? j : j + 1;
+          let n = 1; while (t.cols.some((o) => o.n === trf('Column {0}', '列{0}', n))) n++;
+          t.cols.splice(at, 0, { n: trf('Column {0}', '列{0}', n), f: '' });
+          t.rows.forEach((r) => r.splice(at, 0, ''));
+        } else if (k === 'mleft' || k === 'mright') {
+          const to = k === 'mleft' ? j - 1 : j + 1;
+          [t.cols[j], t.cols[to]] = [t.cols[to], t.cols[j]];
+          t.rows.forEach((r) => { [r[j], r[to]] = [r[to], r[j]]; });
+        } else if (k === 'del') {
+          const sure = await sheet(trf('Delete the column “{0}”?', '列「{0}」を消しますか？', colName(j)), [['del', tr('Delete', '消す'), 'danger']]);
+          if (sure !== 'del') return;
+          t.cols.splice(j, 1); t.rows.forEach((r) => r.splice(j, 1));
+        }
+        save(); build(); runTable();
+      };
+      const rowSheet = async (i) => {
+        const t = memo().table, acts = [];
+        if (t.rows.length < NOTE_MAX) acts.push(['above', tr('Insert a row above', '上に行を入れる')], ['below', tr('Insert a row below', '下に行を入れる')]);
+        if (i > 0) acts.push(['up', tr('Move up', '上へ移す')]);
+        if (i < t.rows.length - 1) acts.push(['down', tr('Move down', '下へ移す')]);
+        if (t.rows.length > 1) acts.push(['del', tr('Delete this row', 'この行を消す'), 'danger']);
+        const k = await sheet(trf('Row {0}', '{0} 行目', i + 1), acts);
+        if (!k) return;
+        const blank = () => t.cols.map(() => '');
+        if (k === 'above') t.rows.splice(i, 0, blank());
+        else if (k === 'below') t.rows.splice(i + 1, 0, blank());
+        else if (k === 'up' || k === 'down') { const to = k === 'up' ? i - 1 : i + 1; [t.rows[i], t.rows[to]] = [t.rows[to], t.rows[i]]; }
+        else if (k === 'del') t.rows.splice(i, 1);
+        save(); build(); runTable();
+      };
+      // (1.16.0, the owner's note of 11-24, P2) cells copied from a spreadsheet, pasted into one cell, went all into it ("Item
+      // Amountapples 1200…"): one value for each cell, from the cell pasted into to the right and down, as in the statistics; the
+      // rows and the columns that are missing added (up to NOTE_COLS columns). Into the first cell with a first row of words (no
+      // digit), the table becomes the one pasted, that row the names of its columns. A formula column keeps its formula.
+      const pasteCells = (i0, j0, text) => {
+        const t = memo().table;
+        let rows = String(text).replace(/\r\n?/g, '\n').replace(/\s+$/, '').split('\n').map((l) => l.split('\t').map((x) => x.replace(/\s+/g, ' ').trim()));
+        // (the groups of digits of a spreadsheet left out: "1,200" would be read as two values, [1 200])
+        rows = pastedDecimals(rows).map((r) => r.map((x) => (noteWord(x) ? x : ungroupPasted(x))));
+        const wide = Math.max(...rows.map((r) => r.length));
+        let cut = false, kept = '';
+        if (i0 === 0 && j0 === 0 && rows.length >= 2 && rows[0].some((x) => x) && rows[0].every((x) => noteWord(x))) {
+          const nc = Math.min(NOTE_COLS, wide), cols = [];
+          for (let j = 0; j < nc; j++) { let nm = (rows[0][j] || '').slice(0, 24) || trf('Column {0}', '列{0}', j + 1); while (cols.some((c) => c.n === nm)) nm += '′'; cols.push({ n: nm, f: '' }); }
+          cut = wide > NOTE_COLS || rows.length - 1 > NOTE_MAX;
+          t.cols = cols;
+          t.rows = rows.slice(1, NOTE_MAX + 1).map((r) => cols.map((c, j) => r[j] || ''));
+        } else {
+          while (t.cols.length < Math.min(NOTE_COLS, j0 + wide)) {
+            let n = 1; while (t.cols.some((o) => o.n === trf('Column {0}', '列{0}', n))) n++;
+            t.cols.push({ n: trf('Column {0}', '列{0}', n), f: '' }); t.rows.forEach((r) => r.push(''));
+          }
+          if (j0 + wide > NOTE_COLS) cut = true;
+          if (i0 + rows.length > NOTE_MAX) cut = true;
+          while (t.rows.length < Math.min(NOTE_MAX, i0 + rows.length)) t.rows.push(t.cols.map(() => ''));
+          rows.forEach((r, di) => r.forEach((x, dj) => {
+            const i = i0 + di, j = j0 + dj;
+            if (i >= t.rows.length || j >= t.cols.length) return;
+            if (t.cols[j].f) { if (x) kept = kept || t.cols[j].n; return; }
+            t.rows[i][j] = x;
+          }));
+        }
+        save(); build(); runTable();
+        const first = tbox.querySelectorAll('tbody tr')[i0];
+        const f = first && first.querySelectorAll('td')[j0] && first.querySelectorAll('td')[j0].querySelector('input');
+        if (f) f.focus();
+        if (kept) toast(trf('“{0}” is a formula column: the values pasted into it were left out', '「{0}」は式の列なので、そこに貼った値は入れていません', kept), 4000);
+        else if (cut) toast(trf('A table has up to {0} columns and {1} rows: the part that did not fit was left out', '表は {0} 列・{1} 行までです。入りきらない分は入れていません', NOTE_COLS, NOTE_MAX), 4000);
+      };
+      const buildTable = () => {
+        const t = memo().table, nc = t.cols.length;
+        t.rows = t.rows.map((r) => { const a = Array.isArray(r) ? r.slice(0, nc) : []; while (a.length < nc) a.push(''); return a.map((v) => String(v === null || v === undefined ? '' : v)); });
+        if (!t.rows.length) t.rows.push(t.cols.map(() => ''));
+        TB.fx = t.rows.map(() => []); TB.foot = [];
+        const head = el('tr', {}, el('th', { class: 'note-no-c', scope: 'col', 'aria-label': tr('Row', '行'), text: '#' }),
+          ...t.cols.map((c, j) => el('th', { scope: 'col' }, tapButton({ class: 'note-col', 'aria-label': trf('Column “{0}”: rename, formula, insert, move, delete', '列「{0}」：名前・式・列を入れる・移す・消す', colName(j)) + (c.f ? ' = ' + c.f : '') }, () => colSheet(j))
+            .appendChild(el('span', { class: 'note-col-n', text: colName(j) })).parentNode
+            .appendChild(c.f ? el('span', { class: 'note-col-f', text: '= ' + c.f }) : document.createTextNode('')).parentNode)));
+        const body = t.rows.map((r, i) => el('tr', {}, el('th', { class: 'note-no-c', scope: 'row' }, tapButton({ class: 'note-no', text: String(i + 1), 'aria-label': trf('Row {0}: insert, move, delete', '{0} 行目：行を入れる・移す・消す', i + 1) }, () => rowSheet(i))),
+          ...t.cols.map((c, j) => {
+            if (c.f) {
+              const b = tapButton({ class: 'note-fx', 'aria-label': trf('{0}, row {1}', '{0}、{1} 行目', colName(j), i + 1) }, () => { const v = b._v; if (v && v.ok) resultSheet(colName(j) + ' ' + trf('(row {0})', '（{0} 行目）', i + 1), v.expr, v.shown); });
+              TB.fx[i][j] = b;
+              return el('td', { class: 'note-fxc' }, b);
+            }
+            const inp = el('input', { inputmode: 'text', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false', value: r[j], 'aria-label': trf('{0}, row {1}', '{0}、{1} 行目', colName(j), i + 1), enterkeyhint: 'next' });
+            inp.addEventListener('input', () => { memo().table.rows[i][j] = inp.value; save(); runTableSoon(); });
+            // (P2) a table copied from a spreadsheet: into the cells from this one, right and down
+            inp.addEventListener('paste', (e) => {
+              const text = e.clipboardData ? e.clipboardData.getData('text') : '';
+              if (!/[\t\n]/.test(String(text).replace(/\r\n?/g, '\n').replace(/\s+$/, ''))) return;
+              e.preventDefault();
+              pasteCells(i, j, text);
+            });
+            inp.addEventListener('keydown', (e) => {
+              if (e.key !== 'Enter') return;
+              e.preventDefault();
+              // (Enter: the cell below; at the last row, a new row)
+              if (i === t.rows.length - 1 && t.rows.length < NOTE_MAX) { t.rows.push(t.cols.map(() => '')); save(); build(); runTable(); }
+              const next = tbox.querySelectorAll('tbody tr')[i + 1];
+              const f = next && next.querySelectorAll('td')[j] && next.querySelectorAll('td')[j].querySelector('input');
+              if (f) f.focus();
+            });
+            return el('td', {}, inp);
+          })));
+        const footRow = (kind, label) => el('tr', { class: 'note-foot' }, el('th', { class: 'note-no-c', scope: 'row', text: label }),
+          ...t.cols.map((c, j) => {
+            const b = tapButton({ class: 'note-fx note-tot', 'aria-label': trf('{0}: {1}', '{0}：{1}', label, colName(j)) }, () => { const v = b._v; if (v && v.ok) resultSheet(label + ' ' + colName(j), v.expr, v.shown); });
+            (TB.foot[j] || (TB.foot[j] = {}))[kind] = b;
+            return el('td', {}, b);
+          }));
+        const tbl = el('table', { class: 'note-tbl' }, el('thead', {}, head), el('tbody', {}, ...body), el('tfoot', {}, footRow('tot', tr('Total', '合計')), footRow('avg', tr('Average', '平均'))));
+        const wrap = el('div', { class: 'note-tbl-wrap', role: 'region', tabindex: '0', 'aria-label': tr('Table: swipe sideways for more columns', '表：横にずらすとほかの列') }, tbl);
+        const addRow = tapButton({ class: 'btn', text: tr('+ Row', '＋ 行') }, () => { if (t.rows.length >= NOTE_MAX) return; t.rows.push(t.cols.map(() => '')); save(); build(); runTable(); const last = tbox.querySelector('tbody tr:last-child input'); if (last) last.focus(); });
+        const addCol = tapButton({ class: 'btn', text: tr('+ Column', '＋ 列') }, async () => {
+          if (t.cols.length >= NOTE_COLS) { messageSheet(trf('A table has up to {0} columns', '表の列は {0} 列までです', NOTE_COLS)); return; }
+          const v = await promptSheet(tr('Name of the column', '列の名前'), '', tr('e.g. Qty', '例：数量'), tr('Add', '足す'));
+          if (v === null) return;
+          let n = 1; while (t.cols.some((o) => o.n === trf('Column {0}', '列{0}', n))) n++;
+          const m = NOTE_ASSIGN.exec(v);
+          t.cols.push(m ? { n: m[1], f: m[2].trim() } : { n: v.trim().slice(0, 24) || trf('Column {0}', '列{0}', n), f: '' }); t.rows.forEach((r) => r.push(''));
+          save(); build(); runTable();
+        });
+        tbox.append(wrap, el('div', { class: 'tool-tbl-btns' }, addRow, addCol),
+          el('div', { class: 'form-hint', text: tr('A cell can have a unit or a currency (3 kg, 120 JPY). Tap the name of a column for its formula ("Qty × Price"), a row number or a column name to insert, move or delete; tap a result or a total for the three actions. Words (the name of an item) are left out of the totals.', 'セルには単位や通貨も書けます（3 kg、120 JPY）。列の名前をタップすると式（「数量 × 単価」）、行の番号や列の名前で行・列を入れる・移す・消す。結果や合計をタップすると 3 つの操作。言葉（品目の名前など）は合計に入りません。') }));
+      };
+      const runTableSoon = debounce(() => runTable(), 150);
+      const paint = (b, v, blank) => {
+        if (!b) return;
+        b._v = v || null;
+        b.textContent = blank || !v ? '' : v.ok ? v.shown : v.err;
+        b.classList.toggle('bad', !!v && !v.ok && !blank);
+      };
+      const runTable = async () => {
+        if (!isTable()) return;
+        const seq = ++TB.seq, t = memo().table, nr = t.rows.length, nc = t.cols.length;
+        // the cells as expressions: the cells typed (with their units), the formula cells worked out; null: empty or a word
+        const ex = t.rows.map(() => new Array(nc).fill(null));
+        for (let j = 0; j < nc; j++) {
+          const c = t.cols[j];
+          if (!c.f) {
+            for (let i = 0; i < nr; i++) { const s = String(t.rows[i][j] || '').trim(); ex[i][j] = s && !noteWord(s) ? normalizeExpr(s) : null; }
+            continue;
+          }
+          // (a formula uses the columns typed and the formula columns to its left, by their names, in each row)
+          const uses = noteUses(c.f, t.cols, j);
+          for (let i = 0; i < nr; i++) {
+            const b = TB.fx[i] && TB.fx[i][j];
+            const names = {};
+            let blank = false, word = '';
+            for (const k of uses) {
+              if (t.cols[k].f && k > j) { blank = true; break; }
+              const s = String(t.rows[i][k] || '').trim();
+              if (!t.cols[k].f && !s) { blank = true; break; }
+              if (!t.cols[k].f && noteWord(s)) { word = word || t.cols[k].n; continue; }
+              if (ex[i][k] === null) { blank = true; break; }
+              names[t.cols[k].n] = ex[i][k];
+            }
+            if (blank || !uses.length && !c.f.trim()) { paint(b, null, true); continue; }
+            if (word) { paint(b, { ok: false, err: trf('“{0}” is not a value', '「{0}」が値ではありません', word) }); continue; }
+            const v = await calcOne(noteExpand(normalizeExpr(c.f), names, null).expr);
+            if (seq !== TB.seq) return;
+            ex[i][j] = v.ok ? v.expr : null;
+            paint(b, v);
+          }
+        }
+        // the total and the average of each column of values (the words and the empty cells left out)
+        for (let j = 0; j < nc; j++) {
+          const f = TB.foot[j] || {}, parts = [];
+          for (let i = 0; i < nr; i++) if (ex[i][j] !== null) parts.push('(' + ex[i][j] + ')');
+          if (!parts.length) { paint(f.tot, null, true); paint(f.avg, null, true); continue; }
+          let tot = await calcOne(parts.join(' + '));
+          if (seq !== TB.seq) return;
+          // (1.16.0, the owner's note of 11-24, P2) a cell with a digit that is not a value ("apples 2 pcs" as the name of an
+          // item) made the total "… is not a variable, function or unit": such cells left out of the total and the average
+          if (!tot.ok && !t.cols[j].f) {
+            parts.length = 0;
+            for (let i = 0; i < nr; i++) {
+              if (ex[i][j] === null) continue;
+              const v = await calcOne(ex[i][j]);
+              if (seq !== TB.seq) return;
+              if (v.ok) parts.push('(' + ex[i][j] + ')');
+            }
+            if (!parts.length) { paint(f.tot, null, true); paint(f.avg, null, true); continue; }
+            tot = await calcOne(parts.join(' + '));
+            if (seq !== TB.seq) return;
+          }
+          // (1.16.0, the owner's note of 11-24, L4) values of different units in a column (3 kg and 2) stay a sum ("3 kg + 2"):
+          // said in the total and the average, not shown as their values
+          const top = tot.ok ? String(tot.shown).split(' ≈ ')[0].replace(/\([^()]*\)/g, '') : '';
+          if (/\s[+−]\s/.test(top) && /[A-Za-z¥$€£₩₹]/.test(top.replace(/\d\s*i$/, ''))) {
+            const mixed = { ok: false, err: tr('Values of different units are mixed', '単位のちがう値が混じっています') };
+            paint(f.tot, mixed); paint(f.avg, mixed); continue;
+          }
+          paint(f.tot, tot);
+          // (L5) the average of money with 2 decimals, as the average cost of the stocks (¥183.33, €1.83)
+          const isMoney = tot.ok && /[¥$€£₩₹]|(?:^|[\s\d])(?:JPY|USD|EUR|GBP|KRW|TWD|CNY|MXN|CHF|INR|CAD|AUD)\b/.test(top);
+          const avg = await calcOne('(' + parts.join(' + ') + ') / ' + parts.length, isMoney ? 0 : 8, isMoney ? { fraction: 'decimal', max_decimals: Math.max(2, MONEY().dec) } : null);
+          if (seq !== TB.seq) return;
+          paint(f.avg, avg);
+        }
+        TB.ex = ex;
+      };
+      // the table as rows of text: the names of the columns, the rows (the values typed, the results of the formulas), the
+      // total and the average; the first column, "#", the number of the row
+      const tableRows = () => {
+        const t = memo().table, out = [['#'].concat(t.cols.map((c, j) => colName(j)))];
+        t.rows.forEach((r, i) => out.push([String(i + 1)].concat(t.cols.map((c, j) => (c.f ? (TB.fx[i] && TB.fx[i][j] && TB.fx[i][j]._v && TB.fx[i][j]._v.ok ? TB.fx[i][j]._v.shown : '') : r[j])))));
+        for (const [k, label] of [['tot', tr('Total', '合計')], ['avg', tr('Average', '平均')]]) out.push([label].concat(t.cols.map((c, j) => { const b = TB.foot[j] && TB.foot[j][k]; return b && b._v && b._v.ok ? b._v.shown : ''; })));
+        return out;
+      };
       // copy, share, and under "More": rename, save as text or CSV (Pro), delete
-      const asText = () => memo().lines.map((l, i) => { const c = N.cache[i]; return c && c.ok ? l + '  →  ' + c.shown : l; }).join('\n');
+      const asText = () => (isTable() ? tableRows().map((r) => r.join('\t')).join('\n') : memo().lines.map((l, i) => { const c = N.cache[i]; return c && c.ok ? l + '  →  ' + c.shown : l; }).join('\n'));
       const copyBtn = tapButton({ class: 'btn', text: tr('Copy', 'コピー') }, () => { copyText(asText()); reviewMoment('tool'); });
       const shareBtn = tapButton({ class: 'btn', text: tr('Share', '共有') }, () => {
         if (window.QalcNative && QalcNative.shareText) QalcNative.shareText(asText());
@@ -17802,10 +19985,12 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         reviewMoment('tool');
       });
       const exp = (kind) => {
-        if (!proGate('notes')) return;
+        // (a table as CSV: 'notes_table', as the table itself; the lines: 'notes')
+        if (!proGate(isTable() && kind === 'csv' ? 'notes_table' : 'notes')) return;
         const d = new Date(), z = (q) => String(q).padStart(2, '0'), stamp = d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate());
         const sep = commaMode ? ';' : ',', cell = (v) => '"' + String(v).replace(/"/g, '""') + '"';
-        const text = kind === 'csv' ? '﻿' + [[tr('Line', '行'), tr('Calculation', '計算'), tr('Result', '結果')].map(cell).join(sep)].concat(memo().lines.map((l, i) => [i + 1, l, N.cache[i] && N.cache[i].ok ? N.cache[i].shown : ''].map(cell).join(sep))).join('\r\n') + '\r\n' : asText() + '\n';
+        const text = kind === 'csv' ? '﻿' + (isTable() ? tableRows().map((r) => r.map(cell).join(sep))
+          : [[tr('Line', '行'), tr('Calculation', '計算'), tr('Result', '結果')].map(cell).join(sep)].concat(memo().lines.map((l, i) => [i + 1, l, N.cache[i] && N.cache[i].ok ? N.cache[i].shown : ''].map(cell).join(sep)))).join('\r\n') + '\r\n' : asText() + '\n';
         const name = 'QCalc-notes-' + stamp + (kind === 'csv' ? '.csv' : '.txt');
         savingWhat = 'notes';
         if (kind === 'csv' && window.QalcNative && QalcNative.saveFile) { QalcNative.saveFile(name, 'text/csv', text); return; }
@@ -17825,16 +20010,22 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         N.cur = N.memos[0].id; N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
       });
       // (1.15.0) what was read: as a new memo (an empty memo takes it; a second memo is QCalc Pro), at the end of this memo,
-      // or one line into the input field
+      // or one line into the input field; (1.16.0) a CSV file with two columns or more also as a table (its first row: the
+      // names of the columns; QCalc Pro, as tables are)
       p.importLines = async (got) => {
-        const L = memo().lines, empty = L.every((l) => !String(l).trim()), n = got.lines.length;
+        // (P1: values pasted into the input field go into the example memo of a first start, as into an empty memo)
+        const example = got.pasted && N.memos.length === 1 && !isTable() && JSON.stringify(memo().lines) === JSON.stringify(NOTE_EX()[0][1].map(decSign));
+        const L = memo().lines, empty = example || (!isTable() && L.every((l) => !String(l).trim())), n = got.lines.length;
         const lock = PRO_GATES.notes === 'pro' && !hasPro() && !empty;
         const head = got.name ? trf('Read “{0}”: {1} lines', '「{0}」を読み込みます（{1} 行）', got.name, n) : trf('Text received: {0} lines', '受け取った文字（{0} 行）', n);
-        const note = got.csv === 'first' ? '\n' + tr('A CSV file: its first column is read', 'CSV の 1 列目を読み込みます') : '';
+        const asTable = got.csv === 'first' && got.rows && got.rows.length >= 2 && got.rows[0].length >= 2;
+        const note = got.csv === 'first' ? '\n' + (asTable ? tr('A CSV file: as a table, or its first column as lines', 'CSV のファイル：表にするか、1 列目を行として読み込みます') : tr('A CSV file: its first column is read', 'CSV の 1 列目を読み込みます')) : '';
         const peek = '\n' + clip(got.lines.filter((l) => l.trim()).slice(0, 3).join(' / '), 90);
-        const acts = [['new', tr('As a new memo', '新しいメモにする') + (lock ? '  ⭐ Pro' : ''), 'accent'], ['add', tr('At the end of this memo', '今のメモの最後に足す')]];
+        const acts = [];
+        if (asTable) acts.push(['table', tr('As a table (the first row: the names of the columns)', '表にする（1 行目を列の名前に）') + tlock(), 'accent']);
+        acts.push(['new', tr('As a new memo', '新しいメモにする') + (lock ? '  ⭐ Pro' : ''), asTable ? '' : 'accent'], ['add', tr('At the end of this memo', '今のメモの最後に足す')]);
         if (n === 1) acts.push(['field', tr('Put it into the input field', '入力欄に入れる')]);
-        const k = await sheet(head + note + peek, acts);
+        const k = got.direct || await sheet(head + note + peek, acts);
         if (!k) return;
         if (k === 'field') {
           while (panelStack.length) closePanel();
@@ -17842,7 +20033,29 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           exprChanged(); focusExpr();
           return;
         }
-        const into = (m) => { m.lines = got.lines.slice(); if (got.title) m.title = got.title; };
+        const into = (m) => { m.kind = ''; m.lines = got.lines.slice(); if (got.title) m.title = got.title; };
+        if (k === 'table') {
+          if (!proGate('notes_table')) return;
+          let rows = got.rows.map((r) => r.map((v) => String(v).replace(/\s+/g, ' ').trim()));
+          // (a table saved by QCalc: its first column is the number of the row, and its last rows the total and the average)
+          if (rows[0][0] === '#') { rows = rows.filter((r, i) => i === 0 || /^\d+$/.test(r[0])).map((r) => r.slice(1)); }
+          const nc = Math.min(NOTE_COLS, Math.max(...rows.map((r) => r.length)));
+          const cols = [];
+          for (let j = 0; j < nc; j++) { let nm = (rows[0][j] || '').slice(0, 24) || trf('Column {0}', '列{0}', j + 1); while (cols.some((c) => c.n === nm)) nm += '′'; cols.push({ n: nm, f: '' }); }
+          const body = rows.slice(1, NOTE_MAX + 1).map((r) => cols.map((c, j) => r[j] || ''));
+          const tbl = { cols, rows: body.length ? body : [cols.map(() => '')] };
+          const blankNow = !isTable() && L.every((l) => !String(l).trim());
+          if (blankNow) { memo().kind = 'table'; memo().table = tbl; if (got.title) memo().title = got.title; }
+          else {
+            if (!proGate('notes')) return;
+            if (N.memos.length >= 50) { messageSheet(tr('There can be up to 50 memos', 'メモは 50 個までです')); return; }
+            const id = Math.max(...N.memos.map((m) => m.id)) + 1;
+            N.memos.push({ id, title: got.title || trf('Memo {0}', 'メモ {0}', N.memos.length + 1), lines: [''], kind: 'table', table: tbl }); N.cur = id;
+          }
+          N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
+          toast(trf('Read into “{0}” as a table: {1} rows, {2} columns', '「{0}」に表として読み込みました（{1} 行、{2} 列）', memo().title, tbl.rows.length, cols.length), 2500);
+          return;
+        }
         if (k === 'new') {
           if (empty) into(memo());
           else {
@@ -17852,10 +20065,11 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
             N.memos.push({ id, title: got.title || trf('Memo {0}', 'メモ {0}', N.memos.length + 1), lines: got.lines.slice() }); N.cur = id;
           }
           N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
-          toast(trf('Read into “{0}”: {1} lines', '「{0}」に {1} 行を読み込みました', memo().title, n), 2500);
+          toast(got.pasted ? trf('Put into “{0}”: {1} lines', '「{0}」に {1} 行を入れました', memo().title, n) : trf('Read into “{0}”: {1} lines', '「{0}」に {1} 行を読み込みました', memo().title, n), 2500);
           return;
         }
-        // at the end of this memo (its empty lines at the end go)
+        // at the end of this memo (its empty lines at the end go; a table memo shows its lines again)
+        memo().kind = '';
         let end = L.length;
         while (end > 0 && !String(L[end - 1]).trim()) end--;
         if (end + n > NOTE_MAX) { messageSheet(trf('A memo holds up to {0} lines: with these it would have {1}', '1 つのメモは {0} 行までです。足すと {1} 行になります', NOTE_MAX, end + n)); return; }
@@ -17863,24 +20077,176 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         save(); fillPick(); titleIn.value = memo().title; build(); run(empty ? 0 : end);
         toast(trf('Added to “{0}”: {1} lines', '「{0}」に {1} 行を足しました', memo().title, n), 2500);
       };
-      const openBtn = tapButton({ class: 'btn', text: tr('Open a file', 'ファイルを開く') }, () => openImportFile());
+      // (1.16.0) the card of what is new: the memo as a table
+      p.showTable = () => { if (!isTable()) setMode('table'); };
+      // (1.16.0) from the list of variables: a memo shown at one of its lines
+      p.showMemo = (id, line) => {
+        if (!N.memos.some((m) => m.id === id)) return;
+        if (N.cur !== id) { N.cur = id; N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0); }
+        if (isTable()) { memo().kind = ''; save(); build(); run(0); }
+        setTimeout(() => { const f = list.querySelectorAll('input')[line]; if (f) { f.scrollIntoView({ block: 'center' }); f.classList.add('note-flash'); setTimeout(() => f.classList.remove('note-flash'), 1800); } }, 150);
+      };
+      const openBtn = tapButton({ class: 'btn', text: tr('Open a file', 'ファイルを開く') }, () => { statImport = null; openImportFile(); });
       const txtBtn = tapButton({ class: 'btn', text: tr('Save as text', 'テキストで保存') + lock() }, () => exp('txt'));
       const csvBtn = tapButton({ class: 'btn', text: tr('Save as CSV', 'CSV で保存') + lock() }, () => exp('csv'));
       const more = el('details', { class: 'sec-more note-more' }, el('summary', { text: tr('More ▾', '詳しく ▾') }),
         el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Name', '名前') }), titleIn), el('div', { class: 'tool-tbl-btns' }, openBtn, txtBtn, csvBtn), delBtn);
       more.addEventListener('toggle', () => { if (more.open) titleIn.value = memo().title; });
-      const hint = el('div', { class: 'form-hint', text: tr('One calculation on each line. "name = …" gives a name for the lines below (in this memo), "ans" is the line above, and "total" adds the lines above. Tap a result for the three actions.', '1 行に 1 つの計算。「名前 = 式」で下の行で使える名前（このメモの中だけ）、「ans」は上の行の値、「合計」で上の行を足します。結果をタップすると 3 つの操作。') });
-      p.body.append(chips, el('div', { class: 'geo-size note-pick' }, pick, addBtn), list, msg, el('div', { class: 'tool-tbl-btns' }, copyBtn, shareBtn), more, hint);
+      const hint = el('div', { class: 'form-hint', text: tr('One calculation on each line. "name = …" gives a name for the lines below (in this memo), "ans" is the line above, "#3" is the result of line 3, and "total" adds the lines above. Tap a line number to insert, move or delete a line; tap a result for the three actions.', '1 行に 1 つの計算。「名前 = 式」で下の行で使える名前（このメモの中だけ）、「ans」は上の行の値、「#3」は 3 行目の結果、「合計」で上の行を足します。行の番号をタップすると行を入れる・移す・消す、結果をタップすると 3 つの操作。') });
+      p.body.append(chips, el('div', { class: 'geo-size note-pick' }, pick, addBtn), modeSeg, list, tbox, msg, el('div', { class: 'tool-tbl-btns' }, copyBtn, shareBtn), more, hint);
       fillPick(); build(); run(0);
     });
     return p;
   }
+  // ---- (1.16.0, feature/stats-plus, the owner's request of 11-23 11:16: the statistics of R, made here) probability
+  // distributions, the histogram and the box plot of one column, regression with a choice of the curve (polynomials
+  // of degree 2 to 4, exponential, power, logarithmic) and a column read from a CSV file. The probabilities are the
+  // engine's (normdist, binomdist, poisson, tdist, chisqdist and their inverses, so that a tap on a result gives the
+  // expression for the calculator); the curves of the densities are drawn from the formulas here.
+  function statLgamma(z) {
+    if (z < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * z))) - statLgamma(1 - z);
+    const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    z -= 1;
+    let x = c[0];
+    for (let i = 1; i < 9; i++) x += c[i] / (z + i);
+    const t = z + 7.5;
+    return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+  }
+  // the distributions: [key, name, parameters [key, symbol, default, what it is], discrete]
+  const DISTS = () => [
+    ['norm', tr('Normal', '正規'), [['mu', 'μ', '0', tr('mean', '平均')], ['sd', 'σ', '1', tr('standard deviation', '標準偏差')]], false],
+    ['binom', tr('Binomial', '二項'), [['n', 'n', '10', tr('trials', '試行の回数')], ['p', 'p', '0.5', tr('probability of success', '成功の確率')]], true],
+    ['pois', tr('Poisson', 'ポアソン'), [['lam', 'λ', '3', tr('mean number', '平均の回数')]], true],
+    ['t', 't', [['df', 'ν', '10', tr('degrees of freedom', '自由度')]], false],
+    ['chisq', 'χ²', [['df', 'k', '3', tr('degrees of freedom', '自由度')]], false]
+  ];
+  const DIST_DEF = { norm: { a: '-1.96', b: '1.96', q: '0.975' }, binom: { a: '3', b: '7', q: '0.5' }, pois: { a: '0', b: '2', q: '0.9' }, t: { a: '-2', b: '2', q: '0.975' }, chisq: { a: '0', b: '7.81', q: '0.95' } };
+  // the parameters checked: '' or why not
+  function distCheck(k, P) {
+    const pos = (v) => isFinite(v) && v > 0;
+    if (k === 'norm') return !isFinite(P.mu) ? tr('Enter the mean μ', '平均 μ を入れてください') : !pos(P.sd) ? tr('The standard deviation σ must be above 0', '標準偏差 σ は 0 より大きくしてください') : '';
+    if (k === 'binom') return !(Number.isInteger(P.n) && P.n >= 1 && P.n <= 100000) ? tr('The number of trials n is a whole number from 1 to 100000', '試行の回数 n は 1〜100000 の整数です') : !(P.p >= 0 && P.p <= 1) ? tr('The probability p is from 0 to 1', '確率 p は 0〜1 です') : '';
+    if (k === 'pois') return !(pos(P.lam) && P.lam <= 1e6) ? tr('The mean number λ must be above 0', '平均の回数 λ は 0 より大きくしてください') : '';
+    return !(pos(P.df) && P.df <= 1e6) ? tr('The degrees of freedom must be above 0', '自由度は 0 より大きくしてください') : '';
+  }
+  // the density (continuous) or the probability of each value (discrete), here for the drawing and the quantiles
+  function distPdf(k, P, x) {
+    const lg = statLgamma;
+    if (k === 'norm') { const z = (x - P.mu) / P.sd; return Math.exp(-z * z / 2) / (P.sd * Math.sqrt(2 * Math.PI)); }
+    if (k === 't') { const v = P.df; return Math.exp(lg((v + 1) / 2) - lg(v / 2) - 0.5 * Math.log(v * Math.PI) - (v + 1) / 2 * Math.log(1 + x * x / v)); }
+    if (k === 'chisq') { const h = P.df / 2; if (x < 0) return 0; if (x === 0) return h < 1 ? Infinity : h === 1 ? 0.5 : 0; return Math.exp((h - 1) * Math.log(x) - x / 2 - h * Math.log(2) - lg(h)); }
+    if (!Number.isInteger(x) || x < 0) return 0;
+    if (k === 'binom') {
+      if (x > P.n) return 0;
+      if (P.p === 0) return x === 0 ? 1 : 0;
+      if (P.p === 1) return x === P.n ? 1 : 0;
+      return Math.exp(lg(P.n + 1) - lg(x + 1) - lg(P.n - x + 1) + x * Math.log(P.p) + (P.n - x) * Math.log(1 - P.p));
+    }
+    return Math.exp(x * Math.log(P.lam) - P.lam - lg(x + 1));
+  }
+  // the mean and the variance; the range drawn
+  function distMoments(k, P) {
+    if (k === 'norm') return [P.mu, P.sd * P.sd];
+    if (k === 'binom') return [P.n * P.p, P.n * P.p * (1 - P.p)];
+    if (k === 'pois') return [P.lam, P.lam];
+    if (k === 't') return [P.df > 1 ? 0 : NaN, P.df > 2 ? P.df / (P.df - 2) : P.df > 1 ? Infinity : NaN];
+    return [P.df, 2 * P.df];
+  }
+  function distRange(k, P) {
+    const [m, v] = distMoments(k, P), s = Math.sqrt(v);
+    if (k === 'norm') return [m - 4 * s, m + 4 * s];
+    if (k === 't') { const w = P.df < 1.5 ? 12 : P.df < 3 ? 8 : 5; return [-w, w]; }
+    if (k === 'chisq') return [0, Math.max(8, m + 4.5 * s)];
+    if (k === 'binom') return [Math.max(0, Math.floor(m - 5 * s - 1)), Math.min(P.n, Math.ceil(m + 5 * s + 1))];
+    return [Math.max(0, Math.floor(m - 5 * s - 1)), Math.ceil(m + 5 * s + 2)];
+  }
+  // the engine's expressions: the cumulative probability P(X ≤ x), the density or P(X = x), the quantile (null: here)
+  function distExpr(k, P, what, x) {
+    const E = exprNum;
+    const args = k === 'norm' ? [E(P.mu), E(P.sd)] : k === 'binom' ? [E(P.n), E(P.p)] : k === 'pois' ? [E(P.lam)] : [E(P.df)];
+    const f = { norm: 'normdist', binom: 'binomdist', pois: 'poisson', t: 'tdist', chisq: 'chisqdist' }[k];
+    if (what === 'cdf') return f + '(' + [E(x)].concat(args, ['1']).join(', ') + ')';
+    if (what === 'pdf') return f + '(' + [E(x)].concat(args).join(', ') + ')';
+    const inv = { norm: 'normdistinv', t: 'tdistinv', chisq: 'chisqdistinv' }[k];
+    return inv ? inv + '(' + [E(x)].concat(args).join(', ') + ')' : null;
+  }
+  // the smallest whole k with P(X ≤ k) ≥ q (binomial, Poisson), summed here
+  function distDiscreteQuantile(k, P, q) {
+    let c = 0;
+    const top = k === 'binom' ? P.n : Math.ceil(P.lam + 50 * Math.sqrt(P.lam) + 100);
+    for (let i = 0; i <= top; i++) { c += distPdf(k, P, i); if (c >= q - 1e-12) return i; }
+    return top;
+  }
+  // a chart drawn on a canvas in the panels: the theme's colours, the size of the box, the device's pixels
+  function chartCanvas(box, h, label) {
+    let c = box.querySelector('canvas.st-chart');
+    if (!c) { c = el('canvas', { class: 'st-chart', role: 'img' }); box.prepend(c); }
+    c.setAttribute('aria-label', label);
+    const W = Math.max(200, box.clientWidth || 320), dpr = window.devicePixelRatio || 1;
+    c.style.height = h + 'px';
+    c.width = Math.round(W * dpr); c.height = Math.round(h * dpr);
+    const g = c.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cs = getComputedStyle(document.documentElement), col = (n, d) => cs.getPropertyValue(n).trim() || d;
+    const C = { bg: col('--plot-bg', '#fff'), line: col('--line', '#ccd'), text: col('--muted', '#667'), accent: col('--accent', '#2563eb'), fill: col('--accent', '#2563eb'), danger: col('--danger', '#c62828') };
+    g.fillStyle = C.bg; g.fillRect(0, 0, W, h);
+    g.font = '11px system-ui, sans-serif'; g.textBaseline = 'top';
+    return { c, g, W, H: h, C };
+  }
+  // tick marks: about n nice numbers from lo to hi
+  function niceTicks(lo, hi, n) {
+    const span = hi - lo;
+    if (!(span > 0)) return [lo];
+    const raw = span / Math.max(1, n), p = Math.pow(10, Math.floor(Math.log10(raw))), r = raw / p;
+    const step = (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * p, out = [];
+    for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + step * 1e-9; v += step) out.push(Math.abs(v) < step * 1e-9 ? 0 : v);
+    return out;
+  }
+  const tickNum = (v) => statNum(+v.toPrecision(6), 6);
+  // a nice width for the bins of a histogram: 1, 2 or 5 × 10^k, the next larger or smaller
+  function niceStep(w, dir) {
+    if (!(w > 0)) return 1;
+    const p = Math.pow(10, Math.floor(Math.log10(w) + 1e-9)), r = w / p;
+    const steps = [1, 2, 5, 10];
+    if (!dir) return steps.find((s) => s >= r - 1e-9) * p;
+    let i = steps.findIndex((s) => Math.abs(s - r) < 1e-6);
+    if (i < 0) return niceStep(w, 0);
+    i += dir;
+    return i < 0 ? 5 * p / 10 : i > 3 ? 2 * p * 10 : steps[i] * p;
+  }
+  // a polynomial of degree d by least squares in u = x − mean, written again in x: the coefficients c[0] + c[1] x + …
+  function statPoly(xs, ys, d) {
+    const n = xs.length, m = xs.reduce((s, x) => s + x, 0) / n, N = d + 1, S = new Array(2 * d + 1).fill(0), T = new Array(N).fill(0);
+    for (let i = 0; i < n; i++) { const u = xs[i] - m; let p = 1; for (let k = 0; k <= 2 * d; k++) { S[k] += p; if (k < N) T[k] += p * ys[i]; p *= u; } }
+    const A = [];
+    for (let i = 0; i < N; i++) { const r = []; for (let j = 0; j < N; j++) r.push(S[i + j]); r.push(T[i]); A.push(r); }
+    for (let i = 0; i < N; i++) {
+      let piv = i;
+      for (let j = i + 1; j < N; j++) if (Math.abs(A[j][i]) > Math.abs(A[piv][i])) piv = j;
+      [A[i], A[piv]] = [A[piv], A[i]];
+      if (!A[i][i]) return null;
+      for (let j = 0; j < N; j++) if (j !== i) { const q = A[j][i] / A[i][i]; for (let k = i; k <= N; k++) A[j][k] -= q * A[i][k]; }
+    }
+    const b = A.map((r, i) => r[N] / r[i]);
+    // (u = x − m: Σ b_j (x − m)^j = Σ_k x^k Σ_{j ≥ k} b_j C(j, k) (−m)^(j−k))
+    const c = new Array(N).fill(0), C = (j, k) => { let r = 1; for (let i = 1; i <= k; i++) r = r * (j - k + i) / i; return r; };
+    for (let j = 0; j < N; j++) for (let k = 0; k <= j; k++) c[k] += b[j] * C(j, k) * Math.pow(-m, j - k);
+    return c.every(isFinite) ? c : null;
+  }
+  // the short names of the curves (the buttons above the results); the curves that are QCalc Pro (PRO_GATES.stats_fit)
+  const STAT_CURVE_SHORT = () => ({ linear: tr('Line', '直線'), quad: tr('Degree 2', '2 次'), cubic: tr('Degree 3', '3 次'), quartic: tr('Degree 4', '4 次'), exp: tr('Exponential', '指数'), power: tr('Power', '累乗'), log: tr('Log', '対数') });
+  const STAT_PRO_CURVES = ['cubic', 'quartic'];
+  const fitLocked = () => PRO_GATES.stats_fit === 'pro' && !hasPro();
   function openStatsTool() {
     const p = panel('stats', tr('Statistics', '統計'), (p) => {
       const saved = store.get('qalc.stats', null) || {};
       const ex0 = STAT_EX()[0];
-      const D = { cols: saved.cols === 2 ? 2 : 1, rows: Array.isArray(saved.rows) && saved.rows.length ? saved.rows.slice(0, STAT_MAX) : ex0[2].map((r) => r.slice()), px: typeof saved.px === 'string' ? saved.px : '' };
-      const save = () => store.set('qalc.stats', { cols: D.cols, rows: D.rows, px: D.px });
+      const D = { cols: saved.cols === 2 ? 2 : 1, rows: Array.isArray(saved.rows) && saved.rows.length ? saved.rows.slice(0, STAT_MAX) : ex0[2].map((r) => r.slice()), px: typeof saved.px === 'string' ? saved.px : '',
+        // (1.16.0) the part shown (data or distributions), the curve chosen for two columns, the chart of one column and
+        // the width of its bins ('' automatic), the distribution with its parameters, range and probability
+        mode: saved.mode === 'dist' ? 'dist' : 'data', model: typeof saved.model === 'string' ? saved.model : 'linear', chart: saved.chart === 'box' ? 'box' : 'hist',
+        bw: typeof saved.bw === 'string' ? saved.bw : '', dist: Object.assign({ k: 'norm', P: {}, at: {} }, saved.dist && typeof saved.dist === 'object' ? saved.dist : {}) };
+      const save = () => store.set('qalc.stats', { cols: D.cols, rows: D.rows, px: D.px, mode: D.mode, model: D.model, chart: D.chart, bw: D.bw, dist: D.dist });
       const chips = el('div', { class: 'rev-ex tool-chips' }, el('span', { class: 'area-lbl', text: tr('Examples: ', '例：') }),
         ...STAT_EX().map(([label, cols, rows]) => tapButton({ class: 'area-chip', text: label }, () => { D.cols = cols; D.rows = rows.map((r) => r.slice()); save(); setCols(cols); })));
       const b1 = tapButton({ text: tr('1 column', '1 列') }, () => setCols(1)), b2 = tapButton({ text: tr('2 columns (x and y)', '2 列（x と y）') }, () => setCols(2));
@@ -17896,6 +20262,30 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const pxRow = el('label', { class: 'geo-size stat-px' }, el('span', { class: 'geo-lbl', text: tr('Predict at x =', '予測：x =') }), pxIn);
       const graph = tapButton({ class: 'btn geo-graph', text: tr('📈 Show in a graph', '📈 グラフで見る') }, () => showGraph());
       const hint = el('div', { class: 'form-hint stat-hint' });
+      // (1.16.0) a column read from a CSV file (free), the table saved as a CSV file (QCalc Pro, as the other tables)
+      const csvRead = tapButton({ class: 'btn', text: tr('Read a CSV file', 'CSV を読み込む') }, () => { statImport = (text, name) => takeCsv(text, name); openImportFile(); });
+      const csvSave = tapButton({ class: 'btn', text: tr('Save as CSV', 'CSV で保存') + (PRO_GATES.tables === 'pro' && !hasPro() ? '  ⭐ Pro' : '') }, () => {
+        const rows = D.rows.filter((r) => String(r[0] || '').trim() || String(r[1] || '').trim()).map((r) => r.slice(0, D.cols).map((c) => String(c || '').trim()));
+        saveTableCsv({ title: tr('Statistics', '統計'), name: 'statistics', head: D.cols === 2 ? ['x', 'y'] : [tr('Values', '値')], rows });
+      });
+      const csvRow = el('div', { class: 'tool-tbl-btns stat-csv' }, csvRead, csvSave);
+      // two columns: the curve (the line is free; the others are QCalc Pro: PRO_GATES.stats_fit)
+      const modelRow = el('div', { class: 'seg mini stat-models', role: 'group', 'aria-label': tr('Curve', '曲線') });
+      // one column: the histogram or the box plot
+      const cHist = tapButton({ text: tr('Histogram', 'ヒストグラム') }, () => { D.chart = 'hist'; save(); run(); });
+      const cBox = tapButton({ text: tr('Box plot', '箱ひげ図') }, () => { D.chart = 'box'; save(); run(); });
+      const bwIn = el('input', { inputmode: 'decimal', autocapitalize: 'off', spellcheck: 'false', class: 'stat-bw', 'aria-label': tr('Width of the bins', '階級の幅') });
+      const bwMinus = tapButton({ class: 'btn stat-bw-btn', text: '−', 'aria-label': tr('Narrower bins', '階級の幅を狭く') }, () => stepBins(-1));
+      const bwPlus = tapButton({ class: 'btn stat-bw-btn', text: '+', 'aria-label': tr('Wider bins', '階級の幅を広く') }, () => stepBins(1));
+      const bwAuto = tapButton({ class: 'btn stat-bw-btn', text: tr('Auto', '自動') }, () => { D.bw = ''; save(); run(); });
+      bwIn.addEventListener('change', () => { const v = statVal(bwIn.value); if (v > 0) { D.bw = String(v); save(); run(); } else bwIn.setAttribute('aria-invalid', 'true'); });
+      const bwRow = el('label', { class: 'geo-size stat-bwrow' }, el('span', { class: 'geo-lbl', text: tr('Width of the bins', '階級の幅') }), bwIn, bwMinus, bwPlus, bwAuto);
+      const chartCap = el('div', { class: 'form-hint stat-cap' });
+      const chartShare = tapButton({ class: 'btn', text: tr('Share the picture', '画像で共有') }, () => { const c = chartArea.querySelector('canvas'); if (c) shareData(graphPng(c, chartCap.textContent, hasPro() || PRO_GATES.share_pro !== 'pro'), 'image/png', 'QCalc'); });
+      const chartArea = el('div', { class: 'stat-chart' });
+      const chartBox = el('div', { class: 'stat-charts' }, el('div', { class: 'seg mini', role: 'group', 'aria-label': tr('Chart', 'グラフ') }, cHist, cBox), chartArea, bwRow, chartCap, chartShare);
+      let binNow = 0;
+      const stepBins = (dir) => { const w = niceStep(binNow || 1, dir); if (w > 0) { D.bw = String(+w.toPrecision(6)); save(); run(); } };
       // a value box: on paste of several values (tabs, commas, lines) the table becomes the pasted one from there
       const cell = (r, c) => {
         const inp = el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', value: (D.rows[r] || [])[c] || '',
@@ -17951,6 +20341,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const list = (vs) => '[' + vs.map(exprNum).join(', ') + ']';
       const run = () => {
         msg.textContent = ''; outs.textContent = ''; moreOut.textContent = ''; more.hidden = false; D.fit = null;
+        chartBox.hidden = true; modelRow.hidden = true; modelRow.textContent = '';
         const xs = [], ys = [];
         let dx = 0, dy = 0; // the decimals of the data (feature/screen-digits)
         for (let r = 0; r < D.rows.length; r++) {
@@ -17989,6 +20380,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           if (s.n > 1) row(moreOut, tr('Interquartile range', '四分位範囲'), 'Q3 − Q1', A(s.q3 - s.q1), 'median(' + list(s.upper) + ') − median(' + list(s.lower) + ')');
           if (s.n > 1) row(moreOut, tr('Variance (sample / population)', '分散（標本 / 母集団）'), 's² / σ²', A(s.vs) + ' / ' + A(s.vp), 'var(' + L + ')');
           row(moreOut, tr('Quartiles as in spreadsheets', '表計算ソフトの四分位数'), 'QUARTILE.INC', A(s.inc1) + ' / ' + A(s.inc3), 'quartile(' + L + ', 1)');
+          drawChart(xs, s, dx);
           hint.textContent = tr('The sample standard deviation divides by n − 1 (for a part of all the data), the population one by n (for all of it). The quartiles are the medians of the lower and the upper half (without the median when n is odd), as in school books.',
             '標本の標準偏差は n − 1 で割ります（全体の一部のデータから全体を推し量るとき）。母集団の標準偏差は n で割ります（データが全体のとき）。四分位数は、下半分と上半分のそれぞれの中央値です（n が奇数のときは中央値を除く。教科書の方法）。');
           return;
@@ -17996,36 +20388,274 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (xs.length < 2) return fail(null, tr('Enter at least two rows of x and y', 'x と y を 2 行以上入れてください'));
         const models = statModels(xs, ys), lin = models.find((m) => m[0] === 'linear');
         if (!lin) return fail(null, tr('Every x is the same, so no line can be drawn: enter different x', 'x がすべて同じなので、直線を引けません。違う x を入れてください'));
-        D.fit = { xs, ys, expr: lin[3] };
-        const L = lin[6];
-        row(outs, tr('Regression line', '回帰直線'), tr('least squares', '最小二乗法'), lin[2], lin[3], true);
-        row(outs, tr('Correlation coefficient', '相関係数'), 'r', isFinite(L.r) ? R4(L.r) : '—', isFinite(L.r) ? exprNum(L.r) : '');
-        row(outs, tr('Coefficient of determination', '決定係数'), 'R²', isFinite(lin[5]) ? R4(lin[5]) : '—', isFinite(lin[5]) ? exprNum(lin[5]) : '');
+        // (1.16.0) the curve chosen above the results: the line (free) or another (QCalc Pro); one that cannot be worked
+        // out for these values (needs more different x, or values above 0) is shown greyed with the reason
+        const locked = fitLocked();
+        let sel = models.find((m) => m[0] === D.model && m.length > 3) || lin;
+        if (sel !== lin && locked) sel = lin;
+        for (const m of models) {
+          const b = tapButton({ class: m === sel ? 'on' : '', text: STAT_CURVE_SHORT()[m[0]] + (m[0] !== 'linear' && locked ? ' ⭐' : ''), 'aria-pressed': String(m === sel), 'aria-label': m[1] + (m.length === 3 ? ' — ' + m[2] : '') }, () => {
+            if (m.length === 3) { toast(m[1] + ': ' + m[2], 3000); return; }
+            if (m[0] !== 'linear' && !proGate('stats_fit')) return;
+            D.model = m[0]; save(); run();
+          });
+          if (m.length === 3) b.classList.add('off');
+          modelRow.append(b);
+        }
+        modelRow.hidden = false;
+        D.fit = { xs, ys, expr: sel[3], name: sel[1] };
+        const L = lin[6], logFit = /^(exp|power|log)$/.test(sel[0]);
+        row(outs, sel === lin ? tr('Regression line', '回帰直線') : trf('Regression curve ({0})', '回帰曲線（{0}）', sel[1]), logFit ? tr('least squares on the logarithms', '対数をとって最小二乗法') : tr('least squares', '最小二乗法'), sel[2], sel[3], true);
+        if (sel === lin) row(outs, tr('Correlation coefficient', '相関係数'), 'r', isFinite(L.r) ? R4(L.r) : '—', isFinite(L.r) ? exprNum(L.r) : '');
+        row(outs, tr('Coefficient of determination', '決定係数'), 'R²', isFinite(sel[5]) ? R4(sel[5]) : '—', isFinite(sel[5]) ? exprNum(sel[5]) : '');
         const pxv = statVal(D.px);
         if (String(D.px).trim() && !isFinite(pxv)) pxIn.setAttribute('aria-invalid', 'true');
-        if (isFinite(pxv)) row(outs, trf('Predicted y at x = {0}', 'x = {0} のときの y（予測）', statNum(pxv)), 'ŷ', A(lin[4](pxv), dy), lin[3].replace(/x/g, '(' + exprNum(pxv) + ')'));
+        if (isFinite(pxv)) row(outs, trf('Predicted y at x = {0}', 'x = {0} のときの y（予測）', statNum(pxv)), 'ŷ', A(sel[4](pxv), dy), sel[3].replace(/x/g, '(' + exprNum(pxv) + ')'));
         row(outs, tr('Rows', '行の数'), 'n', String(xs.length), String(xs.length));
-        for (const m of models.filter((q) => q[0] !== 'linear')) {
+        let lockRow = false;
+        for (const m of models.filter((q) => q !== sel)) {
+          if (locked && STAT_PRO_CURVES.indexOf(m[0]) >= 0) {
+            // (the polynomials of degree 3 and 4 are QCalc Pro: one row that says so)
+            if (lockRow) continue;
+            lockRow = true;
+            const lr = tapButton({ class: 'geo-row' }, () => proGate('stats_fit'));
+            lr.append(el('span', { class: 'geo-name', text: tr('Cubic and quartic', '3 次式・4 次式') }), el('span', { class: 'geo-val geo-val-text', text: '⭐ QCalc Pro' }));
+            moreOut.append(lr);
+            continue;
+          }
           if (m.length === 3) { row(moreOut, m[1], '', m[2], ''); continue; }
           const at = isFinite(pxv) ? '  ' + trf('(x = {0}: {1})', '（x = {0} で {1}）', statNum(pxv), A(m[4](pxv), dy)) : '';
           row(moreOut, m[1], 'R² = ' + (isFinite(m[5]) ? R4(m[5]) : '—') + at, m[2], m[3]);
         }
         const xm = xs.reduce((a, b) => a + b, 0) / xs.length, ym = ys.reduce((a, b) => a + b, 0) / ys.length;
         row(moreOut, tr('Means of x and y', 'x と y の平均'), 'x̄ / ȳ', A(xm, dx) + ' / ' + A(ym, dy), 'mean(' + list(xs) + ')');
-        hint.textContent = tr('The line is found by least squares; r near ±1 means the points lie close to it. Other curves are under "More"; their R² is worked out on the y values themselves.',
-          '回帰直線は最小二乗法で求めます。r が ±1 に近いほど、点は直線の近くに並びます。ほかの曲線は「詳しく」の中にあります（決定係数は元の y の値で計算）。');
+        hint.textContent = tr('The line is found by least squares; r near ±1 means the points lie close to it. Other curves are under "More"; their R² is worked out on the y values themselves. Choosing another curve above, with its prediction and graph, is a QCalc Pro feature.',
+          '回帰直線は最小二乗法で求めます。r が ±1 に近いほど、点は直線の近くに並びます。ほかの曲線は「詳しく」の中にあります（決定係数は元の y の値で計算）。上でほかの曲線を選び、その予測とグラフを出すのは QCalc Pro の機能です。');
+        if (!locked) hint.textContent = tr('The line is found by least squares; r near ±1 means the points lie close to it. Choose another curve above: its R² is worked out on the y values themselves. "More" compares all the curves.',
+          '回帰直線は最小二乗法で求めます。r が ±1 に近いほど、点は直線の近くに並びます。上でほかの曲線も選べます（決定係数は元の y の値で計算）。「詳しく」ですべての曲線を比べられます。');
       };
       // the points and the line in the 2D graph
       const showGraph = () => {
         if (!D.fit) return;
-        const { xs, ys, expr } = D.fit;
+        const { xs, ys, expr } = D.fit; // (1.16.0: the curve chosen)
         let lo = Math.min(...xs), hi = Math.max(...xs);
         const pad = (hi - lo) * 0.15 || Math.abs(lo) * 0.2 || 1;
         openPlotWith([expr], { points: xs.map((x, i) => ({ x, y: ys[i] })), range: [+(lo - pad).toPrecision(6), +(hi + pad).toPrecision(6)] });
       };
-      p.body.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Columns', '列') }), seg), table, tools, pxRow, msg, outs, more, graph, hint);
-      digitsButton(p, 'stats'); digitsRefresh.stats = () => run();
+      // (1.16.0) one column: the histogram (bins of a nice width: automatic by Sturges' rule, or chosen) or the box plot
+      // (the box from Q1 to Q3 with the median, the whiskers to the furthest values within 1.5 × IQR, the others as points)
+      const drawChart = (xs, s, dx) => {
+        if (xs.length < 2) return;
+        chartBox.hidden = false;
+        for (const [b, k] of [[cHist, 'hist'], [cBox, 'box']]) { b.classList.toggle('on', D.chart === k); b.setAttribute('aria-pressed', String(D.chart === k)); }
+        bwRow.hidden = D.chart !== 'hist';
+        const lo = s.min, hi = s.max;
+        if (D.chart === 'hist') {
+          const auto = niceStep((hi - lo) / Math.max(1, Math.ceil(Math.log2(xs.length) + 1)), 0) || 1;
+          let w = statVal(D.bw);
+          if (!(w > 0) || (hi - lo) / w > 200) w = auto;
+          binNow = w;
+          bwIn.value = statNum(w, 6); bwIn.removeAttribute('aria-invalid');
+          const start = Math.floor(lo / w + 1e-9) * w, nb = Math.max(1, Math.floor((hi - start) / w + 1e-9) + 1), counts = new Array(nb).fill(0);
+          for (const x of xs) counts[Math.min(nb - 1, Math.max(0, Math.floor((x - start) / w + 1e-9)))]++;
+          const top = Math.max(...counts);
+          const { g, W, H, C } = chartCanvas(chartArea, 190, trf('Histogram: {0} bins of width {1}', 'ヒストグラム：幅 {1} の階級が {0} 個', nb, statNum(w, 6)));
+          const L = 30, R = 8, T = 8, B = 20, X = (v) => L + (v - start) / (nb * w) * (W - L - R), Y = (n) => H - B - n / top * (H - T - B);
+          g.strokeStyle = C.line; g.fillStyle = C.text; g.lineWidth = 1;
+          for (const t of niceTicks(0, top, 4).filter((t) => Number.isInteger(t))) { g.beginPath(); g.moveTo(L, Y(t) + 0.5); g.lineTo(W - R, Y(t) + 0.5); g.stroke(); g.textAlign = 'right'; g.fillText(String(t), L - 4, Y(t) - 6); }
+          g.fillStyle = C.fill; g.globalAlpha = 0.75;
+          counts.forEach((n, i) => { if (n) g.fillRect(X(start + i * w) + 1, Y(n), X(start + (i + 1) * w) - X(start + i * w) - 2, H - B - Y(n)); });
+          g.globalAlpha = 1; g.fillStyle = C.text; g.textAlign = 'center';
+          const every = Math.max(1, Math.ceil(nb / Math.max(1, Math.floor((W - L - R) / 56))));
+          for (let i = 0; i <= nb; i += every) { const x = X(start + i * w); g.textAlign = x > W - 24 ? 'right' : x < L + 12 ? 'left' : 'center'; g.fillText(tickNum(start + i * w), x, H - B + 4); }
+          chartCap.textContent = trf('{0} bins of width {1} (from {2})', '幅 {1} の階級が {0} 個（{2} から）', nb, statNum(w, 6), statNum(start, 8)) + (D.bw ? '' : tr(' — automatic', '（自動）'));
+        } else {
+          const iqr = s.q3 - s.q1, f1 = s.q1 - 1.5 * iqr, f3 = s.q3 + 1.5 * iqr;
+          const inside = xs.filter((x) => x >= f1 - 1e-12 && x <= f3 + 1e-12), out = xs.filter((x) => x < f1 - 1e-12 || x > f3 + 1e-12).sort((a, b) => a - b);
+          const w0 = Math.min(...inside), w1 = Math.max(...inside), pad = (hi - lo) * 0.06 || Math.abs(hi) * 0.1 || 1;
+          const { g, W, H, C } = chartCanvas(chartArea, 150, tr('Box plot', '箱ひげ図'));
+          const L = 12, R = 12, a0 = lo - pad, a1 = hi + pad, X = (v) => L + (v - a0) / (a1 - a0) * (W - L - R), yc = 60, bh = 26;
+          g.strokeStyle = C.line; g.fillStyle = C.text; g.lineWidth = 1; g.textAlign = 'center';
+          g.beginPath(); g.moveTo(L, H - 26.5); g.lineTo(W - R, H - 26.5); g.stroke();
+          for (const t of niceTicks(a0, a1, Math.max(2, Math.floor((W - L - R) / 64)))) { g.beginPath(); g.moveTo(X(t) + 0.5, H - 26); g.lineTo(X(t) + 0.5, H - 22); g.stroke(); g.fillText(tickNum(t), X(t), H - 19); }
+          g.strokeStyle = C.accent; g.lineWidth = 2;
+          g.beginPath(); g.moveTo(X(w0), yc); g.lineTo(X(s.q1), yc); g.moveTo(X(s.q3), yc); g.lineTo(X(w1), yc);
+          g.moveTo(X(w0), yc - bh / 3); g.lineTo(X(w0), yc + bh / 3); g.moveTo(X(w1), yc - bh / 3); g.lineTo(X(w1), yc + bh / 3); g.stroke();
+          g.fillStyle = C.fill; g.globalAlpha = 0.18; g.fillRect(X(s.q1), yc - bh, X(s.q3) - X(s.q1), 2 * bh); g.globalAlpha = 1;
+          g.strokeRect(X(s.q1), yc - bh, X(s.q3) - X(s.q1), 2 * bh);
+          g.lineWidth = 3; g.beginPath(); g.moveTo(X(s.median), yc - bh); g.lineTo(X(s.median), yc + bh); g.stroke();
+          g.lineWidth = 1.5; g.beginPath(); g.moveTo(X(s.mean) - 4, yc - 4); g.lineTo(X(s.mean) + 4, yc + 4); g.moveTo(X(s.mean) + 4, yc - 4); g.lineTo(X(s.mean) - 4, yc + 4); g.stroke();
+          g.strokeStyle = C.danger; g.lineWidth = 1.5;
+          for (const x of out) { g.beginPath(); g.arc(X(x), yc, 4, 0, 2 * Math.PI); g.stroke(); }
+          const Bd = (v) => fmtDigits('stats', v, { m: 'dec', n: dx, zeros: true }), A2 = (v) => fmtDigits('stats', v, { m: 'dec', n: dx + 2, zeros: true });
+          chartCap.textContent = trf('Box Q1 {0} to Q3 {1}, median {2} (|), mean ×; whiskers {3} to {4}', '箱は Q1 {0}〜Q3 {1}、中央値 {2}（|）、平均 ×。ひげは {3}〜{4}', A2(s.q1), A2(s.q3), A2(s.median), Bd(w0), Bd(w1)) + '. '
+            + (out.length ? trf('Outliers (beyond 1.5 × IQR): {0} ({1})', '外れ値（1.5 × IQR より外）：{0} 個（{1}）', out.length, clip(out.map(Bd).join(', '), 80)) : tr('No outliers (none beyond 1.5 × IQR).', '外れ値はありません（1.5 × IQR より外の値なし）。'));
+        }
+      };
+      // (1.16.0) a CSV file read in: one column (or x and y) chosen when it has more; a row of headings is skipped,
+      // and so are the cells that are not numbers
+      const takeCsv = async (text, name) => {
+        const rows0 = importCsvRows(String(text).replace(/^\ufeff/, '').replace(/\r\n?/g, '\n')).map((r) => r.map((c) => String(c).trim())).filter((r) => r.some((c) => c));
+        const rows = pastedDecimals(rows0);
+        const isNum = (c) => isFinite(statVal(c));
+        if (!rows.length) { messageSheet(tr('There is nothing to read in it', '読み込む行がありません')); return; }
+        const head = rows.length > 1 && rows[0].some((c) => c && !isNum(c)) ? rows[0] : null, body = head ? rows.slice(1) : rows;
+        const ncol = Math.max(...body.map((r) => r.length));
+        const numeric = [];
+        for (let c = 0; c < ncol; c++) { const v = body.map((r) => r[c] || '').filter((x) => x); if (v.length && v.filter(isNum).length >= v.length / 2) numeric.push(c); }
+        if (!numeric.length) { messageSheet(tr('No column of numbers was found in this file', 'このファイルには数の列がありません')); return; }
+        const colName = (c) => (head && head[c] ? head[c] + '  ' : '') + trf('(column {0})', '（{0} 列目）', c + 1);
+        const pick = async (title, skip) => {
+          const cs = numeric.filter((c) => c !== skip);
+          if (cs.length === 1) return cs[0];
+          const k = await sheet(title, cs.map((c) => ['c' + c, colName(c) + ' — ' + clip(body.map((r) => r[c] || '').filter(isNum).slice(0, 3).join(', '), 40)]));
+          return k ? Number(k.slice(1)) : null;
+        };
+        let rowsNew;
+        if (D.cols === 1) {
+          const c = await pick(tr('Which column?', 'どの列を読み込みますか？'));
+          if (c === null) return;
+          rowsNew = body.map((r) => r[c] || '').filter(isNum).map((v) => [v, '']);
+        } else {
+          if (numeric.length < 2) { messageSheet(tr('This file has only one column of numbers: choose "1 column" to read it', 'このファイルの数の列は 1 つだけです。「1 列」にして読み込んでください')); return; }
+          const cx = await pick(tr('Which column is x?', 'x はどの列ですか？'));
+          if (cx === null) return;
+          const cy = await pick(tr('Which column is y?', 'y はどの列ですか？'), cx);
+          if (cy === null) return;
+          rowsNew = body.filter((r) => isNum(r[cx] || '') && isNum(r[cy] || '')).map((r) => [r[cx], r[cy]]);
+        }
+        if (!rowsNew.length) { messageSheet(tr('No column of numbers was found in this file', 'このファイルには数の列がありません')); return; }
+        const cut = rowsNew.length > STAT_MAX;
+        D.rows = rowsNew.slice(0, STAT_MAX); save(); setCols(D.cols);
+        toast(trf('Read {0} rows from “{1}”', '「{1}」から {0} 行を読み込みました', D.rows.length, name || 'CSV') + (cut ? trf(' (the first {0})', '（最初の {0} 行）', STAT_MAX) : ''), 3500);
+      };
+      // ---- the distributions (free): P(a ≤ X ≤ b) shaded under the curve, the density (or P(X = a)), P(X ≤ b), P(X ≥ a),
+      // the quantile for a cumulative probability, the mean and the standard deviation
+      const distSeg = el('div', { class: 'seg mini stat-dists', role: 'group', 'aria-label': tr('Distribution', '分布') });
+      const distPars = el('div', { class: 'stat-dpars' });
+      const inBox = (ph, label) => el('input', { inputmode: 'text', autocapitalize: 'off', spellcheck: 'false', placeholder: ph, 'aria-label': label });
+      const aIn = inBox('−∞', tr('From a (empty: no limit)', '下限 a（空：なし）')), bIn = inBox('∞', tr('To b (empty: no limit)', '上限 b（空：なし）')), qIn = inBox('0.95', tr('Cumulative probability for the quantile', '分位点の累積確率'));
+      const rangeRow = el('div', { class: 'geo-size stat-range' }, el('span', { class: 'geo-lbl', text: tr('Range a ≤ X ≤ b', '範囲 a ≤ X ≤ b') }), aIn, el('span', { class: 'stat-tilde', text: '〜' }), bIn);
+      const qRow = el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl', text: tr('Quantile: P(X ≤ x) =', '分位点：P(X ≤ x) =') }), qIn);
+      const distMsg = el('div', { class: 'geo-msg', role: 'alert' });
+      const distChart = el('div', { class: 'stat-chart' });
+      const distOut = el('div', { class: 'geo-out tool-out', 'aria-live': 'polite' });
+      const distShare = tapButton({ class: 'btn', text: tr('Share the picture', '画像で共有') }, () => { const c = distChart.querySelector('canvas'); if (c) shareData(graphPng(c, c.getAttribute('aria-label') || '', hasPro() || PRO_GATES.share_pro !== 'pro'), 'image/png', 'QCalc'); });
+      const distHint = el('div', { class: 'form-hint', text: tr('In the input field too: normdist(x, μ, σ, 1) is P(X ≤ x), normdistinv(P, μ, σ) its quantile; binomdist(k, n, p, 1), poisson(k, λ, 1), tdist(x, ν, 1), tdistinv(P, ν), chisqdist(x, k, 1), chisqdistinv(P, k). Without the last 1: the density (P(X = k) for the binomial and Poisson). Tap a result for its expression.',
+        '入力欄でも使えます：normdist(x, μ, σ, 1) が P(X ≤ x)、normdistinv(P, μ, σ) がその分位点。binomdist(k, n, p, 1)・poisson(k, λ, 1)・tdist(x, ν, 1)・tdistinv(P, ν)・chisqdist(x, k, 1)・chisqdistinv(P, k)。最後の 1 を省くと密度（二項・ポアソンは P(X = k)）。結果をタップすると式を使えます。') });
+      const distBox = el('div', { class: 'stat-dist' }, distSeg, distPars, rangeRow, qRow, distMsg, distChart, distOut, distShare, distHint);
+      let distSeq = 0;
+      const dAt = () => { const k = D.dist.k; D.dist.at[k] = Object.assign({}, DIST_DEF[k], D.dist.at[k] || {}); return D.dist.at[k]; };
+      for (const [inp, f] of [[aIn, 'a'], [bIn, 'b'], [qIn, 'q']]) inp.addEventListener('input', () => { dAt()[f] = inp.value; inp.removeAttribute('aria-invalid'); save(); runDist(); });
+      const buildDist = () => {
+        distSeg.textContent = ''; distPars.textContent = '';
+        for (const [k, name] of DISTS()) distSeg.append(tapButton({ class: k === D.dist.k ? 'on' : '', 'aria-pressed': String(k === D.dist.k), text: name }, () => { D.dist.k = k; save(); buildDist(); runDist(); }));
+        const def = DISTS().find((d) => d[0] === D.dist.k), P = D.dist.P[D.dist.k] = D.dist.P[D.dist.k] || {};
+        for (const [pk, sym, d0, what] of def[2]) {
+          const inp = inBox(d0, sym + ' — ' + what);
+          inp.value = P[pk] !== undefined ? P[pk] : d0;
+          inp.addEventListener('input', () => { P[pk] = inp.value; inp.removeAttribute('aria-invalid'); save(); runDist(); });
+          distPars.append(el('label', { class: 'geo-size' }, el('span', { class: 'geo-lbl' }, sym + ' ', el('small', { text: what })), inp));
+        }
+        const at = dAt();
+        aIn.value = at.a; bIn.value = at.b; qIn.value = at.q;
+      };
+      const runDist = async () => {
+        const seq = ++distSeq, k = D.dist.k, def = DISTS().find((d) => d[0] === k), disc = def[3];
+        distMsg.textContent = ''; distOut.textContent = '';
+        const P = {}, PIn = D.dist.P[k] || {};
+        for (const [pk, , d0] of def[2]) P[pk] = statVal(PIn[pk] !== undefined ? PIn[pk] : d0);
+        const bad = distCheck(k, P);
+        if (bad) { distMsg.textContent = bad; distChart.textContent = ''; return; }
+        const at = dAt(), num = (t, inp) => { const v = String(t || '').trim() ? statVal(t) : null; if (v !== null && !isFinite(v)) inp.setAttribute('aria-invalid', 'true'); return v !== null && isFinite(v) ? v : null; };
+        let a = num(at.a, aIn), b = num(at.b, bIn);
+        const q = num(at.q, qIn);
+        if (q !== null && !(q > 0 && q < 1)) qIn.setAttribute('aria-invalid', 'true');
+        if (a !== null && b !== null && a > b) { distMsg.textContent = tr('a must not be larger than b', 'a は b 以下にしてください'); }
+        // the bounds as the distribution has them: whole numbers for the binomial and Poisson, none below 0 for χ²
+        const lo = a === null ? null : disc ? Math.ceil(a - 1e-9) : a, hi = b === null ? null : disc ? Math.floor(b + 1e-9) : b;
+        const lowCut = lo !== null && (disc ? lo > 0 : k !== 'chisq' || lo > 0);
+        const cdf = (x) => distExpr(k, P, 'cdf', x);
+        const sh = (v) => statNum(v, 8), F6 = (v) => fmtDigits('stats', v, { m: 'sig', n: 6 });
+        const rows = [];
+        if ((lo !== null || hi !== null) && !(a !== null && b !== null && a > b)) {
+          const e = lo !== null && hi !== null ? (lowCut ? cdf(hi) + ' − ' + cdf(disc ? lo - 1 : lo) : cdf(hi)) : hi !== null ? cdf(hi) : lowCut ? '1 − ' + cdf(disc ? lo - 1 : lo) : '1';
+          const name = 'P(' + (lo !== null ? sh(lo) + ' ≤ ' : '') + 'X' + (hi !== null ? ' ≤ ' + sh(hi) : '') + ')';
+          rows.push([name, tr('the shaded part', '色を付けた部分'), e, true]);
+        }
+        if (hi !== null && lo !== null) rows.push(['P(X ≤ ' + sh(hi) + ')', '', cdf(hi)]);
+        if (lo !== null && hi !== null) rows.push(['P(X ≥ ' + sh(lo) + ')', '', lowCut ? '1 − ' + cdf(disc ? lo - 1 : lo) : '1']);
+        if (a !== null && (!disc || Number.isInteger(a))) rows.push([disc ? 'P(X = ' + sh(a) + ')' : 'f(' + sh(a) + ')', disc ? '' : tr('density', '確率密度'), distExpr(k, P, 'pdf', a)]);
+        let qx = null;
+        if (q !== null && q > 0 && q < 1) {
+          const ie = distExpr(k, P, 'inv', q);
+          if (ie) rows.push([trf('x with P(X ≤ x) = {0}', 'P(X ≤ x) = {0} の x', sh(q)), tr('quantile', '分位点'), ie, false, 'q']);
+          else { qx = distDiscreteQuantile(k, P, q); rows.push([trf('Smallest k with P(X ≤ k) ≥ {0}', 'P(X ≤ k) ≥ {0} となる最小の k', sh(q)), tr('quantile', '分位点'), String(qx), false, 'k']); }
+        }
+        const [mean, vr] = distMoments(k, P);
+        // the numbers from the engine, one after the other (a newer change wins)
+        for (const [name, small, e, main, kind] of rows) {
+          const v = kind === 'k' ? [qx] : e === '1' ? [1] : await resultNumbers(e);
+          if (seq !== distSeq) return;
+          const shown = v ? (kind === 'k' ? String(v[0]) : F6(Math.abs(v[0]) < 1e-300 ? 0 : v[0])) : '—';
+          if (kind === 'q' && v) qx = v[0];
+          row(distOut, name, small, shown, v ? e : '', !!main);
+        }
+        row(distOut, tr('Mean / standard deviation', '平均 / 標準偏差'), 'E(X) / √V(X)', (isFinite(mean) ? F6(mean) : '—') + ' / ' + (isFinite(vr) ? F6(Math.sqrt(vr)) : vr === Infinity ? '∞' : '—'), '');
+        // the picture: the density (or the bars), the range shaded, the quantile dashed
+        let [x0, x1] = distRange(k, P);
+        const label = def[1] + ': ' + (rows[0] ? rows[0][0] : '');
+        const { g, W, H, C } = chartCanvas(distChart, 190, label);
+        const L = 10, R = 10, T = 10, B = 20, X = (x) => L + (x - x0) / (x1 - x0) * (W - L - R);
+        let top = 0;
+        const pts = [];
+        if (disc) for (let i = Math.ceil(x0); i <= x1; i++) { const y = distPdf(k, P, i); pts.push([i, y]); top = Math.max(top, y); }
+        else { for (let i = 0; i <= 240; i++) { const x = x0 + (x1 - x0) * i / 240, y = distPdf(k, P, x); pts.push([x, y]); if (isFinite(y)) top = Math.max(top, y); } }
+        if (!(top > 0)) top = 1;
+        const fin = pts.filter((p) => isFinite(p[1])).map((p) => p[1]).sort((u, v) => u - v);
+        if (!disc && k === 'chisq' && P.df < 2 && fin.length > 10) top = fin[Math.floor(fin.length * 0.97)];
+        const Y = (y) => H - B - Math.min(1.05, y / top) / 1.05 * (H - T - B);
+        const inR = (x) => (lo === null || x >= lo - 1e-12) && (hi === null || x <= hi + 1e-12);
+        g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(L, H - B + 0.5); g.lineTo(W - R, H - B + 0.5); g.stroke();
+        g.fillStyle = C.text; g.textAlign = 'center';
+        for (const t of niceTicks(x0, x1, Math.max(3, Math.floor((W - L - R) / 60)))) g.fillText(tickNum(t), X(t), H - B + 4);
+        if (disc) {
+          const bw = Math.max(1, Math.min(18, (W - L - R) / Math.max(1, pts.length) * 0.7));
+          for (const [x, y] of pts) { g.fillStyle = inR(x) && rows[0] && rows[0][3] ? C.fill : C.line; g.globalAlpha = inR(x) && rows[0] && rows[0][3] ? 0.85 : 0.9; g.fillRect(X(x) - bw / 2, Y(y), bw, H - B - Y(y)); }
+          g.globalAlpha = 1;
+        } else {
+          if (rows[0] && rows[0][3]) {
+            const s0 = lo === null ? x0 : Math.max(x0, lo), s1 = hi === null ? x1 : Math.min(x1, hi);
+            if (s1 > s0) {
+              g.fillStyle = C.fill; g.globalAlpha = 0.28; g.beginPath(); g.moveTo(X(s0), H - B);
+              for (let i = 0; i <= 160; i++) { const x = s0 + (s1 - s0) * i / 160, y = distPdf(k, P, x); g.lineTo(X(x), Y(isFinite(y) ? y : top * 1.05)); }
+              g.lineTo(X(s1), H - B); g.closePath(); g.fill(); g.globalAlpha = 1;
+            }
+          }
+          g.strokeStyle = C.accent; g.lineWidth = 2; g.beginPath();
+          let pen = false;
+          for (const [x, y] of pts) { if (!isFinite(y)) { pen = false; continue; } if (pen) g.lineTo(X(x), Y(y)); else g.moveTo(X(x), Y(y)); pen = true; }
+          g.stroke();
+        }
+        if (qx !== null && isFinite(qx) && qx >= x0 && qx <= x1) {
+          g.strokeStyle = C.danger; g.lineWidth = 1.5; g.setLineDash([5, 4]); g.beginPath(); g.moveTo(X(qx) + 0.5, T); g.lineTo(X(qx) + 0.5, H - B); g.stroke(); g.setLineDash([]);
+          g.fillStyle = C.danger; g.textAlign = X(qx) > W - 60 ? 'right' : 'left'; g.fillText((disc ? 'k = ' : 'x = ') + tickNum(qx), X(qx) + (X(qx) > W - 60 ? -4 : 4), T);
+        }
+      };
+      // data or distributions
+      const mData = tapButton({ text: tr('Data', 'データ') }, () => setMode('data')), mDist = tapButton({ text: tr('Distributions', '確率分布') }, () => setMode('dist'));
+      const dataBox = el('div', { class: 'stat-data' });
+      const setMode = (m) => {
+        D.mode = m; save();
+        for (const [b, k] of [[mData, 'data'], [mDist, 'dist']]) { b.classList.toggle('on', m === k); b.setAttribute('aria-pressed', String(m === k)); }
+        dataBox.hidden = m !== 'data'; distBox.hidden = m !== 'dist';
+        if (m === 'dist') { buildDist(); runDist(); } else run();
+      };
+      dataBox.append(chips, el('div', { class: 'geo-size tool-choice' }, el('span', { class: 'geo-lbl', text: tr('Columns', '列') }), seg), table, tools, csvRow, pxRow, msg, modelRow, outs, chartBox, more, graph, hint);
+      p.body.append(el('div', { class: 'seg stat-mode', role: 'group', 'aria-label': tr('Statistics', '統計') }, mData, mDist), dataBox, distBox);
+      digitsButton(p, 'stats'); digitsRefresh.stats = () => { if (D.mode === 'dist') runDist(); else run(); };
       setCols(D.cols);
+      setMode(D.mode);
     });
     return p;
   }
@@ -18059,7 +20689,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (kind === 'fuel') return FUEL.map(([n, label]) => ({ name: n, abbr: label, title: '' }));
         const names = KIND_ALIASES[kind] || [kind];
         // (the Japanese units are a category of their own in the engine: here also with their kind)
-        return (catalogs.units || []).filter((it) => names.indexOf(it._top) >= 0 || JP_UNIT_KIND[it.name] === kind || JP_UNIT_KIND[it.abbr] === kind).slice().sort((x, y) => x._i - y._i);
+        return (catalogs.units || []).filter((it) => (names.indexOf(it._top) >= 0 || JP_UNIT_KIND[it.name] === kind || JP_UNIT_KIND[it.abbr] === kind) && !CONV_HIDE.has(it.name)).slice().sort((x, y) => x._i - y._i);
       };
       const label = (it) => {
         if (!it.title) return it.abbr;
@@ -18178,7 +20808,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   // Mehrwertsteuer, IVA …), the tools used last, then the tools by purpose. A group without tools
   // yet is not shown. Each tool: [id, group, icon, name, what it does (one line), words to find it by,
   // how to open it]. Graph tools are listed too, so that "volume" also finds the solid of revolution.
-  const TOOL_GROUPS = [['shop', tr('Shopping', '買い物')], ['money', tr('Money', 'お金')], ['time', tr('Dates and times', '日付と時間')],
+  const TOOL_GROUPS = [['shop', tr('Shopping', '買い物')], ['money', tr('Money', 'お金')], ['invest', tr('Stocks and investing', '株・投資')], ['time', tr('Dates and times', '日付と時間')],
     ['convert', tr('Conversion', '換算')], ['geo', tr('Shapes and volumes', '図形と体積')], ['data', tr('Data', 'データ')]];
   const TOOLS = [
     // 1.12.0 (C2): conversion
@@ -18190,8 +20820,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['memo', 'data', '📝', tr('Calculation notes', '計算メモ'), tr('A calculation on each line with its result; names, totals, units and currencies', '1 行ずつ計算して結果を右に。名前・合計・単位・通貨も'),
       'notes memo notepad calculation sheet lines budget total sum variables names list 計算メモ メモ 計算 合計 名前 変数 家計 予算 一覧 めも けいさん Notizen Rechenblatt Summe notas cálculo suma notes calcul somme 계산 메모 합계 計算筆記 備忘 總計',
       () => openNotesTool()],
-    ['stats', 'data', '📊', tr('Statistics', '統計'), tr('Mean, median, standard deviation; regression for two columns', '平均・中央値・標準偏差、2 列なら回帰'),
-      'statistics stats mean average median mode standard deviation variance quartile regression correlation trend least squares data 統計 平均 中央値 最頻値 標準偏差 分散 四分位 回帰 相関 決定係数 最小二乗 データ 散布図 へいきん ちゅうおうち とうけい Statistik Mittelwert Durchschnitt Median Standardabweichung Varianz Quartil Regression Korrelation Daten estadística media promedio mediana moda desviación varianza cuartil regresión correlación datos statistiques moyenne médiane mode écart-type variance quartile régression corrélation données 통계 평균 중앙값 최빈값 표준편차 분산 사분위 회귀 상관 데이터 統計 平均 中位數 眾數 標準差 變異數 四分位 迴歸 相關 資料',
+    ['stats', 'data', '📊', tr('Statistics', '統計'), tr('Mean, standard deviation, histogram; regression; probability distributions', '平均・標準偏差・ヒストグラム、回帰、確率分布'),
+      'distribution normal binomial poisson student chi square probability density cumulative quantile percentile histogram box plot whisker outlier csv polynomial fit 確率分布 正規分布 二項分布 ポアソン分布 t分布 カイ二乗分布 確率 密度 累積 分位点 ヒストグラム 度数分布 箱ひげ図 外れ値 多項式 近似曲線 Verteilung Normalverteilung Binomialverteilung Wahrscheinlichkeit Histogramm Boxplot Ausreißer distribución normal binomial probabilidad histograma diagrama de caja atípico distribution loi normale binomiale probabilité histogramme boîte à moustaches aberrant 분포 정규분포 이항분포 확률 히스토그램 상자그림 이상치 分佈 常態分佈 二項分佈 機率 直方圖 盒鬚圖 離群值 statistics stats mean average median mode standard deviation variance quartile regression correlation trend least squares data 統計 平均 中央値 最頻値 標準偏差 分散 四分位 回帰 相関 決定係数 最小二乗 データ 散布図 へいきん ちゅうおうち とうけい Statistik Mittelwert Durchschnitt Median Standardabweichung Varianz Quartil Regression Korrelation Daten estadística media promedio mediana moda desviación varianza cuartil regresión correlación datos statistiques moyenne médiane mode écart-type variance quartile régression corrélation données 통계 평균 중앙값 최빈값 표준편차 분산 사분위 회귀 상관 데이터 統計 平均 中位數 眾數 標準差 變異數 四分位 迴歸 相關 資料',
       () => openStatsTool()],
     // 1.12.0 (C1): everyday calculations
     ['price', 'shop', '🏷', tr('Price: discount and tax', '値段：割引と税'), tr('Tax included or not, a discount (also two), rounding', '税込・税抜、割引（2 回も）、端数の扱い'),
@@ -18212,6 +20842,28 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['savings', 'money', '🐷', tr('Savings and compound interest', '積立と複利'), tr('What a monthly saving grows to', '毎月の積立がいくらになるか'),
       'savings compound interest deposit invest grow 積立 複利 貯金 預金 利息 つみたて Sparen Zinseszins ahorro interés compuesto épargne intérêts composés 적금 복리 저축 儲蓄 複利 存款',
       () => openSavingsTool()],
+    // 1.16.0 (feature/trading-tools): stocks and investing; [7]: the key of QCalc Pro when it is not the tool's own
+    ['pnl', 'invest', '💹', tr('Stock profit and loss', '株の損益と税'), tr('Profit or loss with the fees and the tax (tax-free too)', '手数料と税（NISA も）を入れた損益'),
+      'stock stocks share shares profit loss gain trade fee commission tax nisa capital gains break even 株 損益 利益 損失 売買 手数料 税 譲渡益 nisa ニーサ 損益分岐 かぶ そんえき Aktie Gewinn Verlust Gebühr Steuer Abgeltungsteuer acción ganancia pérdida comisión impuesto action gain perte frais impôt plus-value 주식 손익 수익 수수료 세금 股票 損益 獲利 手續費 稅',
+      () => openPnlTool()],
+    ['avgcost', 'invest', '➗', tr('Average cost', '平均取得単価'), tr('The average of several buys, and how to reach a target average', '何回かの買いの平均と、目標の平均にする買い方'),
+      'average cost price shares buys dollar cost averaging down up target 平均取得単価 取得単価 平均 買い増し ナンピン 難平 目標 へいきん なんぴん Durchschnittskurs Einstandskurs Nachkauf precio medio promedio compra coût moyen prix de revient 평단가 평균단가 물타기 平均成本 均價 攤平',
+      () => openAvgCostTool()],
+    ['margin', 'invest', '🛡', tr('Margin: maintenance ratio', '信用取引：維持率と追証'), tr('The maintenance ratio and the price of a margin call', '委託保証金維持率と、追証になる株価'),
+      'margin trading account maintenance ratio call collateral short long leverage 信用取引 信用 維持率 委託保証金 保証金 追証 追加保証金 代用 建玉 買建 売建 空売り しんよう ついしょう Margin Nachschuss Sicherheiten Leerverkauf margen llamada de margen garantía venta en corto marge appel de marge garantie vente à découvert 신용거래 증거금 유지율 마진콜 반대매매 融資 融券 保證金 維持率 追繳',
+      () => openMarginTool(), 'trading'],
+    ['possize', 'invest', '🎯', tr('Position size from a stop', '損切りから株数'), tr('Shares for the loss you allow, and risk:reward', '許す損失からの株数とリスクリワード'),
+      'position size sizing risk stop loss cut reward ratio shares lot trading 損切り ロスカット 株数 資金管理 リスク リスクリワード 利確 単元 そんぎり Positionsgröße Risiko Stop-Loss tamaño de posición riesgo stop taille de position risque stop 손절 포지션 리스크 손익비 停損 部位 風險 報酬',
+      () => openPosSizeTool(), 'trading'],
+    ['yield', 'invest', '📈', tr('Yield, PER, PBR, growth', '利回り・PER・PBR・複利'), tr('Dividend yield, PER, PBR, compound growth and saving', '配当利回り・PER・PBR、複利と積立の伸び'),
+      'dividend yield per pbr pe ratio p/e p/b roe eps bps book value compound growth cagr invest saving 配当 利回り 株価収益率 株価純資産倍率 自己資本利益率 複利 積立 年平均成長率 はいとう りまわり Dividende Rendite KGV KBV Zinseszins Wachstum dividendo rentabilidad crecimiento interés compuesto dividende rendement croissance intérêts composés 배당 수익률 복리 성장률 股利 殖利率 本益比 股價淨值比 複利 成長率',
+      () => openYieldTool()],
+    ['carry', 'invest', '📆', tr('Margin interest and lending fee', '金利・貸株料（日割り）'), tr('The cost of holding a margin position, by the day', '信用取引の建玉を持つ費用を日割りで'),
+      'margin interest lending fee borrow short cost days daily carry 金利 買方金利 貸株料 日歩 日割り 信用 費用 きんり かしかぶりょう Sollzins Leihgebühr Zinsen interés préstamo de valores comisión intérêts frais d\'emprunt 이자 대주 수수료 融資利息 借券費 利息',
+      () => openCarryTool(), 'trading'],
+    ['fxstock', 'invest', '💱', tr('Foreign stocks in your money', '外国株を自国通貨で'), tr('Value and profit with the exchange rate, split into price and rate', '為替レートで評価額と損益（株価と為替の分）'),
+      'foreign stock us stocks exchange rate currency dollar profit fx 外国株 米国株 海外株 為替 円 ドル 為替差益 為替差損 がいこくかぶ かわせ ausländische Aktien Wechselkurs acciones extranjeras tipo de cambio actions étrangères taux de change 해외주식 미국주식 환율 外國股票 美股 匯率',
+      () => openFxStockTool()],
     ['date', 'time', '📅', tr('Dates', '日付'), JA ? '日数の差、○日後、年齢、和暦・干支' : tr('Days between, n days after, age', '日数の差、○日後、年齢'),
       'date days between after before age birthday calendar weekday 日付 日数 何日後 何日前 年齢 誕生日 曜日 和暦 西暦 元号 干支 ひづけ Datum Tage Alter fecha días edad date jours âge 날짜 일수 나이 日期 天數 年齡',
       () => openDateTool()],
@@ -18251,7 +20903,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     return words.every((w) => hay.indexOf(w) >= 0);
   }
   function useTool(t) {
-    if (PRO_GATES[t[0]] && !proGate(t[0])) return; // a tool made a Pro feature asks first (1.12.0)
+    const gate = t[7] || t[0];
+    if (PRO_GATES[gate] && !proGate(gate)) return; // a tool made a Pro feature asks first (1.12.0; 1.16.0: by the key t[7] when it has one)
     if ((t[1] === 'shop' || t[1] === 'money' || t[1] === 'time') && !proGate('everyday')) return;
     const recent = (store.get('qalc.tools.recent', []) || []).filter((id) => id !== t[0] && TOOLS.some((x) => x[0] === id));
     recent.unshift(t[0]);
@@ -18355,7 +21008,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     // the settings of now with the digits chosen (as a line edited in place); nothing is defined or kept: a line that
     // defines a value ("a := 2/3") gives its value, a line that defines a function or changes something else is not worked out
     let expr = h.expr;
-    const calc = (e) => Bridge.send('calc', { expr: withAns(e, i), opts: Object.assign(engineOpts(), { precision: n }), timeout: timeLimit() * 1000, max_chars: MAX_RESULT });
+    const rx0 = refsAt(expr, i);
+    if (rx0.error) { toast(rx0.error, 3500); return; } // (1.16.0: "#12" of a line that is gone)
+    const calc = (e) => Bridge.send('calc', { expr: withAns(e, i), opts: Object.assign(lineOpts(h), { precision: n }), timeout: timeLimit() * 1000, max_chars: MAX_RESULT });
     let r = await calc(expr);
     const vd = /^\s*[\p{L}_][\p{L}\p{N}_]*\s*:?=(?!=)\s*(.+)$/su.exec(expr);
     if (r.ok && r.deferred && vd && defName(expr)) { expr = vd[1].trim(); r = await calc(expr); }
@@ -18384,7 +21039,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       ['keep', tr('Keep it in the history', '履歴に残す')], ['copy', tr('Copy the result', '結果をコピー')]]);
     if (k === 'use') useExample(expr);
     else if (k === 'keep') { keepResult(expr, shownToEngine(plain || shown)); reviewMoment('tool'); }
-    else if (k === 'copy') { copyText(copy || shown); reviewMoment('tool'); }
+    else if (k === 'copy') { copyText(ungroupText(copy || shown)); reviewMoment('tool'); } // (1.16.0, R8: without the groups of digits)
   }
   // a text as shown (the number format) → the engine's form, as the history keeps its results: the digit
   // groups as thin spaces (shown again in the number format), the decimal sign ".", ";" between arguments ","
@@ -18401,7 +21056,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (t.indexOf('= ') === 0) t = t.slice(2);
     else if (t.indexOf('≈ ') === 0) { t = t.slice(2); approx = true; }
     if (!expr || !t) return;
-    history.push({ expr, result: t, approx, base: 10, msgs: [], t: Date.now() });
+    history.push({ expr, result: t, approx, base: 10, angle: S.angle, msgs: [], t: Date.now() });
     history = trimHistory(history);
     historyChanged();
     histEl.scrollTop = histEl.scrollHeight;
@@ -18455,7 +21110,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       ['haptics', tr('Vibrate when a key is pressed', 'キーを押したときに振動'), 'bool'],
       ['memkeys', tr('Show the memory keys (M+ M− MR MC)', 'メモリーキー（M+ M− MR MC）を出す'), 'bool'],
       ['next_steps', tr('Suggest the next steps under the newest answer', '次の操作の候補を出す'), 'bool',
-        tr('Buttons under the newest answer for what is often done next: details, graph, factor, derivative and the like', 'いちばん新しい答えの下に、次によく使う操作（詳しく・グラフ・因数分解・微分など）のボタンを出します')]
+        tr('Buttons under the newest answer for what is often done next: details, graph, factor, derivative and the like', 'いちばん新しい答えの下に、次によく使う操作（詳しく・グラフ・因数分解・微分など）のボタンを出します')],
+      ['arg_hints', tr('Show the arguments of a function while typing', '関数の引数のヒントを出す'), 'bool',
+        tr('After a function name and "(", above the keys: its arguments (the one being typed in bold), what it does and an example', '関数の名前と「(」のあとに、キーの上に引数（入力中の引数は太字）・説明・例を出します')]
     ]],
     // 1.12.0: updating the rates was an item of the menu until 1.11.0
     [tr('Exchange rates', '為替レート'), [
@@ -18864,7 +21521,11 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     profile: tr('Volume, weight and surface from the diameters you measured', '測った直径から、体積・重さ・表面積が分かります'),
     stl: tr('Print the solids you made on a 3D printer', '作った立体を 3D プリンターで印刷できます'),
     share_pro: tr('Send the turning 3D graph as a GIF', '回る 3D グラフを GIF で送れます'),
-    notes: tr('Keep several memos and save them as files', 'メモをいくつも作って、ファイルに保存できます')
+    notes: tr('Keep several memos and save them as files', 'メモをいくつも作って、ファイルに保存できます'),
+    sliders3d: tr('Move the letters of a 3D graph with sliders, and watch it change', '3D グラフの文字をスライダーで動かして、形の変わり方を見られます'),
+    stats_fit: tr('Fit a curve of degree 2 to 4, exponential, power or logarithmic to your data, with its graph', 'データに 2〜4 次・指数・累乗・対数の曲線を当てはめ、グラフで見られます'),
+    trading: tr('See the price of a margin call before it comes, and size a trade to the loss you allow', '追証になる株価を前もって知り、許す損失に合わせて株数を決められます'),
+    notes_table: tr('Lists with a column worked out (amount = qty × price), totals and averages, and CSV files', '列を式で計算する表（金額 = 数量 × 単価）と合計・平均、CSV の読み書き')
   });
   // the features that PRO_GATES can make Pro: icon, name, what it gives
   const PRO_INFO = () => ({
@@ -18887,7 +21548,10 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     stl: ['🖨', tr('STL files for 3D printers', 'STL ファイル（3D プリンター）'), tr('Solids of revolution, solids with cross sections and solids from a profile, saved as closed meshes in millimetres', '回転体・断面の立体・輪郭から回転体を、閉じた立体の面（mm）として保存')],
     notes: ['📝', tr('More calculation notes, saved as files', '計算メモの 2 つ目以降と書き出し'), tr('Several memos of calculations, and saving them as text or CSV (the first memo is free)', '計算メモをいくつも作り、テキストや CSV で保存（1 つ目のメモは無料）')],
     share_pro: ['🎞', tr('GIF and pictures without the mark', 'GIF と透かしなしの共有'), tr('The 3D graph and a slider moving as a moving picture (GIF), and pictures of the graphs at full resolution without "QCalc" in the corner', '3D グラフやスライダーの動きを動く画像（GIF）で、グラフの画像を高い解像度・透かしなしで共有')],
-    sliders3d: ['🎛', tr('Sliders in 3D', '3D のスライダー'), tr('Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)', '3D グラフで a sin(x) cos(y) の a などをスライダーで動かす（2D は無料）')]
+    sliders3d: ['🎛', tr('Sliders in 3D', '3D のスライダー'), tr('Change a letter such as a in a sin(x) cos(y) with a slider in the 3D graph (in 2D it is free)', '3D グラフで a sin(x) cos(y) の a などをスライダーで動かす（2D は無料）')],
+    notes_table: ['▦', tr('Table mode of the calculation notes', '計算メモの表'), tr('Columns with names and a formula (amount = qty × price), the total and the average of each column with units, CSV files read in and saved', '名前と式のある列（金額 = 数量 × 単価）、列ごとの単位つきの合計と平均、CSV の読み込みと保存')],
+    trading: ['🛡', tr('Margin and position sizing', '信用取引と建玉の計算'), tr('The maintenance ratio and the margin-call price, the shares from a stop with risk:reward, the interest and lending fee by the day', '委託保証金維持率と追証の株価、損切りからの株数とリスクリワード、金利・貸株料の日割り')],
+    stats_fit: ['📈', tr('Regression curves', '回帰曲線'), tr('For two columns, choose a polynomial of degree 2 to 4, an exponential, a power or a logarithmic curve: its formula, R², prediction and graph (the line stays free)', '2 列のデータで、2〜4 次の多項式・指数・累乗・対数の曲線を選び、式・決定係数・予測・グラフを出す（直線は無料）')]
   });
   // the Pro features (the Pro panel): the fixed ones, the tools set to 'pro', and those still to come
   function proFeatures() {
@@ -18910,7 +21574,10 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     stl: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
     share_pro: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.2l5 2.8-5 2.8z"/><path d="M3 8.5h2M3 15.5h2M19 8.5h2M19 15.5h2"/>',
     notes: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
-    future: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>'
+    future: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>',
+    notes_table: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M10 4.5v15"/><path d="M13.5 12h4M15.5 10v4" />',
+    trading: '<path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M8.5 14l2.5-2.5 2 2 3-3.5"/>',
+    stats_fit: '<path d="M3.5 3.5v17h17"/><circle cx="7.5" cy="15" r="1.1"/><circle cx="11" cy="12.5" r="1.1"/><circle cx="14.5" cy="12" r="1.1"/><circle cx="18" cy="7" r="1.1"/><path d="M5.5 17c4-6 8-5 13.5-12"/>'
   };
   // the picture of a feature: its line picture, or its symbol
   function proIco(key, sym) {
