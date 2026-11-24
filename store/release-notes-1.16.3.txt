@@ -5,7 +5,7 @@
 • Stocks: P&L with tax, average cost, margin call, position size, yield/PER/PBR (margin: Pro)
 • Notes: line numbers, #3, tables with formulas and CSV (Pro)
 • Statistics: distributions, histogram, box plot, curves (Pro)
-• Fixes: decimals, exact values, rounding, line editing, 3D
+• Fixes: currency names, matrices, decimals, exact values, 3D
 </en-US>
 <en-GB>
 • View whole: ⤢ on longer lines, zoom and edit there; wrap at the edge or after N characters
@@ -14,7 +14,7 @@
 • Stocks: P&L with tax, average cost, margin call, position size, yield/PER/PBR (margin: Pro)
 • Notes: line numbers, #3, tables with formulas and CSV (Pro)
 • Statistics: distributions, histogram, box plot, curves (Pro)
-• Fixes: decimals, exact values, rounding, line editing, 3D
+• Fixes: currency names, matrices, decimals, exact values, 3D
 </en-GB>
 <ja-JP>
 ・全体を見る：長い行の ⤢ で画面いっぱいに表示、2 本指で拡大、その中で式を直せる。折り返し（右端／文字数）を選べる
@@ -24,7 +24,7 @@
 ・計算メモ：行の番号と #3。式の列・合計・CSV のある表（QCalc Pro）
 ・自分の変数と関数の一覧、関数の引数のヒント
 ・統計：確率分布、ヒストグラムと箱ひげ図、回帰曲線（直線以外は QCalc Pro）
-・直したこと：小数の式の答えは小数のまま、√ や π の答えを厳密な形で挿入、お金の端数、履歴の行を直すとき、3D の透明とグラフの形
+・直したこと：通貨名と行列の見た目、小数の式の答えは小数のまま、√ や π の答えを厳密な形で挿入、お金の端数、履歴の行を直すとき、3D の透明とグラフの形
 </ja-JP>
 <de-DE>
 • Ganz ansehen: ⤢ an längeren Zeilen, zoomen und dort bearbeiten; Umbruch am Rand oder nach N Zeichen
@@ -33,7 +33,7 @@
 • Aktien: Gewinn mit Steuer, Einstandskurs, Nachschuss, Positionsgröße, Rendite/KGV/KBV (Margin: Pro)
 • Notizen: Zeilennummern, #3, Tabellen mit Formeln, CSV (Pro)
 • Statistik: Verteilungen, Histogramm, Boxplot, Kurven (Pro)
-• Korrekturen: Dezimalen, exakte Werte, Runden, 3D
+• Korrekturen: Währungsnamen, Matrizen, Dezimalen, 3D
 </de-DE>
 <es-ES>
 • Ver completo: ⤢ en líneas largas, zoom y editar allí; ajuste en el borde o tras N caracteres
@@ -42,7 +42,7 @@
 • Acciones: ganancia con impuestos, precio medio, margen, posición, PER (margen: Pro)
 • Notas: números de línea, #3, tablas con fórmulas y CSV (Pro)
 • Estadística: distribuciones, histograma, caja, curvas (Pro)
-• Correcciones: decimales, valores exactos, redondeo, 3D
+• Correcciones: nombres de monedas, matrices, decimales, redondeo, 3D
 </es-ES>
 <es-419>
 • Ver completo: ⤢ en líneas largas, zoom y editar allí; ajuste en el borde o tras N caracteres
@@ -51,7 +51,7 @@
 • Acciones: ganancia con impuestos, precio medio, margen, posición, PER (margen: Pro)
 • Notas: números de línea, #3, tablas con fórmulas y CSV (Pro)
 • Estadística: distribuciones, histograma, caja, curvas (Pro)
-• Correcciones: decimales, valores exactos, redondeo, 3D
+• Correcciones: nombres de monedas, matrices, decimales, redondeo, 3D
 </es-419>
 <fr-FR>
 • Voir en entier : ⤢ sur les longues lignes, zoom, modifier ; coupure au bord ou après N caractères
@@ -60,7 +60,7 @@
 • Bourse : gain avec impôt, prix de revient, appel de marge, position, PER (marge : Pro)
 • Notes : lignes numérotées, #3, tableaux à formules, CSV (Pro)
 • Statistiques : lois, histogramme, boîte, courbes (Pro)
-• Corrections : décimaux, valeurs exactes, arrondi, 3D
+• Corrections : noms des devises, matrices, décimaux, arrondi, 3D
 </fr-FR>
 <fr-CA>
 • Voir en entier : ⤢ sur les longues lignes, zoom, modifier ; coupure au bord ou après N caractères
@@ -69,7 +69,7 @@
 • Bourse : gain avec impôt, prix de revient, appel de marge, position, PER (marge : Pro)
 • Notes : lignes numérotées, #3, tableaux à formules, CSV (Pro)
 • Statistiques : lois, histogramme, boîte, courbes (Pro)
-• Corrections : décimaux, valeurs exactes, arrondi, 3D
+• Corrections : noms des devises, matrices, décimaux, arrondi, 3D
 </fr-CA>
 <ko-KR>
 • 전체 보기: 긴 줄의 ⤢로 화면 가득, 두 손가락으로 확대, 그 안에서 식 고치기. 줄 바꿈(오른쪽 끝/글자 수) 선택
@@ -78,7 +78,7 @@
 • 주식·투자 도구: 세금 포함 손익, 평균 매입 단가, 신용거래 유지율과 추가 증거금 주가, 손절가로 주식 수, 수익률·PER·PBR(신용거래 계산은 QCalc Pro)
 • 계산 메모: 줄 번호와 #3, 식의 열·합계·CSV가 있는 표(QCalc Pro)
 • 통계: 확률분포, 히스토그램, 상자그림, 회귀곡선(직선 외에는 QCalc Pro)
-• 고친 것: 소수 결과, 정확한 형태로 넣기, 돈의 끝자리, 줄 고치기, 3D 투명과 그래프 모양
+• 고친 것: 통화 이름·행렬 표시, 소수 결과, 정확한 형태로 넣기, 돈의 끝자리, 줄 고치기, 3D 투명과 그래프 모양
 </ko-KR>
 <zh-TW>
 • 檢視全部：長的那一列點 ⤢ 佔滿畫面、兩指放大、在其中修改算式；可選擇換行（右緣／字數）
@@ -88,5 +88,5 @@
 • 計算筆記：行號與 #3；有算式欄、合計與 CSV 的表格（QCalc Pro）
 • 我的變數與函數一覽、函數引數提示
 • 統計：機率分佈、直方圖、盒鬚圖、迴歸曲線（直線以外為 QCalc Pro）
-• 修正：小數算式的結果維持小數、√、π 的結果以精確形式插入、金額尾數、修改歷史紀錄的行、3D 透明與重新開啟後的圖形形狀
+• 修正：貨幣名稱與矩陣的顯示、小數算式的結果維持小數、√、π 的結果以精確形式插入、金額尾數、修改歷史紀錄的行、3D 透明與重新開啟後的圖形形狀
 </zh-TW>

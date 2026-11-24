@@ -2075,3 +2075,22 @@ html[data-wrap="none"] .wv-ta { white-space: pre; overflow-wrap: normal; overflo
 .wv-lmsg { font-size: .6em; color: var(--warn); margin-top: .3em; }
 .wv-lmsg:empty { display: none; }
 .wv-lmsg.error { color: var(--danger); }
+/* (①, the review of 11-25 07:03) "View whole" wider than the screen ("after N characters", "never"): the other forms just right
+   of their names, not at the right end of the wide box (1000 px away, out of sight) */
+html:not([data-wrap="edge"]) .wv-val { flex: 0 1 auto; text-align: left; }
+/* (③) the converter: the unit under its value, as wide as the panel, so that its name can be read ("EUR European Euro" was cut
+   at the edge of a box half as wide); side by side again where there is room */
+.conv-row select { flex: 1 1 100%; max-width: none; }
+@media (min-width: 600px) { .conv-row input { flex: 1 1 40%; } .conv-row select { flex: 1 1 45%; } }
+/* (④) the bar of the chosen lines: its four buttons on one line in every language, on a narrow screen and with large text too
+   (a long name takes two lines inside its button: "Fertig" fell to a second line in German) */
+.hs-btns { flex: 1 1 100%; flex-wrap: nowrap; justify-content: stretch; gap: 6px; }
+.hs-btns .btn { flex: 1 1 auto; min-width: auto; padding: 4px 6px; font-size: 14px; white-space: normal; line-height: 1.15; } /* (not narrower than its longest word) */
+/* (⑤) choosing lines with two columns (a tablet, a phone turned sideways): the history takes the place of the keys, which are
+   hidden then (the place stayed empty) */
+@media (min-width: 600px) and (min-height: 300px), (orientation: landscape) and (min-width: 480px) and (max-height: 599px) {
+  body.hselect #app { grid-template-areas: "bar bar" "hist hist" "entry entry" "form form"; }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  body.hselect .history { grid-column: 1 / 3; }
+}

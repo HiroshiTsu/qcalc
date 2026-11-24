@@ -12,31 +12,49 @@
 
   function tokenize(s) {
     const t = [];
-    let i = 0;
+    let i = 0, sp = false;
+    // ((1.16.3, ②) each token knows whether a space was before it: for the elements of a matrix written with spaces)
+    const push = (x) => { x.sp = sp; sp = false; t.push(x); };
     while (i < s.length) {
       const c = s[i], rest = s.slice(i);
-      if (/\s/.test(c)) { i++; continue; }
+      if (/\s/.test(c)) { i++; sp = true; continue; }
       let m;
       // (1.15.0) a number of a result may have its digits in groups (a narrow space between them, as the engine writes
       // them): one number, not numbers multiplied (that was drawn 0.583 · 333 · 333)
-      if ((m = /^(?:\d+(?:[\u202f\u2009]\d+)*(?:\.(?:\d+(?:[\u202f\u2009]\d+)*)?)?|\.\d+(?:[\u202f\u2009]\d+)*)(?:E[−-]?\d+)?/.exec(rest))) { t.push({ k: 'num', v: m[0] }); i += m[0].length; continue; }
-      if ((m = SUP_RE.exec(rest))) { t.push({ k: 'sup', v: Array.from(m[0]).map((x) => SUP[x]).join('') }); i += m[0].length; continue; }
+      if ((m = /^(?:\d+(?:[\u202f\u2009]\d+)*(?:\.(?:\d+(?:[\u202f\u2009]\d+)*)?)?|\.\d+(?:[\u202f\u2009]\d+)*)(?:E[−-]?\d+)?/.exec(rest))) { push({ k: 'num', v: m[0] }); i += m[0].length; continue; }
+      if ((m = SUP_RE.exec(rest))) { push({ k: 'sup', v: Array.from(m[0]).map((x) => SUP[x]).join('') }); i += m[0].length; continue; }
       // an unknown written \t or 't' (a letter that would otherwise be a unit or a constant)
-      if ((m = /^\\([\p{L}_][\p{L}\p{Nd}_]*)/u.exec(rest)) || (m = /^'([\p{L}_][\p{L}\p{Nd}_]*)'/u.exec(rest))) { t.push({ k: 'id', v: m[1] }); i += m[0].length; continue; }
+      if ((m = /^\\([\p{L}_][\p{L}\p{Nd}_]*)/u.exec(rest)) || (m = /^'([\p{L}_][\p{L}\p{Nd}_]*)'/u.exec(rest))) { push({ k: 'id', v: m[1] }); i += m[0].length; continue; }
       // a name (π stands alone: iπ is i × π; ² after a name is a power, not part of it)
-      if (c === 'π') { t.push({ k: 'id', v: 'π' }); i++; continue; }
-      if ((m = /^[\p{L}_][\p{L}\p{Nd}_]*/u.exec(rest))) { const v = m[0].split('π')[0]; t.push({ k: 'id', v }); i += v.length; continue; }
-      if ((m = /^"[^"]*"/.exec(rest))) { t.push({ k: 'str', v: m[0].slice(1, -1) }); i += m[0].length; continue; }
-      if (rest.startsWith('->')) { t.push({ k: 'op', v: '→' }); i += 2; continue; }
-      if (rest.startsWith('<=')) { t.push({ k: 'op', v: '≤' }); i += 2; continue; }
-      if (rest.startsWith('>=')) { t.push({ k: 'op', v: '≥' }); i += 2; continue; }
-      if (rest.startsWith('!=')) { t.push({ k: 'op', v: '≠' }); i += 2; continue; }
-      if (rest.startsWith('**')) { t.push({ k: 'op', v: '^' }); i += 2; continue; }
-      if (OPS.indexOf(c) >= 0) { t.push({ k: 'op', v: c === '-' ? '−' : c === '*' || c === '·' ? '×' : c }); i++; continue; }
-      if (c === '′' || c === "'") { t.push({ k: 'op', v: '′' }); i++; continue; }
+      if (c === 'π') { push({ k: 'id', v: 'π' }); i++; continue; }
+      if ((m = /^[\p{L}_][\p{L}\p{Nd}_]*/u.exec(rest))) { const v = m[0].split('π')[0]; push({ k: 'id', v }); i += v.length; continue; }
+      if ((m = /^"[^"]*"/.exec(rest))) { push({ k: 'str', v: m[0].slice(1, -1) }); i += m[0].length; continue; }
+      if (rest.startsWith('->')) { push({ k: 'op', v: '→' }); i += 2; continue; }
+      if (rest.startsWith('<=')) { push({ k: 'op', v: '≤' }); i += 2; continue; }
+      if (rest.startsWith('>=')) { push({ k: 'op', v: '≥' }); i += 2; continue; }
+      if (rest.startsWith('!=')) { push({ k: 'op', v: '≠' }); i += 2; continue; }
+      if (rest.startsWith('**')) { push({ k: 'op', v: '^' }); i += 2; continue; }
+      if (OPS.indexOf(c) >= 0) { push({ k: 'op', v: c === '-' ? '−' : c === '*' || c === '·' ? '×' : c }); i++; continue; }
+      if (c === '′' || c === "'") { push({ k: 'op', v: '′' }); i++; continue; }
       throw new Error('char');
     }
-    return t;
+    return matrixSpaces(t);
+  }
+  // ((1.16.3, ②, the review of 11-25 07:03) a matrix written with spaces, [1 2 3; 4 5 6] as the engine writes it: a space
+  // between two elements of a row (not inside brackets of their own) separates them as a comma does; until then they were
+  // drawn multiplied, 1 · 2 · 3, as one column. "1 - 2" is still a subtraction; "1 -2" two elements (as the engine reads it)
+  function matrixSpaces(t) {
+    const out = [], stack = [];
+    const ends = (x) => x && (x.k === 'num' || x.k === 'id' || x.k === 'str' || x.k === 'sup' || (x.k === 'op' && ')]!%°′∞□'.indexOf(x.v) >= 0));
+    const starts = (x) => x && (x.k === 'num' || x.k === 'id' || x.k === 'str' || (x.k === 'op' && '([√∛∜∞□'.indexOf(x.v) >= 0));
+    for (let j = 0; j < t.length; j++) {
+      const x = t[j], prev = out[out.length - 1];
+      if (x.sp && stack[stack.length - 1] === '[' && ends(prev) && (starts(x) || (x.k === 'op' && x.v === '−' && t[j + 1] && !t[j + 1].sp && starts(t[j + 1])))) out.push({ k: 'op', v: ',' });
+      out.push(x);
+      if (x.k === 'op' && (x.v === '[' || x.v === '(')) stack.push(x.v);
+      else if (x.k === 'op' && (x.v === ']' || x.v === ')')) stack.pop();
+    }
+    return out;
   }
 
   // ---------------------------------------------------------------- parser (precedence climbing)
