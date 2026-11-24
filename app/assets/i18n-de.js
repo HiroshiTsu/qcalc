@@ -1,6 +1,9 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    "View whole": "Ganz ansehen",
+    "The expression and its answer": "Der Ausdruck und sein Ergebnis",
+    "Other forms": "Andere Formen",
     "History text {0}%": "Verlaufstext {0} %",
     "Input text {0}%": "Eingabetext {0} %",
     "Text size of #{0}": "Textgröße von #{0}",

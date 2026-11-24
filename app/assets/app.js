@@ -1212,6 +1212,10 @@
   // ================================================== expression editing
   // ---- "Undo" for an expression that was cleared (AC) or replaced (history, examples)
   const undoEl = $('#undo');
+  // (1.16.2, W) ⤢ "View whole" beside the small buttons above the field, while it holds something
+  const wholeBtn = el('button', { id: 'wholebtn', class: 'undo', type: 'button', text: '⤢', hidden: true, 'aria-label': tr('View whole', '全体を見る') });
+  wholeBtn.addEventListener('click', () => openWhole(null));
+  undoEl.parentNode.append(wholeBtn);
   let undoText = null;
   function offerUndo(prev) {
     if (!prev || !prev.trim()) return;
@@ -1443,11 +1447,17 @@
     return fs;
   }
   function autosize() {
+    const wb = document.getElementById('wholebtn'); // (1.16.2, W: ⤢ while the field holds something, also after =)
+    if (wb) wb.hidden = !exprEl.value.trim();
     fitText(exprEl, 26 * textScale(), 1.25, 4);
     exprEl.style.height = 'auto';
-    const h = exprEl.scrollHeight, max = Math.round((liveCellOn ? 44 : 110) * textScale()); // (1.16.2, E2: one line while typing in the line)
+    // ((1.16.2, S1, the review of 11-24 22:22) the highest it can be is also what style.css allows (3.9em: smaller with R2's
+    // smaller text) and what the screen leaves: when the expression does not fit, the field scrolls with a finger, with a thin
+    // bar; it was hidden (scrollHeight 95, clientHeight 71) and the start of the expression could not be brought back)
+    const h = exprEl.scrollHeight, css = parseFloat(getComputedStyle(exprEl).maxHeight) || Infinity;
+    const max = Math.min(css, Math.round((liveCellOn ? 44 : 110) * textScale())); // (1.16.2, E2: one line while typing in the line)
     exprEl.style.height = Math.min(h, max) + 'px';
-    exprEl.style.overflowY = h > max ? 'auto' : 'hidden';
+    exprEl.style.overflowY = h > max + 1 || exprEl.scrollHeight > exprEl.clientHeight + 1 ? 'auto' : 'hidden';
   }
   function focusExpr() {
     // with inputmode="none" this only shows the caret, not the system keyboard
@@ -1515,6 +1525,7 @@
   }
   function exprChanged(typed) {
     pruneTapMarks(); // (1.16.0, fix/hist-tap)
+    wholeBtn.hidden = !exprEl.value.trim(); // (1.16.2, W)
     if (fromBand && (!exprEl.value.trim() || history.indexOf(fromBand.h) < 0)) hideFromBand(); // (1.16.2, M1)
     noteField();
     saveDraft();
@@ -1542,6 +1553,7 @@
     mathEl.hidden = !ok;
     parsedEl.hidden = ok;
     if (ok) mathEl.scrollLeft = mathEl.scrollWidth;
+    edgeFade(mathEl); // (1.16.2, S2: the start hidden: a soft left edge)
   }
   // ---- notes on input that the engine reads in another way than it was probably meant. The
   // engine gives no message of its own in these cases:
@@ -4362,7 +4374,24 @@
         g.style.fontSize = (0.84 * scale).toFixed(3) + 'em'; // 0.84em is the size in style.css
       }
     }
+    fadesIn(root); // (1.16.2, S2, S3)
   }
+  // (1.16.2, S2 and S3, the review of 11-24 22:22) what is wider than the screen (a matrix, an answer or an expression in math
+  // notation) scrolls sideways with a finger, and a soft edge shows on the side where more is hidden (cut-l, cut-r)
+  function edgeFade(b) {
+    if (!b || !b.isConnected) return;
+    const more = b.scrollWidth - b.clientWidth > 2;
+    b.classList.toggle('cut-l', more && b.scrollLeft > 2);
+    b.classList.toggle('cut-r', more && b.scrollLeft < b.scrollWidth - b.clientWidth - 2);
+  }
+  const FADE_SEL = '#mathview, .mx, .h-res.math, .preview.math, .wv-box';
+  function fadesIn(root) {
+    if (!root) return;
+    if (root.matches && root.matches(FADE_SEL)) edgeFade(root);
+    for (const b of root.querySelectorAll(FADE_SEL)) edgeFade(b);
+  }
+  document.addEventListener('scroll', (e) => { const b = e.target; if (b && b.matches && b.matches(FADE_SEL)) edgeFade(b); }, true);
+  window.addEventListener('resize', () => { fadesIn(histEl); fadesIn($('.entry')); });
   function bindLongPress(node, onLong, onTap) {
     let timer = null, sx = 0, sy = 0, long = false;
     node.addEventListener('pointerdown', (e) => {
@@ -4474,6 +4503,7 @@
     else if (mcols === 3) more.push(['m-plot', tr('Draw the rows as points (3D graph)', '各行を点としてグラフに描く（3D）')]);
     const a = await sheet((h.t ? fmtTime(h.t / 1000) + (h.edited ? trf(' (edited {0})', '（直した時刻 {0}）', fmtTime(h.edited / 1000)) : '') + '\n' : '') + clip(toDisplay(h.expr), 300) + '\n' + clip(displayText(h.result), 300), more.concat([
       ['details', tr('Details', '詳しく見る')],
+      ['whole', tr('View whole', '全体を見る')],
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['digits', tr('Work it out with other digits', '桁数を変えて計算し直す')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')],
@@ -4493,6 +4523,7 @@
     else if (a === 'f-solve') openForm('solve', { eqs: [fx + ' = 0'] });
     else if (a === 'f-subst') openForm('subst', { f: fx, focus: 'a' });
     else if (a === 'details') openDetails(h);
+    else if (a === 'whole') openWhole(h);
     else if (a === 'copy-res') copyText(copyResultText(h));
     else if (a === 'copy-expr') copyText(h.expr);
     else if (a === 'edit') startHistEdit(h);
@@ -4675,6 +4706,100 @@
     }
     for (const r of rows) if (r.opts && !r.note) r.note = r.label;
     return rows;
+  }
+  // (1.16.2, W, the owner's wish of 11-24 22:28) "View whole": a screen to read an expression and its answer, from the field
+  // (⤢ at its edge: the expression typed and the answer of the preview) or from a line of the history ("View whole" in its
+  // ⋯). The expression in math notation and as text with the groups of digits, the answer as the history shows it, and its
+  // other forms when there are (exact, decimal, fraction, mixed, scientific: as Details). At first it fits the width of the
+  // screen (not under a readable size: then it scrolls both ways, as it does when larger); two fingers make it larger or
+  // smaller, one finger scrolls. Copy the expression, Copy the answer, Edit this line (a line), ✕; Back closes it.
+  let wholeSeq = 0;
+  function openWhole(h) {
+    const expr = h ? h.expr : toInternal(exprEl.value);
+    if (!String(expr || '').trim()) return;
+    const seq = ++wholeSeq, live = () => seq === wholeSeq;
+    const r0 = h ? null : liveRes;
+    const p = panel('whole', tr('View whole', '全体を見る'), () => {});
+    p.body.textContent = '';
+    p.body.classList.add('wv-body');
+    const zoom = el('div', { class: 'wv-zoom' });
+    const box = el('div', { class: 'wv-box', tabindex: '0', role: 'region', 'aria-label': tr('The expression and its answer', '式と答え') }, zoom);
+    const m = el('div', { class: 'wv-math', 'aria-hidden': 'true' });
+    const disp = toDisplay(expr);
+    let mathOk = false;
+    try { if (window.QMath) mathOk = QMath.render(m, normalizeExpr(disp), { richOnly: true }); } catch (e) { mathOk = false; }
+    if (mathOk) { commaMath(m); zoom.append(m); }
+    zoom.append(el('div', { class: 'wv-expr', text: groupText(prettyExpr(disp), true) }));
+    const res = el('div', { class: 'wv-res' });
+    const answer = h ? displayResult(h) : (r0 ? resultText(r0) : '');
+    if (answer) { showResult(res, answer); zoom.append(res); }
+    const forms = el('div', { class: 'wv-forms' });
+    zoom.append(forms);
+    for (const g of zoom.querySelectorAll('.mx')) g.style.fontSize = ''; // (their own size: the whole is made larger or smaller)
+    const copyAns = h ? copyResultText(h) : String(previewEl.textContent || '').replace(/^\s*[=≈]\s*/, '').trim();
+    const btns = el('div', { class: 'wv-btns' },
+      tapButton({ class: 'btn', type: 'button', text: tr('Copy expression', '式をコピー') }, () => copyText(expr)),
+      answer ? tapButton({ class: 'btn', type: 'button', text: tr('Copy result', '結果をコピー') }, () => copyText(copyAns)) : '',
+      h ? tapButton({ class: 'btn', type: 'button', text: tr('Edit this line', 'この行を直す') }, () => { closePanel(); if (history.indexOf(h) >= 0) startHistEdit(h); }) : '',
+      tapButton({ class: 'btn wv-x', type: 'button', text: '✕', 'aria-label': tr('Close', '閉じる') }, () => closePanel()));
+    p.body.append(box, btns);
+    // the size: the width of the screen at first (from 80 % to 2.2 times of 22 px), then two fingers (from 50 % to 4 times)
+    let z = 1;
+    const BASE = 22;
+    const setZ = (nz, cx, cy) => {
+      const old = z;
+      z = Math.max(0.5, Math.min(4, nz));
+      const fx = cx === undefined ? 0 : cx + box.scrollLeft, fy = cy === undefined ? 0 : cy + box.scrollTop;
+      zoom.style.fontSize = (BASE * z).toFixed(2) + 'px';
+      if (cx !== undefined) { box.scrollLeft = fx * z / old - cx; box.scrollTop = fy * z / old - cy; }
+      edgeFade(box);
+    };
+    const fit = () => {
+      zoom.style.fontSize = BASE + 'px';
+      zoom.style.width = 'max-content';
+      const w = zoom.scrollWidth, room = box.clientWidth - 24;
+      zoom.style.width = '';
+      setZ(w > 0 ? Math.max(0.8, Math.min(2.2, room / w)) : 1);
+    };
+    requestAnimationFrame(fit);
+    let pz = null;
+    const dist = (l) => Math.hypot(l[0].clientX - l[1].clientX, l[0].clientY - l[1].clientY);
+    box.addEventListener('touchstart', (e) => { if (e.touches.length === 2) { pz = { d0: dist(e.touches) || 1, z0: z }; if (e.cancelable) e.preventDefault(); } }, { passive: false });
+    box.addEventListener('touchmove', (e) => {
+      if (!pz) return;
+      if (e.cancelable) e.preventDefault();
+      if (e.touches.length < 2) return;
+      const q = box.getBoundingClientRect(), cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - q.left, cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - q.top;
+      setZ(pz.z0 * dist(e.touches) / pz.d0, cx, cy);
+    }, { passive: false });
+    const endPz = (e) => { if (pz && e.touches.length < 2) pz = null; };
+    box.addEventListener('touchend', endPz);
+    box.addEventListener('touchcancel', endPz);
+    box.addEventListener('scroll', () => edgeFade(box));
+    // the other forms of the answer (as Details: what could not be had or says nothing new is left out)
+    const hh = h || (r0 ? { expr, result: r0.result, approx: r0.approx } : null);
+    const tt = hh ? insertText(hh) : '';
+    if (!tt || functionOfX(hh)) return;
+    const rows = detailRows(hh, tt, null).filter((row) => ['exact', 'dec', 'frac', 'mixed', 'sci'].indexOf(row.id) >= 0);
+    const same = (a, b) => toDisplay(String(a || '')).replace(/\s+/g, '') === toDisplay(String(b || '')).replace(/\s+/g, '');
+    const seen = String(answer).split(/\s*(?:^|\n|\s)[=≈]\s*/).map((x) => x.trim()).filter(Boolean); // (each line of the answer)
+    (async () => {
+      for (const row of rows) {
+        const r = await Bridge.send('calc', { expr: row.expr, opts: Object.assign(engineOpts(), row.opts || {}), timeout: 3000 });
+        if (!live()) return;
+        const err = r.ok ? (r.messages || []).find((x) => x.type === 'error') : null;
+        const shown = r.ok && r.result && !r.timeout && !err ? resultText(r).replace(/^= /, '') : '';
+        if (!shown || /\b(?:diff|integrate|solve|taylor)\(/.test(r.result) || seen.some((q) => same(q, shown) || same(q, '≈ ' + shown) || same('≈ ' + q, shown))
+          || (row.id === 'exact' && r.approx) || (row.id === 'mixed' && !/ \+ /.test(r.result)) || (row.id === 'frac' && !/\//.test(r.result))
+          || (row.id === 'sci' && !/E[−-]?\d/.test(r.result))) continue;
+        seen.push(shown);
+        if (!forms.children.length) forms.append(el('div', { class: 'wv-lbl wv-head', text: tr('Other forms', 'ほかの形') }));
+        const v = el('div', { class: 'wv-val' });
+        showResult(v, resultText(r));
+        forms.append(el('div', { class: 'wv-row' }, el('div', { class: 'wv-lbl', text: row.label }), v));
+      }
+      if (live()) edgeFade(box);
+    })();
   }
   async function openDetails(h) {
     const t = insertText(h);
@@ -4935,7 +5060,15 @@
       if (liveCellOn && document.activeElement === cell && (cell.selectionStart !== exprEl.selectionStart || cell.selectionEnd !== exprEl.selectionEnd)) cell.setSelectionRange(exprEl.selectionStart, exprEl.selectionEnd);
     }
     fitText(cell, 17 * histScale() * (H.fs || 1), 1.35, 8); // (1.16.2, R2 and Z4)
-    cell.style.height = 'auto'; cell.style.height = cell.scrollHeight + 'px';
+    // ((1.16.2, S4) at most 40 % of the history high (and 3 lines): then it scrolls in itself, its caret in sight)
+    cell.style.height = 'auto';
+    const cmax = Math.max(parseFloat(getComputedStyle(cell).fontSize) * 1.35 * 3 + 10, Math.round(histEl.clientHeight * 0.4));
+    cell.style.height = Math.min(cell.scrollHeight + (cell.offsetHeight - cell.clientHeight), cmax) + 'px'; // (border-box: its borders too)
+    cell.style.overflowY = cell.scrollHeight > cell.clientHeight + 1 ? 'auto' : 'hidden';
+    if (cell.style.overflowY === 'auto' && document.activeElement !== cell) {
+      const sp = cellSpot(cell, exprEl.selectionEnd || 0);
+      if (sp.y < cell.scrollTop || sp.y + sp.h > cell.scrollTop + cell.clientHeight) cell.scrollTop = Math.max(0, sp.y + sp.h - cell.clientHeight + 4);
+    }
     const holder = box.querySelector('.h-live-a');
     holder.textContent = '';
     if (S.preview && v.trim()) {
@@ -5047,7 +5180,7 @@
     const run = () => {
       const c = histEdit && histEdit.cell;
       if (!liveCellOn || !c || !c.isConnected || !histEl.clientHeight) return;
-      const sp = cellSpot(c, c.selectionEnd || 0), y0 = sp.y, lh = sp.h;
+      const sp = cellSpot(c, c.selectionEnd || 0), y0 = sp.y - c.scrollTop, lh = sp.h; // ((S4) a box that scrolls in itself)
       const r = c.getBoundingClientRect(), b = histEl.getBoundingClientRect(), y = r.top + y0, pad = 8;
       let d = 0;
       if (y < b.top + pad) d = y - b.top - pad;

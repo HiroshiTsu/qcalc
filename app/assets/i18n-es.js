@@ -13,6 +13,9 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "View whole": "Ver completo",
+    "The expression and its answer": "La expresión y su resultado",
+    "Other forms": "Otras formas",
     "History text {0}%": "Texto del historial {0} %",
     "Input text {0}%": "Texto de entrada {0} %",
     "Text size of #{0}": "Tamaño del texto de #{0}",

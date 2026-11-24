@@ -1989,3 +1989,36 @@ body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 .ts-reset { margin-top: 4px; min-height: 40px; }
 .ts-reset[hidden] { display: none; }
 .sheet .line-ts { padding: 0 12px 8px; }
+/* (1.16.2, S1) the field scrolls when the expression does not fit: a thin bar shows it */
+#expr { scrollbar-width: thin; scrollbar-color: var(--muted) transparent; }
+#expr::-webkit-scrollbar { width: 4px; }
+#expr::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+.h-cell::-webkit-scrollbar { width: 4px; }
+.h-cell::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+/* (1.16.2, S2, S3) what scrolls sideways: a soft edge on the side where more is hidden */
+.cut-l, .cut-r {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
+}
+.cut-l { --fade-l: 24px; }
+.cut-r { --fade-r: 24px; }
+.cut-l:not(.cut-r) { --fade-r: 0px; }
+.cut-r:not(.cut-l) { --fade-l: 0px; }
+/* (1.16.2, W) "View whole": the expression and the answer to read, larger or smaller with two fingers, scrolled both ways */
+.panel-body.wv-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.wv-box { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 12px; overscroll-behavior: contain; touch-action: pan-x pan-y; }
+.wv-zoom { font-size: 22px; line-height: 1.35; color: var(--text); }
+.wv-math { margin-bottom: .4em; white-space: nowrap; }
+.wv-math .katex { font-size: 1.15em; }
+.wv-expr { color: var(--muted); font-size: .8em; white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: .5em; }
+.wv-res { font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.wv-res .mx, .wv-val .mx { max-width: none; overflow: visible; }
+.wv-forms { margin-top: .8em; }
+.wv-head { font-weight: 700; color: var(--text); margin-bottom: .2em; }
+.wv-row { display: flex; gap: .8em; align-items: baseline; padding: .25em 0; border-top: 1px solid var(--line); }
+.wv-lbl { flex: 0 0 auto; color: var(--muted); font-size: .65em; min-width: 5em; }
+.wv-val { flex: 1 1 auto; text-align: right; font-size: .85em; white-space: pre-wrap; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.wv-btns { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); }
+.wv-btns .btn { min-height: 48px; }
+.wv-btns .wv-x { margin-left: auto; min-width: 48px; }
+#wholebtn { font-size: 16px; }

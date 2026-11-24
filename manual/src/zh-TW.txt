@@ -133,6 +133,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :step: 最新答案下方會出現接下來常用操作的按鈕（最多 6 個）：x 的算式是 [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]；數字是 [[Details]]、[[As a fraction]]、[[Scientific]]（整數是 [[Prime factors]]、[[In hex]]）；有單位時是 [[Convert…]]；矩陣是 [[Determinant]]、[[Inverse]]、[[Eigenvalues]]、[[Transpose]]。按下後，該計算會成為歷史的新一行。
 :step: [[Details]]（或 ⋯ → [[Details]]）可一次查看答案的其他形式：數字是精確值、小數、分數、帶分數、科學記號（整數是 2、8、16 進位與質因數分解，有單位時是其他單位）；x 的算式是小圖形、零點、導函數、不定積分、泰勒展開與因式分解。點一下某一行可選擇 [[Put the expression in the field]]、[[Keep it in the history]] 或 [[Copy result]]。
 :tip: 不需要這些按鈕時，在 [[Settings]] 關閉 [[Suggest the next steps under the newest answer]]。
+:tip: 比畫面寬的結果或算式（例如矩陣）可以用手指左右滑動查看（還有內容的那一側會變淡）。想放大看全部時，點輸入欄上方的 ⤢，或那一列 ⋯ 中的 [[View whole]]，就會佔滿畫面（兩指放大縮小，一指上下左右捲動，按返回關閉）。
 
 ## undo | 刪除與復原
 :what: ⌫ 刪除一個字元，AC 清空輸入欄。剛清空後，可用輸入欄上方的 [[Undo]] 復原。

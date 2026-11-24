@@ -133,6 +133,7 @@ QCalc는 식을 종이에 쓰듯 입력하면 바로 결과가 나오는 계산�
 :step: 최신 답 아래에 다음에 자주 하는 작업의 버튼(최대 6개)이 나옵니다. x의 식이면 [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]], 수이면 [[Details]]·[[As a fraction]]·[[Scientific]](정수는 [[Prime factors]]·[[In hex]]), 단위가 있으면 [[Convert…]], 행렬이면 [[Determinant]]·[[Inverse]]·[[Eigenvalues]]·[[Transpose]]입니다. 누르면 그 계산이 기록의 새 줄이 됩니다.
 :step: [[Details]](또는 ⋯ → [[Details]])로 답의 다른 형태를 한꺼번에 볼 수 있습니다. 수는 정확한 값, 소수, 분수, 대분수, 지수 표기(정수는 2·8·16진수와 소인수분해, 단위가 있으면 다른 단위), x의 식은 작은 그래프, 영점, 도함수, 부정적분, 테일러 전개, 인수분해입니다. 줄을 탭하면 [[Put the expression in the field]]·[[Keep it in the history]]·[[Copy result]]를 고를 수 있습니다.
 :tip: 버튼이 필요 없으면 [[Settings]]의 [[Suggest the next steps under the newest answer]]를 끕니다.
+:tip: 화면보다 넓은 결과나 식(행렬 등)은 옆으로 밀어서 볼 수 있습니다(뒤에 더 있는 쪽이 흐려집니다). 전체를 크게 보려면 입력란 위의 ⤢나 줄의 ⋯에서 [[View whole]]을 누르면 화면 가득 나옵니다(두 손가락으로 확대·축소, 한 손가락으로 상하좌우 스크롤, 뒤로 가기로 닫기).
 
 ## undo | 지우기와 되돌리기
 :what: ⌫는 한 글자를, AC는 입력란 전체를 지웁니다. 지운 직후에는 입력란 위의 [[Undo]]로 되돌릴 수 있습니다.

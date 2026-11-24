@@ -1,6 +1,9 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "View whole": "전체 보기",
+    "The expression and its answer": "식과 결과",
+    "Other forms": "다른 형태",
     "History text {0}%": "기록 글자 {0}%",
     "Input text {0}%": "입력란 글자 {0}%",
     "Text size of #{0}": "#{0}의 글자 크기",

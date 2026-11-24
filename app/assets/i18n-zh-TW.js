@@ -2,6 +2,9 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "View whole": "檢視全部",
+    "The expression and its answer": "算式與結果",
+    "Other forms": "其他形式",
     "History text {0}%": "歷史紀錄文字 {0}%",
     "Input text {0}%": "輸入欄文字 {0}%",
     "Text size of #{0}": "#{0} 的文字大小",
