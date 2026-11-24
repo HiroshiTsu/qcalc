@@ -40,16 +40,34 @@
     }
     return matrixSpaces(t);
   }
-  // ((1.16.3, ②, the review of 11-25 07:03) a matrix written with spaces, [1 2 3; 4 5 6] as the engine writes it: a space
-  // between two elements of a row (not inside brackets of their own) separates them as a comma does; until then they were
-  // drawn multiplied, 1 · 2 · 3, as one column. "1 - 2" is still a subtraction; "1 -2" two elements (as the engine reads it)
+  // ((1.16.3, ②, the review of 11-25 07:03; M1 of 07:40) a matrix written with spaces, [1 2 3; 4 5 6] as the engine writes it: a
+  // space between two elements of a row (not inside brackets of their own) separates them as a comma does, as the engine reads
+  // it; until then they were drawn multiplied, 1 · 2 · 3, as one column. As the engine: a unit after a number stays with it
+  // ([5 m 3 m]: 5 m and 3 m; [3 m/s 2 m/s]); "-2" and "+2" after a space (none after the sign) begin an element ([1 +2]: 1 and
+  // 2), "1 - 2" is a subtraction; a row with a comma of its own is not split at its spaces ([1, 2 3] is 1 and 23 for the engine,
+  // drawn as written)
   function matrixSpaces(t) {
+    // (first: the row of [ ] each token is in, and whether that row has a comma of its own)
+    const rowOf = new Array(t.length).fill(-1), rowComma = [], st = [];
+    for (let j = 0; j < t.length; j++) {
+      const x = t[j], top = st[st.length - 1];
+      if (x.k === 'op' && x.v === '[') { st.push({ k: '[', row: rowComma.push(false) - 1 }); continue; }
+      if (x.k === 'op' && x.v === '(') { st.push({ k: '(' }); continue; }
+      if (x.k === 'op' && (x.v === ']' || x.v === ')')) { st.pop(); continue; }
+      if (!top || top.k !== '[') continue;
+      if (x.k === 'op' && x.v === ';') { top.row = rowComma.push(false) - 1; continue; }
+      if (x.k === 'op' && x.v === ',') rowComma[top.row] = true;
+      rowOf[j] = top.row;
+    }
     const out = [], stack = [];
     const ends = (x) => x && (x.k === 'num' || x.k === 'id' || x.k === 'str' || x.k === 'sup' || (x.k === 'op' && ')]!%°′∞□'.indexOf(x.v) >= 0));
     const starts = (x) => x && (x.k === 'num' || x.k === 'id' || x.k === 'str' || (x.k === 'op' && '([√∛∜∞□'.indexOf(x.v) >= 0));
     for (let j = 0; j < t.length; j++) {
       const x = t[j], prev = out[out.length - 1];
-      if (x.sp && stack[stack.length - 1] === '[' && ends(prev) && (starts(x) || (x.k === 'op' && x.v === '−' && t[j + 1] && !t[j + 1].sp && starts(t[j + 1])))) out.push({ k: 'op', v: ',' });
+      const inRow = x.sp && stack[stack.length - 1] === '[' && rowOf[j] >= 0 && !rowComma[rowOf[j]] && ends(prev);
+      const unit = prev && prev.k === 'num' && x.k === 'id'; // (5 m: a unit with its number)
+      const signed = x.k === 'op' && (x.v === '−' || x.v === '+') && t[j + 1] && !t[j + 1].sp && starts(t[j + 1]);
+      if (inRow && ((starts(x) && !unit) || signed)) out.push({ k: 'op', v: ',' });
       out.push(x);
       if (x.k === 'op' && (x.v === '[' || x.v === '(')) stack.push(x.v);
       else if (x.k === 'op' && (x.v === ']' || x.v === ')')) stack.pop();

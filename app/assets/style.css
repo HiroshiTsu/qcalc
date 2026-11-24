@@ -2094,3 +2094,10 @@ html:not([data-wrap="edge"]) .wv-val { flex: 0 1 auto; text-align: left; }
 @media (orientation: landscape) and (max-height: 560px) {
   body.hselect .history { grid-column: 1 / 3; }
 }
+/* (S1, the review of 11-25 07:40) the choice of the wrapping as wide as its row: "80 文字で折り返す", "Nach 80 Zeichen" whole at 320 px
+   with large text */
+.wrap-box select { width: 100%; max-width: none; box-sizing: border-box; }
+/* (T1) a long title of a panel ("Einheiten und Währungen umrechnen" at 320 px with large text): on two lines in a bar as high as
+   it needs (it was cut at the top of the bar 52 px high), "…" after two lines */
+.panel-bar { height: auto; min-height: 52px; }
+.panel-bar .ptitle { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; line-height: 1.2; padding: 4px 0; }

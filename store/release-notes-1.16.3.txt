@@ -1,19 +1,19 @@
 <en-US>
 • View whole: ⤢ on longer lines, zoom and edit there; wrap at the edge or after N characters
-• Pinch to resize text; hide the keys for more history
+• Pinch to resize text; hide the keys
 • History as a spreadsheet: tap an answer or its #12; add up; copy
 • Stocks: P&L with tax, average cost, margin call, position size, yield/PER/PBR (margin: Pro)
 • Notes: line numbers, #3, tables with formulas and CSV (Pro)
-• Statistics: distributions, histogram, box plot, curves (Pro)
+• Statistics: distributions, histogram, box plot, curves (non-linear: Pro)
 • Fixes: currency names, matrices, decimals, exact values, 3D
 </en-US>
 <en-GB>
 • View whole: ⤢ on longer lines, zoom and edit there; wrap at the edge or after N characters
-• Pinch to resize text; hide the keys for more history
+• Pinch to resize text; hide the keys
 • History as a spreadsheet: tap an answer or its #12; add up; copy
 • Stocks: P&L with tax, average cost, margin call, position size, yield/PER/PBR (margin: Pro)
 • Notes: line numbers, #3, tables with formulas and CSV (Pro)
-• Statistics: distributions, histogram, box plot, curves (Pro)
+• Statistics: distributions, histogram, box plot, curves (non-linear: Pro)
 • Fixes: currency names, matrices, decimals, exact values, 3D
 </en-GB>
 <ja-JP>
@@ -31,8 +31,8 @@
 • Schrift per Pinch; Tasten ausblenden
 • Verlauf als Tabelle: Ergebnis oder #12 antippen; addieren; kopieren
 • Aktien: Gewinn mit Steuer, Einstandskurs, Nachschuss, Positionsgröße, Rendite/KGV/KBV (Margin: Pro)
-• Notizen: Zeilennummern, #3, Tabellen mit Formeln, CSV (Pro)
-• Statistik: Verteilungen, Histogramm, Boxplot, Kurven (Pro)
+• Notizen: Zeilennummern, #3, Tabellen mit Formeln (Pro)
+• Statistik: Verteilungen, Histogramm, Boxplot, Kurven (nicht linear: Pro)
 • Korrekturen: Währungsnamen, Matrizen, Dezimalen, 3D
 </de-DE>
 <es-ES>
@@ -41,7 +41,7 @@
 • Historial como tabla: toca un resultado o su #12; sumar; copiar
 • Acciones: ganancia con impuestos, precio medio, margen, posición, PER (margen: Pro)
 • Notas: números de línea, #3, tablas con fórmulas y CSV (Pro)
-• Estadística: distribuciones, histograma, caja, curvas (Pro)
+• Estadística: distribuciones, histograma, caja, curvas (no lineales: Pro)
 • Correcciones: nombres de monedas, matrices, decimales, redondeo, 3D
 </es-ES>
 <es-419>
@@ -50,25 +50,25 @@
 • Historial como tabla: toca un resultado o su #12; sumar; copiar
 • Acciones: ganancia con impuestos, precio medio, margen, posición, PER (margen: Pro)
 • Notas: números de línea, #3, tablas con fórmulas y CSV (Pro)
-• Estadística: distribuciones, histograma, caja, curvas (Pro)
+• Estadística: distribuciones, histograma, caja, curvas (no lineales: Pro)
 • Correcciones: nombres de monedas, matrices, decimales, redondeo, 3D
 </es-419>
 <fr-FR>
 • Voir en entier : ⤢ sur les longues lignes, zoom, modifier ; coupure au bord ou après N caractères
 • Texte à deux doigts ; masquer les touches
 • Historique en tableur : touchez un résultat ou son #12 ; somme ; copier
-• Bourse : gain avec impôt, prix de revient, appel de marge, position, PER (marge : Pro)
-• Notes : lignes numérotées, #3, tableaux à formules, CSV (Pro)
-• Statistiques : lois, histogramme, boîte, courbes (Pro)
+• Bourse : gain avec impôt, prix de revient, appel de marge, PER (marge : Pro)
+• Notes : lignes numérotées, #3, tableaux à formules (Pro)
+• Statistiques : lois, histogramme, boîte, courbes (non linéaires : Pro)
 • Corrections : noms des devises, matrices, décimaux, arrondi, 3D
 </fr-FR>
 <fr-CA>
 • Voir en entier : ⤢ sur les longues lignes, zoom, modifier ; coupure au bord ou après N caractères
 • Texte à deux doigts ; masquer les touches
 • Historique en tableur : touchez un résultat ou son #12 ; somme ; copier
-• Bourse : gain avec impôt, prix de revient, appel de marge, position, PER (marge : Pro)
-• Notes : lignes numérotées, #3, tableaux à formules, CSV (Pro)
-• Statistiques : lois, histogramme, boîte, courbes (Pro)
+• Bourse : gain avec impôt, prix de revient, appel de marge, PER (marge : Pro)
+• Notes : lignes numérotées, #3, tableaux à formules (Pro)
+• Statistiques : lois, histogramme, boîte, courbes (non linéaires : Pro)
 • Corrections : noms des devises, matrices, décimaux, arrondi, 3D
 </fr-CA>
 <ko-KR>

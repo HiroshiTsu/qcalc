@@ -1362,7 +1362,7 @@
         break;
       }
     }
-    if (f === exprEl) liveCaret(); // (1.16.2, E2)
+    if (f === exprEl) { liveCaret(); revealX(exprEl); } // (1.16.2, E2; (1.16.3, C1) the caret in sight sideways after ◀ ▶)
   }
   let kbdMinH = 0, kbdW = 0;
   function toggleKeyboard(force) {
@@ -1513,7 +1513,7 @@
     const sc = mode === 'chars' ? ta.parentNode : ta;
     if (!sc || !sc.clientWidth) return;
     if (sc.scrollWidth > sc.clientWidth + 1) {
-      const x = cellSpot(ta, ta.selectionEnd || 0).x, pad = 28, view = sc.clientWidth;
+      const x = cellSpot(ta, ta.selectionEnd || 0).x, pad = 36, view = sc.clientWidth; // ((C1) clear of the soft edges, 24 px)
       let left = sc.scrollLeft;
       if (x < left + pad) left = Math.max(0, x - pad);
       else if (x > left + view - pad) left = x - view + pad;
@@ -4831,10 +4831,15 @@
   let wholeSeq = 0, wvCancel = null;
   function openWhole(h) {
     if (wvCancel) wvCancel(); // (1.16.3, W3: an editing left open)
-    const expr = h ? h.expr : toInternal(exprEl.value);
+    // ((1.16.3, E1, the review of 11-25 07:40) the line being edited in its place: what is being typed for it (the field) and its
+    // answer as it is now, not the line as it was; "Done" puts the expression back into that editing, which goes on (it
+    // changed the line itself, while the editing went on with the field: the line edited in two places))
+    const editing = !!h && !!histEdit && histEdit.h === h && history.indexOf(h) >= 0;
+    const hh0 = editing ? null : h; // (the line as it is kept, when it is not being edited)
+    const expr = hh0 ? hh0.expr : toInternal(exprEl.value);
     if (!String(expr || '').trim()) return;
     const seq = ++wholeSeq, live = () => seq === wholeSeq;
-    const r0 = h ? null : liveRes;
+    const r0 = hh0 ? null : liveRes;
     const p = panel('whole', tr('View whole', '全体を見る'), () => {});
     p.body.textContent = '';
     p.body.classList.add('wv-body');
@@ -4848,12 +4853,12 @@
     const exDiv = el('div', { class: 'wv-expr', text: groupText(prettyExpr(disp), true) });
     zoom.append(exDiv);
     const res = el('div', { class: 'wv-res' });
-    const answer = h ? displayResult(h) : (r0 ? resultText(r0) : '');
+    const answer = hh0 ? displayResult(hh0) : (r0 ? resultText(r0) : '');
     if (answer) { showResult(res, answer); zoom.append(res); }
     const forms = el('div', { class: 'wv-forms' });
     zoom.append(forms);
     for (const g of zoom.querySelectorAll('.mx')) g.style.fontSize = ''; // (their own size: the whole is made larger or smaller)
-    const copyAns = h ? copyResultText(h) : String(previewEl.textContent || '').replace(/^\s*[=≈]\s*/, '').trim();
+    const copyAns = hh0 ? copyResultText(hh0) : String(previewEl.textContent || '').replace(/^\s*[=≈]\s*/, '').trim();
     // ((1.16.3, W3, the owner's wish of 11-25 05:38) "Edit expression": the expression edited here, in large letters (the size
     // of this screen, two fingers too, and the wrapping chosen), its answer under it at once (the preview's calculation);
     // "Done" puts it in the line (as = after editing a line: worked out again, with the time it was edited) or back into the
@@ -4863,7 +4868,7 @@
       tapButton({ class: 'btn wv-edit', type: 'button', text: tr('Edit expression', '式を直す') }, () => startEdit()),
       tapButton({ class: 'btn', type: 'button', text: tr('Copy expression', '式をコピー') }, () => copyText(expr)),
       answer ? tapButton({ class: 'btn', type: 'button', text: tr('Copy result', '結果をコピー') }, () => copyText(copyAns)) : null,
-      h ? tapButton({ class: 'btn', type: 'button', text: tr('Edit this line', 'この行を直す') }, () => { closePanel(); if (history.indexOf(h) >= 0) startHistEdit(h); }) : null,
+      hh0 ? tapButton({ class: 'btn', type: 'button', text: tr('Edit this line', 'この行を直す') }, () => { closePanel(); if (history.indexOf(h) >= 0) startHistEdit(h); }) : null,
       tapButton({ class: 'btn wv-x', type: 'button', text: '✕', 'aria-label': tr('Close', '閉じる') }, () => closePanel())].filter(Boolean);
     const editBtns = [
       tapButton({ class: 'btn primary wv-ok', type: 'button', text: tr('Done', '決定') }, () => finishEdit(true)),
@@ -4937,7 +4942,7 @@
       };
       if (!ok || !txt || txt === e0.start.trim()) { back(); return; }
       closePanel();
-      if (h) {
+      if (hh0) {
         if (history.indexOf(h) < 0) { toast(tr('This line is no longer in the history', 'この行はもう履歴にありません'), 2200); return; }
         // (as typed in the line and =: worked out again in its place, the lines below asked about, the time it was edited)
         startHistEdit(h);
@@ -4989,7 +4994,7 @@
     box.addEventListener('touchcancel', endPz);
     box.addEventListener('scroll', () => edgeFade(box));
     // the other forms of the answer (as Details: what could not be had or says nothing new is left out)
-    const hh = h || (r0 ? { expr, result: r0.result, approx: r0.approx } : null);
+    const hh = hh0 || (r0 ? { expr, result: r0.result, approx: r0.approx } : null);
     const tt = hh ? insertText(hh) : '';
     if (!tt || functionOfX(hh)) return;
     const rows = detailRows(hh, tt, null).filter((row) => ['exact', 'dec', 'frac', 'mixed', 'sci'].indexOf(row.id) >= 0);
@@ -5386,9 +5391,12 @@
   function cellSpot(c, pos) {
     const cs = getComputedStyle(c), m = document.createElement('div');
     for (const k of ['width', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderLeftWidth', 'borderRightWidth', 'borderTopStyle', 'borderLeftStyle', 'borderRightStyle', 'boxSizing', 'textAlign']) m.style[k] = cs[k];
-    Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: cs.whiteSpace === 'pre' ? 'pre' : 'pre-wrap', overflowWrap: cs.whiteSpace === 'pre' ? 'normal' : 'anywhere', top: '0', left: '-9999px' }); // ((1.16.3, F1) "never": one line)
-    const mk = document.createElement('span'); mk.textContent = '\u200b';
-    m.append(document.createTextNode(c.value.slice(0, pos)), mk, document.createTextNode(c.value.slice(pos)));
+    Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: cs.whiteSpace === 'pre' ? 'pre' : 'pre-wrap', overflowWrap: cs.overflowWrap || 'anywhere', wordBreak: cs.wordBreak || 'normal', fontVariantNumeric: cs.fontVariantNumeric, top: '0', left: '-9999px' }); // ((1.16.3, F1, C1) it breaks as the box does: "never" one line)
+    // ((1.16.3, C1) the mark is the character after the position, so that a position where a line breaks is at the start of
+    // the next line, where the box draws it (Home on a second line was taken for the end of the first))
+    const n = /[\uD800-\uDBFF]/.test(c.value[pos] || '') ? 2 : 1, after = c.value.slice(pos, pos + n);
+    const mk = document.createElement('span'); mk.textContent = after || '\u200b';
+    m.append(document.createTextNode(c.value.slice(0, pos)), mk, document.createTextNode(c.value.slice(pos + after.length)));
     document.body.append(m);
     const s = { x: mk.offsetLeft, y: mk.offsetTop, h: mk.offsetHeight || parseFloat(cs.fontSize) * 1.3 };
     m.remove();
@@ -5805,10 +5813,21 @@
       document.body.append(p.node);
       p.body.scrollTop = y;
     }
-    requestAnimationFrame(() => p.node.classList.add('open'));
+    requestAnimationFrame(() => { p.node.classList.add('open'); fitTitle(p); });
     panelStack.push(p);
     return p;
   }
+  // ((1.16.3, T1, the review of 11-25 07:40) a long title of a panel on two lines in a bar as high as it needs, smaller letters
+  // (down to 13 px) when two lines are not enough, and only then "…": "Einheiten und Währungen umrechnen" at 320 px with large
+  // text was cut at the top of a bar 52 px high)
+  function fitTitle(p) {
+    const t = p && p.bar && p.bar.querySelector('.ptitle');
+    if (!t || !t.isConnected || !t.clientWidth) return;
+    t.style.fontSize = '';
+    let fs = parseFloat(getComputedStyle(t).fontSize) || 17;
+    while (t.scrollHeight > t.clientHeight + 1 && fs > 13) { fs -= 1; t.style.fontSize = fs + 'px'; }
+  }
+  window.addEventListener('resize', () => { for (const p of panelStack) fitTitle(p); });
   function closePanel() {
     const top = panelStack[panelStack.length - 1];
     if (top && top.beforeClose && top.beforeClose()) return true; // ((1.16.3, W3) "View whole" being edited: the editing stops first)
