@@ -217,6 +217,7 @@ class Runs(unittest.TestCase):
         T.ensure_voice(self.dir, e, 'female', v2, redesign=True, log=self.log.append)
         self.assertEqual(len(e.designs), 3)
 
+    # (1.16: the paragraphs of the plan of 1.16, the promo and the shorts: p07 is the first of short 1)
     def test_sample_and_listening_lists(self):
         q, i = FakeEngine('qwen3'), FakeEngine('irodori', langs=['ja'])
         T.make_sample(self.dir, ['ja', 'en'], q, ['female', 'male'], VOICES, {'seed': '1234'}, {}, log=self.log.append)
@@ -226,8 +227,8 @@ class Runs(unittest.TestCase):
         self.assertEqual(len(i.calls), n)                        # Irodori: only Japanese
         man = read_json(os.path.join(self.dir, 'tts', 'sample', 'manifest.json'))
         names = sorted(r['file'] for r in man['rows'])
-        self.assertIn('ja/ja-irodori-female-p09-youtube-01.wav', names)
-        self.assertIn('en/en-qwen3-male-p09-youtube-01.wav', names)
+        self.assertIn('ja/ja-irodori-female-p07-short-1-history-00.wav', names)
+        self.assertIn('en/en-qwen3-male-p07-short-1-history-00.wav', names)
         for r in man['rows']:
             self.assertEqual((r['time_s'] is not None, r['vram_mb']), (True, 800))
             with wave.open(os.path.join(self.dir, 'tts', 'sample', r['file'])) as w:
@@ -236,13 +237,13 @@ class Runs(unittest.TestCase):
             md = f.read()
         self.assertIn('数字・単位・記号', md)
         self.assertIn('漢字の読み', md)
-        self.assertIn('ja/ja-irodori-female-p09-youtube-01.wav', md)
+        self.assertIn('ja/ja-irodori-female-p07-short-1-history-00.wav', md)
         self.assertIn('800 MB', md)
         with open(os.path.join(self.dir, 'tts', 'sample', 'listen.html'), encoding='utf-8') as f:
             h = f.read()
-        self.assertIn('<audio controls preload="none" src="ja/ja-qwen3-female-p09-youtube-01.wav">', h)
+        self.assertIn('<audio controls preload="none" src="ja/ja-qwen3-female-p07-short-1-history-00.wav">', h)
         # the logs give the time and the GPU memory of each paragraph
-        self.assertTrue(any('GPU memory at most 800 MB' in l and 'p09' in l for l in self.log))
+        self.assertTrue(any('GPU memory at most 800 MB' in l and 'p07' in l for l in self.log))
         # a second run makes nothing; a changed reading makes that paragraph again
         q2 = FakeEngine('qwen3')
         T.make_sample(self.dir, ['ja', 'en'], q2, ['female', 'male'], VOICES, {'seed': '1234'}, {}, log=self.log.append)
@@ -325,8 +326,8 @@ class Runs(unittest.TestCase):
         T.make_sample(self.dir, ['ja'], a, ['female'], VOICES, {}, {}, log=self.log.append)
         self.assertEqual(len(a.calls), len(T.tricky('ja')))         # not taken for the old samples
         names = sorted(os.listdir(os.path.join(self.dir, 'tts', 'sample', 'ja')))
-        self.assertIn('ja-qwen3-female-p09-youtube-01.wav', names)
-        self.assertIn('ja-qwen3-female-xvec-p09-youtube-01.wav', names)
+        self.assertIn('ja-qwen3-female-p07-short-1-history-00.wav', names)
+        self.assertIn('ja-qwen3-female-xvec-p07-short-1-history-00.wav', names)
 
     def test_clone_check_when_the_two_ways_differ(self):
         q = FakeQwen(honest=True)

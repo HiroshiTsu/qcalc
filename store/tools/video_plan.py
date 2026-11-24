@@ -19,6 +19,8 @@ import sys
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 STORE = os.path.dirname(TOOLS)
 PLAN = json.load(open(os.path.join(TOOLS, 'video-plan.json'), encoding='utf-8'))
+VER = PLAN.get('version', '1.12.0')  # (1.16: the texts go to store/video-1.16/, PLAN['out'])
+OUT = PLAN.get('out', 'video')
 MANUAL = 'https://hiroshitsu.github.io/qcalc/manual/'
 SOURCE = 'https://github.com/HiroshiTsu/qcalc'
 CONTACT = 'hiroshitsu.apps@gmail.com'
@@ -48,6 +50,16 @@ SCENE_JA = {
     'notes': '道具 →「計算メモ」→ 最初の例（名前と合計）',
     'manual': '道具 →「値段」→「？」→ 取扱説明書のその節（アプリの中、ネットなし）',
     'end': '終わりのカード：アイコン、QCalc、その言語の 1 行（アプリの画面ではない）',
+    # (1.16)
+    'histtype': '計算画面：1280 × 3、980 × 2 を打ち、そのたびに「=」。履歴の行に #1・#2 の番号',
+    'histsel': '同じ履歴：#1 の番号をタップ →「+」→ #2 の番号をタップ →「=」（#1 + #2）。履歴のボタン →「行を選んで合計・平均・コピー」→ 1 行目と 2 行目：合計・平均のバー →「表でコピー」',
+    'hist': '計算画面：1280 × 3、980 × 2、行の番号のタップで #1 + #2。「行を選んで合計…」→ 2 行：合計・平均 →「表でコピー」',
+    'margin': '道具 →「信用取引：維持率と追証」→ 最初の例 → 結果（維持率、追証の株価。QCalc Pro）',
+    'possize': '道具 →「損切りから株数」→ 最初の例 → 結果（株数、損切りの損失、損益比。QCalc Pro）',
+    'avgcost': '道具 →「平均取得単価」→ 最初の例 → 結果（平均取得単価、目標の平均にする株数。QCalc Pro）',
+    'notestable': '道具 →「計算メモ」→「表」（QCalc Pro）→ 例（品目・数量・単価、列「金額 = 数量 × 単価」）：数量を変えると金額と合計が変わる →「詳しく」→「CSV で保存」',
+    'notespaste': '道具 →「計算メモ」→ 新しいメモ →「表」（QCalc Pro）：表計算ソフトの表を最初のセルに貼る → セルに分かれ、1 行目が列の名前、合計と平均',
+    'pastesum': '計算画面：表計算ソフトの列（1200、850、−300）を入力欄に貼る → シート →「＋でつないで合計」→ 1200 + 850 + (−300) = 1750',
 }
 
 
@@ -94,7 +106,8 @@ def write_srt(path, cs):
 def videos(lang):
     L = PLAN['langs'][lang]
     v = [('promo', 'promo', L['promo'])]
-    v.append(('youtube', 'youtube', L['youtube']))
+    if L.get('youtube'):
+        v.append(('youtube', 'youtube', L['youtube']))
     for i, sh in enumerate(L['shorts'], 1):
         v.append((sh['name'], 'short', sh['segments']))
     return v
@@ -104,12 +117,12 @@ def main():
     problems = []
     for lang, L in PLAN['langs'].items():
         T = L10N['ja'] if lang == 'ja' else L10N['en']
-        d = os.path.join(STORE, 'video', lang)
+        d = os.path.join(STORE, OUT, lang)
         os.makedirs(d, exist_ok=True)
         script, board = [], []
-        title = 'QCalc 1.12.0 — ' + ('動画の台本' if lang == 'ja' else 'video scripts') + ' (' + lang + ')'
+        title = 'QCalc ' + VER + ' — ' + ('動画の台本' if lang == 'ja' else 'video scripts') + ' (' + lang + ')'
         script += ['# ' + title, '', T['note'], '']
-        board += ['# QCalc 1.12.0 — ' + ('絵コンテ' if lang == 'ja' else 'storyboard') + ' (' + lang + ')', '',
+        board += ['# QCalc ' + VER + ' — ' + ('絵コンテ' if lang == 'ja' else 'storyboard') + ' (' + lang + ')', '',
                   ('画面はすべて実際のアプリ（作業環境の Chromium に出した app/assets と本物の計算エンジン）を録画したものです。終わりのカードだけがアプリの画面ではありません（どの動画もアプリの画面が 8 割以上）。'
                    if lang == 'ja' else 'Every screen is a recording of the real app (app/assets in Chromium with the real engine). Only the closing card is not the app (the app is more than 80 % of every video).'), '']
         n_short = 0
@@ -156,11 +169,11 @@ def main():
         # youtube.md: title, description with the chapters, tags, thumbnail
         M = L['youtube_meta']
         chapters, t0 = [], 0.0
-        for s in L['youtube']:
+        for s in L.get('youtube') or []:
             if s.get('chapter'):
                 chapters.append('%s %s' % (mmss(t0), s['chapter']))
             t0 += float(s['dur'])
-        desc = [M['description'], '', T['chapters'] + ':' if lang != 'ja' else T['chapters'] + '：'] + chapters + ['',
+        desc = [M['description'], ''] + ([T['chapters'] + ':' if lang != 'ja' else T['chapters'] + '：'] + chapters + [''] if chapters else []) + [
                 T['manual'] + ('：' if lang == 'ja' else ': ') + MANUAL, T['source'] + ('：' if lang == 'ja' else ': ') + SOURCE,
                 T['contact'] + ('：' if lang == 'ja' else ': ') + CONTACT]
         tags = ', '.join(M['tags'])
@@ -175,7 +188,19 @@ def main():
              '## ' + ('説明' if lang == 'ja' else 'Description'), '', '```', '\n'.join(desc), '```', '',
              '## ' + ('タグ' if lang == 'ja' else 'Tags') + ' (%d / 500)' % len(tags), '', tags, '',
              '## ' + ('サムネイル' if lang == 'ja' else 'Thumbnail'), '', 'thumbnail.png (1280 × 720): ' + ' / '.join(M['thumb']), '',
-             '## ' + ('字幕' if lang == 'ja' else 'Subtitles'), '', 'youtube.srt (' + lang + ')', '']
+             '## ' + ('字幕' if lang == 'ja' else 'Subtitles'), '', ('youtube.srt' if L.get('youtube') else 'promo.srt') + ' (' + lang + ')', '']
+        if not L.get('youtube'):
+            # (1.16) the promo is the video on YouTube (its link goes into Google Play); the shorts, with a title each
+            y[2] = ('Google Play の宣伝動画（promo.mp4）を YouTube に上げるときに貼り付けます（本人が行います）。ショート動画の題名は下にあります。'
+                    if lang == 'ja' else 'Paste these in YouTube Studio when uploading the promo (promo.mp4; done by the owner). The titles of the shorts are below.')
+            y += ['## ' + ('ショート動画' if lang == 'ja' else 'Shorts'), '']
+            for sh in L['shorts']:
+                st = ''.join(sh['segments'][0]['title']) if lang in ('ja', 'zh-TW') else ' '.join(sh['segments'][0]['title'])
+                st = st + ' | QCalc #Shorts'
+                if len(st) > 100:
+                    problems.append('%s %s title has %d characters (limit 100)' % (lang, sh['name'], len(st)))
+                y += ['- ' + sh['name'] + '.mp4（' + sh['name'] + '.srt）：' + st if lang == 'ja' else '- ' + sh['name'] + '.mp4 (' + sh['name'] + '.srt): ' + st]
+            y.append('')
         open(os.path.join(d, 'youtube.md'), 'w', encoding='utf-8').write('\n'.join(y))
         print(lang, 'ok')
     for p in problems:

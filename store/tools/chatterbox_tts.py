@@ -66,7 +66,8 @@ def plan_text(lang, lines):
 
 def all_videos(lang, plan=None):
     L = (plan or PLAN)['langs'][lang]
-    return [('promo', L['promo']), ('youtube', L['youtube'])] + [(s['name'], s['segments']) for s in L['shorts']]
+    # (1.16: the promo and the shorts; no long YouTube video)
+    return [('promo', L['promo'])] + ([('youtube', L['youtube'])] if L.get('youtube') else []) + [(s['name'], s['segments']) for s in L['shorts']]
 
 
 def paragraphs_of(lang, plan=None):
