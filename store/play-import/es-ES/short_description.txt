@@ -1,1 +1,1 @@
-Cuentas como en papel: unidades, divisas, IVA, préstamos, gráficas y sólidos 3D.
+Calculadora con historial tipo hoja de cálculo: exacta, unidades, bolsa y 3D.

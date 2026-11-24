@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:05,464
+Every line of your history gets a number.
+
+2
+00:00:05,584 --> 00:00:11,578
+Use earlier answers, like line 1 plus line 2.
+
+3
+00:00:11,698 --> 00:00:19,730
+Select lines to add them up, then copy them as a table.
+

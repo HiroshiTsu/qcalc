@@ -1,0 +1,24 @@
+1
+00:00:00,150 --> 00:00:04,730
+QCalc is a calculator whose history works like a spreadsheet.
+
+2
+00:00:05,150 --> 00:00:09,730
+Reuse answers by number, add up a selection, copy a table.
+
+3
+00:00:10,150 --> 00:00:15,730
+Turn a region of a graph into a solid, and spin it in 3D.
+
+4
+00:00:16,150 --> 00:00:20,730
+Paste a spreadsheet into the notes for column formulas and totals.
+
+5
+00:00:21,150 --> 00:00:25,730
+Traders get the position size from a stop-loss.
+
+6
+00:00:26,150 --> 00:00:29,730
+Math, spreadsheets and 3D, all in QCalc.
+

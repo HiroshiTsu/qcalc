@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:06,597
+Notizen als Tabelle, mit einer Formelspalte.
+
+2
+00:00:06,717 --> 00:00:14,258
+Menge ändern: Beträge und Summen folgen sofort.
+
+3
+00:00:14,378 --> 00:00:19,730
+Die Tabelle als CSV-Datei speichern.
+

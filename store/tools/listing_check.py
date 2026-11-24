@@ -173,11 +173,13 @@ def main():
     if os.path.exists(vplan):
         VP = json.load(open(vplan, encoding='utf-8'))
         for lang, L in VP['langs'].items():
-            segs = L['promo'] + L['youtube'] + [s for sh in L['shorts'] for s in sh['segments']]
+            segs = L['promo'] + (L.get('youtube') or []) + [s for sh in L['shorts'] for s in sh['segments']]  # (1.16: no long video)
             texts = [t for s in segs for t in s['title'] + ([s['tag']] if s.get('tag') else [])] + L['end'] + L['youtube_meta']['thumb']
             check_text('video-plan %s headlines' % lang, lang, '\n'.join(texts), True, problems)
-    vroot = os.path.join(STORE, 'video')
-    if os.path.isdir(vroot):
+    # the subtitles of the videos of 1.12-1.15 (store/video/) and of 1.16 (store/video-1.16/)
+    for vroot in [os.path.join(STORE, 'video'), os.path.join(STORE, 'video-1.16')]:
+        if not os.path.isdir(vroot):
+            continue
         for lang in sorted(os.listdir(vroot)):
             d = os.path.join(vroot, lang)
             if not os.path.isdir(d):
@@ -186,7 +188,7 @@ def main():
                 if fn.endswith('.srt'):
                     txt = open(os.path.join(d, fn), encoding='utf-8').read()
                     lines = [l for l in txt.splitlines() if l.strip() and not re.match(r'^\d+$|^\d\d:\d\d', l)]
-                    check_text('video %s %s' % (lang, fn), lang, '\n'.join(lines), True, problems)
+                    check_text('%s %s %s' % (os.path.basename(vroot), lang, fn), lang, '\n'.join(lines), True, problems)
     print('%-7s %5s %5s %5s %6s' % ('locale', 'name', 'short', 'full', 'first'))
     for r in rows:
         print('%-7s %5d %5d %5d %6d' % r)

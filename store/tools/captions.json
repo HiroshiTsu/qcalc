@@ -1,193 +1,723 @@
 {
-  "_note": "Headlines on the store pictures (store/tools/shots.js). p1-p8: phone pictures in the order of the listing; land: the 16:9 picture; t1-t5: tablets (t1, t3 and t5 use p1, p4 and p5); p5_profile: the earlier fifth phone picture, kept as an alternative (screenshots-1.12/<set>/alt/); fg: the feature graphic; tag_pro / tag_3d: the small labels on pictures of QCalc Pro features. No rank, price or promotion words (store/tools/listing_check.py checks them).",
-  "ja": {
-    "p1": ["式を書くとおりに打つだけ", "答えはすぐ出ます"],
-    "p2": ["値段・ローン・日付は", "例をタップしてすぐ答え"],
-    "p3": ["単位も通貨も", "その場で換算"],
-    "p4": ["グラフの面を回して", "立体と体積に"],
-    "p5": ["容器の液量を 3D で", "液面を動かして量と %"],
-    "p5_profile": ["測った輪郭から", "体積と重さ"],
-    "p6": ["1 行ずつ計算して合計", "名前も付けられる計算メモ"],
-    "p7": ["分数・√・π のままの答え", "最大 20 万桁まで"],
-    "p8": ["ネットなしで動き", "個人データを集めません"],
-    "land": ["グラフの面を回すと", "立体と体積が出ます"],
-    "t2": ["道具は 1 つの画面に", "検索してすぐ使えます"],
-    "t4": ["立体を 3D で回して見る"],
-    "t5": ["容器の液量を 3D で見る"],
-    "fg": ["式のまま計算", "グラフから立体まで"],
-    "tag_pro": "QCalc Pro",
-    "tag_3d": "3D の表示：QCalc Pro",
-    "tag_digits": "1,000 桁を超えるのは QCalc Pro"
-  },
-  "en": {
-    "p1": ["Type math the way", "you write it"],
-    "p2": ["Prices, loans, dates:", "tap an example"],
-    "p3": ["Units and currencies,", "converted as you type"],
-    "p4": ["Turn a region of a graph", "into a solid and its volume"],
-    "p5": ["Liquid in a tank, in 3D:", "drag the level, read the amount"],
-    "p5_profile": ["Volume and weight", "from a measured profile"],
-    "p6": ["Calculation notes:", "a line at a time, with totals"],
-    "p7": ["Exact answers with √ and π,", "up to 200,000 digits"],
-    "p8": ["Works offline.", "Collects no personal data."],
-    "land": ["Turn a region of a graph", "into a 3D solid"],
-    "t2": ["All the tools on one screen,", "with a search"],
-    "t4": ["Turn the solid in 3D"],
-    "t5": ["See the liquid in a tank in 3D"],
-    "fg": ["Type math as you write it", "From graphs to 3D solids"],
-    "tag_pro": "QCalc Pro",
-    "tag_3d": "3D view: QCalc Pro",
-    "tag_digits": "More than 1,000 digits: QCalc Pro"
-  },
-  "en-GB": {
-    "p1": ["Type maths the way", "you write it"],
-    "p2": ["Prices, loans, dates:", "tap an example"],
-    "p3": ["Units and currencies,", "converted as you type"],
-    "p4": ["Turn a region of a graph", "into a solid and its volume"],
-    "p5": ["Liquid in a tank, in 3D:", "drag the level, read the amount"],
-    "p5_profile": ["Volume and weight", "from a measured profile"],
-    "p6": ["Calculation notes:", "a line at a time, with totals"],
-    "p7": ["Exact answers with surds and π,", "up to 200,000 digits"],
-    "p8": ["Works offline.", "Collects no personal data."],
-    "land": ["Turn a region of a graph", "into a 3D solid"],
-    "t2": ["All the tools on one screen,", "with a search"],
-    "t4": ["Turn the solid in 3D"],
-    "t5": ["See the liquid in a tank in 3D"],
-    "fg": ["Type maths as you write it", "From graphs to 3D solids"],
-    "tag_pro": "QCalc Pro",
-    "tag_3d": "3D view: QCalc Pro",
-    "tag_digits": "More than 1,000 digits: QCalc Pro"
-  },
-  "de": {
-    "p1": ["Rechnen, wie man", "es aufschreibt"],
-    "p2": ["Preis, Kredit, Datum:", "Beispiel antippen"],
-    "p3": ["Einheiten und Währungen", "sofort umrechnen"],
-    "p4": ["Fläche drehen:", "Rotationskörper und Volumen"],
-    "p5": ["Füllmenge im Tank in 3D:", "Füllstand ziehen, Menge ablesen"],
-    "p5_profile": ["Volumen und Gewicht", "aus einem Profil"],
-    "p6": ["Rechennotizen:", "Zeile für Zeile, mit Summe"],
-    "p7": ["Exakt mit √ und π,", "bis zu 200.000 Stellen"],
-    "p8": ["Funktioniert offline,", "sammelt keine persönlichen Daten"],
-    "land": ["Aus dem Graphen", "wird ein 3D-Körper"],
-    "t2": ["Alle Werkzeuge auf einem", "Bildschirm, mit Suche"],
-    "t4": ["Den Körper in 3D drehen"],
-    "t5": ["Die Füllmenge im Tank in 3D"],
-    "fg": ["Rechnen wie auf Papier", "Vom Graphen zum 3D-Körper"],
-    "tag_pro": "QCalc Pro",
-    "tag_3d": "3D-Ansicht: QCalc Pro",
-    "tag_digits": "Mehr als 1.000 Stellen: QCalc Pro"
-  },
-  "es": {
-    "p1": ["Escribe las cuentas", "como en papel"],
-    "p2": ["Precio, préstamo, fechas:", "toca un ejemplo"],
-    "p3": ["Unidades y divisas", "al momento"],
-    "p4": ["Gira una región:", "sólido y volumen"],
-    "p5": ["El líquido del depósito en 3D:", "arrastra el nivel y lee la cantidad"],
-    "p5_profile": ["Volumen y peso", "a partir de un perfil"],
-    "p6": ["Notas de cálculo:", "línea a línea, con total"],
-    "p7": ["Exacto con √ y π,", "hasta 200 000 cifras"],
-    "p8": ["Funciona sin conexión", "y no recoge datos personales"],
-    "land": ["Una región de la gráfica", "se convierte en sólido 3D"],
-    "t2": ["Todas las herramientas", "en una pantalla, con buscador"],
-    "t4": ["Gira el sólido en 3D"],
-    "t5": ["El líquido del depósito en 3D"],
-    "fg": ["Cuentas como en papel", "De la gráfica al sólido 3D"],
-    "tag_pro": "QCalc Pro",
-    "tag_3d": "Vista 3D: QCalc Pro",
-    "tag_digits": "Más de 1000 cifras: QCalc Pro"
-  },
-  "es-419": {
-    "p1": ["Escribe las operaciones", "como en papel"],
-    "p2": ["Precio, préstamo, fechas:", "toca un ejemplo"],
-    "p3": ["Unidades y monedas", "al instante"],
-    "p4": ["Gira una región:", "sólido y volumen"],
-    "p5": ["El líquido del tanque en 3D:", "arrastra el nivel y lee la cantidad"],
-    "p5_profile": ["Volumen y peso", "a partir de un perfil"],
-    "p6": ["Notas de cálculo:", "línea por línea, con total"],
-    "p7": ["Exacto con √ y π,", "hasta 200,000 dígitos"],
-    "p8": ["Funciona sin conexión", "y no recopila datos personales"],
-    "land": ["Una región de la gráfica", "se convierte en sólido 3D"],
-    "t2": ["Todas las herramientas", "en una pantalla, con buscador"],
-    "t4": ["Gira el sólido en 3D"],
-    "t5": ["El líquido del tanque en 3D"],
-    "fg": ["Operaciones como en papel", "De la gráfica al sólido 3D"],
-    "tag_pro": "QCalc Pro",
-    "tag_3d": "Vista 3D: QCalc Pro",
-    "tag_digits": "Más de 1,000 dígitos: QCalc Pro"
-  },
-  "fr": {
-    "p1": ["Tapez vos calculs", "comme sur papier"],
-    "p2": ["Prix, prêt, dates :", "touchez un exemple"],
-    "p3": ["Unités et devises", "converties aussitôt"],
-    "p4": ["Faites tourner une région :", "solide et volume"],
-    "p5": ["Le liquide de la cuve en 3D :", "faites glisser le niveau"],
-    "p5_profile": ["Volume et masse", "d’après un profil"],
-    "p6": ["Notes de calcul :", "ligne par ligne, avec total"],
-    "p7": ["Exact avec √ et π,", "jusqu’à 200 000 chiffres"],
-    "p8": ["Fonctionne hors ligne,", "aucune donnée personnelle collectée"],
-    "land": ["Une région du graphique", "devient un solide 3D"],
-    "t2": ["Tous les outils sur un écran,", "avec recherche"],
-    "t4": ["Faites tourner le solide en 3D"],
-    "t5": ["Le liquide de la cuve en 3D"],
-    "fg": ["Vos calculs comme sur papier", "Du graphique au solide 3D"],
-    "tag_pro": "QCalc Pro",
-    "tag_3d": "Vue 3D : QCalc Pro",
-    "tag_digits": "Plus de 1 000 chiffres : QCalc Pro"
-  },
-  "fr-CA": {
-    "p1": ["Entrez vos calculs", "comme sur papier"],
-    "p2": ["Prix, prêt, dates :", "touchez un exemple"],
-    "p3": ["Unités et devises", "converties aussitôt"],
-    "p4": ["Faites tourner une région :", "solide et volume"],
-    "p5": ["Le liquide du réservoir en 3D :", "faites glisser le niveau"],
-    "p5_profile": ["Volume et masse", "d’après un profil"],
-    "p6": ["Notes de calcul :", "ligne par ligne, avec total"],
-    "p7": ["Exact avec √ et π,", "jusqu’à 200 000 chiffres"],
-    "p8": ["Fonctionne hors ligne,", "aucune donnée personnelle recueillie"],
-    "land": ["Une région du graphique", "devient un solide 3D"],
-    "t2": ["Tous les outils sur un écran,", "avec recherche"],
-    "t4": ["Faites tourner le solide en 3D"],
-    "t5": ["Le liquide du réservoir en 3D"],
-    "fg": ["Vos calculs comme sur papier", "Du graphique au solide 3D"],
-    "tag_pro": "QCalc Pro",
-    "tag_3d": "Vue 3D : QCalc Pro",
-    "tag_digits": "Plus de 1 000 chiffres : QCalc Pro"
-  },
-  "ko": {
-    "p1": ["수식을 쓰는 그대로", "입력하면 바로 답"],
-    "p2": ["가격·대출·날짜", "예시를 탭하면 바로"],
-    "p3": ["단위도 환율도", "바로 변환"],
-    "p4": ["그래프의 영역을 돌려", "입체와 부피로"],
-    "p5": ["탱크의 액체를 3D로", "액면을 끌어 양과 % 확인"],
-    "p5_profile": ["측정한 윤곽으로", "부피와 무게"],
-    "p6": ["한 줄씩 계산하고 합계", "이름도 붙이는 계산 메모"],
-    "p7": ["분수·√·π 그대로의 답", "최대 20만 자리까지"],
-    "p8": ["인터넷 없이 작동", "개인정보를 수집하지 않습니다"],
-    "land": ["그래프의 영역을 돌리면", "입체와 부피가 나옵니다"],
-    "t2": ["모든 도구를 한 화면에", "검색도 됩니다"],
-    "t4": ["입체를 3D로 돌려 보기"],
-    "t5": ["탱크의 액체를 3D로 보기"],
-    "fg": ["수식을 쓰듯이 계산", "그래프에서 입체까지"],
-    "tag_pro": "QCalc Pro",
-    "tag_3d": "3D 보기: QCalc Pro",
-    "tag_digits": "1,000자리 초과: QCalc Pro"
-  },
-  "zh-TW": {
-    "p1": ["算式怎麼寫", "就怎麼輸入"],
-    "p2": ["價格、房貸、日期", "點範例馬上算"],
-    "p3": ["單位、匯率", "立刻換算"],
-    "p4": ["把圖形區域轉一圈", "變成立體並算出體積"],
-    "p5": ["以 3D 看儲槽的液量", "拖曳液面，讀出量與 %"],
-    "p5_profile": ["由實測輪廓", "算體積和重量"],
-    "p6": ["一行一行算再加總", "還能取名字的計算筆記"],
-    "p7": ["保留分數、√、π 的答案", "最多 20 萬位數"],
-    "p8": ["不用網路也能用", "不收集個人資料"],
-    "land": ["把圖形區域轉一圈", "就是 3D 立體"],
-    "t2": ["所有工具在同一頁", "還能搜尋"],
-    "t4": ["在 3D 中轉動立體"],
-    "t5": ["以 3D 看儲槽的液量"],
-    "fg": ["算式照寫就能算", "從函數圖形到立體"],
-    "tag_pro": "QCalc Pro",
-    "tag_3d": "3D 顯示：QCalc Pro",
-    "tag_digits": "超過 1,000 位數：QCalc Pro"
-  }
+ "_note": "Headlines on the store pictures of 1.16 (store/tools/shots.js, store/screenshots-1.16/). p1-p8: the phone pictures in the order of the listing of that language (ja: history, margin, 3D graph, notes table, tank, units, statistics, languages; the others: history, 3D graph, notes table, position size, tank, units, statistics, languages); pN_tag: the small label on a picture of a QCalc Pro feature; land: the 16:9 picture (the 3D graph); t1-t5: the tablets (history, notes table, 3D graph, stocks, tank: the headlines of those phone pictures); fg: the feature graphic. en-GB, es-419 and fr-CA have the texts of en, es and fr (es-419: its own p5 and p6), and the money of their region on the screens. No rank, price or promotion words (store/tools/listing_check.py checks them).",
+ "ja": {
+  "p1": [
+   "履歴がそのまま表計算に",
+   "#12 で前の答えを使い、選んで合計・表でコピー"
+  ],
+  "p2": [
+   "信用取引の追証の株価がすぐ分かる",
+   "維持率、損切りから株数、NISA の損益も"
+  ],
+  "p2_tag": "信用取引の計算：QCalc Pro",
+  "p3": [
+   "グラフの面を回して立体と体積に",
+   "指で回して 3D で見る"
+  ],
+  "p3_tag": "3D の表示：QCalc Pro",
+  "p4": [
+   "計算メモを表にして合計",
+   "列の式・合計・平均、表計算ソフトから貼り付け"
+  ],
+  "p4_tag": "表のモード：QCalc Pro",
+  "p5": [
+   "容器の液量も、立体の重さも",
+   "寸法を入れるだけ。3D で液面を確かめる"
+  ],
+  "p5_tag": "3D の表示：QCalc Pro",
+  "p6": [
+   "単位も通貨も、打つそばから換算",
+   "為替レートはアプリを開くと更新"
+  ],
+  "p7": [
+   "データの平均・分布・回帰曲線",
+   "ヒストグラムと箱ひげ図も"
+  ],
+  "p7_tag": "直線以外の曲線：QCalc Pro",
+  "p8": [
+   "7 つの言語、ライトもダークも",
+   "ネットなしでも動き、個人データを集めません"
+  ],
+  "land": [
+   "グラフの面を回して立体と体積に",
+   "指で回して 3D で見る"
+  ],
+  "land_tag": "3D の表示：QCalc Pro",
+  "t1": [
+   "履歴がそのまま表計算に",
+   "#12 で前の答えを使い、選んで合計・表でコピー"
+  ],
+  "t2": [
+   "計算メモを表にして合計",
+   "列の式・合計・平均、表計算ソフトから貼り付け"
+  ],
+  "t2_tag": "表のモード：QCalc Pro",
+  "t3": [
+   "グラフの面を回して立体と体積に",
+   "指で回して 3D で見る"
+  ],
+  "t3_tag": "3D の表示：QCalc Pro",
+  "t4": [
+   "信用取引の追証の株価がすぐ分かる",
+   "維持率、損切りから株数、NISA の損益も"
+  ],
+  "t4_tag": "信用取引の計算：QCalc Pro",
+  "t5": [
+   "容器の液量も、立体の重さも",
+   "寸法を入れるだけ。3D で液面を確かめる"
+  ],
+  "t5_tag": "3D の表示：QCalc Pro",
+  "fg": [
+   "計算・表計算・3D をひとつに",
+   "履歴がそのまま表計算になる電卓"
+  ]
+ },
+ "en": {
+  "p1": [
+   "Your history works like a spreadsheet",
+   "Reuse answers as #12, add up a selection, copy as a table"
+  ],
+  "p2": [
+   "Turn a graph into a 3D solid",
+   "Spin it with your finger and read the volume"
+  ],
+  "p2_tag": "3D view: QCalc Pro",
+  "p3": [
+   "Notes that turn into a table",
+   "Column formulas, totals, paste from a spreadsheet"
+  ],
+  "p3_tag": "Table mode: QCalc Pro",
+  "p4": [
+   "Position size from your stop-loss",
+   "Also the margin-call price, average cost and yields"
+  ],
+  "p4_tag": "Margin and position sizing: QCalc Pro",
+  "p5": [
+   "Liquid in a tank, weight of a solid",
+   "Enter the sizes, check the level in 3D"
+  ],
+  "p5_tag": "3D view: QCalc Pro",
+  "p6": [
+   "Units and currencies, converted as you type",
+   "Exchange rates update when you open the app"
+  ],
+  "p7": [
+   "Averages, distributions, fitted curves",
+   "Histograms and box plots too"
+  ],
+  "p7_tag": "Curves other than a line: QCalc Pro",
+  "p8": [
+   "7 languages, light or dark",
+   "Works offline too. Collects no personal data."
+  ],
+  "land": [
+   "Turn a graph into a 3D solid",
+   "Spin it with your finger and read the volume"
+  ],
+  "land_tag": "3D view: QCalc Pro",
+  "t1": [
+   "Your history works like a spreadsheet",
+   "Reuse answers as #12, add up a selection, copy as a table"
+  ],
+  "t2": [
+   "Notes that turn into a table",
+   "Column formulas, totals, paste from a spreadsheet"
+  ],
+  "t2_tag": "Table mode: QCalc Pro",
+  "t3": [
+   "Turn a graph into a 3D solid",
+   "Spin it with your finger and read the volume"
+  ],
+  "t3_tag": "3D view: QCalc Pro",
+  "t4": [
+   "Position size from your stop-loss",
+   "Also the margin-call price, average cost and yields"
+  ],
+  "t4_tag": "Margin and position sizing: QCalc Pro",
+  "t5": [
+   "Liquid in a tank, weight of a solid",
+   "Enter the sizes, check the level in 3D"
+  ],
+  "t5_tag": "3D view: QCalc Pro",
+  "fg": [
+   "Calculator, spreadsheet and 3D in one",
+   "Your history works like a spreadsheet"
+  ]
+ },
+ "en-GB": {
+  "p1": [
+   "Your history works like a spreadsheet",
+   "Reuse answers as #12, add up a selection, copy as a table"
+  ],
+  "p2": [
+   "Turn a graph into a 3D solid",
+   "Spin it with your finger and read the volume"
+  ],
+  "p2_tag": "3D view: QCalc Pro",
+  "p3": [
+   "Notes that turn into a table",
+   "Column formulas, totals, paste from a spreadsheet"
+  ],
+  "p3_tag": "Table mode: QCalc Pro",
+  "p4": [
+   "Position size from your stop-loss",
+   "Also the margin-call price, average cost and yields"
+  ],
+  "p4_tag": "Margin and position sizing: QCalc Pro",
+  "p5": [
+   "Liquid in a tank, weight of a solid",
+   "Enter the sizes, check the level in 3D"
+  ],
+  "p5_tag": "3D view: QCalc Pro",
+  "p6": [
+   "Units and currencies, converted as you type",
+   "Exchange rates update when you open the app"
+  ],
+  "p7": [
+   "Averages, distributions, fitted curves",
+   "Histograms and box plots too"
+  ],
+  "p7_tag": "Curves other than a line: QCalc Pro",
+  "p8": [
+   "7 languages, light or dark",
+   "Works offline too. Collects no personal data."
+  ],
+  "land": [
+   "Turn a graph into a 3D solid",
+   "Spin it with your finger and read the volume"
+  ],
+  "land_tag": "3D view: QCalc Pro",
+  "t1": [
+   "Your history works like a spreadsheet",
+   "Reuse answers as #12, add up a selection, copy as a table"
+  ],
+  "t2": [
+   "Notes that turn into a table",
+   "Column formulas, totals, paste from a spreadsheet"
+  ],
+  "t2_tag": "Table mode: QCalc Pro",
+  "t3": [
+   "Turn a graph into a 3D solid",
+   "Spin it with your finger and read the volume"
+  ],
+  "t3_tag": "3D view: QCalc Pro",
+  "t4": [
+   "Position size from your stop-loss",
+   "Also the margin-call price, average cost and yields"
+  ],
+  "t4_tag": "Margin and position sizing: QCalc Pro",
+  "t5": [
+   "Liquid in a tank, weight of a solid",
+   "Enter the sizes, check the level in 3D"
+  ],
+  "t5_tag": "3D view: QCalc Pro",
+  "fg": [
+   "Calculator, spreadsheet and 3D in one",
+   "Your history works like a spreadsheet"
+  ]
+ },
+ "de": {
+  "p1": [
+   "Der Verlauf rechnet wie eine Tabelle",
+   "#12 wiederverwenden, Auswahl summieren, als Tabelle kopieren"
+  ],
+  "p2": [
+   "Aus einem Graphen wird ein 3D-Körper",
+   "Mit dem Finger drehen, Volumen ablesen"
+  ],
+  "p2_tag": "3D-Ansicht: QCalc Pro",
+  "p3": [
+   "Notizen werden zur Tabelle",
+   "Spaltenformeln, Summen, Einfügen aus Tabellen"
+  ],
+  "p3_tag": "Tabellenmodus: QCalc Pro",
+  "p4": [
+   "Positionsgröße aus dem Stop-Loss",
+   "Auch Nachschusskurs, Einstandskurs und Rendite"
+  ],
+  "p4_tag": "Margin und Positionsgröße: QCalc Pro",
+  "p5": [
+   "Füllstand im Tank, Gewicht eines Körpers",
+   "Maße eingeben, Füllstand in 3D prüfen"
+  ],
+  "p5_tag": "3D-Ansicht: QCalc Pro",
+  "p6": [
+   "Einheiten und Währungen, sofort umgerechnet",
+   "Wechselkurse aktualisieren sich beim Öffnen"
+  ],
+  "p7": [
+   "Mittelwerte, Verteilungen, Kurven",
+   "Auch Histogramm und Boxplot"
+  ],
+  "p7_tag": "Kurven außer der Geraden: QCalc Pro",
+  "p8": [
+   "7 Sprachen, hell oder dunkel",
+   "Funktioniert auch offline. Sammelt keine persönlichen Daten."
+  ],
+  "land": [
+   "Aus einem Graphen wird ein 3D-Körper",
+   "Mit dem Finger drehen, Volumen ablesen"
+  ],
+  "land_tag": "3D-Ansicht: QCalc Pro",
+  "t1": [
+   "Der Verlauf rechnet wie eine Tabelle",
+   "#12 wiederverwenden, Auswahl summieren, als Tabelle kopieren"
+  ],
+  "t2": [
+   "Notizen werden zur Tabelle",
+   "Spaltenformeln, Summen, Einfügen aus Tabellen"
+  ],
+  "t2_tag": "Tabellenmodus: QCalc Pro",
+  "t3": [
+   "Aus einem Graphen wird ein 3D-Körper",
+   "Mit dem Finger drehen, Volumen ablesen"
+  ],
+  "t3_tag": "3D-Ansicht: QCalc Pro",
+  "t4": [
+   "Positionsgröße aus dem Stop-Loss",
+   "Auch Nachschusskurs, Einstandskurs und Rendite"
+  ],
+  "t4_tag": "Margin und Positionsgröße: QCalc Pro",
+  "t5": [
+   "Füllstand im Tank, Gewicht eines Körpers",
+   "Maße eingeben, Füllstand in 3D prüfen"
+  ],
+  "t5_tag": "3D-Ansicht: QCalc Pro",
+  "fg": [
+   "Rechner, Tabelle und 3D in einem",
+   "Der Verlauf rechnet wie eine Tabelle"
+  ]
+ },
+ "es": {
+  "p1": [
+   "Tu historial funciona como una hoja de cálculo",
+   "Reutiliza resultados con #12, suma una selección, copia como tabla"
+  ],
+  "p2": [
+   "Convierte una gráfica en un sólido 3D",
+   "Gíralo con el dedo y lee el volumen"
+  ],
+  "p2_tag": "Vista 3D: QCalc Pro",
+  "p3": [
+   "Notas que se vuelven tabla",
+   "Fórmulas por columna, totales, pegar desde una hoja de cálculo"
+  ],
+  "p3_tag": "Modo tabla: QCalc Pro",
+  "p4": [
+   "Tamaño de posición desde tu stop",
+   "También precio de llamada de margen, precio medio y rentabilidad"
+  ],
+  "p4_tag": "Margen y tamaño de posición: QCalc Pro",
+  "p5": [
+   "Líquido en un depósito, peso de un sólido",
+   "Introduce las medidas y mira el nivel en 3D"
+  ],
+  "p5_tag": "Vista 3D: QCalc Pro",
+  "p6": [
+   "Unidades y monedas, convertidas al escribir",
+   "Los tipos de cambio se actualizan al abrir la app"
+  ],
+  "p7": [
+   "Medias, distribuciones y curvas",
+   "También histograma y diagrama de caja"
+  ],
+  "p7_tag": "Curvas que no son rectas: QCalc Pro",
+  "p8": [
+   "7 idiomas, claro u oscuro",
+   "También funciona sin conexión. No recopila datos personales."
+  ],
+  "land": [
+   "Convierte una gráfica en un sólido 3D",
+   "Gíralo con el dedo y lee el volumen"
+  ],
+  "land_tag": "Vista 3D: QCalc Pro",
+  "t1": [
+   "Tu historial funciona como una hoja de cálculo",
+   "Reutiliza resultados con #12, suma una selección, copia como tabla"
+  ],
+  "t2": [
+   "Notas que se vuelven tabla",
+   "Fórmulas por columna, totales, pegar desde una hoja de cálculo"
+  ],
+  "t2_tag": "Modo tabla: QCalc Pro",
+  "t3": [
+   "Convierte una gráfica en un sólido 3D",
+   "Gíralo con el dedo y lee el volumen"
+  ],
+  "t3_tag": "Vista 3D: QCalc Pro",
+  "t4": [
+   "Tamaño de posición desde tu stop",
+   "También precio de llamada de margen, precio medio y rentabilidad"
+  ],
+  "t4_tag": "Margen y tamaño de posición: QCalc Pro",
+  "t5": [
+   "Líquido en un depósito, peso de un sólido",
+   "Introduce las medidas y mira el nivel en 3D"
+  ],
+  "t5_tag": "Vista 3D: QCalc Pro",
+  "fg": [
+   "Calculadora, hoja de cálculo y 3D en una",
+   "Tu historial funciona como una hoja de cálculo"
+  ]
+ },
+ "es-419": {
+  "p1": [
+   "Tu historial funciona como una hoja de cálculo",
+   "Reutiliza resultados con #12, suma una selección, copia como tabla"
+  ],
+  "p2": [
+   "Convierte una gráfica en un sólido 3D",
+   "Gíralo con el dedo y lee el volumen"
+  ],
+  "p2_tag": "Vista 3D: QCalc Pro",
+  "p3": [
+   "Notas que se vuelven tabla",
+   "Fórmulas por columna, totales, pegar desde una hoja de cálculo"
+  ],
+  "p3_tag": "Modo tabla: QCalc Pro",
+  "p4": [
+   "Tamaño de posición desde tu stop",
+   "También precio de llamada de margen, precio medio y rentabilidad"
+  ],
+  "p4_tag": "Margen y tamaño de posición: QCalc Pro",
+  "p5": [
+   "Líquido en un depósito, peso de un sólido",
+   "Ingresa las medidas y mira el nivel en 3D"
+  ],
+  "p5_tag": "Vista 3D: QCalc Pro",
+  "p6": [
+   "Unidades y monedas, convertidas al escribir",
+   "Las tasas de cambio se actualizan al abrir la app"
+  ],
+  "p7": [
+   "Medias, distribuciones y curvas",
+   "También histograma y diagrama de caja"
+  ],
+  "p7_tag": "Curvas que no son rectas: QCalc Pro",
+  "p8": [
+   "7 idiomas, claro u oscuro",
+   "También funciona sin conexión. No recopila datos personales."
+  ],
+  "land": [
+   "Convierte una gráfica en un sólido 3D",
+   "Gíralo con el dedo y lee el volumen"
+  ],
+  "land_tag": "Vista 3D: QCalc Pro",
+  "t1": [
+   "Tu historial funciona como una hoja de cálculo",
+   "Reutiliza resultados con #12, suma una selección, copia como tabla"
+  ],
+  "t2": [
+   "Notas que se vuelven tabla",
+   "Fórmulas por columna, totales, pegar desde una hoja de cálculo"
+  ],
+  "t2_tag": "Modo tabla: QCalc Pro",
+  "t3": [
+   "Convierte una gráfica en un sólido 3D",
+   "Gíralo con el dedo y lee el volumen"
+  ],
+  "t3_tag": "Vista 3D: QCalc Pro",
+  "t4": [
+   "Tamaño de posición desde tu stop",
+   "También precio de llamada de margen, precio medio y rentabilidad"
+  ],
+  "t4_tag": "Margen y tamaño de posición: QCalc Pro",
+  "t5": [
+   "Líquido en un depósito, peso de un sólido",
+   "Ingresa las medidas y mira el nivel en 3D"
+  ],
+  "t5_tag": "Vista 3D: QCalc Pro",
+  "fg": [
+   "Calculadora, hoja de cálculo y 3D en una",
+   "Tu historial funciona como una hoja de cálculo"
+  ]
+ },
+ "fr": {
+  "p1": [
+   "Votre historique fonctionne comme un tableur",
+   "Réutilisez un résultat avec #12, additionnez une sélection, copiez en tableau"
+  ],
+  "p2": [
+   "Un graphique devient un solide en 3D",
+   "Tournez-le du doigt et lisez le volume"
+  ],
+  "p2_tag": "Vue 3D : QCalc Pro",
+  "p3": [
+   "Des notes qui deviennent un tableau",
+   "Formules par colonne, totaux, collage depuis un tableur"
+  ],
+  "p3_tag": "Mode tableau : QCalc Pro",
+  "p4": [
+   "La taille de position depuis votre stop",
+   "Aussi le prix d’appel de marge, le prix de revient et le rendement"
+  ],
+  "p4_tag": "Marge et taille de position : QCalc Pro",
+  "p5": [
+   "Le liquide d’une cuve, le poids d’un solide",
+   "Entrez les cotes, vérifiez le niveau en 3D"
+  ],
+  "p5_tag": "Vue 3D : QCalc Pro",
+  "p6": [
+   "Unités et devises, converties pendant la saisie",
+   "Les taux de change se mettent à jour à l’ouverture"
+  ],
+  "p7": [
+   "Moyennes, lois, courbes d’ajustement",
+   "Histogramme et boîte à moustaches aussi"
+  ],
+  "p7_tag": "Courbes autres qu’une droite : QCalc Pro",
+  "p8": [
+   "7 langues, clair ou sombre",
+   "Fonctionne aussi hors ligne. Ne collecte aucune donnée personnelle."
+  ],
+  "land": [
+   "Un graphique devient un solide en 3D",
+   "Tournez-le du doigt et lisez le volume"
+  ],
+  "land_tag": "Vue 3D : QCalc Pro",
+  "t1": [
+   "Votre historique fonctionne comme un tableur",
+   "Réutilisez un résultat avec #12, additionnez une sélection, copiez en tableau"
+  ],
+  "t2": [
+   "Des notes qui deviennent un tableau",
+   "Formules par colonne, totaux, collage depuis un tableur"
+  ],
+  "t2_tag": "Mode tableau : QCalc Pro",
+  "t3": [
+   "Un graphique devient un solide en 3D",
+   "Tournez-le du doigt et lisez le volume"
+  ],
+  "t3_tag": "Vue 3D : QCalc Pro",
+  "t4": [
+   "La taille de position depuis votre stop",
+   "Aussi le prix d’appel de marge, le prix de revient et le rendement"
+  ],
+  "t4_tag": "Marge et taille de position : QCalc Pro",
+  "t5": [
+   "Le liquide d’une cuve, le poids d’un solide",
+   "Entrez les cotes, vérifiez le niveau en 3D"
+  ],
+  "t5_tag": "Vue 3D : QCalc Pro",
+  "fg": [
+   "Calculatrice, tableur et 3D réunis",
+   "Votre historique fonctionne comme un tableur"
+  ]
+ },
+ "fr-CA": {
+  "p1": [
+   "Votre historique fonctionne comme un tableur",
+   "Réutilisez un résultat avec #12, additionnez une sélection, copiez en tableau"
+  ],
+  "p2": [
+   "Un graphique devient un solide en 3D",
+   "Tournez-le du doigt et lisez le volume"
+  ],
+  "p2_tag": "Vue 3D : QCalc Pro",
+  "p3": [
+   "Des notes qui deviennent un tableau",
+   "Formules par colonne, totaux, collage depuis un tableur"
+  ],
+  "p3_tag": "Mode tableau : QCalc Pro",
+  "p4": [
+   "La taille de position depuis votre stop",
+   "Aussi le prix d’appel de marge, le prix de revient et le rendement"
+  ],
+  "p4_tag": "Marge et taille de position : QCalc Pro",
+  "p5": [
+   "Le liquide d’une cuve, le poids d’un solide",
+   "Entrez les cotes, vérifiez le niveau en 3D"
+  ],
+  "p5_tag": "Vue 3D : QCalc Pro",
+  "p6": [
+   "Unités et devises, converties pendant la saisie",
+   "Les taux de change se mettent à jour à l’ouverture"
+  ],
+  "p7": [
+   "Moyennes, lois, courbes d’ajustement",
+   "Histogramme et boîte à moustaches aussi"
+  ],
+  "p7_tag": "Courbes autres qu’une droite : QCalc Pro",
+  "p8": [
+   "7 langues, clair ou sombre",
+   "Fonctionne aussi hors ligne. Ne collecte aucune donnée personnelle."
+  ],
+  "land": [
+   "Un graphique devient un solide en 3D",
+   "Tournez-le du doigt et lisez le volume"
+  ],
+  "land_tag": "Vue 3D : QCalc Pro",
+  "t1": [
+   "Votre historique fonctionne comme un tableur",
+   "Réutilisez un résultat avec #12, additionnez une sélection, copiez en tableau"
+  ],
+  "t2": [
+   "Des notes qui deviennent un tableau",
+   "Formules par colonne, totaux, collage depuis un tableur"
+  ],
+  "t2_tag": "Mode tableau : QCalc Pro",
+  "t3": [
+   "Un graphique devient un solide en 3D",
+   "Tournez-le du doigt et lisez le volume"
+  ],
+  "t3_tag": "Vue 3D : QCalc Pro",
+  "t4": [
+   "La taille de position depuis votre stop",
+   "Aussi le prix d’appel de marge, le prix de revient et le rendement"
+  ],
+  "t4_tag": "Marge et taille de position : QCalc Pro",
+  "t5": [
+   "Le liquide d’une cuve, le poids d’un solide",
+   "Entrez les cotes, vérifiez le niveau en 3D"
+  ],
+  "t5_tag": "Vue 3D : QCalc Pro",
+  "fg": [
+   "Calculatrice, tableur et 3D réunis",
+   "Votre historique fonctionne comme un tableur"
+  ]
+ },
+ "ko": {
+  "p1": [
+   "계산 기록이 그대로 표 계산이 됩니다",
+   "#12로 앞의 결과를 쓰고, 골라서 합계, 표로 복사"
+  ],
+  "p2": [
+   "그래프를 돌려 입체와 부피로",
+   "손가락으로 돌려 3D로 보기"
+  ],
+  "p2_tag": "3D 보기: QCalc Pro",
+  "p3": [
+   "계산 메모를 표로 만들어 합계",
+   "열의 식·합계·평균, 스프레드시트에서 붙여 넣기"
+  ],
+  "p3_tag": "표 모드: QCalc Pro",
+  "p4": [
+   "손절가로 주식 수를 바로",
+   "신용거래 추가 증거금 주가, 평균 매입 단가, 수익률도"
+  ],
+  "p4_tag": "신용거래와 포지션 계산: QCalc Pro",
+  "p5": [
+   "탱크의 액량도, 입체의 무게도",
+   "치수만 넣으면 됩니다. 3D로 액면 확인"
+  ],
+  "p5_tag": "3D 보기: QCalc Pro",
+  "p6": [
+   "단위도 통화도 입력하는 대로 환산",
+   "환율은 앱을 열 때 갱신"
+  ],
+  "p7": [
+   "데이터의 평균·분포·회귀곡선",
+   "히스토그램과 상자그림도"
+  ],
+  "p7_tag": "직선 이외의 곡선: QCalc Pro",
+  "p8": [
+   "7개 언어, 라이트와 다크",
+   "인터넷 없이도 작동하고 개인 데이터를 수집하지 않습니다"
+  ],
+  "land": [
+   "그래프를 돌려 입체와 부피로",
+   "손가락으로 돌려 3D로 보기"
+  ],
+  "land_tag": "3D 보기: QCalc Pro",
+  "t1": [
+   "계산 기록이 그대로 표 계산이 됩니다",
+   "#12로 앞의 결과를 쓰고, 골라서 합계, 표로 복사"
+  ],
+  "t2": [
+   "계산 메모를 표로 만들어 합계",
+   "열의 식·합계·평균, 스프레드시트에서 붙여 넣기"
+  ],
+  "t2_tag": "표 모드: QCalc Pro",
+  "t3": [
+   "그래프를 돌려 입체와 부피로",
+   "손가락으로 돌려 3D로 보기"
+  ],
+  "t3_tag": "3D 보기: QCalc Pro",
+  "t4": [
+   "손절가로 주식 수를 바로",
+   "신용거래 추가 증거금 주가, 평균 매입 단가, 수익률도"
+  ],
+  "t4_tag": "신용거래와 포지션 계산: QCalc Pro",
+  "t5": [
+   "탱크의 액량도, 입체의 무게도",
+   "치수만 넣으면 됩니다. 3D로 액면 확인"
+  ],
+  "t5_tag": "3D 보기: QCalc Pro",
+  "fg": [
+   "계산기, 표 계산, 3D를 하나로",
+   "계산 기록이 그대로 표 계산이 되는 계산기"
+  ]
+ },
+ "zh-TW": {
+  "p1": [
+   "歷史紀錄直接變成試算表",
+   "用 #12 沿用前面的結果、選取加總、以表格複製"
+  ],
+  "p2": [
+   "把圖形旋轉成立體與體積",
+   "用手指旋轉，以 3D 查看"
+  ],
+  "p2_tag": "3D 顯示：QCalc Pro",
+  "p3": [
+   "計算筆記變成表格",
+   "欄位公式、合計、平均，可從試算表貼上"
+  ],
+  "p3_tag": "表格模式：QCalc Pro",
+  "p4": [
+   "由停損價算出股數",
+   "還有信用交易追繳價、平均成本、殖利率"
+  ],
+  "p4_tag": "信用交易與部位計算：QCalc Pro",
+  "p5": [
+   "容器的液量、立體的重量",
+   "只要輸入尺寸，用 3D 確認液面"
+  ],
+  "p5_tag": "3D 顯示：QCalc Pro",
+  "p6": [
+   "單位與貨幣，邊輸入邊換算",
+   "開啟 App 時更新匯率"
+  ],
+  "p7": [
+   "資料的平均、分佈、迴歸曲線",
+   "也有直方圖與盒鬚圖"
+  ],
+  "p7_tag": "直線以外的曲線：QCalc Pro",
+  "p8": [
+   "7 種語言，淺色或深色",
+   "不連網也能用，不蒐集個人資料"
+  ],
+  "land": [
+   "把圖形旋轉成立體與體積",
+   "用手指旋轉，以 3D 查看"
+  ],
+  "land_tag": "3D 顯示：QCalc Pro",
+  "t1": [
+   "歷史紀錄直接變成試算表",
+   "用 #12 沿用前面的結果、選取加總、以表格複製"
+  ],
+  "t2": [
+   "計算筆記變成表格",
+   "欄位公式、合計、平均，可從試算表貼上"
+  ],
+  "t2_tag": "表格模式：QCalc Pro",
+  "t3": [
+   "把圖形旋轉成立體與體積",
+   "用手指旋轉，以 3D 查看"
+  ],
+  "t3_tag": "3D 顯示：QCalc Pro",
+  "t4": [
+   "由停損價算出股數",
+   "還有信用交易追繳價、平均成本、殖利率"
+  ],
+  "t4_tag": "信用交易與部位計算：QCalc Pro",
+  "t5": [
+   "容器的液量、立體的重量",
+   "只要輸入尺寸，用 3D 確認液面"
+  ],
+  "t5_tag": "3D 顯示：QCalc Pro",
+  "fg": [
+   "計算、試算表、3D 一次擁有",
+   "歷史紀錄直接變成試算表的計算機"
+  ]
+ }
 }

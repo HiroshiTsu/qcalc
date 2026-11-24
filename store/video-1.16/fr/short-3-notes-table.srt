@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:08,238
+Transformez vos notes en tableau, avec une colonne de formule.
+
+2
+00:00:08,358 --> 00:00:15,626
+Changez une quantité : montants et totaux suivent aussitôt.
+
+3
+00:00:15,746 --> 00:00:19,730
+Enregistrez le tableau en CSV.
+

@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:09,730
+Capital, riesgo, entrada y stop: el tamaño de posición.
+
+2
+00:00:10,150 --> 00:00:15,736
+Precio medio y cuántas acciones comprar para un promedio objetivo.
+
+3
+00:00:15,856 --> 00:00:19,730
+Solo tus números: no se descarga nada.
+

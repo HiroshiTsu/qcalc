@@ -5,6 +5,7 @@
 //   store/video/<lang>/thumbnail.png   the YouTube thumbnail, 1280 × 720 (the solid in 3D from the app)
 // The recorded screens of the app go into the frame (store/tools/video_render.py).
 // Usage: node store/tools/video_cards.js <base url of the test server> <work folder> [langs]
+//        (THUMB_ONLY=1: only the thumbnails, the backgrounds as they are)
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -67,8 +68,8 @@ async function shot(browser, W, H, content, out) {
   const browser = await chromium.launch();
   for (const lang of LANGS) {
     const L = PLAN.langs[lang];
-    const vids = [['promo', WIDE, L.promo], ['youtube', WIDE, L.youtube]].concat(L.shorts.map((s) => [s.name, TALL, s.segments]));
-    for (const [name, F, segs] of vids) {
+    const vids = [['promo', WIDE, L.promo]].concat(L.youtube ? [['youtube', WIDE, L.youtube]] : [], L.shorts.map((s) => [s.name, TALL, s.segments])); // (1.16: no long video)
+    for (const [name, F, segs] of process.env.THUMB_ONLY ? [] : vids) {
       for (let i = 0; i < segs.length; i++) await shot(browser, F.W, F.H, html(lang, F, segs[i], L.end), path.join(WORK, lang, 'bg', `${name}-${i + 1}.png`));
       console.log(lang, name, segs.length);
     }
@@ -81,15 +82,25 @@ async function shot(browser, W, H, content, out) {
     const t = `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><style>
       html,body{margin:0}body{width:1280px;height:720px;overflow:hidden;font-family:${font(lang)};color:#fff;background:radial-gradient(120% 120% at 15% 10%, #3A60EE 0%, #1F31A8 45%, #0B1046 100%);position:relative}
       .b{position:absolute;left:64px;top:64px;display:flex;align-items:center;gap:22px}.b img{width:96px;height:96px;border-radius:22px}.b span{font-size:72px;font-weight:800;letter-spacing:-.03em}
-      .t{position:absolute;left:64px;top:230px;width:640px}.t div{font-size:74px;font-weight:900;line-height:1.12;white-space:nowrap}
+      .t{position:absolute;left:64px;top:230px;width:600px}.t div{font-size:74px;font-weight:900;line-height:1.12;white-space:nowrap;text-wrap-style:balance;word-break:keep-all}
       .t div:nth-child(2){color:#FFC233}
       .s{position:absolute;right:56px;top:96px;width:520px;height:528px;border-radius:30px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.5);outline:3px solid rgba(255,255,255,.2)}
       .s img{width:100%;height:100%;object-fit:cover}
     </style></head><body><div class="b"><img src="${ICON}"><span>QCalc</span></div>
     <div class="t">${M.thumb.map((x) => `<div>${esc(x)}</div>`).join('')}</div>
     <div class="s"><img src="data:image/png;base64,${solid.toString('base64')}"></div>
-    <script>for (const l of document.querySelectorAll('.t div')) { let f = 74; while (l.scrollWidth > 640 && f > 30) { f -= 2; l.style.fontSize = f + 'px'; } }</script></body></html>`;
-    await shot(browser, 1280, 720, t, path.join(STORE, 'video', lang, 'thumbnail.png'));
+    <script>{ // each line on one line if it fits at 58 px or more (40 px from the solid); if not, big words over two lines rather than small
+      // ones on one (not in ja and zh-TW, which have no spaces to break at)
+      const t = document.querySelector('.t'), ls = [...t.children], cjk = ${lang === 'ja' || lang === 'zh-TW'};
+      let f = 74; const fit = () => { for (const l of ls) l.style.fontSize = f + 'px'; }; const wide = () => ls.some((l) => l.scrollWidth > 600);
+      while (wide() && f > (cjk ? 30 : 58)) { f -= 2; fit(); }
+      if (wide()) {
+        for (const l of ls) l.style.whiteSpace = 'normal';
+        f = 74; fit();
+        const lines = (l) => Math.round(l.getBoundingClientRect().height / (f * 1.12));
+        while ((t.scrollHeight > 440 || wide() || ls.some((l) => lines(l) > 2)) && f > 30) { f -= 2; fit(); }
+      } }</script></body></html>`;
+    await shot(browser, 1280, 720, t, path.join(STORE, PLAN.out || 'video', lang, 'thumbnail.png')); // (1.16: store/video-1.16/<lang>/)
     console.log(lang, 'thumbnail');
   }
   await browser.close();

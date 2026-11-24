@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:09,730
+Kapital, Risiko, Einstieg und Stopp eingeben: die Positionsgröße.
+
+2
+00:00:10,150 --> 00:00:14,880
+Einstandskurs und Stückzahl für einen Ziel-Durchschnitt.
+
+3
+00:00:15,000 --> 00:00:19,730
+Nur deine Zahlen: nichts wird abgerufen.
+

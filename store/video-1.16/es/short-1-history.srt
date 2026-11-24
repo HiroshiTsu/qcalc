@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:05,546
+Cada línea del historial tiene un número.
+
+2
+00:00:05,666 --> 00:00:13,426
+Usa resultados anteriores, como la línea 1 más la 2.
+
+3
+00:00:13,546 --> 00:00:19,730
+Elige líneas para sumarlas y cópialas como tabla.
+

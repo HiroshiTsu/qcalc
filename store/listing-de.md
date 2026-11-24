@@ -8,7 +8,7 @@ Limits: app name 30 characters, short description 80, full description 4000; che
 store/tools/listing_check.py; the same texts are in store/play-import/de-DE/ (1.12.0, stage M).
 Written by Claude (not checked by a native speaker yet; store/launch-plan-ja.md says what testers should look at).
 
-- Screenshots: store/screenshots-1.14/de/. Feature graphic: store/feature-graphic-1.14-de.png.
+- Screenshots: store/screenshots-1.16/de/. Feature graphic: store/feature-graphic-1.16-de.png.
 - App icon: store/icon-512.png.
 
 <!-- listing: de-DE -->
@@ -20,49 +20,55 @@ QCalc-Taschenrechner & Graphen
 
 ### Short description
 
-Rechnen wie auf Papier: Einheiten, Währungen, MwSt., Kredit, Graphen, 3D-Körper.
+Rechner mit Tabellen-Verlauf: exakt, Einheiten, Währungen, Aktien, Graphen, 3D.
 
 ### Full description
 
-Ein wissenschaftlicher Taschenrechner, in den du Rechnungen so eintippst, wie du sie auf Papier schreibst. Einheiten und Währungen umrechnen, Preise mit MwSt. und Kredite ausrechnen, Gleichungen lösen, Graphen zeichnen und eine Fläche zu einem Rotationskörper drehen – alles in einer App.
-Probier „100 km/h to mph“, „solve(x^2 − 5x + 6 = 0)“ oder „3/8 + 1/6“: Ergebnisse bleiben auf Wunsch exakt, mit Brüchen, Wurzeln und π.
+Ein Rechner, dessen Verlauf wie eine Tabelle funktioniert. Rechnungen tippst du wie auf Papier; jede Zeile bekommt eine Nummer: Ergebnisse als #12 weiterverwenden, eine Auswahl addieren oder Zeilen als Tabelle kopieren. Notizen, Aktien-Werkzeuge, Einheiten, Graphen und 3D-Körper – alles in einer App.
+Probier „100 km/h to mph“ oder „solve(x^2 − 5x + 6 = 0)“: Ergebnisse bleiben auf Wunsch exakt, mit Brüchen, Wurzeln und π.
 
-■ Für Schule, Studium und Unterricht
-• Funktionen sowie Parameter-, Polar- und implizite Kurven zeichnen, verschieben, zoomen; Schieberegler für Buchstaben wie a; Ableitung, Tangente, Nullstellen, Extrempunkte und Flächen im Graphen
-• Die Fläche zwischen zwei Kurven mit „⟳ 3D“ zu einem Rotationskörper machen und das Volumen sofort sehen. Scheiben- und Schalenlinien, Guldinsche Regel und Körper mit quadratischem, dreieckigem oder halbkreisförmigem Querschnitt
-• Gleichungen und Gleichungssysteme, Ableitungen, Integrale, Grenzwerte, Summen, Taylorreihen, Matrizen bis 30 × 30, komplexe Zahlen, Binär-, Oktal- und Hexzahlen
-• Mittelwert, Median, Standardabweichung, Quartile und Regression mit Graph
-• Bis zu 200.000 Stellen (über 1.000 mit QCalc Pro)
+■ Wie eine Tabelle
+• Nummer einer Zeile antippen: #12; Zeilen in der Zeile selbst oder im Feld darunter bearbeiten, wie Zelle und Bearbeitungsleiste – abhängige Zeilen werden neu berechnet
+• Summe und Mittelwert ausgewählter Zeilen; als Tabelle kopieren
+• Aus einer Tabellenkalkulation einfügen: addieren oder als Verlaufszeilen, Notizzeilen, Statistikdaten oder Matrix übernehmen
+• Rechennotizen mit Summe, Namen (Miete = 980 EUR) und #3; Tabellenmodus mit Formelspalten (QCalc Pro)
 
 ■ 3D mit der GPU (QCalc Pro)
 • Echtes Licht und Schatten, Metalle, Flüssigkeiten; „Durchsichtig“, auch für Teile
-• 3D mit einem Finger frei drehen; Ansicht von vorn, oben, Seite
-• Ohne QCalc Pro 3D einmal kostenlos öffnen
+• Mit einem Finger frei drehen. Ohne QCalc Pro 3D einmal kostenlos öffnen
 
-■ Für Baustelle, Werkstatt und Konstruktion
-• Flächen und Volumen von 22 Formen, Füllmenge von Tanks (Höhe ⇄ Volumen), Volumen aus gemessenen Querschnitten, Gewicht aus der Dichte (auch Edelstahl, Aluminium, Kupfer, Messing, Holz, PLA, ABS, Acrylglas)
-• Mit Einheiten rechnen (2,4 m × 1,8 m × 0,15 m to L), mit Fehlerfortpflanzung
-• QCalc Pro: Figuren und Tanks in 3D, Tankböden mit Peiltabellen, Körper aus einem gemessenen Profil, STL für den 3D-Druck, CSV
+■ Für Schule und Studium
+• Funktionen sowie Parameter-, Polar- und implizite Kurven, mit Schiebereglern; Tangente, Nullstellen, Extrempunkte und Flächen im Graphen
+• „⟳ 3D“ macht die Fläche zwischen zwei Kurven zum Rotationskörper mit Volumen; Scheiben und Schalen, Querschnitte
+• Gleichungen und Systeme, Ableitungen, Integrale, Grenzwerte, Summen, Reihen, Matrizen bis 30 × 30, komplexe Zahlen, Zahlensysteme
+• Statistik: Verteilungen, Histogramm, Boxplot, Regression (Kurven: QCalc Pro). Bis zu 200.000 Stellen (über 1.000: QCalc Pro)
+
+■ Für Baustelle und Werkstatt
+• Flächen und Volumen von 22 Formen, Füllmenge von Tanks (Höhe ⇄ Volumen), Gewicht aus der Dichte
+• Mit Einheiten rechnen (2,4 m × 1,8 m × 0,15 m to L), Fehlerfortpflanzung
+• QCalc Pro: Formen und Tanks in 3D, Tankböden, Körper aus einem Profil, STL
+
+■ Aktien und Anlage
+• Gewinn und Verlust mit Gebühren und Steuer, Einstandskurs; Rendite, KGV, KBV, Zinseszins
+• QCalc Pro: Positionsgröße aus dem Stop-Loss, Margin-Quote und Nachschusskurs
+• Nur deine Zahlen, keine Kursabfrage. Richtwerte, keine Anlageberatung
 
 ■ Für Einkauf und Haushaltskasse
-• Preis mit Rabatt und MwSt., Prozentrechnung, Grundpreise vergleichen, Rechnung teilen, Kreditrate mit Tilgungsplan, Sparen, Daten (Tage ab heute, Alter), Arbeitszeit und Lohn
-• Währungsrechner (Kurse u. a. der EZB)
-• Rechennotizen: eine Rechnung pro Zeile, mit Summe; Werte bekommen Namen, etwa Miete = 980 EUR; .txt- und .csv-Dateien öffnen
+• Preis mit Rabatt und MwSt., Grundpreise, Rechnung teilen, Kreditrate mit Tilgungsplan, Daten, Arbeitszeit und Lohn
+• Währungen zu Kursen u. a. der EZB
 
 ■ Einfach zu bedienen
-• Beispiele in jedem Werkzeug; Ergebnis antippen: einfügen, in den Verlauf, kopieren
-• Klare Ergebnisse: 15 Stellen in Dreiergruppen, exakt und genähert zweizeilig; Stellen oben
-• Nächste Schritte unter der Antwort; „Details“ zeigt andere Formen
-• Zeilen im Verlauf direkt bearbeiten, suchen, anheften, notieren, addieren; Speichertasten
+• Beispiele in jedem Werkzeug; exakt und genähert auf zwei Zeilen
+• Nächste Schritte unter der Antwort; Zeilen suchen, anheften, notieren; Speichertasten
 • Widget, Kachel in den Schnelleinstellungen, Graphen als Bild teilen
-• Sieben Sprachen, darunter Deutsch. Die Anleitung ist in der App, auch offline: „?“ öffnet die passende Seite
+• Sieben Sprachen, hell und dunkel. Die Anleitung ist in der App, auch offline
 
 ■ QCalc Pro (ein In-App-Kauf)
-3D (oben; Volumen und Oberfläche, bewegte GIFs), die Pro-Werkzeuge für die Arbeit (oben), mehr als 1.000 Stellen, CSV des Verlaufs, Farbthemen und mehr als eine Rechennotiz. Alles für Lernen und Alltag funktioniert auch ohne Kauf. Den Preis zeigt Google Play beim Kauf an.
+3D, mehr als 1.000 Stellen, Margin und Positionsgröße, der Tabellenmodus und weitere Notizen, Regressionskurven, Tankböden, Profile, STL, CSV, Farbthemen. Alles für Lernen und Alltag funktioniert auch ohne Kauf. Den Preis zeigt Google Play beim Kauf an.
 
 ■ Datenschutz und offener Quellcode
 • Es gibt keine Werbung und kein Abo.
-• Alle Rechnungen laufen auf deinem Handy; das Internet dient nur den Wechselkursen.
+• Alle Rechnungen laufen auf deinem Handy, und QCalc funktioniert auch offline; das Internet dient nur den Wechselkursen.
 • QCalc sammelt keine persönlichen Daten und sendet nichts an den Entwickler. Verlauf und Einstellungen bleiben auf deinem Handy.
 • Open Source (GNU GPL v2 oder neuer): https://github.com/HiroshiTsu/qcalc
 • QCalc verwendet libqalculate, den quelloffenen Rechenkern von Qalculate!. QCalc ist ein unabhängiges Projekt einer Einzelperson, ohne Verbindung zu den Entwicklern von Qalculate!.

@@ -5,10 +5,14 @@
 // store/tools/video_render.py puts the clips into the videos.
 // Usage: node store/tools/video.js <base url of the test server> <work folder> [langs] [scenes]
 // e.g.   node store/tools/video.js http://127.0.0.1:8790/ /tmp/qcalc-video ja rev,type
+// (1.16: the frames go to ffmpeg through a pipe, at 30 a second, the last frame for each moment; no folder of frames is
+// written or deleted. A new work folder for each recording: a clip there is not written over. The scenes of 1.16: histtype,
+// histsel, hist, margin, possize, avgcost, notestable, notespaste, pastesum; the test server with the money of the region
+// for the stocks and the notes, as for the pictures.)
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
+const { spawn } = require('child_process');
 const Q = require('./qcalc-page.js');
 const { sleep } = Q;
 
@@ -86,8 +90,106 @@ async function graphReady(page, fns) {
   return m2;
 }
 
+// ---- 1.16: the history as a spreadsheet, the stock tools, the notes as a table, pasting from a spreadsheet
+const keyOf = (page, t) => page.locator('#grid .key').filter({ hasText: new RegExp('^' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') }).first();
+async function lineOf(page, n) {
+  await page.evaluate((n) => { for (const it of document.querySelectorAll('#history .h-item')) it.removeAttribute('data-v'); const it = Array.from(document.querySelectorAll('#history .h-item')).find((x) => x._h && x._h.n === n); if (it) { it.setAttribute('data-v', '1'); it.scrollIntoView({ block: 'nearest' }); } }, n);
+  return '#history .h-item[data-v="1"]';
+}
+async function twoLines(page) { for (const x of ['1280 × 3', '980 × 2']) await typeAndEq(page, x); }
+// #1 + #2 by tapping the numbers of the lines and the + key
+async function sumByNumbers(page) {
+  await tap(page, (await lineOf(page, 1)) + ' .h-no'); await sleep(450);
+  await tap(page, keyOf(page, '+')); await sleep(350);
+  await tap(page, (await lineOf(page, 2)) + ' .h-no'); await sleep(500);
+  await tap(page, eqKey(page)); await sleep(1500);
+}
+// the history button → Select lines → lines 1 and 2: the bar of their sum and average
+async function selectTwo(page) {
+  await tap(page, '#btn-hist'); await sleep(700);
+  await tap(page, page.locator('#sheet.open button').nth(1)); await sleep(900);
+  await tap(page, await lineOf(page, 1)); await sleep(450);
+  await tap(page, await lineOf(page, 2)); await sleep(1300);
+}
+async function copyAsTable(page) {
+  await tap(page, page.locator('.hselbar .hs-btns .btn').nth(1)); await sleep(900);
+  await tap(page, page.locator('#sheet.open button').first()); await sleep(1400);
+}
+async function stockScene(page, id) {
+  await sleep(300); await openTool(page, id); await tap(page, chip(page, 0)); await sleep(1700);
+  await smoothScroll(page, '.geo-out', 150, 900); await sleep(2200);
+}
+async function notesTableMode(page) {
+  await page.evaluate(() => { const b = Array.from(document.querySelectorAll('.panel.open .note-mode button')).find((x) => x.dataset.mode === 'table'); if (b) b.click(); });
+  await sleep(2200);
+}
+async function tableScroll(page, to, ms) {
+  await page.evaluate(async ([to, ms]) => {
+    const w = document.querySelector('.panel.open .note-tbl-wrap'); if (!w) return;
+    const from = w.scrollLeft, end = to === 'end' ? w.scrollWidth - w.clientWidth : 0, t0 = performance.now();
+    await new Promise((res) => { const f = (t) => { const k = Math.min(1, (t - t0) / ms); w.scrollLeft = from + (end - from) * (1 - Math.pow(1 - k, 3)); if (k < 1) requestAnimationFrame(f); else res(); }; requestAnimationFrame(f); });
+  }, [to, ms || 800]);
+  await sleep(300);
+}
+// a paste where a person has tapped (the text of the clipboard given to the element, as the system does)
+async function pasteInto(page, target, text) {
+  await tap(page, target); await sleep(500);
+  await page.evaluate(([sel, text]) => {
+    const e = typeof sel === 'string' ? document.querySelector(sel) : null; const b = e || document.activeElement; b.focus();
+    const dt = new DataTransfer(); dt.setData('text/plain', text);
+    b.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+  }, [typeof target === 'string' ? target : null, text]);
+  await sleep(900);
+}
+// a table of a spreadsheet in the language of the set (the groups of digits of the region)
+const PASTE_TABLE = {
+  ja: '品目\t金額\nりんご\t1,200\nパン\t850\n牛乳\t300', en: 'Item\tAmount\napples\t1,200\nbread\t850\nmilk\t300',
+  de: 'Artikel\tBetrag\nÄpfel\t1.200\nBrot\t850\nMilch\t300', es: 'Artículo\tImporte\nmanzanas\t1.200\npan\t850\nleche\t300',
+  fr: 'Article\tMontant\npommes\t1 200\npain\t850\nlait\t300', ko: '품목\t금액\n사과\t1,200\n빵\t850\n우유\t300',
+  'zh-TW': '品項\t金額\n蘋果\t1,200\n麵包\t850\n牛奶\t300'
+};
+
 // each scene: prepare (not recorded), then run (recorded)
 const SCENES = {
+  // (1.16) 1280 × 3 and 980 × 2: the lines get #1 and #2
+  histtype: { prep: async () => {}, run: async (page) => { await sleep(300); await twoLines(page); await sleep(500); } },
+  // (1.16) #1 + #2 by the numbers, then two lines selected (sum and average) and copied as a table
+  histsel: {
+    prep: async (page) => { for (const x of ['1280 × 3', '980 × 2']) { await Q.type(page, x); await Q.eq(page); } },
+    run: async (page) => { await sleep(300); await sumByNumbers(page); await selectTwo(page); await copyAsTable(page); }
+  },
+  // (1.16) the whole: typed, #1 + #2, selected, copied as a table (short 1)
+  hist: { prep: async () => {}, run: async (page) => { await sleep(300); await twoLines(page); await sumByNumbers(page); await selectTwo(page); await sleep(900); await copyAsTable(page); await sleep(900); } },
+  margin: { prep: async () => {}, run: async (page) => stockScene(page, 'margin') },
+  possize: { prep: async () => {}, run: async (page) => stockScene(page, 'possize') },
+  avgcost: { prep: async () => {}, run: async (page) => stockScene(page, 'avgcost') },
+  // (1.16) the notes as a table: its example, a quantity changed (the amounts and totals follow), then Save as CSV
+  notestable: {
+    prep: async (page) => { await Q.tool(page, 'memo', 0); await sleep(600); await notesTableMode(page); },
+    run: async (page) => {
+      await sleep(900);
+      const q = page.locator('.panel.open .note-tbl tbody tr').first().locator('input').nth(1);
+      await tap(page, q); await q.fill(''); await q.type('5', { delay: 160 }); await page.evaluate(() => document.activeElement && document.activeElement.blur()); await sleep(1600);
+      await tableScroll(page, 'end', 900); await sleep(1800);
+      await smoothScroll(page, '.note-more', 160, 800);
+      await tap(page, page.locator('.panel.open .note-more > summary')); await sleep(700);
+      await tap(page, page.locator('.panel.open .note-more .tool-tbl-btns .btn').nth(2)); await sleep(2200);
+    }
+  },
+  // (1.16) a table of a spreadsheet pasted into the first cell of a new table memo: cells, names of the columns, totals
+  notespaste: {
+    prep: async (page) => { await Q.tool(page, 'memo'); await sleep(600); await page.locator('.panel.open .note-pick .btn').first().click(); await sleep(1200); await notesTableMode(page); },
+    run: async (page, lang) => { await sleep(700); await pasteInto(page, page.locator('.panel.open .note-tbl tbody input').first(), PASTE_TABLE[lang]); await sleep(2600); }
+  },
+  // (1.16) a column of a spreadsheet pasted into the field: the sheet, Add them up, =
+  pastesum: {
+    prep: async () => {},
+    run: async (page) => {
+      await sleep(500); await pasteInto(page, '#expr', '1200\n850\n-300'); await sleep(1300);
+      await tap(page, page.locator('#sheet.open button.accent').first()); await sleep(1300);
+      await tap(page, eqKey(page)); await sleep(2000);
+    }
+  },
   rev: {
     prep: async (page) => { await graphReady(page, 'x\nx^2'); },
     run: async (page) => {
@@ -218,7 +320,7 @@ const SCENES = {
 
 async function record(browser, lang, name) {
   const sc = SCENES[name];
-  const { ctx, page } = await Q.start(browser, BASE, SET[lang], { viewport: { width: VW, height: VH }, dpr: DPR, dark: name === 'rev' || name === 'rev3d' || name === 'axis' || name === 'notes' });
+  const { ctx, page } = await Q.start(browser, BASE, SET[lang], { viewport: { width: VW, height: VH }, dpr: DPR, dark: ['rev', 'rev3d', 'axis', 'notes', 'notestable', 'notespaste'].indexOf(name) >= 0 });
   await sc.prep(page, lang);
   await sleep(500);
   const cdp = await ctx.newCDPSession(page);
@@ -230,23 +332,23 @@ async function record(browser, lang, name) {
   const t1 = Date.now() / 1000;
   await cdp.send('Page.stopScreencast');
   await ctx.close();
-  // the frames and their times → a clip at 30 frames a second
-  const dir = path.join(WORK, lang, name + '.frames');
-  fs.rmSync(dir, { recursive: true, force: true });
-  fs.mkdirSync(dir, { recursive: true });
-  const list = [];
-  frames.forEach((f, i) => {
-    const fn = String(i).padStart(5, '0') + '.jpg';
-    fs.writeFileSync(path.join(dir, fn), Buffer.from(f.data, 'base64'));
-    const next = i + 1 < frames.length ? frames[i + 1].t : Math.max(f.t + 0.5, t1);
-    list.push("file '" + fn + "'", 'duration ' + Math.max(0.001, next - f.t).toFixed(4));
-  });
-  if (frames.length) list.push("file '" + String(frames.length - 1).padStart(5, '0') + ".jpg'");
-  fs.writeFileSync(path.join(dir, 'list.txt'), 'ffconcat version 1.0\n' + list.join('\n') + '\n');
+  // the frames and their times → a clip at 30 frames a second: for each 1/30 s the last frame shown by then, through a pipe
   const out = path.join(WORK, lang, name + '.mp4'), tmp = path.join(WORK, lang, name + '.part.mp4');
-  execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', path.join(dir, 'list.txt'), '-vf', 'fps=30,scale=786:1746:flags=lanczos,format=yuv420p', '-c:v', 'libx264', '-crf', '16', '-preset', 'veryfast', tmp]);
-  fs.renameSync(tmp, out);
-  fs.rmSync(dir, { recursive: true, force: true });
+  if (fs.existsSync(out)) { console.log(lang, name, 'kept: ' + out + ' is there already (a new work folder for a new recording)'); return; }
+  if (frames.length) {
+    const ff = spawn('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-framerate', '30', '-c:v', 'mjpeg', '-i', '-', '-vf', 'scale=786:1746:flags=lanczos,format=yuv420p', '-c:v', 'libx264', '-crf', '16', '-preset', 'veryfast', '-r', '30', tmp], { stdio: ['pipe', 'inherit', 'inherit'] });
+    const done = new Promise((res, rej) => ff.on('close', (c) => (c === 0 ? res() : rej(new Error('ffmpeg ' + c)))));
+    const tStart = frames[0].t, tEnd = Math.max(frames[frames.length - 1].t + 0.2, t1);
+    let k = 0;
+    for (let i = 0; tStart + i / 30 <= tEnd; i++) {
+      const at = tStart + i / 30;
+      while (k + 1 < frames.length && frames[k + 1].t <= at) k++;
+      if (!ff.stdin.write(Buffer.from(frames[k].data, 'base64'))) await new Promise((r) => ff.stdin.once('drain', r));
+    }
+    ff.stdin.end();
+    await done;
+    fs.renameSync(tmp, out);
+  }
   console.log(lang, name, frames.length, 'frames', (t1 - t0).toFixed(1) + ' s');
 }
 

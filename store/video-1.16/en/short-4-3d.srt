@@ -1,0 +1,8 @@
+1
+00:00:00,150 --> 00:00:07,992
+Spin a region of a graph into a solid and get its volume.
+
+2
+00:00:08,112 --> 00:00:14,730
+Turn it with your finger to see it from any side.
+

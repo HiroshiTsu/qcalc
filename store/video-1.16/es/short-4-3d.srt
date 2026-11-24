@@ -1,0 +1,8 @@
+1
+00:00:00,150 --> 00:00:08,115
+Gira una región de la gráfica: un sólido con su volumen.
+
+2
+00:00:08,235 --> 00:00:14,730
+Muévelo con el dedo y míralo desde cualquier lado.
+

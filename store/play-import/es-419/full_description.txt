@@ -1,42 +1,48 @@
-Una calculadora científica en la que escribes las operaciones igual que en papel. Convierte unidades y monedas, calcula precios con IVA y préstamos, resuelve ecuaciones, dibuja gráficas y convierte una región en un sólido de revolución, todo en una sola app.
-Prueba "100 km/h to mph", "solve(x^2 − 5x + 6 = 0)" o "3/8 + 1/6": el resultado puede quedar exacto, con fracciones, raíces y π.
+Una calculadora cuyo historial funciona como una hoja de cálculo. Escribe como en papel: cada línea tiene un número para reutilizar un resultado con #12, sumar una selección o copiar líneas como tabla. Notas, herramientas para acciones, unidades, gráficas y sólidos 3D, todo en una app.
+Prueba "100 km/h to mph" o "solve(x^2 − 5x + 6 = 0)": el resultado puede quedar exacto, con fracciones, raíces y π.
 
-■ Para estudiantes y maestros
-• Grafica funciones y curvas paramétricas, polares e implícitas, muévelas o haz zoom; deslizadores para letras como a; derivadas, tangentes, raíces, extremos y áreas en la gráfica
-• Convierte la región entre dos curvas en un sólido de revolución con "⟳ 3D" y ve su volumen al instante. Líneas de discos y capas, teorema de Pappus y sólidos con secciones cuadradas, triangulares o semicirculares
-• Ecuaciones y sistemas, derivadas, integrales, límites, sumatorias, series de Taylor, matrices hasta 30 × 30, complejos, binario, octal y hexadecimal
-• Media, mediana, desviación estándar, cuartiles y regresión con gráfica
-• Hasta 200,000 dígitos (más de 1,000 con QCalc Pro)
+■ Como una hoja de cálculo
+• Toca el número de una línea para #12; edita en la propia línea o en el campo de abajo, como la celda y la barra de fórmulas; se recalculan las que la usan
+• Suma y media de las líneas que elijas; cópialas como tabla
+• Pega desde una hoja de cálculo: súmalo o conviértelo en líneas del historial, de notas, datos de estadística o una matriz
+• Notas de cálculo con total, nombres (renta = 12000 MXN) y #3; modo tabla con columnas de fórmula (QCalc Pro)
 
 ■ 3D con la GPU (QCalc Pro)
 • Luz y sombras reales, metales y líquidos; "Transparente", también por partes
-• Gira el 3D en cualquier dirección con un dedo; vistas de frente, arriba y lado
-• Sin QCalc Pro, 3D gratis una vez
+• Gíralo en cualquier dirección con un dedo. Sin QCalc Pro, 3D gratis una vez
+
+■ Para estudiantes y maestros
+• Funciones y curvas paramétricas, polares e implícitas, con deslizadores; tangentes, raíces, extremos y áreas en la gráfica
+• "⟳ 3D" convierte la región entre dos curvas en un sólido de revolución con su volumen; discos y capas, secciones
+• Ecuaciones y sistemas, derivadas, integrales, límites, sumatorias, series, matrices hasta 30 × 30, complejos y otras bases
+• Estadística: distribuciones, histograma, diagrama de caja, regresión (curvas: QCalc Pro). Hasta 200,000 dígitos (más de 1,000: QCalc Pro)
 
 ■ Para la obra y el diseño
-• Áreas y volúmenes de 22 figuras, líquido en tanques (nivel ⇄ volumen), volumen desde secciones medidas, peso desde la densidad (también acero inoxidable, aluminio, cobre, latón, madera, PLA, ABS, acrílico)
-• Calcula con las unidades puestas (2.4 m × 1.8 m × 0.15 m to L), con propagación de errores
-• QCalc Pro: figuras y tanques en 3D, tapas de tanques con tablas de consulta, sólidos desde un perfil medido, STL para impresión 3D, CSV
+• Áreas y volúmenes de 22 figuras, líquido en tanques (nivel ⇄ volumen), peso desde la densidad
+• Con las unidades puestas (2.4 m × 1.8 m × 0.15 m to L), propagación de errores
+• QCalc Pro: figuras y tanques en 3D, tapas de tanques, sólidos desde un perfil, STL
+
+■ Acciones e inversión
+• Ganancia o pérdida con comisiones e impuestos, precio medio; rentabilidad, PER, P/VC, interés compuesto
+• QCalc Pro: tamaño de posición desde el stop, ratio y precio de llamada de margen
+• Solo tus números, sin cotizaciones descargadas. Estimaciones, no asesoramiento
 
 ■ Para las compras y el presupuesto de la casa
-• Precio con descuento e IVA, porcentajes, comparar precio por unidad, dividir la cuenta, pago de un préstamo con tabla de amortización, ahorro, fechas (días desde hoy, edad), horas trabajadas y sueldo
-• Conversión de monedas (tipos de cambio del BCE y otros)
-• Notas de cálculo: una operación por línea, con total; valores con nombre, como renta = 12000 MXN; abre .txt y .csv
+• Descuento e IVA, precio por unidad, dividir la cuenta, pago de un préstamo con tabla de amortización, fechas, horas y sueldo
+• Monedas con tasas del BCE y otros
 
 ■ Fácil de usar
-• Ejemplos en cada herramienta; toca un resultado para pasarlo a la entrada, al historial o copiarlo
-• Resultados claros: 15 cifras en grupos de 3, exacto y aproximado en dos líneas; cifras arriba
-• Siguientes pasos bajo la respuesta; "Detalles" muestra otras formas
-• Edita en su sitio, busca, fija, anota y suma líneas del historial; teclas de memoria
-• Widget, botón en la configuración rápida, gráficas como imagen
-• Siete idiomas, entre ellos el español. Manual en la app, también sin conexión: "?" abre su página
+• Ejemplos en cada herramienta; exacto y aproximado en dos líneas
+• Pasos siguientes; busca, fija y anota líneas; teclas de memoria
+• Widget, botón en los configuración rápida, gráficas como imagen
+• Siete idiomas, claro y oscuro. Manual en la app, también sin conexión
 
 ■ QCalc Pro (una compra dentro de la app)
-El 3D (arriba; volumen y área, GIF animados), las herramientas Pro para el trabajo (arriba), más de 1,000 dígitos, CSV del historial, temas de color y más de una nota de cálculo. Todo para estudiar y para el día a día funciona sin comprarlo. El precio aparece en la pantalla de compra de Google Play.
+El 3D, más de 1,000 dígitos, margen y tamaño de posición, el modo tabla y más notas, curvas de regresión, tapas de tanques, perfiles, STL, CSV, temas de color. Todo para estudiar y el día a día funciona sin comprarlo. El precio aparece al comprar en Google Play.
 
 ■ Privacidad y código abierto
 • No hay anuncios ni suscripciones.
-• Todos los cálculos se hacen en tu celular; Internet solo se usa para los tipos de cambio.
+• Todos los cálculos se hacen en tu celular y también funciona sin conexión; Internet solo se usa para los tipos de cambio.
 • QCalc no recopila datos personales ni envía nada al desarrollador. El historial y la configuración se quedan en tu celular.
 • Código abierto (GNU GPL v2 o posterior): https://github.com/HiroshiTsu/qcalc
 • QCalc usa libqalculate, el motor de cálculo de código abierto de Qalculate!. QCalc es un proyecto independiente de una sola persona, sin relación con los desarrolladores de Qalculate!.

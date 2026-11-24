@@ -110,7 +110,7 @@ def render(lang, name, F, segs):
 def main():
     for lang in LANGS:
         Lp = PLAN['langs'][lang]
-        vids = [('promo', WIDE, Lp['promo']), ('youtube', WIDE, Lp['youtube'])] + [(s['name'], TALL, s['segments']) for s in Lp['shorts']]
+        vids = [('promo', WIDE, Lp['promo'])] + ([('youtube', WIDE, Lp['youtube'])] if Lp.get('youtube') else []) + [(s['name'], TALL, s['segments']) for s in Lp['shorts']]  # (1.16: no long video)
         for name, F, segs in vids:
             if ONLY and name not in ONLY:
                 continue

@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:09,730
+Capital, risque, entrée et stop : la taille de position.
+
+2
+00:00:10,150 --> 00:00:15,736
+Prix de revient et nombre d’actions pour une moyenne cible.
+
+3
+00:00:15,856 --> 00:00:19,730
+Seulement vos chiffres : rien n’est téléchargé.
+

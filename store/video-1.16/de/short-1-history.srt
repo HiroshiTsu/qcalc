@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:06,026
+Jede Zeile im Verlauf bekommt eine Nummer.
+
+2
+00:00:06,146 --> 00:00:13,734
+Frühere Ergebnisse nutzen, etwa Zeile 1 plus Zeile 2.
+
+3
+00:00:13,854 --> 00:00:19,730
+Zeilen auswählen, summieren und als Tabelle kopieren.
+

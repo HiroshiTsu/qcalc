@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:06,156
+Paste a column from a spreadsheet, and QCalc asks what to do.
+
+2
+00:00:06,276 --> 00:00:09,730
+Add the values up with one tap.
+
+3
+00:00:10,150 --> 00:00:19,730
+Paste a table into a table memo: it fills the cells and totals them.
+

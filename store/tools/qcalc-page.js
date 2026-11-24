@@ -63,7 +63,7 @@ async function start(browser, base, set, o) {
       localStorage.setItem('qalc.lang', JSON.stringify(l));
       localStorage.setItem('qalc.settings', JSON.stringify(st));
       localStorage.setItem('qalc.moved112', 'true');
-      localStorage.setItem('qalc.news', JSON.stringify('1.15'));
+      localStorage.setItem('qalc.news', JSON.stringify('1.16')); // (1.16: the card of what is new counted as seen)
       localStorage.setItem('qalc.defaults115', 'true'); // (1.15.0: the defaults of a new phone, 15 digits in groups)
     } catch (e) { }
   }, [S.lang, Object.assign({ auto_rates: false, appearance: o.dark ? 'dark' : 'light' }, o.settings || {})]);
@@ -212,4 +212,59 @@ async function setPrecisionAndReload(page, n) {
   await page.reload(); await ready(page);
 }
 
-module.exports = { sleep, setSlow, SETS, COMMA, mainExamples, localNotes, start, ready, home, menu, tool, type, eq, body, scrollTo, solid2d, solid3d, graphRect, profile, tank3d, tankSetup, modelDone, manualAbout, setPrecisionAndReload };
+// ---- (1.16) the scenes of the pictures of 1.16 (store/screenshots-1.16)
+// a line of the history by its number, tapped as a finger does (its answer, or with select on, the line)
+async function tapLine(page, n, part) {
+  await page.evaluate((n) => { for (const it of document.querySelectorAll('#history .h-item')) it.removeAttribute('data-st'); const it = Array.from(document.querySelectorAll('#history .h-item')).find((x) => x._h && x._h.n === n); if (it) { it.setAttribute('data-st', '1'); it.scrollIntoView({ block: 'nearest' }); } }, n);
+  await page.locator('#history .h-item[data-st="1"] ' + (part || '> .h-res')).first().click(); await sleep(500);
+}
+// the history as a spreadsheet: 1280 × 3 and 980 × 2, then #1 + #2 by tapping the numbers, √8 = 2√2, and the first two
+// lines selected: the bar of their sum and average
+async function histSheet(page, set, o) {
+  for (const x of ['1280 × 3', '980 × 2']) { await type(page, x); await eq(page); }
+  await tapLine(page, 1, '.h-no'); await page.evaluate(() => { const e = document.getElementById('expr'); e.setSelectionRange(e.value.length, e.value.length); }); await type(page, '#1 + '); await tapLine(page, 2, '.h-no'); await sleep(600); await eq(page);
+  await type(page, 'sqrt(8)'); await eq(page);
+  await type(page, COMMA[set] ? '#3 × 1,1' : '#3 × 1.1'); await eq(page); // (a decimal comma in de, es, fr, fr-CA: 1.1 is not a number there)
+  await type(page, mainExamples(set)[0]); await eq(page);
+  if (o && o.noSelect) { await sleep(800); return; } // (the 10-inch tablet: the keys beside the history stay)
+  await page.evaluate(() => document.getElementById('btn-hist').click()); await sleep(700);
+  await page.evaluate(() => { const b = Array.from(document.querySelectorAll('#sheet.open button')); if (b[1]) b[1].click(); }); await sleep(900);
+  await tapLine(page, 1, ''); await tapLine(page, 2, '');
+  await sleep(1000);
+}
+// a tool of stocks and investing with its first example, the results in sight
+async function stockTool(page, id) { await tool(page, id, 0); await sleep(800); await scrollTo(page, '.geo-out', 120); }
+// the calculation notes as a table (QCalc Pro): its example of items, quantities and prices with the formula column
+async function notesTable(page, set) {
+  await tool(page, 'memo', 0); await sleep(1500);
+  await page.evaluate(() => { const b = Array.from(document.querySelectorAll('.panel.open .note-mode button')).find((x) => x.dataset.mode === 'table'); if (b) b.click(); });
+  await sleep(3000);
+  // (a phone shows part of the table: scrolled so that the last two columns, the prices and the formula column with its
+  // total, are in sight whole; the column of the numbers stays)
+  await page.evaluate(() => { const w = document.querySelector('.panel.open .note-tbl-wrap'); if (!w) return; const th = w.querySelectorAll('tr:first-child > *'); if (th.length < 3) return; w.scrollLeft += th[th.length - 2].getBoundingClientRect().left - th[0].getBoundingClientRect().right; });
+  await sleep(600);
+}
+// statistics: an example with the histogram and the box plot
+async function statsTool(page, set, chip) { await tool(page, 'stats', chip === undefined ? 0 : chip); await sleep(1500); await scrollTo(page, '.stat-charts', 8); }
+// two columns with a curve of degree 2 (QCalc Pro): its formula, R² and the points with the curve
+async function statsCurve(page) {
+  await tool(page, 'stats', 2); await sleep(1500);
+  await page.evaluate(() => { const b = Array.from(document.querySelectorAll('.panel.open .stat-models button'))[1]; if (b) b.click(); }); await sleep(1500);
+  await scrollTo(page, '.stat-models', 8);
+}
+// a few calculations in the dark, then the sheet of the languages
+async function langDark(page, set) {
+  for (const x of mainExamples(set).slice(0, 2)) { await type(page, x); await eq(page); }
+  await page.evaluate(() => document.getElementById('btn-menu').click()); await sleep(500);
+  await page.evaluate(() => { const b = Array.from(document.querySelectorAll('#drawer button')).find((x) => /🌐/.test(x.textContent)); if (b) b.click(); });
+  await sleep(1200);
+}
+// the converter with the money of the region: 100 of it into the other currencies (the list of the app)
+async function convertMoney(page, set) {
+  await tool(page, 'convert'); await sleep(800);
+  await page.evaluate(() => { const b = Array.from(document.querySelectorAll('.panel.open .panel-body')).pop(); const c = Array.from(b.querySelectorAll('button, .chip, option')).find((x) => /通貨|Currenc|Währung|Moneda|Divisa|Devise|Monnaie|통화|貨幣/.test(x.textContent)); if (c && c.tagName !== 'OPTION') c.click(); });
+  await sleep(1500);
+}
+const SCENES16 = { convertMoney, histSheet, margin: (p) => stockTool(p, 'margin'), possize: (p) => stockTool(p, 'possize'), notesTable, stats: statsTool, statsCurve, langDark };
+
+module.exports = { convertMoney, tapLine, histSheet, stockTool, notesTable, statsTool, statsCurve, langDark, SCENES16, sleep, setSlow, SETS, COMMA, mainExamples, localNotes, start, ready, home, menu, tool, type, eq, body, scrollTo, solid2d, solid3d, graphRect, profile, tank3d, tankSetup, modelDone, manualAbout, setPrecisionAndReload };

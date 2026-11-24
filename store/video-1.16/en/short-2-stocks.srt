@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:09,730
+Enter your capital, risk, entry and stop: get the position size.
+
+2
+00:00:10,150 --> 00:00:15,646
+Average cost, and the shares to buy for a target average.
+
+3
+00:00:15,766 --> 00:00:19,730
+Only the numbers you enter: nothing is fetched.
+

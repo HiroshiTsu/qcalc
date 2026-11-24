@@ -1,0 +1,24 @@
+1
+00:00:00,150 --> 00:00:04,730
+QCalc est une calculatrice dont l’historique fonctionne comme un tableur.
+
+2
+00:00:05,150 --> 00:00:09,730
+Réutilisez un résultat par son numéro, additionnez une sélection, copiez en tableau.
+
+3
+00:00:10,150 --> 00:00:15,730
+Faites tourner une région d’un graphique : un solide en 3D.
+
+4
+00:00:16,150 --> 00:00:20,730
+Collez un tableau dans les notes : formules par colonne et totaux.
+
+5
+00:00:21,150 --> 00:00:25,730
+Pour la bourse : la taille de position depuis votre stop.
+
+6
+00:00:26,150 --> 00:00:29,730
+Calcul, tableur et 3D, tout dans QCalc.
+

@@ -1,0 +1,8 @@
+1
+00:00:00,150 --> 00:00:07,380
+Eine Fläche im Graphen wird zum Körper, mit Volumen.
+
+2
+00:00:07,500 --> 00:00:14,730
+Mit dem Finger drehen und von allen Seiten ansehen.
+

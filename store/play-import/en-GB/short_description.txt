@@ -1,1 +1,1 @@
-Type maths as you write it: units, currency, prices, loans, graphs, 3D solids.
+Calculator with a spreadsheet history: exact answers, units, shares, graphs, 3D.

@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:07,143
+Collez une colonne d’un tableur : QCalc demande quoi en faire.
+
+2
+00:00:07,263 --> 00:00:09,730
+Additionnez tout d’un geste.
+
+3
+00:00:10,150 --> 00:00:19,730
+Collez un tableau dans une note en mode tableau : les cellules se remplissent, avec les totaux.
+

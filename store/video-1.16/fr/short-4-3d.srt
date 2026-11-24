@@ -1,0 +1,8 @@
+1
+00:00:00,150 --> 00:00:07,380
+Une région du graphique devient un solide, avec son volume.
+
+2
+00:00:07,500 --> 00:00:14,730
+Tournez-le du doigt pour le voir sous tous les angles.
+

@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:06,877
+Eine Spalte aus einer Tabellenkalkulation einfügen: QCalc fragt, was damit geschehen soll.
+
+2
+00:00:06,997 --> 00:00:09,730
+Mit einem Tipp alles addieren.
+
+3
+00:00:10,150 --> 00:00:19,730
+Eine Tabelle in eine Tabellennotiz einfügen: Zellen und Summen sind sofort da.
+

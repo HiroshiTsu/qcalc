@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:07,326
+Turn your notes into a table with a formula column.
+
+2
+00:00:07,446 --> 00:00:14,623
+Change a quantity: the amounts and totals follow at once.
+
+3
+00:00:14,743 --> 00:00:19,730
+Save the table as a CSV file.
+

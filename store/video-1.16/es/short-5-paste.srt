@@ -1,0 +1,12 @@
+1
+00:00:00,150 --> 00:00:07,574
+Pega una columna de una hoja de cálculo y QCalc te pregunta qué hacer.
+
+2
+00:00:07,694 --> 00:00:09,730
+Súmalas con un toque.
+
+3
+00:00:10,150 --> 00:00:19,730
+Pega una tabla en una nota en modo tabla: llena las celdas y suma.
+

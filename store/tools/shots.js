@@ -1,13 +1,15 @@
-// Makes the pictures of the Google Play listing from the real app (QCalc 1.12.0, stage M2; 1.14.0: the same set and
-// order from the screens of 1.14.0, the 3D drawn with WebGL 2, the tank in 3D with "See-through" on; 1.15.0: the same
-// set again from the screens of 1.15.0, the answers in 15 digits in groups; into the folders of 1.15, those of 1.12
-// and 1.14 kept):
-//   store/screenshots-1.15/<set>/phone-1-…png … phone-8-…png   1080 × 1920 (8 phone pictures)
-//   store/screenshots-1.15/<set>/landscape-1-2d-to-3d.png      1920 × 1080
-//   store/screenshots-1.15/<set>/tablet7-1-…png … (5)          1200 × 1920
-//   store/screenshots-1.15/<set>/tablet10-1-…png … (5)         1600 × 2560
-//   store/screenshots-1.15/<set>/alt/phone-5-profile.png       1080 × 1920 (the earlier fifth phone picture, kind alt)
-//   store/feature-graphic-1.15-<set>.png                       1024 × 500 (for ja, en, de, es, fr, ko, zh-TW)
+// Makes the pictures of the Google Play listing from the real app (QCalc 1.12.0, stage M2; 1.14.0 and 1.15.0: the same
+// set from their screens; 1.16: the set of the plan of 11-24 (the owner's OK of 18:05), from the screens of 1.16.2: the
+// history as a spreadsheet first, then (ja) margin, the 3D graph, the notes table or (the other sets) the 3D graph, the
+// notes table, the position size; the tank in 3D, units and money, statistics, the languages in the dark; into the
+// folders of 1.16, those of 1.12 to 1.15 kept):
+//   store/screenshots-1.16/<set>/phone-1-…png … phone-8-…png   1080 × 1920 (8 phone pictures)
+//   store/screenshots-1.16/<set>/landscape-1-2d-to-3d.png      1920 × 1080
+//   store/screenshots-1.16/<set>/tablet7-1-…png … (5)          1200 × 1920
+//   store/screenshots-1.16/<set>/tablet10-1-…png … (5)         1600 × 2560
+//   store/feature-graphic-1.16-<set>.png                       1024 × 500 (for ja, en, de, es, fr, ko, zh-TW)
+// The test server must have the money of the region of the set (README.md: the notes, the converter and the stocks
+// show amounts in it).
 // Each picture is a screen of the app (Chromium showing app/assets with the real engine through the test
 // server) under a short headline (store/tools/captions.json). The pictures are put together in Chromium
 // too (an HTML page made here), so nothing but Node.js, Playwright and the test server is needed.
@@ -22,6 +24,7 @@ const { sleep } = Q;
 const BASE = process.argv[2] || 'http://127.0.0.1:8790/';
 const SETS = (process.argv[3] || Object.keys(Q.SETS).join(',')).split(',');
 const KINDS = (process.argv[4] || 'phone,land,tab,fg').split(',');
+const VER = '1.16';
 const ONLY = process.argv[5] ? process.argv[5].split(',') : null; // only these phone or tablet pictures (e.g. calc,exact,tank-3d)
 const STORE = path.join(__dirname, '..');
 const CAP = JSON.parse(fs.readFileSync(path.join(__dirname, 'captions.json'), 'utf8'));
@@ -74,8 +77,36 @@ const SCENES = {
     }
   },
   offline: { dark: true, run: Q.manualAbout },
-  tools: { dark: true, run: async (page) => { await Q.menu(page, 1); } }
+  tools: { dark: true, run: async (page) => { await Q.menu(page, 1); } },
+  // (1.16)
+  hist: { dark: false, run: Q.histSheet },
+  margin: { dark: false, run: async (page) => Q.stockTool(page, 'margin') },
+  possize: { dark: false, run: async (page) => Q.stockTool(page, 'possize') },
+  'notes-table': { dark: true, run: Q.notesTable },
+  // (an amount that is usual for the money of the region: 1,000 yen and 10,000 won; 100 for the others)
+  money: { dark: false, run: async (page, set) => { await Q.convertMoney(page, set); await page.evaluate((v) => { const b = Array.from(document.querySelectorAll('.panel.open .panel-body')).pop(); const i = b.querySelector('.conv-row input'); if (i) { i.value = v; i.dispatchEvent(new Event('input', { bubbles: true })); } }, { ja: '1000', ko: '10000' }[set] || '100'); await sleep(1800); } },
+  stats: { dark: false, run: Q.statsTool },
+  'stats-curve': { dark: false, run: Q.statsCurve },
+  languages: { dark: true, run: Q.langDark }
 };
+// the rectangle of an element in the top panel (to cut it out of a picture), from its top to the bottom of another
+const clipOf = (page, from, to) => page.evaluate(([from, to]) => {
+  const b = Array.from(document.querySelectorAll('.panel.open .panel-body')).pop() || document;
+  const a = b.querySelector(from), z = !to ? a : Array.from(b.querySelectorAll(to)).find((x) => x === a || (a && (a.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING)));
+  if (!a || !z) return null;
+  const r = a.getBoundingClientRect(), q = z.getBoundingClientRect();
+  return { x: Math.max(0, Math.min(r.left, q.left) - 6), y: Math.max(0, r.top - 6), width: Math.min(innerWidth, Math.max(r.right, q.right) + 6) - Math.max(0, Math.min(r.left, q.left) - 6), height: Math.min(innerHeight, q.bottom + 6) - Math.max(0, r.top - 6) };
+}, [from, to]);
+async function screenClip(browser, set, o, run, from, to) {
+  const { ctx, page } = await Q.start(browser, BASE, set, o);
+  try { await run(page, set); } catch (e) { console.log(set, 'ERROR', e.message.split('\n')[0]); }
+  await sleep(400);
+  let clip = await clipOf(page, from, to);
+  if (clip && !(clip.height > 20 && clip.width > 20)) clip = null;
+  const buf = await page.screenshot(Object.assign({ type: 'png' }, clip ? { clip } : {}));
+  await ctx.close();
+  return { buf, clip };
+}
 
 // (1.14.0) "See-through" on under the 3D view, and the drawing done (WebGL 2 is slow in this browser)
 async function seeThrough(page) {
@@ -100,7 +131,8 @@ function frameHtml(set, k) {
   const F = font(set), dark = k.dark;
   const bg = dark ? 'radial-gradient(120% 90% at 20% 0%, #2B47C9 0%, #18237A 45%, #0B1046 100%)' : 'linear-gradient(180deg, #EEF2FF 0%, #D9E1FF 100%)';
   const fg = dark ? '#FFFFFF' : '#0B1046';
-  const lines = k.lines.map((l) => `<div class="l">${esc(l)}</div>`).join('');
+  // (1.16: a large headline and a smaller line under it, as in the plan)
+  const lines = k.lines.map((l, i) => `<div class="${i ? 'l s' : 'l'}">${esc(l)}</div>`).join('');
   const tag = k.tag ? `<div class="tag">${esc(k.tag)}</div>` : '';
   const imgs = k.imgs.map((m, i) => `<div class="shot" style="left:${m.x}px;top:${m.y}px;width:${m.w}px;height:${m.h}px;border-radius:${m.r || 36}px"><img src="${m.src}"></div>`).join('');
   const arrow = k.arrow ? `<div class="arrow" style="left:${k.arrow.x}px;top:${k.arrow.y}px">⟳ 3D</div>` : '';
@@ -110,6 +142,7 @@ function frameHtml(set, k) {
     body{width:${k.W}px;height:${k.H}px;overflow:hidden;background:${bg};font-family:${F};color:${fg};position:relative}
     .head{position:absolute;left:${k.hx}px;top:${k.hy}px;width:${k.hw}px;text-align:${k.align || 'center'}}
     .l{font-size:${k.fs}px;font-weight:800;line-height:1.2;letter-spacing:-0.01em;white-space:nowrap}
+    .l.s{font-size:${Math.round(k.fs * 0.58)}px;font-weight:600;margin-top:${Math.round(k.fs * 0.22)}px;opacity:.88}
     .tag{display:inline-block;margin-top:${Math.round(k.fs * 0.28)}px;font-size:${Math.round(k.fs * 0.46)}px;font-weight:800;padding:.18em .7em .24em;border-radius:999px;background:#FFC233;color:#1A1300}
     .shot{position:absolute;overflow:hidden;box-shadow:0 18px 50px rgba(3,8,40,${dark ? '.55' : '.25'});outline:2px solid rgba(${dark ? '255,255,255,.18' : '11,16,70,.10'})}
     .shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
@@ -120,7 +153,7 @@ function frameHtml(set, k) {
   </style></head><body>${imgs}${arrow}<div class="head">${brand}${lines}${tag}</div>
   <script>
     // shrink the headline until every line fits
-    for (const l of document.querySelectorAll('.l')) { let f = ${k.fs}; while (l.scrollWidth > ${k.hw} && f > 20) { f -= 2; l.style.fontSize = f + 'px'; } }
+    for (const l of document.querySelectorAll('.l')) { let f = l.classList.contains('s') ? ${Math.round(k.fs * 0.58)} : ${k.fs}; while (l.scrollWidth > ${k.hw} && f > 16) { f -= 2; l.style.fontSize = f + 'px'; } }
   </script></body></html>`;
 }
 async function compose(browser, set, k, out) {
@@ -135,69 +168,82 @@ async function compose(browser, set, k, out) {
   console.log(path.relative(STORE, out));
 }
 const cap = (set, key) => (CAP[set] || CAP[Q.SETS[set].lang])[key];
+// the phone pictures of 1.16: Japan, and the other sets
+const ORDER = {
+  ja: ['hist', 'margin', '2d-to-3d', 'notes-table', 'tank-3d', 'money', 'stats-pair', 'languages'],
+  other: ['hist', '2d-to-3d', 'notes-table', 'possize', 'tank-3d', 'money', 'stats-pair', 'languages']
+};
+const PHONE = { viewport: { width: 393, height: 873 }, dpr: 1600 / 873 };
 
 (async () => {
   const browser = await chromium.launch();
   for (const set of SETS) {
-    const dir = path.join(STORE, 'screenshots-1.15', set);
+    const dir = path.join(STORE, 'screenshots-' + VER, set);
+    const order = ORDER[set] || ORDER.other;
     // ---- 8 phone pictures, 1080 × 1920
     if (KINDS.indexOf('phone') >= 0) {
-      const order = [['calc', 'p1', null], ['everyday', 'p2', null], ['convert', 'p3', null], ['2d-to-3d', 'p4', 'tag_3d'], ['tank-3d', 'p5', 'tag_pro'], ['notes', 'p6', null], ['exact', 'p7', 'tag_digits'], ['offline', 'p8', null]];
       for (let i = 0; i < order.length; i++) {
-        const [name, key, tagKey] = order[i];
+        const name = order[i], key = 'p' + (i + 1);
         if (ONLY && ONLY.indexOf(name) < 0) continue;
-        const k = { W: 1080, H: 1920, hx: 60, hy: 70, hw: 960, fs: 70, lines: cap(set, key), tag: tagKey ? cap(set, tagKey) : null };
+        const k = { W: 1080, H: 1920, hx: 60, hy: 70, hw: 960, fs: 70, lines: cap(set, key), tag: cap(set, key + '_tag') || null };
         if (name === '2d-to-3d') {
           // the 2D graph with the region turned, and the solid in 3D: two pictures of the graph
           const a = await screen(browser, set, Object.assign({ dpr: 2.2, dark: true }, PH), SCENES.solid2d.run, true);
           const b = await screen(browser, set, Object.assign({ dpr: 2.2, dark: true }, PH), SCENES.solid3d.run, true);
           Object.assign(k, { dark: true, imgs: [{ src: png(a), x: 180, y: 380, w: 720, h: 705 }, { src: png(b), x: 180, y: 1150, w: 720, h: 705 }], arrow: { x: 540, y: 1117 } });
+        } else if (name === 'stats-pair') {
+          // one column: the histogram; two columns: a curve of degree 2 with its formula and R² (QCalc Pro)
+          const o = Object.assign({ dark: false }, PHONE);
+          const a = await screenClip(browser, set, o, SCENES.stats.run, '.stat-charts', '.stat-charts');
+          const b = await screenClip(browser, set, o, SCENES['stats-curve'].run, '.stat-models', '.tool-out');
+          const h1 = a.clip ? Math.round(720 * a.clip.height / a.clip.width) : 700, h2 = b.clip ? Math.round(720 * b.clip.height / b.clip.width) : 700;
+          const gap = 40, top = 330, room = 1880 - top - gap, f = Math.min(1, room / (h1 + h2));
+          const w = Math.round(720 * f), x = Math.round((1080 - w) / 2);
+          Object.assign(k, { dark: false, imgs: [{ src: png(a.buf), x, y: top, w, h: Math.round(h1 * f), r: 28 }, { src: png(b.buf), x, y: top + Math.round(h1 * f) + gap, w, h: Math.round(h2 * f), r: 28 }] });
         } else {
           const sc = SCENES[name];
           // the app at the size of a phone (393 × 873 CSS px, 20:9), 720 × 1600 on the picture
-          const buf = await screen(browser, set, { viewport: { width: 393, height: 873 }, dpr: 1600 / 873, dark: sc.dark, settings: sc.settings }, (p) => sc.run(p, set));
+          const buf = await screen(browser, set, Object.assign({ dark: sc.dark, settings: sc.settings }, PHONE), (p) => sc.run(p, set));
           Object.assign(k, { dark: sc.dark, hy: 48, fs: 66, imgs: [{ src: png(buf), x: 180, y: 290, w: 720, h: 1600, r: 48 }] });
         }
         await compose(browser, set, k, path.join(dir, `phone-${i + 1}-${name}.png`));
       }
-    }
-    // ---- the earlier fifth phone picture (a solid from a profile), kept as an alternative to the tank in 3D
-    if (KINDS.indexOf('alt') >= 0) {
-      const sc = SCENES.profile;
-      const buf = await screen(browser, set, { viewport: { width: 393, height: 873 }, dpr: 1600 / 873, dark: sc.dark }, (p) => sc.run(p, set));
-      const k = { W: 1080, H: 1920, hx: 60, hy: 48, hw: 960, fs: 66, dark: sc.dark, lines: cap(set, 'p5_profile'), tag: cap(set, 'tag_pro'), imgs: [{ src: png(buf), x: 180, y: 290, w: 720, h: 1600, r: 48 }] };
-      await compose(browser, set, k, path.join(dir, 'alt', 'phone-5-profile.png'));
     }
     // ---- 16:9, 1920 × 1080: the headline at the left, the 2D graph and the solid in 3D at the right
     if (KINDS.indexOf('land') >= 0) {
       const o = Object.assign({ dpr: 833 / 640, dark: true }, PH);
       const a = await screen(browser, set, o, SCENES.solid2d.run);
       const b = await screen(browser, set, o, SCENES.solid3d.run);
-      const k = { W: 1920, H: 1080, hx: 90, hy: 300, hw: 720, fs: 64, align: 'left', brand: true, dark: true, lines: cap(set, 'land'), tag: cap(set, 'tag_3d'),
+      const k = { W: 1920, H: 1080, hx: 90, hy: 300, hw: 720, fs: 64, align: 'left', brand: true, dark: true, lines: cap(set, 'land'), tag: cap(set, 'land_tag'),
         imgs: [{ src: png(a), x: 860, y: 123, w: 500, h: 833, r: 32 }, { src: png(b), x: 1380, y: 123, w: 500, h: 833, r: 32 }] };
       await compose(browser, set, k, path.join(dir, 'landscape-1-2d-to-3d.png'));
     }
-    // ---- tablets: 7 inch 1200 × 1920 (the app at 600 × 800) and 10 inch 1600 × 2560 (the app at 800 × 1080)
+    // ---- tablets: 7 inch 1200 × 1920 (the app at 600 × 800) and 10 inch 1600 × 2560 (the app at 800 × 1080): the history,
+    // the notes table, the solid in 3D, the stocks (ja: margin; the others: the position size), the tank in 3D
     if (KINDS.indexOf('tab') >= 0) {
-      const T = [['calc', 'p1', null, 'calc'], ['tools', 't2', null, 'tools'], ['solid2d', 'p4', null, '2d-graph'], ['solid3d', 't4', 'tag_pro', '3d'], ['tank-3d', 't5', 'tag_pro', 'tank-3d']];
+      const T = [['hist', 't1', 'hist'], ['notes-table', 't2', 'notes-table'], ['solid3d', 't3', '3d'], [set === 'ja' ? 'margin' : 'possize', 't4', set === 'ja' ? 'margin' : 'possize'], ['tank-3d', 't5', 'tank-3d']];
       for (const [W, H, vw, vh, dpr, x, y, fs, nm] of [[1200, 1920, 600, 800, 1.8, 60, 420, 80, 'tablet7'], [1600, 2560, 800, 1080, 1.8, 80, 540, 104, 'tablet10']]) {
         for (let i = 0; i < T.length; i++) {
-          const [scene, key, tagKey, file] = T[i];
+          const [scene, key, file] = T[i];
           if (ONLY && ONLY.indexOf(file) < 0) continue;
           const sc = SCENES[scene];
-          const buf = await screen(browser, set, { viewport: { width: vw, height: vh }, dpr, dark: sc.dark }, (p) => sc.run(p, set));
-          const k = { W, H, hx: x, hy: Math.round(y * 0.2), hw: W - 2 * x, fs, dark: sc.dark, lines: cap(set, key), tag: tagKey ? cap(set, tagKey) : null,
+          // (1.16.2: on a tablet the keys stand beside the history, and choosing lines hides them: the history without a choice
+          // there, so that the picture has no empty half)
+          const run = scene === 'hist' ? (p) => Q.histSheet(p, set, { noSelect: true }) : (p) => sc.run(p, set);
+          const buf = await screen(browser, set, { viewport: { width: vw, height: vh }, dpr, dark: sc.dark }, run);
+          const k = { W, H, hx: x, hy: Math.round(y * 0.2), hw: W - 2 * x, fs, dark: sc.dark, lines: cap(set, key), tag: cap(set, key + '_tag') || null,
             imgs: [{ src: png(buf), x, y, w: Math.round(vw * dpr), h: Math.round(vh * dpr), r: 36 }] };
           await compose(browser, set, k, path.join(dir, `${nm}-${i + 1}-${file}.png`));
         }
       }
     }
-    // ---- the feature graphic, 1024 × 500: the icon, the name, two short lines, and the solid in 3D
+    // ---- the feature graphic, 1024 × 500: the icon, the name, two short lines; the history and the solid in 3D, small
     if (KINDS.indexOf('fg') >= 0 && FG_SETS[set]) {
+      const hst = await screen(browser, set, Object.assign({ dark: false }, PHONE, { dpr: 1.2 }), (p) => SCENES.hist.run(p, set));
       const b = await screen(browser, set, Object.assign({ dpr: 1.6, dark: true }, PH), SCENES.solid3d.run, true);
-      const k = { W: 1024, H: 500, hx: 56, hy: 92, hw: 470, fs: 40, align: 'left', brand: true, dark: true, lines: cap(set, 'fg'),
-        imgs: [{ src: png(b), x: 560, y: 40, w: 420, h: 420, r: 28 }] };
-      await compose(browser, set, k, path.join(STORE, `feature-graphic-1.15-${set}.png`));
+      const k = { W: 1024, H: 500, hx: 48, hy: 96, hw: 450, fs: 38, align: 'left', brand: true, dark: true, lines: cap(set, 'fg'),
+        imgs: [{ src: png(hst), x: 520, y: 36, w: 200, h: 428, r: 22 }, { src: png(b), x: 738, y: 70, w: 250, h: 360, r: 22 }] };
+      await compose(browser, set, k, path.join(STORE, `feature-graphic-${VER}-${set}.png`));
     }
   }
   await browser.close();
