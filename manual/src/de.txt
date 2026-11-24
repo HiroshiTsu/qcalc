@@ -35,7 +35,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 - **Regressionskurven und CSV**: für zwei Spalten eine Kurve vom Grad 2 bis 4, eine Exponential-, Logarithmus- oder Potenzkurve wählen (außer der Geraden: QCalc Pro). [[Read a CSV file]] liest eine Spalte einer CSV-Datei ([Statistik](#stats)).
 - **Hinweise zu den Argumenten**: Nach einem Funktionsnamen und „(“ erscheinen unter dem Eingabefeld die Argumente (das aktuelle fett), was die Funktion tut und ein Beispiel. Für etwa 60 Funktionen; ✕ schließt den Hinweis ([Hinweise zu den Argumenten](#arg-hints)).
 - **Ergebnis durch Tippen einfügen**: Ein Tippen auf ein Ergebnis im Verlauf setzt es an der Cursorposition ein, wie ein Klick auf eine Zelle in einer Tabellenkalkulation. Ein weiteres Tippen, bevor Sie etwas eingeben, ersetzt es, und direkt nach einer Zahl kommt zuerst ein sichtbares × dazu. Die verwendeten Zeilen bekommen farbige Markierungen. Ergebnisse mit √ oder π kommen in ihrer exakten Form, nicht als gerundete Dezimalzahl ([Ergebnis durch Tippen einfügen](#tap-insert)).
-- **Zeilennummern und #12 im Verlauf**: Die Zeilen des Verlaufs haben Nummern, und `#12` in einem Ausdruck ist das Ergebnis von Zeile 12; wird Zeile 12 bearbeitet, können die Zeilen mit #12 neu berechnet werden. [[Select: sum and average]] im ⋯ beginnt mit dieser Zeile und zeigt sofort die Summe; langes Drücken auf eine Zeile wählt einen Bereich. [[Copy as a table]] (QCalc Pro) kopiert Ausdrücke und Ergebnisse als zwei Spalten für eine Tabellenkalkulation ([Zeilennummern und #12](#hist-refs), [Zeilen addieren](#select-sum)).
+- **Zeilennummern und #12 im Verlauf**: Die Zeilen des Verlaufs haben Nummern, und `#12` in einem Ausdruck ist das Ergebnis von Zeile 12; wird Zeile 12 bearbeitet, können die Zeilen mit #12 neu berechnet werden. [[Select: sum and average]] im ⋯ beginnt mit dieser Zeile und zeigt sofort die Summe; langes Drücken auf eine Zeile wählt einen Bereich. [[Copy as a table]] kopiert Ausdrücke und Ergebnisse als zwei Spalten für eine Tabellenkalkulation ([Zeilennummern und #12](#hist-refs), [Zeilen addieren](#select-sum)).
 - **Eine Zeile bearbeiten**: Die Zeile und ihr Ergebnis bleiben sichtbar, neu berechnete Zeilen leuchten kurz auf. Eine Zeile behält die Winkeleinheit, mit der sie berechnet wurde, und wird damit bearbeitet. Auch AC beendet das Bearbeiten, und [[Cancel]] bei der Frage nach den Zeilen darunter kehrt zum Bearbeiten zurück ([Eine Zeile des Verlaufs bearbeiten](#edit-line)).
 - **Weitere Korrekturen**: Solange „Volumen und Oberfläche“ im 3D-Graphen offen ist, zeigt die Legende die Farbe des gemessenen Körpers. Geldbeträge runden einen halben Cent richtig auf (manche Summen waren einen Cent zu klein). Ergebnisse werden ohne Zifferngruppierung kopiert. `nPr(5, 2)` und `nCr(5, 2)` funktionieren. Weitere Meldungen der Rechen-Engine (der Hinweis zu 6/2(1+2) und andere) erscheinen auf Deutsch. Der Umrechner lässt selten genutzte Einheiten weg (eingeben lassen sie sich weiterhin).
 
@@ -196,7 +196,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Tippen Sie auf die Zeilen, die addiert werden sollen. Langes Drücken auf eine Zeile wählt alle Zeilen von der zuletzt gewählten bis zu ihr.
 :step: Summe und Mittelwert erscheinen unten, mit Einheit, wenn die Einheiten passen. Als Dezimalzahl angezeigte Zeilen ergeben eine Dezimalzahl. [[Copy]] kopiert die Zeilen (ohne Zifferngruppierung).
 :step: [[Copy as a table]] kopiert Ausdrücke und Ergebnisse der gewählten Zeilen in zwei Spalten mit einem Tabulator dazwischen: In eine Tabellenkalkulation eingefügt, ergeben sie eine Spalte der Ausdrücke und eine Spalte der Ergebnisse.
-:pro: [[Copy as a table]] ist eine Funktion von QCalc Pro, zusammen mit dem Export des Verlaufs (CSV). Nummern, #12, das Auswählen, Summe, Mittelwert und das einfache Kopieren sind kostenlos.
+:tip: [[Copy as a table]] ist kostenlos. Den ganzen Verlauf als CSV-Datei zu speichern ([Den Verlauf exportieren](#export)) ist eine Funktion von QCalc Pro.
 :mistake: Zeilen mit verschiedenen Einheiten (m und kg) lassen sich nicht addieren; der Grund wird angezeigt.
 
 ## export | Den Verlauf exportieren (CSV)
@@ -744,7 +744,7 @@ Numerische Integration (Flächen, Längen und Volumen im Graphen) ist auf etwa 2
 | Mehr als 1000 signifikante Stellen (bis 200000) | [Das Ergebnis lesen](#results) |
 | 3D-Graphen, in 3D ansehen | [3D-Graph](#graph-3d) |
 | Farbthemen (7 Farben) | [Einstellungen](#settings) |
-| Verlauf exportieren (CSV), als Tabelle kopieren | [Den Verlauf exportieren](#export), [Zeilen addieren](#select-sum) |
+| Verlauf exportieren (CSV) | [Den Verlauf exportieren](#export) |
 | Tabellen als CSV (Kredit, Sparen) | [Kredit](#loan) |
 | Tankböden und Tabellen | [Tankböden](#tank-heads) |
 | Körper aus einem Profil | [Körper aus einem Profil](#profile) |

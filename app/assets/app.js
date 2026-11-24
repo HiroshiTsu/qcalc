@@ -17270,7 +17270,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   const selBar = el('div', { class: 'hselbar', hidden: true, role: 'region', 'aria-label': tr('Selected lines', '選んだ行') });
   const selInfo = el('div', { class: 'hs-info', 'aria-live': 'polite' });
   // (1.16.0, feature/hist-excel) "Copy as a table": the expression and the answer of each line in two columns (tab between),
-  // to paste into a spreadsheet (Excel, Google Sheets); with exporting the history, a QCalc Pro feature
+  // to paste into a spreadsheet (Excel, Google Sheets); free (the owner's decision of 11-24: copying is free and saving a file
+  // is Pro everywhere, as Copy the table of the tools and Copy as a table of the matrix form; exporting the history stays Pro)
   const tblBtn = el('button', { class: 'btn', type: 'button', text: tr('Copy as a table', '表でコピー'), onclick: () => copySelectedTable() });
   selBar.append(selInfo, el('div', { class: 'hs-btns' },
     el('button', { class: 'btn', type: 'button', text: tr('Copy', 'コピー'), onclick: () => copySelected() }),
@@ -17285,7 +17286,6 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   function openHistSelect(first) {
     if (!proGate('history_tools')) return;
     selLast = null;
-    tblBtn.textContent = tr('Copy as a table', '表でコピー') + (hasPro() ? '' : ' ⭐');
     closeHistSearch();
     endHistEdit(true); // (1.15.0: selecting lines ends the editing of one; its expression stays in the field)
     drawAllOlder();
@@ -17375,7 +17375,6 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   function copySelectedTable() {
     const list = history.filter((h) => histSel && histSel.has(h));
     if (!list.length) { toast(tr('Nothing is selected', '何も選ばれていません'), 1500); return; }
-    if (!hasPro()) { proPrompt(tr('Copying lines as a table is a QCalc Pro feature, as exporting the history', '表でコピーは、履歴の書き出しと同じく QCalc Pro の機能です'), 'export'); return; }
     copyText(list.map((h) => tableExpr(h) + '\t' + tableAnswer(h)).join('\n'));
     toast(trf('{0} lines copied as a table: paste them into a spreadsheet', '{0} 行を表としてコピーしました（表計算ソフトに貼れます）', list.length), 2500);
   }
@@ -21054,7 +21053,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     ['🎯', tr('High precision', '高精度'), tr('Up to 200000 significant digits (free: up to 1000)', '有効桁数は最大 200000 桁（無料版は 1000 桁まで）'), 'precision'],
     ['🧊', tr('3D graphs', '3D グラフ'), tr('Surfaces z = f(x, y) and solids that you can turn with a finger, also a solid of revolution growing in 3D', '指で回せる曲面 z = f(x, y) と立体（回転体が 3D でできていく様子も）'), '3d'],
     ['🎨', tr('Color themes', '配色テーマ'), tr('Seven colors for the keys and the highlights, in the light and the dark theme', 'キーや強調表示を 7 色から選べます（ライト・ダークの両方）'), 'themes'],
-    ['📤', tr('Export the history', '履歴の書き出し'), tr('Save the history as a CSV file, or copy the lines you choose as a table, for a spreadsheet', '履歴を CSV ファイルに保存したり、選んだ行を表としてコピーしたりして、表計算ソフトで使えます'), 'export']
+    ['📤', tr('Export the history', '履歴の書き出し'), tr('Save the history as a CSV file that spreadsheets can open', '履歴を CSV ファイルに保存（表計算ソフトで開けます）'), 'export']
   ];
   // (feature/ratings) The photos of the Pro sheet: parts of the photos of the user manual, cut by manual/pro-photos.js
   // into app/assets/pro/<language>/<name>.webp (about 50 KB a language; the manual inside the app has no photos).

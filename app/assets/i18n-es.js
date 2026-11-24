@@ -13,6 +13,7 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "Save the history as a CSV file that spreadsheets can open": "Guarda el historial como un archivo CSV que las hojas de cálculo pueden abrir",
     "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "Historial: toca un resultado para insertarlo (otro toque lo sustituye), números de línea y #12, elegir y sumar",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "Este es el valor principal (un número complejo). La raíz cúbica real es cbrt(−{0}) (∛)",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "Este es el valor principal (un número complejo). La raíz real es root(−{0}, {1})",
@@ -33,9 +34,7 @@
     "Select: sum and average": "Elegir: suma y media",
     "{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?": "{0} líneas de abajo siguen de esta (su ans, #{1} o su variable). ¿Calcularlas también de nuevo?",
     "Copy as a table": "Copiar como tabla",
-    "Copying lines as a table is a QCalc Pro feature, as exporting the history": "Copiar líneas como tabla es, como exportar el historial, una función de QCalc Pro",
     "{0} lines copied as a table: paste them into a spreadsheet": "{0} líneas copiadas como tabla: pégalas en una hoja de cálculo",
-    "Save the history as a CSV file, or copy the lines you choose as a table, for a spreadsheet": "Guarda el historial como archivo CSV o copia como tabla las líneas que elijas, para una hoja de cálculo",
     "The solid whose volume is measured": "Sólido cuyo volumen se mide",
     "(its answer is in the expression)": "(su resultado está en la expresión)",
     // (1.16.0) the card of what is new: the stocks and the notes
