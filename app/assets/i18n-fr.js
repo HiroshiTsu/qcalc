@@ -1,6 +1,14 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    "Editing #{0}": "Modification de #{0}",
+    "Before: ": "Avant : ",
+    "Making a new line from the answer of #{0}": "Nouvelle ligne à partir du résultat de #{0}",
+    "Edit this line": "Modifier cette ligne",
+    "Close (the field stays as it is)": "Fermer (le champ reste tel quel)",
+    "A new line from an answer": "Nouvelle ligne à partir d’un résultat",
+    "How opaque": "Opacité",
+    "Seen when the container is see-through": "Visible si le récipient est transparent",
     "What is see-through:": "Ce qui est transparent :",
     "Could not calculate: {0} is a point with no value": "Calcul impossible : {0} est un point sans valeur",
     "Could not calculate: it is a point with no value": "Calcul impossible : point sans valeur",

@@ -1,0 +1,83 @@
+<en-US>
+• History as a spreadsheet: tap an answer for its value, its number for #12; add up; copy
+• Stock tools: P&L with tax, average cost, margin-call price, position size, yield/PER/PBR (margin: Pro)
+• Notes: line numbers and #3; tables with formulas, totals, CSV (Pro)
+• Variables on one screen; argument hints
+• Statistics: distributions, histogram, box plot, curves (non-linear: Pro)
+• Fixes: decimals kept, exact values, money rounding, line editing, 3D see-through, graph shapes after reopening
+</en-US>
+<en-GB>
+• History as a spreadsheet: tap an answer for its value, its number for #12; add up; copy
+• Stock tools: P&L with tax, average cost, margin-call price, position size, yield/PER/PBR (margin: Pro)
+• Notes: line numbers and #3; tables with formulas, totals, CSV (Pro)
+• Variables on one screen; argument hints
+• Statistics: distributions, histogram, box plot, curves (non-linear: Pro)
+• Fixes: decimals kept, exact values, money rounding, line editing, 3D see-through, graph shapes after reopening
+</en-GB>
+<ja-JP>
+・履歴を表計算のように：答えのタップで値、番号のタップで #12、選んで合計、表でコピー
+・株・投資の道具：損益と税（NISA も）、平均取得単価、信用取引の維持率と追証の株価、損切りから株数、利回り・PER・PBR（信用取引の計算は QCalc Pro）
+・計算メモ：行の番号と #3。式の列・合計・CSV のある表（QCalc Pro）
+・自分の変数と関数の一覧、関数の引数のヒント
+・統計：確率分布、ヒストグラムと箱ひげ図、回帰曲線（直線以外は QCalc Pro）
+・直したこと：小数の式の答えは小数のまま、√ や π の答えを厳密な形で挿入、お金の端数、履歴の行を直すとき、図形の重さ、3D の球とドーナツ、計算できない式は答えにせず理由を表示
+・3D の透明と、アプリを開き直したときのグラフの形を直しました
+</ja-JP>
+<de-DE>
+• Verlauf als Tabelle: Ergebnis antippen für den Wert, Nummer für #12; addieren; kopieren
+• Aktien: Gewinn mit Steuer, Einstandskurs, Nachschusskurs, Positionsgröße, Rendite/KGV/KBV (Margin: Pro)
+• Notizen: Zeilennummern und #3; Tabellen mit Formeln, Summen, CSV (Pro)
+• Variablen auf einem Bildschirm; Argumenthilfe
+• Statistik: Verteilungen, Histogramm, Boxplot, Kurven (nicht linear: Pro)
+• Korrekturen: Dezimalen, exakte Werte, Runden, Zeilen bearbeiten, 3D-Durchsicht, Grafiken nach Neustart
+</de-DE>
+<es-ES>
+• Historial como hoja de cálculo: un resultado da su valor, su número da #12; sumar; copiar
+• Acciones: ganancias con impuestos, precio medio, precio de llamada, tamaño de posición, PER/P/VC (margen: Pro)
+• Notas: números de línea y #3; tablas con fórmulas, totales, CSV (Pro)
+• Variables a la vista; ayuda de argumentos
+• Estadística: distribuciones, histograma, caja, curvas (no lineales: Pro)
+• Correcciones: decimales, valores exactos, redondeo, edición, transparencia 3D, gráficas al reabrir
+</es-ES>
+<es-419>
+• Historial como hoja de cálculo: un resultado da su valor, su número da #12; sumar; copiar
+• Acciones: ganancias con impuestos, precio medio, precio de llamada, tamaño de posición, PER/P/VC (margen: Pro)
+• Notas: números de línea y #3; tablas con fórmulas, totales, CSV (Pro)
+• Variables a la vista; ayuda de argumentos
+• Estadística: distribuciones, histograma, caja, curvas (no lineales: Pro)
+• Correcciones: decimales, valores exactos, redondeo, edición, transparencia 3D, gráficas al reabrir
+</es-419>
+<fr-FR>
+• Historique en tableur : un résultat donne sa valeur, son numéro #12 ; somme ; copier
+• Bourse : gain avec impôt, prix de revient, prix d’appel, taille de position, rendement/PER/PBR (marge : Pro)
+• Notes : lignes numérotées et #3 ; tableaux à formules, totaux, CSV (Pro)
+• Variables sur un écran ; aide des arguments
+• Statistiques : lois, histogramme, boîte, courbes (non linéaires : Pro)
+• Corrections : décimaux, valeurs exactes, arrondi, édition, transparence 3D, graphes après réouverture
+</fr-FR>
+<fr-CA>
+• Historique en tableur : un résultat donne sa valeur, son numéro #12 ; somme ; copier
+• Bourse : gain avec impôt, prix de revient, prix d’appel, taille de position, rendement/PER/PBR (marge : Pro)
+• Notes : lignes numérotées et #3 ; tableaux à formules, totaux, CSV (Pro)
+• Variables sur un écran ; aide des arguments
+• Statistiques : lois, histogramme, boîte, courbes (non linéaires : Pro)
+• Corrections : décimaux, valeurs exactes, arrondi, édition, transparence 3D, graphes après réouverture
+</fr-CA>
+<ko-KR>
+• 표 계산처럼 쓰는 기록: 결과 탭으로 값, 번호 탭으로 #12, 골라서 합계, 표로 복사
+• 주식·투자 도구: 세금 포함 손익, 평균 매입 단가, 신용거래 유지율과 추가 증거금 주가, 손절가로 주식 수, 수익률·PER·PBR(신용거래 계산은 QCalc Pro)
+• 계산 메모: 줄 번호와 #3, 식의 열·합계·CSV가 있는 표(QCalc Pro)
+• 내 변수와 함수 목록, 함수 인수 도움말
+• 통계: 확률분포, 히스토그램, 상자그림, 회귀곡선(직선 외에는 QCalc Pro)
+• 고친 것: 소수 식의 결과는 소수로, √·π 결과를 정확한 형태로 넣기, 돈의 끝자리, 줄 고치기, 도형의 무게, 3D 구와 도넛, 계산할 수 없는 식은 결과 대신 이유를 표시
+• 3D 투명과 앱을 다시 열었을 때의 그래프 모양을 고쳤습니다
+</ko-KR>
+<zh-TW>
+• 像試算表的歷史紀錄：點結果放入值、點編號放入 #12、選取後加總、以表格複製
+• 股票與投資工具：含稅損益、平均成本、信用交易維持率與追繳價、由停損算股數、殖利率／本益比／股價淨值比（信用交易計算為 QCalc Pro）
+• 計算筆記：行號與 #3；有算式欄、合計與 CSV 的表格（QCalc Pro）
+• 我的變數與函數一覽、函數引數提示
+• 統計：機率分佈、直方圖、盒鬚圖、迴歸曲線（直線以外為 QCalc Pro）
+• 修正：小數算式的結果維持小數、√、π 的結果以精確形式插入、金額尾數、修改歷史紀錄的行、圖形重量、3D 球與甜甜圈、無法計算的算式改為顯示原因
+• 修正 3D 透明，以及重新開啟 App 後的圖形形狀
+</zh-TW>

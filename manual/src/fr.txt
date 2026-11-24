@@ -152,7 +152,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 
 # history | Historique et mémoire
 :what: Les calculs et les résultats restent dans l'historique, jusqu'à 300 lignes. 🕘 en haut à droite recherche, additionne les lignes choisies, exporte et efface.
-:step: Touchez un résultat de l'historique pour le mettre dans le champ de saisie ([Insérer un résultat d'un toucher](#tap-insert)) ; touchez son expression pour modifier la ligne ([Modifier une ligne de l’historique](#edit-line)).
+:step: Une ligne réagit selon l’endroit touché : **toucher son résultat** pour utiliser la valeur ([[!=]] crée une nouvelle ligne ; [Insérer un résultat d'un toucher](#tap-insert)) ; **toucher son expression** pour modifier la ligne ([[!=]] la remplace ; [Modifier une ligne de l’historique](#edit-line)).
 :step: ⋯ à gauche d'une ligne propose [[☆ Pin at the top]] et [[Add a short note]].
 :step: 🕘 propose [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] et [[Clear the whole history]].
 :shot: history | Le menu de l'historique de 🕘
@@ -161,6 +161,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 ## tap-insert | Insérer un résultat d'un toucher
 :what: Toucher un résultat de l'historique le met dans le champ de saisie, à la position du curseur, comme un clic sur une cellule pendant que vous tapez une formule dans un tableur.
 :step: Si le champ est vide, ou juste après un calcul, le résultat entre tel quel.
+:step: Un résultat touché quand le champ est vide affiche au-dessus du champ une bande claire, « Nouvelle ligne à partir du résultat de #51 » : [[!=]] crée une nouvelle ligne. Pour modifier plutôt cette ligne, appuyez sur [[Edit this line]] dans la bande (aussi après avoir changé des nombres dans le champ : la ligne est alors modifiée avec le champ tel qu’il est). La bande disparaît aussi avec ✕, AC ou un champ vide.
 :step: Un autre toucher sur un résultat avant de taper quoi que ce soit remplace celui touché avant.
 :step: Après un opérateur comme + ou ×, le résultat entre après. Juste après un nombre, une lettre ou « ) », un × visible entre d'abord.
 :step: Les lignes utilisées dans l'expression reçoivent des marques de couleur ; effacer le résultat du champ enlève sa marque.
@@ -172,6 +173,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 ## edit-line | Modifier une ligne de l’historique
 :what: Touchez l’expression d’une ligne (la petite au-dessus de son résultat), ou [[Edit expression]] dans son ⋯, pour modifier cette ligne. L’expression passe dans le champ de saisie, avec la bande « [[Editing a line of the history]] » au-dessus. L’historique défile pour que la ligne et son résultat restent visibles.
 :step: Modifiez l’expression et appuyez sur [[!=]]. La ligne reçoit la nouvelle expression et le nouveau résultat à la même place. ★ et la note courte restent, et le menu ⋯ affiche l’heure de la modification à côté de l’heure de la ligne.
+:step: Pendant la saisie, la ligne affiche à sa place l’expression et son nouveau résultat, avec en dessous, en petit et en gris, la ligne telle qu’elle était (« Avant : … »). L’historique ne change qu’avec [[!=]].
 :step: Pendant quelques secondes, « [[Edited]] » et [[Undo]] s’affichent. [[Undo]] rétablit l’expression et le résultat d’avant.
 :step: Si les lignes en dessous utilisent le résultat de cette ligne (ans ou #12) ou une variable qu’elle définit, l’application demande s’il faut les recalculer (« Aussi les 2 lignes en dessous ») ou [[Only this line]]. Les lignes recalculées s’illuminent un instant, et [[Undo]] les rétablit aussi. Avec [[Only this line]], les lignes en dessous reçoivent une note : leur résultat n’est peut-être plus à jour. [[Cancel]] ne change rien : la nouvelle expression reste dans le champ et vous continuez la modification.
 :step: Pour la calculer plutôt comme une nouvelle ligne en dessous, appuyez sur [[As a new line]] dans la bande, puis sur [[!=]]. Le ✕ de la bande, AC ou le bouton Retour arrête la modification sans rien changer.

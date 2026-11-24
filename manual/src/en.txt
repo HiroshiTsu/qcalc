@@ -152,7 +152,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 
 # history | History and memory
 :what: The expressions and answers stay in the history, up to 300 lines. 🕘 at the top right searches, adds up chosen lines, exports and clears.
-:step: Tap an answer in the history to put it into the input field ([Tap to insert a result](#tap-insert)); tap its expression to edit the line ([Editing a line of the history](#edit-line)).
+:step: A line works in two ways, by where you tap it: **tap its answer** to use the value ([[!=]] makes a new line; [Tap to insert a result](#tap-insert)); **tap its expression** to edit the line ([[!=]] replaces it; [Editing a line of the history](#edit-line)).
 :step: ⋯ at the left of a line offers [[☆ Pin at the top]] and [[Add a short note]].
 :step: 🕘 offers [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] and [[Clear the whole history]].
 :shot: history | The history menu of 🕘
@@ -161,6 +161,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 ## tap-insert | Tap to insert a result
 :what: A tap on an answer in the history puts it into the input field at the cursor, as a click on a cell does while you type a formula in a spreadsheet.
 :step: When the field is empty, or right after a calculation, the answer simply goes in.
+:step: An answer tapped into the empty field shows a pale band above the field, “Making a new line from the answer of #51”: [[!=]] makes a new line. To change that line instead, press [[Edit this line]] in the band (also after changing numbers in the field: the line is then edited with the field as it is). The band also goes with ✕, AC or an empty field.
 :step: Another tap on an answer before you type anything replaces the one tapped before.
 :step: After an operator such as + or ×, the answer goes in after it. Right after a number, a letter or ")", a visible × goes in first.
 :step: The lines used in the expression get colored marks; deleting the answer from the field removes its mark.
@@ -172,6 +173,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 ## edit-line | Editing a line of the history
 :what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "[[Editing a line of the history]]" above it. The history scrolls so that the line and its answer stay in sight.
 :step: Change the expression and press [[!=]]. The line gets the new expression and answer in the same place. ★ and the short note stay, and the menu ⋯ shows the time of the change beside the time of the line.
+:step: While you type, the line shows the expression and its new answer in its place, with the line as it was in small grey letters below it (“Before: …”). The history itself changes only when you press [[!=]].
 :step: "[[Edited]]" and [[Undo]] show for a few seconds. [[Undo]] brings back the expression and answer as they were.
 :step: When the lines below use the answer of this line (ans or #12) or a variable it defines, the app asks whether to work them out again ("Also the 2 lines below") or [[Only this line]]. The lines worked out again flash for a moment, and [[Undo]] takes them back too. With [[Only this line]], the lines below get a note that their answer may be out of date. [[Cancel]] changes nothing: the new expression stays in the field and you go on editing.
 :step: To work it out as a new line below instead, press [[As a new line]] in the band, then [[!=]]. ✕ in the band, AC or the back button stops editing and changes nothing.

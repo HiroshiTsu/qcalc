@@ -836,6 +836,8 @@
   // (1.16.0, fix/hist-tap: the last value put in by a tap on an answer { f, before, at, after, end, h }, and the lines whose
   // answers are in the expression { h, text, color }: insertResult, tapMarks)
   let tapRef = null, tapMarks = [];
+  let liveRes = null, livePending = false, liveQ = false; // (1.16.2, E: the line being edited, shown as it is typed)
+  let fromBand = null; // (1.16.2, M1: the band of a new line made from an answer, { h, after: the field just after the tap })
   // (1.16.0, fix/hist-edit-scroll: the line of the history kept in sight for a moment { h, until, run }, revealHistLine; the
   // lines just worked out again, marked for a moment: line → time it ends, flashLines)
   let histReveal = null;
@@ -1353,6 +1355,7 @@
   }
   function exprChanged(typed) {
     pruneTapMarks(); // (1.16.0, fix/hist-tap)
+    if (fromBand && (!exprEl.value.trim() || history.indexOf(fromBand.h) < 0)) hideFromBand(); // (1.16.2, M1)
     noteField();
     saveDraft();
     autosize();
@@ -1362,6 +1365,7 @@
     plotBtnEl.hidden = !plottable(exprEl.value);
     clearTimeout(previewTimer);
     if (!exprEl.value.trim() || !S.preview) { showPreview(null); return; }
+    if (histEdit) { livePending = true; syncLiveRow(); } // (1.16.2, E: "…" until the preview comes)
     previewTimer = setTimeout(runPreview, 160);
   }
   // "5 km to" while the unit is still to be typed or chosen: what is before the "to" is calculated
@@ -2072,6 +2076,13 @@
     return r;
   }
   function showPreview(r) {
+    showPreviewIn(r);
+    // ((1.16.2, E) the same result for the line being edited, in its place)
+    livePending = false;
+    liveRes = r && r.ok && !r.deferred && !r.timeout && previewEl.childNodes.length && !msgEl.classList.contains('error') ? r : null;
+    if (histEdit) syncLiveRow();
+  }
+  function showPreviewIn(r) {
     msgEl.textContent = '';
     msgEl.className = 'msg';
     if (!r) { parsedEl.textContent = ''; previewEl.textContent = ''; return; }
@@ -2122,6 +2133,7 @@
     }
     committing = true;
     stopping = false;
+    if (given === undefined) hideFromBand(); // (1.16.2, M1)
     clearTimeout(previewTimer);
     previewEl.textContent = tr('Calculating…', '計算中…');
     // from the first second: the seconds so far, and that a tap stops the calculation
@@ -3942,6 +3954,8 @@
     const pos = s + pre.length + arg.length;
     f.setSelectionRange(pos, pos);
     tapRef = { f, before, at: s, after: f.value, end: pos, h };
+    // ((1.16.2, M1) the answer's value into the empty field, not while a line is edited: the band says a new line is made)
+    if (f === exprEl && !asRef && !histEdit && !before.trim()) showFromBand(h, f.value);
     targetChanged();
     if (f === exprEl) {
       if (replaced && replaced !== h) dropTapMark(replaced);
@@ -4059,6 +4073,7 @@
     showResult(res, displayResult(h));
     const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: prettyExpr(toDisplay(h.expr)) }), res);
     item._h = h;
+    if (histEdit && histEdit.h === h) queueLive(); // (1.16.2, E)
     // (1.16.0, feature/hist-excel) its number, and a line it refers to (#12) that is no longer in the history
     if (!h.n) numberLines();
     // (1.16.0, feature/hist-ux, U1) the number is a button: a tap puts "#12" into the expression, as pointing at a cell in a
@@ -4475,6 +4490,7 @@
     else if (a === 'copy') copyText(ungroupText(row.shown)); // (1.16.0, R8)
   }
   function historyChanged() {
+    if (fromBand && history.indexOf(fromBand.h) < 0) hideFromBand(); // (1.16.2, M1: the line deleted)
     fitHistory();
     saveHistory();
     renderHistory(false);
@@ -4497,6 +4513,33 @@
     tapButton({ class: 'btn hedit-new', type: 'button', text: tr('As a new line', '新しい行にする') }, () => endHistEdit(true)),
     tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Stop editing (nothing changes)', '直すのをやめる（何も変わりません）') }, () => endHistEdit(false)));
   $('.entry').insertBefore(editBand, $('.entry').firstChild);
+  // (1.16.2, M1, the owner's report of 11-24 18:50) An answer tapped into the empty field makes a new line with its value
+  // (= adds a line), but where the answer looks like its expression (a matrix of x/… with x not defined) it could not be
+  // told from touching the expression, which edits the line: the owner changed the numbers and got a new line #52. A pale
+  // band in the place of the editing band says so, "Making a new line from the answer of #51", with "Edit this line" (that
+  // line edited: its expression in the field, or what the field holds when it was changed since the tap) and ✕. It goes
+  // with =, AC, the field emptied, ✕, and the line edited or gone; not for a tap while a formula is typed (a click on a cell).
+  const fromEl = el('div', { id: 'hist-from', class: 'hedit hfrom', role: 'region', hidden: true, 'aria-label': tr('A new line from an answer', '答えから新しい行') });
+  fromEl.append(el('span', { class: 'hedit-t' }),
+    tapButton({ class: 'btn hfrom-edit', type: 'button', text: tr('Edit this line', 'この行を直す') }, () => editFromBand()),
+    tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Close (the field stays as it is)', '閉じる（入力欄はそのまま）') }, () => hideFromBand()));
+  $('.entry').insertBefore(fromEl, editBand.nextSibling);
+  function showFromBand(h, after) {
+    fromBand = { h, after };
+    const t = trf('Making a new line from the answer of #{0}', '#{0} の答えから新しい行を作っています', h.n);
+    fromEl.querySelector('.hedit-t').textContent = t;
+    fromEl.hidden = false;
+    $('#status').textContent = t;
+  }
+  function hideFromBand() { if (!fromBand) return; fromBand = null; fromEl.hidden = true; }
+  function editFromBand() {
+    const B = fromBand;
+    hideFromBand();
+    if (!B || history.indexOf(B.h) < 0) return;
+    const cur = exprEl.value, changed = !!cur.trim() && cur !== B.after;
+    startHistEdit(B.h);
+    if (changed) { exprEl.value = cur; exprEl.setSelectionRange(cur.length, cur.length); exprChanged(); }
+  }
   // (1.16.0, the review of 11-24, R3) The angle unit a line was worked out with (h.angle, kept from 1.16.0): editing it, working it
   // out again (the lines below, other digits) and making its definitions again use it, not the setting of now (until then
   // sin(30) worked out in degrees gave −0.988… after the setting went back to radians, without a word). A line of an earlier
@@ -4513,6 +4556,7 @@
   function startHistEdit(h) {
     if (history.indexOf(h) < 0) return;
     if (histSel) closeHistSelect();
+    hideFromBand(); // (1.16.2, M1)
     if (!histEdit) histEdit = { h, keep: exprEl.value };
     else histEdit.h = h;
     const n = editBand.querySelector('.hedit-n'), b = Number(h.base || 10), now = Number(S.base);
@@ -4532,7 +4576,46 @@
     $('#status').textContent = tr('Editing a line of the history: = puts the new result in its place', '履歴の行を直しています。= で、その行を新しい式と答えに置き換えます');
     focusExpr();
   }
-  function markEditing() { for (const it of histEl.querySelectorAll('.h-item')) it.classList.toggle('editing', !!histEdit && it._h === histEdit.h); }
+  function markEditing() { for (const it of histEl.querySelectorAll('.h-item')) it.classList.toggle('editing', !!histEdit && it._h === histEdit.h); syncLiveRow(); }
+  // (1.16.2, E, the owner's wish of 11-24 18:53: as a spreadsheet changes the cell while its formula is typed in the formula
+  // bar) The line being edited shows in its place, as it is typed below: "Editing #51", the expression typed (as the
+  // history writes it), = and its new answer (the preview's result, not worked out again: "…" meanwhile, its error in the
+  // preview's words; only the expression when previews are off), and small and grey "Before: …" (the line as it is, in one
+  // or two lines). The history itself changes only with =; ✕, back and "As a new line" show the line as it was. The line
+  // stays in sight when it grows (revealHistLine, only when it was in sight). Not read out as it changes (no aria-live: the
+  // preview under the field is).
+  function syncLiveRow() {
+    const H = histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
+    for (const it of histEl.querySelectorAll('.h-item.live')) {
+      if (H && it._h === H) continue;
+      it.classList.remove('live');
+      const l = it.querySelector(':scope > .h-live'); if (l) l.remove();
+    }
+    if (!H) return;
+    const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === H);
+    if (!it) return;
+    const r0 = it.getBoundingClientRect(), b0 = histEl.getBoundingClientRect(), seen = r0.bottom > b0.top && r0.top < b0.bottom;
+    let box = it.querySelector(':scope > .h-live');
+    if (!box) { box = el('div', { class: 'h-live' }); it.insertBefore(box, it.querySelector(':scope > .h-expr')); }
+    it.classList.add('live');
+    box.textContent = '';
+    const v = exprEl.value;
+    box.append(el('div', { class: 'h-live-t', text: trf('Editing #{0}', '#{0} 直しています', H.n) }), el('div', { class: 'h-expr h-live-e', text: v.trim() ? prettyExpr(v) : '\u00a0' }));
+    if (S.preview && v.trim()) {
+      const ans = el('div', { class: 'h-res h-live-r' });
+      if (livePending) ans.textContent = '…';
+      else if (msgEl.classList.contains('error') && msgEl.textContent) { ans.className = 'h-msg error h-live-r'; ans.textContent = msgEl.textContent; }
+      else if (liveRes) showResult(ans, resultText(liveRes));
+      else if (previewEl.textContent) { ans.className = 'h-msg note h-live-r'; ans.textContent = previewEl.textContent; }
+      box.append(ans);
+    }
+    box.append(el('div', { class: 'h-live-old', text: tr('Before: ', '元：') + prettyExpr(toDisplay(H.expr)) + ' ' + displayResult(H) }));
+    fitMatrices(box);
+    if (seen) revealHistLine(H, 400);
+  }
+  const queueLive = () => { if (liveQ) return; liveQ = true; Promise.resolve().then(() => { liveQ = false; if (histEdit) syncLiveRow(); }); };
+  // (the errors the preview writes itself: a wrong decimal sign, □ to fill, a #12 that is not there)
+  new MutationObserver(() => { if (histEdit && !livePending) queueLive(); }).observe(msgEl, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   // asNew: "As a new line" (the expression stays in the field, = adds a line); otherwise ✕ or back: nothing changes, the
   // field gets back what it held
   function endHistEdit(asNew) {
@@ -5860,6 +5943,15 @@
     return [{ kind: 'implicit', text: line, F: '(' + N(L) + ') − (' + N(R) + ')' }];
   }
   // all the lines of the box (up to max items; .more: how many were left out)
+  // (1.16.2, B3) the 1:1 of the 2D graph: the choice for every graph (qalc.plot.equal, the button), or that of the functions
+  // it was made for (a circle or a heart of the samples, kept with them: qalc.plot.equalFor { exprs, on }), so that they are
+  // round again when the page is opened again (Android ends the page of the app to free memory, and it is loaded again)
+  const equal2dKey = (text) => plotItems(text, 6).map((q) => q.text).join('\n');
+  function equal2dFor(text) {
+    if (store.get('qalc.plot.equal', false) === true) return true;
+    const kf = store.get('qalc.plot.equalFor', null);
+    return !!(kf && typeof kf === 'object' && kf.on === true && typeof kf.exprs === 'string' && kf.exprs === equal2dKey(text));
+  }
   function plotItems(text, max) {
     const all = [];
     for (const line of String(text || '').split('\n')) all.push(...lineItems(line));
@@ -6538,6 +6630,9 @@
         P.eqBtn = el('button', { class: 'eq', text: '1:1', 'aria-label': tr('The same scale on the x and y axes', 'x と y の目盛りの間隔をそろえる'), onclick: () => {
           P.equal = !P.equal;
           store.set('qalc.plot.equal', P.equal);
+          // ((1.16.2, B3) and for the functions drawn, when their 1:1 was kept with them: the choice made now)
+          const kf = store.get('qalc.plot.equalFor', null);
+          if (kf && typeof kf === 'object' && kf.exprs === (P.items || []).map((q) => q.text).join('\n')) store.set('qalc.plot.equalFor', { exprs: kf.exprs, on: P.equal });
           P.view = null; P.mark = null; P.tip.style.display = 'none';
           draw();
         } }),
@@ -6548,7 +6643,7 @@
           el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' })),
         // 1.12.0 (D4): a picture of the graph to the share sheet
         el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share a picture of the graph', 'グラフの画像を共有'), onclick: () => shareGraph2d() }));
-      P.equal = P.equal || store.get('qalc.plot.equal', false) === true;
+      P.equal = P.equal || equal2dFor(ta.value);
       const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
       // (1.15.0) the sliders of the letters, under the graph
       P.sl = sliderBox({ key: SL_KEY2D, redraw: sliderRedraw2d,
@@ -6575,7 +6670,7 @@
           P.points = null; P.marks = []; P.pending = null; P.guides = null;
           // the same scale of a sample (a circle) and the marked sample stay while the same functions
           // are drawn again with another range; other functions drop them (1.8.3)
-          if (plotItems(ta.value, 6).map((q) => q.text).join('\n') !== (P.items || []).map((q) => q.text).join('\n')) { P.equal = store.get('qalc.plot.equal', false) === true; if (P.samples) P.samples.clearChoice(); }
+          if (plotItems(ta.value, 6).map((q) => q.text).join('\n') !== (P.items || []).map((q) => q.text).join('\n')) { P.equal = equal2dFor(ta.value); if (P.samples) P.samples.clearChoice(); }
         }
         P.keep = false;
         setItems(ta.value);
@@ -6619,7 +6714,9 @@
     P.points = opts.points || null;
     P.marks = [];
     P.guides = null;
-    P.equal = !!opts.equal || store.get('qalc.plot.equal', false) === true; // the same scale on both axes (a circle stays round)
+    P.equal = !!opts.equal || equal2dFor(toDisplay(list.join('\n'))); // the same scale on both axes (a circle stays round)
+    // ((1.16.2, B3) kept with the functions, as the page may be opened again: Android ends it to free memory)
+    if (opts.equal) store.set('qalc.plot.equalFor', { exprs: equal2dKey(toDisplay(list.join('\n'))), on: true });
     P.pending = opts;
     const built = !!panels.plot;
     if (!built) store.set('qalc.plot.ok', true);
@@ -9322,7 +9419,8 @@
     Q3.ta.value = toDisplay(top + '\n−' + top);
     Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(r6(i % 2 ? w : -w))); });
     if (Q3.resEl && Number(Q3.resEl.value) < 61) Q3.resEl.value = '61';
-    Q3.equalOnce = true; // round for this drawing; the 1:1 setting itself stays as it was
+    Q3.equalOnce = true; // round for this drawing, and kept with its formulas (1.16.2, B1)
+    keepEqual3d(Q3.ta.value);
     if (Q3.samples) Q3.samples.clearChoice(); // (the sphere is not the sample that was marked, 1.8.2)
     Q3.keep = true;
     Q3.pending = async () => {
@@ -10721,7 +10819,10 @@
     // (fix/3d-first-colors: the sphere and the doughnut have their edges from their shape, as a solid of revolution, and are
     // one solid from the first drawing; for the expressions as the graph reads them from the box, while they are drawn)
     Q3.sampleRims = d.rims ? Object.assign({ exprs: plotExprs(Q3.ta.value, 4).join('\n') }, d.rims) : null;
-    Q3.equalOnce = !!d.eq; // round for this drawing; the 1:1 setting itself stays as it was
+    Q3.equalOnce = !!d.eq; // round for this drawing
+    // ((1.16.2, B1, B2) and kept with the formulas, for the page opened again: round, one solid, with its exact edges)
+    if (d.eq) keepEqual3d(Q3.ta.value);
+    keepRims3d(Q3.sampleRims, true);
     // "Volume and surface" measures over the region that fits the sample (a disk for a sphere)
     const U = Q3.volUI;
     if (U) { U.setRegion(d.disk ? 'disk' : 'rect', true); if (d.disk) U.R.value = d.disk; U.regionSet = true; }
@@ -10876,6 +10977,8 @@
     // graphs, true or false, counts as no choice)
     const eq = store.get('qalc.plot3d.equal', 'auto');
     Q3.equal = eq && typeof eq === 'object' && typeof eq.on === 'boolean' && typeof eq.exprs === 'string' ? eq : 'auto';
+    // ((1.16.2, B2) the edges of the sample drawn last, for its formulas drawn again after the page was opened again)
+    if (!Q3.sampleRims) Q3.sampleRims = rimsKept();
     const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
     // (1.15.0) the sliders of the letters (QCalc Pro in 3D)
     Q3.sl = sliderBox({ key: SL_KEY3D, redraw: sliderRedraw3d, locked: () => PRO_GATES.sliders3d === 'pro' && !hasPro(), anyStep: false,
@@ -10922,6 +11025,9 @@
     const seeBtn = tapButton({ class: 'btn see-btn', 'aria-pressed': 'false', text: tr('See-through', '透明') }, () => { if (!gl3dReady()) return; Q3.see.on = !Q3.see.on; if (Q3.see.on) seeSomething(); saveSee(); syncSeeRow(); draw3d(); });
     const seeRange = el('input', { type: 'range', min: '10', max: '90', step: '5', 'aria-label': tr('How opaque (%)', '濃さ（%）') });
     const seeVal = el('span', { class: 'rev-angle-v' });
+    // (1.16.2, A3) the slider's words on the screen too (its value is how opaque, not how see-through: "See-through 75%"
+    // read as 75 % see-through); the same words as its name, which screen readers read
+    const seeLbl = el('span', { class: 'see-lbl', text: tr('How opaque', '濃さ'), 'aria-hidden': 'true' });
     // (the slider can be moved while the see-through is off, by a finger, the keyboard or a screen reader: it turns the
     // see-through on, as a phone showed a slider that did not move until "See-through" was pressed first)
     seeRange.addEventListener('input', () => {
@@ -10944,8 +11050,8 @@
     const seeNote = el('span', { class: 'see-note', id: 'see-note', hidden: true, text: tr('Not available on this device', 'この端末では使えません') });
     // (what is see-through: a chip for each formula, the solid, the container and the liquid of a tank)
     const seeChips = el('div', { class: 'see-chips', role: 'group', 'aria-label': tr('See-through: what', '透明にするもの'), hidden: true });
-    const seeRow = el('div', { class: 'plot-range rev-angle see-row', hidden: true }, seeBtn, seeRange, seeVal, boxBtn, seeNote, seeChips);
-    Object.assign(Q3, { seeRow, seeBtn, seeRange, seeVal, boxBtn, seeNote, seeChips, saveSee });
+    const seeRow = el('div', { class: 'plot-range rev-angle see-row', hidden: true }, seeBtn, seeLbl, seeRange, seeVal, boxBtn, seeNote, seeChips);
+    Object.assign(Q3, { seeRow, seeBtn, seeLbl, seeRange, seeVal, boxBtn, seeNote, seeChips, saveSee });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
@@ -11022,9 +11128,12 @@
     store.set('qalc.plot3d.ok', true);
     Q3.points = opts.points || null;
     Q3.equalOnce = !!opts.equal;
+    // ((1.16.2, B1, B2) the 1:1 and the edges kept with the formulas, for the page opened again)
+    if (opts.equal) keepEqual3d(toDisplay(list.join('\n')));
     Q3.growNext = opts.grow || null;
     // (the edges of a solid of revolution, from its shape: specRims, 1.12.0 BG09)
     Q3.rimSpec = opts.rims ? Object.assign({ exprs: list.join('\n') }, opts.rims) : null;
+    if (Q3.rimSpec) keepRims3d(Q3.rimSpec, false);
     Q3.revInfo = opts.grow || null; // (the angle row of B2)
     if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
     // (a solid made in the 2D graph, BG20: its volume large above the graph, and "← Back to 2D")
@@ -11133,7 +11242,7 @@
     if (ok) Q3.seeBtn.removeAttribute('aria-describedby'); else Q3.seeBtn.setAttribute('aria-describedby', 'see-note');
     Q3.seeNote.hidden = ok;
     Q3.seeRange.disabled = !ok; Q3.seeRange.hidden = !ok; Q3.seeRange.value = String(pc);
-    Q3.seeVal.hidden = !ok; Q3.seeVal.textContent = pc + '%';
+    Q3.seeVal.hidden = !ok; Q3.seeVal.textContent = pc + '%'; Q3.seeLbl.hidden = !ok;
     const box = Q3.see.box !== false;
     Q3.boxBtn.setAttribute('aria-pressed', String(box)); Q3.boxBtn.classList.toggle('on', box);
     // the chips (only when there are two things or more to choose from)
@@ -11145,9 +11254,13 @@
     // chosen one has ✓ (a phone kept both of a torus's halves taken out, and "See-through" seemed not to work)
     ch.append(el('span', { class: 'see-chips-lbl', text: tr('What is see-through:', '透明にするもの：'), 'aria-hidden': 'true' }));
     const selOf = (it) => (it.k === 9 ? G.groups[9].see > 0 : G.groups[it.k].see > 0);
+    // (1.16.2, A4) a tank whose container is taken out is drawn opaque, and nothing inside it is seen: its liquid cannot be
+    // chosen then, and a line says why
+    const shut = !!(Md && Md.tank && G.list.some((x) => x.key === 'glass') && !(G.groups[9].see > 0));
     for (const it of G.list) {
-      const sel = selOf(it);
+      const sel = selOf(it), locked = shut && it.key === 'liquid';
       const b = tapButton({ class: 'chip see-chip' + (sel ? ' on' : ''), 'aria-pressed': String(sel), 'data-key': it.key }, () => {
+        if (locked) return;
         Q3.see.off = Q3.see.off || {};
         Q3.see.off[it.key] = sel;
         // ((イ) the last chosen one taken out: the see-through goes off, and next time it is on everything is see-through
@@ -11161,8 +11274,10 @@
       if (sel) b.append(el('span', { class: 'see-ck', text: '✓', 'aria-hidden': 'true' }));
       if (it.color) b.append(el('span', { class: 'see-sw', style: 'background:' + it.color, 'aria-hidden': 'true' }));
       b.append(el('span', { text: it.label }));
+      if (locked) { b.disabled = true; b.setAttribute('aria-describedby', 'see-shut'); }
       ch.append(b);
     }
+    if (shut) ch.append(el('span', { class: 'see-shut', id: 'see-shut', text: tr('Seen when the container is see-through', '容器を透明にすると見えます') }));
   }
   // (1.16.2, (ア)) the see-through turned on, or found on, with nothing of what is drawn see-through (every chip taken out
   // earlier, kept for each formula): their keys out of the list of what is taken out, so that all of it is see-through (a tank:
@@ -11615,6 +11730,8 @@
     const tR = Date.now();
     if (!refined && !devFlag('norefine')) refined = await refineRims(series, r.x, r.y, seq, guessed);
     if (seq !== Q3.seq) { clearTimeout(late); return; }
+    // ((1.16.2, B4) f and −f on a coarse grid: more halvings where their edges are still apart near the middle)
+    if (refined && !spec && guessed && mirrors.length) { await refineMirrored(series, mirrors, guessed, seq, data.z0, data.z1); if (seq !== Q3.seq) { clearTimeout(late); return; } }
     if (!spec) settle(true);
     // where the surfaces leave the box at its top or bottom (1.9.5)
     const tC = Date.now();
@@ -11984,10 +12101,81 @@
     keep();
     return true;
   }
+  // (1.16.2, B4, the reviewer's note of 11-24 18:40) f and −f typed as two formulas (a sphere, a doughnut) and drawn on a
+  // coarse grid (25×25): after refineRims the last point found with a value is still some way from the edge (8 halvings
+  // of a longer step), and a surface that ends as a square root is still high there (the doughnut: ±0.045 apart, more
+  // than joinedSolid allows), so the two halves stayed two surfaces in two colors with a seam. Where the two found edges
+  // are apart, but near each other (as meetMirrored), the step of f is halved again (up to 10 times, all such lines in one
+  // calculation per step) until its height there is small; −f has the same edge at the opposite height. Two halves that
+  // end apart (±(√(1 − x² − y²) + 1)) stay apart: their heights there do not become small. Gives whether it changed any.
+  async function refineMirrored(series, pairs, jobs, seq, z0, z1) {
+    const tz = 0.02 * (z1 - z0), near = 0.3 * (z1 - z0), todo = [];
+    for (const [a, b] of pairs) {
+      for (const jb of jobs) {
+        if (jb.si !== a) continue;
+        const e = series[a].rim && series[a].rim[jb.key], o = series[b].rim && series[b].rim[jb.key];
+        if (!e || !o || !isFinite(e.z) || !isFinite(o.z) || Math.abs(e.x - o.x) + Math.abs(e.y - o.y) > 1e-9 * (1 + Math.abs(e.x) + Math.abs(e.y))) continue;
+        const d = Math.abs(e.z - o.z);
+        if (d > tz && d <= near && jb.px !== undefined) todo.push({ jb, b });
+      }
+    }
+    if (!todo.length || todo.length > 1200) return false;
+    const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect', base: 10, notation: 'auto', max_decimals: -1 });
+    const B = batchOf(series.map((s) => s.expr)), t0 = Date.now();
+    let left = todo;
+    for (let step = 0; step < 10 && left.length && Date.now() - t0 < 4000; step++) {
+      for (let b0 = 0; b0 < left.length; b0 += B) {
+        const part = left.slice(b0, b0 + B);
+        const mids = part.map(({ jb }) => [(jb.px + jb.qx) / 2, (jb.py + jb.qy) / 2]);
+        const expr = '[' + part.map(({ jb }, n) => '(' + subXY(series[jb.si].expr, engineNum(mids[n][0]), engineNum(mids[n][1])) + ')').join(', ') + ']';
+        const r = await Bridge.send('calc', { expr, opts, timeout: 5000, max_chars: 200000 });
+        if (seq !== Q3.seq) return false;
+        const t = r.ok && r.result && !r.timeout ? r.result.split(' ≈ ').pop().split(' = ').pop().trim() : '';
+        const cells = t[0] === '[' && t[t.length - 1] === ']' ? t.slice(1, -1).trim().split(/\s{2,}/) : [];
+        if (cells.length !== part.length) { left = []; break; }
+        part.forEach(({ jb }, n) => {
+          const v = Number(cells[n].replace(/−/g, '-'));
+          if (isFinite(v)) { jb.px = mids[n][0]; jb.py = mids[n][1]; jb.z = v; } else { jb.qx = mids[n][0]; jb.qy = mids[n][1]; }
+        });
+      }
+      left = left.filter(({ jb }) => !(Math.abs(jb.z) * 2 <= tz / 2));
+    }
+    for (const { jb, b } of todo) {
+      series[jb.si].rim[jb.key] = { x: jb.px, y: jb.py, z: jb.z };
+      series[b].rim[jb.key] = { x: jb.px, y: jb.py, z: -jb.z };
+    }
+    return true;
+  }
   // 1:1:1 — automatic: on when the three ranges are about as long as each other (a sphere, a cone),
   // off for flat surfaces over wide ranges. The button sets it on or off for the functions being drawn
   // ({ exprs, on }); other functions are automatic again (1.9.3: until 1.9.2 the choice held for every
   // graph, so after 1:1 was turned off once, every sphere came out flattened).
+  // (1.16.2, B1) the 1:1 of a sample, a sphere or a solid made elsewhere, kept with its formulas as the button keeps it
+  // (qalc.plot3d.equal { exprs, on }): Android may end the page of the app to free memory, and it is loaded again (until
+  // 1.16.1 only Q3.equalOnce, in memory, made them round: opened again, a doughnut came out tall). Other formulas are
+  // automatic again, as before.
+  function keepEqual3d(text) {
+    Q3.equal = { exprs: plotExprs(text, 4).join('\n'), on: true };
+    store.set('qalc.plot3d.equal', Q3.equal);
+  }
+  // (1.16.2, B2) the exact edges of a sample (a sphere, a doughnut) or of a solid of revolution, kept with their formulas
+  // (qalc.plot3d.rims), and given back when the page is opened again (rimsKept): one solid in one color, without saw
+  // teeth. A sample without them clears them (as in memory: Q3.sampleRims); too large ones are not kept.
+  function keepRims3d(spec, clear) {
+    let s = '';
+    try { s = spec ? JSON.stringify(spec) : ''; } catch (e) { s = ''; }
+    if (s && s.length <= 60000) store.set('qalc.plot3d.rims', JSON.parse(s));
+    else if (clear || s) store.set('qalc.plot3d.rims', null);
+  }
+  function rimsKept() {
+    const k = store.get('qalc.plot3d.rims', null);
+    const num = (v) => typeof v === 'number' && isFinite(v);
+    const ok = k && typeof k === 'object' && typeof k.exprs === 'string' && k.exprs && /^(ring|h|v)$/.test(k.kind) &&
+      Array.isArray(k.groups) && k.groups.every((g) => Array.isArray(g) && g.every((i) => Number.isInteger(i) && i >= 0 && i < 8)) &&
+      (k.kind !== 'ring' || (num(k.c) && num(k.R) && k.R > 0)) &&
+      (k.kind !== 'v' || (Array.isArray(k.surf) && k.surf.every((q) => q && Array.isArray(q.iv) && q.z && typeof q.z === 'object')));
+    return ok ? k : null;
+  }
   function setEqual3d(on) {
     Q3.equal = { exprs: Q3.exprs.join('\n'), on: !!on };
     Q3.equalOnce = false;
@@ -12536,12 +12724,18 @@
     const S = Q3.see || {}, on = !!S.on && gl3dWanted() && GL3D.state === 1, a = S.a || 0.35, off = S.off || {};
     const groups = [], list = [];
     for (let k = 0; k < GL3D_NG; k++) groups.push({ mat: null, see: 0, cast: true });
-    const chosen = (key, dflt) => on && (off[key] === undefined ? dflt : !off[key]);
+    // (1.16.2, A2) one thing drawn (one formula, or one solid that is not a tank) has no chips to choose it again with:
+    // it is always see-through, whatever was taken out before (a formula taken out when it was drawn with another)
+    const keyOf = (sr, i) => 's:' + (sr.label || sr.expr || i); // (the formula as written: the same with another value of a slider)
+    const nThings = new Set((D && D.series || []).slice(0, 8).map(keyOf)).size + (MD ? (MD.tank ? 2 : 1) : 0);
+    const chosen = (key, dflt) => on && (nThings === 1 || (off[key] === undefined ? dflt : !off[key]));
     const rgbCss = (c) => (c ? 'rgb(' + c.map((x) => Math.round(x)).join(',') + ')' : '');
+    // ((A5) surfaces drawn as one solid are colored by height: their chips show that, a small square from low to high)
+    const hue = D && D.oneSolid ? 'linear-gradient(to top, ' + [0, 0.5, 1].map((t) => rgbCss(viridis(t))).join(', ') + ')' : '';
     (D && D.series || []).forEach((sr, i) => {
       if (i > 7) return;
-      const key = 's:' + (sr.label || sr.expr || i); // (the formula as written: the same with another value of a slider)
-      if (!list.some((x) => x.key === key)) list.push({ key, k: i, label: toDisplay(sr.label || sr.expr || ''), color: rgbCss(sr.drawRgb || sr.rgb) });
+      const key = keyOf(sr, i);
+      if (!list.some((x) => x.key === key)) list.push({ key, k: i, label: toDisplay(sr.label || sr.expr || ''), color: hue || rgbCss(sr.drawRgb || sr.rgb) });
       groups[i].see = chosen(key, true) ? a : 0;
       groups[i].cast = !groups[i].see;  // (what is see-through casts no shadow)
     });

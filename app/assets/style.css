@@ -1571,6 +1571,11 @@ body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 /* (1.16.2) the label of the chips of what is see-through, and the mark of a chosen chip */
 .see-row .see-chips-lbl { align-self: center; color: var(--muted); font-size: .92em; }
 .see-row .see-ck { flex: none; font-weight: 700; }
+/* (1.16.2) the words of the slider (how opaque), a chip that cannot be chosen (the liquid in a tank whose container is
+   opaque) and the line that says why */
+.see-row .see-lbl { color: var(--muted); font-size: .92em; }
+.see-row .see-chip:disabled { opacity: .5; }
+.see-row .see-shut { flex-basis: 100%; font-size: 13px; color: var(--muted, #6b7280); }
 
 /* the everyday tools (1.12.0, C1) */
 .tool-choice .seg.mini { flex: 1 1 0; flex-wrap: wrap; }
@@ -1785,7 +1790,15 @@ body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 .hedit .hedit-tip { flex-basis: 100%; order: 4; font-size: .92em; line-height: 1.45; padding: 6px 8px; border-radius: 8px; background: var(--surface); }
 .hedit .hedit-tip[hidden] { display: none; }
 .hedit .hedit-x { width: 48px; height: 48px; border: 0; border-radius: 24px; background: transparent; color: inherit; font-size: 18px; }
+/* (1.16.2, M1) the pale band of a new line made from an answer tapped into the empty field, with "Edit this line" */
+.hedit.hfrom { background: var(--surface); border: 1px solid var(--accent-soft); padding: 2px 4px 2px 12px; }
+.hedit.hfrom .hedit-t { font-weight: 400; color: var(--muted); }
+.hedit.hfrom .hfrom-edit { min-height: 48px; padding: 4px 14px; background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 22px; font-weight: 600; }
 .h-item.editing { box-shadow: inset 3px 0 0 var(--accent); background: var(--accent-soft); border-radius: 8px; }
+/* (1.16.2, E) the line being edited, shown as it is typed: "Editing #51", the expression, = the new answer, "Before: …" */
+.h-item.live > .h-expr, .h-item.live > .h-res, .h-item.live > .h-msg { display: none; }
+.h-live-t { font-size: calc(12px * var(--fs)); font-weight: 700; color: var(--text); }
+.h-live-old { margin-top: 4px; font-size: calc(12px * var(--fs)); color: var(--muted); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* (1.16.0, fix/hist-tap) a line whose answer is in the expression: framed in its color, as a cell a formula refers to */
 /* (1.16.0, fix/hist-edit-scroll) a line worked out again after the line above it was edited: marked for 3 s, fading */
 .h-item.h-flash { animation: hflash 3s ease-out; border-radius: 8px; }

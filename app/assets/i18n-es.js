@@ -13,6 +13,14 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "Editing #{0}": "Editando #{0}",
+    "Before: ": "Antes: ",
+    "Making a new line from the answer of #{0}": "Línea nueva con el resultado de #{0}",
+    "Edit this line": "Editar esta línea",
+    "Close (the field stays as it is)": "Cerrar (el campo queda como está)",
+    "A new line from an answer": "Línea nueva con un resultado",
+    "How opaque": "Opacidad",
+    "Seen when the container is see-through": "Se ve si el recipiente es transparente",
     "What is see-through:": "Qué es transparente:",
     "Could not calculate: {0} is a point with no value": "No se pudo calcular: {0} es un punto sin valor",
     "Could not calculate: it is a point with no value": "No se pudo calcular: es un punto sin valor",

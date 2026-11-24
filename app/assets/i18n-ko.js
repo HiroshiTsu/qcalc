@@ -1,6 +1,14 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "Editing #{0}": "#{0} 고치는 중",
+    "Before: ": "원래: ",
+    "Making a new line from the answer of #{0}": "#{0}의 결과로 새 줄을 만드는 중",
+    "Edit this line": "이 줄 고치기",
+    "Close (the field stays as it is)": "닫기(입력란은 그대로)",
+    "A new line from an answer": "결과로 만드는 새 줄",
+    "How opaque": "불투명도",
+    "Seen when the container is see-through": "용기를 투명하게 하면 보입니다",
     "What is see-through:": "투명하게 할 것:",
     "Could not calculate: {0} is a point with no value": "계산할 수 없습니다({0}은(는) 값이 없는 점입니다)",
     "Could not calculate: it is a point with no value": "계산할 수 없습니다(값이 없는 점입니다)",

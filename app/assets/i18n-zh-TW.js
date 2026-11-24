@@ -2,6 +2,14 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "Editing #{0}": "正在修改 #{0}",
+    "Before: ": "原本：",
+    "Making a new line from the answer of #{0}": "正以 #{0} 的結果建立新的一列",
+    "Edit this line": "修改這一列",
+    "Close (the field stays as it is)": "關閉（輸入欄保持不變）",
+    "A new line from an answer": "以結果建立的新一列",
+    "How opaque": "不透明度",
+    "Seen when the container is see-through": "容器設為透明才看得到",
     "What is see-through:": "要透明的部分：",
     "Could not calculate: {0} is a point with no value": "無法計算（{0} 是沒有值的點）",
     "Could not calculate: it is a point with no value": "無法計算（沒有值的點）",

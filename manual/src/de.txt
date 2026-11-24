@@ -152,7 +152,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 
 # history | Verlauf und Speicher
 :what: Ausdrücke und Ergebnisse bleiben im Verlauf, bis zu 300 Zeilen. 🕘 oben rechts sucht, summiert ausgewählte Zeilen, exportiert und löscht.
-:step: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu setzen ([Ergebnis durch Tippen einfügen](#tap-insert)); ein Tippen auf den Ausdruck bearbeitet die Zeile ([Eine Zeile des Verlaufs bearbeiten](#edit-line)).
+:step: Eine Zeile reagiert je nach Stelle anders: **Ergebnis antippen** = den Wert verwenden ([[!=]] ergibt eine neue Zeile; [Ergebnis durch Tippen einfügen](#tap-insert)); **Ausdruck antippen** = die Zeile bearbeiten ([[!=]] ersetzt sie; [Eine Zeile des Verlaufs bearbeiten](#edit-line)).
 :step: ⋯ links an einer Zeile bietet [[☆ Pin at the top]] und [[Add a short note]].
 :step: 🕘 bietet [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] und [[Clear the whole history]].
 :shot: history | Das Verlaufsmenü von 🕘
@@ -161,6 +161,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 ## tap-insert | Ergebnis durch Tippen einfügen
 :what: Ein Tippen auf ein Ergebnis im Verlauf setzt es an der Cursorposition ins Eingabefeld, so wie ein Klick auf eine Zelle, während Sie in einer Tabellenkalkulation eine Formel eingeben.
 :step: Ist das Feld leer oder wurde gerade gerechnet, kommt das Ergebnis einfach hinein.
+:step: Tippen Sie bei leerem Feld auf ein Ergebnis, erscheint über dem Feld ein helles Band „Neue Zeile aus dem Ergebnis von #51“: [[!=]] ergibt eine neue Zeile. Um stattdessen diese Zeile zu ändern, tippen Sie im Band auf [[Edit this line]] (auch nachdem Sie Zahlen im Feld geändert haben: Die Zeile wird dann mit dem Feld, wie es ist, bearbeitet). Das Band verschwindet auch mit ✕, AC oder einem leeren Feld.
 :step: Ein weiteres Tippen auf ein Ergebnis, bevor Sie etwas eingeben, ersetzt das zuvor angetippte.
 :step: Nach einem Operator wie + oder × kommt das Ergebnis dahinter. Direkt nach einer Zahl, einem Buchstaben oder „)“ kommt zuerst ein sichtbares × dazu.
 :step: Die im Ausdruck verwendeten Zeilen bekommen farbige Markierungen; wird das Ergebnis aus dem Feld gelöscht, verschwindet seine Markierung.
@@ -172,6 +173,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 ## edit-line | Eine Zeile des Verlaufs bearbeiten
 :what: Tippen Sie auf den Ausdruck einer Zeile (den kleinen über dem Ergebnis) oder auf [[Edit expression]] in ihrem ⋯, um die Zeile zu bearbeiten. Der Ausdruck kommt ins Eingabefeld, darüber erscheint das Band „[[Editing a line of the history]]“. Der Verlauf scrollt so, dass die Zeile und ihr Ergebnis sichtbar bleiben.
 :step: Ändern Sie den Ausdruck und drücken Sie [[!=]]. Die Zeile bekommt an derselben Stelle den neuen Ausdruck und das neue Ergebnis. ★ und die kurze Notiz bleiben; das Menü ⋯ zeigt neben der Zeit der Zeile die Zeit der Änderung.
+:step: Während Sie tippen, zeigt die Zeile an ihrer Stelle den Ausdruck und das neue Ergebnis, darunter klein und grau die Zeile, wie sie war („Vorher: …“). Der Verlauf selbst ändert sich erst mit [[!=]].
 :step: Einige Sekunden lang erscheinen „[[Edited]]“ und [[Undo]]. [[Undo]] stellt Ausdruck und Ergebnis wieder her.
 :step: Wenn Zeilen darunter das Ergebnis dieser Zeile (ans oder #12) oder eine hier definierte Variable verwenden, fragt die App, ob sie neu berechnet werden sollen („Auch die 2 Zeilen darunter“) oder [[Only this line]]. Neu berechnete Zeilen leuchten kurz auf, und [[Undo]] nimmt auch sie zurück. Bei [[Only this line]] bekommen die Zeilen darunter einen Hinweis, dass ihr Ergebnis veraltet sein kann. [[Cancel]] ändert nichts: Der neue Ausdruck bleibt im Feld, und Sie bearbeiten weiter.
 :step: Um stattdessen eine neue Zeile darunter zu rechnen, drücken Sie [[As a new line]] im Band und dann [[!=]]. ✕ im Band, AC oder die Zurück-Taste beendet das Bearbeiten, ohne etwas zu ändern.

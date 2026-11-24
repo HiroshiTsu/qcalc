@@ -152,7 +152,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 
 # history | Historial y memoria
 :what: Las expresiones y los resultados quedan en el historial, hasta 300 líneas. 🕘 arriba a la derecha busca, suma las líneas elegidas, exporta y borra.
-:step: Toca un resultado del historial para ponerlo en el campo de entrada ([Insertar un resultado con un toque](#tap-insert)); toca su expresión para editar la línea ([Editar una línea del historial](#edit-line)).
+:step: Una línea funciona de dos maneras según dónde la toques: **toca su resultado** para usar el valor ([[!=]] crea una línea nueva; [Insertar un resultado con un toque](#tap-insert)); **toca su expresión** para editar la línea ([[!=]] la reemplaza; [Editar una línea del historial](#edit-line)).
 :step: ⋯ a la izquierda de una línea ofrece [[☆ Pin at the top]] y [[Add a short note]].
 :step: 🕘 ofrece [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] y [[Clear the whole history]].
 :shot: history | El menú del historial de 🕘
@@ -161,6 +161,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 ## tap-insert | Insertar un resultado con un toque
 :what: Tocar un resultado del historial lo pone en el campo de entrada, en la posición del cursor, como un clic en una celda mientras escribes una fórmula en una hoja de cálculo.
 :step: Si el campo está vacío, o justo después de un cálculo, el resultado entra tal cual.
+:step: Si tocas un resultado con el campo vacío, aparece sobre el campo una banda clara, «Línea nueva con el resultado de #51»: [[!=]] crea una línea nueva. Para cambiar esa línea, pulsa [[Edit this line]] en la banda (también después de cambiar números en el campo: la línea se edita con el campo tal como está). La banda también se va con ✕, AC o con el campo vacío.
 :step: Otro toque en un resultado antes de escribir nada sustituye al tocado antes.
 :step: Después de un operador como + o ×, el resultado entra detrás. Justo después de un número, una letra o «)», entra primero un × visible.
 :step: Las líneas usadas en la expresión reciben marcas de color; al borrar el resultado del campo desaparece su marca.
@@ -172,6 +173,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 ## edit-line | Editar una línea del historial
 :what: Toca la expresión de una línea (la pequeña sobre su resultado), o [[Edit expression]] en su ⋯, para editarla. La expresión pasa al campo de entrada, con la banda «[[Editing a line of the history]]» encima. El historial se desplaza para que la línea y su resultado sigan a la vista.
 :step: Cambia la expresión y pulsa [[!=]]. La línea recibe la nueva expresión y el nuevo resultado en el mismo lugar. ★ y la nota corta se mantienen, y el menú ⋯ muestra la hora del cambio junto a la hora de la línea.
+:step: Mientras escribes, la línea muestra en su lugar la expresión y su nuevo resultado, y debajo, en letra pequeña y gris, la línea como era («Antes: …»). El historial solo cambia al pulsar [[!=]].
 :step: Durante unos segundos aparecen «[[Edited]]» y [[Undo]]. [[Undo]] devuelve la expresión y el resultado de antes.
 :step: Si las líneas de abajo usan el resultado de esta línea (ans o #12) o una variable que define, la app pregunta si calcularlas de nuevo («También las 2 líneas de abajo») o [[Only this line]]. Las líneas recalculadas se iluminan un momento, y [[Undo]] las devuelve también. Con [[Only this line]], las líneas de abajo reciben una nota de que su resultado puede estar desactualizado. [[Cancel]] no cambia nada: la nueva expresión se queda en el campo y sigues editando.
 :step: Para calcularla como una línea nueva abajo, pulsa [[As a new line]] en la banda y luego [[!=]]. La ✕ de la banda, AC o el botón Atrás dejan de editar sin cambiar nada.
