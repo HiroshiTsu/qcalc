@@ -3312,18 +3312,22 @@
   // (P1) a pasted cell as a value in the engine's form, or null for a word (a heading, the name of an item): the groups of
   // digits of a spreadsheet left out (1,200 / 1.200,50 with a decimal comma / 1 200), (300) of accounting as −300
   function pasteValue(x) {
-    let s = String(x || '').replace(/[   ]/g, ' ').trim();
-    if (!/[0-9０-９]/.test(s)) return null;
-    s = normalizeJa(s);
+    let s = ungroupPasted(x);
+    if (!/[0-9]/.test(s)) return null;
+    s = normalizeExpr(s).replace(/^-(?=[\d¥$€£₩(])/, '−');
+    return s || null;
+  }
+  // (P1, P2) a cell of a spreadsheet as typed: its groups of digits left out (1,200 → 1200; 1.200,50 → 1200,50 with a decimal
+  // comma; 1 200 → 1200), and (300) of accounting as −300; a cell that is not a number with groups stays as it is
+  function ungroupPasted(x) {
+    let s = normalizeJa(String(x || '').replace(/[\u00a0\u202f\u2009]/g, ' ').trim());
     const acc = /^\(\s*([¥$€£₩]?\s*\d[\d.,\s]*)\)$/.exec(s);
     if (acc) s = '−' + acc[1];
-    s = s.replace(/^([−+-]?[¥$€£₩]?\s*)(\d{1,3}(?:([,.\s])\d{3})(?:\3\d{3})*)(?=$|[.,]\d+$|\s*[%A-Za-z¥$€£₩])/, (all, pre, n, g) => {
+    return s.replace(/^([−+-]?[¥$€£₩]?\s*)(\d{1,3}(?:([,.\s])\d{3})(?:\3\d{3})*)(?=$|[.,]\d+$|\s*[%A-Za-z¥$€£₩])/, (all, pre, n, g) => {
       // (a group sign that is not the decimal sign of the number format)
       if (g === (commaMode ? ',' : '.')) return all;
       return pre + n.split(g).join('');
     });
-    s = normalizeExpr(s).replace(/^-(?=[\d¥$€£₩(])/, '−');
-    return s || null;
   }
   // (P1) text pasted into the input field: its rows and cells (lines and tabs), when it holds two or more values; else null
   function pastedValues(text) {
@@ -19776,7 +19780,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const pasteCells = (i0, j0, text) => {
         const t = memo().table;
         let rows = String(text).replace(/\r\n?/g, '\n').replace(/\s+$/, '').split('\n').map((l) => l.split('\t').map((x) => x.replace(/\s+/g, ' ').trim()));
-        rows = pastedDecimals(rows);
+        // (the groups of digits of a spreadsheet left out: "1,200" would be read as two values, [1 200])
+        rows = pastedDecimals(rows).map((r) => r.map((x) => (noteWord(x) ? x : ungroupPasted(x))));
         const wide = Math.max(...rows.map((r) => r.length));
         let cut = false, kept = '';
         if (i0 === 0 && j0 === 0 && rows.length >= 2 && rows[0].some((x) => x) && rows[0].every((x) => noteWord(x))) {
