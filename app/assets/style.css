@@ -7,6 +7,7 @@
   --surface-2: #eef1f5;
   --text: #1b2130;
   --muted: #5f6778; /* 1.12.0: 5:1 on the key background (was #687082, 4.4:1) */
+  --num: #4b5262; /* (1.16.2, R4) the numbers of the lines: 6.3:1 or more on every background of a line */
   --line: #dde2ea;
   --accent: #2563eb;
   --accent-text: #ffffff;
@@ -26,16 +27,18 @@
   --plot-grid: #e8ebf0;
   --plot-axis: #8a93a5;
   color-scheme: light;
-  --fs: 1; /* setting "文字の大きさ": history, input field and preview */
+  --fs: 1; /* setting "文字の大きさ": the input field and the result (and the forms and tools) */
+  --hfs: 1; /* (1.16.2, Z2) the size of the history apart */
 }
-:root[data-text-size="large"] { --fs: 1.18; }
-:root[data-text-size="xlarge"] { --fs: 1.38; }
+:root[data-text-size="large"] { --fs: 1.18; --hfs: 1.18; }
+:root[data-text-size="xlarge"] { --fs: 1.38; --hfs: 1.38; }
 :root.dark {
   --bg: #121418;
   --surface: #1c1f26;
   --surface-2: #262a33;
   --text: #e8eaf0;
   --muted: #9aa3b5;
+  --num: #b8c0cf;
   --line: #2e333d;
   --accent: #6b9cff;
   --accent-text: #0b1530;
@@ -158,19 +161,19 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 .ex-chip:active { background: var(--surface-2); }
 .h-item {
-  padding: 8px 4px 10px;
+  padding: 6px 4px 7px; /* (1.16.2, V: a little closer, more lines in sight; a line stays over 48 px high) */
   border-bottom: 1px solid var(--line);
   text-align: right;
 }
 .h-item:active { background: var(--surface-2); }
 .h-expr {
   color: var(--muted);
-  font-size: calc(15px * var(--fs));
+  font-size: calc(15px * var(--hfs) * var(--lfs, 1));
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 .h-res {
-  font-size: calc(22px * var(--fs));
+  font-size: calc(22px * var(--hfs) * var(--lfs, 1));
   font-weight: 600;
   margin-top: 2px;
   overflow-wrap: anywhere;
@@ -181,7 +184,7 @@ input, select, textarea { font: inherit; color: inherit; }
   overflow-y: auto;
 }
 .h-res.brk, .preview.brk { word-break: break-all; } /* a number longer than a line (app.js showResult): fill each line, as up to 1.3.0 */
-.h-msg { font-size: calc(12px * var(--fs)); margin-top: 3px; text-align: right; }
+.h-msg { font-size: calc(12px * var(--hfs) * var(--lfs, 1)); margin-top: 3px; text-align: right; }
 /* a matrix in a result, drawn as a grid between brackets */
 .mx {
   display: inline-grid;
@@ -248,7 +251,7 @@ input, select, textarea { font: inherit; color: inherit; }
   user-select: text;
   caret-color: var(--accent);
 }
-#expr::placeholder { color: var(--muted); opacity: .85; } /* (1.12.0: readable, was .6) */
+#expr::placeholder { color: var(--muted); opacity: 1; } /* (1.12.0: readable, was .6; 1.16.2 R5: .85 left 4.2:1 on white, now 5.7:1) */
 /* 1.12.0 (F, 要判断 39): the empty field keeps one line (the hint cut with …): with large text on a small screen the
    hint took two lines ("Ausdruck eingeben" at 320 px and 200 %), and the history lost a line for it */
 #expr:placeholder-shown { white-space: nowrap; overflow: hidden; }
@@ -260,13 +263,14 @@ input, select, textarea { font: inherit; color: inherit; }
   max-height: 4.6em; /* a very long result scrolls instead of pushing the keypad off the screen */
   overflow-y: auto;
   overscroll-behavior: contain;
-  font-size: calc(18px * var(--fs));
-  color: var(--muted);
+  font-size: calc(19.8px * var(--fs)); /* (1.16.2, R1: as dark as the answers and a little larger; it was 18 px and gray) */
+  color: var(--text);
   text-align: right;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
   font-variant-numeric: tabular-nums;
 }
+.preview.dim { color: var(--muted); } /* (R1) "…", Calculating…, a hint: not a result */
 .msg { font-size: calc(12px * var(--fs)); color: var(--warn); text-align: right; min-height: 0; max-height: 3.2em; overflow-y: auto; }
 .msg.error { color: var(--danger); }
 /* suggestions under the input field: names that complete the word being typed, or what the value
@@ -346,6 +350,18 @@ input, select, textarea { font: inherit; color: inherit; }
 .tb-toggle.on { background: var(--accent); color: var(--accent-text); }
 .tb-toggle.pressed { filter: brightness(.9); }
 .tb-toggle[hidden] { display: none; }
+/* (1.16.2, V) ⌄ at the end of the tabs folds the keys away; folded, the thin bar with ⌃ stays under the field. The tabs are
+   sized by their names (as with large text), so that "Funktionen" keeps its room beside ⌄. The top of the keypad takes the
+   swipes (no scrolling there) */
+.kb-fold { flex: 0 0 40px; border: 0; border-radius: 10px; background: var(--key-fn); color: var(--text); font-size: 18px; line-height: 1; padding: 0; position: relative; touch-action: none; }
+.kb-fold::before { content: ""; position: absolute; left: -2px; right: -6px; top: -6px; bottom: -6px; }
+.kb-fold.pressed, .kb-bar.pressed { filter: brightness(.9); }
+.pages-row .pages { grid-template-columns: minmax(44px, auto) auto auto auto; }
+.pages-row .ptab { padding: 0 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.keypad .toolbar, .keypad .pages-row { touch-action: none; }
+.kb-bar { display: block; width: 100%; height: 40px; border: 0; border-radius: 10px; background: var(--key-fn); color: var(--text); font-size: 22px; line-height: 1; padding: 0; touch-action: none; }
+.kb-bar[hidden] { display: none; }
+.keypad.folded > :not(.kb-bar) { display: none; }
 .keypad.kb-compact:not(.tb-open) .toolbar { display: none; }
 /* (the tabs beside the ⌨ sized by their names, so that "Funktionen" keeps its room; the hint of the empty field
    smaller, so that it fits on its one line) */
@@ -1307,7 +1323,7 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 }
 .h-more::before { content: "⋯"; font-size: 20px; line-height: 1; }
 /* (1.16.0, feature/hist-excel) the number of the line ("#12" in an expression is its answer), under the ⋯ */
-.h-no { position: absolute; left: 2px; top: 42px; max-width: 46px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px * var(--fs)); color: var(--muted); font-variant-numeric: tabular-nums; text-align: left; background: none; border: 0; padding: 0; margin: 0; font-family: inherit; line-height: 1.3; cursor: pointer; }
+.h-no { position: absolute; left: 2px; top: calc(4px + 33px * var(--hfs) * var(--lfs, 1)); max-width: 46px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(12.5px * var(--hfs) * var(--lfs, 1)); font-weight: 600; color: var(--num); /* (1.16.2, R4: 12.5 px and darker, beside the first line of the answer: app.js placeNumbers) */ font-variant-numeric: tabular-nums; text-align: left; background: none; border: 0; padding: 0; margin: 0; font-family: inherit; line-height: 1.3; cursor: pointer; }
 /* (1.16.0, feature/hist-ux, U1) a tap on the number puts "#12" in: the area to touch goes beyond the small number, under the ⋯ */
 .h-no::before { content: ""; position: absolute; left: -6px; right: -10px; top: -2px; bottom: -14px; }
 .h-no { overflow: visible; }
@@ -1375,6 +1391,9 @@ body.hselect .h-no { pointer-events: none; }
 #expr { min-height: 48px; }
 input.search { min-height: 48px; box-sizing: border-box; }
 .h-more { width: 48px; height: 48px; left: -10px; top: -4px; border-radius: 24px; }
+/* (1.16.2, R4) the number beside the first line of the answer, under the ⋯: the ⋯ 38 px high, so that a tap on the number
+   is the number's (app.js placeNumbers keeps the number under it) */
+.h-more { height: 38px; padding-bottom: 6px; }
 /* the phone's font size, in the panels (app.js applyTextSize: up to 1.15 times) */
 .panel-body { zoom: var(--pfs, 1); }
 /* Large screens and landscape (1.12.0): two columns, the history and the input field on the
@@ -1809,11 +1828,11 @@ body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 .h-item.editing { box-shadow: inset 3px 0 0 var(--accent); background: var(--accent-soft); border-radius: 8px; }
 /* (1.16.2, E) the line being edited, shown as it is typed: "Editing #51", the expression, = the new answer, "Before: …" */
 .h-item.live > .h-expr, .h-item.live > .h-res, .h-item.live > .h-msg { display: none; }
-.h-live-t { font-size: calc(12px * var(--fs)); font-weight: 700; color: var(--text); }
+.h-live-t { font-size: calc(12px * var(--hfs) * var(--lfs, 1)); font-weight: 700; color: var(--text); }
 /* (1.16.2, E2) the expression of the line being edited, a box to type in (joined to the field below), as plain as the field */
-.h-cell { display: block; box-sizing: border-box; width: 100%; margin: 2px 0; padding: 4px 8px; border: 1px solid var(--accent); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: calc(17px * var(--fs)); line-height: 1.35; text-align: right; resize: none; overflow: hidden; overflow-wrap: anywhere; white-space: pre-wrap; }
+.h-cell { display: block; box-sizing: border-box; width: 100%; margin: 2px 0; padding: 4px 8px; border: 1px solid var(--accent); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: calc(17px * var(--hfs) * var(--lfs, 1)); line-height: 1.35; text-align: right; resize: none; overflow: hidden; overflow-wrap: anywhere; white-space: pre-wrap; }
 .h-cell:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-.h-live-old { margin-top: 4px; font-size: calc(12px * var(--fs)); color: var(--muted); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.h-live-old { margin-top: 4px; font-size: calc(12px * var(--hfs) * var(--lfs, 1)); color: var(--muted); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* (1.16.0, fix/hist-tap) a line whose answer is in the expression: framed in its color, as a cell a formula refers to */
 /* (1.16.0, fix/hist-edit-scroll) a line worked out again after the line above it was edited: marked for 3 s, fading */
 .h-item.h-flash { animation: hflash 3s ease-out; border-radius: 8px; }
@@ -1952,3 +1971,21 @@ body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 .note-tbl .note-fxc { background: var(--surface-2); }
 .note-tbl tfoot th, .note-tbl tfoot td { background: var(--surface-2); }
 .note-tbl tfoot .note-no-c { font-weight: 600; color: var(--text); font-size: calc(13px * var(--fs)); }
+
+/* (1.16.2, Z) the size while two fingers change it: "History text 120%" */
+.pinch-tip { position: fixed; left: 50%; top: 72px; transform: translateX(-50%); z-index: 60; padding: 6px 14px; border-radius: 999px; background: rgba(20, 24, 33, .86); color: #fff; font-size: 15px; font-weight: 700; pointer-events: none; white-space: nowrap; }
+.pinch-tip[hidden] { display: none; }
+/* (1.16.2, Z3 and Z4) the sliders of the text size: the settings (history, input field) and the size of a line */
+.setting.setting-ts { flex-wrap: wrap; }
+.setting-ts .ts-box { flex: 1 1 100%; }
+.ts-row { display: flex; align-items: center; gap: 10px; }
+.ts-range { flex: 1 1 auto; min-width: 0; height: 40px; accent-color: var(--accent); }
+.ts-val { flex: 0 0 auto; min-width: 3.4em; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ts-marks { position: relative; height: 30px; margin: 0 calc(3.4em + 10px) 2px 0; font-size: 11px; color: var(--muted); }
+/* (Small and Normal are close: every second name one line lower, each with a small tick) */
+.ts-marks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; line-height: 14px; }
+.ts-marks span:nth-child(even) { top: 15px; }
+.ts-marks span::before { content: ""; position: absolute; left: 50%; top: -3px; width: 1px; height: 3px; background: currentColor; }
+.ts-reset { margin-top: 4px; min-height: 40px; }
+.ts-reset[hidden] { display: none; }
+.sheet .line-ts { padding: 0 12px 8px; }

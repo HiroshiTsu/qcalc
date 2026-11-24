@@ -13,6 +13,20 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "History text {0}%": "Texto del historial {0} %",
+    "Input text {0}%": "Texto de entrada {0} %",
+    "Text size of #{0}": "Tamaño del texto de #{0}",
+    "Text size of {0} lines": "Tamaño del texto de {0} líneas",
+    "Back (the size of the history)": "Volver (el tamaño del historial)",
+    "Text size of this line": "Tamaño del texto de esta línea",
+    "Text size: history": "Tamaño del texto: historial",
+    "Also with two fingers on the history": "También con dos dedos sobre el historial",
+    "Text size: input field and result": "Tamaño del texto: campo de entrada y resultado",
+    "Also with two fingers on the input field": "También con dos dedos sobre el campo de entrada",
+    "Small": "Pequeño",
+    "Back to normal": "Volver a normal",
+    "Hide the keys": "Ocultar las teclas",
+    "Show the keys": "Mostrar las teclas",
     "Touching an expression edits its line; = replaces it.": "Tocar una expresión edita su línea; = la sustituye.",
     "Expression of #{0} (editing)": "Expresión de #{0} (editando)",
     ", …": ", …",
@@ -1243,7 +1257,6 @@
     "Teal": "Verde azulado",
     "Temperature": "Temperatura",
     "Test build": "Versión de prueba",
-    "Text in the history, the input field and the result": "Texto del historial, del campo de entrada y del resultado",
     "Text size": "Tamaño del texto",
     "Thank you for your purchase!": "¡Gracias por tu compra!",
     "The \",\" in {0} separates values, it does not group digits: type {1}": "La \",\" en {0} separa valores, no agrupa dígitos: escribe {1}",

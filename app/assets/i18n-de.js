@@ -1,6 +1,20 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    "History text {0}%": "Verlaufstext {0} %",
+    "Input text {0}%": "Eingabetext {0} %",
+    "Text size of #{0}": "Textgröße von #{0}",
+    "Text size of {0} lines": "Textgröße von {0} Zeilen",
+    "Back (the size of the history)": "Zurück (Größe des Verlaufs)",
+    "Text size of this line": "Textgröße dieser Zeile",
+    "Text size: history": "Textgröße: Verlauf",
+    "Also with two fingers on the history": "Auch mit zwei Fingern auf dem Verlauf",
+    "Text size: input field and result": "Textgröße: Eingabefeld und Ergebnis",
+    "Also with two fingers on the input field": "Auch mit zwei Fingern auf dem Eingabefeld",
+    "Small": "Klein",
+    "Back to normal": "Zurück auf Normal",
+    "Hide the keys": "Tasten ausblenden",
+    "Show the keys": "Tasten einblenden",
     "Touching an expression edits its line; = replaces it.": "Ein Tippen auf einen Ausdruck bearbeitet seine Zeile; = ersetzt sie.",
     "Expression of #{0} (editing)": "Ausdruck von #{0} (wird bearbeitet)",
     ", …": ", …",
@@ -1231,7 +1245,6 @@
     "Teal": "Petrol",
     "Temperature": "Temperatur",
     "Test build": "Testversion",
-    "Text in the history, the input field and the result": "Text im Verlauf, im Eingabefeld und im Ergebnis",
     "Text size": "Textgröße",
     "Thank you for your purchase!": "Danke für deinen Kauf!",
     "The \",\" in {0} separates values, it does not group digits: type {1}": "Das „,“ in {0} trennt Werte, es gruppiert keine Ziffern: Tippe {1}",

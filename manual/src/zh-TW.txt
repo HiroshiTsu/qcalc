@@ -197,6 +197,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 :step: 在 ⋯ 中選 [[Add a short note]]，寫下簡短備註。備註顯示在算式上方。
 :step: 🕘 的 [[Search the history]] 只顯示算式、結果或備註中含有所輸入文字的行。
 :example: 備註為「房租」的行，搜尋「房租」就會出現。
+:tip: 在歷史紀錄或輸入欄上張開或捏合兩指，就能放大或縮小那裡的文字（各自分開；設定中的 [[Text size: history]] 與 [[Text size: input field and result]] 可以還原）。只改一列時，用那一列 ⋯ 中的 [[Text size of this line]]。
 
 ## select-sum | 加總多行
 :step: 在 🕘 中選 [[Select lines: sum, average, copy]]。在一行的 ⋯ 中選 [[Select: sum and average]]，會從選好那一行開始，並立刻顯示合計。
@@ -230,6 +231,7 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 | [[Calculus]] | 微分 d/dx、積分 ∫、極限 lim、總和 Σ、乘積 Π、方程式 |
 | [[Matrix]] | 矩陣 ▦、行列式 det、轉置、反矩陣 |
 :tip: 不知道函數的名稱時，在 [[Lists: functions, units, constants]] 中尋找（[清單](#lists)）。
+:tip: 想看更多歷史紀錄時，按分頁右端的 ⌄，或在分頁列上往下滑，就能收起按鍵。按 ⌃、往上滑或點一下輸入欄就會回來（重新開啟 App 時按鍵會出現）。
 
 ## boxes | 空格 □（表單）
 :what: 按積分或極限鍵，會打開有空格 □ 的表單。填好空格，算式就完成了。
@@ -700,7 +702,8 @@ QCalc 是一款像在紙上寫算式一樣輸入，就能立刻得到結果的�
 | [[Precision (significant digits)]] | 計算精度（預設 15） |
 | [[Digits shown by each tool]] | 各工具畫面的顯示位數，以及幾何圖形、容器、立體與圖形共用的位數 ([各畫面的顯示位數](#digits)) |
 | [[Light or dark]] | 畫面的顏色 |
-| [[Text size]] | 歷史紀錄、輸入欄、結果的文字 |
+| [[Text size: history]] | 歷史紀錄的文字（滑桿；也可以在歷史紀錄上用兩指） |
+| [[Text size: input field and result]] | 輸入欄與結果的文字（滑桿；也可以在輸入欄上用兩指） |
 | [[Color theme]] | 按鍵的顏色（藍色以外是 QCalc Pro） |
 | [[Show the result while typing]] | 預覽 |
 | [[Update exchange rates now]] | 立刻下載匯率 |

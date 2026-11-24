@@ -198,6 +198,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :step: Elige [[Add a short note]] en ⋯ y escribe una nota breve. Aparece sobre la expresión.
 :step: En 🕘, [[Search the history]] muestra solo las líneas cuya expresión, resultado o nota tiene las palabras que escribes.
 :example: Una línea con la nota «alquiler» aparece al buscar «alquiler».
+:tip: Separa o junta dos dedos sobre el historial o sobre el campo de entrada para agrandar o achicar su texto (cada uno por su lado; [[Text size: history]] y [[Text size: input field and result]] en los ajustes lo devuelven). Para una sola línea, [[Text size of this line]] en su ⋯.
 
 ## select-sum | Sumar líneas
 :step: Elige [[Select lines: sum, average, copy]] en 🕘. [[Select: sum and average]] en el ⋯ de una línea empieza con esa línea elegida y muestra la suma al instante.
@@ -231,6 +232,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 | [[Calculus]] | Derivada d/dx, integral ∫, límite lim, suma Σ, producto Π, ecuaciones |
 | [[Matrix]] | Matriz ▦, determinante det, traspuesta, inversa |
 :tip: Si no sabes el nombre de una función, búscalo en [[Lists: functions, units, constants]] ([Listas](#lists)).
+:tip: Para ver más historial, pliega las teclas con ⌄ a la derecha de las pestañas, o desliza hacia abajo sobre la fila de pestañas. ⌃, deslizar hacia arriba o tocar el campo de entrada las devuelve (al volver a abrir la app vuelven a estar).
 
 ## boxes | Casillas □ (los formularios)
 :what: Las teclas de integral y límite abren un formulario con casillas □. Rellénalas y la expresión queda hecha.
@@ -701,7 +703,8 @@ Las fórmulas:
 | [[Precision (significant digits)]] | La precisión de los cálculos (15 por defecto) |
 | [[Digits shown by each tool]] | Las cifras de cada herramienta y las comunes de Figuras, Depósitos, sólidos y el gráfico ([Cifras mostradas en cada herramienta](#digits)) |
 | [[Light or dark]] | Los colores de la pantalla |
-| [[Text size]] | El texto del historial, el campo de entrada y el resultado |
+| [[Text size: history]] | El texto del historial (un control deslizante; también con dos dedos sobre el historial) |
+| [[Text size: input field and result]] | El texto del campo de entrada y del resultado (un control deslizante; también con dos dedos sobre el campo) |
 | [[Color theme]] | El color de las teclas (salvo el azul: QCalc Pro) |
 | [[Show the result while typing]] | La vista previa |
 | [[Update exchange rates now]] | Descarga los tipos al momento |

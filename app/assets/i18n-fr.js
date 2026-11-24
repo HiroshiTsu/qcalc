@@ -1,6 +1,20 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    "History text {0}%": "Texte de l’historique {0} %",
+    "Input text {0}%": "Texte de saisie {0} %",
+    "Text size of #{0}": "Taille du texte de #{0}",
+    "Text size of {0} lines": "Taille du texte de {0} lignes",
+    "Back (the size of the history)": "Revenir (taille de l’historique)",
+    "Text size of this line": "Taille du texte de cette ligne",
+    "Text size: history": "Taille du texte : historique",
+    "Also with two fingers on the history": "Aussi avec deux doigts sur l’historique",
+    "Text size: input field and result": "Taille du texte : champ de saisie et résultat",
+    "Also with two fingers on the input field": "Aussi avec deux doigts sur le champ de saisie",
+    "Small": "Petit",
+    "Back to normal": "Revenir à normal",
+    "Hide the keys": "Masquer les touches",
+    "Show the keys": "Afficher les touches",
     "Touching an expression edits its line; = replaces it.": "Toucher une expression modifie sa ligne ; = la remplace.",
     "Expression of #{0} (editing)": "Expression de #{0} (en modification)",
     ", …": ", …",
@@ -1231,7 +1245,6 @@
     "Teal": "Bleu canard",
     "Temperature": "Température",
     "Test build": "Version de test",
-    "Text in the history, the input field and the result": "Texte de l’historique, du champ de saisie et du résultat",
     "Text size": "Taille du texte",
     "Thank you for your purchase!": "Merci pour votre achat !",
     "The \",\" in {0} separates values, it does not group digits: type {1}": "La « , » dans {0} sépare des valeurs, elle ne groupe pas les chiffres : tapez {1}",

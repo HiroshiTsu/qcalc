@@ -198,6 +198,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Choisissez [[Add a short note]] dans ⋯ et écrivez une note courte. Elle s'affiche au-dessus du calcul.
 :step: Dans 🕘, [[Search the history]] n'affiche que les lignes dont le calcul, le résultat ou la note contient les mots tapés.
 :example: Une ligne avec la note « loyer » apparaît quand vous cherchez « loyer ».
+:tip: Écartez ou rapprochez deux doigts sur l’historique ou sur le champ de saisie pour agrandir ou réduire son texte (chacun à part ; [[Text size: history]] et [[Text size: input field and result]] dans les réglages le remettent). Pour une seule ligne, [[Text size of this line]] dans son ⋯.
 
 ## select-sum | Additionner des lignes
 :step: Choisissez [[Select lines: sum, average, copy]] dans 🕘. [[Select: sum and average]] dans le ⋯ d'une ligne commence avec cette ligne choisie et affiche la somme tout de suite.
@@ -231,6 +232,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 | [[Calculus]] | Dérivée d/dx, intégrale ∫, limite lim, somme Σ, produit Π, équations |
 | [[Matrix]] | Matrice ▦, déterminant det, transposée, inverse |
 :tip: Si vous ne connaissez pas le nom d'une fonction, cherchez-le dans [[Lists: functions, units, constants]] ([Listes](#lists)).
+:tip: Pour voir plus d’historique, repliez les touches avec ⌄ à droite des onglets, ou glissez vers le bas sur la rangée d’onglets. ⌃, un glissement vers le haut ou un toucher dans le champ de saisie les fait revenir (elles sont de retour à la prochaine ouverture).
 
 ## boxes | Cases □ (les formulaires)
 :what: Les touches d'intégrale et de limite ouvrent un formulaire avec des cases □. Remplissez les cases et le calcul est écrit.
@@ -701,7 +703,8 @@ Les formules :
 | [[Precision (significant digits)]] | La précision des calculs (15 par défaut) |
 | [[Digits shown by each tool]] | Les chiffres de chaque outil, et ceux communs aux Formes, Cuves, solides et au graphique ([Chiffres affichés par outil](#digits)) |
 | [[Light or dark]] | Les couleurs de l'écran |
-| [[Text size]] | Le texte de l'historique, du champ de saisie et du résultat |
+| [[Text size: history]] | Le texte de l'historique (un curseur ; aussi avec deux doigts sur l'historique) |
+| [[Text size: input field and result]] | Le texte du champ de saisie et du résultat (un curseur ; aussi avec deux doigts sur le champ) |
 | [[Color theme]] | La couleur des touches (sauf le bleu : QCalc Pro) |
 | [[Show the result while typing]] | L'aperçu |
 | [[Update exchange rates now]] | Télécharge les taux tout de suite |

@@ -198,6 +198,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Choose [[Add a short note]] in ⋯ and write a short note. It shows above the expression.
 :step: In 🕘, [[Search the history]] shows only the lines whose expression, answer or note has the words you type.
 :example: A line noted "rent" is found by searching for "rent".
+:tip: Spread or pinch two fingers on the history or on the input field to make its text larger or smaller (each on its own; [[Text size: history]] and [[Text size: input field and result]] in the settings set it back). For one line, [[Text size of this line]] in its ⋯.
 
 ## select-sum | Adding up lines
 :step: Choose [[Select lines: sum, average, copy]] in 🕘. [[Select: sum and average]] in the ⋯ of a line starts with that line chosen and shows the sum at once.
@@ -231,6 +232,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 | [[Calculus]] | Derivative d/dx, integral ∫, limit lim, sum Σ, product Π, equations |
 | [[Matrix]] | Matrix ▦, determinant det, transpose, inverse |
 :tip: When you do not know the name of a function, look in [[Lists: functions, units, constants]] ([Lists](#lists)).
+:tip: To see more of the history, fold the keys away with ⌄ at the right end of the tabs, or swipe down on the row of tabs. ⌃, a swipe up or a tap on the input field brings them back (they are out again when the app is opened again).
 
 ## boxes | Boxes □ (the forms)
 :what: The integral and limit keys open a form with boxes □. Fill in the boxes and the expression is made.
@@ -702,7 +704,8 @@ The formulas:
 | [[Precision (significant digits)]] | The precision of calculations (15 by default) |
 | [[Digits shown by each tool]] | The digits of each tool, and those shared by Shapes, Tanks, solids and the graph ([Digits shown by each tool](#digits)) |
 | [[Light or dark]] | The colors of the screen |
-| [[Text size]] | The text of the history, the input field and the result |
+| [[Text size: history]] | The text of the history (a slider; also two fingers on the history) |
+| [[Text size: input field and result]] | The text of the input field and the result (a slider; also two fingers on the field) |
 | [[Color theme]] | The color of the keys (other than blue: QCalc Pro) |
 | [[Show the result while typing]] | The preview |
 | [[Update exchange rates now]] | Downloads the rates at once |

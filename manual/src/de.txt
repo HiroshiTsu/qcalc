@@ -198,6 +198,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Wählen Sie [[Add a short note]] im ⋯ und schreiben Sie eine kurze Notiz. Sie erscheint über dem Ausdruck.
 :step: In 🕘 zeigt [[Search the history]] nur die Zeilen, deren Ausdruck, Ergebnis oder Notiz die eingegebenen Wörter enthält.
 :example: Eine Zeile mit der Notiz „Miete“ findet die Suche nach „Miete“.
+:tip: Zwei Finger auf dem Verlauf oder dem Eingabefeld spreizen oder zusammenziehen ändert dort die Schriftgröße (jeweils für sich; [[Text size: history]] und [[Text size: input field and result]] in den Einstellungen stellen sie zurück). Für eine Zeile: [[Text size of this line]] in ihrem ⋯.
 
 ## select-sum | Zeilen addieren
 :step: Wählen Sie [[Select lines: sum, average, copy]] in 🕘. [[Select: sum and average]] im ⋯ einer Zeile beginnt mit dieser Zeile ausgewählt und zeigt sofort die Summe.
@@ -231,6 +232,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 | [[Calculus]] | Ableitung d/dx, Integral ∫, Grenzwert lim, Summe Σ, Produkt Π, Gleichungen |
 | [[Matrix]] | Matrix ▦, Determinante det, Transponierte, Inverse |
 :tip: Wenn Sie den Namen einer Funktion nicht kennen, suchen Sie in [[Lists: functions, units, constants]] ([Listen](#lists)).
+:tip: Für mehr Verlauf die Tasten einklappen: ⌄ rechts neben den Reitern, oder auf der Reiterzeile nach unten wischen. ⌃, nach oben wischen oder ein Tippen ins Eingabefeld holt sie zurück (beim nächsten Öffnen sind sie wieder da).
 
 ## boxes | Kästchen □ (die Formulare)
 :what: Die Tasten für Integral und Grenzwert öffnen ein Formular mit Kästchen □. Kästchen ausfüllen, und der Ausdruck ist fertig.
@@ -701,7 +703,8 @@ Die Formeln:
 | [[Precision (significant digits)]] | Die Rechengenauigkeit (Standard 15) |
 | [[Digits shown by each tool]] | Die Stellen jedes Werkzeugs und die gemeinsamen Stellen von Figuren, Behältern, Körpern und Graph ([Angezeigte Stellen je Werkzeug](#digits)) |
 | [[Light or dark]] | Die Farben des Bildschirms |
-| [[Text size]] | Die Schrift von Verlauf, Eingabefeld und Ergebnis |
+| [[Text size: history]] | Die Schrift des Verlaufs (ein Schieberegler; auch mit zwei Fingern auf dem Verlauf) |
+| [[Text size: input field and result]] | Die Schrift von Eingabefeld und Ergebnis (ein Schieberegler; auch mit zwei Fingern auf dem Feld) |
 | [[Color theme]] | Die Farbe der Tasten (außer Blau: QCalc Pro) |
 | [[Show the result while typing]] | Die Vorschau |
 | [[Update exchange rates now]] | Lädt die Kurse sofort |

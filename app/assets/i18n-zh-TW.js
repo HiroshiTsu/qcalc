@@ -2,6 +2,20 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "History text {0}%": "歷史紀錄文字 {0}%",
+    "Input text {0}%": "輸入欄文字 {0}%",
+    "Text size of #{0}": "#{0} 的文字大小",
+    "Text size of {0} lines": "{0} 列的文字大小",
+    "Back (the size of the history)": "還原（配合歷史紀錄的大小）",
+    "Text size of this line": "這一列的文字大小",
+    "Text size: history": "文字大小：歷史紀錄",
+    "Also with two fingers on the history": "也可以在歷史紀錄上用兩指調整",
+    "Text size: input field and result": "文字大小：輸入欄與結果",
+    "Also with two fingers on the input field": "也可以在輸入欄上用兩指調整",
+    "Small": "小",
+    "Back to normal": "回到標準",
+    "Hide the keys": "隱藏按鍵",
+    "Show the keys": "顯示按鍵",
     "Touching an expression edits its line; = replaces it.": "點按算式會修改那一行，按 = 取代。",
     "Expression of #{0} (editing)": "#{0} 的算式（修改中）",
     ", …": " 等",
@@ -1235,7 +1249,6 @@
     "Teal": "藍綠色",
     "Temperature": "溫度",
     "Test build": "測試版",
-    "Text in the history, the input field and the result": "歷史紀錄、輸入欄與結果的文字",
     "Text size": "文字大小",
     "Thank you for your purchase!": "感謝您的購買！",
     "The \",\" in {0} separates values, it does not group digits: type {1}": "「{0}」中的「,」會被當成數值的分隔，而不是千位分隔：請輸入 {1}",

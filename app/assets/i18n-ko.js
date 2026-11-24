@@ -1,6 +1,20 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "History text {0}%": "기록 글자 {0}%",
+    "Input text {0}%": "입력란 글자 {0}%",
+    "Text size of #{0}": "#{0}의 글자 크기",
+    "Text size of {0} lines": "{0}줄의 글자 크기",
+    "Back (the size of the history)": "되돌리기(기록의 크기에 맞춤)",
+    "Text size of this line": "이 줄의 글자 크기",
+    "Text size: history": "글자 크기: 기록",
+    "Also with two fingers on the history": "기록 위에서 두 손가락으로도 바꿀 수 있습니다",
+    "Text size: input field and result": "글자 크기: 입력란과 결과",
+    "Also with two fingers on the input field": "입력란 위에서 두 손가락으로도 바꿀 수 있습니다",
+    "Small": "작게",
+    "Back to normal": "보통으로 되돌리기",
+    "Hide the keys": "키 숨기기",
+    "Show the keys": "키 보이기",
     "Touching an expression edits its line; = replaces it.": "식을 탭하면 그 줄을 고칩니다. =를 누르면 바뀝니다.",
     "Expression of #{0} (editing)": "#{0}의 식(고치는 중)",
     ", …": " 등",
@@ -1234,7 +1248,6 @@
     "Teal": "청록",
     "Temperature": "온도",
     "Test build": "테스트 버전",
-    "Text in the history, the input field and the result": "기록, 입력란, 결과의 글자 크기",
     "Text size": "글자 크기",
     "Thank you for your purchase!": "구입해 주셔서 감사합니다!",
     "The \",\" in {0} separates values, it does not group digits: type {1}": "‘{0}’의 ‘,’는 자릿수 구분이 아니라 값의 구분으로 처리됩니다. {1}처럼 이어서 넣으세요",

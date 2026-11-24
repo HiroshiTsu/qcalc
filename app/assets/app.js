@@ -343,7 +343,9 @@
     text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false, next_steps: true, arg_hints: true
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
-  const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
+  // (1.16.2, Z2) two sizes: the history (text_size_h, --hfs) and the input field with the result (text_size, --fs, also the
+  // forms and the tools as before); "small" added, and "custom" for a size set with two fingers (text_custom_h, text_custom)
+  const TEXT_SCALE = { small: 0.88, normal: 1, large: 1.18, xlarge: 1.38 };
   // The phone's font size (1.12.0; Settings → Display → Font size, up to 200 %). The WebView itself
   // keeps 100 % (MainActivity: setTextZoom), so that the keys keep their size; the page makes the
   // history, the input field and the result larger by the phone's size up to 1.5 times (with "Text
@@ -357,16 +359,37 @@
     } catch (e) { f = 1; }
     return Math.max(1, Math.min(2, f));
   })();
-  function textScale() { return Math.min(1.8, (own(TEXT_SCALE, S.text_size) || 1) * Math.min(1.5, SYS_FONT)); }
+  // the size chosen (a factor of the normal size): 80 % at least, and with the phone's text size not over 1.8 times
+  const TEXT_MIN = 0.8, textMax = () => 1.8 / Math.min(1.5, SYS_FONT);
+  const clampText = (f) => Math.max(TEXT_MIN, Math.min(textMax(), f));
+  function textFactor(size, custom) { return size === 'custom' ? clampText(Number(custom) || 1) : (own(TEXT_SCALE, size) || 1); }
+  function textScale() { return Math.min(1.8, textFactor(S.text_size, S.text_custom) * Math.min(1.5, SYS_FONT)); }
+  function histScale() { return Math.min(1.8, textFactor(S.text_size_h, S.text_custom_h) * Math.min(1.5, SYS_FONT)); }
   function applyTextSize() {
     document.documentElement.dataset.textSize = own(TEXT_SCALE, S.text_size) ? S.text_size : 'normal';
     document.documentElement.style.setProperty('--fs', String(textScale()));
+    document.documentElement.style.setProperty('--hfs', String(histScale()));
+    if (typeof placeNumbers === 'function') placeNumbers();
     document.documentElement.style.setProperty('--pfs', String(Math.min(1.15, SYS_FONT)));
     autosize();
     if (typeof applyCompactKeys === 'function') applyCompactKeys();
   }
+  // (1.16.2, Z3) a size of the history ('h') or of the input field ('e') as a factor, from the slider of the settings or two
+  // fingers: one of the four sizes when it is one of them, otherwise "custom" (to 1 %)
+  function setTextFactor(w, f) {
+    const key = w === 'h' ? 'text_size_h' : 'text_size', ck = w === 'h' ? 'text_custom_h' : 'text_custom';
+    f = clampText(Math.round(f * 100) / 100);
+    const preset = Object.keys(TEXT_SCALE).find((k) => Math.abs(TEXT_SCALE[k] - f) < 0.001);
+    S[key] = preset || 'custom';
+    if (!preset) S[ck] = f;
+    return f;
+  }
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
   S.lang = LANG_AUTO ? 'auto' : LANG; // the language in use (qalc.lang, or 'auto'), whatever qalc.settings says
+  // (1.16.2, Z2) the size of the history apart: until then one size for both, which the history keeps
+  if (!own(S, 'text_size_h')) S.text_size_h = S.text_size;
+  if (!own(S, 'text_custom')) S.text_custom = 1;
+  if (!own(S, 'text_custom_h')) S.text_custom_h = S.text_custom;
   // (1.15.0) the new defaults, 15 significant digits and digit groups, once, also on a phone whose saved settings still
   // have the old ones (up to 1.14 every setting was saved whenever one changed, so a value as it was cannot be told
   // from one chosen): each on its own, 10 digits → 15 and no groups → groups (the owner's choice B of 11-23). What the
@@ -844,6 +867,54 @@
   let histReveal = null;
   const histFlash = new Map();
   histEl.addEventListener('scroll', () => { histPinned = histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight < 24; }, { passive: true });
+  // (1.16.2, Z and Z2, the owner's wishes of 11-24 21:32 and 21:34) Two fingers spread or pinched on the history make the text
+  // of the history larger or smaller; on the input field and the result, the text of those (the keys keep their size; the
+  // box of a line being edited goes with the history). While the fingers move, "History text 120%" shows; the size is kept
+  // when they lift, and the setting "Text size" shows it as "Custom (120%)" (Normal there goes back). From 80 % up to what
+  // the phone's text size leaves under 1.8 times, continuously (Z3). Touch events, so that the second finger stops the
+  // scrolling; one finger scrolls, taps and holds as before, and nothing of a pinch is a tap or a long touch (pinchBusy).
+  // The page itself does not zoom (the viewport). Not on the keypad (its swipes) nor on the panels (their own fingers).
+  let pinch = null, pinchDone = 0, pinchTipTimer = null;
+  const pinchBusy = () => !!pinch || performance.now() - pinchDone < 400;
+  const pinchTip = el('div', { class: 'pinch-tip', 'aria-hidden': 'true', hidden: true });
+  document.body.append(pinchTip);
+  function pinchApply(which, f) {
+    const mid = histEl.scrollHeight ? (histEl.scrollTop + histEl.clientHeight / 2) / histEl.scrollHeight : 1, pinned = histPinned;
+    setTextFactor(which, f);
+    applyTextSize();
+    // (the history stays where it was: at its end, or around its middle)
+    if (pinned) histEl.scrollTop = histEl.scrollHeight;
+    else histEl.scrollTop = mid * histEl.scrollHeight - histEl.clientHeight / 2;
+    if (histEdit && history.indexOf(histEdit.h) >= 0) syncLiveRow();
+  }
+  function bindPinch(zone, which) {
+    const dist = (l) => Math.hypot(l[0].clientX - l[1].clientX, l[0].clientY - l[1].clientY);
+    zone.addEventListener('touchstart', (e) => {
+      if (pinch || e.touches.length !== 2 || !Array.from(e.touches).every((x) => zone.contains(x.target))) return;
+      const f0 = which === 'h' ? textFactor(S.text_size_h, S.text_custom_h) : textFactor(S.text_size, S.text_custom);
+      pinch = { which, d0: dist(e.touches) || 1, f0, f: f0, two: true };
+      if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+    zone.addEventListener('touchmove', (e) => {
+      if (!pinch || pinch.which !== which) return;
+      if (e.cancelable) e.preventDefault();
+      if (!pinch.two || e.touches.length < 2) return;
+      const f = clampText(Math.round(pinch.f0 * dist(e.touches) / pinch.d0 * 100) / 100); // (Z3: continuous, to 1 %)
+      clearTimeout(pinchTipTimer);
+      pinchTip.textContent = which === 'h' ? trf('History text {0}%', '履歴の文字 {0}%', Math.round(f * 100)) : trf('Input text {0}%', '入力欄の文字 {0}%', Math.round(f * 100));
+      pinchTip.hidden = false;
+      if (f !== pinch.f) { pinch.f = f; pinchApply(which, f); }
+    }, { passive: false });
+    const end = (e) => {
+      if (!pinch || pinch.which !== which) return;
+      if (pinch.two && e.touches.length < 2) { pinch.two = false; saveSettings(); pinchTipTimer = setTimeout(() => { pinchTip.hidden = true; }, 900); }
+      if (e.touches.length === 0) { pinch = null; pinchDone = performance.now(); }
+    };
+    zone.addEventListener('touchend', end);
+    zone.addEventListener('touchcancel', end);
+  }
+  bindPinch(histEl, 'h');
+  bindPinch($('.entry'), 'e');
   if (window.ResizeObserver) new ResizeObserver(() => {
     fitMatrices(histEl);
     // (1.16.0, fix/hist-edit-scroll: a line being kept in sight is kept there, not the end of the history)
@@ -1030,6 +1101,14 @@
       const t = el('button', { class: 'tb-toggle', id: 'tb-toggle', text: '⌨', 'aria-controls': 'toolbar', 'aria-expanded': 'false', 'aria-label': tr('Show the row of x, ans, the arrows and the keyboard', 'x・ans・矢印・キーボードの段を出す'), hidden: true });
       bindPress(t, () => { vibrate(); store.set('qalc.tbopen', !$('#keypad').classList.contains('tb-open')); applyCompactKeys(); histEl.scrollTop = histEl.scrollHeight; });
       row.append(t);
+      // (1.16.2, V) ⌄ at the end of the tabs folds the keys away (foldKeys); ⌃ on the thin bar brings them back
+      const f = el('button', { class: 'kb-fold', id: 'kb-fold', type: 'button', text: '⌄', 'aria-controls': 'keypad', 'aria-expanded': 'true', 'aria-label': tr('Hide the keys', 'キーを隠す') });
+      bindPress(f, () => { vibrate(); foldKeys(true); });
+      row.append(f);
+      const bar = el('button', { class: 'kb-bar', id: 'kb-bar', type: 'button', text: '⌃', hidden: true, 'aria-label': tr('Show the keys', 'キーを出す') });
+      bindPress(bar, () => { vibrate(); foldKeys(false); });
+      $('#keypad').insertBefore(bar, $('#keypad').firstChild);
+      bindKeySwipes();
     }
     renderPage();
     updateToolbar();
@@ -1051,6 +1130,63 @@
     t.hidden = !on;
     t.setAttribute('aria-expanded', String(open));
     t.classList.toggle('on', open);
+  }
+  // (1.16.2, V, the owner's wish of 11-24 21:28: more lines of the history in sight) The keys fold away, and the history
+  // takes their room: ⌄ at the end of the tabs, or a swipe down on the top of the keypad (the row of tabs and the top row of
+  // keys only: a swipe on the keys stays what it was, and not from the left and right edges, where Android has its back
+  // gesture). Folded, a thin bar with ⌃ stays under the field; ⌃, a swipe up on the bar (not from the bottom edge: the home
+  // gesture), or a tap on the input field or on the box of a line being edited brings the keys back. It works while a line
+  // is edited too. Not kept: the app opened again has its keys (a keypad that does not come back would look broken).
+  let keysFolded = false;
+  function foldKeys(on) {
+    const kp = $('#keypad');
+    if (!kp || keysFolded === !!on) return;
+    const pinned = histPinned, bar = $('#kb-bar'), f = $('#kb-fold'), had = document.activeElement;
+    keysFolded = !!on;
+    if (keysFolded) closeVarPop();
+    kp.classList.toggle('folded', keysFolded);
+    if (bar) bar.hidden = !keysFolded;
+    if (f) f.setAttribute('aria-expanded', String(!keysFolded));
+    // (the focus of a screen reader stays on the button that took the place of the one pressed)
+    if (keysFolded && had === f && bar) bar.focus({ preventScroll: true });
+    else if (!keysFolded && had === bar && f) f.focus({ preventScroll: true });
+    const keep = () => { if (histEdit && history.indexOf(histEdit.h) >= 0) revealHistLine(histEdit.h); else if (pinned) histEl.scrollTop = histEl.scrollHeight; };
+    keep(); requestAnimationFrame(keep);
+  }
+  function bindKeySwipes() {
+    const kp = $('#keypad');
+    if (!kp || kp._swipes) return;
+    kp._swipes = true;
+    let sw = null, noClick = 0;
+    const zone = (x) => !!(x && x.closest && (x.closest('#toolbar') || x.closest('.pages-row') || x.closest('#kb-bar')));
+    kp.addEventListener('pointerdown', (e) => {
+      sw = null;
+      if (!zone(e.target) || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      if (e.clientX < 24 || e.clientX > window.innerWidth - 24) return; // (the back gesture of Android)
+      if (keysFolded && e.clientY > window.innerHeight - 32) return; // (the home gesture)
+      sw = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target, on: false };
+    }, true);
+    kp.addEventListener('pointermove', (e) => {
+      if (!sw || e.pointerId !== sw.id || sw.on) return;
+      const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+      if (Math.abs(dy) > 24 && Math.abs(dy) > 1.5 * Math.abs(dx) && (keysFolded ? dy < 0 : dy > 0)) {
+        sw.on = true;
+        // (the key or tab under the finger is not pressed: its press and its repeat stop)
+        const b = sw.target.closest && sw.target.closest('button');
+        if (b) b.dispatchEvent(new PointerEvent('pointercancel', { pointerId: e.pointerId, bubbles: false }));
+      }
+    }, true);
+    kp.addEventListener('pointerup', (e) => {
+      if (!sw || e.pointerId !== sw.id) return;
+      const s = sw;
+      sw = null;
+      if (!s.on) return;
+      e.stopPropagation(); e.preventDefault();
+      noClick = performance.now() + 600;
+      if (Math.abs(e.clientY - s.y) > 40) { vibrate(); foldKeys(!keysFolded); }
+    }, true);
+    kp.addEventListener('pointercancel', (e) => { if (e.isTrusted && sw && e.pointerId === sw.id) sw = null; }, true);
+    kp.addEventListener('click', (e) => { if (performance.now() < noClick) { e.stopPropagation(); e.preventDefault(); } }, true);
   }
   function setPage(id) {
     if (page === id || !PAGES[id]) return;
@@ -1286,10 +1422,28 @@
     exprChanged(true);
   });
   exprEl.addEventListener('focus', () => { liveCellOff(false); updateToolbar(); }); // (1.16.2, E2: the caret in the field again)
+  exprEl.addEventListener('pointerdown', () => { if (keysFolded) foldKeys(false); }); // (1.16.2, V: the keys back)
   // the caret was put somewhere else by touching the field
   exprEl.addEventListener('click', () => { updateSuggest(false); updateNextBox(); });
 
+  // (1.16.2, R2, the review of 11-24 21:43) a long expression gets smaller, down to 70 % of its size, before it takes more
+  // lines (a matrix took three lines at 26 px and pushed the preview away); a shorter one gets its size back. box: the field
+  // or the box of a line being edited; lh: its line height; pad: its padding top and bottom
+  function fitText(box, base, lh, pad) {
+    let fs = base;
+    const min = base * 0.7, one = () => box.scrollHeight <= Math.ceil(fs * lh + pad + 1);
+    box.style.fontSize = fs + 'px';
+    if (!box.value || box === exprEl && !box.value.trim()) return fs;
+    // (measured without the least height of the box: a box of 48 px holds one line of 26 px)
+    const mh = box.style.minHeight;
+    box.style.minHeight = '0px';
+    box.style.height = 'auto';
+    while (!one() && fs > min + 0.05) { fs = Math.max(min, fs * 0.93); box.style.fontSize = fs.toFixed(2) + 'px'; }
+    box.style.minHeight = mh;
+    return fs;
+  }
   function autosize() {
+    fitText(exprEl, 26 * textScale(), 1.25, 4);
     exprEl.style.height = 'auto';
     const h = exprEl.scrollHeight, max = Math.round((liveCellOn ? 44 : 110) * textScale()); // (1.16.2, E2: one line while typing in the line)
     exprEl.style.height = Math.min(h, max) + 'px';
@@ -1701,14 +1855,15 @@
   // shapes tool cut 33.510 321 638 into 33.51 321 638). A whole part or decimals of 5 digits or more in groups of 3, as
   // the engine wrote them: the whole part with the sign of the number format, the decimals with narrow spaces; not the
   // power after E, nor digits that belong to a name; only in base 10
-  function groupText(t) {
+  // (expr: an expression shown, 1.16.2 R3: "#12345" is a line, not a number)
+  function groupText(t, expr) {
     if (!S.grouping || Number(S.base) !== 10 || !t || t.length > 20000) return t;
     const re = new RegExp('\\d+(?:' + (NF.dec === '.' ? '\\.' : ',') + '\\d+)?', 'g');
     // (1.16.0, the review of 11-24, N1: an amount of money from 4 digits, ¥6,200 as ¥85,000 beside it in the notes)
     const minG = /[¥$€£₩₹]|(?:^|[\s\d])(?:JPY|USD|EUR|GBP|KRW|TWD|CNY|MXN|CHF|INR|CAD|AUD)\b/.test(t) ? 4 : 5;
     return t.replace(re, (num, at, all) => {
       const b = all[at - 1] || '';
-      if (/[\p{L}_\d]/u.test(b) || (b === NF.dec || b === NF.group) || ((b === '-' || b === '−' || b === '+') && all[at - 2] === 'E')) return num;
+      if (/[\p{L}_\d]/u.test(b) || (b === NF.dec || b === NF.group) || ((b === '-' || b === '−' || b === '+') && all[at - 2] === 'E') || (expr && b === '#')) return num;
       const k = num.indexOf(NF.dec), i = k < 0 ? num : num.slice(0, k), f = k < 0 ? '' : num.slice(k + 1);
       const gi = i.length >= minG ? i.replace(/\B(?=(\d{3})+$)/g, NF.group) : i;
       const gf = f.length >= 5 ? f.replace(/(\d{3})(?=\d)/g, '$1\u202f') : f;
@@ -2088,12 +2243,16 @@
     liveRes = r && r.ok && !r.deferred && !r.timeout && previewEl.childNodes.length && !msgEl.classList.contains('error') ? r : null;
     if (histEdit) syncLiveRow();
   }
+  // (1.16.2, R1, the review of 11-24 21:43) the result under the field as dark as the answers of the history (it was the
+  // lightest text of the screen); gray only for what is not a result ("…", Calculating…, a hint): .dim
+  new MutationObserver(() => { previewEl.classList.toggle('dim', !!previewEl.textContent.trim() && !/^\s*[=≈]/.test(previewEl.textContent)); })
+    .observe(previewEl, { childList: true, characterData: true, subtree: true });
   function showPreviewIn(r) {
     msgEl.textContent = '';
     msgEl.className = 'msg';
     if (!r) { parsedEl.textContent = ''; previewEl.textContent = ''; return; }
     if (!r.ok) { previewEl.textContent = ''; msgEl.textContent = localMessage(r.error) || ''; msgEl.className = 'msg error'; return; }
-    parsedEl.textContent = toDisplay(r.parsed || '');
+    parsedEl.textContent = groupText(toDisplay(r.parsed || ''), true); // (1.16.2, R3)
     const err = (r.messages || []).find((m) => m.type === 'error');
     if (r.deferred) previewEl.textContent = tr('Press = to run it (definitions are not previewed)', '＝ を押すと実行します（定義など）');
     else if (r.timeout) previewEl.textContent = '…';
@@ -4148,8 +4307,11 @@
   function historyItem(h) {
     const res = el('div', { class: 'h-res' });
     showResult(res, displayResult(h));
-    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: prettyExpr(toDisplay(h.expr)) }), res);
+    // ((1.16.2, R3) the expression with the groups of digits of the answers, 17,400,353,377,512 / 3: only as shown)
+    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: groupText(prettyExpr(toDisplay(h.expr)), true) }), res);
     item._h = h;
+    if (h.fs && h.fs !== 1) item.style.setProperty('--lfs', String(h.fs)); // (1.16.2, Z4: the size of this line)
+    placeNumbers(); // (1.16.2, R4)
     if (histEdit && histEdit.h === h) queueLive(); // (1.16.2, E)
     // (1.16.0, feature/hist-excel) its number, and a line it refers to (#12) that is no longer in the history
     if (!h.n) numberLines();
@@ -4206,13 +4368,13 @@
     node.addEventListener('pointerdown', (e) => {
       e.preventDefault(); // keep the focus (and the caret) in the expression field
       sx = e.clientX; sy = e.clientY; long = false;
-      timer = setTimeout(() => { long = true; vibrate(); onLong(); }, 480);
+      timer = setTimeout(() => { timer = null; if (pinchBusy()) return; long = true; vibrate(); onLong(); }, 480); // (1.16.2, Z: not in a pinch)
     });
     node.addEventListener('pointermove', (e) => {
       if (timer && (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10)) { clearTimeout(timer); timer = null; }
     });
     node.addEventListener('pointerup', (e) => {
-      if (timer) { clearTimeout(timer); timer = null; if (!long) onTap(e.target); }
+      if (timer) { clearTimeout(timer); timer = null; if (!long && !pinchBusy()) onTap(e.target); }
       if (long) {
         // the browser may still send a click, which would land on the menu's dimmed background
         const kill = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
@@ -4222,6 +4384,74 @@
     });
     node.addEventListener('pointercancel', () => { clearTimeout(timer); timer = null; });
     node.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+  // (1.16.2, R4, the review of 11-24 21:43) The number of a line beside the first line of its answer, as the numbers of the
+  // rows of a spreadsheet (it was 42 px from the top, beside the expression when that took two lines or the text was larger):
+  // all read first, then all set, once a frame
+  let numQ = false;
+  function placeNumbers() {
+    if (numQ) return;
+    numQ = true;
+    requestAnimationFrame(() => {
+      numQ = false;
+      const spots = [];
+      for (const it of histEl.querySelectorAll('.h-item')) {
+        const no = it.querySelector(':scope > .h-no'), res = it.querySelector(':scope > .h-res');
+        if (!no || !res || !res.offsetParent) continue;
+        const first = (res.querySelector('.r-line') || res).getClientRects()[0];
+        if (!first) continue;
+        const top = it.getBoundingClientRect().top, more = it.querySelector(':scope > .h-more');
+        // (under the ⋯, so that a tap on the number is the number's)
+        spots.push([no, Math.max(first.top - top + (first.height - no.offsetHeight) / 2, more ? more.getBoundingClientRect().bottom - top + 1 : 0)]);
+      }
+      for (const [no, y] of spots) no.style.top = Math.max(0, Math.round(y)) + 'px';
+    });
+  }
+  window.addEventListener('resize', () => placeNumbers());
+  // (1.16.2, Z4, the owner's wish of 11-24 21:38) The text of one line, or of the lines selected, larger or smaller: a factor
+  // on the size of the history, kept with the line (h.fs: when the app is opened again and after Delete → Undo; copying, the
+  // table and the CSV file do not have it), shown at once as the slider moves, with "Back (the size of the history)". The
+  // box of the line when it is edited has its size too. 0.6 to 2 times, and not over 2.5 times the normal size with the size
+  // of the history (nothing wider than the screen: the lines wrap).
+  const LINE_FS_MIN = 0.6, lineFsMax = () => Math.max(1, Math.min(2, 2.5 / histScale()));
+  function lineFsApply(h) {
+    for (const it of histEl.querySelectorAll('.h-item')) {
+      if (it._h !== h) continue;
+      if (h.fs && h.fs !== 1) it.style.setProperty('--lfs', String(h.fs)); else it.style.removeProperty('--lfs');
+    }
+    placeNumbers();
+  }
+  function lineSizeSheet(list) {
+    list = list.filter((h) => history.indexOf(h) >= 0);
+    if (!list.length) return;
+    if (sheetResolve) closeSheet(null);
+    const sh = $('#sheet'), max = lineFsMax(), lo = Math.round(LINE_FS_MIN * 100), hi = Math.floor(max * 100);
+    sh.textContent = '';
+    const title = list.length === 1 ? trf('Text size of #{0}', '#{0} の文字の大きさ', list[0].n) : trf('Text size of {0} lines', '{0} 行の文字の大きさ', list.length);
+    const val = el('span', { class: 'ts-val', 'aria-hidden': 'true' });
+    const range = el('input', { type: 'range', class: 'ts-range', min: String(lo), max: String(hi), step: '1', 'aria-label': title });
+    const back = el('button', { class: 'btn ts-reset', type: 'button', text: tr('Back (the size of the history)', '元に戻す（履歴の大きさに合わせる）') });
+    const set = (n) => {
+      const f = Math.max(lo, Math.min(hi, n)) / 100;
+      for (const h of list) { if (Math.abs(f - 1) < 0.005) delete h.fs; else h.fs = f; lineFsApply(h); }
+      range.value = String(Math.round(f * 100)); val.textContent = Math.round(f * 100) + '%'; range.setAttribute('aria-valuetext', Math.round(f * 100) + '%');
+      back.hidden = Math.abs(f - 1) < 0.005;
+      if (histEdit && list.indexOf(histEdit.h) >= 0) syncLiveRow();
+    };
+    range.addEventListener('input', () => set(Number(range.value)));
+    range.addEventListener('change', () => saveHistory());
+    back.addEventListener('click', () => { set(100); saveHistory(); });
+    sh.append(el('div', { class: 'stitle', text: title }), el('div', { class: 'ts-box line-ts' }, el('div', { class: 'ts-row' }, range, val), back),
+      el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
+    set(Math.round((list[0].fs || 1) * 100));
+    // (the first line in sight above the sheet)
+    const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === list[0]);
+    if (it) it.scrollIntoView({ block: 'start' });
+    sheetResolve = () => { saveHistory(); };
+    $('#scrim').classList.add('show', 'over-panels');
+    sh.classList.add('open');
+    sh.inert = false;
+    range.focus({ preventScroll: true });
   }
   async function historyMenu(h) {
     if (history.indexOf(h) < 0) return;
@@ -4251,6 +4481,7 @@
       ['select', tr('Select: sum and average', '選ぶ（合計・平均）')],
       ['star', h.star ? tr('★ Unpin', '★ 固定を外す') : tr('☆ Pin at the top', '☆ 上に固定')],
       ['note', h.note ? tr('Change the note', 'メモを変える') : tr('Add a short note', 'ひとことメモ')],
+      ['l-size', tr('Text size of this line', 'この行の文字の大きさ')],
       ['del', tr('Delete this line', 'この行を削除'), 'danger']
     ]));
     if (a === 'm-edit') openForm('mat', { matrix: mat });
@@ -4269,6 +4500,7 @@
     else if (a === 'ins-ans') insertResult(h);
     else if (a === 'ins-ref') { insertResult(h, true); focusExpr(); }
     else if (a === 'select') openHistSelect(h);
+    else if (a === 'l-size') lineSizeSheet([h]);
     else if (a === 'del') {
       const i = history.indexOf(h);
       if (i < 0) return; // the history changed while the menu was open
@@ -4702,6 +4934,7 @@
       if (cell.value !== v) cell.value = v;
       if (liveCellOn && document.activeElement === cell && (cell.selectionStart !== exprEl.selectionStart || cell.selectionEnd !== exprEl.selectionEnd)) cell.setSelectionRange(exprEl.selectionStart, exprEl.selectionEnd);
     }
+    fitText(cell, 17 * histScale() * (H.fs || 1), 1.35, 8); // (1.16.2, R2 and Z4)
     cell.style.height = 'auto'; cell.style.height = cell.scrollHeight + 'px';
     const holder = box.querySelector('.h-live-a');
     holder.textContent = '';
@@ -4729,6 +4962,7 @@
     const c = el('textarea', { class: 'h-cell h-live-e', rows: 1, inputmode: exprEl.inputMode === 'text' ? 'text' : 'none', enterkeyhint: 'go', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
     // (the line's own taps and long touch, which keep the focus in the field, are not for the box)
     for (const ev of ['pointerdown', 'pointerup', 'contextmenu', 'click']) c.addEventListener(ev, (e) => e.stopPropagation());
+    c.addEventListener('pointerdown', () => { if (keysFolded) foldKeys(false); }); // (1.16.2, V: the keys back)
     // (1.16.2, K2, the review of 11-24 20:53) the box is right-aligned: a tap on the empty part left of the text put the
     // caret at the start of the line (1200*1.1 and 5 gave 51200*1.1). A tap where there is no text: the caret at the end
     c.addEventListener('click', (e) => {
@@ -18066,6 +18300,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   selBar.append(selInfo, el('div', { class: 'hs-btns' },
     el('button', { class: 'btn', type: 'button', text: tr('Copy', 'コピー'), onclick: () => copySelected() }),
     tblBtn,
+    // (1.16.2, Z4) the text size of the lines selected
+    el('button', { class: 'btn', type: 'button', text: tr('Text size', '文字の大きさ'), onclick: () => lineSizeSheet(history.filter((h) => histSel && histSel.has(h))) }),
     el('button', { class: 'btn primary', type: 'button', text: tr('Done', '終わる'), onclick: () => closeHistSelect() })));
   document.body.append(selBar);
   // (1.16.0, fix/hist-selbar) the history ends above the bar however high it is (its buttons beside the numbers or under them,
@@ -21565,7 +21801,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       ['math_view', tr('Math notation for expressions and results', '式と結果を数式の形で表示'), 'bool',
         tr('Fractions, powers, roots, integrals and the like: the expression above the input field, and results', '分数・べき乗・根号・積分などを、入力欄の上の式と結果に使います')],
       ['appearance', tr('Light or dark', 'ライト／ダーク'), [['system', tr('Same as the phone', '端末の設定と同じ')], ['light', tr('Light', 'ライト')], ['dark', tr('Dark', 'ダーク')]]],
-      ['text_size', tr('Text size', '文字の大きさ'), [['normal', tr('Normal', '標準')], ['large', tr('Large', '大きめ')], ['xlarge', tr('Extra large', '特大')]], tr('Text in the history, the input field and the result', '履歴・入力欄・結果の文字の大きさ')],
+      // (1.16.2, Z2) the history and the input field apart, each also with two fingers ("Custom (120%)" then)
+      ['text_size_h', tr('Text size: history', '文字の大きさ：履歴'), 'textsize', tr('Also with two fingers on the history', '履歴の上で 2 本指でも変えられます')],
+      ['text_size', tr('Text size: input field and result', '文字の大きさ：入力欄・結果'), 'textsize', tr('Also with two fingers on the input field', '入力欄の上で 2 本指でも変えられます')],
       ['theme', tr('Color theme', '配色テーマ'), THEMES, tr('The color of the keys and the highlights, in the light and the dark theme', 'キーや強調表示の色（ライト・ダークの両方）')]
     ]],
     // (1.12.0, D7: "Digits of the tools" was here; feature/screen-digits: a row of "Digits shown by each tool")
@@ -21627,6 +21865,25 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
               if (p.precisionBack) p.precisionBack();
               if (locked) proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'), 'precision');
             });
+          } else if (type === 'textsize') {
+            // (1.16.2, Z3) the size as a slider in %, with marks for the four sizes, and "Back to normal"
+            const w = key === 'text_size_h' ? 'h' : 'e', ck = w === 'h' ? 'text_custom_h' : 'text_custom';
+            const lo = Math.round(TEXT_MIN * 100), hi = Math.floor(textMax() * 100);
+            const val = el('span', { class: 'ts-val', 'aria-hidden': 'true' });
+            input = el('input', { type: 'range', class: 'ts-range', min: String(lo), max: String(hi), step: '1', 'aria-label': label });
+            const marks = el('div', { class: 'ts-marks', 'aria-hidden': 'true' });
+            for (const [k, name] of [['small', tr('Small', '小さめ')], ['normal', tr('Normal', '標準')], ['large', tr('Large', '大きめ')], ['xlarge', tr('Extra large', '特大')]]) {
+              const v = Math.round(TEXT_SCALE[k] * 100);
+              if (v <= hi) marks.append(el('span', { style: 'left:' + ((v - lo) / (hi - lo) * 100).toFixed(2) + '%', text: name }));
+            }
+            const reset = el('button', { class: 'btn ts-reset', type: 'button', text: tr('Back to normal', '標準に戻す') });
+            const show = () => { const f = textFactor(S[key], S[ck]), n = Math.round(f * 100); input.value = String(n); val.textContent = n + '%'; input.setAttribute('aria-valuetext', n + '%'); reset.hidden = n === 100; };
+            input.addEventListener('input', () => { setTextFactor(w, Number(input.value) / 100); applyTextSize(); show(); });
+            input.addEventListener('change', () => { settingsChanged(); show(); });
+            reset.addEventListener('click', (e) => { e.preventDefault(); setTextFactor(w, 1); settingsChanged(); show(); });
+            show();
+            (p.textShows = p.textShows || []).push(show);
+            input._box = el('div', { class: 'ts-box' }, el('div', { class: 'ts-row' }, input, val), marks, reset);
           } else {
             input = el('select');
             for (const [v, t] of type) input.append(el('option', { value: v, text: t }));
@@ -21656,8 +21913,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
             p.precisionBack = () => { back.hidden = Number(S.precision) === DEFAULTS.precision; if (p.digitsList) p.digitsList(); };
             p.precisionBack();
           }
-          part.append(el('label', { class: 'setting' },
-            el('div', { class: 'lbl' }, name, sub ? el('div', { class: 's', text: sub }) : null), back ? el('div', { class: 'precision-box' }, input, back) : input));
+          part.append(el(input._box ? 'div' : 'label', { class: 'setting' + (input._box ? ' setting-ts' : '') },
+            el('div', { class: 'lbl' }, name, sub ? el('div', { class: 's', text: sub }) : null), back ? el('div', { class: 'precision-box' }, input, back) : input._box || input));
           (p.inputs = p.inputs || {})[key] = input;
         }
         }
