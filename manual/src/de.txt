@@ -357,7 +357,7 @@ Die physikalischen Konstanten sind die Werte von CODATA 2022, die im Rechenkern 
 :step: Wählen Sie [[Taxed]] oder [[Tax-free account]]. Der Steuersatz ist 20,315 % (der japanische), wenn Sie keinen anderen eingeben.
 :example: Gekauft zu 1000, verkauft zu 1200, 100 Aktien, ohne Gebühren → +20.000,00, Steuer 4.063,00, nach Steuern +15.937,00
 :tip: Der %-Wert bezieht sich auf den gezahlten Betrag mit Gebühr. Die Gewinnschwelle ist der Kurs, bei dem nach den Gebühren kein Verlust bleibt.
-:note: Die Steuer wird nur für diesen Handel berechnet und abgerundet; Verlustverrechnung im Jahr und die Rundung des Brokers werden nicht berücksichtigt.
+:note: Die Steuer wird nur für diesen Handel berechnet. Bei 20,315 % werden die Einkommensteuern (15,315 %) und die Einwohnersteuer (5 %) je für sich abgerundet und addiert, wie ein Broker sie einbehält (ein Gewinn von 19 Yen zahlt 2). Verlustverrechnung im Jahr wird nicht berücksichtigt.
 
 ### avg-cost | Durchschnittlicher Einstandskurs
 :what: Der Durchschnittskurs von Aktien aus mehreren Käufen, und wie viele Aktien zu welchem Kurs den Durchschnitt auf ein Ziel bringen.
@@ -556,6 +556,7 @@ Die Formeln:
 :example: Zeilen 1 bis 3 Miete, Strom und Wasser, Zeile 4 „Summe“, Zeile 5 `#4 / 2` → ¥47,150 (94.300 / 2)
 :tip: Werden Zeilen eingefügt, gelöscht oder verschoben, folgen die in den Zeilen geschriebenen Nummern und meinen weiter dieselben Zeilen. Ein Verweis auf eine gelöschte Zeile wird zu #?, und die Zeile sagt es.
 :note: #3 kann nur eine Zeile über der Zeile sein, in der es steht.
+:tip: Eine Zeile, die über eine von ihr verwendete Zeile (ihr #4) verschoben wird, lässt sich nicht berechnen: Die App sagt es („Zeile 1 verwendet #2 und lässt sich deshalb nicht über #2 berechnen“) und bietet [[Undo]] an.
 
 ### notes-table | Tabellenmodus
 :what: Eine Notiz als Tabelle: Spalten mit Namen, eine Spalte, die per Formel aus den anderen berechnet wird (z. B. Betrag = Menge × Preis), und Summe und Mittelwert jeder Spalte. Eine Zelle kann eine Einheit oder Währung haben, z. B. 3 kg oder 120 JPY.
@@ -565,6 +566,7 @@ Die Formeln:
 :step: [[+ Row]] und [[+ Column]] fügen eine Zeile und eine Spalte hinzu. Eine als „Betrag = Menge × Preis“ hinzugefügte Spalte ist eine Formelspalte.
 :example: 3 Äpfel zu 120 JPY, 2 Brot zu 250 JPY, 1 Milch zu 180 JPY → Beträge ¥360, ¥500, ¥180, Summe ¥1040, Mittelwert ≈ ¥346.67
 :tip: Eine Zelle nur mit Wörtern (der Name eines Artikels) zählt nicht zu den Summen. Werte in verschiedenen Einheiten derselben Größe (3 kg und 500 g) werden zusammengezählt.
+:tip: Werte verschiedener Art in einer Spalte (3 kg und 2): Summe und Mittelwert zeigen „Werte mit verschiedenen Einheiten gemischt“. Der Mittelwert einer Spalte mit Geld hat 2 Nachkommastellen (≈ ¥346,67).
 :step: [[Save as CSV]] unter [[More ▾]] speichert die Tabelle als CSV-Datei (Zeilennummern, Spaltennamen, Werte, Summe und Mittelwert). Eine mit [[Open a file]] gewählte CSV-Datei kann [[As a table (the first row: the names of the columns)]] gelesen werden.
 :tip: Auf einem schmalen Bildschirm wischen Sie die Tabelle seitlich für die anderen Spalten; die Spalte der Zeilennummern bleibt links.
 :pro: Der Tabellenmodus (mit Speichern als CSV und Lesen einer CSV-Datei als Tabelle) ist eine Funktion von QCalc Pro. Zeilennummern und #3 sind kostenlos.

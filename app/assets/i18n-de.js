@@ -2,6 +2,11 @@
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
     "Save the history as a CSV file that spreadsheets can open": "Den Verlauf als CSV-Datei speichern, die Tabellenkalkulationen öffnen können",
+    "Line {1} uses #{0}, so it cannot be worked out above #{0}": "Zeile {1} verwendet #{0} und lässt sich deshalb nicht über #{0} berechnen",
+    "Values of different units are mixed": "Werte mit verschiedenen Einheiten gemischt",
+    "Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down (at 20.315 %, the income taxes of 15.315 % and the resident tax of 5 % each rounded down, as a broker withholds them); \"Break-even\" is the price at which selling leaves no loss after the fees.": "Gewinn = (Verkauf − Kauf) × Aktien − Gebühren. Eine Gebühr kann ein Betrag oder ein % des Handels sein. Steuer nur auf einen Gewinn, abgerundet (bei 20,315 % die Einkommensteuern von 15,315 % und die Einwohnersteuer von 5 % je für sich abgerundet, wie ein Broker sie einbehält); „Gewinnschwelle“ ist der Kurs, bei dem nach den Gebühren kein Verlust bleibt.",
+    "The tax is worked out on this trade alone (20.315 %: Japan's rate for listed stocks, its parts of 15.315 % and 5 % rounded down one by one); losses offset in the year are not taken into account.": "Die Steuer wird nur für diesen Handel berechnet (20,315 %: der japanische Satz für börsennotierte Aktien, seine Teile von 15,315 % und 5 % je für sich abgerundet); Verlustverrechnung im Jahr wird nicht berücksichtigt.",
+    "15.315 % and 5 % of the profit, each rounded down": "15,315 % und 5 % des Gewinns, je abgerundet",
     "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "Verlauf: Ergebnisse durch Tippen einfügen (erneutes Tippen ersetzt), Zeilennummern und #12, auswählen und addieren",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "Das ist der Hauptwert (eine komplexe Zahl). Die reelle Kubikwurzel ist cbrt(−{0}) (∛)",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "Das ist der Hauptwert (eine komplexe Zahl). Die reelle Wurzel ist root(−{0}, {1})",
@@ -106,8 +111,6 @@
     "Fee when selling": "Gebühr beim Verkauf",
     "Taxed": "Steuerpflichtig",
     "Tax-free account": "Steuerfreies Konto",
-    "Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down; \"Break-even\" is the price at which selling leaves no loss after the fees.": "Gewinn = (Verkauf − Kauf) × Aktien − Gebühren. Eine Gebühr kann ein Betrag oder ein % des Handels sein. Steuer nur auf einen Gewinn, abgerundet; „Gewinnschwelle“ ist der Kurs, bei dem nach den Gebühren kein Verlust bleibt.",
-    "The tax is worked out on this trade alone (20.315 %: Japan's rate for listed stocks); losses offset in the year and the way a broker rounds are not taken into account.": "Die Steuer wird nur für diesen Handel berechnet (20,315 %: der japanische Satz für börsennotierte Aktien); Verlustverrechnung im Jahr und die Rundung des Brokers werden nicht berücksichtigt.",
     "Enter the prices and the shares": "Geben Sie die Kurse und die Aktien ein",
     "The price bought at must be a number above 0": "Der Kaufkurs muss eine Zahl über 0 sein",
     "The price sold at must be a number": "Der Verkaufskurs muss eine Zahl sein",

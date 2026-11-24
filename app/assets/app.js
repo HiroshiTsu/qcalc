@@ -17899,8 +17899,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   function boxNum(t) {
     let s = String(t || '').trim().replace(/[\s ]/g, '').replace(/[，]/g, ',').replace(/[．]/g, '.').replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[−–]/g, '-');
     let scale = 1;
-    // (1.16.0, the review of 11-24, T3: also 3割引, 3割引き; 3000万, 1億, 1億2000万, 5千 and 円 after a sum)
-    s = s.replace(/円$/, '');
+    // (1.16.0, the review of 11-24, T3: also 3割引, 3割引き; 3000万, 1億, 1億2000万, 5千 and 円 after a sum; the owner's note
+    // L1: 100株, 100 shares and the like in the boxes of shares, as 1,200円 in those of prices)
+    s = s.replace(/円$/, '').replace(/(?:株|shares?|Aktien|Stück|Stk\.?|acciones|actions|주|股)$/i, '');
     if (/割(?:引き?)?$/.test(s)) { s = s.replace(/割(?:引き?)?$/, ''); scale = 10; } else if (/%$/.test(s)) s = s.slice(0, -1);
     const big = /^(?:([\d.,]+)億)?(?:([\d.,]+)万)?(?:([\d.,]+)千)?([\d.,]*)$/.exec(s);
     if (big && /[億万千]/.test(s)) {
@@ -18305,8 +18306,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         { k: 'account', label: tr('Tax', '税'), opts: [['taxed', tr('Taxed', '課税')], ['nisa', tr('Tax-free account', '非課税（NISA）')]], def: 'taxed' },
         { k: 'tax', label: tr('Tax rate (%)', '税率（%）'), def: '20.315', ph: '20.315', when: (v) => v.account === 'taxed' }
       ],
-      hint: tr('Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down; "Break-even" is the price at which selling leaves no loss after the fees.', '損益 ＝（売値 − 買値）× 株数 − 手数料。手数料は額でも、売買代金の % でも入れられます。税は利益にだけかかり、1 円未満は切り捨てです。「損益ゼロの売値」は、手数料を引いても損が出ない売値です。'),
-      caution: tr('The tax is worked out on this trade alone (20.315 %: Japan\'s rate for listed stocks); losses offset in the year and the way a broker rounds are not taken into account.', '前提：税はこの取引だけで計算します（20.315 % は上場株式の税率）。年間の損益通算や、証券会社の端数の扱いは考えません。'),
+      hint: tr('Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down (at 20.315 %, the income taxes of 15.315 % and the resident tax of 5 % each rounded down, as a broker withholds them); "Break-even" is the price at which selling leaves no loss after the fees.', '損益 ＝（売値 − 買値）× 株数 − 手数料。手数料は額でも、売買代金の % でも入れられます。税は利益にだけかかり、1 円未満は切り捨てです（20.315 % のときは、証券会社の源泉徴収と同じく、所得税と復興特別所得税の 15.315 % と住民税の 5 % を別々に切り捨てて足します）。「損益ゼロの売値」は、手数料を引いても損が出ない売値です。'),
+      caution: tr('The tax is worked out on this trade alone (20.315 %: Japan\'s rate for listed stocks, its parts of 15.315 % and 5 % rounded down one by one); losses offset in the year are not taken into account.', '前提：税はこの取引だけで計算します（20.315 % は上場株式の税率で、15.315 % と 5 % を別々に切り捨て）。年間の損益通算は考えません。'),
       run: async (v) => {
         if (!v.buy || !v.sell || !v.n) return { msg: tr('Enter the prices and the shares', '買値・売値・株数を入れてください') };
         const b = boxNum(v.buy), s = boxNum(v.sell), n = boxNum(v.n), fb = feeOf(v.feeBuy), fs = feeOf(v.feeSell), rate = v.account === 'taxed' ? (v.tax === '' ? NaN : boxNum(v.tax)) : 0;
@@ -18318,14 +18319,17 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (!(rate >= 0 && rate < 100)) return { msg: tr('The tax rate must be from 0 to 100 %', '税率は 0〜100 % にしてください'), bad: 'tax' };
         const feeB = fb.amt + fb.rate * b * n, feeS = fs.amt + fs.rate * s * n;
         const pl = (s - b) * n - feeB - feeS, cost = b * n + feeB;
-        const tax = v.account === 'taxed' && pl > 0 ? floorMoney(pl * rate / 100) : 0;
+        // (1.16.0, the owner's note of 11-24, L2) at 20.315 % the income tax with the special income tax for reconstruction
+        // (15.315 %) and the resident tax (5 %) are each rounded down, as a broker withholds them: a profit of 19 yen pays 2, not 3
+        const jp = Math.abs(rate - 20.315) < 1e-9;
+        const tax = v.account === 'taxed' && pl > 0 ? (jp ? floorMoney(pl * 0.15315) + floorMoney(pl * 0.05) : floorMoney(pl * rate / 100)) : 0;
         const net = pl - tax, got = s * n - feeS - tax;
         const plE = `(${exprNum(s)} − ${exprNum(b)}) × ${exprNum(n)}${feeB ? ' − ' + exprNum(feeB) : ''}${feeS ? ' − ' + exprNum(feeS) : ''}`;
         const be = (b * n + feeB + fs.amt) / (n * (1 - fs.rate));
         const rows = [
           { name: tr('Profit or loss', '損益'), small: tr('before tax, after the fees', '税引前・手数料を引いたあと'), value: signed(money('pnl', pl), pl), expr: plE },
           { name: tr('Profit or loss in %', '損益率'), small: tr('of what was paid (with the fee)', '買った額（手数料込み）に対して'), value: signed(fmtDigits('pnl', pl / cost * 100, pctAuto) + ' %', pl), expr: `(${plE}) / (${exprNum(b)} × ${exprNum(n)}${feeB ? ' + ' + exprNum(feeB) : ''}) to %` }];
-        if (v.account === 'taxed') rows.push({ name: tr('Tax', '税'), small: pl > 0 ? trf('{0} % of the profit, rounded down', '利益の {0} %（切り捨て）', fmtNum(rate, 4)) : tr('none on a loss', '損失のため 0'), value: money('pnl', tax), expr: pl > 0 ? floorMoneyE(`(${plE}) × ${exprNum(rate)}%`) : '' });
+        if (v.account === 'taxed') rows.push({ name: tr('Tax', '税'), small: pl > 0 ? (jp ? tr('15.315 % and 5 % of the profit, each rounded down', '利益の 15.315 % と 5 %（それぞれ切り捨て）') : trf('{0} % of the profit, rounded down', '利益の {0} %（切り捨て）', fmtNum(rate, 4))) : tr('none on a loss', '損失のため 0'), value: money('pnl', tax), expr: pl > 0 ? (jp ? floorMoneyE(`(${plE}) × 15.315%`) + ' + ' + floorMoneyE(`(${plE}) × 5%`) : floorMoneyE(`(${plE}) × ${exprNum(rate)}%`)) : '' });
         rows.push({ name: tr('After tax', '税引後の損益（手取り）'), value: signed(money('pnl', net), net), expr: tax ? `${exprNum(pl)} − ${exprNum(tax)}` : plE },
           { name: tr('Received from the sale', '売って受け取る額'), small: tr('after the fee and the tax', '手数料と税を引いたあと'), value: money('pnl', got), expr: `${exprNum(s)} × ${exprNum(n)}${feeS ? ' − ' + exprNum(feeS) : ''}${tax ? ' − ' + exprNum(tax) : ''}` },
           { name: tr('Break-even price', '損益ゼロの売値'), small: tr('the fees paid back', '手数料の分を取り戻す売値'), value: fmtDigits('pnl', be, priceAuto()), expr: `(${exprNum(b)} × ${exprNum(n)}${feeB ? ' + ' + exprNum(feeB) : ''}${fs.amt ? ' + ' + exprNum(fs.amt) : ''}) / (${exprNum(n)}${fs.rate ? ' × (1 − ' + exprNum(fs.rate * 100) + '%)' : ''})` });
@@ -19225,7 +19229,16 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       const relines = (L, map, from) => { memo().lines = map ? noteRenumber(L, map) : L; N.cache.length = Math.min(N.cache.length, from); save(); build(); run(from); };
       const insertLine = (at) => { const L = memo().lines.slice(); if (L.length >= NOTE_MAX) return; const L2 = noteRenumber(L, (k) => (k >= at + 1 ? k + 1 : k)); L2.splice(at, 0, ''); relines(L2, null, at); };
       const deleteLine = (d) => { const L = noteRenumber(memo().lines, (k) => (k === d + 1 ? 0 : k > d + 1 ? k - 1 : k)); L.splice(d, 1); relines(L, null, d); };
-      const moveLine = (i, to) => { const L = noteRenumber(memo().lines, (k) => (k === i + 1 ? to + 1 : k === to + 1 ? i + 1 : k)); const t = L[i]; L[i] = L[to]; L[to] = t; relines(L, null, Math.min(i, to)); };
+      const moveLine = (i, to) => {
+        const before = memo().lines.slice(), from = Math.min(i, to);
+        const L = noteRenumber(memo().lines, (k) => (k === i + 1 ? to + 1 : k === to + 1 ? i + 1 : k)); const t = L[i]; L[i] = L[to]; L[to] = t; relines(L, null, from);
+        // (1.16.0, the owner's note of 11-24, L3) a line moved above a line it uses (its #4 now below it) cannot be worked out:
+        // said, with Undo (only the two lines swapped change their order)
+        for (const j of [from, Math.max(i, to)]) {
+          const n = lineRefs(L[j]).find((k) => typeof k === 'number' && k >= j + 1);
+          if (n) { toast(trf('Line {1} uses #{0}, so it cannot be worked out above #{0}', '{1} 行目は #{0} を使っているので、#{0} より上では計算できません', n, j + 1), 7000, [tr('Undo', '元に戻す'), () => relines(before, null, from)]); break; }
+        }
+      };
       // the number of a line: what can be done with the line (a reference to it in the line being edited, insert, move, delete)
       const lineSheet = async (i) => {
         const L = memo().lines, f = N.focus, acts = [];
@@ -19351,10 +19364,10 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       // ---- the table (1.16.0): the columns, the cells, the formula columns and the totals worked out
       const TB = { seq: 0, calc: new Map(), fx: [], foot: [] };
       // (a cell shows its value without "= "; an average with 8 significant digits at most: 1040 / 3 ≈ 346.66667)
-      const calcOne = async (expr, prec) => {
-        const key = (prec || '') + '|' + expr;
+      const calcOne = async (expr, prec, more) => {
+        const key = (prec || '') + '|' + (more ? JSON.stringify(more) : '') + '|' + expr;
         if (TB.calc.has(key)) return TB.calc.get(key);
-        const r = await Bridge.send('calc', { expr, opts: prec ? Object.assign(engineOpts(), { precision: Math.min(prec, Number(S.precision) || prec) }) : engineOpts(), timeout: 4000 });
+        const r = await Bridge.send('calc', { expr, opts: Object.assign(engineOpts(), prec ? { precision: Math.min(prec, Number(S.precision) || prec) } : {}, more || {}), timeout: 4000 });
         const v = r.ok && r.result && !r.timeout && !(r.messages || []).some((q) => q.type === 'error') ? { ok: true, expr, shown: groupText(resultText(r)).replace(/^=\s*/, '') }
           : { ok: false, err: r.timeout ? tr('took too long', '時間がかかりすぎました') : localMessage(((r.messages || []).find((q) => q.type === 'error') || {}).text || r.error) || tr('could not be calculated', '計算できませんでした') };
         if (TB.calc.size > 3000) TB.calc.clear();
@@ -19513,8 +19526,17 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           if (!parts.length) { paint(f.tot, null, true); paint(f.avg, null, true); continue; }
           const tot = await calcOne(parts.join(' + '));
           if (seq !== TB.seq) return;
+          // (1.16.0, the owner's note of 11-24, L4) values of different units in a column (3 kg and 2) stay a sum ("3 kg + 2"):
+          // said in the total and the average, not shown as their values
+          const top = tot.ok ? String(tot.shown).split(' ≈ ')[0].replace(/\([^()]*\)/g, '') : '';
+          if (/\s[+−]\s/.test(top) && /[A-Za-z¥$€£₩₹]/.test(top.replace(/\d\s*i$/, ''))) {
+            const mixed = { ok: false, err: tr('Values of different units are mixed', '単位のちがう値が混じっています') };
+            paint(f.tot, mixed); paint(f.avg, mixed); continue;
+          }
           paint(f.tot, tot);
-          const avg = await calcOne('(' + parts.join(' + ') + ') / ' + parts.length, 8);
+          // (L5) the average of money with 2 decimals, as the average cost of the stocks (¥183.33, €1.83)
+          const isMoney = tot.ok && /[¥$€£₩₹]|(?:^|[\s\d])(?:JPY|USD|EUR|GBP|KRW|TWD|CNY|MXN|CHF|INR|CAD|AUD)\b/.test(top);
+          const avg = await calcOne('(' + parts.join(' + ') + ') / ' + parts.length, isMoney ? 0 : 8, isMoney ? { fraction: 'decimal', max_decimals: Math.max(2, MONEY().dec) } : null);
           if (seq !== TB.seq) return;
           paint(f.avg, avg);
         }
