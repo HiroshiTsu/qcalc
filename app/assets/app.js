@@ -3766,7 +3766,9 @@
     item._h = h;
     // (1.16.0, feature/hist-excel) its number, and a line it refers to (#12) that is no longer in the history
     if (!h.n) numberLines();
-    item.append(el('span', { class: 'h-no', text: '#' + h.n }));
+    // (1.16.0, feature/hist-ux, U1) the number is a button: a tap puts "#12" into the expression, as pointing at a cell in a
+    // spreadsheet (a tap on the answer puts its value); touching and holding it opens the menu of the line as elsewhere
+    item.append(el('button', { class: 'h-no', type: 'button', text: '#' + h.n, 'aria-label': trf('#{0}: put it into the expression (this line by its number)', '#{0}：式に入れる（番号でこの行を使う）', h.n) }));
     const gone = lineRefs(h.expr).filter((n) => n === '?' || !history.some((x) => x && x.n === n));
     if (gone.length) item.append(el('div', { class: 'h-msg warning h-gone', text: trf('#{0} is no longer in the history: this answer is the one from before', '#{0} の行は消されました（この答えは消える前の値です）', gone[0]) }));
     if (tapMarks.length) paintTapMark(item);
@@ -3781,6 +3783,7 @@
     bindLongPress(item, () => { if (!histSel) historyMenu(h); else selectRange(item); }, (target) => {
       if (histSel) { toggleSelected(item); return; }
       if (target.closest('.h-more')) { historyMenu(h); return; }
+      if (target.closest('.h-no')) { insertResult(h, true); focusExpr(); return; } // (U1)
       if (target.closest('.h-expr')) startHistEdit(h); // (1.15.0: the line edited in place)
       else insertResult(h);
       focusExpr();
@@ -17423,6 +17426,20 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   async function copySelectedTable() {
     const list = history.filter((h) => histSel && histSel.has(h));
     if (!list.length) { toast(tr('Nothing is selected', '何も選ばれていません'), 1500); return; }
+    // (1.16.0, feature/hist-ux, U2) the expressions and the answers, or the answers only (one column of numbers to paste); the
+    // choice made last comes first
+    const last = store.get('qalc.tablecopy', 'both');
+    const ch = [['both', tr('Expression and answer (2 columns)', '式と答え（2 列）')], ['ans', tr('Answers only (1 column)', '答えだけ（1 列）')]];
+    const how = await sheet(trf('Copy {0} lines as a table', '{0} 行を表でコピー', list.length), last === 'ans' ? ch.reverse() : ch);
+    if (!how) return;
+    store.set('qalc.tablecopy', how);
+    if (how === 'ans') {
+      const col = [];
+      for (const h of list) col.push(await tableAnswer(h));
+      copyText(col.join('\n'));
+      toast(trf('{0} answers copied as a column: paste them into a spreadsheet', '{0} 個の答えを 1 列でコピーしました（表計算ソフトに貼れます）', list.length), 2500);
+      return;
+    }
     const rows = [];
     for (const h of list) rows.push(tableExpr(h) + '\t' + await tableAnswer(h));
     copyText(rows.join('\n'));

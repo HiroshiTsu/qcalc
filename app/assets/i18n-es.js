@@ -13,6 +13,11 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "#{0}: put it into the expression (this line by its number)": "#{0}: ponerlo en la expresión (esta línea por su número)",
+    "Expression and answer (2 columns)": "Expresión y resultado (2 columnas)",
+    "Answers only (1 column)": "Solo los resultados (1 columna)",
+    "Copy {0} lines as a table": "Copiar {0} líneas como tabla",
+    "{0} answers copied as a column: paste them into a spreadsheet": "{0} resultados copiados en una columna: pégalos en una hoja de cálculo",
     "Could not calculate: it divides by zero": "No se pudo calcular: divide entre cero",
     "#{0} has “{1}” right after it": "Justo después de #{0} hay «{1}»",
     "There is no line numbered #{0}": "No hay ninguna línea con el número #{0}",

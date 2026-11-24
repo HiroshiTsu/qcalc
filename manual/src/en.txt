@@ -163,6 +163,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :example: Tap the line `120`, press ×, tap the line `3` → the field holds `120 × 3`, and the answer is `= 360`
 :tip: Answers with √ or π go in in their exact form, not as rounded decimals: the answer of `sqrt(8)` goes in as `(2 × √(2))`, so its square is `= 8`. An answer without an exact form goes in with all the digits of the precision.
 :tip: To use a line by its number, choose "Insert #12" in its ⋯; to copy an answer, [[Copy result]] in ⋯ (copied without digit grouping).
+:tip: A tap on the number at the left of a line (#12) puts #12 into the expression instead of the value, as pointing at a cell in a spreadsheet ([Line numbers and #12](#hist-refs)).
 
 ## edit-line | Editing a line of the history
 :what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "[[Editing a line of the history]]" above it. The history scrolls so that the line and its answer stay in sight.
@@ -196,6 +197,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Tap the lines to add up. Touching and holding a line chooses all the lines from the one chosen last to it.
 :step: The sum and the average show below, with their unit when the units agree. Lines shown as decimals add up to a decimal. [[Copy]] copies the lines (without digit grouping).
 :step: [[Copy as a table]] copies the expressions and answers of the chosen lines in two columns, with a tab between them: pasted into a spreadsheet, they make a column of expressions and a column of answers.
+:step: [[Copy as a table]] lets you choose "Expression and answer (2 columns)" or "Answers only (1 column)"; the one chosen last comes first.
 :tip: [[Copy as a table]] is free. Saving the whole history as a CSV file ([Exporting the history](#export)) is a QCalc Pro feature.
 :mistake: Lines in different units (m and kg) cannot be added; the reason is shown.
 

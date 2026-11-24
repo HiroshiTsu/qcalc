@@ -1,6 +1,11 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    "#{0}: put it into the expression (this line by its number)": "#{0}: in den Ausdruck einfügen (diese Zeile über ihre Nummer)",
+    "Expression and answer (2 columns)": "Ausdruck und Ergebnis (2 Spalten)",
+    "Answers only (1 column)": "Nur die Ergebnisse (1 Spalte)",
+    "Copy {0} lines as a table": "{0} Zeilen als Tabelle kopieren",
+    "{0} answers copied as a column: paste them into a spreadsheet": "{0} Ergebnisse als Spalte kopiert: in eine Tabellenkalkulation einfügen",
     "Could not calculate: it divides by zero": "Konnte nicht berechnen: Es wird durch null geteilt",
     "#{0} has “{1}” right after it": "Direkt nach #{0} steht „{1}“",
     "There is no line numbered #{0}": "Es gibt keine Zeile mit der Nummer #{0}",

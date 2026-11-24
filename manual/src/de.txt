@@ -163,6 +163,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :example: Tippen Sie auf die Zeile `120`, drücken Sie ×, tippen Sie auf die Zeile `3` → im Feld steht `120 × 3`, das Ergebnis ist `= 360`
 :tip: Ergebnisse mit √ oder π kommen in ihrer exakten Form, nicht als gerundete Dezimalzahl: Das Ergebnis von `sqrt(8)` kommt als `(2 × √(2))`, sein Quadrat ist also `= 8`. Ein Ergebnis ohne exakte Form kommt mit allen Stellen der eingestellten Genauigkeit.
 :tip: Um eine Zeile über ihre Nummer zu verwenden, wählen Sie „#12 einfügen“ in ihrem ⋯; zum Kopieren eines Ergebnisses [[Copy result]] im ⋯ (ohne Zifferngruppierung kopiert).
+:tip: Ein Tippen auf die Nummer links an einer Zeile (#12) setzt statt des Werts #12 in den Ausdruck, wie das Zeigen auf eine Zelle in einer Tabellenkalkulation ([Zeilennummern und #12](#hist-refs)).
 
 ## edit-line | Eine Zeile des Verlaufs bearbeiten
 :what: Tippen Sie auf den Ausdruck einer Zeile (den kleinen über dem Ergebnis) oder auf [[Edit expression]] in ihrem ⋯, um die Zeile zu bearbeiten. Der Ausdruck kommt ins Eingabefeld, darüber erscheint das Band „[[Editing a line of the history]]“. Der Verlauf scrollt so, dass die Zeile und ihr Ergebnis sichtbar bleiben.
@@ -196,6 +197,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Tippen Sie auf die Zeilen, die addiert werden sollen. Langes Drücken auf eine Zeile wählt alle Zeilen von der zuletzt gewählten bis zu ihr.
 :step: Summe und Mittelwert erscheinen unten, mit Einheit, wenn die Einheiten passen. Als Dezimalzahl angezeigte Zeilen ergeben eine Dezimalzahl. [[Copy]] kopiert die Zeilen (ohne Zifferngruppierung).
 :step: [[Copy as a table]] kopiert Ausdrücke und Ergebnisse der gewählten Zeilen in zwei Spalten mit einem Tabulator dazwischen: In eine Tabellenkalkulation eingefügt, ergeben sie eine Spalte der Ausdrücke und eine Spalte der Ergebnisse.
+:step: Bei [[Copy as a table]] wählen Sie „Ausdruck und Ergebnis (2 Spalten)“ oder „Nur die Ergebnisse (1 Spalte)“; die zuletzt gewählte Möglichkeit steht oben.
 :tip: [[Copy as a table]] ist kostenlos. Den ganzen Verlauf als CSV-Datei zu speichern ([Den Verlauf exportieren](#export)) ist eine Funktion von QCalc Pro.
 :mistake: Zeilen mit verschiedenen Einheiten (m und kg) lassen sich nicht addieren; der Grund wird angezeigt.
 

@@ -222,6 +222,7 @@ th { background: var(--box); }
 <div class="m-box m-ex"><div class="m-lbl">예</div><p><code>120</code> 줄을 탭하고 ×를 누른 뒤 <code>3</code> 줄을 탭 → 입력란은 <code>120 × 3</code>, 결과는 <code>= 360</code></p></div>
 <div class="m-box m-tip"><div class="m-lbl">도움말</div><p>√나 π가 있는 결과는 반올림한 소수가 아니라 정확한 형태로 들어갑니다. <code>sqrt(8)</code>의 결과는 <code>(2 × √(2))</code>로 들어가므로 제곱하면 <code>= 8</code>입니다. 정확한 형태가 없는 결과는 유효 자릿수의 모든 자리가 들어갑니다.</p></div>
 <div class="m-box m-tip"><div class="m-lbl">도움말</div><p>번호로 줄을 쓰려면 ⋯의 「#12을(를) 식에 넣기」를, 결과를 복사하려면 ⋯의 <b class="ui">결과 복사</b>를 씁니다(자릿수 구분 없이 복사합니다).</p></div>
+<div class="m-box m-tip"><div class="m-lbl">도움말</div><p>줄 왼쪽의 번호(#12)를 탭하면 값 대신 #12가 식에 들어갑니다. 스프레드시트에서 셀을 가리키는 것과 같습니다(<a href="#hist-refs">기록의 줄 번호와 #12</a>).</p></div>
 </section>
 <section class="m-sec" id="edit-line">
 <h3>기록의 줄 고치기</h3>
@@ -247,7 +248,7 @@ th { background: var(--box); }
 </section>
 <section class="m-sec" id="select-sum">
 <h3>여러 줄 더하기</h3>
-<div class="m-steps"><div class="m-lbl">순서</div><ol><li>🕘에서 <b class="ui">줄 선택: 합계·평균·복사</b>를 고릅니다. 줄의 ⋯에서 <b class="ui">선택(합계·평균)</b>를 고르면 그 줄을 고른 상태로 시작하고 바로 합계가 나옵니다.</li><li>더할 줄을 탭합니다. 줄을 길게 누르면 마지막으로 고른 줄부터 그 줄까지를 한꺼번에 고릅니다.</li><li>아래에 합계와 평균이 나옵니다. 단위가 맞으면 단위도 붙습니다. 소수로 나온 줄끼리는 합계도 소수로 나옵니다. <b class="ui">복사</b>로 줄을 복사합니다(자릿수 구분 없이).</li><li><b class="ui">표로 복사</b>은 고른 줄의 식과 결과를 두 열(탭으로 구분)로 복사합니다. 스프레드시트에 붙여 넣으면 식의 열과 결과의 열이 됩니다.</li></ol></div>
+<div class="m-steps"><div class="m-lbl">순서</div><ol><li>🕘에서 <b class="ui">줄 선택: 합계·평균·복사</b>를 고릅니다. 줄의 ⋯에서 <b class="ui">선택(합계·평균)</b>를 고르면 그 줄을 고른 상태로 시작하고 바로 합계가 나옵니다.</li><li>더할 줄을 탭합니다. 줄을 길게 누르면 마지막으로 고른 줄부터 그 줄까지를 한꺼번에 고릅니다.</li><li>아래에 합계와 평균이 나옵니다. 단위가 맞으면 단위도 붙습니다. 소수로 나온 줄끼리는 합계도 소수로 나옵니다. <b class="ui">복사</b>로 줄을 복사합니다(자릿수 구분 없이).</li><li><b class="ui">표로 복사</b>은 고른 줄의 식과 결과를 두 열(탭으로 구분)로 복사합니다. 스프레드시트에 붙여 넣으면 식의 열과 결과의 열이 됩니다.</li><li><b class="ui">표로 복사</b>에서는 「식과 결과(2열)」와 「결과만(1열)」 중에서 고를 수 있습니다. 전에 고른 것이 위에 나옵니다.</li></ol></div>
 <div class="m-box m-tip"><div class="m-lbl">도움말</div><p><b class="ui">표로 복사</b>은 무료입니다. 기록 전체를 CSV 파일로 저장하는 것(<a href="#export">기록 내보내기</a>)은 QCalc Pro의 기능입니다.</p></div>
 <div class="m-box m-mis"><div class="m-lbl">자주 하는 실수</div><ul><li>단위가 다른 줄(m와 kg)은 더할 수 없습니다. 이유가 나옵니다.</li></ul></div>
 </section>
