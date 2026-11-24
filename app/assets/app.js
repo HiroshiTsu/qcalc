@@ -1902,7 +1902,24 @@
   // A result that is not an answer (the reviews of 11-24: C5, H8; (5): F1, G1–G4, G8): said as "Could not calculate (why)" and not
   // made a line; a line that uses it by #12 or ans gets the same, as its answer has it too. expr: what the engine was given.
   // Kept as they are: the answers of solve (x = …) and the answers that are right as symbols (sin(x), √(2), ln(2) ≈ 0.69…).
-  const POLE = () => tr('Could not calculate: it is a point with no value (tan(π/2), gamma(−1), zeta(1))', '計算できませんでした（答えのない点です（tan(π/2)、gamma(−1)、zeta(1) など））');
+  // (1.16.0, the owner's note of 11-24 13:13) the reason with the expression it is about ("gamma(−1) is a point with no value"),
+  // not the examples of the owner's note in brackets in brackets; a long expression: the reason alone
+  const SAY_MAX = 24;
+  const sayable = (x) => { const v = String(x || '').trim(); return v && v.length <= SAY_MAX && !/\d[.,]\d{5,}/.test(v) ? v : ''; };
+  const POLE = (x) => (sayable(x) ? trf('Could not calculate: {0} is a point with no value', '計算できませんでした（{0} は値のない点です）', sayable(x)) : tr('Could not calculate: it is a point with no value', '計算できませんでした（値のない点です）'));
+  const UNDEFINED = (x) => (sayable(x) ? trf('Could not calculate: {0} is not defined', '計算できませんでした（{0} は定まりません）', sayable(x)) : tr('Could not calculate: it is not defined', '計算できませんでした（定まりません）'));
+  // the call of the function f in an expression as typed (tan(pi/2) + 1 → tan(π/2)), as shown above the input field
+  function typedCall(expr, f) {
+    const s = String(expr || ''), m = new RegExp('(?:^|[^\\p{L}\\p{N}_])' + f + '\\(', 'u').exec(s);
+    if (!m) return '';
+    const at = m.index + m[0].length - f.length - 1;
+    let d = 0;
+    for (let i = at + f.length; i < s.length; i++) {
+      if (s[i] === '(') d++;
+      else if (s[i] === ')' && --d === 0) return prettyExpr(toDisplay(s.slice(at, i + 1))).replace(/(^|[(,\s])-(?=[\d(πp])/g, '$1−');
+    }
+    return '';
+  }
   const TOO_LARGE = () => tr('Could not calculate: the number is too large', '計算できませんでした（大きすぎます）');
   const UNEVAL_FN = new RegExp('(?:^|[^\\p{L}\\p{N}_])(factorial|factorial2|multifactorial|gamma|lgamma|digamma|beta|zeta|tan|sin|cos|sec|csc|cot|mod|rem|fibonacci|lucas)\\(\\s*([−-]?(?:\\d[\\d.]*(?:E[−+-]?\\d+)?|π))\\s*(?:,\\s*([−-]?(?:\\d[\\d.]*(?:E[−+-]?\\d+)?|π))\\s*)?\\)', 'u');
   function undoneMessage(result, messages, expr) {
@@ -1921,17 +1938,19 @@
       return unk ? unk.text : localMessage(err.text) || tr('Could not calculate: check the expression', '計算できませんでした（式を確認してください）');
     }
     // (G1) ∞ − ∞, 0⁰, ∞/∞, 0 × ∞: not defined
-    if (/∞\)?\s*[−+-]\s*\(?[+−-]?∞/.test(last) || /(^|[^\d., ])0⁰/.test(last) || /∞\)?\s*\/\s*\(?[+−-]?∞/.test(last) || /(^|[^\d.,])0\s*×\s*\(?[+−-]?∞|∞\)?\s*×\s*0(?![\d.,])/.test(last)) return tr('Could not calculate: it is not defined (∞ − ∞, 0⁰)', '計算できませんでした（定まりません（∞ − ∞、0⁰ など））');
+    if (/∞\)?\s*[−+-]\s*\(?[+−-]?∞/.test(last) || /(^|[^\d., ])0⁰/.test(last) || /∞\)?\s*\/\s*\(?[+−-]?∞/.test(last) || /(^|[^\d.,])0\s*×\s*\(?[+−-]?∞|∞\)?\s*×\s*0(?![\d.,])/.test(last)) return UNDEFINED(prettyExpr(last.trim()));
     // (F1, G1) a function of numbers left as it is: why, where it can be told
     const fn = UNEVAL_FN.exec(last);
     if (fn) {
       const f = fn[1], num = (x) => (x === 'π' ? Math.PI : Number(String(x).replace('−', '-'))), a = num(fn[2]), b = fn[3] === undefined ? null : num(fn[3]);
       if ((f === 'mod' || f === 'rem') && b === 0) return tr('Could not calculate: it divides by zero', '計算できませんでした（ゼロで割っています）');
       if (!isFinite(a) || Math.abs(a) >= 1e15) return TOO_LARGE();
-      if (/^(gamma|lgamma|digamma)$/.test(f) && Number.isInteger(a) && a <= 0) return POLE();
-      if (f === 'factorial' && Number.isInteger(a) && a < 0) return POLE();
-      if (f === 'zeta' && a === 1) return POLE();
-      if (/^(tan|sec|cot|csc)$/.test(f)) return POLE();
+      // (the call as worked out, gamma(−1), or as typed when the engine has its decimals: tan(1.5707963267949) → tan(π/2))
+      const call = sayable(fn[0].replace(/^[^\p{L}]+/u, '')) || typedCall(expr, f);
+      if (/^(gamma|lgamma|digamma)$/.test(f) && Number.isInteger(a) && a <= 0) return POLE(call);
+      if (f === 'factorial' && Number.isInteger(a) && a < 0) return POLE(call);
+      if (f === 'zeta' && a === 1) return POLE(call);
+      if (/^(tan|sec|cot|csc)$/.test(f)) return POLE(call);
       if (/^(factorial|gamma|lgamma|fibonacci|lucas)$/.test(f)) return TOO_LARGE();
       return tr('Could not calculate: no answer was found', '計算できませんでした（答えを求められませんでした）');
     }

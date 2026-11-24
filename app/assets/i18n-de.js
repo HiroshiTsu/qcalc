@@ -1,6 +1,10 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    "Could not calculate: {0} is a point with no value": "Konnte nicht berechnen: {0} ist eine Stelle ohne Wert",
+    "Could not calculate: it is a point with no value": "Konnte nicht berechnen: eine Stelle ohne Wert",
+    "Could not calculate: {0} is not defined": "Konnte nicht berechnen: {0} ist nicht definiert",
+    "Could not calculate: it is not defined": "Konnte nicht berechnen: nicht definiert",
     "Add them up with + (headings and other words left out)": "Mit + addieren (Überschriften und andere Wörter weggelassen)",
     "Put them into the calculation notes as lines (a new memo)": "Als Zeilen in die Rechennotizen (neue Notiz)",
     "Use them as data of the statistics (x and y)": "Als Daten der Statistik (x und y)",
@@ -11,10 +15,8 @@
     "A table has up to {0} columns and {1} rows: the part that did not fit was left out": "Eine Tabelle hat höchstens {0} Spalten und {1} Zeilen: was nicht passte, wurde weggelassen",
     "Put into “{0}”: {1} lines": "In „{0}“ eingefügt: {1} Zeilen",
     "\"{0}\" is not a function: check the spelling": "„{0}“ ist keine Funktion: Schreibweise prüfen",
-    "Could not calculate: it is a point with no value (tan(π/2), gamma(−1), zeta(1))": "Konnte nicht berechnen: eine Stelle ohne Wert (tan(π/2), gamma(−1), zeta(1))",
     "Could not calculate: !! is for integers from −1 only": "Konnte nicht berechnen: !! gilt nur für ganze Zahlen ab −1",
     "Could not calculate: check the expression": "Konnte nicht berechnen: Ausdruck prüfen",
-    "Could not calculate: it is not defined (∞ − ∞, 0⁰)": "Konnte nicht berechnen: nicht definiert (∞ − ∞, 0⁰)",
     "Could not calculate: no answer was found": "Konnte nicht berechnen: kein Ergebnis gefunden",
     "Could not calculate: the integral could not be found": "Konnte nicht berechnen: das Integral wurde nicht gefunden",
     "Could not calculate: the sum could not be worked out": "Konnte nicht berechnen: die Summe ließ sich nicht berechnen",

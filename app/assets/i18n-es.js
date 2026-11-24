@@ -13,6 +13,10 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "Could not calculate: {0} is a point with no value": "No se pudo calcular: {0} es un punto sin valor",
+    "Could not calculate: it is a point with no value": "No se pudo calcular: es un punto sin valor",
+    "Could not calculate: {0} is not defined": "No se pudo calcular: {0} no está definido",
+    "Could not calculate: it is not defined": "No se pudo calcular: no está definido",
     "Add them up with + (headings and other words left out)": "Sumarlos con + (sin encabezados ni otras palabras)",
     "Put them into the calculation notes as lines (a new memo)": "Ponerlos como líneas en las notas de cálculo (una nota nueva)",
     "Use them as data of the statistics (x and y)": "Usarlos como datos de la estadística (x e y)",
@@ -23,10 +27,8 @@
     "A table has up to {0} columns and {1} rows: the part that did not fit was left out": "Una tabla tiene como máximo {0} columnas y {1} filas: lo que no cabía se dejó fuera",
     "Put into “{0}”: {1} lines": "Puesto en «{0}»: {1} líneas",
     "\"{0}\" is not a function: check the spelling": "\"{0}\" no es una función: revisa la ortografía",
-    "Could not calculate: it is a point with no value (tan(π/2), gamma(−1), zeta(1))": "No se pudo calcular: es un punto sin valor (tan(π/2), gamma(−1), zeta(1))",
     "Could not calculate: !! is for integers from −1 only": "No se pudo calcular: !! es solo para enteros desde −1",
     "Could not calculate: check the expression": "No se pudo calcular: revisa la expresión",
-    "Could not calculate: it is not defined (∞ − ∞, 0⁰)": "No se pudo calcular: no está definido (∞ − ∞, 0⁰)",
     "Could not calculate: no answer was found": "No se pudo calcular: no se encontró el resultado",
     "Could not calculate: the integral could not be found": "No se pudo calcular: no se encontró la integral",
     "Could not calculate: the sum could not be worked out": "No se pudo calcular: no se pudo calcular la suma",

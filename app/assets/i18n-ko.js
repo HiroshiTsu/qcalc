@@ -1,6 +1,10 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "Could not calculate: {0} is a point with no value": "계산할 수 없습니다({0}은(는) 값이 없는 점입니다)",
+    "Could not calculate: it is a point with no value": "계산할 수 없습니다(값이 없는 점입니다)",
+    "Could not calculate: {0} is not defined": "계산할 수 없습니다({0}은(는) 정해지지 않습니다)",
+    "Could not calculate: it is not defined": "계산할 수 없습니다(정해지지 않습니다)",
     "Add them up with + (headings and other words left out)": "+로 이어서 합계(제목 같은 글자는 건너뜀)",
     "Put them into the calculation notes as lines (a new memo)": "계산 메모에 줄로 넣기(새 메모)",
     "Use them as data of the statistics (x and y)": "통계 데이터로 쓰기(x와 y)",
@@ -11,10 +15,8 @@
     "A table has up to {0} columns and {1} rows: the part that did not fit was left out": "표는 {0}열·{1}행까지입니다. 들어가지 않는 부분은 넣지 않았습니다",
     "Put into “{0}”: {1} lines": "‘{0}’에 {1}줄을 넣었습니다",
     "\"{0}\" is not a function: check the spelling": "‘{0}’(이)라는 함수는 없습니다. 철자를 확인하세요",
-    "Could not calculate: it is a point with no value (tan(π/2), gamma(−1), zeta(1))": "계산할 수 없습니다(값이 없는 점입니다: tan(π/2), gamma(−1), zeta(1) 등)",
     "Could not calculate: !! is for integers from −1 only": "계산할 수 없습니다(!!는 −1 이상의 정수에만 씁니다)",
     "Could not calculate: check the expression": "계산할 수 없습니다(식을 확인하세요)",
-    "Could not calculate: it is not defined (∞ − ∞, 0⁰)": "계산할 수 없습니다(정해지지 않습니다: ∞ − ∞, 0⁰ 등)",
     "Could not calculate: no answer was found": "계산할 수 없습니다(결과를 구하지 못했습니다)",
     "Could not calculate: the integral could not be found": "계산할 수 없습니다(적분하지 못했습니다)",
     "Could not calculate: the sum could not be worked out": "계산할 수 없습니다(합을 계산하지 못했습니다)",

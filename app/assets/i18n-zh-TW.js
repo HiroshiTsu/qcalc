@@ -2,6 +2,10 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "Could not calculate: {0} is a point with no value": "無法計算（{0} 是沒有值的點）",
+    "Could not calculate: it is a point with no value": "無法計算（沒有值的點）",
+    "Could not calculate: {0} is not defined": "無法計算（{0} 無法確定）",
+    "Could not calculate: it is not defined": "無法計算（無法確定）",
     "Add them up with + (headings and other words left out)": "用 + 連起來加總（略過標題等文字）",
     "Put them into the calculation notes as lines (a new memo)": "以行放進計算備忘（新的備忘）",
     "Use them as data of the statistics (x and y)": "作為統計的資料（x 與 y）",
@@ -12,10 +16,8 @@
     "A table has up to {0} columns and {1} rows: the part that did not fit was left out": "表格最多 {0} 欄、{1} 列，放不下的部分沒有放入",
     "Put into “{0}”: {1} lines": "已在「{0}」放入 {1} 行",
     "\"{0}\" is not a function: check the spelling": "沒有「{0}」這個函數，請確認拼字",
-    "Could not calculate: it is a point with no value (tan(π/2), gamma(−1), zeta(1))": "無法計算（沒有值的點：tan(π/2)、gamma(−1)、zeta(1) 等）",
     "Could not calculate: !! is for integers from −1 only": "無法計算（!! 只能用於 −1 以上的整數）",
     "Could not calculate: check the expression": "無法計算（請確認算式）",
-    "Could not calculate: it is not defined (∞ − ∞, 0⁰)": "無法計算（無法確定：∞ − ∞、0⁰ 等）",
     "Could not calculate: no answer was found": "無法計算（求不出結果）",
     "Could not calculate: the integral could not be found": "無法計算（無法積分）",
     "Could not calculate: the sum could not be worked out": "無法計算（無法計算總和）",
