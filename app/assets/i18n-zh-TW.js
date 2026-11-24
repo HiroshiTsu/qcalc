@@ -7,7 +7,7 @@
     "Could not calculate: {0} is not defined": "無法計算（{0} 無法確定）",
     "Could not calculate: it is not defined": "無法計算（無法確定）",
     "Add them up with + (headings and other words left out)": "用 + 連起來加總（略過標題等文字）",
-    "Put them into the calculation notes as lines (a new memo)": "以行放進計算備忘（新的備忘）",
+    "Put them into the calculation notes as lines (a new memo)": "以行放進計算筆記（新筆記）",
     "Use them as data of the statistics (x and y)": "作為統計的資料（x 與 y）",
     "Use them as data of the statistics (values)": "作為統計的資料（值）",
     "Make a matrix of them": "做成矩陣",
