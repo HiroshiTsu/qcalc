@@ -711,7 +711,29 @@
   // (1.16.0, the review of 11-24, C3) "… to mi" with one unit: the result in that unit as a decimal (≈ 3.106 86 mi), not split into
   // mixed units (3 mi + 188 yd + 2.39 in), as the converter gives it
   const TO_ONE = /(?:\bto|→|->)\s*[\p{L}°µΩ'"][\p{L}\p{N}°µΩ²³⁴/·⋅^_'"]*\s*$/u;
-  const optsFor = (expr, base) => (TO_ONE.test(String(expr || '')) ? Object.assign(base || engineOpts(), { mixed_units: false }) : base || engineOpts());
+  // (1.16.0, fix/result-forms, the review of 11-24 (4), V1) an expression of decimal numbers only (123456.789, 2.5, 0.1 + 0.2,
+  // 1.5 × 2.25): decimals, not fractions, when the setting is automatic (until then 123456.789 = 123,456 + 789/1000 and
+  // 0.5 = 1/2); a fraction is the next step "As a fraction"
+  const DEC_ONLY = /^[\s\d.+\-−×*^()]+$/;
+  const decimalsOnly = (expr) => S.fraction === 'auto' && DEC_ONLY.test(String(expr || '')) && /\d\.\d/.test(String(expr || ''));
+  const optsFor = (expr, base) => {
+    const o = TO_ONE.test(String(expr || '')) ? Object.assign(base || engineOpts(), { mixed_units: false }) : base || engineOpts();
+    return decimalsOnly(expr) ? Object.assign(o, { fraction: 'decimal' }) : o;
+  };
+  // (V2, V3) the forms of an answer: a fraction with a denominator of 5 digits or more is not the first form, its decimal is
+  // (2^−20 ≈ 0.000000954; 1/1048576 is the next step "As a fraction"); at most two forms (10/4 = 5/2 = 2.5, not 5/2 = 2 + 1/2 = 2.5)
+  function plainerForms(r) {
+    if (!r || !r.result || r.comparison || S.fraction !== 'auto' || /[\[\]]/.test(r.result)) return r;
+    const parts = String(r.result).split(/( = | ≈ )/);
+    if (parts.length < 3) return r;
+    const forms = parts.filter((x, i) => i % 2 === 0), seps = parts.filter((x, i) => i % 2 === 1);
+    const last = forms[forms.length - 1], lastSep = seps[seps.length - 1];
+    if (/\d\s*\/\s*\d{5,}/.test(forms[0]) && !/\//.test(last)) {
+      r.result = last;
+      if (lastSep === ' ≈ ') r.approx = true;
+    } else if (forms.length > 2) r.result = forms[0] + lastSep + last;
+    return r;
+  }
   function engineOpts() {
     return {
       angle: S.angle, approx: S.approx, fraction: S.fraction, precision: Math.min(Number(S.precision) || DEFAULTS.precision, maxPrecision()),
@@ -1420,7 +1442,7 @@
     // (1.16.0, R3: the line being edited is previewed with the angle unit it keeps, as = works it out; until then the preview of
     // sin(30) worked out in degrees said ≈ −0.988 while the band said degrees)
     const edH = histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
-    const r = await withNotes(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr, edH ? lineOpts(edH) : undefined), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), rx.expr);
+    const r = plainerForms(await withNotes(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr, edH ? lineOpts(edH) : undefined), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), rx.expr));
     previewBusy = false;
     if (exprEl.value.trim() === raw && !committing) showPreview(r);
     if (previewAgain) { previewAgain = false; runPreview(); }
@@ -1922,7 +1944,7 @@
     const rx = editing ? null : expandHistRefs(expr, histNo + 1);
     if (rx && rx.error) { committing = false; clearInterval(busyTimer); previewEl.textContent = ''; msgEl.textContent = rx.error; msgEl.className = 'msg error'; return; }
     const r = editing ? Object.assign(await recalcLine(history.indexOf(editing), expr), { editRun: true })
-      : await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+      : plainerForms(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr), timeout: limit * 1000, store: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }));
     if (editing) {
       committing = false; clearInterval(busyTimer); clearInterval(cancelTimer);
       if (r.error) { previewEl.textContent = ''; msgEl.textContent = r.error; msgEl.className = 'msg error'; return; }
@@ -4275,7 +4297,7 @@
   async function recalcLine(i, expr) {
     const rx = refsAt(expr, i);
     if (rx.error) return { error: rx.error };
-    const r = await Bridge.send('calc', { expr: withAns(expr, i), opts: optsFor(expr, lineOpts(history[i])), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT });
+    const r = plainerForms(await Bridge.send('calc', { expr: withAns(expr, i), opts: optsFor(expr, lineOpts(history[i])), timeout: timeLimit() * 1000, store: false, preview: false, input: true, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }));
     if (r.ok && r.result && !r.timeout) await withNotes(r, expr);
     if (!r.ok || r.timeout || !r.result) {
       const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
