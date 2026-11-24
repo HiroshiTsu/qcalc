@@ -121,6 +121,8 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - `sqrt(8)` → `= 2√2`, then `≈ 2.828 427 124 746 19`
 - `30!` → `= 265,252,859,812,191,058,636,308,480,000,000` (whole numbers in full up to 60 digits)
 - `2^200` → `≈ 1.606 938 044 258 99 × 10⁶⁰` (a very large number)
+- `2.5`, `0.1 + 0.2` → `= 2.5`, `= 0.3` (an expression of decimals only has a decimal answer; [[As a fraction]] shows the fraction)
+- `10/4` → `= 5/2 = 2.5` (two forms at most)
 :step: The chip at the top switches between [[!EXACT]], approximate and automatic.
 :step: The precision (15 digits by default) can be changed with the chip “15 dig” in the row at the top. It offers 10, 15, 20, 30, 50, 100 and Other… (type a number); the answer of the expression being typed is worked out again at once, and the answers in the history stay as they are. [[Precision (significant digits)]] in [[Settings]] changes it too. Results are shown with their digits in groups of three ([[Digit grouping (1,000)]] turns it off).
 :step: To see one line of the history with more digits, choose 30, 50, 100 or Other… in its ⋯ → [[Work it out with other digits]]. The answer shows in a sheet with [[Put the expression into the input field]], [[Keep it in the history]] and [[Copy the result]]. The precision of the settings and the line stay as they are.

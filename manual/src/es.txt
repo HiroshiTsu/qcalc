@@ -121,6 +121,8 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 - `sqrt(8)` → `= 2√2`, debajo `≈ 2.828 427 124 746 19`
 - `30!` → `= 265,252,859,812,191,058,636,308,480,000,000` (los enteros completos hasta 60 cifras)
 - `2^200` → `≈ 1.606 938 044 258 99 × 10⁶⁰` (un número muy grande)
+- `2.5`, `0.1 + 0.2` → `= 2.5`, `= 0.3` (una expresión solo de decimales da un resultado decimal; [[As a fraction]] muestra la fracción)
+- `10/4` → `= 5/2 = 2.5` (dos formas como mucho)
 :step: El botón de arriba cambia entre exacto, aproximado y automático.
 :step: La precisión (15 cifras por defecto) se cambia con el botón «15 cif.» de la fila de arriba. Ofrece 10, 15, 20, 30, 50, 100 y Otro… (escribir un número); el resultado de la expresión que se escribe se calcula de nuevo al instante y los resultados del historial no cambian. [[Precision (significant digits)]] en [[Settings]] también la cambia. Los resultados se muestran con las cifras en grupos de tres ([[Digit grouping (1,000)]] lo desactiva).
 :step: Para ver una línea del historial con más cifras, elige 30, 50, 100 u Otro… en su ⋯ → [[Work it out with other digits]]. El resultado aparece en una hoja con [[Put the expression into the input field]], [[Keep it in the history]] y [[Copy the result]]. La precisión de los ajustes y la línea no cambian.
