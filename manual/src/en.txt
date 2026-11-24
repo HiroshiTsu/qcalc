@@ -115,6 +115,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
 :tip: ÷ × + and the like in an empty input field continue from the last answer, "ans".
 :tip: A column or a table copied in a spreadsheet (Excel, Google Sheets) — two or more values on lines or with tabs — pasted into the input field asks what to do: add them up with +, put them into the calculation notes as lines, use them as data of the statistics, or make a matrix (two or more columns). Cells of words only (headings) are left out. One line pastes as it is.
+:tip: [[Make them lines of the history (worked out one by one)]] takes one expression from each row and works them out from the top as if each were typed and [[!=]] pressed, adding them to the history (from QCalc's [[Copy as a table]], the column of the expressions). Rows that cannot be worked out are left out and named; [[⤶ Undo]] takes all the lines put in away.
 :mistake: Parentheses that do not pair up give an error. The message says what to fix.
 
 ## results | Reading the answer: exact, approximate, fractions
@@ -133,6 +134,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Under the newest answer, buttons for what is often done next (6 at most): for an expression in x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]; for a number [[Details]], [[As a fraction]], [[Scientific]] (an integer: [[Prime factors]], [[In hex]]); with a unit [[Convert…]]; for a matrix [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. A button's calculation becomes a new line of the history.
 :step: [[Details]] (or ⋯ → [[Details]]) shows the other forms of the answer together: for a number the exact value, the decimal, the fraction, the mixed fraction and the scientific notation (an integer in bases 2, 8 and 16 and its prime factors; with a unit, other units); for an expression in x a small graph, the zeros, the derivative, the integral, the Taylor series and the factored form. Tap a row for [[Put the expression in the field]], [[Keep it in the history]] or [[Copy result]].
 :tip: Without these buttons: [[Settings]] → [[Suggest the next steps under the newest answer]] off.
+:tip: An answer or expression wider than the screen (a matrix, for example) scrolls sideways with a finger (a soft edge shows where more is hidden). To read it whole and large, tap ⤢ above the input field, or [[View whole]] in the ⋯ of a line: it fills the screen (two fingers make it larger or smaller, one finger scrolls, Back closes it).
 
 ## undo | Deleting and undoing
 :what: ⌫ deletes one character, AC empties the input field. Right after that, [[Undo]] above the input field brings it back.
@@ -152,7 +154,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 
 # history | History and memory
 :what: The expressions and answers stay in the history, up to 300 lines. 🕘 at the top right searches, adds up chosen lines, exports and clears.
-:step: Tap an answer in the history to put it into the input field ([Tap to insert a result](#tap-insert)); tap its expression to edit the line ([Editing a line of the history](#edit-line)).
+:step: A line works in two ways, by where you tap it: **tap its answer** to use the value ([[!=]] makes a new line; [Tap to insert a result](#tap-insert)); **tap its expression** to edit the line ([[!=]] replaces it; [Editing a line of the history](#edit-line)).
 :step: ⋯ at the left of a line offers [[☆ Pin at the top]] and [[Add a short note]].
 :step: 🕘 offers [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] and [[Clear the whole history]].
 :shot: history | The history menu of 🕘
@@ -161,6 +163,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 ## tap-insert | Tap to insert a result
 :what: A tap on an answer in the history puts it into the input field at the cursor, as a click on a cell does while you type a formula in a spreadsheet.
 :step: When the field is empty, or right after a calculation, the answer simply goes in.
+:step: An answer tapped into the empty field shows a pale band above the field, “Making a new line from the answer of #51”: [[!=]] makes a new line. To change that line instead, press [[Edit this line]] in the band (also after changing numbers in the field: the line is then edited with the field as it is). The band also goes with ✕, AC or an empty field.
 :step: Another tap on an answer before you type anything replaces the one tapped before.
 :step: After an operator such as + or ×, the answer goes in after it. Right after a number, a letter or ")", a visible × goes in first.
 :step: The lines used in the expression get colored marks; deleting the answer from the field removes its mark.
@@ -170,8 +173,9 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :tip: A tap on the number at the left of a line (#12) puts #12 into the expression instead of the value, as pointing at a cell in a spreadsheet ([Line numbers and #12](#hist-refs)).
 
 ## edit-line | Editing a line of the history
-:what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "[[Editing a line of the history]]" above it. The history scrolls so that the line and its answer stay in sight.
+:what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "Editing #12" above it (12: the number of the line). The history scrolls so that the line and its answer stay in sight.
 :step: Change the expression and press [[!=]]. The line gets the new expression and answer in the same place. ★ and the short note stay, and the menu ⋯ shows the time of the change beside the time of the line.
+:step: While you type, the line shows the expression and its new answer in its place, with the line as it was in small grey letters below it (“Before: …”). A line can be edited in the line itself or in the field below: tap the expression in the line to put the caret there, and the keys, ◀ ▶, ⌫, ⌨, pasting and taps on other answers work there; tap the field to go on typing there. What is typed in one shows at once in the other. The history itself changes only when you press [[!=]].
 :step: "[[Edited]]" and [[Undo]] show for a few seconds. [[Undo]] brings back the expression and answer as they were.
 :step: When the lines below use the answer of this line (ans or #12) or a variable it defines, the app asks whether to work them out again ("Also the 2 lines below") or [[Only this line]]. The lines worked out again flash for a moment, and [[Undo]] takes them back too. With [[Only this line]], the lines below get a note that their answer may be out of date. [[Cancel]] changes nothing: the new expression stays in the field and you go on editing.
 :step: To work it out as a new line below instead, press [[As a new line]] in the band, then [[!=]]. ✕ in the band, AC or the back button stops editing and changes nothing.
@@ -195,6 +199,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Choose [[Add a short note]] in ⋯ and write a short note. It shows above the expression.
 :step: In 🕘, [[Search the history]] shows only the lines whose expression, answer or note has the words you type.
 :example: A line noted "rent" is found by searching for "rent".
+:tip: Spread or pinch two fingers on the history or on the input field to make its text larger or smaller (each on its own; [[Text size: history]] and [[Text size: input field and result]] in the settings set it back). For one line, [[Text size of this line]] in its ⋯.
 
 ## select-sum | Adding up lines
 :step: Choose [[Select lines: sum, average, copy]] in 🕘. [[Select: sum and average]] in the ⋯ of a line starts with that line chosen and shows the sum at once.
@@ -228,6 +233,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 | [[Calculus]] | Derivative d/dx, integral ∫, limit lim, sum Σ, product Π, equations |
 | [[Matrix]] | Matrix ▦, determinant det, transpose, inverse |
 :tip: When you do not know the name of a function, look in [[Lists: functions, units, constants]] ([Lists](#lists)).
+:tip: To see more of the history, fold the keys away with ⌄ at the right end of the tabs, or swipe down on the row of tabs. ⌃, a swipe up or a tap on the input field brings them back (they are out again when the app is opened again).
 
 ## boxes | Boxes □ (the forms)
 :what: The integral and limit keys open a form with boxes □. Fill in the boxes and the expression is made.
@@ -699,7 +705,8 @@ The formulas:
 | [[Precision (significant digits)]] | The precision of calculations (15 by default) |
 | [[Digits shown by each tool]] | The digits of each tool, and those shared by Shapes, Tanks, solids and the graph ([Digits shown by each tool](#digits)) |
 | [[Light or dark]] | The colors of the screen |
-| [[Text size]] | The text of the history, the input field and the result |
+| [[Text size: history]] | The text of the history (a slider; also two fingers on the history) |
+| [[Text size: input field and result]] | The text of the input field and the result (a slider; also two fingers on the field) |
 | [[Color theme]] | The color of the keys (other than blue: QCalc Pro) |
 | [[Show the result while typing]] | The preview |
 | [[Update exchange rates now]] | Downloads the rates at once |

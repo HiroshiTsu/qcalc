@@ -343,7 +343,9 @@
     text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false, next_steps: true, arg_hints: true
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
-  const TEXT_SCALE = { normal: 1, large: 1.18, xlarge: 1.38 };
+  // (1.16.2, Z2) two sizes: the history (text_size_h, --hfs) and the input field with the result (text_size, --fs, also the
+  // forms and the tools as before); "small" added, and "custom" for a size set with two fingers (text_custom_h, text_custom)
+  const TEXT_SCALE = { small: 0.88, normal: 1, large: 1.18, xlarge: 1.38 };
   // The phone's font size (1.12.0; Settings → Display → Font size, up to 200 %). The WebView itself
   // keeps 100 % (MainActivity: setTextZoom), so that the keys keep their size; the page makes the
   // history, the input field and the result larger by the phone's size up to 1.5 times (with "Text
@@ -357,16 +359,37 @@
     } catch (e) { f = 1; }
     return Math.max(1, Math.min(2, f));
   })();
-  function textScale() { return Math.min(1.8, (own(TEXT_SCALE, S.text_size) || 1) * Math.min(1.5, SYS_FONT)); }
+  // the size chosen (a factor of the normal size): 80 % at least, and with the phone's text size not over 1.8 times
+  const TEXT_MIN = 0.8, textMax = () => 1.8 / Math.min(1.5, SYS_FONT);
+  const clampText = (f) => Math.max(TEXT_MIN, Math.min(textMax(), f));
+  function textFactor(size, custom) { return size === 'custom' ? clampText(Number(custom) || 1) : (own(TEXT_SCALE, size) || 1); }
+  function textScale() { return Math.min(1.8, textFactor(S.text_size, S.text_custom) * Math.min(1.5, SYS_FONT)); }
+  function histScale() { return Math.min(1.8, textFactor(S.text_size_h, S.text_custom_h) * Math.min(1.5, SYS_FONT)); }
   function applyTextSize() {
     document.documentElement.dataset.textSize = own(TEXT_SCALE, S.text_size) ? S.text_size : 'normal';
     document.documentElement.style.setProperty('--fs', String(textScale()));
+    document.documentElement.style.setProperty('--hfs', String(histScale()));
+    if (typeof placeNumbers === 'function') placeNumbers();
     document.documentElement.style.setProperty('--pfs', String(Math.min(1.15, SYS_FONT)));
     autosize();
     if (typeof applyCompactKeys === 'function') applyCompactKeys();
   }
+  // (1.16.2, Z3) a size of the history ('h') or of the input field ('e') as a factor, from the slider of the settings or two
+  // fingers: one of the four sizes when it is one of them, otherwise "custom" (to 1 %)
+  function setTextFactor(w, f) {
+    const key = w === 'h' ? 'text_size_h' : 'text_size', ck = w === 'h' ? 'text_custom_h' : 'text_custom';
+    f = clampText(Math.round(f * 100) / 100);
+    const preset = Object.keys(TEXT_SCALE).find((k) => Math.abs(TEXT_SCALE[k] - f) < 0.001);
+    S[key] = preset || 'custom';
+    if (!preset) S[ck] = f;
+    return f;
+  }
   let S = Object.assign({}, DEFAULTS, store.get('qalc.settings', {}));
   S.lang = LANG_AUTO ? 'auto' : LANG; // the language in use (qalc.lang, or 'auto'), whatever qalc.settings says
+  // (1.16.2, Z2) the size of the history apart: until then one size for both, which the history keeps
+  if (!own(S, 'text_size_h')) S.text_size_h = S.text_size;
+  if (!own(S, 'text_custom')) S.text_custom = 1;
+  if (!own(S, 'text_custom_h')) S.text_custom_h = S.text_custom;
   // (1.15.0) the new defaults, 15 significant digits and digit groups, once, also on a phone whose saved settings still
   // have the old ones (up to 1.14 every setting was saved whenever one changed, so a value as it was cannot be told
   // from one chosen): each on its own, 10 digits → 15 and no groups → groups (the owner's choice B of 11-23). What the
@@ -836,11 +859,62 @@
   // (1.16.0, fix/hist-tap: the last value put in by a tap on an answer { f, before, at, after, end, h }, and the lines whose
   // answers are in the expression { h, text, color }: insertResult, tapMarks)
   let tapRef = null, tapMarks = [];
+  let liveRes = null, livePending = false, liveQ = false; // (1.16.2, E: the line being edited, shown as it is typed)
+  let liveCellOn = false, liveComposing = false; // (1.16.2, E2: the caret in the line being edited, not in the field)
+  let fromBand = null; // (1.16.2, M1: the band of a new line made from an answer, { h, after: the field just after the tap })
   // (1.16.0, fix/hist-edit-scroll: the line of the history kept in sight for a moment { h, until, run }, revealHistLine; the
   // lines just worked out again, marked for a moment: line → time it ends, flashLines)
   let histReveal = null;
   const histFlash = new Map();
   histEl.addEventListener('scroll', () => { histPinned = histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight < 24; }, { passive: true });
+  // (1.16.2, Z and Z2, the owner's wishes of 11-24 21:32 and 21:34) Two fingers spread or pinched on the history make the text
+  // of the history larger or smaller; on the input field and the result, the text of those (the keys keep their size; the
+  // box of a line being edited goes with the history). While the fingers move, "History text 120%" shows; the size is kept
+  // when they lift, and the setting "Text size" shows it as "Custom (120%)" (Normal there goes back). From 80 % up to what
+  // the phone's text size leaves under 1.8 times, continuously (Z3). Touch events, so that the second finger stops the
+  // scrolling; one finger scrolls, taps and holds as before, and nothing of a pinch is a tap or a long touch (pinchBusy).
+  // The page itself does not zoom (the viewport). Not on the keypad (its swipes) nor on the panels (their own fingers).
+  let pinch = null, pinchDone = 0, pinchTipTimer = null;
+  const pinchBusy = () => !!pinch || performance.now() - pinchDone < 400;
+  const pinchTip = el('div', { class: 'pinch-tip', 'aria-hidden': 'true', hidden: true });
+  document.body.append(pinchTip);
+  function pinchApply(which, f) {
+    const mid = histEl.scrollHeight ? (histEl.scrollTop + histEl.clientHeight / 2) / histEl.scrollHeight : 1, pinned = histPinned;
+    setTextFactor(which, f);
+    applyTextSize();
+    // (the history stays where it was: at its end, or around its middle)
+    if (pinned) histEl.scrollTop = histEl.scrollHeight;
+    else histEl.scrollTop = mid * histEl.scrollHeight - histEl.clientHeight / 2;
+    if (histEdit && history.indexOf(histEdit.h) >= 0) syncLiveRow();
+  }
+  function bindPinch(zone, which) {
+    const dist = (l) => Math.hypot(l[0].clientX - l[1].clientX, l[0].clientY - l[1].clientY);
+    zone.addEventListener('touchstart', (e) => {
+      if (pinch || e.touches.length !== 2 || !Array.from(e.touches).every((x) => zone.contains(x.target))) return;
+      const f0 = which === 'h' ? textFactor(S.text_size_h, S.text_custom_h) : textFactor(S.text_size, S.text_custom);
+      pinch = { which, d0: dist(e.touches) || 1, f0, f: f0, two: true };
+      if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+    zone.addEventListener('touchmove', (e) => {
+      if (!pinch || pinch.which !== which) return;
+      if (e.cancelable) e.preventDefault();
+      if (!pinch.two || e.touches.length < 2) return;
+      const f = clampText(Math.round(pinch.f0 * dist(e.touches) / pinch.d0 * 100) / 100); // (Z3: continuous, to 1 %)
+      clearTimeout(pinchTipTimer);
+      pinchTip.textContent = which === 'h' ? trf('History text {0}%', '履歴の文字 {0}%', Math.round(f * 100)) : trf('Input text {0}%', '入力欄の文字 {0}%', Math.round(f * 100));
+      pinchTip.hidden = false;
+      if (f !== pinch.f) { pinch.f = f; pinchApply(which, f); }
+    }, { passive: false });
+    const end = (e) => {
+      if (!pinch || pinch.which !== which) return;
+      if (pinch.two && e.touches.length < 2) { pinch.two = false; saveSettings(); pinchTipTimer = setTimeout(() => { pinchTip.hidden = true; }, 900); }
+      if (e.touches.length === 0) { pinch = null; pinchDone = performance.now(); }
+    };
+    zone.addEventListener('touchend', end);
+    zone.addEventListener('touchcancel', end);
+  }
+  bindPinch(histEl, 'h');
+  bindPinch($('.entry'), 'e');
   if (window.ResizeObserver) new ResizeObserver(() => {
     fitMatrices(histEl);
     // (1.16.0, fix/hist-edit-scroll: a line being kept in sight is kept there, not the end of the history)
@@ -1027,6 +1101,14 @@
       const t = el('button', { class: 'tb-toggle', id: 'tb-toggle', text: '⌨', 'aria-controls': 'toolbar', 'aria-expanded': 'false', 'aria-label': tr('Show the row of x, ans, the arrows and the keyboard', 'x・ans・矢印・キーボードの段を出す'), hidden: true });
       bindPress(t, () => { vibrate(); store.set('qalc.tbopen', !$('#keypad').classList.contains('tb-open')); applyCompactKeys(); histEl.scrollTop = histEl.scrollHeight; });
       row.append(t);
+      // (1.16.2, V) ⌄ at the end of the tabs folds the keys away (foldKeys); ⌃ on the thin bar brings them back
+      const f = el('button', { class: 'kb-fold', id: 'kb-fold', type: 'button', text: '⌄', 'aria-controls': 'keypad', 'aria-expanded': 'true', 'aria-label': tr('Hide the keys', 'キーを隠す') });
+      bindPress(f, () => { vibrate(); foldKeys(true); });
+      row.append(f);
+      const bar = el('button', { class: 'kb-bar', id: 'kb-bar', type: 'button', text: '⌃', hidden: true, 'aria-label': tr('Show the keys', 'キーを出す') });
+      bindPress(bar, () => { vibrate(); foldKeys(false); });
+      $('#keypad').insertBefore(bar, $('#keypad').firstChild);
+      bindKeySwipes();
     }
     renderPage();
     updateToolbar();
@@ -1048,6 +1130,63 @@
     t.hidden = !on;
     t.setAttribute('aria-expanded', String(open));
     t.classList.toggle('on', open);
+  }
+  // (1.16.2, V, the owner's wish of 11-24 21:28: more lines of the history in sight) The keys fold away, and the history
+  // takes their room: ⌄ at the end of the tabs, or a swipe down on the top of the keypad (the row of tabs and the top row of
+  // keys only: a swipe on the keys stays what it was, and not from the left and right edges, where Android has its back
+  // gesture). Folded, a thin bar with ⌃ stays under the field; ⌃, a swipe up on the bar (not from the bottom edge: the home
+  // gesture), or a tap on the input field or on the box of a line being edited brings the keys back. It works while a line
+  // is edited too. Not kept: the app opened again has its keys (a keypad that does not come back would look broken).
+  let keysFolded = false;
+  function foldKeys(on) {
+    const kp = $('#keypad');
+    if (!kp || keysFolded === !!on) return;
+    const pinned = histPinned, bar = $('#kb-bar'), f = $('#kb-fold'), had = document.activeElement;
+    keysFolded = !!on;
+    if (keysFolded) closeVarPop();
+    kp.classList.toggle('folded', keysFolded);
+    if (bar) bar.hidden = !keysFolded;
+    if (f) f.setAttribute('aria-expanded', String(!keysFolded));
+    // (the focus of a screen reader stays on the button that took the place of the one pressed)
+    if (keysFolded && had === f && bar) bar.focus({ preventScroll: true });
+    else if (!keysFolded && had === bar && f) f.focus({ preventScroll: true });
+    const keep = () => { if (histEdit && history.indexOf(histEdit.h) >= 0) revealHistLine(histEdit.h); else if (pinned) histEl.scrollTop = histEl.scrollHeight; };
+    keep(); requestAnimationFrame(keep);
+  }
+  function bindKeySwipes() {
+    const kp = $('#keypad');
+    if (!kp || kp._swipes) return;
+    kp._swipes = true;
+    let sw = null, noClick = 0;
+    const zone = (x) => !!(x && x.closest && (x.closest('#toolbar') || x.closest('.pages-row') || x.closest('#kb-bar')));
+    kp.addEventListener('pointerdown', (e) => {
+      sw = null;
+      if (!zone(e.target) || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      if (e.clientX < 24 || e.clientX > window.innerWidth - 24) return; // (the back gesture of Android)
+      if (keysFolded && e.clientY > window.innerHeight - 32) return; // (the home gesture)
+      sw = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target, on: false };
+    }, true);
+    kp.addEventListener('pointermove', (e) => {
+      if (!sw || e.pointerId !== sw.id || sw.on) return;
+      const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+      if (Math.abs(dy) > 24 && Math.abs(dy) > 1.5 * Math.abs(dx) && (keysFolded ? dy < 0 : dy > 0)) {
+        sw.on = true;
+        // (the key or tab under the finger is not pressed: its press and its repeat stop)
+        const b = sw.target.closest && sw.target.closest('button');
+        if (b) b.dispatchEvent(new PointerEvent('pointercancel', { pointerId: e.pointerId, bubbles: false }));
+      }
+    }, true);
+    kp.addEventListener('pointerup', (e) => {
+      if (!sw || e.pointerId !== sw.id) return;
+      const s = sw;
+      sw = null;
+      if (!s.on) return;
+      e.stopPropagation(); e.preventDefault();
+      noClick = performance.now() + 600;
+      if (Math.abs(e.clientY - s.y) > 40) { vibrate(); foldKeys(!keysFolded); }
+    }, true);
+    kp.addEventListener('pointercancel', (e) => { if (e.isTrusted && sw && e.pointerId === sw.id) sw = null; }, true);
+    kp.addEventListener('click', (e) => { if (performance.now() < noClick) { e.stopPropagation(); e.preventDefault(); } }, true);
   }
   function setPage(id) {
     if (page === id || !PAGES[id]) return;
@@ -1073,6 +1212,10 @@
   // ================================================== expression editing
   // ---- "Undo" for an expression that was cleared (AC) or replaced (history, examples)
   const undoEl = $('#undo');
+  // (1.16.2, W) ⤢ "View whole" beside the small buttons above the field, while it holds something
+  const wholeBtn = el('button', { id: 'wholebtn', class: 'undo', type: 'button', text: '⤢', hidden: true, 'aria-label': tr('View whole', '全体を見る') });
+  wholeBtn.addEventListener('click', () => openWhole(null));
+  undoEl.parentNode.append(wholeBtn);
   let undoText = null;
   function offerUndo(prev) {
     if (!prev || !prev.trim()) return;
@@ -1200,15 +1343,17 @@
         break;
       }
     }
+    if (f === exprEl) liveCaret(); // (1.16.2, E2)
   }
   let kbdMinH = 0, kbdW = 0;
   function toggleKeyboard(force) {
     const text = force !== undefined ? force : exprEl.inputMode !== 'text';
     exprEl.inputMode = text ? 'text' : 'none';
     for (const b of formBoxes()) b.inputMode = exprEl.inputMode; // the boxes of an open calculus form too
+    if (histEdit && histEdit.cell) histEdit.cell.inputMode = exprEl.inputMode; // (1.16.2, E2: and the box of the line)
     document.body.classList.toggle('kbd', text);
     kbdMinH = window.innerHeight; kbdW = window.innerWidth;
-    const f = tgt();
+    const f = !editTarget && liveCellOn && histEdit && histEdit.cell && histEdit.cell.isConnected ? histEdit.cell : tgt();
     f.blur();
     setTimeout(text ? () => f.focus() : focusExpr, 30);
     updateToolbar();
@@ -1220,6 +1365,7 @@
     if (window.innerWidth !== kbdW) { kbdW = window.innerWidth; kbdMinH = window.innerHeight; return; }
     kbdMinH = Math.min(kbdMinH, window.innerHeight);
     if (window.innerHeight > kbdMinH * 1.3) toggleKeyboard(false);
+    else if (liveCellOn && histEdit) revealCaret(); // (1.16.2, E2: the caret in the line stays in sight)
     else histEl.scrollTop = histEl.scrollHeight;
   });
   exprEl.addEventListener('keydown', (e) => {
@@ -1279,20 +1425,46 @@
     }
     exprChanged(true);
   });
-  exprEl.addEventListener('focus', () => updateToolbar());
+  exprEl.addEventListener('focus', () => { liveCellOff(false); updateToolbar(); }); // (1.16.2, E2: the caret in the field again)
+  exprEl.addEventListener('pointerdown', () => { if (keysFolded) foldKeys(false); }); // (1.16.2, V: the keys back)
   // the caret was put somewhere else by touching the field
   exprEl.addEventListener('click', () => { updateSuggest(false); updateNextBox(); });
 
+  // (1.16.2, R2, the review of 11-24 21:43) a long expression gets smaller, down to 70 % of its size, before it takes more
+  // lines (a matrix took three lines at 26 px and pushed the preview away); a shorter one gets its size back. box: the field
+  // or the box of a line being edited; lh: its line height; pad: its padding top and bottom
+  function fitText(box, base, lh, pad) {
+    let fs = base;
+    const min = base * 0.7, one = () => box.scrollHeight <= Math.ceil(fs * lh + pad + 1);
+    box.style.fontSize = fs + 'px';
+    if (!box.value || box === exprEl && !box.value.trim()) return fs;
+    // (measured without the least height of the box: a box of 48 px holds one line of 26 px)
+    const mh = box.style.minHeight;
+    box.style.minHeight = '0px';
+    box.style.height = 'auto';
+    while (!one() && fs > min + 0.05) { fs = Math.max(min, fs * 0.93); box.style.fontSize = fs.toFixed(2) + 'px'; }
+    box.style.minHeight = mh;
+    return fs;
+  }
   function autosize() {
+    const wb = document.getElementById('wholebtn'); // (1.16.2, W: ⤢ while the field holds something, also after =)
+    if (wb) wb.hidden = !exprEl.value.trim();
+    fitText(exprEl, 26 * textScale(), 1.25, 4);
     exprEl.style.height = 'auto';
-    const h = exprEl.scrollHeight, max = Math.round(110 * textScale());
+    // ((1.16.2, S1, the review of 11-24 22:22) the highest it can be is also what style.css allows (3.9em: smaller with R2's
+    // smaller text) and what the screen leaves: when the expression does not fit, the field scrolls with a finger, with a thin
+    // bar; it was hidden (scrollHeight 95, clientHeight 71) and the start of the expression could not be brought back)
+    const h = exprEl.scrollHeight, css = parseFloat(getComputedStyle(exprEl).maxHeight) || Infinity;
+    const max = Math.min(css, Math.round((liveCellOn ? 44 : 110) * textScale())); // (1.16.2, E2: one line while typing in the line)
     exprEl.style.height = Math.min(h, max) + 'px';
-    exprEl.style.overflowY = h > max ? 'auto' : 'hidden';
+    exprEl.style.overflowY = h > max + 1 || exprEl.scrollHeight > exprEl.clientHeight + 1 ? 'auto' : 'hidden';
   }
   function focusExpr() {
     // with inputmode="none" this only shows the caret, not the system keyboard
     // (the box of an open calculus form gets the focus instead of the input field)
-    const f = tgt();
+    // ((1.16.2, E2) or the box of the line being edited, when the caret is there)
+    const c = !editTarget && liveCellOn && histEdit && histEdit.cell && histEdit.cell.isConnected ? histEdit.cell : null;
+    const f = c || tgt();
     if (document.activeElement !== f) {
       try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); }
     }
@@ -1353,6 +1525,8 @@
   }
   function exprChanged(typed) {
     pruneTapMarks(); // (1.16.0, fix/hist-tap)
+    wholeBtn.hidden = !exprEl.value.trim(); // (1.16.2, W)
+    if (fromBand && (!exprEl.value.trim() || history.indexOf(fromBand.h) < 0)) hideFromBand(); // (1.16.2, M1)
     noteField();
     saveDraft();
     autosize();
@@ -1362,6 +1536,7 @@
     plotBtnEl.hidden = !plottable(exprEl.value);
     clearTimeout(previewTimer);
     if (!exprEl.value.trim() || !S.preview) { showPreview(null); return; }
+    if (histEdit) { livePending = true; syncLiveRow(); } // (1.16.2, E: "…" until the preview comes)
     previewTimer = setTimeout(runPreview, 160);
   }
   // "5 km to" while the unit is still to be typed or chosen: what is before the "to" is calculated
@@ -1378,6 +1553,7 @@
     mathEl.hidden = !ok;
     parsedEl.hidden = ok;
     if (ok) mathEl.scrollLeft = mathEl.scrollWidth;
+    edgeFade(mathEl); // (1.16.2, S2: the start hidden: a soft left edge)
   }
   // ---- notes on input that the engine reads in another way than it was probably meant. The
   // engine gives no message of its own in these cases:
@@ -1691,14 +1867,15 @@
   // shapes tool cut 33.510 321 638 into 33.51 321 638). A whole part or decimals of 5 digits or more in groups of 3, as
   // the engine wrote them: the whole part with the sign of the number format, the decimals with narrow spaces; not the
   // power after E, nor digits that belong to a name; only in base 10
-  function groupText(t) {
+  // (expr: an expression shown, 1.16.2 R3: "#12345" is a line, not a number)
+  function groupText(t, expr) {
     if (!S.grouping || Number(S.base) !== 10 || !t || t.length > 20000) return t;
     const re = new RegExp('\\d+(?:' + (NF.dec === '.' ? '\\.' : ',') + '\\d+)?', 'g');
     // (1.16.0, the review of 11-24, N1: an amount of money from 4 digits, ¥6,200 as ¥85,000 beside it in the notes)
     const minG = /[¥$€£₩₹]|(?:^|[\s\d])(?:JPY|USD|EUR|GBP|KRW|TWD|CNY|MXN|CHF|INR|CAD|AUD)\b/.test(t) ? 4 : 5;
     return t.replace(re, (num, at, all) => {
       const b = all[at - 1] || '';
-      if (/[\p{L}_\d]/u.test(b) || (b === NF.dec || b === NF.group) || ((b === '-' || b === '−' || b === '+') && all[at - 2] === 'E')) return num;
+      if (/[\p{L}_\d]/u.test(b) || (b === NF.dec || b === NF.group) || ((b === '-' || b === '−' || b === '+') && all[at - 2] === 'E') || (expr && b === '#')) return num;
       const k = num.indexOf(NF.dec), i = k < 0 ? num : num.slice(0, k), f = k < 0 ? '' : num.slice(k + 1);
       const gi = i.length >= minG ? i.replace(/\B(?=(\d{3})+$)/g, NF.group) : i;
       const gf = f.length >= 5 ? f.replace(/(\d{3})(?=\d)/g, '$1\u202f') : f;
@@ -2072,11 +2249,22 @@
     return r;
   }
   function showPreview(r) {
+    showPreviewIn(r);
+    // ((1.16.2, E) the same result for the line being edited, in its place)
+    livePending = false;
+    liveRes = r && r.ok && !r.deferred && !r.timeout && previewEl.childNodes.length && !msgEl.classList.contains('error') ? r : null;
+    if (histEdit) syncLiveRow();
+  }
+  // (1.16.2, R1, the review of 11-24 21:43) the result under the field as dark as the answers of the history (it was the
+  // lightest text of the screen); gray only for what is not a result ("…", Calculating…, a hint): .dim
+  new MutationObserver(() => { previewEl.classList.toggle('dim', !!previewEl.textContent.trim() && !/^\s*[=≈]/.test(previewEl.textContent)); })
+    .observe(previewEl, { childList: true, characterData: true, subtree: true });
+  function showPreviewIn(r) {
     msgEl.textContent = '';
     msgEl.className = 'msg';
     if (!r) { parsedEl.textContent = ''; previewEl.textContent = ''; return; }
     if (!r.ok) { previewEl.textContent = ''; msgEl.textContent = localMessage(r.error) || ''; msgEl.className = 'msg error'; return; }
-    parsedEl.textContent = toDisplay(r.parsed || '');
+    parsedEl.textContent = groupText(toDisplay(r.parsed || ''), true); // (1.16.2, R3)
     const err = (r.messages || []).find((m) => m.type === 'error');
     if (r.deferred) previewEl.textContent = tr('Press = to run it (definitions are not previewed)', '＝ を押すと実行します（定義など）');
     else if (r.timeout) previewEl.textContent = '…';
@@ -2122,6 +2310,7 @@
     }
     committing = true;
     stopping = false;
+    if (given === undefined) hideFromBand(); // (1.16.2, M1)
     clearTimeout(previewTimer);
     previewEl.textContent = tr('Calculating…', '計算中…');
     // from the first second: the seconds so far, and that a tap stops the calculation
@@ -3367,8 +3556,11 @@
       ['notes', tr('Put them into the calculation notes as lines (a new memo)', '計算メモに行として入れる（新しいメモ）')],
       ['stats', P.valCols >= 2 ? tr('Use them as data of the statistics (x and y)', '統計のデータにする（x と y）') : tr('Use them as data of the statistics (values)', '統計のデータにする（値）')]];
     if (P.valCols >= 2) acts.push(['mat', tr('Make a matrix of them', '行列にする')]);
+    // ((1.16.2, H) lines of the history, as if each were typed and = pressed; not while a line of the history is edited)
+    if (!histEdit) acts.push(['hist', tr('Make them lines of the history (worked out one by one)', '履歴の行にする（1 行ずつ計算）')]);
     const k = await sheet(trf('{0} values pasted ({1}): what to do with them?', '{0} 個の値を貼り付けました（{1}）。どうしますか？', P.n, peek), acts);
     if (!k) { focusExpr(); return; }
+    if (k === 'hist') { await pasteToHistory(P); return; }
     if (k === 'sum') {
       // 1200 + 850 + (−300): a value with a sign or a space (12 kg) in parentheses
       const sum = flat.map((v, i) => (/^[−+-]|\s/.test(v) && (i > 0 || /\s/.test(v)) ? '(' + v + ')' : v)).join(' + ');
@@ -3404,6 +3596,74 @@
     }
     const p = openNotesTool();
     if (p.importLines) await p.importLines({ lines: lines.slice(0, NOTE_MAX), csv: '', rows: null, title: '', name: '', direct: 'new', pasted: true });
+  }
+  // (1.16.2, H, the owner's wish of 11-24 19:09) Rows pasted into the field made lines of the history: from each row one
+  // expression, worked out from the top as if it were typed and = pressed (ans goes on from line to line; #12 is the line
+  // 12 of the history now). The expression of a row: the first column of QCalc's "Copy as a table" (expression, tab,
+  // answer), else the first cell with a value or an expression (groups of digits as ungroupPasted); a row of words only
+  // (a heading) is left out. "Calculating 3 / 20" with Stop meanwhile; a row that cannot be worked out is not put in, and
+  // the end says which; Undo takes all the lines put in away, and the variables they defined back as they were. When the
+  // history (300 lines) is too short for them, it says first that older lines go (those with ★ stay).
+  function pastedExpr(c) {
+    let s = String(c || '').trim();
+    if (s[0] === "'") s = s.slice(1).trim(); // (a cell kept as text by "Copy as a table": = + @ first)
+    s = s.replace(/∶/g, ':'); // (the colon of 12:30 written as ∶ by "Copy as a table", so that it is not a time)
+    if (!s || !/[0-9√∛π∞#]/.test(s)) return null;
+    s = ungroupPasted(s);
+    return normalizeExpr(s) ? s : null;
+  }
+  async function pasteToHistory(P) {
+    const items = [];
+    P.rows.forEach((r, i) => { for (const c of r) { const e = pastedExpr(c); if (e) { items.push({ row: i + 1, expr: e }); break; } } });
+    if (!items.length) { toast(tr('There is no expression to work out', '計算する式がありません'), 2200); return; }
+    if (!engineReady) { toast(tr('The calculation engine is starting', '計算エンジンを準備中です'), 1500); return; }
+    const MAXH = 300, stars = history.filter((x) => x && x.star).length, over = history.length + items.length - MAXH;
+    if (over > 0 && !(await confirmSheet(trf('The history keeps {0} lines: {1} older lines will go (lines with ★ stay). Put them in?', '履歴は {0} 行までなので、古い行が {1} 行消えます（★ の行は残ります）。入れますか？', MAXH, Math.min(over, Math.max(0, history.length - stars))), tr('Put them in', '入れる')))) { focusExpr(); return; }
+    const before = history.slice(), defs0 = await userDefs();
+    const added = [], failed = [];
+    let stop = false;
+    for (let k = 0; k < items.length && !stop; k++) {
+      toast(trf('Calculating {0} / {1}', '計算中 {0} / {1}', k + 1, items.length), 120000, [tr('Stop', '中止'), () => { stop = true; }]);
+      const last0 = history[history.length - 1];
+      await commit(items[k].expr);
+      const last = history[history.length - 1];
+      if (last && last !== last0) added.push(last); else failed.push(items[k].row);
+    }
+    // (the field as it was: the error of a row that failed is not left under it)
+    if (exprEl.value.trim()) exprChanged(); else showPreview(null);
+    const left = items.length - added.length - failed.length;
+    let msg = trf('{0} lines put into the history', '{0} 行を履歴に入れました', added.length);
+    if (failed.length) msg += ' ' + trf('{0} rows could not be worked out and were not put in (row {1}{2})', '{0} 行は計算できなかったので入れていません（{1} 行目{2}）', failed.length, failed.slice(0, 6).join(tr(', ', ' 行目、')), failed.length > 6 ? tr(', …', 'など') : '');
+    if (left > 0) msg += ' ' + trf('Stopped: {0} rows not worked out', '中止しました（{0} 行は計算していません）', left);
+    if (!added.length) { toast(msg, 6000); return; }
+    toast(msg, 9000, [tr('⤶ Undo', '⤶ 元に戻す'), () => undoPasteToHistory(before, added, defs0)]);
+  }
+  async function undoPasteToHistory(before, added, defs0) {
+    const set = new Set(added);
+    if (histEdit && set.has(histEdit.h)) endHistEdit(true);
+    // (the lines worked out since stay, as with Undo of "Clear the whole history")
+    const later = history.filter((x) => !set.has(x) && before.indexOf(x) < 0);
+    history = trimHistory(before.concat(later));
+    historyChanged();
+    // the variables and functions the lines defined: as they were before (taken away when there was none)
+    const names = new Set(added.map((x) => defName(x.expr)).filter(Boolean));
+    if (names.size && defs0 && defs0.ok) {
+      for (const nm of names) {
+        const v = defs0.variables.find((d) => d.name === nm), f = defs0.functions.find((d) => d.name === nm);
+        if (v) await defineAgain('variable', nm, nm, v.value, v.temporary, true);
+        else if (f) await defineAgain('function', nm, f.sig || nm, f.expr, f.temporary, true);
+        else {
+          await Bridge.send('delete_def', { kind: 'variable', name: nm });
+          await Bridge.send('delete_def', { kind: 'function', name: nm });
+          tempFuncs.delete(nm);
+        }
+      }
+    }
+    await engineAsHistory(true, new Set());
+    invalidateCatalogs();
+    await refreshDefined();
+    toast(trf('{0} lines taken out of the history', '{0} 行を履歴から取り消しました', added.length), 2200);
+    exprChanged();
   }
   function parseBlock(text) {
     const t = text.replace(/\r\n?/g, '\n').replace(/[\s;]+$/, '');
@@ -3942,6 +4202,8 @@
     const pos = s + pre.length + arg.length;
     f.setSelectionRange(pos, pos);
     tapRef = { f, before, at: s, after: f.value, end: pos, h };
+    // ((1.16.2, M1) the answer's value into the empty field, not while a line is edited: the band says a new line is made)
+    if (f === exprEl && !asRef && !histEdit && !before.trim()) showFromBand(h, f.value);
     targetChanged();
     if (f === exprEl) {
       if (replaced && replaced !== h) dropTapMark(replaced);
@@ -4057,8 +4319,12 @@
   function historyItem(h) {
     const res = el('div', { class: 'h-res' });
     showResult(res, displayResult(h));
-    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: prettyExpr(toDisplay(h.expr)) }), res);
+    // ((1.16.2, R3) the expression with the groups of digits of the answers, 17,400,353,377,512 / 3: only as shown)
+    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: groupText(prettyExpr(toDisplay(h.expr)), true) }), res);
     item._h = h;
+    if (h.fs && h.fs !== 1) item.style.setProperty('--lfs', String(h.fs)); // (1.16.2, Z4: the size of this line)
+    placeNumbers(); // (1.16.2, R4)
+    if (histEdit && histEdit.h === h) queueLive(); // (1.16.2, E)
     // (1.16.0, feature/hist-excel) its number, and a line it refers to (#12) that is no longer in the history
     if (!h.n) numberLines();
     // (1.16.0, feature/hist-ux, U1) the number is a button: a tap puts "#12" into the expression, as pointing at a cell in a
@@ -4079,6 +4345,8 @@
       if (histSel) { toggleSelected(item); return; }
       if (target.closest('.h-more')) { historyMenu(h); return; }
       if (target.closest('.h-no')) { insertResult(h, true); focusExpr(); return; } // (U1)
+      // ((1.16.2, E2) a tap on the line being edited, beside its box: the caret into the box)
+      if (target.closest('.h-live')) { const c = histEdit && histEdit.cell; if (c) { try { c.focus({ preventScroll: true }); } catch (e) { c.focus(); } } return; }
       if (target.closest('.h-expr')) startHistEdit(h); // (1.15.0: the line edited in place)
       else insertResult(h);
       focusExpr();
@@ -4106,19 +4374,36 @@
         g.style.fontSize = (0.84 * scale).toFixed(3) + 'em'; // 0.84em is the size in style.css
       }
     }
+    fadesIn(root); // (1.16.2, S2, S3)
   }
+  // (1.16.2, S2 and S3, the review of 11-24 22:22) what is wider than the screen (a matrix, an answer or an expression in math
+  // notation) scrolls sideways with a finger, and a soft edge shows on the side where more is hidden (cut-l, cut-r)
+  function edgeFade(b) {
+    if (!b || !b.isConnected) return;
+    const more = b.scrollWidth - b.clientWidth > 2;
+    b.classList.toggle('cut-l', more && b.scrollLeft > 2);
+    b.classList.toggle('cut-r', more && b.scrollLeft < b.scrollWidth - b.clientWidth - 2);
+  }
+  const FADE_SEL = '#mathview, .mx, .h-res.math, .preview.math, .wv-box';
+  function fadesIn(root) {
+    if (!root) return;
+    if (root.matches && root.matches(FADE_SEL)) edgeFade(root);
+    for (const b of root.querySelectorAll(FADE_SEL)) edgeFade(b);
+  }
+  document.addEventListener('scroll', (e) => { const b = e.target; if (b && b.matches && b.matches(FADE_SEL)) edgeFade(b); }, true);
+  window.addEventListener('resize', () => { fadesIn(histEl); fadesIn($('.entry')); });
   function bindLongPress(node, onLong, onTap) {
     let timer = null, sx = 0, sy = 0, long = false;
     node.addEventListener('pointerdown', (e) => {
       e.preventDefault(); // keep the focus (and the caret) in the expression field
       sx = e.clientX; sy = e.clientY; long = false;
-      timer = setTimeout(() => { long = true; vibrate(); onLong(); }, 480);
+      timer = setTimeout(() => { timer = null; if (pinchBusy()) return; long = true; vibrate(); onLong(); }, 480); // (1.16.2, Z: not in a pinch)
     });
     node.addEventListener('pointermove', (e) => {
       if (timer && (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10)) { clearTimeout(timer); timer = null; }
     });
     node.addEventListener('pointerup', (e) => {
-      if (timer) { clearTimeout(timer); timer = null; if (!long) onTap(e.target); }
+      if (timer) { clearTimeout(timer); timer = null; if (!long && !pinchBusy()) onTap(e.target); }
       if (long) {
         // the browser may still send a click, which would land on the menu's dimmed background
         const kill = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
@@ -4128,6 +4413,74 @@
     });
     node.addEventListener('pointercancel', () => { clearTimeout(timer); timer = null; });
     node.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+  // (1.16.2, R4, the review of 11-24 21:43) The number of a line beside the first line of its answer, as the numbers of the
+  // rows of a spreadsheet (it was 42 px from the top, beside the expression when that took two lines or the text was larger):
+  // all read first, then all set, once a frame
+  let numQ = false;
+  function placeNumbers() {
+    if (numQ) return;
+    numQ = true;
+    requestAnimationFrame(() => {
+      numQ = false;
+      const spots = [];
+      for (const it of histEl.querySelectorAll('.h-item')) {
+        const no = it.querySelector(':scope > .h-no'), res = it.querySelector(':scope > .h-res');
+        if (!no || !res || !res.offsetParent) continue;
+        const first = (res.querySelector('.r-line') || res).getClientRects()[0];
+        if (!first) continue;
+        const top = it.getBoundingClientRect().top, more = it.querySelector(':scope > .h-more');
+        // (under the ⋯, so that a tap on the number is the number's)
+        spots.push([no, Math.max(first.top - top + (first.height - no.offsetHeight) / 2, more ? more.getBoundingClientRect().bottom - top + 1 : 0)]);
+      }
+      for (const [no, y] of spots) no.style.top = Math.max(0, Math.round(y)) + 'px';
+    });
+  }
+  window.addEventListener('resize', () => placeNumbers());
+  // (1.16.2, Z4, the owner's wish of 11-24 21:38) The text of one line, or of the lines selected, larger or smaller: a factor
+  // on the size of the history, kept with the line (h.fs: when the app is opened again and after Delete → Undo; copying, the
+  // table and the CSV file do not have it), shown at once as the slider moves, with "Back (the size of the history)". The
+  // box of the line when it is edited has its size too. 0.6 to 2 times, and not over 2.5 times the normal size with the size
+  // of the history (nothing wider than the screen: the lines wrap).
+  const LINE_FS_MIN = 0.6, lineFsMax = () => Math.max(1, Math.min(2, 2.5 / histScale()));
+  function lineFsApply(h) {
+    for (const it of histEl.querySelectorAll('.h-item')) {
+      if (it._h !== h) continue;
+      if (h.fs && h.fs !== 1) it.style.setProperty('--lfs', String(h.fs)); else it.style.removeProperty('--lfs');
+    }
+    placeNumbers();
+  }
+  function lineSizeSheet(list) {
+    list = list.filter((h) => history.indexOf(h) >= 0);
+    if (!list.length) return;
+    if (sheetResolve) closeSheet(null);
+    const sh = $('#sheet'), max = lineFsMax(), lo = Math.round(LINE_FS_MIN * 100), hi = Math.floor(max * 100);
+    sh.textContent = '';
+    const title = list.length === 1 ? trf('Text size of #{0}', '#{0} の文字の大きさ', list[0].n) : trf('Text size of {0} lines', '{0} 行の文字の大きさ', list.length);
+    const val = el('span', { class: 'ts-val', 'aria-hidden': 'true' });
+    const range = el('input', { type: 'range', class: 'ts-range', min: String(lo), max: String(hi), step: '1', 'aria-label': title });
+    const back = el('button', { class: 'btn ts-reset', type: 'button', text: tr('Back (the size of the history)', '元に戻す（履歴の大きさに合わせる）') });
+    const set = (n) => {
+      const f = Math.max(lo, Math.min(hi, n)) / 100;
+      for (const h of list) { if (Math.abs(f - 1) < 0.005) delete h.fs; else h.fs = f; lineFsApply(h); }
+      range.value = String(Math.round(f * 100)); val.textContent = Math.round(f * 100) + '%'; range.setAttribute('aria-valuetext', Math.round(f * 100) + '%');
+      back.hidden = Math.abs(f - 1) < 0.005;
+      if (histEdit && list.indexOf(histEdit.h) >= 0) syncLiveRow();
+    };
+    range.addEventListener('input', () => set(Number(range.value)));
+    range.addEventListener('change', () => saveHistory());
+    back.addEventListener('click', () => { set(100); saveHistory(); });
+    sh.append(el('div', { class: 'stitle', text: title }), el('div', { class: 'ts-box line-ts' }, el('div', { class: 'ts-row' }, range, val), back),
+      el('button', { text: tr('Close', '閉じる'), onclick: () => closeSheet(null) }));
+    set(Math.round((list[0].fs || 1) * 100));
+    // (the first line in sight above the sheet)
+    const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === list[0]);
+    if (it) it.scrollIntoView({ block: 'start' });
+    sheetResolve = () => { saveHistory(); };
+    $('#scrim').classList.add('show', 'over-panels');
+    sh.classList.add('open');
+    sh.inert = false;
+    range.focus({ preventScroll: true });
   }
   async function historyMenu(h) {
     if (history.indexOf(h) < 0) return;
@@ -4150,6 +4503,7 @@
     else if (mcols === 3) more.push(['m-plot', tr('Draw the rows as points (3D graph)', '各行を点としてグラフに描く（3D）')]);
     const a = await sheet((h.t ? fmtTime(h.t / 1000) + (h.edited ? trf(' (edited {0})', '（直した時刻 {0}）', fmtTime(h.edited / 1000)) : '') + '\n' : '') + clip(toDisplay(h.expr), 300) + '\n' + clip(displayText(h.result), 300), more.concat([
       ['details', tr('Details', '詳しく見る')],
+      ['whole', tr('View whole', '全体を見る')],
       ['copy-res', tr('Copy result', '結果をコピー')], ['copy-expr', tr('Copy expression', '式をコピー')], ['edit', tr('Edit expression', '式を編集')],
       ['digits', tr('Work it out with other digits', '桁数を変えて計算し直す')],
       ['ins-ans', tr('Insert result', '結果を式に挿入')],
@@ -4157,6 +4511,7 @@
       ['select', tr('Select: sum and average', '選ぶ（合計・平均）')],
       ['star', h.star ? tr('★ Unpin', '★ 固定を外す') : tr('☆ Pin at the top', '☆ 上に固定')],
       ['note', h.note ? tr('Change the note', 'メモを変える') : tr('Add a short note', 'ひとことメモ')],
+      ['l-size', tr('Text size of this line', 'この行の文字の大きさ')],
       ['del', tr('Delete this line', 'この行を削除'), 'danger']
     ]));
     if (a === 'm-edit') openForm('mat', { matrix: mat });
@@ -4168,6 +4523,7 @@
     else if (a === 'f-solve') openForm('solve', { eqs: [fx + ' = 0'] });
     else if (a === 'f-subst') openForm('subst', { f: fx, focus: 'a' });
     else if (a === 'details') openDetails(h);
+    else if (a === 'whole') openWhole(h);
     else if (a === 'copy-res') copyText(copyResultText(h));
     else if (a === 'copy-expr') copyText(h.expr);
     else if (a === 'edit') startHistEdit(h);
@@ -4175,6 +4531,7 @@
     else if (a === 'ins-ans') insertResult(h);
     else if (a === 'ins-ref') { insertResult(h, true); focusExpr(); }
     else if (a === 'select') openHistSelect(h);
+    else if (a === 'l-size') lineSizeSheet([h]);
     else if (a === 'del') {
       const i = history.indexOf(h);
       if (i < 0) return; // the history changed while the menu was open
@@ -4350,6 +4707,100 @@
     for (const r of rows) if (r.opts && !r.note) r.note = r.label;
     return rows;
   }
+  // (1.16.2, W, the owner's wish of 11-24 22:28) "View whole": a screen to read an expression and its answer, from the field
+  // (⤢ at its edge: the expression typed and the answer of the preview) or from a line of the history ("View whole" in its
+  // ⋯). The expression in math notation and as text with the groups of digits, the answer as the history shows it, and its
+  // other forms when there are (exact, decimal, fraction, mixed, scientific: as Details). At first it fits the width of the
+  // screen (not under a readable size: then it scrolls both ways, as it does when larger); two fingers make it larger or
+  // smaller, one finger scrolls. Copy the expression, Copy the answer, Edit this line (a line), ✕; Back closes it.
+  let wholeSeq = 0;
+  function openWhole(h) {
+    const expr = h ? h.expr : toInternal(exprEl.value);
+    if (!String(expr || '').trim()) return;
+    const seq = ++wholeSeq, live = () => seq === wholeSeq;
+    const r0 = h ? null : liveRes;
+    const p = panel('whole', tr('View whole', '全体を見る'), () => {});
+    p.body.textContent = '';
+    p.body.classList.add('wv-body');
+    const zoom = el('div', { class: 'wv-zoom' });
+    const box = el('div', { class: 'wv-box', tabindex: '0', role: 'region', 'aria-label': tr('The expression and its answer', '式と答え') }, zoom);
+    const m = el('div', { class: 'wv-math', 'aria-hidden': 'true' });
+    const disp = toDisplay(expr);
+    let mathOk = false;
+    try { if (window.QMath) mathOk = QMath.render(m, normalizeExpr(disp), { richOnly: true }); } catch (e) { mathOk = false; }
+    if (mathOk) { commaMath(m); zoom.append(m); }
+    zoom.append(el('div', { class: 'wv-expr', text: groupText(prettyExpr(disp), true) }));
+    const res = el('div', { class: 'wv-res' });
+    const answer = h ? displayResult(h) : (r0 ? resultText(r0) : '');
+    if (answer) { showResult(res, answer); zoom.append(res); }
+    const forms = el('div', { class: 'wv-forms' });
+    zoom.append(forms);
+    for (const g of zoom.querySelectorAll('.mx')) g.style.fontSize = ''; // (their own size: the whole is made larger or smaller)
+    const copyAns = h ? copyResultText(h) : String(previewEl.textContent || '').replace(/^\s*[=≈]\s*/, '').trim();
+    const btns = el('div', { class: 'wv-btns' },
+      tapButton({ class: 'btn', type: 'button', text: tr('Copy expression', '式をコピー') }, () => copyText(expr)),
+      answer ? tapButton({ class: 'btn', type: 'button', text: tr('Copy result', '結果をコピー') }, () => copyText(copyAns)) : '',
+      h ? tapButton({ class: 'btn', type: 'button', text: tr('Edit this line', 'この行を直す') }, () => { closePanel(); if (history.indexOf(h) >= 0) startHistEdit(h); }) : '',
+      tapButton({ class: 'btn wv-x', type: 'button', text: '✕', 'aria-label': tr('Close', '閉じる') }, () => closePanel()));
+    p.body.append(box, btns);
+    // the size: the width of the screen at first (from 80 % to 2.2 times of 22 px), then two fingers (from 50 % to 4 times)
+    let z = 1;
+    const BASE = 22;
+    const setZ = (nz, cx, cy) => {
+      const old = z;
+      z = Math.max(0.5, Math.min(4, nz));
+      const fx = cx === undefined ? 0 : cx + box.scrollLeft, fy = cy === undefined ? 0 : cy + box.scrollTop;
+      zoom.style.fontSize = (BASE * z).toFixed(2) + 'px';
+      if (cx !== undefined) { box.scrollLeft = fx * z / old - cx; box.scrollTop = fy * z / old - cy; }
+      edgeFade(box);
+    };
+    const fit = () => {
+      zoom.style.fontSize = BASE + 'px';
+      zoom.style.width = 'max-content';
+      const w = zoom.scrollWidth, room = box.clientWidth - 24;
+      zoom.style.width = '';
+      setZ(w > 0 ? Math.max(0.8, Math.min(2.2, room / w)) : 1);
+    };
+    requestAnimationFrame(fit);
+    let pz = null;
+    const dist = (l) => Math.hypot(l[0].clientX - l[1].clientX, l[0].clientY - l[1].clientY);
+    box.addEventListener('touchstart', (e) => { if (e.touches.length === 2) { pz = { d0: dist(e.touches) || 1, z0: z }; if (e.cancelable) e.preventDefault(); } }, { passive: false });
+    box.addEventListener('touchmove', (e) => {
+      if (!pz) return;
+      if (e.cancelable) e.preventDefault();
+      if (e.touches.length < 2) return;
+      const q = box.getBoundingClientRect(), cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - q.left, cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - q.top;
+      setZ(pz.z0 * dist(e.touches) / pz.d0, cx, cy);
+    }, { passive: false });
+    const endPz = (e) => { if (pz && e.touches.length < 2) pz = null; };
+    box.addEventListener('touchend', endPz);
+    box.addEventListener('touchcancel', endPz);
+    box.addEventListener('scroll', () => edgeFade(box));
+    // the other forms of the answer (as Details: what could not be had or says nothing new is left out)
+    const hh = h || (r0 ? { expr, result: r0.result, approx: r0.approx } : null);
+    const tt = hh ? insertText(hh) : '';
+    if (!tt || functionOfX(hh)) return;
+    const rows = detailRows(hh, tt, null).filter((row) => ['exact', 'dec', 'frac', 'mixed', 'sci'].indexOf(row.id) >= 0);
+    const same = (a, b) => toDisplay(String(a || '')).replace(/\s+/g, '') === toDisplay(String(b || '')).replace(/\s+/g, '');
+    const seen = String(answer).split(/\s*(?:^|\n|\s)[=≈]\s*/).map((x) => x.trim()).filter(Boolean); // (each line of the answer)
+    (async () => {
+      for (const row of rows) {
+        const r = await Bridge.send('calc', { expr: row.expr, opts: Object.assign(engineOpts(), row.opts || {}), timeout: 3000 });
+        if (!live()) return;
+        const err = r.ok ? (r.messages || []).find((x) => x.type === 'error') : null;
+        const shown = r.ok && r.result && !r.timeout && !err ? resultText(r).replace(/^= /, '') : '';
+        if (!shown || /\b(?:diff|integrate|solve|taylor)\(/.test(r.result) || seen.some((q) => same(q, shown) || same(q, '≈ ' + shown) || same('≈ ' + q, shown))
+          || (row.id === 'exact' && r.approx) || (row.id === 'mixed' && !/ \+ /.test(r.result)) || (row.id === 'frac' && !/\//.test(r.result))
+          || (row.id === 'sci' && !/E[−-]?\d/.test(r.result))) continue;
+        seen.push(shown);
+        if (!forms.children.length) forms.append(el('div', { class: 'wv-lbl wv-head', text: tr('Other forms', 'ほかの形') }));
+        const v = el('div', { class: 'wv-val' });
+        showResult(v, resultText(r));
+        forms.append(el('div', { class: 'wv-row' }, el('div', { class: 'wv-lbl', text: row.label }), v));
+      }
+      if (live()) edgeFade(box);
+    })();
+  }
   async function openDetails(h) {
     const t = insertText(h);
     if (!t) { toast(tr('This result is too long for details', 'この結果は長すぎて詳しく見られません'), 2200); return; }
@@ -4475,6 +4926,7 @@
     else if (a === 'copy') copyText(ungroupText(row.shown)); // (1.16.0, R8)
   }
   function historyChanged() {
+    if (fromBand && history.indexOf(fromBand.h) < 0) hideFromBand(); // (1.16.2, M1: the line deleted)
     fitHistory();
     saveHistory();
     renderHistory(false);
@@ -4490,13 +4942,44 @@
   // worked out again when an older one was).
   let histEdit = null; // { h, keep: what the field held before }
   const editBand = el('div', { id: 'hist-edit', class: 'hedit', role: 'region', hidden: true, 'aria-label': tr('Editing a line of the history', '履歴の行を直しています') });
-  editBand.append(el('span', { class: 'hedit-t', text: tr('Editing a line of the history', '履歴の行を直しています') }),
+  // (1.16.2, K1 and K3, the review of 11-24 20:53 at 360 × 780) The words and the button in one part that wraps (.hedit-main),
+  // ✕ at the right of the first row: on a narrow phone ✕ went alone to a second row, and with the long heading and the tip
+  // the band, the tip and the field filled the room above the keys (the line being edited was cut). The heading is short,
+  // "Editing #51" (the region keeps its name); the tip of the first time is short and goes when the line is changed.
+  editBand.append(el('span', { class: 'hedit-main' }, el('span', { class: 'hedit-t', text: tr('Editing a line of the history', '履歴の行を直しています') }),
+    tapButton({ class: 'btn hedit-new', type: 'button', text: tr('As a new line', '新しい行にする') }, () => endHistEdit(true))),
+    tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Stop editing (nothing changes)', '直すのをやめる（何も変わりません）') }, () => endHistEdit(false)),
     el('span', { class: 'hedit-n', hidden: true }),
     // (1.16.0, the review of 11-24, R9: until 1.14 touching an expression put it into the field for a new line; shown once)
-    el('span', { class: 'hedit-tip', hidden: true, text: tr('Touching an expression edits its line: = puts the new result in its place. For a new line, press "As a new line".', '式のタップは、その行を直します。= でその行が置き換わります。新しい行にするには「新しい行にする」を押してください。') }),
-    tapButton({ class: 'btn hedit-new', type: 'button', text: tr('As a new line', '新しい行にする') }, () => endHistEdit(true)),
-    tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Stop editing (nothing changes)', '直すのをやめる（何も変わりません）') }, () => endHistEdit(false)));
+    el('span', { class: 'hedit-tip', hidden: true, text: tr('Touching an expression edits its line; = replaces it.', '式のタップはその行を直します。= で置き換わります。') }));
   $('.entry').insertBefore(editBand, $('.entry').firstChild);
+  // (1.16.2, M1, the owner's report of 11-24 18:50) An answer tapped into the empty field makes a new line with its value
+  // (= adds a line), but where the answer looks like its expression (a matrix of x/… with x not defined) it could not be
+  // told from touching the expression, which edits the line: the owner changed the numbers and got a new line #52. A pale
+  // band in the place of the editing band says so, "Making a new line from the answer of #51", with "Edit this line" (that
+  // line edited: its expression in the field, or what the field holds when it was changed since the tap) and ✕. It goes
+  // with =, AC, the field emptied, ✕, and the line edited or gone; not for a tap while a formula is typed (a click on a cell).
+  const fromEl = el('div', { id: 'hist-from', class: 'hedit hfrom', role: 'region', hidden: true, 'aria-label': tr('A new line from an answer', '答えから新しい行') });
+  fromEl.append(el('span', { class: 'hedit-main' }, el('span', { class: 'hedit-t' }),
+    tapButton({ class: 'btn hfrom-edit', type: 'button', text: tr('Edit this line', 'この行を直す') }, () => editFromBand())),
+    tapButton({ class: 'icon-btn hedit-x', type: 'button', text: '✕', 'aria-label': tr('Close (the field stays as it is)', '閉じる（入力欄はそのまま）') }, () => hideFromBand()));
+  $('.entry').insertBefore(fromEl, editBand.nextSibling);
+  function showFromBand(h, after) {
+    fromBand = { h, after };
+    const t = trf('Making a new line from the answer of #{0}', '#{0} の答えから新しい行を作っています', h.n);
+    fromEl.querySelector('.hedit-t').textContent = t;
+    fromEl.hidden = false;
+    $('#status').textContent = t;
+  }
+  function hideFromBand() { if (!fromBand) return; fromBand = null; fromEl.hidden = true; }
+  function editFromBand() {
+    const B = fromBand;
+    hideFromBand();
+    if (!B || history.indexOf(B.h) < 0) return;
+    const cur = exprEl.value, changed = !!cur.trim() && cur !== B.after;
+    startHistEdit(B.h);
+    if (changed) { exprEl.value = cur; exprEl.setSelectionRange(cur.length, cur.length); exprChanged(); }
+  }
   // (1.16.0, the review of 11-24, R3) The angle unit a line was worked out with (h.angle, kept from 1.16.0): editing it, working it
   // out again (the lines below, other digits) and making its definitions again use it, not the setting of now (until then
   // sin(30) worked out in degrees gave −0.988… after the setting went back to radians, without a word). A line of an earlier
@@ -4513,11 +4996,14 @@
   function startHistEdit(h) {
     if (history.indexOf(h) < 0) return;
     if (histSel) closeHistSelect();
+    hideFromBand(); // (1.16.2, M1)
     if (!histEdit) histEdit = { h, keep: exprEl.value };
     else histEdit.h = h;
+    liveCellOff(false); // (1.16.2, E2: another line touched: the caret in the field, as before)
     const n = editBand.querySelector('.hedit-n'), b = Number(h.base || 10), now = Number(S.base);
     n.textContent = [b !== now ? trf('This line was in {0}; it is worked out in {1}, as set now', 'この行は {0} でした。今の設定の {1} で計算します', BASE_NAME[b] || String(b), BASE_NAME[now] || String(now)) : '', angleNote(h)].filter(Boolean).join(' ');
     n.hidden = !n.textContent;
+    editBand.querySelector('.hedit-t').textContent = trf('Editing #{0}', '#{0} 直しています', h.n);
     // (1.16.0, R9) the first time: what touching an expression does
     const tip = editBand.querySelector('.hedit-tip');
     if (tip) { tip.hidden = store.get('qalc.hedittip', false) === true; store.set('qalc.hedittip', true); }
@@ -4532,7 +5018,183 @@
     $('#status').textContent = tr('Editing a line of the history: = puts the new result in its place', '履歴の行を直しています。= で、その行を新しい式と答えに置き換えます');
     focusExpr();
   }
-  function markEditing() { for (const it of histEl.querySelectorAll('.h-item')) it.classList.toggle('editing', !!histEdit && it._h === histEdit.h); }
+  function markEditing() { for (const it of histEl.querySelectorAll('.h-item')) it.classList.toggle('editing', !!histEdit && it._h === histEdit.h); syncLiveRow(); }
+  // (1.16.2, E, the owner's wish of 11-24 18:53: as a spreadsheet changes the cell while its formula is typed in the formula
+  // bar) The line being edited shows in its place, as it is typed below: "Editing #51", the expression typed (as the
+  // history writes it), = and its new answer (the preview's result, not worked out again: "…" meanwhile, its error in the
+  // preview's words; only the expression when previews are off), and small and grey "Before: …" (the line as it is, in one
+  // or two lines). The history itself changes only with =; ✕, back and "As a new line" show the line as it was. The line
+  // stays in sight when it grows (revealHistLine, only when it was in sight). Not read out as it changes (no aria-live: the
+  // preview under the field is).
+  function syncLiveRow() {
+    const H = histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
+    for (const it of histEl.querySelectorAll('.h-item.live')) {
+      if (H && it._h === H) continue;
+      it.classList.remove('live');
+      const l = it.querySelector(':scope > .h-live'); if (l) l.remove();
+    }
+    if (!H) { liveCellOff(true); return; }
+    const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === H);
+    if (!it) return;
+    const r0 = it.getBoundingClientRect(), b0 = histEl.getBoundingClientRect(), seen = r0.bottom > b0.top && r0.top < b0.bottom;
+    // (E2) the expression is a box to type in, the same one while the line is edited (histEdit.cell), joined to the field
+    const cell = histEdit.cell || (histEdit.cell = liveCell());
+    cell.setAttribute('aria-label', trf('Expression of #{0} (editing)', '#{0} の式（直しています）', H.n));
+    let box = it.querySelector(':scope > .h-live');
+    if (!box || box._h !== H) {
+      if (box) box.remove();
+      box = el('div', { class: 'h-live' });
+      box._h = H;
+      box.append(el('div', { class: 'h-live-t', 'aria-hidden': 'true' }), cell, el('div', { class: 'h-live-a' }), el('div', { class: 'h-live-old' }));
+      it.insertBefore(box, it.querySelector(':scope > .h-expr'));
+      if (liveCellOn && document.activeElement !== cell) { try { cell.focus({ preventScroll: true }); } catch (e) { cell.focus(); } }
+    }
+    it.classList.add('live');
+    box.querySelector('.h-live-t').textContent = trf('Editing #{0}', '#{0} 直しています', H.n);
+    const v = exprEl.value;
+    // (K1) the tip of the first time, once the line is changed: the room for the line
+    const tip = editBand.querySelector('.hedit-tip');
+    if (!tip.hidden && v !== toDisplay(H.expr)) tip.hidden = true;
+    if (!liveComposing) {
+      if (cell.value !== v) cell.value = v;
+      if (liveCellOn && document.activeElement === cell && (cell.selectionStart !== exprEl.selectionStart || cell.selectionEnd !== exprEl.selectionEnd)) cell.setSelectionRange(exprEl.selectionStart, exprEl.selectionEnd);
+    }
+    fitText(cell, 17 * histScale() * (H.fs || 1), 1.35, 8); // (1.16.2, R2 and Z4)
+    // ((1.16.2, S4) at most 40 % of the history high (and 3 lines): then it scrolls in itself, its caret in sight)
+    cell.style.height = 'auto';
+    const cmax = Math.max(parseFloat(getComputedStyle(cell).fontSize) * 1.35 * 3 + 10, Math.round(histEl.clientHeight * 0.4));
+    cell.style.height = Math.min(cell.scrollHeight + (cell.offsetHeight - cell.clientHeight), cmax) + 'px'; // (border-box: its borders too)
+    cell.style.overflowY = cell.scrollHeight > cell.clientHeight + 1 ? 'auto' : 'hidden';
+    if (cell.style.overflowY === 'auto' && document.activeElement !== cell) {
+      const sp = cellSpot(cell, exprEl.selectionEnd || 0);
+      if (sp.y < cell.scrollTop || sp.y + sp.h > cell.scrollTop + cell.clientHeight) cell.scrollTop = Math.max(0, sp.y + sp.h - cell.clientHeight + 4);
+    }
+    const holder = box.querySelector('.h-live-a');
+    holder.textContent = '';
+    if (S.preview && v.trim()) {
+      const ans = el('div', { class: 'h-res h-live-r' });
+      if (livePending) ans.textContent = '…';
+      else if (msgEl.classList.contains('error') && msgEl.textContent) { ans.className = 'h-msg error h-live-r'; ans.textContent = msgEl.textContent; }
+      else if (liveRes) showResult(ans, resultText(liveRes));
+      else if (previewEl.textContent) { ans.className = 'h-msg note h-live-r'; ans.textContent = previewEl.textContent; }
+      holder.append(ans);
+      fitMatrices(holder);
+    }
+    box.querySelector('.h-live-old').textContent = tr('Before: ', '元：') + prettyExpr(toDisplay(H.expr)) + ' ' + displayResult(H);
+    if (liveCellOn) revealCaret();
+    else if (seen) revealHistLine(H, 400);
+  }
+  // (1.16.2, E2, the owner's decision of 11-24 19:14: "both, as in Excel") The line being edited can be typed in, in its
+  // place as in a cell, or in the field below as in the formula bar: what is typed in one shows at once in the other. The
+  // field stays the one text (exprEl): the box of the line passes what is typed in it to the field (and the field's input
+  // runs as when typed there), and is given the field's text and caret back after every change. The keys, ◀ ▶, ⌫, Undo,
+  // the suggestions and the hints, the taps on answers (their value or #n at the caret, as clicking a cell while a formula
+  // is typed) all work on the field, whose caret is the box's; ⌨ opens the phone keyboard on the box. Pasted into the box,
+  // a text goes in as it is (no sheet of values). = puts the line in its place, ✕ and back stop, as from the field.
+  function liveCell() {
+    const c = el('textarea', { class: 'h-cell h-live-e', rows: 1, inputmode: exprEl.inputMode === 'text' ? 'text' : 'none', enterkeyhint: 'go', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
+    // (the line's own taps and long touch, which keep the focus in the field, are not for the box)
+    for (const ev of ['pointerdown', 'pointerup', 'contextmenu', 'click']) c.addEventListener(ev, (e) => e.stopPropagation());
+    c.addEventListener('pointerdown', () => { if (keysFolded) foldKeys(false); }); // (1.16.2, V: the keys back)
+    // (1.16.2, K2, the review of 11-24 20:53) the box is right-aligned: a tap on the empty part left of the text put the
+    // caret at the start of the line (1200*1.1 and 5 gave 51200*1.1). A tap where there is no text: the caret at the end
+    c.addEventListener('click', (e) => {
+      if (c.selectionStart !== c.selectionEnd || !c.value) return;
+      const r = c.getBoundingClientRect(), s = cellSpot(c, c.selectionStart);
+      if (e.clientX - r.left < s.x - 8) {
+        const n = c.value.length;
+        c.setSelectionRange(n, n); exprEl.setSelectionRange(n, n);
+        updateSuggest(false); updateNextBox();
+      }
+    });
+    c.addEventListener('focus', () => {
+      liveCellOn = true;
+      document.body.classList.add('cell-on');
+      exprEl.setSelectionRange(c.selectionStart, c.selectionEnd);
+      autosize(); updateToolbar(); updateSuggest(false);
+    });
+    c.addEventListener('compositionstart', () => { liveComposing = true; });
+    c.addEventListener('compositionend', () => { liveComposing = false; fromCell(null); });
+    c.addEventListener('input', (e) => fromCell(e));
+    c.addEventListener('beforeinput', (e) => { if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') { e.preventDefault(); commit(); } });
+    c.addEventListener('keydown', (e) => {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); endHistEdit(false); }
+      else if ((e.ctrlKey || e.metaKey) && /^[zy]$/i.test(e.key)) { if (stepField(e.key.toLowerCase() === 'z' && !e.shiftKey)) e.preventDefault(); }
+    });
+    c.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const t = String((e.clipboardData && e.clipboardData.getData('text')) || '').replace(/\s*[\r\n]+\s*/g, ' ').replace(/\t+/g, ' ').trim();
+      if (!t) return;
+      exprEl.setSelectionRange(c.selectionStart, c.selectionEnd);
+      insert(t);
+    });
+    return c;
+  }
+  // what was typed in the box of the line, into the field (its own input then runs: Japanese full-width signs, ans …)
+  function fromCell(e) {
+    const c = histEdit && histEdit.cell;
+    if (!c) return;
+    exprEl.value = c.value;
+    exprEl.setSelectionRange(c.selectionStart, c.selectionEnd);
+    exprEl.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: !!(e && e.isComposing), inputType: (e && e.inputType) || 'insertText' }));
+  }
+  // the caret moved in the box (a tap, a drag, the arrows of a keyboard): the field's caret with it
+  document.addEventListener('selectionchange', () => {
+    const c = histEdit && histEdit.cell;
+    if (!c || document.activeElement !== c || liveComposing) return;
+    if (exprEl.selectionStart !== c.selectionStart || exprEl.selectionEnd !== c.selectionEnd) { exprEl.setSelectionRange(c.selectionStart, c.selectionEnd); updateSuggest(false); updateNextBox(); }
+  });
+  // after a key that only moves the caret (◀ ▶) or changes the field: the box's caret as the field's
+  function liveCaret() {
+    const c = histEdit && histEdit.cell;
+    if (!liveCellOn || !c || !c.isConnected || liveComposing) return;
+    if (c.value !== exprEl.value) c.value = exprEl.value;
+    if (document.activeElement !== c) { try { c.focus({ preventScroll: true }); } catch (e) { c.focus(); } }
+    c.setSelectionRange(exprEl.selectionStart, exprEl.selectionEnd);
+    revealCaret();
+  }
+  function liveCellOff(refocus) {
+    if (!liveCellOn) return;
+    liveCellOn = false; liveComposing = false;
+    document.body.classList.remove('cell-on');
+    autosize();
+    if (refocus && (!document.activeElement || document.activeElement === document.body)) focusExpr();
+  }
+  // where the caret is in the box of the line stays in sight above the keys when the line grows (the line as tall as it
+  // is: from a copy of the box's text up to the caret)
+  // where a position of the box is drawn, from a copy of its text with a mark there: { x, y, h } in the box
+  function cellSpot(c, pos) {
+    const cs = getComputedStyle(c), m = document.createElement('div');
+    for (const k of ['width', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderLeftWidth', 'borderRightWidth', 'borderTopStyle', 'borderLeftStyle', 'borderRightStyle', 'boxSizing', 'textAlign']) m.style[k] = cs[k];
+    Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', top: '0', left: '-9999px' });
+    const mk = document.createElement('span'); mk.textContent = '\u200b';
+    m.append(document.createTextNode(c.value.slice(0, pos)), mk, document.createTextNode(c.value.slice(pos)));
+    document.body.append(m);
+    const s = { x: mk.offsetLeft, y: mk.offsetTop, h: mk.offsetHeight || parseFloat(cs.fontSize) * 1.3 };
+    m.remove();
+    return s;
+  }
+  function revealCaret() {
+    const run = () => {
+      const c = histEdit && histEdit.cell;
+      if (!liveCellOn || !c || !c.isConnected || !histEl.clientHeight) return;
+      const sp = cellSpot(c, c.selectionEnd || 0), y0 = sp.y - c.scrollTop, lh = sp.h; // ((S4) a box that scrolls in itself)
+      const r = c.getBoundingClientRect(), b = histEl.getBoundingClientRect(), y = r.top + y0, pad = 8;
+      let d = 0;
+      if (y < b.top + pad) d = y - b.top - pad;
+      else if (y + lh > b.bottom - pad) d = y + lh - b.bottom + pad;
+      if (Math.abs(d) >= 1) histEl.scrollTop += d;
+      histPinned = histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight < 24;
+    };
+    run();
+    requestAnimationFrame(run);
+    setTimeout(run, 250);
+  }
+  const queueLive = () => { if (liveQ) return; liveQ = true; Promise.resolve().then(() => { liveQ = false; if (histEdit) syncLiveRow(); }); };
+  // (the errors the preview writes itself: a wrong decimal sign, □ to fill, a #12 that is not there)
+  new MutationObserver(() => { if (histEdit && !livePending) queueLive(); }).observe(msgEl, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   // asNew: "As a new line" (the expression stays in the field, = adds a line); otherwise ✕ or back: nothing changes, the
   // field gets back what it held
   function endHistEdit(asNew) {
@@ -4625,10 +5287,22 @@
       if (!histReveal || histReveal.h !== h) return;
       const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === h);
       if (!it || !histEl.clientHeight) return;
-      const r = it.getBoundingClientRect(), b = histEl.getBoundingClientRect(), m = 8;
+      let r = it.getBoundingClientRect();
+      const b = histEl.getBoundingClientRect(), m = 8;
       let bottom = b.bottom;
       const t = $('#toast');
       if (t.classList.contains('show')) { const q = t.getBoundingClientRect(); if (q.top < b.bottom && q.bottom > b.top && q.top - b.top > r.height + 2 * m) bottom = q.top; }
+      // (1.16.2, K1) a line being edited taller than the room (a narrow phone): from its box to type in down to "Before",
+      // or down to the new answer, or the box alone; its heading may go above
+      const live = it.classList.contains('live') && it.querySelector(':scope > .h-live'), room = bottom - b.top - 2 * m;
+      if (live && r.height > room) {
+        const c = live.querySelector('.h-cell'), a = live.querySelector('.h-live-a');
+        const top = c.getBoundingClientRect().top;
+        let bot = r.bottom;
+        if (bot - top > room) bot = (a && a.textContent ? a : c).getBoundingClientRect().bottom;
+        if (bot - top > room) bot = top + room;
+        r = { top, bottom: bot, height: bot - top };
+      }
       let d = 0;
       if (r.height > bottom - b.top - 2 * m) d = r.top - b.top - m;
       else if (r.top < b.top + m) d = r.top - b.top - m;
@@ -5114,6 +5788,7 @@
     // Japanese names: shown beside the English title and used by the search
     const names = !JA ? {} : kind === 'functions' ? FUNC_JA : kind === 'variables' ? VAR_JA : JA_NAMES;
     items.forEach((it, i) => { it._i = i; }); // the engine's order: the common units of a category come first
+    if (kind === 'units') await addRegionCurrency(items);
     for (const it of items) {
       it._cat = it.category || tr('Other', 'その他');
       it._top = it._cat.split('/')[0];
@@ -5128,6 +5803,19 @@
     items.sort((a, b) => (a.title || a.name).localeCompare(b.title || b.name));
     catalogs[kind] = items;
     return items;
+  }
+  // (1.16.2) The money of the region in the list of units, also when the engine keeps it out: the engine hides the
+  // currencies that only the second source of rates has (the New Taiwan dollar, the pesos of Argentina, Chile and
+  // Colombia…), though it converts them. Without it a phone in Taiwan opened the converter on EUR → USD, with no TWD to
+  // choose (the converter, the list of units and its search). A currency the engine cannot convert stays out.
+  const CURRENCY_TITLES = { TWD: 'New Taiwan Dollar', ARS: 'Argentine Peso', CLP: 'Chilean Peso', COP: 'Colombian Peso', PEN: 'Peruvian Sol',
+    UYU: 'Uruguayan Peso', VND: 'Vietnamese Dong' };
+  async function addRegionCurrency(items) {
+    const c = regionCurrency();
+    if (!/^[A-Z]{3}$/.test(c) || items.some((it) => it.name === c || it.abbr === c)) return;
+    if (!(await fxRate(c, c === 'USD' ? 'EUR' : 'USD') > 0)) return;
+    items.push({ name: c, abbr: c, display: c, title: own(CURRENCY_TITLES, c) || '', category: 'Currency', description: '', currency: true, local: false,
+      composite: false, insert: true, _i: -1 });
   }
   const CATALOG_TITLE = { functions: tr('Functions', '関数の一覧'), units: tr('Units and currencies', '単位・通貨の一覧'), variables: tr('Variables and constants', '変数・定数の一覧') };
   // titles and descriptions of the traditional Japanese units in Japanese (the engine has them in English)
@@ -5860,6 +6548,15 @@
     return [{ kind: 'implicit', text: line, F: '(' + N(L) + ') − (' + N(R) + ')' }];
   }
   // all the lines of the box (up to max items; .more: how many were left out)
+  // (1.16.2, B3) the 1:1 of the 2D graph: the choice for every graph (qalc.plot.equal, the button), or that of the functions
+  // it was made for (a circle or a heart of the samples, kept with them: qalc.plot.equalFor { exprs, on }), so that they are
+  // round again when the page is opened again (Android ends the page of the app to free memory, and it is loaded again)
+  const equal2dKey = (text) => plotItems(text, 6).map((q) => q.text).join('\n');
+  function equal2dFor(text) {
+    if (store.get('qalc.plot.equal', false) === true) return true;
+    const kf = store.get('qalc.plot.equalFor', null);
+    return !!(kf && typeof kf === 'object' && kf.on === true && typeof kf.exprs === 'string' && kf.exprs === equal2dKey(text));
+  }
   function plotItems(text, max) {
     const all = [];
     for (const line of String(text || '').split('\n')) all.push(...lineItems(line));
@@ -6538,6 +7235,9 @@
         P.eqBtn = el('button', { class: 'eq', text: '1:1', 'aria-label': tr('The same scale on the x and y axes', 'x と y の目盛りの間隔をそろえる'), onclick: () => {
           P.equal = !P.equal;
           store.set('qalc.plot.equal', P.equal);
+          // ((1.16.2, B3) and for the functions drawn, when their 1:1 was kept with them: the choice made now)
+          const kf = store.get('qalc.plot.equalFor', null);
+          if (kf && typeof kf === 'object' && kf.exprs === (P.items || []).map((q) => q.text).join('\n')) store.set('qalc.plot.equalFor', { exprs: kf.exprs, on: P.equal });
           P.view = null; P.mark = null; P.tip.style.display = 'none';
           draw();
         } }),
@@ -6548,7 +7248,7 @@
           el('span', { class: 'rev3d-i', 'aria-hidden': 'true', text: '⟳' }), el('small', { 'aria-hidden': 'true', text: '3D' })),
         // 1.12.0 (D4): a picture of the graph to the share sheet
         el('button', { class: 'share-g', text: '↗', 'aria-label': tr('Share a picture of the graph', 'グラフの画像を共有'), onclick: () => shareGraph2d() }));
-      P.equal = P.equal || store.get('qalc.plot.equal', false) === true;
+      P.equal = P.equal || equal2dFor(ta.value);
       const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
       // (1.15.0) the sliders of the letters, under the graph
       P.sl = sliderBox({ key: SL_KEY2D, redraw: sliderRedraw2d,
@@ -6575,7 +7275,7 @@
           P.points = null; P.marks = []; P.pending = null; P.guides = null;
           // the same scale of a sample (a circle) and the marked sample stay while the same functions
           // are drawn again with another range; other functions drop them (1.8.3)
-          if (plotItems(ta.value, 6).map((q) => q.text).join('\n') !== (P.items || []).map((q) => q.text).join('\n')) { P.equal = store.get('qalc.plot.equal', false) === true; if (P.samples) P.samples.clearChoice(); }
+          if (plotItems(ta.value, 6).map((q) => q.text).join('\n') !== (P.items || []).map((q) => q.text).join('\n')) { P.equal = equal2dFor(ta.value); if (P.samples) P.samples.clearChoice(); }
         }
         P.keep = false;
         setItems(ta.value);
@@ -6619,7 +7319,9 @@
     P.points = opts.points || null;
     P.marks = [];
     P.guides = null;
-    P.equal = !!opts.equal || store.get('qalc.plot.equal', false) === true; // the same scale on both axes (a circle stays round)
+    P.equal = !!opts.equal || equal2dFor(toDisplay(list.join('\n'))); // the same scale on both axes (a circle stays round)
+    // ((1.16.2, B3) kept with the functions, as the page may be opened again: Android ends it to free memory)
+    if (opts.equal) store.set('qalc.plot.equalFor', { exprs: equal2dKey(toDisplay(list.join('\n'))), on: true });
     P.pending = opts;
     const built = !!panels.plot;
     if (!built) store.set('qalc.plot.ok', true);
@@ -9322,7 +10024,8 @@
     Q3.ta.value = toDisplay(top + '\n−' + top);
     Q3.inputs.forEach((e, i) => { e.value = toDisplay(String(r6(i % 2 ? w : -w))); });
     if (Q3.resEl && Number(Q3.resEl.value) < 61) Q3.resEl.value = '61';
-    Q3.equalOnce = true; // round for this drawing; the 1:1 setting itself stays as it was
+    Q3.equalOnce = true; // round for this drawing, and kept with its formulas (1.16.2, B1)
+    keepEqual3d(Q3.ta.value);
     if (Q3.samples) Q3.samples.clearChoice(); // (the sphere is not the sample that was marked, 1.8.2)
     Q3.keep = true;
     Q3.pending = async () => {
@@ -10721,7 +11424,10 @@
     // (fix/3d-first-colors: the sphere and the doughnut have their edges from their shape, as a solid of revolution, and are
     // one solid from the first drawing; for the expressions as the graph reads them from the box, while they are drawn)
     Q3.sampleRims = d.rims ? Object.assign({ exprs: plotExprs(Q3.ta.value, 4).join('\n') }, d.rims) : null;
-    Q3.equalOnce = !!d.eq; // round for this drawing; the 1:1 setting itself stays as it was
+    Q3.equalOnce = !!d.eq; // round for this drawing
+    // ((1.16.2, B1, B2) and kept with the formulas, for the page opened again: round, one solid, with its exact edges)
+    if (d.eq) keepEqual3d(Q3.ta.value);
+    keepRims3d(Q3.sampleRims, true);
     // "Volume and surface" measures over the region that fits the sample (a disk for a sphere)
     const U = Q3.volUI;
     if (U) { U.setRegion(d.disk ? 'disk' : 'rect', true); if (d.disk) U.R.value = d.disk; U.regionSet = true; }
@@ -10876,6 +11582,8 @@
     // graphs, true or false, counts as no choice)
     const eq = store.get('qalc.plot3d.equal', 'auto');
     Q3.equal = eq && typeof eq === 'object' && typeof eq.on === 'boolean' && typeof eq.exprs === 'string' ? eq : 'auto';
+    // ((1.16.2, B2) the edges of the sample drawn last, for its formulas drawn again after the page was opened again)
+    if (!Q3.sampleRims) Q3.sampleRims = rimsKept();
     const wrap = el('div', { class: 'plot-wrap' }, canvas, ctl, tip);
     // (1.15.0) the sliders of the letters (QCalc Pro in 3D)
     Q3.sl = sliderBox({ key: SL_KEY3D, redraw: sliderRedraw3d, locked: () => PRO_GATES.sliders3d === 'pro' && !hasPro(), anyStep: false,
@@ -10919,15 +11627,19 @@
     const sv = store.get('qalc.plot3d.see', null);
     Q3.see = { on: !!(sv && sv.on === true), a: sv && sv.a >= 0.1 && sv.a <= 0.9 ? sv.a : 0.35, box: !(sv && sv.box === false), off: sv && sv.off && typeof sv.off === 'object' ? sv.off : {} };
     const saveSee = () => store.set('qalc.plot3d.see', Q3.see);
-    const seeBtn = tapButton({ class: 'btn see-btn', 'aria-pressed': 'false', text: tr('See-through', '透明') }, () => { if (!gl3dReady()) return; Q3.see.on = !Q3.see.on; saveSee(); syncSeeRow(); draw3d(); });
+    const seeBtn = tapButton({ class: 'btn see-btn', 'aria-pressed': 'false', text: tr('See-through', '透明') }, () => { if (!gl3dReady()) return; Q3.see.on = !Q3.see.on; if (Q3.see.on) seeSomething(); saveSee(); syncSeeRow(); draw3d(); });
     const seeRange = el('input', { type: 'range', min: '10', max: '90', step: '5', 'aria-label': tr('How opaque (%)', '濃さ（%）') });
     const seeVal = el('span', { class: 'rev-angle-v' });
+    // (1.16.2, A3) the slider's words on the screen too (its value is how opaque, not how see-through: "See-through 75%"
+    // read as 75 % see-through); the same words as its name, which screen readers read
+    const seeLbl = el('span', { class: 'see-lbl', text: tr('How opaque', '濃さ'), 'aria-hidden': 'true' });
     // (the slider can be moved while the see-through is off, by a finger, the keyboard or a screen reader: it turns the
     // see-through on, as a phone showed a slider that did not move until "See-through" was pressed first)
     seeRange.addEventListener('input', () => {
       if (!(gl3dWanted() && gl3dReady())) return;
       const was = Q3.see.on;
       Q3.see.a = Number(seeRange.value) / 100; Q3.see.on = true;
+      if (!was) seeSomething();
       saveSee(); syncSeeRow();
       if (was) requestDraw3d(); else draw3d();
     });
@@ -10935,7 +11647,7 @@
     // see-through on too; a finger that scrolls the page from the slider ends with pointercancel, not pointerup)
     const seeFromRange = () => {
       if (!(gl3dWanted() && gl3dReady()) || Q3.see.on) return;
-      Q3.see.on = true; saveSee(); syncSeeRow(); draw3d();
+      Q3.see.on = true; seeSomething(); saveSee(); syncSeeRow(); draw3d();
     };
     seeRange.addEventListener('pointerup', seeFromRange);
     seeRange.addEventListener('keydown', (e) => { if (/^(Arrow|Page|Home$|End$)/.test(e.key)) seeFromRange(); });
@@ -10943,8 +11655,10 @@
     const seeNote = el('span', { class: 'see-note', id: 'see-note', hidden: true, text: tr('Not available on this device', 'この端末では使えません') });
     // (what is see-through: a chip for each formula, the solid, the container and the liquid of a tank)
     const seeChips = el('div', { class: 'see-chips', role: 'group', 'aria-label': tr('See-through: what', '透明にするもの'), hidden: true });
-    const seeRow = el('div', { class: 'plot-range rev-angle see-row', hidden: true }, seeBtn, seeRange, seeVal, boxBtn, seeNote, seeChips);
-    Object.assign(Q3, { seeRow, seeBtn, seeRange, seeVal, boxBtn, seeNote, seeChips, saveSee });
+    // (the words, the slider and its value kept together on one line, as the row wraps on a phone)
+    const seeOp = el('span', { class: 'see-op' }, seeLbl, seeRange, seeVal);
+    const seeRow = el('div', { class: 'plot-range rev-angle see-row', hidden: true }, seeBtn, seeOp, boxBtn, seeNote, seeChips);
+    Object.assign(Q3, { seeRow, seeBtn, seeOp, seeLbl, seeRange, seeVal, boxBtn, seeNote, seeChips, saveSee });
     const read = () => {
       Q3.exprs = plotExprs(ta.value, 4);
       Q3.range = [xmin, xmax, ymin, ymax].map((e) => normalizeExpr(e.value));
@@ -11021,9 +11735,12 @@
     store.set('qalc.plot3d.ok', true);
     Q3.points = opts.points || null;
     Q3.equalOnce = !!opts.equal;
+    // ((1.16.2, B1, B2) the 1:1 and the edges kept with the formulas, for the page opened again)
+    if (opts.equal) keepEqual3d(toDisplay(list.join('\n')));
     Q3.growNext = opts.grow || null;
     // (the edges of a solid of revolution, from its shape: specRims, 1.12.0 BG09)
     Q3.rimSpec = opts.rims ? Object.assign({ exprs: list.join('\n') }, opts.rims) : null;
+    if (Q3.rimSpec) keepRims3d(Q3.rimSpec, false);
     Q3.revInfo = opts.grow || null; // (the angle row of B2)
     if (Q3.angleRow) Q3.angleRow.hidden = !Q3.revInfo;
     // (a solid made in the 2D graph, BG20: its volume large above the graph, and "← Back to 2D")
@@ -11132,7 +11849,7 @@
     if (ok) Q3.seeBtn.removeAttribute('aria-describedby'); else Q3.seeBtn.setAttribute('aria-describedby', 'see-note');
     Q3.seeNote.hidden = ok;
     Q3.seeRange.disabled = !ok; Q3.seeRange.hidden = !ok; Q3.seeRange.value = String(pc);
-    Q3.seeVal.hidden = !ok; Q3.seeVal.textContent = pc + '%';
+    Q3.seeVal.hidden = !ok; Q3.seeVal.textContent = pc + '%'; Q3.seeLbl.hidden = !ok; Q3.seeOp.hidden = !ok;
     const box = Q3.see.box !== false;
     Q3.boxBtn.setAttribute('aria-pressed', String(box)); Q3.boxBtn.classList.toggle('on', box);
     // the chips (only when there are two things or more to choose from)
@@ -11140,17 +11857,47 @@
     ch.textContent = '';
     ch.hidden = !on || G.list.length < 2;
     if (ch.hidden) return;
+    // (1.16.2, the owner's note of 11-24 18:15, (ウ)) the chips are the choice of what is see-through: said before them, and a
+    // chosen one has ✓ (a phone kept both of a torus's halves taken out, and "See-through" seemed not to work)
+    ch.append(el('span', { class: 'see-chips-lbl', text: tr('What is see-through:', '透明にするもの：'), 'aria-hidden': 'true' }));
+    const selOf = (it) => (it.k === 9 ? G.groups[9].see > 0 : G.groups[it.k].see > 0);
+    // (1.16.2, A4) a tank whose container is taken out is drawn opaque, and nothing inside it is seen: its liquid cannot be
+    // chosen then, and a line says why
+    const shut = !!(Md && Md.tank && G.list.some((x) => x.key === 'glass') && !(G.groups[9].see > 0));
     for (const it of G.list) {
-      const k = it.k, sel = (Md && Md.tank && k === 8) ? G.groups[8].see > 0 : (k === 9 ? G.groups[9].see > 0 : G.groups[k].see > 0);
+      const sel = selOf(it), locked = shut && it.key === 'liquid';
       const b = tapButton({ class: 'chip see-chip' + (sel ? ' on' : ''), 'aria-pressed': String(sel), 'data-key': it.key }, () => {
+        if (locked) return;
         Q3.see.off = Q3.see.off || {};
         Q3.see.off[it.key] = sel;
+        // ((イ) the last chosen one taken out: the see-through goes off, and next time it is on everything is see-through
+        // again, so that it is never on with nothing see-through)
+        if (sel && !G.list.some((x) => x !== it && selOf(x))) {
+          Q3.see.on = false;
+          for (const x of G.list) delete Q3.see.off[x.key];
+        }
         Q3.saveSee(); syncSeeRow(); draw3d();
       });
+      if (sel) b.append(el('span', { class: 'see-ck', text: '✓', 'aria-hidden': 'true' }));
       if (it.color) b.append(el('span', { class: 'see-sw', style: 'background:' + it.color, 'aria-hidden': 'true' }));
       b.append(el('span', { text: it.label }));
+      if (locked) { b.disabled = true; b.setAttribute('aria-describedby', 'see-shut'); }
       ch.append(b);
     }
+    if (shut) ch.append(el('span', { class: 'see-shut', id: 'see-shut', text: tr('Seen when the container is see-through', '容器を透明にすると見えます') }));
+  }
+  // (1.16.2, (ア)) the see-through turned on, or found on, with nothing of what is drawn see-through (every chip taken out
+  // earlier, kept for each formula): their keys out of the list of what is taken out, so that all of it is see-through (a tank:
+  // as by default, the container see-through and the liquid not). Says whether it changed anything.
+  function seeSomething() {
+    const S = Q3.see;
+    if (!S || !S.on || !S.off) return false;
+    const L = gl3dGroups(Q3.data, Q3.model, true).list;
+    if (!L.length) return false;
+    const any = L.some((it) => (S.off[it.key] === undefined ? it.key !== 'liquid' : !S.off[it.key]));
+    if (any) return false;
+    for (const it of L) delete S.off[it.key];
+    return true;
   }
   // a size written on a model ({ sym, val, unit } → "r = 15 cm"; D7: the digits of the 3D picture)
   const labText = (o) => (!o ? '' : typeof o === 'string' ? o : o.sym + ' = ' + digPic(o.val, 'dim') + (o.unit ? ' ' + o.unit : ''));
@@ -11590,6 +12337,8 @@
     const tR = Date.now();
     if (!refined && !devFlag('norefine')) refined = await refineRims(series, r.x, r.y, seq, guessed);
     if (seq !== Q3.seq) { clearTimeout(late); return; }
+    // ((1.16.2, B4) f and −f on a coarse grid: more halvings where their edges are still apart near the middle)
+    if (refined && !spec && guessed && mirrors.length) { await refineMirrored(series, mirrors, guessed, seq, data.z0, data.z1); if (seq !== Q3.seq) { clearTimeout(late); return; } }
     if (!spec) settle(true);
     // where the surfaces leave the box at its top or bottom (1.9.5)
     const tC = Date.now();
@@ -11959,10 +12708,81 @@
     keep();
     return true;
   }
+  // (1.16.2, B4, the reviewer's note of 11-24 18:40) f and −f typed as two formulas (a sphere, a doughnut) and drawn on a
+  // coarse grid (25×25): after refineRims the last point found with a value is still some way from the edge (8 halvings
+  // of a longer step), and a surface that ends as a square root is still high there (the doughnut: ±0.045 apart, more
+  // than joinedSolid allows), so the two halves stayed two surfaces in two colors with a seam. Where the two found edges
+  // are apart, but near each other (as meetMirrored), the step of f is halved again (up to 10 times, all such lines in one
+  // calculation per step) until its height there is small; −f has the same edge at the opposite height. Two halves that
+  // end apart (±(√(1 − x² − y²) + 1)) stay apart: their heights there do not become small. Gives whether it changed any.
+  async function refineMirrored(series, pairs, jobs, seq, z0, z1) {
+    const tz = 0.02 * (z1 - z0), near = 0.3 * (z1 - z0), todo = [];
+    for (const [a, b] of pairs) {
+      for (const jb of jobs) {
+        if (jb.si !== a) continue;
+        const e = series[a].rim && series[a].rim[jb.key], o = series[b].rim && series[b].rim[jb.key];
+        if (!e || !o || !isFinite(e.z) || !isFinite(o.z) || Math.abs(e.x - o.x) + Math.abs(e.y - o.y) > 1e-9 * (1 + Math.abs(e.x) + Math.abs(e.y))) continue;
+        const d = Math.abs(e.z - o.z);
+        if (d > tz && d <= near && jb.px !== undefined) todo.push({ jb, b });
+      }
+    }
+    if (!todo.length || todo.length > 1200) return false;
+    const opts = Object.assign(engineOpts(), { approx: 'approx', precision: 12, grouping: false, complex: 'rect', base: 10, notation: 'auto', max_decimals: -1 });
+    const B = batchOf(series.map((s) => s.expr)), t0 = Date.now();
+    let left = todo;
+    for (let step = 0; step < 10 && left.length && Date.now() - t0 < 4000; step++) {
+      for (let b0 = 0; b0 < left.length; b0 += B) {
+        const part = left.slice(b0, b0 + B);
+        const mids = part.map(({ jb }) => [(jb.px + jb.qx) / 2, (jb.py + jb.qy) / 2]);
+        const expr = '[' + part.map(({ jb }, n) => '(' + subXY(series[jb.si].expr, engineNum(mids[n][0]), engineNum(mids[n][1])) + ')').join(', ') + ']';
+        const r = await Bridge.send('calc', { expr, opts, timeout: 5000, max_chars: 200000 });
+        if (seq !== Q3.seq) return false;
+        const t = r.ok && r.result && !r.timeout ? r.result.split(' ≈ ').pop().split(' = ').pop().trim() : '';
+        const cells = t[0] === '[' && t[t.length - 1] === ']' ? t.slice(1, -1).trim().split(/\s{2,}/) : [];
+        if (cells.length !== part.length) { left = []; break; }
+        part.forEach(({ jb }, n) => {
+          const v = Number(cells[n].replace(/−/g, '-'));
+          if (isFinite(v)) { jb.px = mids[n][0]; jb.py = mids[n][1]; jb.z = v; } else { jb.qx = mids[n][0]; jb.qy = mids[n][1]; }
+        });
+      }
+      left = left.filter(({ jb }) => !(Math.abs(jb.z) * 2 <= tz / 2));
+    }
+    for (const { jb, b } of todo) {
+      series[jb.si].rim[jb.key] = { x: jb.px, y: jb.py, z: jb.z };
+      series[b].rim[jb.key] = { x: jb.px, y: jb.py, z: -jb.z };
+    }
+    return true;
+  }
   // 1:1:1 — automatic: on when the three ranges are about as long as each other (a sphere, a cone),
   // off for flat surfaces over wide ranges. The button sets it on or off for the functions being drawn
   // ({ exprs, on }); other functions are automatic again (1.9.3: until 1.9.2 the choice held for every
   // graph, so after 1:1 was turned off once, every sphere came out flattened).
+  // (1.16.2, B1) the 1:1 of a sample, a sphere or a solid made elsewhere, kept with its formulas as the button keeps it
+  // (qalc.plot3d.equal { exprs, on }): Android may end the page of the app to free memory, and it is loaded again (until
+  // 1.16.1 only Q3.equalOnce, in memory, made them round: opened again, a doughnut came out tall). Other formulas are
+  // automatic again, as before.
+  function keepEqual3d(text) {
+    Q3.equal = { exprs: plotExprs(text, 4).join('\n'), on: true };
+    store.set('qalc.plot3d.equal', Q3.equal);
+  }
+  // (1.16.2, B2) the exact edges of a sample (a sphere, a doughnut) or of a solid of revolution, kept with their formulas
+  // (qalc.plot3d.rims), and given back when the page is opened again (rimsKept): one solid in one color, without saw
+  // teeth. A sample without them clears them (as in memory: Q3.sampleRims); too large ones are not kept.
+  function keepRims3d(spec, clear) {
+    let s = '';
+    try { s = spec ? JSON.stringify(spec) : ''; } catch (e) { s = ''; }
+    if (s && s.length <= 60000) store.set('qalc.plot3d.rims', JSON.parse(s));
+    else if (clear || s) store.set('qalc.plot3d.rims', null);
+  }
+  function rimsKept() {
+    const k = store.get('qalc.plot3d.rims', null);
+    const num = (v) => typeof v === 'number' && isFinite(v);
+    const ok = k && typeof k === 'object' && typeof k.exprs === 'string' && k.exprs && /^(ring|h|v)$/.test(k.kind) &&
+      Array.isArray(k.groups) && k.groups.every((g) => Array.isArray(g) && g.every((i) => Number.isInteger(i) && i >= 0 && i < 8)) &&
+      (k.kind !== 'ring' || (num(k.c) && num(k.R) && k.R > 0)) &&
+      (k.kind !== 'v' || (Array.isArray(k.surf) && k.surf.every((q) => q && Array.isArray(q.iv) && q.z && typeof q.z === 'object')));
+    return ok ? k : null;
+  }
   function setEqual3d(on) {
     Q3.equal = { exprs: Q3.exprs.join('\n'), on: !!on };
     Q3.equalOnce = false;
@@ -12507,16 +13327,22 @@
   // is see-through; groups, GL3D_NG of { mat, see, cast } for gl3dPaint. With the see-through on, a thing is see-through
   // unless it was taken out of it (Q3.see.off[key]); the liquid of a tank is not see-through unless chosen (the container
   // is, so the liquid is seen inside it).
-  function gl3dGroups(D, MD) {
+  function gl3dGroups(D, MD, fixed) {
     const S = Q3.see || {}, on = !!S.on && gl3dWanted() && GL3D.state === 1, a = S.a || 0.35, off = S.off || {};
     const groups = [], list = [];
     for (let k = 0; k < GL3D_NG; k++) groups.push({ mat: null, see: 0, cast: true });
-    const chosen = (key, dflt) => on && (off[key] === undefined ? dflt : !off[key]);
+    // (1.16.2, A2) one thing drawn (one formula, or one solid that is not a tank) has no chips to choose it again with:
+    // it is always see-through, whatever was taken out before (a formula taken out when it was drawn with another)
+    const keyOf = (sr, i) => 's:' + (sr.label || sr.expr || i); // (the formula as written: the same with another value of a slider)
+    const nThings = new Set((D && D.series || []).slice(0, 8).map(keyOf)).size + (MD ? (MD.tank ? 2 : 1) : 0);
+    const chosen = (key, dflt) => on && (nThings === 1 || (off[key] === undefined ? dflt : !off[key]));
     const rgbCss = (c) => (c ? 'rgb(' + c.map((x) => Math.round(x)).join(',') + ')' : '');
+    // ((A5) surfaces drawn as one solid are colored by height: their chips show that, a small square from low to high)
+    const hue = D && D.oneSolid ? 'linear-gradient(to top, ' + [0, 0.5, 1].map((t) => rgbCss(viridis(t))).join(', ') + ')' : '';
     (D && D.series || []).forEach((sr, i) => {
       if (i > 7) return;
-      const key = 's:' + (sr.label || sr.expr || i); // (the formula as written: the same with another value of a slider)
-      if (!list.some((x) => x.key === key)) list.push({ key, k: i, label: toDisplay(sr.label || sr.expr || ''), color: rgbCss(sr.drawRgb || sr.rgb) });
+      const key = keyOf(sr, i);
+      if (!list.some((x) => x.key === key)) list.push({ key, k: i, label: toDisplay(sr.label || sr.expr || ''), color: hue || rgbCss(sr.drawRgb || sr.rgb) });
       groups[i].see = chosen(key, true) ? a : 0;
       groups[i].cast = !groups[i].see;  // (what is see-through casts no shadow)
     });
@@ -12533,6 +13359,12 @@
         const sm = chosen('model', true) ? a : 0;
         groups[8] = { mat: MD.mat || null, see: sm, cast: !sm };
       }
+    }
+    // ((ア) a see-through on with nothing see-through, as an earlier version could leave it: all of it see-through)
+    if (on && !fixed && list.length && !groups.some((g) => g.see > 0) && list.some((it) => off[it.key] !== undefined)) {
+      for (const it of list) delete off[it.key];
+      store.set('qalc.plot3d.see', Q3.see);
+      return gl3dGroups(D, MD, true);
     }
     return { list, groups, on };
   }
@@ -17601,6 +18433,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   selBar.append(selInfo, el('div', { class: 'hs-btns' },
     el('button', { class: 'btn', type: 'button', text: tr('Copy', 'コピー'), onclick: () => copySelected() }),
     tblBtn,
+    // (1.16.2, Z4) the text size of the lines selected
+    el('button', { class: 'btn', type: 'button', text: tr('Text size', '文字の大きさ'), onclick: () => lineSizeSheet(history.filter((h) => histSel && histSel.has(h))) }),
     el('button', { class: 'btn primary', type: 'button', text: tr('Done', '終わる'), onclick: () => closeHistSelect() })));
   document.body.append(selBar);
   // (1.16.0, fix/hist-selbar) the history ends above the bar however high it is (its buttons beside the numbers or under them,
@@ -21100,7 +21934,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       ['math_view', tr('Math notation for expressions and results', '式と結果を数式の形で表示'), 'bool',
         tr('Fractions, powers, roots, integrals and the like: the expression above the input field, and results', '分数・べき乗・根号・積分などを、入力欄の上の式と結果に使います')],
       ['appearance', tr('Light or dark', 'ライト／ダーク'), [['system', tr('Same as the phone', '端末の設定と同じ')], ['light', tr('Light', 'ライト')], ['dark', tr('Dark', 'ダーク')]]],
-      ['text_size', tr('Text size', '文字の大きさ'), [['normal', tr('Normal', '標準')], ['large', tr('Large', '大きめ')], ['xlarge', tr('Extra large', '特大')]], tr('Text in the history, the input field and the result', '履歴・入力欄・結果の文字の大きさ')],
+      // (1.16.2, Z2) the history and the input field apart, each also with two fingers ("Custom (120%)" then)
+      ['text_size_h', tr('Text size: history', '文字の大きさ：履歴'), 'textsize', tr('Also with two fingers on the history', '履歴の上で 2 本指でも変えられます')],
+      ['text_size', tr('Text size: input field and result', '文字の大きさ：入力欄・結果'), 'textsize', tr('Also with two fingers on the input field', '入力欄の上で 2 本指でも変えられます')],
       ['theme', tr('Color theme', '配色テーマ'), THEMES, tr('The color of the keys and the highlights, in the light and the dark theme', 'キーや強調表示の色（ライト・ダークの両方）')]
     ]],
     // (1.12.0, D7: "Digits of the tools" was here; feature/screen-digits: a row of "Digits shown by each tool")
@@ -21162,6 +21998,25 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
               if (p.precisionBack) p.precisionBack();
               if (locked) proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'), 'precision');
             });
+          } else if (type === 'textsize') {
+            // (1.16.2, Z3) the size as a slider in %, with marks for the four sizes, and "Back to normal"
+            const w = key === 'text_size_h' ? 'h' : 'e', ck = w === 'h' ? 'text_custom_h' : 'text_custom';
+            const lo = Math.round(TEXT_MIN * 100), hi = Math.floor(textMax() * 100);
+            const val = el('span', { class: 'ts-val', 'aria-hidden': 'true' });
+            input = el('input', { type: 'range', class: 'ts-range', min: String(lo), max: String(hi), step: '1', 'aria-label': label });
+            const marks = el('div', { class: 'ts-marks', 'aria-hidden': 'true' });
+            for (const [k, name] of [['small', tr('Small', '小さめ')], ['normal', tr('Normal', '標準')], ['large', tr('Large', '大きめ')], ['xlarge', tr('Extra large', '特大')]]) {
+              const v = Math.round(TEXT_SCALE[k] * 100);
+              if (v <= hi) marks.append(el('span', { style: 'left:' + ((v - lo) / (hi - lo) * 100).toFixed(2) + '%', text: name }));
+            }
+            const reset = el('button', { class: 'btn ts-reset', type: 'button', text: tr('Back to normal', '標準に戻す') });
+            const show = () => { const f = textFactor(S[key], S[ck]), n = Math.round(f * 100); input.value = String(n); val.textContent = n + '%'; input.setAttribute('aria-valuetext', n + '%'); reset.hidden = n === 100; };
+            input.addEventListener('input', () => { setTextFactor(w, Number(input.value) / 100); applyTextSize(); show(); });
+            input.addEventListener('change', () => { settingsChanged(); show(); });
+            reset.addEventListener('click', (e) => { e.preventDefault(); setTextFactor(w, 1); settingsChanged(); show(); });
+            show();
+            (p.textShows = p.textShows || []).push(show);
+            input._box = el('div', { class: 'ts-box' }, el('div', { class: 'ts-row' }, input, val), marks, reset);
           } else {
             input = el('select');
             for (const [v, t] of type) input.append(el('option', { value: v, text: t }));
@@ -21191,8 +22046,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
             p.precisionBack = () => { back.hidden = Number(S.precision) === DEFAULTS.precision; if (p.digitsList) p.digitsList(); };
             p.precisionBack();
           }
-          part.append(el('label', { class: 'setting' },
-            el('div', { class: 'lbl' }, name, sub ? el('div', { class: 's', text: sub }) : null), back ? el('div', { class: 'precision-box' }, input, back) : input));
+          part.append(el(input._box ? 'div' : 'label', { class: 'setting' + (input._box ? ' setting-ts' : '') },
+            el('div', { class: 'lbl' }, name, sub ? el('div', { class: 's', text: sub }) : null), back ? el('div', { class: 'precision-box' }, input, back) : input._box || input));
           (p.inputs = p.inputs || {})[key] = input;
         }
         }

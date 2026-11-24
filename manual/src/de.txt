@@ -115,6 +115,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
 :tip: ÷ × + und Ähnliches in einem leeren Eingabefeld rechnen mit dem letzten Ergebnis „ans“ weiter.
 :tip: Eine in einer Tabellenkalkulation (Excel, Google Tabellen) kopierte Spalte oder Tabelle – zwei oder mehr Werte in Zeilen oder mit Tabs – fragt beim Einfügen ins Eingabefeld, was damit geschehen soll: mit + addieren, als Zeilen in die Rechennotizen, als Daten der Statistik oder als Matrix (ab zwei Spalten). Zellen nur mit Wörtern (Überschriften) werden weggelassen. Eine Zeile wird wie bisher eingefügt.
+:tip: [[Make them lines of the history (worked out one by one)]] nimmt aus jeder Zeile einen Ausdruck und berechnet sie von oben, als würde jeder eingetippt und [[!=]] gedrückt, und fügt sie dem Verlauf hinzu (bei [[Copy as a table]] von QCalc die Spalte der Ausdrücke). Zeilen, die sich nicht berechnen lassen, werden weggelassen und genannt; [[⤶ Undo]] nimmt alle eingefügten Zeilen zurück.
 :mistake: Klammern, die nicht paarweise stehen, führen zu einem Fehler. Die Meldung sagt, was zu korrigieren ist.
 
 ## results | Das Ergebnis lesen: exakt, genähert, Brüche
@@ -133,6 +134,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Unter der neuesten Antwort erscheinen Schaltflächen für das, was oft als Nächstes kommt (höchstens 6): bei einem Ausdruck in x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]]; bei einer Zahl [[Details]], [[As a fraction]], [[Scientific]] (bei einer ganzen Zahl [[Prime factors]], [[In hex]]); mit Einheit [[Convert…]]; bei einer Matrix [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. Die Rechnung einer Schaltfläche wird eine neue Zeile im Verlauf.
 :step: [[Details]] (oder ⋯ → [[Details]]) zeigt die anderen Formen der Antwort zusammen: bei einer Zahl den exakten Wert, die Dezimalzahl, den Bruch, den gemischten Bruch und die wissenschaftliche Schreibweise (ganze Zahlen in den Basen 2, 8 und 16 und ihre Primfaktoren; mit Einheit andere Einheiten); bei einem Ausdruck in x einen kleinen Graphen, die Nullstellen, die Ableitung, das Integral, die Taylorreihe und die faktorisierte Form. Eine Zeile antippen für [[Put the expression in the field]], [[Keep it in the history]] oder [[Copy result]].
 :tip: Ohne diese Schaltflächen: [[Settings]] → [[Suggest the next steps under the newest answer]] aus.
+:tip: Ein Ergebnis oder Ausdruck, der breiter als der Bildschirm ist (etwa eine Matrix), lässt sich seitlich wischen (ein weicher Rand zeigt, wo noch mehr ist). Um ihn ganz und groß zu lesen: ⤢ über dem Eingabefeld oder [[View whole]] im ⋯ einer Zeile – er füllt den Bildschirm (zwei Finger vergrößern oder verkleinern, ein Finger scrollt, Zurück schließt).
 
 ## undo | Löschen und rückgängig machen
 :what: ⌫ löscht ein Zeichen, AC leert das Eingabefeld. Gleich danach holt [[Undo]] über dem Eingabefeld es zurück.
@@ -152,7 +154,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 
 # history | Verlauf und Speicher
 :what: Ausdrücke und Ergebnisse bleiben im Verlauf, bis zu 300 Zeilen. 🕘 oben rechts sucht, summiert ausgewählte Zeilen, exportiert und löscht.
-:step: Tippen Sie auf ein Ergebnis im Verlauf, um es ins Eingabefeld zu setzen ([Ergebnis durch Tippen einfügen](#tap-insert)); ein Tippen auf den Ausdruck bearbeitet die Zeile ([Eine Zeile des Verlaufs bearbeiten](#edit-line)).
+:step: Eine Zeile reagiert je nach Stelle anders: **Ergebnis antippen** = den Wert verwenden ([[!=]] ergibt eine neue Zeile; [Ergebnis durch Tippen einfügen](#tap-insert)); **Ausdruck antippen** = die Zeile bearbeiten ([[!=]] ersetzt sie; [Eine Zeile des Verlaufs bearbeiten](#edit-line)).
 :step: ⋯ links an einer Zeile bietet [[☆ Pin at the top]] und [[Add a short note]].
 :step: 🕘 bietet [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] und [[Clear the whole history]].
 :shot: history | Das Verlaufsmenü von 🕘
@@ -161,6 +163,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 ## tap-insert | Ergebnis durch Tippen einfügen
 :what: Ein Tippen auf ein Ergebnis im Verlauf setzt es an der Cursorposition ins Eingabefeld, so wie ein Klick auf eine Zelle, während Sie in einer Tabellenkalkulation eine Formel eingeben.
 :step: Ist das Feld leer oder wurde gerade gerechnet, kommt das Ergebnis einfach hinein.
+:step: Tippen Sie bei leerem Feld auf ein Ergebnis, erscheint über dem Feld ein helles Band „Neue Zeile aus dem Ergebnis von #51“: [[!=]] ergibt eine neue Zeile. Um stattdessen diese Zeile zu ändern, tippen Sie im Band auf [[Edit this line]] (auch nachdem Sie Zahlen im Feld geändert haben: Die Zeile wird dann mit dem Feld, wie es ist, bearbeitet). Das Band verschwindet auch mit ✕, AC oder einem leeren Feld.
 :step: Ein weiteres Tippen auf ein Ergebnis, bevor Sie etwas eingeben, ersetzt das zuvor angetippte.
 :step: Nach einem Operator wie + oder × kommt das Ergebnis dahinter. Direkt nach einer Zahl, einem Buchstaben oder „)“ kommt zuerst ein sichtbares × dazu.
 :step: Die im Ausdruck verwendeten Zeilen bekommen farbige Markierungen; wird das Ergebnis aus dem Feld gelöscht, verschwindet seine Markierung.
@@ -170,8 +173,9 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :tip: Ein Tippen auf die Nummer links an einer Zeile (#12) setzt statt des Werts #12 in den Ausdruck, wie das Zeigen auf eine Zelle in einer Tabellenkalkulation ([Zeilennummern und #12](#hist-refs)).
 
 ## edit-line | Eine Zeile des Verlaufs bearbeiten
-:what: Tippen Sie auf den Ausdruck einer Zeile (den kleinen über dem Ergebnis) oder auf [[Edit expression]] in ihrem ⋯, um die Zeile zu bearbeiten. Der Ausdruck kommt ins Eingabefeld, darüber erscheint das Band „[[Editing a line of the history]]“. Der Verlauf scrollt so, dass die Zeile und ihr Ergebnis sichtbar bleiben.
+:what: Tippen Sie auf den Ausdruck einer Zeile (den kleinen über dem Ergebnis) oder auf [[Edit expression]] in ihrem ⋯, um die Zeile zu bearbeiten. Der Ausdruck kommt ins Eingabefeld, darüber erscheint das Band „#12 wird bearbeitet“ (12: die Nummer der Zeile). Der Verlauf scrollt so, dass die Zeile und ihr Ergebnis sichtbar bleiben.
 :step: Ändern Sie den Ausdruck und drücken Sie [[!=]]. Die Zeile bekommt an derselben Stelle den neuen Ausdruck und das neue Ergebnis. ★ und die kurze Notiz bleiben; das Menü ⋯ zeigt neben der Zeit der Zeile die Zeit der Änderung.
+:step: Während Sie tippen, zeigt die Zeile an ihrer Stelle den Ausdruck und das neue Ergebnis, darunter klein und grau die Zeile, wie sie war („Vorher: …“). Eine Zeile lässt sich in der Zeile selbst oder im Feld darunter bearbeiten: Tippen Sie auf den Ausdruck in der Zeile, um den Cursor dorthin zu setzen; Tasten, ◀ ▶, ⌫, ⌨, Einfügen und das Antippen anderer Ergebnisse wirken dort. Tippen Sie auf das Feld, um dort weiterzuschreiben. Was in einem getippt wird, erscheint sofort im anderen. Der Verlauf selbst ändert sich erst mit [[!=]].
 :step: Einige Sekunden lang erscheinen „[[Edited]]“ und [[Undo]]. [[Undo]] stellt Ausdruck und Ergebnis wieder her.
 :step: Wenn Zeilen darunter das Ergebnis dieser Zeile (ans oder #12) oder eine hier definierte Variable verwenden, fragt die App, ob sie neu berechnet werden sollen („Auch die 2 Zeilen darunter“) oder [[Only this line]]. Neu berechnete Zeilen leuchten kurz auf, und [[Undo]] nimmt auch sie zurück. Bei [[Only this line]] bekommen die Zeilen darunter einen Hinweis, dass ihr Ergebnis veraltet sein kann. [[Cancel]] ändert nichts: Der neue Ausdruck bleibt im Feld, und Sie bearbeiten weiter.
 :step: Um stattdessen eine neue Zeile darunter zu rechnen, drücken Sie [[As a new line]] im Band und dann [[!=]]. ✕ im Band, AC oder die Zurück-Taste beendet das Bearbeiten, ohne etwas zu ändern.
@@ -195,6 +199,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Wählen Sie [[Add a short note]] im ⋯ und schreiben Sie eine kurze Notiz. Sie erscheint über dem Ausdruck.
 :step: In 🕘 zeigt [[Search the history]] nur die Zeilen, deren Ausdruck, Ergebnis oder Notiz die eingegebenen Wörter enthält.
 :example: Eine Zeile mit der Notiz „Miete“ findet die Suche nach „Miete“.
+:tip: Zwei Finger auf dem Verlauf oder dem Eingabefeld spreizen oder zusammenziehen ändert dort die Schriftgröße (jeweils für sich; [[Text size: history]] und [[Text size: input field and result]] in den Einstellungen stellen sie zurück). Für eine Zeile: [[Text size of this line]] in ihrem ⋯.
 
 ## select-sum | Zeilen addieren
 :step: Wählen Sie [[Select lines: sum, average, copy]] in 🕘. [[Select: sum and average]] im ⋯ einer Zeile beginnt mit dieser Zeile ausgewählt und zeigt sofort die Summe.
@@ -228,6 +233,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 | [[Calculus]] | Ableitung d/dx, Integral ∫, Grenzwert lim, Summe Σ, Produkt Π, Gleichungen |
 | [[Matrix]] | Matrix ▦, Determinante det, Transponierte, Inverse |
 :tip: Wenn Sie den Namen einer Funktion nicht kennen, suchen Sie in [[Lists: functions, units, constants]] ([Listen](#lists)).
+:tip: Für mehr Verlauf die Tasten einklappen: ⌄ rechts neben den Reitern, oder auf der Reiterzeile nach unten wischen. ⌃, nach oben wischen oder ein Tippen ins Eingabefeld holt sie zurück (beim nächsten Öffnen sind sie wieder da).
 
 ## boxes | Kästchen □ (die Formulare)
 :what: Die Tasten für Integral und Grenzwert öffnen ein Formular mit Kästchen □. Kästchen ausfüllen, und der Ausdruck ist fertig.
@@ -698,7 +704,8 @@ Die Formeln:
 | [[Precision (significant digits)]] | Die Rechengenauigkeit (Standard 15) |
 | [[Digits shown by each tool]] | Die Stellen jedes Werkzeugs und die gemeinsamen Stellen von Figuren, Behältern, Körpern und Graph ([Angezeigte Stellen je Werkzeug](#digits)) |
 | [[Light or dark]] | Die Farben des Bildschirms |
-| [[Text size]] | Die Schrift von Verlauf, Eingabefeld und Ergebnis |
+| [[Text size: history]] | Die Schrift des Verlaufs (ein Schieberegler; auch mit zwei Fingern auf dem Verlauf) |
+| [[Text size: input field and result]] | Die Schrift von Eingabefeld und Ergebnis (ein Schieberegler; auch mit zwei Fingern auf dem Feld) |
 | [[Color theme]] | Die Farbe der Tasten (außer Blau: QCalc Pro) |
 | [[Show the result while typing]] | Die Vorschau |
 | [[Update exchange rates now]] | Lädt die Kurse sofort |

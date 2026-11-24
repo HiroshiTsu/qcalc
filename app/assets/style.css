@@ -7,6 +7,7 @@
   --surface-2: #eef1f5;
   --text: #1b2130;
   --muted: #5f6778; /* 1.12.0: 5:1 on the key background (was #687082, 4.4:1) */
+  --num: #4b5262; /* (1.16.2, R4) the numbers of the lines: 6.3:1 or more on every background of a line */
   --line: #dde2ea;
   --accent: #2563eb;
   --accent-text: #ffffff;
@@ -26,16 +27,18 @@
   --plot-grid: #e8ebf0;
   --plot-axis: #8a93a5;
   color-scheme: light;
-  --fs: 1; /* setting "文字の大きさ": history, input field and preview */
+  --fs: 1; /* setting "文字の大きさ": the input field and the result (and the forms and tools) */
+  --hfs: 1; /* (1.16.2, Z2) the size of the history apart */
 }
-:root[data-text-size="large"] { --fs: 1.18; }
-:root[data-text-size="xlarge"] { --fs: 1.38; }
+:root[data-text-size="large"] { --fs: 1.18; --hfs: 1.18; }
+:root[data-text-size="xlarge"] { --fs: 1.38; --hfs: 1.38; }
 :root.dark {
   --bg: #121418;
   --surface: #1c1f26;
   --surface-2: #262a33;
   --text: #e8eaf0;
   --muted: #9aa3b5;
+  --num: #b8c0cf;
   --line: #2e333d;
   --accent: #6b9cff;
   --accent-text: #0b1530;
@@ -158,19 +161,19 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 .ex-chip:active { background: var(--surface-2); }
 .h-item {
-  padding: 8px 4px 10px;
+  padding: 6px 4px 7px; /* (1.16.2, V: a little closer, more lines in sight; a line stays over 48 px high) */
   border-bottom: 1px solid var(--line);
   text-align: right;
 }
 .h-item:active { background: var(--surface-2); }
 .h-expr {
   color: var(--muted);
-  font-size: calc(15px * var(--fs));
+  font-size: calc(15px * var(--hfs) * var(--lfs, 1));
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 .h-res {
-  font-size: calc(22px * var(--fs));
+  font-size: calc(22px * var(--hfs) * var(--lfs, 1));
   font-weight: 600;
   margin-top: 2px;
   overflow-wrap: anywhere;
@@ -181,7 +184,7 @@ input, select, textarea { font: inherit; color: inherit; }
   overflow-y: auto;
 }
 .h-res.brk, .preview.brk { word-break: break-all; } /* a number longer than a line (app.js showResult): fill each line, as up to 1.3.0 */
-.h-msg { font-size: calc(12px * var(--fs)); margin-top: 3px; text-align: right; }
+.h-msg { font-size: calc(12px * var(--hfs) * var(--lfs, 1)); margin-top: 3px; text-align: right; }
 /* a matrix in a result, drawn as a grid between brackets */
 .mx {
   display: inline-grid;
@@ -248,7 +251,7 @@ input, select, textarea { font: inherit; color: inherit; }
   user-select: text;
   caret-color: var(--accent);
 }
-#expr::placeholder { color: var(--muted); opacity: .85; } /* (1.12.0: readable, was .6) */
+#expr::placeholder { color: var(--muted); opacity: 1; } /* (1.12.0: readable, was .6; 1.16.2 R5: .85 left 4.2:1 on white, now 5.7:1) */
 /* 1.12.0 (F, 要判断 39): the empty field keeps one line (the hint cut with …): with large text on a small screen the
    hint took two lines ("Ausdruck eingeben" at 320 px and 200 %), and the history lost a line for it */
 #expr:placeholder-shown { white-space: nowrap; overflow: hidden; }
@@ -260,13 +263,14 @@ input, select, textarea { font: inherit; color: inherit; }
   max-height: 4.6em; /* a very long result scrolls instead of pushing the keypad off the screen */
   overflow-y: auto;
   overscroll-behavior: contain;
-  font-size: calc(18px * var(--fs));
-  color: var(--muted);
+  font-size: calc(19.8px * var(--fs)); /* (1.16.2, R1: as dark as the answers and a little larger; it was 18 px and gray) */
+  color: var(--text);
   text-align: right;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
   font-variant-numeric: tabular-nums;
 }
+.preview.dim { color: var(--muted); } /* (R1) "…", Calculating…, a hint: not a result */
 .msg { font-size: calc(12px * var(--fs)); color: var(--warn); text-align: right; min-height: 0; max-height: 3.2em; overflow-y: auto; }
 .msg.error { color: var(--danger); }
 /* suggestions under the input field: names that complete the word being typed, or what the value
@@ -346,6 +350,18 @@ input, select, textarea { font: inherit; color: inherit; }
 .tb-toggle.on { background: var(--accent); color: var(--accent-text); }
 .tb-toggle.pressed { filter: brightness(.9); }
 .tb-toggle[hidden] { display: none; }
+/* (1.16.2, V) ⌄ at the end of the tabs folds the keys away; folded, the thin bar with ⌃ stays under the field. The tabs are
+   sized by their names (as with large text), so that "Funktionen" keeps its room beside ⌄. The top of the keypad takes the
+   swipes (no scrolling there) */
+.kb-fold { flex: 0 0 40px; border: 0; border-radius: 10px; background: var(--key-fn); color: var(--text); font-size: 18px; line-height: 1; padding: 0; position: relative; touch-action: none; }
+.kb-fold::before { content: ""; position: absolute; left: -2px; right: -6px; top: -6px; bottom: -6px; }
+.kb-fold.pressed, .kb-bar.pressed { filter: brightness(.9); }
+.pages-row .pages { grid-template-columns: minmax(44px, auto) auto auto auto; }
+.pages-row .ptab { padding: 0 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.keypad .toolbar, .keypad .pages-row { touch-action: none; }
+.kb-bar { display: block; width: 100%; height: 40px; border: 0; border-radius: 10px; background: var(--key-fn); color: var(--text); font-size: 22px; line-height: 1; padding: 0; touch-action: none; }
+.kb-bar[hidden] { display: none; }
+.keypad.folded > :not(.kb-bar) { display: none; }
 .keypad.kb-compact:not(.tb-open) .toolbar { display: none; }
 /* (the tabs beside the ⌨ sized by their names, so that "Funktionen" keeps its room; the hint of the empty field
    smaller, so that it fits on its one line) */
@@ -727,8 +743,10 @@ html.dark .plot-ms { background: rgba(0, 0, 0, .6); color: #e5e7eb; }
 }
 .sheet.open { transform: none; }
 .sheet .stitle {
-  /* no padding at the bottom: the clamped lines are cut at the edge of the padding */
-  color: var(--muted); font-size: 13px; padding: 8px 12px 0; margin-bottom: 10px; word-break: break-all; white-space: pre-wrap;
+  /* no padding at the bottom: the clamped lines are cut at the edge of the padding. (1.16.2) Between words, and inside
+     a word only when it is longer than the line (a long number or expression): break-all cut the sentences of the
+     sheets inside their words ("…of the device, i|t is in English" in the sheet of the languages) */
+  color: var(--muted); font-size: 13px; padding: 8px 12px 0; margin-bottom: 10px; word-break: normal; overflow-wrap: anywhere; white-space: pre-wrap;
   display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
 }
 .sheet button {
@@ -1305,7 +1323,7 @@ body.cform-open #history, body.cform-open .entry { display: none; }
 }
 .h-more::before { content: "⋯"; font-size: 20px; line-height: 1; }
 /* (1.16.0, feature/hist-excel) the number of the line ("#12" in an expression is its answer), under the ⋯ */
-.h-no { position: absolute; left: 2px; top: 42px; max-width: 46px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px * var(--fs)); color: var(--muted); font-variant-numeric: tabular-nums; text-align: left; background: none; border: 0; padding: 0; margin: 0; font-family: inherit; line-height: 1.3; cursor: pointer; }
+.h-no { position: absolute; left: 2px; top: calc(4px + 33px * var(--hfs) * var(--lfs, 1)); max-width: 46px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(12.5px * var(--hfs) * var(--lfs, 1)); font-weight: 600; color: var(--num); /* (1.16.2, R4: 12.5 px and darker, beside the first line of the answer: app.js placeNumbers) */ font-variant-numeric: tabular-nums; text-align: left; background: none; border: 0; padding: 0; margin: 0; font-family: inherit; line-height: 1.3; cursor: pointer; }
 /* (1.16.0, feature/hist-ux, U1) a tap on the number puts "#12" in: the area to touch goes beyond the small number, under the ⋯ */
 .h-no::before { content: ""; position: absolute; left: -6px; right: -10px; top: -2px; bottom: -14px; }
 .h-no { overflow: visible; }
@@ -1373,6 +1391,9 @@ body.hselect .h-no { pointer-events: none; }
 #expr { min-height: 48px; }
 input.search { min-height: 48px; box-sizing: border-box; }
 .h-more { width: 48px; height: 48px; left: -10px; top: -4px; border-radius: 24px; }
+/* (1.16.2, R4) the number beside the first line of the answer, under the ⋯: the ⋯ 38 px high, so that a tap on the number
+   is the number's (app.js placeNumbers keeps the number under it) */
+.h-more { height: 38px; padding-bottom: 6px; }
 /* the phone's font size, in the panels (app.js applyTextSize: up to 1.15 times) */
 .panel-body { zoom: var(--pfs, 1); }
 /* Large screens and landscape (1.12.0): two columns, the history and the input field on the
@@ -1424,10 +1445,11 @@ body.hsearching .bar > .title, body.hsearching .bar > .chips, body.hsearching #b
 .hs-count { font-size: 13px; color: var(--muted); white-space: nowrap; }
 .hsearch .icon-btn { flex: 0 0 auto; }
 body.hselect .h-item { padding-left: 44px; }
-body.hselect .h-item::before { content: ""; position: absolute; left: 12px; top: 50%; width: 20px; height: 20px; margin-top: -10px; border: 2px solid var(--muted); border-radius: 6px; box-sizing: border-box; }
+/* (1.16.2) the box at the top of the line, above its number (#4 under the box of a line of two answers, centred) */
+body.hselect .h-item::before { content: ""; position: absolute; left: 12px; top: 12px; width: 20px; height: 20px; border: 2px solid var(--muted); border-radius: 6px; box-sizing: border-box; }
 body.hselect .h-item.sel { background: var(--surface-2); }
 body.hselect .h-item.sel::before { background: var(--accent); border-color: var(--accent); }
-body.hselect .h-item.sel::after { content: "✓"; position: absolute; left: 15px; top: 50%; margin-top: -11px; color: var(--accent-text); font-size: 15px; font-weight: 700; }
+body.hselect .h-item.sel::after { content: "✓"; position: absolute; left: 15px; top: 11px; color: var(--accent-text); font-size: 15px; font-weight: 700; }
 body.hselect .h-item .h-more { visibility: hidden; }
 .hselbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(0,0,0,.12); padding: 8px 12px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: flex-end; }
 .hselbar[hidden] { display: none; }
@@ -1568,6 +1590,16 @@ body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 .see-row .see-chip > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14em; }
 .see-row .see-chip.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 .see-row .see-sw { width: 12px; height: 12px; border-radius: 3px; flex: none; box-shadow: 0 0 0 1px rgba(0,0,0,.18) inset; }
+/* (1.16.2) the label of the chips of what is see-through, and the mark of a chosen chip */
+.see-row .see-chips-lbl { align-self: center; color: var(--muted); font-size: .92em; }
+.see-row .see-ck { flex: none; font-weight: 700; }
+/* (1.16.2) the words of the slider (how opaque), a chip that cannot be chosen (the liquid in a tank whose container is
+   opaque) and the line that says why */
+.see-row .see-lbl { color: var(--muted); font-size: .92em; }
+.see-row .see-op { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: max-content; }
+.see-row .see-op[hidden] { display: none; }
+.see-row .see-chip:disabled { opacity: .5; }
+.see-row .see-shut { flex-basis: 100%; font-size: 13px; color: var(--muted, #6b7280); }
 
 /* the everyday tools (1.12.0, C1) */
 .tool-choice .seg.mini { flex: 1 1 0; flex-wrap: wrap; }
@@ -1776,13 +1808,31 @@ body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 .hedit { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin: 0 0 6px; padding: 6px 6px 6px 12px; border-radius: 12px; background: var(--accent-soft); color: var(--text); font-size: calc(14px * var(--pfs, 1)); }
 .hedit[hidden] { display: none; }
 .hedit .hedit-t { flex: 1 1 auto; font-weight: 600; }
+/* (1.16.2, K1 and K3) the words and the button wrap inside .hedit-main; ✕ stays at the right of the first row (on a narrow
+   phone it went alone to a second row). The words take what the button leaves and wrap inside it; the button goes under
+   them only when 7em of words do not fit beside it */
+.hedit .hedit-main { flex: 1 1 0; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; }
+.hedit .hedit-main .hedit-t { flex: 1 1 7em; min-width: 0; overflow-wrap: anywhere; }
+.hedit .hedit-main > .btn { flex: none; }
+.hedit > .hedit-x { flex: none; align-self: flex-start; }
 .hedit .hedit-n { flex-basis: 100%; order: 3; font-size: .9em; color: var(--muted); }
 .hedit .hedit-n[hidden] { display: none; }
 .hedit .hedit-new { min-height: 48px; padding: 6px 16px; background: var(--accent); color: var(--accent-text); border: 1px solid var(--accent); border-radius: 24px; font-weight: 700; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); } /* (1.16.0, R9: a button that stands out) */
 .hedit .hedit-tip { flex-basis: 100%; order: 4; font-size: .92em; line-height: 1.45; padding: 6px 8px; border-radius: 8px; background: var(--surface); }
 .hedit .hedit-tip[hidden] { display: none; }
 .hedit .hedit-x { width: 48px; height: 48px; border: 0; border-radius: 24px; background: transparent; color: inherit; font-size: 18px; }
+/* (1.16.2, M1) the pale band of a new line made from an answer tapped into the empty field, with "Edit this line" */
+.hedit.hfrom { background: var(--surface); border: 1px solid var(--accent-soft); padding: 2px 4px 2px 12px; }
+.hedit.hfrom .hedit-t { font-weight: 400; color: var(--muted); }
+.hedit.hfrom .hfrom-edit { min-height: 48px; padding: 4px 14px; background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 22px; font-weight: 600; }
 .h-item.editing { box-shadow: inset 3px 0 0 var(--accent); background: var(--accent-soft); border-radius: 8px; }
+/* (1.16.2, E) the line being edited, shown as it is typed: "Editing #51", the expression, = the new answer, "Before: …" */
+.h-item.live > .h-expr, .h-item.live > .h-res, .h-item.live > .h-msg { display: none; }
+.h-live-t { font-size: calc(12px * var(--hfs) * var(--lfs, 1)); font-weight: 700; color: var(--text); }
+/* (1.16.2, E2) the expression of the line being edited, a box to type in (joined to the field below), as plain as the field */
+.h-cell { display: block; box-sizing: border-box; width: 100%; margin: 2px 0; padding: 4px 8px; border: 1px solid var(--accent); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: calc(17px * var(--hfs) * var(--lfs, 1)); line-height: 1.35; text-align: right; resize: none; overflow: hidden; overflow-wrap: anywhere; white-space: pre-wrap; }
+.h-cell:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.h-live-old { margin-top: 4px; font-size: calc(12px * var(--hfs) * var(--lfs, 1)); color: var(--muted); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* (1.16.0, fix/hist-tap) a line whose answer is in the expression: framed in its color, as a cell a formula refers to */
 /* (1.16.0, fix/hist-edit-scroll) a line worked out again after the line above it was edited: marked for 3 s, fading */
 .h-item.h-flash { animation: hflash 3s ease-out; border-radius: 8px; }
@@ -1921,3 +1971,54 @@ body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 .note-tbl .note-fxc { background: var(--surface-2); }
 .note-tbl tfoot th, .note-tbl tfoot td { background: var(--surface-2); }
 .note-tbl tfoot .note-no-c { font-weight: 600; color: var(--text); font-size: calc(13px * var(--fs)); }
+
+/* (1.16.2, Z) the size while two fingers change it: "History text 120%" */
+.pinch-tip { position: fixed; left: 50%; top: 72px; transform: translateX(-50%); z-index: 60; padding: 6px 14px; border-radius: 999px; background: rgba(20, 24, 33, .86); color: #fff; font-size: 15px; font-weight: 700; pointer-events: none; white-space: nowrap; }
+.pinch-tip[hidden] { display: none; }
+/* (1.16.2, Z3 and Z4) the sliders of the text size: the settings (history, input field) and the size of a line */
+.setting.setting-ts { flex-wrap: wrap; }
+.setting-ts .ts-box { flex: 1 1 100%; }
+.ts-row { display: flex; align-items: center; gap: 10px; }
+.ts-range { flex: 1 1 auto; min-width: 0; height: 40px; accent-color: var(--accent); }
+.ts-val { flex: 0 0 auto; min-width: 3.4em; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ts-marks { position: relative; height: 30px; margin: 0 calc(3.4em + 10px) 2px 0; font-size: 11px; color: var(--muted); }
+/* (Small and Normal are close: every second name one line lower, each with a small tick) */
+.ts-marks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; line-height: 14px; }
+.ts-marks span:nth-child(even) { top: 15px; }
+.ts-marks span::before { content: ""; position: absolute; left: 50%; top: -3px; width: 1px; height: 3px; background: currentColor; }
+.ts-reset { margin-top: 4px; min-height: 40px; }
+.ts-reset[hidden] { display: none; }
+.sheet .line-ts { padding: 0 12px 8px; }
+/* (1.16.2, S1) the field scrolls when the expression does not fit: a thin bar shows it */
+#expr { scrollbar-width: thin; scrollbar-color: var(--muted) transparent; }
+#expr::-webkit-scrollbar { width: 4px; }
+#expr::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+.h-cell::-webkit-scrollbar { width: 4px; }
+.h-cell::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+/* (1.16.2, S2, S3) what scrolls sideways: a soft edge on the side where more is hidden */
+.cut-l, .cut-r {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
+}
+.cut-l { --fade-l: 24px; }
+.cut-r { --fade-r: 24px; }
+.cut-l:not(.cut-r) { --fade-r: 0px; }
+.cut-r:not(.cut-l) { --fade-l: 0px; }
+/* (1.16.2, W) "View whole": the expression and the answer to read, larger or smaller with two fingers, scrolled both ways */
+.panel-body.wv-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.wv-box { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 12px; overscroll-behavior: contain; touch-action: pan-x pan-y; }
+.wv-zoom { font-size: 22px; line-height: 1.35; color: var(--text); }
+.wv-math { margin-bottom: .4em; white-space: nowrap; }
+.wv-math .katex { font-size: 1.15em; }
+.wv-expr { color: var(--muted); font-size: .8em; white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: .5em; }
+.wv-res { font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.wv-res .mx, .wv-val .mx { max-width: none; overflow: visible; }
+.wv-forms { margin-top: .8em; }
+.wv-head { font-weight: 700; color: var(--text); margin-bottom: .2em; }
+.wv-row { display: flex; gap: .8em; align-items: baseline; padding: .25em 0; border-top: 1px solid var(--line); }
+.wv-lbl { flex: 0 0 auto; color: var(--muted); font-size: .65em; min-width: 5em; }
+.wv-val { flex: 1 1 auto; text-align: right; font-size: .85em; white-space: pre-wrap; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.wv-btns { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); }
+.wv-btns .btn { min-height: 48px; }
+.wv-btns .wv-x { margin-left: auto; min-width: 48px; }
+#wholebtn { font-size: 16px; }

@@ -115,6 +115,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
 :tip: ÷ × + et autres dans un champ vide continuent à partir du dernier résultat, « ans ».
 :tip: Une colonne ou un tableau copié dans un tableur (Excel, Google Sheets), deux valeurs ou plus sur des lignes ou séparées par des tabulations, collé dans le champ de saisie demande quoi en faire : les additionner avec +, les mettre en lignes dans les notes de calcul, en faire les données des statistiques ou une matrice (à partir de deux colonnes). Les cellules de mots seuls (titres) sont laissées de côté. Une seule ligne se colle comme avant.
+:tip: [[Make them lines of the history (worked out one by one)]] prend une expression de chaque ligne et les calcule depuis le haut comme si chacune était tapée puis [[!=]] appuyé, en les ajoutant à l’historique (depuis [[Copy as a table]] de QCalc, la colonne des expressions). Les lignes qui ne peuvent pas être calculées sont laissées de côté et indiquées ; [[⤶ Undo]] retire toutes les lignes ajoutées.
 :mistake: Des parenthèses qui ne vont pas par paires donnent une erreur. Le message dit quoi corriger.
 
 ## results | Lire le résultat : exact, approché, fractions
@@ -133,6 +134,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Sous la dernière réponse, des boutons pour ce qu’on fait souvent ensuite (6 au plus) : pour une expression en x [[Details]] · [[Graph]] · [[Factor]] · [[Derivative]] · [[Integral]] · [[Solve = 0]] ; pour un nombre [[Details]], [[As a fraction]], [[Scientific]] (un entier : [[Prime factors]], [[In hex]]) ; avec une unité [[Convert…]] ; pour une matrice [[Determinant]], [[Inverse]], [[Eigenvalues]], [[Transpose]]. Le calcul d’un bouton devient une nouvelle ligne de l’historique.
 :step: [[Details]] (ou ⋯ → [[Details]]) montre ensemble les autres formes de la réponse : pour un nombre la valeur exacte, le décimal, la fraction, la fraction mixte et la notation scientifique (un entier en bases 2, 8 et 16 et ses facteurs premiers ; avec une unité, d’autres unités) ; pour une expression en x un petit graphique, les zéros, la dérivée, l’intégrale, la série de Taylor et la forme factorisée. Touchez une ligne pour [[Put the expression in the field]], [[Keep it in the history]] ou [[Copy result]].
 :tip: Sans ces boutons : [[Settings]] → [[Suggest the next steps under the newest answer]] désactivé.
+:tip: Un résultat ou une expression plus large que l’écran (une matrice, par exemple) défile de côté avec un doigt (un bord estompé montre qu’il y a une suite). Pour le lire en entier et en grand, touchez ⤢ au-dessus du champ de saisie ou [[View whole]] dans le ⋯ d’une ligne : il remplit l’écran (deux doigts l’agrandissent ou le réduisent, un doigt le fait défiler, Retour le ferme).
 
 ## undo | Effacer et annuler
 :what: ⌫ efface un caractère, AC vide le champ de saisie. Juste après, [[Undo]] au-dessus du champ le récupère.
@@ -152,7 +154,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 
 # history | Historique et mémoire
 :what: Les calculs et les résultats restent dans l'historique, jusqu'à 300 lignes. 🕘 en haut à droite recherche, additionne les lignes choisies, exporte et efface.
-:step: Touchez un résultat de l'historique pour le mettre dans le champ de saisie ([Insérer un résultat d'un toucher](#tap-insert)) ; touchez son expression pour modifier la ligne ([Modifier une ligne de l’historique](#edit-line)).
+:step: Une ligne réagit selon l’endroit touché : **toucher son résultat** pour utiliser la valeur ([[!=]] crée une nouvelle ligne ; [Insérer un résultat d'un toucher](#tap-insert)) ; **toucher son expression** pour modifier la ligne ([[!=]] la remplace ; [Modifier une ligne de l’historique](#edit-line)).
 :step: ⋯ à gauche d'une ligne propose [[☆ Pin at the top]] et [[Add a short note]].
 :step: 🕘 propose [[Search the history]], [[Select lines: sum, average, copy]], [[Export the history (CSV file)]] et [[Clear the whole history]].
 :shot: history | Le menu de l'historique de 🕘
@@ -161,6 +163,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 ## tap-insert | Insérer un résultat d'un toucher
 :what: Toucher un résultat de l'historique le met dans le champ de saisie, à la position du curseur, comme un clic sur une cellule pendant que vous tapez une formule dans un tableur.
 :step: Si le champ est vide, ou juste après un calcul, le résultat entre tel quel.
+:step: Un résultat touché quand le champ est vide affiche au-dessus du champ une bande claire, « Nouvelle ligne à partir du résultat de #51 » : [[!=]] crée une nouvelle ligne. Pour modifier plutôt cette ligne, appuyez sur [[Edit this line]] dans la bande (aussi après avoir changé des nombres dans le champ : la ligne est alors modifiée avec le champ tel qu’il est). La bande disparaît aussi avec ✕, AC ou un champ vide.
 :step: Un autre toucher sur un résultat avant de taper quoi que ce soit remplace celui touché avant.
 :step: Après un opérateur comme + ou ×, le résultat entre après. Juste après un nombre, une lettre ou « ) », un × visible entre d'abord.
 :step: Les lignes utilisées dans l'expression reçoivent des marques de couleur ; effacer le résultat du champ enlève sa marque.
@@ -170,8 +173,9 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :tip: Toucher le numéro à gauche d’une ligne (#12) met #12 dans l’expression au lieu de la valeur, comme désigner une cellule dans un tableur ([Numéros de ligne et #12](#hist-refs)).
 
 ## edit-line | Modifier une ligne de l’historique
-:what: Touchez l’expression d’une ligne (la petite au-dessus de son résultat), ou [[Edit expression]] dans son ⋯, pour modifier cette ligne. L’expression passe dans le champ de saisie, avec la bande « [[Editing a line of the history]] » au-dessus. L’historique défile pour que la ligne et son résultat restent visibles.
+:what: Touchez l’expression d’une ligne (la petite au-dessus de son résultat), ou [[Edit expression]] dans son ⋯, pour modifier cette ligne. L’expression passe dans le champ de saisie, avec la bande « Modification de #12 » au-dessus (12 : le numéro de la ligne). L’historique défile pour que la ligne et son résultat restent visibles.
 :step: Modifiez l’expression et appuyez sur [[!=]]. La ligne reçoit la nouvelle expression et le nouveau résultat à la même place. ★ et la note courte restent, et le menu ⋯ affiche l’heure de la modification à côté de l’heure de la ligne.
+:step: Pendant la saisie, la ligne affiche à sa place l’expression et son nouveau résultat, avec en dessous, en petit et en gris, la ligne telle qu’elle était (« Avant : … »). Une ligne se modifie dans la ligne elle-même ou dans le champ du bas : touchez l’expression dans la ligne pour y mettre le curseur ; les touches, ◀ ▶, ⌫, ⌨, le collage et les touchers sur d’autres résultats y agissent. Touchez le champ pour continuer à y taper. Ce qui est tapé dans l’un apparaît aussitôt dans l’autre. L’historique ne change qu’avec [[!=]].
 :step: Pendant quelques secondes, « [[Edited]] » et [[Undo]] s’affichent. [[Undo]] rétablit l’expression et le résultat d’avant.
 :step: Si les lignes en dessous utilisent le résultat de cette ligne (ans ou #12) ou une variable qu’elle définit, l’application demande s’il faut les recalculer (« Aussi les 2 lignes en dessous ») ou [[Only this line]]. Les lignes recalculées s’illuminent un instant, et [[Undo]] les rétablit aussi. Avec [[Only this line]], les lignes en dessous reçoivent une note : leur résultat n’est peut-être plus à jour. [[Cancel]] ne change rien : la nouvelle expression reste dans le champ et vous continuez la modification.
 :step: Pour la calculer plutôt comme une nouvelle ligne en dessous, appuyez sur [[As a new line]] dans la bande, puis sur [[!=]]. Le ✕ de la bande, AC ou le bouton Retour arrête la modification sans rien changer.
@@ -195,6 +199,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Choisissez [[Add a short note]] dans ⋯ et écrivez une note courte. Elle s'affiche au-dessus du calcul.
 :step: Dans 🕘, [[Search the history]] n'affiche que les lignes dont le calcul, le résultat ou la note contient les mots tapés.
 :example: Une ligne avec la note « loyer » apparaît quand vous cherchez « loyer ».
+:tip: Écartez ou rapprochez deux doigts sur l’historique ou sur le champ de saisie pour agrandir ou réduire son texte (chacun à part ; [[Text size: history]] et [[Text size: input field and result]] dans les réglages le remettent). Pour une seule ligne, [[Text size of this line]] dans son ⋯.
 
 ## select-sum | Additionner des lignes
 :step: Choisissez [[Select lines: sum, average, copy]] dans 🕘. [[Select: sum and average]] dans le ⋯ d'une ligne commence avec cette ligne choisie et affiche la somme tout de suite.
@@ -228,6 +233,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 | [[Calculus]] | Dérivée d/dx, intégrale ∫, limite lim, somme Σ, produit Π, équations |
 | [[Matrix]] | Matrice ▦, déterminant det, transposée, inverse |
 :tip: Si vous ne connaissez pas le nom d'une fonction, cherchez-le dans [[Lists: functions, units, constants]] ([Listes](#lists)).
+:tip: Pour voir plus d’historique, repliez les touches avec ⌄ à droite des onglets, ou glissez vers le bas sur la rangée d’onglets. ⌃, un glissement vers le haut ou un toucher dans le champ de saisie les fait revenir (elles sont de retour à la prochaine ouverture).
 
 ## boxes | Cases □ (les formulaires)
 :what: Les touches d'intégrale et de limite ouvrent un formulaire avec des cases □. Remplissez les cases et le calcul est écrit.
@@ -698,7 +704,8 @@ Les formules :
 | [[Precision (significant digits)]] | La précision des calculs (15 par défaut) |
 | [[Digits shown by each tool]] | Les chiffres de chaque outil, et ceux communs aux Formes, Cuves, solides et au graphique ([Chiffres affichés par outil](#digits)) |
 | [[Light or dark]] | Les couleurs de l'écran |
-| [[Text size]] | Le texte de l'historique, du champ de saisie et du résultat |
+| [[Text size: history]] | Le texte de l'historique (un curseur ; aussi avec deux doigts sur l'historique) |
+| [[Text size: input field and result]] | Le texte du champ de saisie et du résultat (un curseur ; aussi avec deux doigts sur le champ) |
 | [[Color theme]] | La couleur des touches (sauf le bleu : QCalc Pro) |
 | [[Show the result while typing]] | L'aperçu |
 | [[Update exchange rates now]] | Télécharge les taux tout de suite |
