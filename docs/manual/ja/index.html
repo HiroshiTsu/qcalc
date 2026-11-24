@@ -182,6 +182,7 @@ th { background: var(--box); }
 <div class="m-steps"><div class="m-lbl">手順</div><ol><li>数字と演算子のキーで式を入れます。かっこは ( ) キーです。</li><li>関数は、関数のページのキー（sin・log・√ など）を押すと「sin(」のように入ります。</li><li>単位や通貨は、名前をそのまま書きます（<code>5 km</code>、<code>100 USD</code>）。換算は「to」でつなぎます（<code>5 km to mi</code>）。</li><li><b class="ui">=</b> で計算します。</li></ol></div>
 <div class="m-box m-ex"><div class="m-lbl">例</div><p><code>2^10</code> → <code>= 1024</code>、<code>5!</code> → <code>= 120</code>、<code>sin(30°)</code> → <code>= 1/2</code></p></div>
 <div class="m-box m-tip"><div class="m-lbl">ヒント</div><p>空の入力欄で ÷ × + などを押すと、前の答え「ans」から続けて計算します。</p></div>
+<div class="m-box m-tip"><div class="m-lbl">ヒント</div><p>表計算ソフト（Excel・Google スプレッドシート）でコピーした列や表（改行やタブで区切られた 2 つ以上の値）を入力欄に貼ると、「＋でつないで合計」「計算メモに行として入れる」「統計のデータにする」「行列にする」（2 列以上のとき）から選べます。見出しなどの文字だけのマスは飛ばします。1 行の式はそのまま貼れます。</p></div>
 <div class="m-box m-mis"><div class="m-lbl">よくある間違い</div><ul><li>かっこの数が合わないと、エラーになります。エラーの文には、どこを直せばよいかが出ます。</li></ul></div>
 </section>
 <section class="m-sec" id="results">
@@ -603,6 +604,8 @@ th { background: var(--box); }
 <div class="m-steps"><div class="m-lbl">手順</div><ol><li>メモの上の <b class="ui">表</b> を押します。はじめは品目・数量・単価・金額（数量 × 単価）の例が入っています。</li><li>セルに値を入れると、式の列・合計・平均がすぐ計算し直されます。</li><li>列の名前をタップすると、<b class="ui">名前を変える</b>・<b class="ui">式で計算する列にする</b>（例：数量 × 単価）・列を入れる・移す・消すを選べます。行の番号をタップすると、行を入れる・移す・消すを選べます。</li><li><b class="ui">＋ 行</b> と <b class="ui">＋ 列</b> で行と列を足せます。列を足すときに「金額 = 数量 × 単価」と書くと、式の列になります。</li></ol></div>
 <div class="m-box m-ex"><div class="m-lbl">例</div><p>りんご 3 個・120 円、パン 2 個・250 円、牛乳 1 本・180 円 → 金額 ¥360・¥500・¥180、合計 ¥1040、平均 ≈ ¥346.67</p></div>
 <div class="m-box m-tip"><div class="m-lbl">ヒント</div><p>言葉だけのセル（品目の名前など）は合計に入りません。単位の違う値（3 kg と 500 g）は同じ量としてまとめて足します。</p></div>
+<div class="m-box m-tip"><div class="m-lbl">ヒント</div><p>数字を含んでも値として読めないセル（「りんご 2 個」など）も、合計と平均に入りません。</p></div>
+<div class="m-box m-tip"><div class="m-lbl">ヒント</div><p>表計算ソフトでコピーした表を 1 つのセルに貼ると、そのセルから右と下のセルに分けて入ります。足りない行と列は足します（列は 12 列まで）。左上のセルに貼って 1 行目が見出し（数字を含まない）のときは、表がその表になり、1 行目が列の名前になります。式の列には貼った値は入りません。</p></div>
 <div class="m-box m-tip"><div class="m-lbl">ヒント</div><p>種類の違う単位の値（3 kg と 2 など）が同じ列に混じると、合計と平均の所に「単位のちがう値が混じっています」と出ます。お金の列の平均は小数 2 桁で出します（≈ ¥346.67）。</p></div>
 <div class="m-steps"><div class="m-lbl">手順</div><ol><li><b class="ui">詳しく ▾</b> の <b class="ui">CSV で保存</b> で表を CSV ファイルにします（行の番号・列の名前・値・合計・平均）。<b class="ui">ファイルを開く</b> で選んだ CSV は <b class="ui">表にする（1 行目を列の名前に）</b> で表として読み込めます。</li></ol></div>
 <div class="m-box m-tip"><div class="m-lbl">ヒント</div><p>画面が狭いときは、表を横にずらすとほかの列が見えます。行の番号の列はいつも左に見えています。</p></div>

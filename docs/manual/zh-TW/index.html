@@ -182,6 +182,7 @@ th { background: var(--box); }
 <div class="m-steps"><div class="m-lbl">步驟</div><ol><li>用數字和運算子按鍵輸入算式。括號在 ( ) 鍵。</li><li>按 <b class="ui">函數</b> 頁的按鍵（sin、log、√ 等）會輸入「sin(」等。</li><li>單位和貨幣用名稱寫（<code>5 km</code>、<code>100 USD</code>）。換算用「to」（<code>5 km to mi</code>）。</li><li>按 <b class="ui">=</b> 計算。</li></ol></div>
 <div class="m-box m-ex"><div class="m-lbl">例子</div><p><code>2^10</code> → <code>= 1024</code>，<code>5!</code> → <code>= 120</code>，<code>sin(30°)</code> → <code>= 1/2</code></p></div>
 <div class="m-box m-tip"><div class="m-lbl">提示</div><p>在空的輸入欄按 ÷ × + 等，會接著上一個結果「ans」計算。</p></div>
+<div class="m-box m-tip"><div class="m-lbl">提示</div><p>在試算表（Excel、Google 試算表）複製的欄或表格（以換行或 Tab 分隔的 2 個以上的值）貼到輸入欄時，可以選擇「用 + 連起來加總」「以行放進計算備忘」「作為統計的資料」「做成矩陣」（2 欄以上時）。只有標題等文字的格子會略過。一行的算式照原樣貼上。</p></div>
 <div class="m-box m-mis"><div class="m-lbl">常見錯誤</div><ul><li>括號沒有成對會出現錯誤。訊息會說明要修正的地方。</li></ul></div>
 </section>
 <section class="m-sec" id="results">
@@ -600,6 +601,8 @@ th { background: var(--box); }
 <div class="m-steps"><div class="m-lbl">步驟</div><ol><li>按筆記上方的 <b class="ui">表格</b>。一開始會放入品項、數量、價格、金額（數量 × 價格）的例子。</li><li>在儲存格輸入值後，算式欄、合計與平均會立即重算。</li><li>點欄名稱可選擇 <b class="ui">重新命名</b>、<b class="ui">改為以算式計算</b>（例如 數量 × 價格），以及插入、移動、刪除欄；點列號可插入、移動、刪除列。</li><li>用 <b class="ui">+ 列</b> 與 <b class="ui">+ 欄</b> 新增列與欄。新增欄時寫「金額 = 數量 × 價格」，就會成為算式欄。</li></ol></div>
 <div class="m-box m-ex"><div class="m-lbl">例子</div><p>蘋果 3 個・120 JPY、麵包 2 個・250 JPY、牛奶 1 瓶・180 JPY → 金額 ¥360、¥500、¥180，合計 ¥1040，平均 ≈ ¥346.67</p></div>
 <div class="m-box m-tip"><div class="m-lbl">提示</div><p>只有文字的儲存格（品項名稱等）不計入合計。同一種量但單位不同的值（3 kg 與 500 g）會一起加總。</p></div>
+<div class="m-box m-tip"><div class="m-lbl">提示</div><p>含有數字但無法讀成值的格子（「蘋果 2 個」等）也不會算進合計與平均。</p></div>
+<div class="m-box m-tip"><div class="m-lbl">提示</div><p>在試算表複製的表格貼到一個格子時，會從那一格往右、往下分開放入各格；不夠的列與欄會補上（欄最多 12 欄）。貼到左上角的格子且第 1 列是標題（不含數字）時，表格會變成貼上的表格，第 1 列成為欄名。公式欄不會放入貼上的值。</p></div>
 <div class="m-box m-tip"><div class="m-lbl">提示</div><p>同一欄混有不同種類單位的值（3 kg 和 2 等）時，合計與平均處會顯示「混有單位不同的值」。金額欄的平均顯示到小數 2 位（≈ ¥346.67）。</p></div>
 <div class="m-steps"><div class="m-lbl">步驟</div><ol><li><b class="ui">詳細 ▾</b> 裡的 <b class="ui">存成 CSV</b> 會把表格存成 CSV 檔（列號、欄名稱、值、合計與平均）。用 <b class="ui">開啟檔案</b> 選的 CSV 可用 <b class="ui">做成表格（第一列當欄名稱）</b> 讀成表格。</li></ol></div>
 <div class="m-box m-tip"><div class="m-lbl">提示</div><p>螢幕較窄時，左右滑動表格可看其他欄；列號欄會一直留在左側。</p></div>

@@ -114,6 +114,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Appuyez sur [[!=]] pour calculer.
 :example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
 :tip: ÷ × + et autres dans un champ vide continuent à partir du dernier résultat, « ans ».
+:tip: Une colonne ou un tableau copié dans un tableur (Excel, Google Sheets), deux valeurs ou plus sur des lignes ou séparées par des tabulations, collé dans le champ de saisie demande quoi en faire : les additionner avec +, les mettre en lignes dans les notes de calcul, en faire les données des statistiques ou une matrice (à partir de deux colonnes). Les cellules de mots seuls (titres) sont laissées de côté. Une seule ligne se colle comme avant.
 :mistake: Des parenthèses qui ne vont pas par paires donnent une erreur. Le message dit quoi corriger.
 
 ## results | Lire le résultat : exact, approché, fractions
@@ -574,6 +575,8 @@ Les formules :
 :step: [[+ Row]] et [[+ Column]] ajoutent une ligne et une colonne. Une colonne ajoutée comme « Montant = Quantité × Prix » est une colonne à formule.
 :example: 3 pommes à 120 JPY, 2 pains à 250 JPY, 1 lait à 180 JPY → montants ¥360, ¥500, ¥180, total ¥1040, moyenne ≈ ¥346.67
 :tip: Une cellule qui ne contient que des mots (le nom d’un article) ne compte pas dans les totaux. Des valeurs en unités différentes d’une même grandeur (3 kg et 500 g) sont additionnées ensemble.
+:tip: Une cellule avec un chiffre qui ne se lit pas comme une valeur (« pommes 2 pièces ») n’entre pas non plus dans le total ni dans la moyenne.
+:tip: Un tableau copié dans un tableur et collé dans une cellule se répartit à partir d’elle vers la droite et vers le bas ; les lignes et colonnes manquantes sont ajoutées (jusqu’à 12 colonnes). Collé dans la cellule en haut à gauche avec une première ligne de titres (sans chiffres), le tableau devient celui collé, sa première ligne les noms des colonnes. Une colonne de formule garde sa formule.
 :tip: Des valeurs de natures différentes dans une colonne (3 kg et 2) : le total et la moyenne affichent « Des valeurs d’unités différentes sont mélangées ». La moyenne d’une colonne d’argent a 2 décimales (≈ ¥346,67).
 :step: [[Save as CSV]] sous [[More ▾]] enregistre le tableau en fichier CSV (les numéros de ligne, les noms des colonnes, les valeurs, le total et la moyenne). Un fichier CSV choisi avec [[Open a file]] peut être lu [[As a table (the first row: the names of the columns)]].
 :tip: Sur un écran étroit, faites glisser le tableau sur le côté pour les autres colonnes ; la colonne des numéros de ligne reste à gauche.

@@ -13,6 +13,15 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "Add them up with + (headings and other words left out)": "Sumarlos con + (sin encabezados ni otras palabras)",
+    "Put them into the calculation notes as lines (a new memo)": "Ponerlos como líneas en las notas de cálculo (una nota nueva)",
+    "Use them as data of the statistics (x and y)": "Usarlos como datos de la estadística (x e y)",
+    "Use them as data of the statistics (values)": "Usarlos como datos de la estadística (valores)",
+    "Make a matrix of them": "Hacer una matriz con ellos",
+    "{0} values pasted ({1}): what to do with them?": "Se pegaron {0} valores ({1}): ¿qué hacer con ellos?",
+    "“{0}” is a formula column: the values pasted into it were left out": "«{0}» es una columna de fórmula: no se pusieron los valores pegados en ella",
+    "A table has up to {0} columns and {1} rows: the part that did not fit was left out": "Una tabla tiene como máximo {0} columnas y {1} filas: lo que no cabía se dejó fuera",
+    "Put into “{0}”: {1} lines": "Puesto en «{0}»: {1} líneas",
     "\"{0}\" is not a function: check the spelling": "«{0}» no es una función: revisa la ortografía",
     "Could not calculate: it is a point with no value (tan(π/2), gamma(−1), zeta(1))": "No se pudo calcular: es un punto sin valor (tan(π/2), gamma(−1), zeta(1))",
     "Could not calculate: !! is for integers from −1 only": "No se pudo calcular: !! es solo para enteros desde −1",

@@ -114,6 +114,7 @@ QCalc ist ein Rechner, in den Sie einen Ausdruck so eingeben, wie Sie ihn auf Pa
 :step: Drücken Sie [[!=]], um zu rechnen.
 :example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
 :tip: ÷ × + und Ähnliches in einem leeren Eingabefeld rechnen mit dem letzten Ergebnis „ans“ weiter.
+:tip: Eine in einer Tabellenkalkulation (Excel, Google Tabellen) kopierte Spalte oder Tabelle – zwei oder mehr Werte in Zeilen oder mit Tabs – fragt beim Einfügen ins Eingabefeld, was damit geschehen soll: mit + addieren, als Zeilen in die Rechennotizen, als Daten der Statistik oder als Matrix (ab zwei Spalten). Zellen nur mit Wörtern (Überschriften) werden weggelassen. Eine Zeile wird wie bisher eingefügt.
 :mistake: Klammern, die nicht paarweise stehen, führen zu einem Fehler. Die Meldung sagt, was zu korrigieren ist.
 
 ## results | Das Ergebnis lesen: exakt, genähert, Brüche
@@ -574,6 +575,8 @@ Die Formeln:
 :step: [[+ Row]] und [[+ Column]] fügen eine Zeile und eine Spalte hinzu. Eine als „Betrag = Menge × Preis“ hinzugefügte Spalte ist eine Formelspalte.
 :example: 3 Äpfel zu 120 JPY, 2 Brot zu 250 JPY, 1 Milch zu 180 JPY → Beträge ¥360, ¥500, ¥180, Summe ¥1040, Mittelwert ≈ ¥346.67
 :tip: Eine Zelle nur mit Wörtern (der Name eines Artikels) zählt nicht zu den Summen. Werte in verschiedenen Einheiten derselben Größe (3 kg und 500 g) werden zusammengezählt.
+:tip: Eine Zelle mit einer Ziffer, die sich nicht als Wert lesen lässt („Äpfel 2 Stück“), zählt ebenfalls nicht zu Summe und Durchschnitt.
+:tip: Eine in einer Tabellenkalkulation kopierte Tabelle, in eine Zelle eingefügt, verteilt sich von dort nach rechts und unten auf die Zellen; fehlende Zeilen und Spalten kommen hinzu (bis 12 Spalten). In die Zelle oben links eingefügt, mit einer ersten Zeile aus Überschriften (ohne Ziffern), wird die Tabelle die eingefügte, ihre erste Zeile die Namen der Spalten. Eine Formelspalte behält ihre Formel.
 :tip: Werte verschiedener Art in einer Spalte (3 kg und 2): Summe und Mittelwert zeigen „Werte mit verschiedenen Einheiten gemischt“. Der Mittelwert einer Spalte mit Geld hat 2 Nachkommastellen (≈ ¥346,67).
 :step: [[Save as CSV]] unter [[More ▾]] speichert die Tabelle als CSV-Datei (Zeilennummern, Spaltennamen, Werte, Summe und Mittelwert). Eine mit [[Open a file]] gewählte CSV-Datei kann [[As a table (the first row: the names of the columns)]] gelesen werden.
 :tip: Auf einem schmalen Bildschirm wischen Sie die Tabelle seitlich für die anderen Spalten; die Spalte der Zeilennummern bleibt links.

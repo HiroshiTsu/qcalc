@@ -182,6 +182,7 @@ th { background: var(--box); }
 <div class="m-steps"><div class="m-lbl">순서</div><ol><li>숫자와 연산자 키로 식을 입력합니다. 괄호는 ( ) 키에 있습니다.</li><li>함수 페이지의 키(sin, log, √ 등)를 누르면 「sin(」 등이 입력됩니다.</li><li>단위와 통화는 이름으로 씁니다(<code>5 km</code>, <code>100 USD</code>). 변환은 「to」를 씁니다(<code>5 km to mi</code>).</li><li><b class="ui">=</b>를 눌러 계산합니다.</li></ol></div>
 <div class="m-box m-ex"><div class="m-lbl">예</div><p><code>2^10</code> → <code>= 1024</code>, <code>5!</code> → <code>= 120</code>, <code>sin(30°)</code> → <code>= 1/2</code></p></div>
 <div class="m-box m-tip"><div class="m-lbl">도움말</div><p>빈 입력란에서 ÷ × + 등을 누르면 바로 앞의 결과 「ans」에 이어서 계산합니다.</p></div>
+<div class="m-box m-tip"><div class="m-lbl">도움말</div><p>스프레드시트(Excel, Google 스프레드시트)에서 복사한 열이나 표(줄 바꿈이나 탭으로 나뉜 값 2개 이상)를 입력란에 붙여 넣으면 「+로 이어서 합계」「계산 메모에 줄로 넣기」「통계 데이터로 쓰기」「행렬로 만들기」(2열 이상일 때) 중에서 고를 수 있습니다. 제목 같은 글자만 있는 칸은 건너뜁니다. 한 줄의 식은 그대로 붙여 넣어집니다.</p></div>
 <div class="m-box m-mis"><div class="m-lbl">자주 하는 실수</div><ul><li>괄호의 짝이 맞지 않으면 오류가 납니다. 메시지에 고칠 곳이 나옵니다.</li></ul></div>
 </section>
 <section class="m-sec" id="results">
@@ -600,6 +601,8 @@ th { background: var(--box); }
 <div class="m-steps"><div class="m-lbl">순서</div><ol><li>메모 위의 <b class="ui">표</b>를 누릅니다. 처음에는 품목·수량·가격·금액(수량 × 가격)의 예가 들어 있습니다.</li><li>셀에 값을 넣으면 식의 열·합계·평균이 바로 다시 계산됩니다.</li><li>열 이름을 탭하면 <b class="ui">이름 바꾸기</b>·<b class="ui">식으로 계산하는 열로</b>(예: 수량 × 가격)·열 넣기·옮기기·삭제를, 행 번호를 탭하면 행 넣기·옮기기·삭제를 고를 수 있습니다.</li><li><b class="ui">+ 행</b>와 <b class="ui">+ 열</b>으로 행과 열을 더합니다. 열을 더할 때 「금액 = 수량 × 가격」이라고 쓰면 식의 열이 됩니다.</li></ol></div>
 <div class="m-box m-ex"><div class="m-lbl">예</div><p>사과 3개·120 JPY, 빵 2개·250 JPY, 우유 1개·180 JPY → 금액 ¥360·¥500·¥180, 합계 ¥1040, 평균 ≈ ¥346.67</p></div>
 <div class="m-box m-tip"><div class="m-lbl">도움말</div><p>단어만 있는 셀(품목 이름 등)은 합계에 들어가지 않습니다. 같은 종류의 다른 단위 값(3 kg과 500 g)은 함께 더합니다.</p></div>
+<div class="m-box m-tip"><div class="m-lbl">도움말</div><p>숫자가 있어도 값으로 읽을 수 없는 칸(「사과 2개」 등)도 합계와 평균에 들어가지 않습니다.</p></div>
+<div class="m-box m-tip"><div class="m-lbl">도움말</div><p>스프레드시트에서 복사한 표를 한 칸에 붙여 넣으면 그 칸에서 오른쪽과 아래 칸으로 나뉘어 들어갑니다. 모자라는 행과 열은 추가합니다(열은 12열까지). 왼쪽 위 칸에 붙여 넣고 첫 행이 제목(숫자가 없음)이면 표가 붙여 넣은 표가 되고 첫 행이 열 이름이 됩니다. 식 열에는 붙여 넣은 값이 들어가지 않습니다.</p></div>
 <div class="m-box m-tip"><div class="m-lbl">도움말</div><p>한 열에 종류가 다른 단위의 값(3 kg와 2 등)이 섞이면 합계와 평균 자리에 「단위가 다른 값이 섞여 있습니다」가 나옵니다. 돈의 열의 평균은 소수 둘째 자리까지 나옵니다(≈ ¥346.67).</p></div>
 <div class="m-steps"><div class="m-lbl">순서</div><ol><li><b class="ui">자세히 ▾</b>의 <b class="ui">CSV로 저장</b>로 표를 CSV 파일로 저장합니다(행 번호·열 이름·값·합계·평균). <b class="ui">파일 열기</b>로 고른 CSV는 <b class="ui">표로(첫 행을 열 이름으로)</b>로 표로 읽을 수 있습니다.</li></ol></div>
 <div class="m-box m-tip"><div class="m-lbl">도움말</div><p>화면이 좁을 때는 표를 옆으로 밀면 다른 열이 보입니다. 행 번호 열은 항상 왼쪽에 보입니다.</p></div>

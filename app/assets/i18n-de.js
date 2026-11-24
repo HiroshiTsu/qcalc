@@ -1,6 +1,15 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    "Add them up with + (headings and other words left out)": "Mit + addieren (Überschriften und andere Wörter weggelassen)",
+    "Put them into the calculation notes as lines (a new memo)": "Als Zeilen in die Rechennotizen (neue Notiz)",
+    "Use them as data of the statistics (x and y)": "Als Daten der Statistik (x und y)",
+    "Use them as data of the statistics (values)": "Als Daten der Statistik (Werte)",
+    "Make a matrix of them": "Eine Matrix daraus machen",
+    "{0} values pasted ({1}): what to do with them?": "{0} Werte eingefügt ({1}): was damit tun?",
+    "“{0}” is a formula column: the values pasted into it were left out": "„{0}“ ist eine Formelspalte: die dort eingefügten Werte wurden weggelassen",
+    "A table has up to {0} columns and {1} rows: the part that did not fit was left out": "Eine Tabelle hat höchstens {0} Spalten und {1} Zeilen: was nicht passte, wurde weggelassen",
+    "Put into “{0}”: {1} lines": "In „{0}“ eingefügt: {1} Zeilen",
     "\"{0}\" is not a function: check the spelling": "„{0}“ ist keine Funktion: Schreibweise prüfen",
     "Could not calculate: it is a point with no value (tan(π/2), gamma(−1), zeta(1))": "Konnte nicht berechnen: eine Stelle ohne Wert (tan(π/2), gamma(−1), zeta(1))",
     "Could not calculate: !! is for integers from −1 only": "Konnte nicht berechnen: !! gilt nur für ganze Zahlen ab −1",

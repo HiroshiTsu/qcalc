@@ -114,6 +114,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Press [[!=]] to calculate.
 :example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
 :tip: ÷ × + and the like in an empty input field continue from the last answer, "ans".
+:tip: A column or a table copied in a spreadsheet (Excel, Google Sheets) — two or more values on lines or with tabs — pasted into the input field asks what to do: add them up with +, put them into the calculation notes as lines, use them as data of the statistics, or make a matrix (two or more columns). Cells of words only (headings) are left out. One line pastes as it is.
 :mistake: Parentheses that do not pair up give an error. The message says what to fix.
 
 ## results | Reading the answer: exact, approximate, fractions
@@ -574,6 +575,8 @@ The formulas:
 :step: [[+ Row]] and [[+ Column]] add a row and a column. A column added as "Amount = Qty × Price" is a formula column.
 :example: 3 apples at 120 JPY, 2 bread at 250 JPY, 1 milk at 180 JPY → amounts ¥360, ¥500, ¥180, total ¥1040, average ≈ ¥346.67
 :tip: A cell with words only (the name of an item) is left out of the totals. Values in different units (3 kg and 500 g) of the same kind are added up together.
+:tip: A cell with a digit that cannot be read as a value ("apples 2 pcs") is also left out of the total and the average.
+:tip: A table copied in a spreadsheet and pasted into one cell goes into the cells from there to the right and down; the rows and columns missing are added (up to 12 columns). Pasted into the top left cell with a first row of headings (no digits), the table becomes the one pasted, its first row the names of the columns. A formula column keeps its formula.
 :tip: Values of different kinds in a column (3 kg and 2) make the total and the average say "Values of different units are mixed". The average of a column of money has 2 decimals (≈ ¥346.67).
 :step: [[Save as CSV]] under [[More ▾]] saves the table as a CSV file (the row numbers, the names of the columns, the values, the total and the average). A CSV file chosen with [[Open a file]] can be read [[As a table (the first row: the names of the columns)]].
 :tip: On a narrow screen, swipe the table sideways for the other columns; the column of the row numbers stays on the left.

@@ -1254,6 +1254,15 @@
   exprEl.addEventListener('beforeinput', (e) => {
     if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') { e.preventDefault(); commit(); }
   });
+  // (1.16.0, the owner's note of 11-24, P1) a column or a table copied from a spreadsheet (values on lines, or with tabs)
+  // became one line, "1200 850 -300", its spaces read as groups of digits (= 1,200,550, without a word): two or more values
+  // pasted are asked about (add them up, lines of the notes, data of the statistics, a matrix). One line pastes as before.
+  exprEl.addEventListener('paste', (e) => {
+    const P = pastedValues(e.clipboardData ? e.clipboardData.getData('text') : '');
+    if (!P) return;
+    e.preventDefault();
+    pasteChoice(P);
+  });
   exprEl.addEventListener('input', (e) => {
     dropUndo();
     if (!e.isComposing) normalizeField();
@@ -3299,6 +3308,79 @@
     const cells = [].concat(...rows).filter((x) => /^[−+-]?\d+,\d+$/.test(x));
     if (!cells.length || cells.some((x) => /,\d{3}$/.test(x))) return rows;
     return rows.map((r) => r.map((x) => (/^[−+-]?\d+,\d+$/.test(x) ? x.replace(',', '.') : x)));
+  }
+  // (P1) a pasted cell as a value in the engine's form, or null for a word (a heading, the name of an item): the groups of
+  // digits of a spreadsheet left out (1,200 / 1.200,50 with a decimal comma / 1 200), (300) of accounting as −300
+  function pasteValue(x) {
+    let s = String(x || '').replace(/[   ]/g, ' ').trim();
+    if (!/[0-9０-９]/.test(s)) return null;
+    s = normalizeJa(s);
+    const acc = /^\(\s*([¥$€£₩]?\s*\d[\d.,\s]*)\)$/.exec(s);
+    if (acc) s = '−' + acc[1];
+    s = s.replace(/^([−+-]?[¥$€£₩]?\s*)(\d{1,3}(?:([,.\s])\d{3})(?:\3\d{3})*)(?=$|[.,]\d+$|\s*[%A-Za-z¥$€£₩])/, (all, pre, n, g) => {
+      // (a group sign that is not the decimal sign of the number format)
+      if (g === (commaMode ? ',' : '.')) return all;
+      return pre + n.split(g).join('');
+    });
+    s = normalizeExpr(s).replace(/^-(?=[\d¥$€£₩(])/, '−');
+    return s || null;
+  }
+  // (P1) text pasted into the input field: its rows and cells (lines and tabs), when it holds two or more values; else null
+  function pastedValues(text) {
+    const t = String(text || '').replace(/\r\n?/g, '\n').replace(/^\n+/, '').replace(/[\s]+$/, '');
+    if (!/[\n\t]/.test(t)) return null;
+    const rows = pastedDecimals(t.split('\n').filter((l) => l.trim() !== '').map((l) => l.split('\t').map((c) => c.trim())));
+    const vals = rows.map((r) => r.map(pasteValue));
+    const n = [].concat(...vals).filter((v) => v !== null).length;
+    if (n < 2) return null;
+    // the columns that hold values (a heading row and the names of the items left out)
+    const valCols = Math.max(...vals.map((r) => r.filter((v) => v !== null).length));
+    return { rows, vals, n, valCols };
+  }
+  async function pasteChoice(P) {
+    const flat = [].concat(...P.vals).filter((v) => v !== null);
+    const peek = clip(flat.slice(0, 4).map(toDisplay).join(', ') + (flat.length > 4 ? ', …' : ''), 60);
+    const acts = [['sum', tr('Add them up with + (headings and other words left out)', '＋でつないで合計（見出しなどの文字は飛ばす）'), 'accent'],
+      ['notes', tr('Put them into the calculation notes as lines (a new memo)', '計算メモに行として入れる（新しいメモ）')],
+      ['stats', P.valCols >= 2 ? tr('Use them as data of the statistics (x and y)', '統計のデータにする（x と y）') : tr('Use them as data of the statistics (values)', '統計のデータにする（値）')]];
+    if (P.valCols >= 2) acts.push(['mat', tr('Make a matrix of them', '行列にする')]);
+    const k = await sheet(trf('{0} values pasted ({1}): what to do with them?', '{0} 個の値を貼り付けました（{1}）。どうしますか？', P.n, peek), acts);
+    if (!k) { focusExpr(); return; }
+    if (k === 'sum') {
+      // 1200 + 850 + (−300): a value with a sign or a space (12 kg) in parentheses
+      const sum = flat.map((v, i) => (/^[−+-]|\s/.test(v) && (i > 0 || /\s/.test(v)) ? '(' + v + ')' : v)).join(' + ');
+      exprEl.focus();
+      insert(toDisplay(sum));
+      exprChanged(true);
+      return;
+    }
+    // the rows with values only (a heading row left out); in each row its values
+    const valueRows = P.vals.map((r) => r.filter((v) => v !== null)).filter((r) => r.length);
+    if (k === 'stats') {
+      const two = P.valCols >= 2;
+      const rows = (two ? valueRows.filter((r) => r.length >= 2).map((r) => [r[0], r[1]]) : [].concat(...valueRows).map((v) => [v])).slice(0, STAT_MAX).map((r) => r.map(toDisplay));
+      statsWith({ cols: two ? 2 : 1, rows, mode: 'data' });
+      return;
+    }
+    if (k === 'mat') {
+      const w = Math.min(MAT_MAX, P.valCols), rows = valueRows.slice(0, MAT_MAX).map((r) => { const a = r.slice(0, w); while (a.length < w) a.push('0'); return a; });
+      openForm('mat', { matrix: '[' + rows.map((r) => r.join(', ')).join('; ') + ']' });
+      if (valueRows.length > MAT_MAX || P.valCols > MAT_MAX) toast(tr('The part that did not fit was left out', '入りきらない分は入れていません'), 2600);
+      return;
+    }
+    // the notes: a line for each row; a row of words (a heading) as a note ("# Item Amount"), the name of an item and its value
+    // as "apples = 1200" (the name usable in the lines below), a row of several values a line for each value
+    const lines = [];
+    for (let i = 0; i < P.rows.length && lines.length < NOTE_MAX; i++) {
+      const words = P.rows[i].filter((c, j) => c && P.vals[i][j] === null), vs = P.vals[i].filter((v) => v !== null).map(toDisplay);
+      if (!vs.length) { lines.push('# ' + words.join(' ')); continue; }
+      const name = words.join('_').replace(new RegExp('[^' + NOTE_NAME_CH + '0-9]+', 'g'), '_').replace(/^_+|_+$/g, '').slice(0, 24);
+      if (vs.length === 1 && name && NOTE_ASSIGN.test(name + ' = 1')) { lines.push(name + ' = ' + vs[0]); continue; }
+      if (words.length) lines.push('# ' + words.join(' '));
+      lines.push(...vs);
+    }
+    const p = openNotesTool();
+    if (p.importLines) await p.importLines({ lines: lines.slice(0, NOTE_MAX), csv: '', rows: null, title: '', name: '', direct: 'new', pasted: true });
   }
   function parseBlock(text) {
     const t = text.replace(/\r\n?/g, '\n').replace(/[\s;]+$/, '');
@@ -19687,6 +19769,44 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         else if (k === 'del') t.rows.splice(i, 1);
         save(); build(); runTable();
       };
+      // (1.16.0, the owner's note of 11-24, P2) cells copied from a spreadsheet, pasted into one cell, went all into it ("Item
+      // Amountapples 1200…"): one value for each cell, from the cell pasted into to the right and down, as in the statistics; the
+      // rows and the columns that are missing added (up to NOTE_COLS columns). Into the first cell with a first row of words (no
+      // digit), the table becomes the one pasted, that row the names of its columns. A formula column keeps its formula.
+      const pasteCells = (i0, j0, text) => {
+        const t = memo().table;
+        let rows = String(text).replace(/\r\n?/g, '\n').replace(/\s+$/, '').split('\n').map((l) => l.split('\t').map((x) => x.replace(/\s+/g, ' ').trim()));
+        rows = pastedDecimals(rows);
+        const wide = Math.max(...rows.map((r) => r.length));
+        let cut = false, kept = '';
+        if (i0 === 0 && j0 === 0 && rows.length >= 2 && rows[0].some((x) => x) && rows[0].every((x) => noteWord(x))) {
+          const nc = Math.min(NOTE_COLS, wide), cols = [];
+          for (let j = 0; j < nc; j++) { let nm = (rows[0][j] || '').slice(0, 24) || trf('Column {0}', '列{0}', j + 1); while (cols.some((c) => c.n === nm)) nm += '′'; cols.push({ n: nm, f: '' }); }
+          cut = wide > NOTE_COLS || rows.length - 1 > NOTE_MAX;
+          t.cols = cols;
+          t.rows = rows.slice(1, NOTE_MAX + 1).map((r) => cols.map((c, j) => r[j] || ''));
+        } else {
+          while (t.cols.length < Math.min(NOTE_COLS, j0 + wide)) {
+            let n = 1; while (t.cols.some((o) => o.n === trf('Column {0}', '列{0}', n))) n++;
+            t.cols.push({ n: trf('Column {0}', '列{0}', n), f: '' }); t.rows.forEach((r) => r.push(''));
+          }
+          if (j0 + wide > NOTE_COLS) cut = true;
+          if (i0 + rows.length > NOTE_MAX) cut = true;
+          while (t.rows.length < Math.min(NOTE_MAX, i0 + rows.length)) t.rows.push(t.cols.map(() => ''));
+          rows.forEach((r, di) => r.forEach((x, dj) => {
+            const i = i0 + di, j = j0 + dj;
+            if (i >= t.rows.length || j >= t.cols.length) return;
+            if (t.cols[j].f) { if (x) kept = kept || t.cols[j].n; return; }
+            t.rows[i][j] = x;
+          }));
+        }
+        save(); build(); runTable();
+        const first = tbox.querySelectorAll('tbody tr')[i0];
+        const f = first && first.querySelectorAll('td')[j0] && first.querySelectorAll('td')[j0].querySelector('input');
+        if (f) f.focus();
+        if (kept) toast(trf('“{0}” is a formula column: the values pasted into it were left out', '「{0}」は式の列なので、そこに貼った値は入れていません', kept), 4000);
+        else if (cut) toast(trf('A table has up to {0} columns and {1} rows: the part that did not fit was left out', '表は {0} 列・{1} 行までです。入りきらない分は入れていません', NOTE_COLS, NOTE_MAX), 4000);
+      };
       const buildTable = () => {
         const t = memo().table, nc = t.cols.length;
         t.rows = t.rows.map((r) => { const a = Array.isArray(r) ? r.slice(0, nc) : []; while (a.length < nc) a.push(''); return a.map((v) => String(v === null || v === undefined ? '' : v)); });
@@ -19705,6 +19825,13 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
             }
             const inp = el('input', { inputmode: 'text', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false', value: r[j], 'aria-label': trf('{0}, row {1}', '{0}、{1} 行目', colName(j), i + 1), enterkeyhint: 'next' });
             inp.addEventListener('input', () => { memo().table.rows[i][j] = inp.value; save(); runTableSoon(); });
+            // (P2) a table copied from a spreadsheet: into the cells from this one, right and down
+            inp.addEventListener('paste', (e) => {
+              const text = e.clipboardData ? e.clipboardData.getData('text') : '';
+              if (!/[\t\n]/.test(String(text).replace(/\r\n?/g, '\n').replace(/\s+$/, ''))) return;
+              e.preventDefault();
+              pasteCells(i, j, text);
+            });
             inp.addEventListener('keydown', (e) => {
               if (e.key !== 'Enter') return;
               e.preventDefault();
@@ -19782,8 +19909,22 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           const f = TB.foot[j] || {}, parts = [];
           for (let i = 0; i < nr; i++) if (ex[i][j] !== null) parts.push('(' + ex[i][j] + ')');
           if (!parts.length) { paint(f.tot, null, true); paint(f.avg, null, true); continue; }
-          const tot = await calcOne(parts.join(' + '));
+          let tot = await calcOne(parts.join(' + '));
           if (seq !== TB.seq) return;
+          // (1.16.0, the owner's note of 11-24, P2) a cell with a digit that is not a value ("apples 2 pcs" as the name of an
+          // item) made the total "… is not a variable, function or unit": such cells left out of the total and the average
+          if (!tot.ok && !t.cols[j].f) {
+            parts.length = 0;
+            for (let i = 0; i < nr; i++) {
+              if (ex[i][j] === null) continue;
+              const v = await calcOne(ex[i][j]);
+              if (seq !== TB.seq) return;
+              if (v.ok) parts.push('(' + ex[i][j] + ')');
+            }
+            if (!parts.length) { paint(f.tot, null, true); paint(f.avg, null, true); continue; }
+            tot = await calcOne(parts.join(' + '));
+            if (seq !== TB.seq) return;
+          }
           // (1.16.0, the owner's note of 11-24, L4) values of different units in a column (3 kg and 2) stay a sum ("3 kg + 2"):
           // said in the total and the average, not shown as their values
           const top = tot.ok ? String(tot.shown).split(' ≈ ')[0].replace(/\([^()]*\)/g, '') : '';
@@ -19846,7 +19987,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       // or one line into the input field; (1.16.0) a CSV file with two columns or more also as a table (its first row: the
       // names of the columns; QCalc Pro, as tables are)
       p.importLines = async (got) => {
-        const L = memo().lines, empty = !isTable() && L.every((l) => !String(l).trim()), n = got.lines.length;
+        // (P1: values pasted into the input field go into the example memo of a first start, as into an empty memo)
+        const example = got.pasted && N.memos.length === 1 && !isTable() && JSON.stringify(memo().lines) === JSON.stringify(NOTE_EX()[0][1].map(decSign));
+        const L = memo().lines, empty = example || (!isTable() && L.every((l) => !String(l).trim())), n = got.lines.length;
         const lock = PRO_GATES.notes === 'pro' && !hasPro() && !empty;
         const head = got.name ? trf('Read “{0}”: {1} lines', '「{0}」を読み込みます（{1} 行）', got.name, n) : trf('Text received: {0} lines', '受け取った文字（{0} 行）', n);
         const asTable = got.csv === 'first' && got.rows && got.rows.length >= 2 && got.rows[0].length >= 2;
@@ -19856,7 +19999,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
         if (asTable) acts.push(['table', tr('As a table (the first row: the names of the columns)', '表にする（1 行目を列の名前に）') + tlock(), 'accent']);
         acts.push(['new', tr('As a new memo', '新しいメモにする') + (lock ? '  ⭐ Pro' : ''), asTable ? '' : 'accent'], ['add', tr('At the end of this memo', '今のメモの最後に足す')]);
         if (n === 1) acts.push(['field', tr('Put it into the input field', '入力欄に入れる')]);
-        const k = await sheet(head + note + peek, acts);
+        const k = got.direct || await sheet(head + note + peek, acts);
         if (!k) return;
         if (k === 'field') {
           while (panelStack.length) closePanel();
@@ -19896,7 +20039,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
             N.memos.push({ id, title: got.title || trf('Memo {0}', 'メモ {0}', N.memos.length + 1), lines: got.lines.slice() }); N.cur = id;
           }
           N.cache = []; save(); fillPick(); titleIn.value = memo().title; build(); run(0);
-          toast(trf('Read into “{0}”: {1} lines', '「{0}」に {1} 行を読み込みました', memo().title, n), 2500);
+          toast(got.pasted ? trf('Put into “{0}”: {1} lines', '「{0}」に {1} 行を入れました', memo().title, n) : trf('Read into “{0}”: {1} lines', '「{0}」に {1} 行を読み込みました', memo().title, n), 2500);
           return;
         }
         // at the end of this memo (its empty lines at the end go; a table memo shows its lines again)
