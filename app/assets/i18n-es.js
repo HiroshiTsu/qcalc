@@ -22,7 +22,7 @@
     "“{0}” is a formula column: the values pasted into it were left out": "«{0}» es una columna de fórmula: no se pusieron los valores pegados en ella",
     "A table has up to {0} columns and {1} rows: the part that did not fit was left out": "Una tabla tiene como máximo {0} columnas y {1} filas: lo que no cabía se dejó fuera",
     "Put into “{0}”: {1} lines": "Puesto en «{0}»: {1} líneas",
-    "\"{0}\" is not a function: check the spelling": "«{0}» no es una función: revisa la ortografía",
+    "\"{0}\" is not a function: check the spelling": "\"{0}\" no es una función: revisa la ortografía",
     "Could not calculate: it is a point with no value (tan(π/2), gamma(−1), zeta(1))": "No se pudo calcular: es un punto sin valor (tan(π/2), gamma(−1), zeta(1))",
     "Could not calculate: !! is for integers from −1 only": "No se pudo calcular: !! es solo para enteros desde −1",
     "Could not calculate: check the expression": "No se pudo calcular: revisa la expresión",
