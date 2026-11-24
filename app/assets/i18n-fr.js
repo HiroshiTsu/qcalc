@@ -1,6 +1,11 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    "Could not calculate: it divides by zero": "Calcul impossible : division par zéro",
+    "#{0} has “{1}” right after it": "« {1} » suit directement #{0}",
+    "There is no line numbered #{0}": "Aucune ligne ne porte le numéro #{0}",
+    "Not worked out again (#{0} could not be worked out again)": "Non recalculé (#{0} n’a pas pu être recalculé)",
+    "The units or kinds (money, matrices) do not match, so they cannot be added up": "Les unités ou les types (argent, matrices) ne concordent pas : impossible d’additionner",
     "Save the history as a CSV file that spreadsheets can open": "Enregistrer l’historique dans un fichier CSV que les tableurs peuvent ouvrir",
     "Line {1} uses #{0}, so it cannot be worked out above #{0}": "La ligne {1} utilise #{0} : elle ne peut pas être calculée au-dessus de #{0}",
     "Values of different units are mixed": "Des valeurs d’unités différentes sont mélangées",

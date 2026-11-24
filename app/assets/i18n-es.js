@@ -13,6 +13,11 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "Could not calculate: it divides by zero": "No se pudo calcular: divide entre cero",
+    "#{0} has “{1}” right after it": "Justo después de #{0} hay «{1}»",
+    "There is no line numbered #{0}": "No hay ninguna línea con el número #{0}",
+    "Not worked out again (#{0} could not be worked out again)": "No se recalculó (#{0} no se pudo recalcular)",
+    "The units or kinds (money, matrices) do not match, so they cannot be added up": "Las unidades o los tipos (dinero, matrices) no coinciden, así que no se pueden sumar",
     "Save the history as a CSV file that spreadsheets can open": "Guarda el historial como un archivo CSV que las hojas de cálculo pueden abrir",
     "Line {1} uses #{0}, so it cannot be worked out above #{0}": "La línea {1} usa #{0}, así que no se puede calcular por encima de #{0}",
     "Values of different units are mixed": "Hay valores con unidades distintas mezclados",

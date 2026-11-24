@@ -1417,7 +1417,10 @@
     const rx = expandHistRefs(expr, histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h.n : histNo + 1);
     if (rx.error) { showPreview(null); msgEl.textContent = rx.error; msgEl.className = 'msg error'; return; }
     previewBusy = true;
-    const r = await withNotes(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), rx.expr);
+    // (1.16.0, R3: the line being edited is previewed with the angle unit it keeps, as = works it out; until then the preview of
+    // sin(30) worked out in degrees said ≈ −0.988 while the band said degrees)
+    const edH = histEdit && history.indexOf(histEdit.h) >= 0 ? histEdit.h : null;
+    const r = await withNotes(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr, edH ? lineOpts(edH) : undefined), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), rx.expr);
     previewBusy = false;
     if (exprEl.value.trim() === raw && !committing) showPreview(r);
     if (previewAgain) { previewAgain = false; runPreview(); }
@@ -1844,8 +1847,10 @@
   }
   // (1.16.0, the review of 11-24, C5) a result that is the calculation itself, left undone by the engine without a message: said
   // instead of "= [1  2] + [1  2  3]" or "= factorial(−1)"
-  function undoneMessage(result) {
+  function undoneMessage(result, messages) {
     const t = String(result || '').split(' ≈ ')[0];
+    // (1.16.0, the review of 11-24 (4), H8) 1/0 stayed "= 1/0" with a warning, and the lines with it went on (#1 × 2 = 2/0)
+    if ((messages || []).some((m) => /^Division by zero/.test(String(m.text || ''))) && /\/\s*0(?![\d.,])/.test(t)) return tr('Could not calculate: it divides by zero', '計算できませんでした（ゼロで割っています）');
     if (/\]\s*[+−-]\s*\[/.test(t)) return tr('Could not calculate: the vectors or matrices are not the same size', '計算できませんでした（ベクトルや行列の大きさが違います）');
     if (/^factorial\(\s*[−-]\s*\d+\s*\)$|^\(\s*[−-]\s*\d+\s*\)!$/.test(t)) return tr('Could not calculate: the factorial of a negative integer is not defined', '計算できませんでした（負の整数の階乗は定義されていません）');
     return '';
@@ -1860,7 +1865,7 @@
     if (r.deferred) previewEl.textContent = tr('Press = to run it (definitions are not previewed)', '＝ を押すと実行します（定義など）');
     else if (r.timeout) previewEl.textContent = '…';
     else if (err) { previewEl.textContent = ''; msgEl.textContent = localMessage(err.text); msgEl.className = 'msg error'; }
-    else if (undoneMessage(r.result)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result); msgEl.className = 'msg error'; }
+    else if (undoneMessage(r.result, r.messages)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result, r.messages); msgEl.className = 'msg error'; }
     else {
       showResult(previewEl, resultText(r));
       fitMatrices(previewEl);
@@ -1952,7 +1957,7 @@
       msgEl.className = 'msg error';
       return;
     }
-    if (undoneMessage(r.result)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result); msgEl.className = 'msg error'; return; } // (C5)
+    if (undoneMessage(r.result, r.messages)) { previewEl.textContent = ''; msgEl.textContent = undoneMessage(r.result, r.messages); msgEl.className = 'msg error'; return; } // (C5, H8)
     const entry = {
       expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), angle: S.angle, // (angle: 1.16.0, R3)
       msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3), t: Date.now()
@@ -3523,8 +3528,11 @@
   const lineRefs = (e) => Array.from(String(e || '').matchAll(LINE_REF)).map((m) => (m[1] === '?' ? '?' : Number(m[1])));
   function expandLineRefs(expr, get) {
     let error = '';
-    const out = String(expr).replace(LINE_REF, (all, k) => {
+    const out = String(expr).replace(LINE_REF, (all, k, at, str) => {
       if (error) return '0';
+      // (1.16.0, the review of 11-24 (4), H6) "#1.5" was (100).5 = 50 without a word
+      const nx = str[at + all.length];
+      if ((nx === '.' || nx === NF.dec) && /\d/.test(str[at + all.length + 1] || '')) { error = trf('#{0} has “{1}” right after it', '#{0} のすぐ後に「{1}」があります', k, nx); return '0'; }
       const v = get(k === '?' ? '?' : Number(k));
       if (v && typeof v === 'object') { error = v.error; return '0'; }
       return '(' + v + ')';
@@ -3535,6 +3543,8 @@
   function expandHistRefs(expr, own) {
     return expandLineRefs(expr, (n) => {
       const line = n === '?' ? null : history.find((x) => x && x.n === n);
+      // (1.16.0, H7) a number never given (#999): no line has that number; one given before: the line was deleted
+      if (!line && n !== '?' && n > histNo) return { error: trf('There is no line numbered #{0}', '#{0} という番号の行はありません', n) };
       if (!line) return { error: trf('#{0}: that line is no longer in the history', '#{0}：その行は履歴にありません（消されました）', n === '?' ? '?' : n) };
       if (own && n >= own) return { error: trf('#{0} is not a line above this one', '#{0} はこの行より上の行ではありません', n) };
       const v = insertText(line);
@@ -4268,6 +4278,7 @@
       const err = r.ok ? (r.messages || []).find((m) => m.type === 'error') : null;
       return { error: r.timeout ? tr('The time limit was reached', '制限時間を過ぎました') : localMessage(err ? err.text : r.error) || tr('Check the expression', '式を確認してください') };
     }
+    if (undoneMessage(r.result, r.messages)) return { error: undoneMessage(r.result, r.messages) }; // (1.16.0, H8)
     const s = { expr, result: r.result, approx: r.approx, cmp: r.comparison, base: Number(S.base), angle: (history[i] && history[i].angle) || S.angle, msgs: (r.messages || []).filter((m) => m.type !== 'info').slice(0, 3) };
     if (r.truncated) { s.cut = true; if (typeof r.tail === 'string' && r.tail) s.tail = r.tail; s.msgs.push({ type: 'warning', text: cutMessage(r) }); }
     if (typeof r.input === 'string' && r.input) { if (r.input.length > MAX_INPUT) s.big = true; else s.input = r.input; }
@@ -4389,12 +4400,27 @@
         redrawEntries(new Set(before.keys()));
       }
       if (a === 'all') {
+        // (1.16.0, the review of 11-24 (4), H5) a line that could not be worked out again: the lines that use it (its #, its ans,
+        // its variable) are not worked out again with its old answer, as #REF! in a spreadsheet; they keep their answers, marked
+        const failIdx = new Set(), failNo = new Map(), failNames = new Map();
         for (const j of deps) {
           const d = history[j];
           if (!d) continue;
-          const n = await recalcLine(j, d.expr);
           if (!before.has(d)) before.set(d, snapEntry(d));
-          if (n.error) { d.msgs = [{ type: 'error', text: trf('Not worked out again: {0}', '計算し直せませんでした：{0}', n.error) }]; continue; }
+          const dn0 = defName(d.expr), body = dn0 ? String(d.expr).replace(/^[^=]*=/, '') : d.expr;
+          const viaA = ansUses(d.expr).map((k) => j - k).find((x) => failIdx.has(x)), via = viaA === undefined ? -1 : viaA;
+          const viaNo = lineRefs(d.expr).find((k) => failNo.has(k));
+          const viaName = Array.from(failNames.keys()).find((nm) => usesName(body, nm));
+          const from = viaNo !== undefined ? viaNo : via >= 0 ? history[via].n : viaName !== undefined ? failNames.get(viaName) : null;
+          if (from !== null && from !== undefined) {
+            // (the line that could not be worked out first is named, also through a line in between: #5 = ans of #4 = #3 × 2)
+            const root = failNo.get(from) || from;
+            d.msgs = (d.msgs || []).filter((m) => !m.stale && !m.notAgain).concat([{ type: 'error', text: trf('Not worked out again (#{0} could not be worked out again)', '計算し直せませんでした（#{0} が計算し直せないため）', root), notAgain: true }]);
+            failIdx.add(j); failNo.set(d.n, root); if (dn0) failNames.set(dn0, d.n);
+            continue;
+          }
+          const n = await recalcLine(j, d.expr);
+          if (n.error) { d.msgs = [{ type: 'error', text: trf('Not worked out again: {0}', '計算し直せませんでした：{0}', n.error), notAgain: true }]; failIdx.add(j); failNo.set(d.n, d.n); if (dn0) failNames.set(dn0, d.n); continue; }
           const dn = defName(d.expr); if (dn) touched.add(dn);
           putEntry(d, Object.assign(n, { edited: Date.now() }));
           done++;
@@ -17338,6 +17364,10 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (!list.length) return;
     const vals = list.map((h) => insertText(h));
     if (vals.some((v) => !v)) { selInfo.append(el('div', { class: 'form-hint warn', text: tr('A result that cannot be used in a calculation is selected (too long, or text)', '計算に使えない結果（長すぎる・文字）が選ばれています') })); return; }
+    // (1.16.0, the review of 11-24 (4), H4) money with numbers or units, matrices with anything but matrices: not added up (until
+    // then "= (¥2050 + 1) (¥2050 + 2)" or "≈ €1.200 + 1.230,67": the check of the units saw only letters)
+    const kindOf = (h) => { const t = String(h.result || '').split(/ [=≈] /).pop(); return /^\s*\[/.test(t) ? 'matrix' : /[¥$€£₩₹]|(?:^|[\s\d])(?:JPY|USD|EUR|GBP|KRW|TWD|CNY|MXN|CHF|INR|CAD|AUD)\b/.test(t) ? 'money' : 'other'; };
+    if (new Set(list.map(kindOf)).size > 1) { selInfo.append(el('div', { class: 'form-hint warn', text: tr('The units or kinds (money, matrices) do not match, so they cannot be added up', '単位や種類（お金・行列）がそろっていないので、合計できません') })); return; }
     const sum = vals.map((v) => '(' + v + ')').join(' + ');
     // (1.16.0, feature/hist-excel: lines shown as decimals add up to a decimal, as in a spreadsheet: 52.8, not 52 + 4/5)
     const dec = list.every((h) => !/\//.test(String(h.result || '')));
@@ -17346,7 +17376,8 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     if (!r.ok || !r.result || r.timeout) { selInfo.append(el('div', { class: 'form-hint warn', text: localMessage(r.error) || tr('Could not add them up', '合計を計算できませんでした') })); return; }
     // a sum of different kinds of units stays a sum ("5 km + 3 kg"): said, not given as a total
     const exact = r.result.split(' ≈ ')[0];
-    if (/[A-Za-z]/.test(exact) && /\s[+−]\s/.test(exact.replace(/\([^()]*\)/g, ''))) {
+    if (undoneMessage(r.result, r.messages)) { selInfo.append(el('div', { class: 'form-hint warn', text: undoneMessage(r.result, r.messages) })); return; }
+    if (/[A-Za-z¥$€£₩₹]/.test(exact) && /\s[+−]\s/.test(exact.replace(/\([^()]*\)/g, ''))) {
       selInfo.append(el('div', { class: 'form-hint warn', text: tr('The units do not match, so they cannot be added up', '単位がそろっていないので、合計できません') }));
       return;
     }
@@ -17363,19 +17394,38 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     copyText(list.map((h) => toDisplay(h.expr) + ' ' + copyDisplayResult(h)).join('\n'));
   }
   // the answer of a line as a cell of a spreadsheet: the decimal value when there is one (1/5523 ≈ 0.000181… → 0.000181…, as
-  // a spreadsheet would read 1/5523 as a date), without the groups of digits, with the decimal sign of the number format
-  function tableAnswer(h) {
-    let t = h.cut ? shownText(h) : String(h.result || '');
-    const parts = t.split(' ≈ ');
-    t = parts[parts.length - 1].replace(/(\d)[\u202f\u2009](?=\d)/g, '$1');
-    return displayText(t).replace(/[\t\n]+/g, ' ');
+  // a spreadsheet would read 1/5523 as a date), without the groups of digits, with the decimal sign of the number format.
+  // (1.16.0, the review of 11-24 (4)) H3: a fraction (1234 + 1/2, the answer of 1234.5 typed) worked out as a decimal by the
+  // engine; H1: the minus sign "-" (Excel and Google Sheets read −5 with U+2212 as text) and 1.2E+20 for 1.2 × 10^20
+  const SHEET_SUP = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', '⁻': '-', '⁺': '+', '−': '-' };
+  const sheetNumber = (t) => String(t)
+    .replace(/\s*×\s*10\^?\s*([⁻⁺]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+|[−+-]?\d+)/g, (m, e) => { const d = e.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺−]/g, (c) => SHEET_SUP[c]); return 'E' + (d[0] === '-' ? '-' : '+') + d.replace(/^[-+]/, ''); })
+    .replace(/(\d)E([−+-]?)(\d+)/g, (m, a, sg, d) => a + 'E' + (sg === '-' || sg === '−' ? '-' : '+') + d)
+    .replace(/−/g, '-');
+  async function tableAnswer(h) {
+    const t = h.cut ? shownText(h) : String(h.result || '');
+    let last = t.split(/ [=≈] /).pop().replace(/(\d)[\u202f\u2009](?=\d)/g, '$1');
+    if (!h.cut && /\d\s*\/\s*\d/.test(last) && !/^\s*\[/.test(last)) {
+      const src = insertText(h);
+      const r = src ? await Bridge.send('calc', { expr: src, opts: Object.assign(lineOpts(h), { fraction: 'decimal', approx: 'approx' }), timeout: 2000, store: false, preview: false }) : null;
+      if (r && r.ok && r.result && !r.timeout) last = String(r.result).split(/ [=≈] /).pop().replace(/(\d)[\u202f\u2009](?=\d)/g, '$1');
+    }
+    return sheetNumber(displayText(last).replace(/(\d)[\u202f\u2009](?=\d)/g, '$1').replace(/[\t\n]+/g, ' '));
   }
-  // the expression as a cell: not read as a formula by the spreadsheet (a minus sign first as −, "=" or "+" first with ')
-  const tableExpr = (h) => { const t = toDisplay(String(h.expr || '')).replace(/[\t\n]+/g, ' '); return /^-/.test(t) ? '−' + t.slice(1) : /^[=+@]/.test(t) ? "'" + t : t; };
-  function copySelectedTable() {
+  // the expression as a cell: not read as a formula by the spreadsheet (a minus sign first as −, "=" or "+" first with ').
+  // (1.16.0, H2) only digits with / - : (1/2, 3-4, 12:30): with the signs of the screen, ÷ and −, and ∶ for the colon, so that
+  // the spreadsheet reads text, not the date 2 January or the time 12:30 (LibreOffice: 1/2 a date, 12:30 a time, 1 ÷ 2 text)
+  const tableExpr = (h) => {
+    let t = toDisplay(String(h.expr || '')).replace(/[\t\n]+/g, ' ');
+    if (/^[\d\s.,:\/÷−-]+$/.test(t) && !/^[−-]?\d+(?:[.,]\d+)?$/.test(t.trim())) t = t.replace(/\s*\/\s*/g, ' ÷ ').replace(/(\S)\s*[−-]\s*/g, '$1 − ').replace(/\s*:\s*/g, '∶');
+    return /^-/.test(t) ? '−' + t.slice(1) : /^[=+@]/.test(t) ? "'" + t : t;
+  };
+  async function copySelectedTable() {
     const list = history.filter((h) => histSel && histSel.has(h));
     if (!list.length) { toast(tr('Nothing is selected', '何も選ばれていません'), 1500); return; }
-    copyText(list.map((h) => tableExpr(h) + '\t' + tableAnswer(h)).join('\n'));
+    const rows = [];
+    for (const h of list) rows.push(tableExpr(h) + '\t' + await tableAnswer(h));
+    copyText(rows.join('\n'));
     toast(trf('{0} lines copied as a table: paste them into a spreadsheet', '{0} 行を表としてコピーしました（表計算ソフトに貼れます）', list.length), 2500);
   }
   // a dialog with one line of text: the text, or null when cancelled

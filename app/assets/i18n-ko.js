@@ -1,6 +1,11 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "Could not calculate: it divides by zero": "계산할 수 없습니다(0으로 나눕니다)",
+    "#{0} has “{1}” right after it": "#{0} 바로 뒤에 「{1}」이(가) 있습니다",
+    "There is no line numbered #{0}": "#{0}이라는 번호의 줄은 없습니다",
+    "Not worked out again (#{0} could not be worked out again)": "다시 계산하지 못했습니다(#{0}을(를) 다시 계산할 수 없어서)",
+    "The units or kinds (money, matrices) do not match, so they cannot be added up": "단위나 종류(돈·행렬)가 맞지 않아 합계할 수 없습니다",
     "Save the history as a CSV file that spreadsheets can open": "기록을 CSV 파일로 저장(스프레드시트에서 열 수 있습니다)",
     "Line {1} uses #{0}, so it cannot be worked out above #{0}": "{1}번 줄은 #{0}을(를) 쓰므로 #{0}보다 위에서는 계산할 수 없습니다",
     "Values of different units are mixed": "단위가 다른 값이 섞여 있습니다",

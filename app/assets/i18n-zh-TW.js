@@ -2,6 +2,11 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "Could not calculate: it divides by zero": "無法計算（除以零）",
+    "#{0} has “{1}” right after it": "#{0} 後面緊接著「{1}」",
+    "There is no line numbered #{0}": "沒有編號為 #{0} 的行",
+    "Not worked out again (#{0} could not be worked out again)": "未重新計算（因為 #{0} 無法重新計算）",
+    "The units or kinds (money, matrices) do not match, so they cannot be added up": "單位或種類（金額、矩陣）不一致，無法加總",
     "Save the history as a CSV file that spreadsheets can open": "將歷史紀錄存成試算表可開啟的 CSV 檔",
     "Line {1} uses #{0}, so it cannot be worked out above #{0}": "第 {1} 行用到 #{0}，所以不能在 #{0} 上方計算",
     "Values of different units are mixed": "混有單位不同的值",
