@@ -5385,6 +5385,7 @@
     // Japanese names: shown beside the English title and used by the search
     const names = !JA ? {} : kind === 'functions' ? FUNC_JA : kind === 'variables' ? VAR_JA : JA_NAMES;
     items.forEach((it, i) => { it._i = i; }); // the engine's order: the common units of a category come first
+    if (kind === 'units') await addRegionCurrency(items);
     for (const it of items) {
       it._cat = it.category || tr('Other', 'その他');
       it._top = it._cat.split('/')[0];
@@ -5399,6 +5400,19 @@
     items.sort((a, b) => (a.title || a.name).localeCompare(b.title || b.name));
     catalogs[kind] = items;
     return items;
+  }
+  // (1.16.2) The money of the region in the list of units, also when the engine keeps it out: the engine hides the
+  // currencies that only the second source of rates has (the New Taiwan dollar, the pesos of Argentina, Chile and
+  // Colombia…), though it converts them. Without it a phone in Taiwan opened the converter on EUR → USD, with no TWD to
+  // choose (the converter, the list of units and its search). A currency the engine cannot convert stays out.
+  const CURRENCY_TITLES = { TWD: 'New Taiwan Dollar', ARS: 'Argentine Peso', CLP: 'Chilean Peso', COP: 'Colombian Peso', PEN: 'Peruvian Sol',
+    UYU: 'Uruguayan Peso', VND: 'Vietnamese Dong' };
+  async function addRegionCurrency(items) {
+    const c = regionCurrency();
+    if (!/^[A-Z]{3}$/.test(c) || items.some((it) => it.name === c || it.abbr === c)) return;
+    if (!(await fxRate(c, c === 'USD' ? 'EUR' : 'USD') > 0)) return;
+    items.push({ name: c, abbr: c, display: c, title: own(CURRENCY_TITLES, c) || '', category: 'Currency', description: '', currency: true, local: false,
+      composite: false, insert: true, _i: -1 });
   }
   const CATALOG_TITLE = { functions: tr('Functions', '関数の一覧'), units: tr('Units and currencies', '単位・通貨の一覧'), variables: tr('Variables and constants', '変数・定数の一覧') };
   // titles and descriptions of the traditional Japanese units in Japanese (the engine has them in English)
