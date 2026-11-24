@@ -35,7 +35,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 - **Courbes de régression et CSV** : pour deux colonnes, choisissez une courbe de degré 2 à 4, exponentielle, logarithmique ou puissance (sauf la droite : QCalc Pro). [[Read a CSV file]] lit une colonne d’un fichier CSV ([Statistiques](#stats)).
 - **Aide sur les arguments** : après le nom d’une fonction et « ( », ses arguments (l’actuel en gras), ce qu’elle fait et un exemple s’affichent sous le champ. Pour environ 60 fonctions ; ✕ ferme l’aide ([Aide sur les arguments](#arg-hints)).
 - **Insérer un résultat d'un toucher** : toucher un résultat de l'historique le met à la position du curseur, comme un clic sur une cellule dans un tableur. Un autre toucher avant de taper quoi que ce soit le remplace, et juste après un nombre un × visible entre d'abord. Les lignes utilisées reçoivent des marques de couleur. Les résultats avec √ ou π entrent sous leur forme exacte, pas en décimales arrondies ([Insérer un résultat d'un toucher](#tap-insert)).
-- **Numéros de ligne et #12 dans l'historique** : les lignes de l'historique ont des numéros, et `#12` dans une expression est le résultat de la ligne 12 ; modifier la ligne 12 peut recalculer les lignes qui utilisent #12. [[Select: sum and average]] dans ⋯ commence avec cette ligne et affiche la somme tout de suite ; un appui long sur une ligne choisit une plage. [[Copy as a table]] (QCalc Pro) copie les expressions et les résultats en deux colonnes pour un tableur ([Numéros de ligne et #12](#hist-refs), [Additionner des lignes](#select-sum)).
+- **Numéros de ligne et #12 dans l'historique** : les lignes de l'historique ont des numéros, et `#12` dans une expression est le résultat de la ligne 12 ; modifier la ligne 12 peut recalculer les lignes qui utilisent #12. [[Select: sum and average]] dans ⋯ commence avec cette ligne et affiche la somme tout de suite ; un appui long sur une ligne choisit une plage. [[Copy as a table]] copie les expressions et les résultats en deux colonnes pour un tableur ([Numéros de ligne et #12](#hist-refs), [Additionner des lignes](#select-sum)).
 - **Modifier une ligne** : la ligne et son résultat restent visibles, et les lignes recalculées s'illuminent un instant. Une ligne garde l'unité d'angle avec laquelle elle a été calculée et est modifiée avec elle. AC arrête aussi la modification, et [[Cancel]] dans la question sur les lignes en dessous revient à la modification ([Modifier une ligne de l’historique](#edit-line)).
 - **Autres corrections** : tant que « Volume et surface » est ouvert dans le graphique 3D, la légende montre la couleur du solide mesuré. L'argent arrondit correctement un demi-centime vers le haut (certaines sommes avaient un centime de moins). Les résultats se copient sans séparateurs de milliers. `nPr(5, 2)` et `nCr(5, 2)` fonctionnent. D'autres messages du moteur de calcul (la remarque sur 6/2(1+2) et d'autres) s'affichent en français. Le convertisseur laisse de côté les unités rarement utilisées (on peut toujours les taper).
 
@@ -196,7 +196,7 @@ QCalc est une calculatrice où vous tapez un calcul comme sur papier et obtenez 
 :step: Touchez les lignes à additionner. Un appui long sur une ligne choisit toutes les lignes depuis la dernière choisie jusqu'à elle.
 :step: La somme et la moyenne s'affichent en bas, avec leur unité si les unités concordent. Des lignes affichées en décimales donnent une somme décimale. [[Copy]] copie les lignes (sans séparateurs de milliers).
 :step: [[Copy as a table]] copie les expressions et les résultats des lignes choisies en deux colonnes séparées par une tabulation : collées dans un tableur, elles forment une colonne d'expressions et une colonne de résultats.
-:pro: [[Copy as a table]] est une fonction de QCalc Pro, avec l'export de l'historique (CSV). Les numéros, #12, le choix des lignes, la somme, la moyenne et la copie simple sont gratuits.
+:tip: [[Copy as a table]] est gratuit. Enregistrer tout l'historique dans un fichier CSV ([Exporter l'historique](#export)) est une fonction de QCalc Pro.
 :mistake: Des lignes d'unités différentes (m et kg) ne s'additionnent pas ; la raison s'affiche.
 
 ## export | Exporter l'historique (CSV)
@@ -744,7 +744,7 @@ L'intégration numérique (aires, longueurs et volumes du graphique) est sûre �
 | Plus de 1000 chiffres significatifs (jusqu'à 200000) | [Lire le résultat](#results) |
 | Graphiques 3D, voir en 3D | [Graphique 3D](#graph-3d) |
 | Thèmes de couleur (7 couleurs) | [Réglages](#settings) |
-| Exporter l'historique (CSV), copier en tableau | [Exporter l'historique](#export), [Additionner des lignes](#select-sum) |
+| Exporter l'historique (CSV) | [Exporter l'historique](#export) |
 | Tableaux en CSV (prêt, épargne) | [Prêt](#loan) |
 | Fonds de cuves et barèmes de jaugeage | [Fonds de cuves](#tank-heads) |
 | Solide à partir d'un profil | [Solide à partir d'un profil](#profile) |

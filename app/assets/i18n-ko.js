@@ -1,6 +1,7 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "Save the history as a CSV file that spreadsheets can open": "기록을 CSV 파일로 저장(스프레드시트에서 열 수 있습니다)",
     "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "기록: 결과를 탭해서 넣기(다시 탭하면 바뀜), 줄 번호와 #12, 골라서 합계",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "이것은 주값(복소수)입니다. 실수 세제곱근은 cbrt(−{0})(∛)로 구합니다",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "이것은 주값(복소수)입니다. 실수 거듭제곱근은 root(−{0}, {1})로 구합니다",
@@ -21,9 +22,7 @@
     "Select: sum and average": "선택(합계·평균)",
     "{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?": "아래 {0}줄은 이 줄의 결과(ans나 #{1})나 변수를 씁니다. 다시 계산할까요?",
     "Copy as a table": "표로 복사",
-    "Copying lines as a table is a QCalc Pro feature, as exporting the history": "표로 복사는 기록 내보내기와 같이 QCalc Pro 기능입니다",
     "{0} lines copied as a table: paste them into a spreadsheet": "{0}줄을 표로 복사했습니다(스프레드시트에 붙여 넣을 수 있습니다)",
-    "Save the history as a CSV file, or copy the lines you choose as a table, for a spreadsheet": "기록을 CSV 파일로 저장하거나 고른 줄을 표로 복사해 스프레드시트에서 쓸 수 있습니다",
     "The solid whose volume is measured": "부피를 재고 있는 입체",
     "(its answer is in the expression)": "(이 결과를 식에서 쓰고 있습니다)",
     // (1.16.0) the card of what is new: the stocks and the notes

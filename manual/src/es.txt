@@ -35,7 +35,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 - **Curvas de regresión y CSV**: para dos columnas, elige una curva de grado 2 a 4, exponencial, logarítmica o potencial (salvo la recta: QCalc Pro). [[Read a CSV file]] lee una columna de un archivo CSV ([Estadística](#stats)).
 - **Ayuda de los argumentos**: tras el nombre de una función y «(», bajo el campo aparecen sus argumentos (el actual en negrita), qué hace y un ejemplo. Para unas 60 funciones; ✕ la cierra ([Ayuda de los argumentos](#arg-hints)).
 - **Insertar un resultado con un toque**: tocar un resultado del historial lo pone en la posición del cursor, como un clic en una celda de una hoja de cálculo. Otro toque antes de escribir nada lo sustituye, y justo después de un número entra primero un × visible. Las líneas usadas reciben marcas de color. Los resultados con √ o π entran en su forma exacta, no como decimales redondeados ([Insertar un resultado con un toque](#tap-insert)).
-- **Números de línea y #12 en el historial**: las líneas del historial tienen números, y `#12` en una expresión es el resultado de la línea 12; al editar la línea 12 se pueden recalcular las líneas que usan #12. [[Select: sum and average]] en ⋯ empieza con esa línea y muestra la suma al instante; mantener pulsada una línea elige un rango. [[Copy as a table]] (QCalc Pro) copia expresiones y resultados en dos columnas para una hoja de cálculo ([Números de línea y #12](#hist-refs), [Sumar líneas](#select-sum)).
+- **Números de línea y #12 en el historial**: las líneas del historial tienen números, y `#12` en una expresión es el resultado de la línea 12; al editar la línea 12 se pueden recalcular las líneas que usan #12. [[Select: sum and average]] en ⋯ empieza con esa línea y muestra la suma al instante; mantener pulsada una línea elige un rango. [[Copy as a table]] copia expresiones y resultados en dos columnas para una hoja de cálculo ([Números de línea y #12](#hist-refs), [Sumar líneas](#select-sum)).
 - **Editar una línea**: la línea y su resultado siguen a la vista, y las líneas recalculadas se iluminan un momento. Una línea guarda la unidad de ángulo con que se calculó y se edita con ella. AC también deja de editar, y [[Cancel]] en la pregunta sobre las líneas de abajo vuelve a la edición ([Editar una línea del historial](#edit-line)).
 - **Otras correcciones**: mientras «Volumen y superficie» está abierto en la gráfica 3D, la leyenda muestra el color del sólido medido. El dinero redondea bien medio céntimo hacia arriba (algunas sumas quedaban un céntimo cortas). Los resultados se copian sin separadores de miles. `nPr(5, 2)` y `nCr(5, 2)` funcionan. Más mensajes del motor de cálculo (la nota sobre 6/2(1+2) y otros) aparecen en español. El conversor deja fuera las unidades poco usadas (se pueden seguir escribiendo).
 
@@ -196,7 +196,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :step: Toca las líneas que quieres sumar. Mantener pulsada una línea elige todas las líneas desde la última elegida hasta ella.
 :step: La suma y el promedio aparecen abajo, con su unidad si las unidades coinciden. Las líneas mostradas como decimales suman un decimal. [[Copy]] copia las líneas (sin separadores de miles).
 :step: [[Copy as a table]] copia las expresiones y los resultados de las líneas elegidas en dos columnas, separadas por un tabulador: pegadas en una hoja de cálculo, forman una columna de expresiones y otra de resultados.
-:pro: [[Copy as a table]] es una función de QCalc Pro, junto con exportar el historial (CSV). Los números, #12, elegir, la suma, el promedio y la copia normal son gratis.
+:tip: [[Copy as a table]] es gratis. Guardar todo el historial como archivo CSV ([Exportar el historial](#export)) es una función de QCalc Pro.
 :mistake: No se pueden sumar líneas con unidades distintas (m y kg); se muestra el motivo.
 
 ## export | Exportar el historial (CSV)
@@ -744,7 +744,7 @@ La integración numérica (áreas, longitudes y volúmenes del gráfico) es segu
 | Más de 1000 cifras significativas (hasta 200000) | [Leer el resultado](#results) |
 | Gráficas 3D, ver en 3D | [Gráfica 3D](#graph-3d) |
 | Temas de color (7 colores) | [Ajustes](#settings) |
-| Exportar el historial (CSV), copiar como tabla | [Exportar el historial](#export), [Sumar líneas](#select-sum) |
+| Exportar el historial (CSV) | [Exportar el historial](#export) |
 | Tablas como CSV (préstamo, ahorro) | [Préstamo](#loan) |
 | Fondos de tanques y tablas de consulta | [Fondos de tanques](#tank-heads) |
 | Sólido a partir de un perfil | [Sólido a partir de un perfil](#profile) |

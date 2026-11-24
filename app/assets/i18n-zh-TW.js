@@ -2,6 +2,7 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "Save the history as a CSV file that spreadsheets can open": "將歷史紀錄存成試算表可開啟的 CSV 檔",
     "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "歷史紀錄：點一下結果即可插入（再點會替換）、行號與 #12、選取後加總",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "這是主值（複數）。實數立方根請用 cbrt(−{0})（∛）",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "這是主值（複數）。實數方根請用 root(−{0}, {1})",
@@ -22,9 +23,7 @@
     "Select: sum and average": "選取（合計、平均）",
     "{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?": "下方 {0} 行使用了這一行的結果（ans 或 #{1}）或變數。要一併重新計算嗎？",
     "Copy as a table": "以表格複製",
-    "Copying lines as a table is a QCalc Pro feature, as exporting the history": "以表格複製與匯出歷史紀錄一樣，是 QCalc Pro 的功能",
     "{0} lines copied as a table: paste them into a spreadsheet": "已將 {0} 行以表格複製（可貼到試算表）",
-    "Save the history as a CSV file, or copy the lines you choose as a table, for a spreadsheet": "將歷史紀錄存成 CSV 檔，或將選取的行以表格複製，在試算表中使用",
     "The solid whose volume is measured": "正在測量體積的立體",
     "(its answer is in the expression)": "（此結果已用在算式中）",
     // (1.16.0) the card of what is new: the stocks and the notes

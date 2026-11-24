@@ -1,6 +1,7 @@
 // German texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["de"] = () => ({
   texts: {
+    "Save the history as a CSV file that spreadsheets can open": "Den Verlauf als CSV-Datei speichern, die Tabellenkalkulationen öffnen können",
     "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "Verlauf: Ergebnisse durch Tippen einfügen (erneutes Tippen ersetzt), Zeilennummern und #12, auswählen und addieren",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "Das ist der Hauptwert (eine komplexe Zahl). Die reelle Kubikwurzel ist cbrt(−{0}) (∛)",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "Das ist der Hauptwert (eine komplexe Zahl). Die reelle Wurzel ist root(−{0}, {1})",
@@ -21,9 +22,7 @@
     "Select: sum and average": "Auswählen: Summe und Mittelwert",
     "{0} lines below go on from this line (its ans, #{1} or its variable). Work them out again too?": "{0} Zeilen darunter rechnen mit dieser Zeile weiter (ihr ans, #{1} oder ihre Variable). Auch neu berechnen?",
     "Copy as a table": "Als Tabelle kopieren",
-    "Copying lines as a table is a QCalc Pro feature, as exporting the history": "Zeilen als Tabelle kopieren ist wie der Export des Verlaufs eine Funktion von QCalc Pro",
     "{0} lines copied as a table: paste them into a spreadsheet": "{0} Zeilen als Tabelle kopiert: in eine Tabellenkalkulation einfügen",
-    "Save the history as a CSV file, or copy the lines you choose as a table, for a spreadsheet": "Den Verlauf als CSV-Datei speichern oder ausgewählte Zeilen als Tabelle kopieren, für eine Tabellenkalkulation",
     "The solid whose volume is measured": "Körper, dessen Volumen gemessen wird",
     "(its answer is in the expression)": "(sein Ergebnis steht im Ausdruck)",
     // (1.16.0) the card of what is new: the stocks and the notes

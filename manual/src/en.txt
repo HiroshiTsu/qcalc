@@ -35,7 +35,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 - **Regression curves and CSV**: for two columns, choose a curve of degree 2 to 4, an exponential, a logarithmic or a power curve (other than the line: QCalc Pro). [[Read a CSV file]] reads a column of a CSV file ([Statistics](#stats)).
 - **Hints for the arguments of functions**: after a function name and "(", its arguments (the current one in bold), what it does and an example show under the input field. For about 60 functions; ✕ closes it ([Hints for the arguments](#arg-hints)).
 - **Tap to insert a result**: a tap on an answer in the history puts it at the cursor, as a click on a cell does in a spreadsheet. Another tap before you type anything replaces it, and right after a number a visible × goes in first. The lines used get colored marks. Answers with √ or π go in in their exact form, not as rounded decimals ([Tap to insert a result](#tap-insert)).
-- **Line numbers and #12 in the history**: the lines of the history have numbers, and `#12` in an expression is the answer of line 12; editing line 12 can work out again the lines that use #12. [[Select: sum and average]] in ⋯ starts with that line and shows the sum at once, and touching and holding a line chooses a range. [[Copy as a table]] (QCalc Pro) copies the expressions and answers as two columns for a spreadsheet ([Line numbers and #12](#hist-refs), [Adding up lines](#select-sum)).
+- **Line numbers and #12 in the history**: the lines of the history have numbers, and `#12` in an expression is the answer of line 12; editing line 12 can work out again the lines that use #12. [[Select: sum and average]] in ⋯ starts with that line and shows the sum at once, and touching and holding a line chooses a range. [[Copy as a table]] copies the expressions and answers as two columns for a spreadsheet ([Line numbers and #12](#hist-refs), [Adding up lines](#select-sum)).
 - **Editing a line**: the line and its answer stay in sight, and the lines worked out again flash for a moment. A line keeps the angle unit it was worked out with and is edited with it. AC stops editing too, and [[Cancel]] in the question about the lines below goes back to editing ([Editing a line of the history](#edit-line)).
 - **Other fixes**: while "Volume and surface" is open in the 3D graph, the legend shows the color of the solid being measured. Money rounds a half cent up correctly (some sums were one cent short). Results are copied without digit grouping. `nPr(5, 2)` and `nCr(5, 2)` work. More messages of the engine (the note on 6/2(1+2) and others) are in your language. The converter leaves out rarely used units (they can still be typed).
 
@@ -196,7 +196,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :step: Tap the lines to add up. Touching and holding a line chooses all the lines from the one chosen last to it.
 :step: The sum and the average show below, with their unit when the units agree. Lines shown as decimals add up to a decimal. [[Copy]] copies the lines (without digit grouping).
 :step: [[Copy as a table]] copies the expressions and answers of the chosen lines in two columns, with a tab between them: pasted into a spreadsheet, they make a column of expressions and a column of answers.
-:pro: [[Copy as a table]] is a QCalc Pro feature, with exporting the history (CSV). The numbers, #12, choosing, the sum, the average and plain copying are free.
+:tip: [[Copy as a table]] is free. Saving the whole history as a CSV file ([Exporting the history](#export)) is a QCalc Pro feature.
 :mistake: Lines in different units (m and kg) cannot be added; the reason is shown.
 
 ## export | Exporting the history (CSV)
@@ -744,7 +744,7 @@ Numeric integration (areas, lengths and volumes of the graph) is certain to abou
 | More than 1000 significant digits (up to 200000) | [Reading the answer](#results) |
 | 3D graphs, View in 3D | [3D graph](#graph-3d) |
 | Color themes (7 colors) | [Settings](#settings) |
-| Exporting the history (CSV), Copy as a table | [Exporting the history](#export), [Adding up lines](#select-sum) |
+| Exporting the history (CSV) | [Exporting the history](#export) |
 | Tables as CSV files (loan, savings) | [Loan](#loan) |
 | Tank heads and quick-reference tables | [Tank heads](#tank-heads) |
 | Solid from a profile | [Solid from a profile](#profile) |
