@@ -13,6 +13,11 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "Line {1} uses #{0}, so it cannot be worked out above #{0}": "La línea {1} usa #{0}, así que no se puede calcular por encima de #{0}",
+    "Values of different units are mixed": "Hay valores con unidades distintas mezclados",
+    "Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down (at 20.315 %, the income taxes of 15.315 % and the resident tax of 5 % each rounded down, as a broker withholds them); \"Break-even\" is the price at which selling leaves no loss after the fees.": "Ganancia = (venta − compra) × acciones − comisiones. Una comisión puede ser un importe o un % de la operación. El impuesto solo se aplica a una ganancia, redondeado hacia abajo (al 20,315 %, los impuestos sobre la renta del 15,315 % y el impuesto de residentes del 5 % se redondean por separado, como los retiene el bróker); «Punto de equilibrio» es el precio al que vender no deja pérdida tras las comisiones.",
+    "The tax is worked out on this trade alone (20.315 %: Japan's rate for listed stocks, its parts of 15.315 % and 5 % rounded down one by one); losses offset in the year are not taken into account.": "El impuesto se calcula solo para esta operación (20,315 %: el tipo japonés de las acciones cotizadas, sus partes del 15,315 % y del 5 % redondeadas hacia abajo por separado); no se tiene en cuenta la compensación de pérdidas del año.",
+    "15.315 % and 5 % of the profit, each rounded down": "15,315 % y 5 % de la ganancia, redondeados por separado",
     "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "Historial: toca un resultado para insertarlo (otro toque lo sustituye), números de línea y #12, elegir y sumar",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "Este es el valor principal (un número complejo). La raíz cúbica real es cbrt(−{0}) (∛)",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "Este es el valor principal (un número complejo). La raíz real es root(−{0}, {1})",
@@ -119,8 +124,6 @@
     "Fee when selling": "Comisión de venta",
     "Taxed": "Con impuestos",
     "Tax-free account": "Cuenta exenta",
-    "Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down; \"Break-even\" is the price at which selling leaves no loss after the fees.": "Ganancia = (venta − compra) × acciones − comisiones. Una comisión puede ser un importe o un % de la operación. El impuesto solo se aplica a una ganancia, redondeado hacia abajo; «Punto de equilibrio» es el precio al que vender no deja pérdida tras las comisiones.",
-    "The tax is worked out on this trade alone (20.315 %: Japan's rate for listed stocks); losses offset in the year and the way a broker rounds are not taken into account.": "El impuesto se calcula solo para esta operación (20,315 %: el tipo japonés de las acciones cotizadas); no se tienen en cuenta la compensación de pérdidas del año ni el redondeo del bróker.",
     "Enter the prices and the shares": "Introduzca los precios y las acciones",
     "The price bought at must be a number above 0": "El precio de compra debe ser un número mayor que 0",
     "The price sold at must be a number": "El precio de venta debe ser un número",

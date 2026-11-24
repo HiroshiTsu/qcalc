@@ -357,7 +357,7 @@ Las constantes físicas son los valores de CODATA 2022 que trae el motor de cál
 :step: Elige [[Taxed]] o [[Tax-free account]]. El tipo impositivo es 20,315 % (el de Japón) salvo que escribas otro.
 :example: Comprada a 1000, vendida a 1200, 100 acciones, sin comisiones → +20,000.00, impuesto 4,063.00, después de impuestos +15,937.00
 :tip: El % es sobre lo pagado, con la comisión. El precio de equilibrio es aquel al que vender no deja pérdida tras las comisiones.
-:note: El impuesto se calcula solo para esta operación y se redondea hacia abajo; no se tienen en cuenta la compensación de pérdidas del año ni el redondeo del bróker.
+:note: El impuesto se calcula solo para esta operación. Al 20,315 %, los impuestos sobre la renta (15,315 %) y el impuesto de residentes (5 %) se redondean hacia abajo por separado y se suman, como los retiene el bróker (una ganancia de 19 yenes paga 2). No se tiene en cuenta la compensación de pérdidas del año.
 
 ### avg-cost | Precio medio de compra
 :what: El precio medio de acciones compradas en varias veces, y cuántas acciones a qué precio llevan el promedio a un objetivo.
@@ -556,6 +556,7 @@ Las fórmulas:
 :example: líneas 1 a 3 alquiler, luz y agua, línea 4 «total», línea 5 `#4 / 2` → ¥47,150 (94,300 / 2)
 :tip: Al insertar, eliminar o mover líneas, los números escritos en las líneas las siguen y siguen indicando las mismas líneas. Una referencia a una línea eliminada pasa a #? y la línea lo dice.
 :note: #3 solo puede ser una línea por encima de la línea en la que está.
+:tip: Una línea movida por encima de una línea que usa (su #4) no se puede calcular: la app lo dice («La línea 1 usa #2, así que no se puede calcular por encima de #2») con [[Undo]].
 
 ### notes-table | Modo tabla
 :what: Una nota como tabla: columnas con nombre, una columna calculada a partir de las otras con una fórmula (como Importe = Cantidad × Precio), y el total y la media de cada columna. Una celda puede tener una unidad o una moneda, como 3 kg o 120 JPY.
@@ -565,6 +566,7 @@ Las fórmulas:
 :step: [[+ Row]] y [[+ Column]] añaden una fila y una columna. Una columna añadida como «Importe = Cantidad × Precio» es una columna con fórmula.
 :example: 3 manzanas a 120 JPY, 2 pan a 250 JPY, 1 leche a 180 JPY → importes ¥360, ¥500, ¥180, total ¥1040, media ≈ ¥346.67
 :tip: Una celda solo con palabras (el nombre de un artículo) no entra en los totales. Los valores en unidades distintas de la misma magnitud (3 kg y 500 g) se suman juntos.
+:tip: Con valores de distinto tipo en una columna (3 kg y 2), el total y la media dicen «Hay valores con unidades distintas mezclados». La media de una columna de dinero tiene 2 decimales (≈ ¥346.67).
 :step: [[Save as CSV]] en [[More ▾]] guarda la tabla como archivo CSV (los números de fila, los nombres de las columnas, los valores, el total y la media). Un archivo CSV elegido con [[Open a file]] se puede leer [[As a table (the first row: the names of the columns)]].
 :tip: En una pantalla estrecha, desliza la tabla de lado para ver las otras columnas; la columna de los números de fila queda a la izquierda.
 :pro: El modo tabla (con guardar como CSV y leer un CSV como tabla) es una función de QCalc Pro. Los números de línea y #3 son gratis.

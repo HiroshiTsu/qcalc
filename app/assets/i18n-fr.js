@@ -1,6 +1,11 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    "Line {1} uses #{0}, so it cannot be worked out above #{0}": "La ligne {1} utilise #{0} : elle ne peut pas être calculée au-dessus de #{0}",
+    "Values of different units are mixed": "Des valeurs d’unités différentes sont mélangées",
+    "Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down (at 20.315 %, the income taxes of 15.315 % and the resident tax of 5 % each rounded down, as a broker withholds them); \"Break-even\" is the price at which selling leaves no loss after the fees.": "Gain = (vente − achat) × actions − frais. Des frais peuvent être un montant ou un % de l’opération. L’impôt ne porte que sur un gain, arrondi vers le bas (à 20,315 %, les impôts sur le revenu de 15,315 % et la taxe des résidents de 5 % arrondis chacun vers le bas, comme le courtier les retient) ; « Point mort » est le prix auquel vendre ne laisse aucune perte après les frais.",
+    "The tax is worked out on this trade alone (20.315 %: Japan's rate for listed stocks, its parts of 15.315 % and 5 % rounded down one by one); losses offset in the year are not taken into account.": "L’impôt est calculé pour cette seule opération (20,315 % : le taux japonais des actions cotées, ses parts de 15,315 % et de 5 % arrondies vers le bas l’une après l’autre) ; la compensation des pertes de l’année n’est pas prise en compte.",
+    "15.315 % and 5 % of the profit, each rounded down": "15,315 % et 5 % du gain, arrondis chacun vers le bas",
     "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "Historique : touchez un résultat pour l’insérer (un autre toucher le remplace), numéros de ligne et #12, choisir et additionner",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "C’est la valeur principale (un nombre complexe). La racine cubique réelle est cbrt(−{0}) (∛)",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "C’est la valeur principale (un nombre complexe). La racine réelle est root(−{0}, {1})",
@@ -107,8 +112,6 @@
     "Fee when selling": "Frais à la vente",
     "Taxed": "Imposable",
     "Tax-free account": "Compte exonéré",
-    "Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down; \"Break-even\" is the price at which selling leaves no loss after the fees.": "Gain = (vente − achat) × actions − frais. Des frais peuvent être un montant ou un % de l’opération. L’impôt ne porte que sur un gain, arrondi vers le bas ; « Point mort » est le prix auquel vendre ne laisse aucune perte après les frais.",
-    "The tax is worked out on this trade alone (20.315 %: Japan's rate for listed stocks); losses offset in the year and the way a broker rounds are not taken into account.": "L’impôt est calculé pour cette seule opération (20,315 % : le taux japonais des actions cotées) ; la compensation des pertes de l’année et l’arrondi du courtier ne sont pas pris en compte.",
     "Enter the prices and the shares": "Saisissez les prix et les actions",
     "The price bought at must be a number above 0": "Le prix d’achat doit être un nombre supérieur à 0",
     "The price sold at must be a number": "Le prix de vente doit être un nombre",

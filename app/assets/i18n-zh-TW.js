@@ -2,6 +2,11 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "Line {1} uses #{0}, so it cannot be worked out above #{0}": "第 {1} 行用到 #{0}，所以不能在 #{0} 上方計算",
+    "Values of different units are mixed": "混有單位不同的值",
+    "Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down (at 20.315 %, the income taxes of 15.315 % and the resident tax of 5 % each rounded down, as a broker withholds them); \"Break-even\" is the price at which selling leaves no loss after the fees.": "損益 ＝（賣出價 − 買入價）× 股數 − 手續費。手續費可輸入金額或交易金額的 %。稅只對獲利課徵，無條件捨去（20.315% 時，和券商代扣一樣，所得稅與復興特別所得稅 15.315% 及住民稅 5% 分別捨去後相加）；「損益兩平賣價」是扣除手續費後不虧損的賣價。",
+    "The tax is worked out on this trade alone (20.315 %: Japan's rate for listed stocks, its parts of 15.315 % and 5 % rounded down one by one); losses offset in the year are not taken into account.": "稅只就這筆交易計算（20.315%：日本上市股票的稅率，15.315% 與 5% 分別無條件捨去）；不考慮年度損益相抵。",
+    "15.315 % and 5 % of the profit, each rounded down": "獲利的 15.315% 與 5%（分別無條件捨去）",
     "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "歷史紀錄：點一下結果即可插入（再點會替換）、行號與 #12、選取後加總",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "這是主值（複數）。實數立方根請用 cbrt(−{0})（∛）",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "這是主值（複數）。實數方根請用 root(−{0}, {1})",
@@ -108,8 +113,6 @@
     "Fee when selling": "賣出手續費",
     "Taxed": "課稅",
     "Tax-free account": "免稅帳戶",
-    "Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down; \"Break-even\" is the price at which selling leaves no loss after the fees.": "損益 ＝（賣出價 − 買入價）× 股數 − 手續費。手續費可輸入金額或交易金額的 %。稅只對獲利課徵，無條件捨去；「損益兩平賣價」是扣除手續費後不虧損的賣價。",
-    "The tax is worked out on this trade alone (20.315 %: Japan's rate for listed stocks); losses offset in the year and the way a broker rounds are not taken into account.": "稅只就這筆交易計算（20.315%：日本上市股票的稅率）；不考慮年度損益相抵與券商的尾數處理。",
     "Enter the prices and the shares": "請輸入買入價、賣出價與股數",
     "The price bought at must be a number above 0": "買入價必須是大於 0 的數",
     "The price sold at must be a number": "賣出價必須是數",

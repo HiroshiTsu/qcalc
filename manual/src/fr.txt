@@ -357,7 +357,7 @@ Les constantes physiques sont les valeurs de CODATA 2022 intégrées au moteur d
 :step: Choisissez [[Taxed]] ou [[Tax-free account]]. Le taux d’imposition est 20,315 % (celui du Japon) si vous n’en tapez pas d’autre.
 :example: Achetée à 1000, vendue à 1200, 100 actions, sans frais → +20 000,00, impôt 4 063,00, après impôt +15 937,00
 :tip: Le % porte sur ce qui a été payé, frais compris. Le point mort est le prix auquel vendre ne laisse aucune perte après les frais.
-:note: L’impôt est calculé pour cette seule opération et arrondi vers le bas ; la compensation des pertes de l’année et l’arrondi du courtier ne sont pas pris en compte.
+:note: L’impôt est calculé pour cette seule opération. À 20,315 %, les impôts sur le revenu (15,315 %) et la taxe des résidents (5 %) sont arrondis vers le bas chacun puis additionnés, comme le courtier les retient (un gain de 19 yens paie 2). La compensation des pertes de l’année n’est pas prise en compte.
 
 ### avg-cost | Prix de revient moyen
 :what: Le prix moyen d’actions achetées en plusieurs fois, et combien d’actions à quel prix amènent la moyenne à une cible.
@@ -556,6 +556,7 @@ Les formules :
 :example: lignes 1 à 3 loyer, électricité et eau, ligne 4 « total », ligne 5 `#4 / 2` → ¥47,150 (94 300 / 2)
 :tip: Quand des lignes sont insérées, supprimées ou déplacées, les numéros écrits dans les lignes suivent et désignent toujours les mêmes lignes. Un renvoi à une ligne supprimée devient #?, et la ligne le dit.
 :note: #3 ne peut désigner qu’une ligne au-dessus de celle où il se trouve.
+:tip: Une ligne déplacée au-dessus d’une ligne qu’elle utilise (son #4) ne peut pas être calculée : l’application le dit (« La ligne 1 utilise #2 : elle ne peut pas être calculée au-dessus de #2 ») avec [[Undo]].
 
 ### notes-table | Mode tableau
 :what: Un mémo en tableau : des colonnes avec un nom, une colonne calculée à partir des autres par une formule (comme Montant = Quantité × Prix), et le total et la moyenne de chaque colonne. Une cellule peut avoir une unité ou une monnaie, comme 3 kg ou 120 JPY.
@@ -565,6 +566,7 @@ Les formules :
 :step: [[+ Row]] et [[+ Column]] ajoutent une ligne et une colonne. Une colonne ajoutée comme « Montant = Quantité × Prix » est une colonne à formule.
 :example: 3 pommes à 120 JPY, 2 pains à 250 JPY, 1 lait à 180 JPY → montants ¥360, ¥500, ¥180, total ¥1040, moyenne ≈ ¥346.67
 :tip: Une cellule qui ne contient que des mots (le nom d’un article) ne compte pas dans les totaux. Des valeurs en unités différentes d’une même grandeur (3 kg et 500 g) sont additionnées ensemble.
+:tip: Des valeurs de natures différentes dans une colonne (3 kg et 2) : le total et la moyenne affichent « Des valeurs d’unités différentes sont mélangées ». La moyenne d’une colonne d’argent a 2 décimales (≈ ¥346,67).
 :step: [[Save as CSV]] sous [[More ▾]] enregistre le tableau en fichier CSV (les numéros de ligne, les noms des colonnes, les valeurs, le total et la moyenne). Un fichier CSV choisi avec [[Open a file]] peut être lu [[As a table (the first row: the names of the columns)]].
 :tip: Sur un écran étroit, faites glisser le tableau sur le côté pour les autres colonnes ; la colonne des numéros de ligne reste à gauche.
 :pro: Le mode tableau (avec l’enregistrement en CSV et la lecture d’un CSV en tableau) est une fonction de QCalc Pro. Les numéros de ligne et #3 sont gratuits.

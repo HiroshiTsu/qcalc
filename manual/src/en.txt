@@ -357,7 +357,7 @@ The physical constants are the CODATA 2022 values built into the calculation eng
 :step: Choose [[Taxed]] or [[Tax-free account]]. The tax rate is 20.315 % (Japan's) unless you type another.
 :example: Bought at 1000, sold at 1200, 100 shares, no fees → +20,000.00, tax 4,063.00, after tax +15,937.00
 :tip: The % is of what was paid, with the fee. The break-even price is where selling leaves no loss after the fees.
-:note: The tax is worked out on this trade alone and rounded down; offsetting losses in the year and a broker's way of rounding are not taken into account.
+:note: The tax is worked out on this trade alone. At 20.315 %, the income taxes (15.315 %) and the resident tax (5 %) are each rounded down and added, as a broker withholds them (a profit of 19 yen pays 2). Offsetting losses in the year is not taken into account.
 
 ### avg-cost | Average cost
 :what: The average cost of shares bought in several buys, and how many shares at what price bring the average to a target.
@@ -556,6 +556,7 @@ The formulas:
 :example: lines 1 to 3 rent, electricity and water, line 4 "total", line 5 `#4 / 2` → ¥47,150 (94,300 / 2)
 :tip: When lines are inserted, deleted or moved, the numbers written in the lines follow, so they still mean the same lines. A reference to a deleted line becomes #?, and the line says so.
 :note: #3 can only be a line above the line it is in.
+:tip: A line moved above a line it uses (its #4) cannot be worked out: the app says so ("Line 1 uses #2, so it cannot be worked out above #2") with [[Undo]].
 
 ### notes-table | Table mode
 :what: A memo as a table: columns with names, a column worked out from the others by a formula (such as Amount = Qty × Price), and the total and the average of each column. A cell can have a unit or a currency, such as 3 kg or 120 JPY.
@@ -565,6 +566,7 @@ The formulas:
 :step: [[+ Row]] and [[+ Column]] add a row and a column. A column added as "Amount = Qty × Price" is a formula column.
 :example: 3 apples at 120 JPY, 2 bread at 250 JPY, 1 milk at 180 JPY → amounts ¥360, ¥500, ¥180, total ¥1040, average ≈ ¥346.67
 :tip: A cell with words only (the name of an item) is left out of the totals. Values in different units (3 kg and 500 g) of the same kind are added up together.
+:tip: Values of different kinds in a column (3 kg and 2) make the total and the average say "Values of different units are mixed". The average of a column of money has 2 decimals (≈ ¥346.67).
 :step: [[Save as CSV]] under [[More ▾]] saves the table as a CSV file (the row numbers, the names of the columns, the values, the total and the average). A CSV file chosen with [[Open a file]] can be read [[As a table (the first row: the names of the columns)]].
 :tip: On a narrow screen, swipe the table sideways for the other columns; the column of the row numbers stays on the left.
 :pro: The table mode (with saving as CSV and reading a CSV file as a table) is a QCalc Pro feature. The line numbers and #3 are free.

@@ -1,6 +1,11 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "Line {1} uses #{0}, so it cannot be worked out above #{0}": "{1}번 줄은 #{0}을(를) 쓰므로 #{0}보다 위에서는 계산할 수 없습니다",
+    "Values of different units are mixed": "단위가 다른 값이 섞여 있습니다",
+    "Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down (at 20.315 %, the income taxes of 15.315 % and the resident tax of 5 % each rounded down, as a broker withholds them); \"Break-even\" is the price at which selling leaves no loss after the fees.": "손익 = (매도가 − 매수가) × 주식 수 − 수수료. 수수료는 금액이나 거래 금액의 %로 넣을 수 있습니다. 세금은 이익에만 붙으며 끝수는 버립니다(20.315%일 때는 증권사의 원천징수처럼 소득세와 부흥특별소득세 15.315%와 주민세 5%를 따로 끝수를 버려 더합니다). ‘손익분기 매도가’는 수수료를 빼도 손실이 나지 않는 매도가입니다.",
+    "The tax is worked out on this trade alone (20.315 %: Japan's rate for listed stocks, its parts of 15.315 % and 5 % rounded down one by one); losses offset in the year are not taken into account.": "세금은 이 거래만으로 계산합니다(20.315%: 일본 상장 주식의 세율, 15.315%와 5%를 따로 끝수 버림). 연간 손익 통산은 고려하지 않습니다.",
+    "15.315 % and 5 % of the profit, each rounded down": "이익의 15.315%와 5%(각각 끝수 버림)",
     "History: tap answers to insert them (another tap replaces), line numbers and #12, select to add up": "기록: 결과를 탭해서 넣기(다시 탭하면 바뀜), 줄 번호와 #12, 골라서 합계",
     "This is the principal value (a complex number). The real cube root is cbrt(−{0}) (∛)": "이것은 주값(복소수)입니다. 실수 세제곱근은 cbrt(−{0})(∛)로 구합니다",
     "This is the principal value (a complex number). The real root is root(−{0}, {1})": "이것은 주값(복소수)입니다. 실수 거듭제곱근은 root(−{0}, {1})로 구합니다",
@@ -107,8 +112,6 @@
     "Fee when selling": "매도 수수료",
     "Taxed": "과세",
     "Tax-free account": "비과세 계좌",
-    "Profit = (sold − bought) × shares − the fees. A fee can be an amount or a % of the trade. The tax is taken from a profit only, rounded down; \"Break-even\" is the price at which selling leaves no loss after the fees.": "손익 = (매도가 − 매수가) × 주식 수 − 수수료. 수수료는 금액이나 거래 금액의 %로 넣을 수 있습니다. 세금은 이익에만 붙으며 끝수는 버립니다. ‘손익분기 매도가’는 수수료를 빼도 손실이 나지 않는 매도가입니다.",
-    "The tax is worked out on this trade alone (20.315 %: Japan's rate for listed stocks); losses offset in the year and the way a broker rounds are not taken into account.": "세금은 이 거래만으로 계산합니다(20.315%: 일본 상장 주식의 세율). 연간 손익 통산이나 증권사의 끝수 처리는 고려하지 않습니다.",
     "Enter the prices and the shares": "매수가·매도가·주식 수를 넣어 주세요",
     "The price bought at must be a number above 0": "매수가는 0보다 큰 수로 넣어 주세요",
     "The price sold at must be a number": "매도가는 수로 넣어 주세요",
