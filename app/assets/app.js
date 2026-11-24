@@ -837,6 +837,7 @@
   // answers are in the expression { h, text, color }: insertResult, tapMarks)
   let tapRef = null, tapMarks = [];
   let liveRes = null, livePending = false, liveQ = false; // (1.16.2, E: the line being edited, shown as it is typed)
+  let liveCellOn = false, liveComposing = false; // (1.16.2, E2: the caret in the line being edited, not in the field)
   let fromBand = null; // (1.16.2, M1: the band of a new line made from an answer, { h, after: the field just after the tap })
   // (1.16.0, fix/hist-edit-scroll: the line of the history kept in sight for a moment { h, until, run }, revealHistLine; the
   // lines just worked out again, marked for a moment: line → time it ends, flashLines)
@@ -1202,15 +1203,17 @@
         break;
       }
     }
+    if (f === exprEl) liveCaret(); // (1.16.2, E2)
   }
   let kbdMinH = 0, kbdW = 0;
   function toggleKeyboard(force) {
     const text = force !== undefined ? force : exprEl.inputMode !== 'text';
     exprEl.inputMode = text ? 'text' : 'none';
     for (const b of formBoxes()) b.inputMode = exprEl.inputMode; // the boxes of an open calculus form too
+    if (histEdit && histEdit.cell) histEdit.cell.inputMode = exprEl.inputMode; // (1.16.2, E2: and the box of the line)
     document.body.classList.toggle('kbd', text);
     kbdMinH = window.innerHeight; kbdW = window.innerWidth;
-    const f = tgt();
+    const f = !editTarget && liveCellOn && histEdit && histEdit.cell && histEdit.cell.isConnected ? histEdit.cell : tgt();
     f.blur();
     setTimeout(text ? () => f.focus() : focusExpr, 30);
     updateToolbar();
@@ -1222,6 +1225,7 @@
     if (window.innerWidth !== kbdW) { kbdW = window.innerWidth; kbdMinH = window.innerHeight; return; }
     kbdMinH = Math.min(kbdMinH, window.innerHeight);
     if (window.innerHeight > kbdMinH * 1.3) toggleKeyboard(false);
+    else if (liveCellOn && histEdit) revealCaret(); // (1.16.2, E2: the caret in the line stays in sight)
     else histEl.scrollTop = histEl.scrollHeight;
   });
   exprEl.addEventListener('keydown', (e) => {
@@ -1281,20 +1285,22 @@
     }
     exprChanged(true);
   });
-  exprEl.addEventListener('focus', () => updateToolbar());
+  exprEl.addEventListener('focus', () => { liveCellOff(false); updateToolbar(); }); // (1.16.2, E2: the caret in the field again)
   // the caret was put somewhere else by touching the field
   exprEl.addEventListener('click', () => { updateSuggest(false); updateNextBox(); });
 
   function autosize() {
     exprEl.style.height = 'auto';
-    const h = exprEl.scrollHeight, max = Math.round(110 * textScale());
+    const h = exprEl.scrollHeight, max = Math.round((liveCellOn ? 44 : 110) * textScale()); // (1.16.2, E2: one line while typing in the line)
     exprEl.style.height = Math.min(h, max) + 'px';
     exprEl.style.overflowY = h > max ? 'auto' : 'hidden';
   }
   function focusExpr() {
     // with inputmode="none" this only shows the caret, not the system keyboard
     // (the box of an open calculus form gets the focus instead of the input field)
-    const f = tgt();
+    // ((1.16.2, E2) or the box of the line being edited, when the caret is there)
+    const c = !editTarget && liveCellOn && histEdit && histEdit.cell && histEdit.cell.isConnected ? histEdit.cell : null;
+    const f = c || tgt();
     if (document.activeElement !== f) {
       try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); }
     }
@@ -3379,8 +3385,11 @@
       ['notes', tr('Put them into the calculation notes as lines (a new memo)', '計算メモに行として入れる（新しいメモ）')],
       ['stats', P.valCols >= 2 ? tr('Use them as data of the statistics (x and y)', '統計のデータにする（x と y）') : tr('Use them as data of the statistics (values)', '統計のデータにする（値）')]];
     if (P.valCols >= 2) acts.push(['mat', tr('Make a matrix of them', '行列にする')]);
+    // ((1.16.2, H) lines of the history, as if each were typed and = pressed; not while a line of the history is edited)
+    if (!histEdit) acts.push(['hist', tr('Make them lines of the history (worked out one by one)', '履歴の行にする（1 行ずつ計算）')]);
     const k = await sheet(trf('{0} values pasted ({1}): what to do with them?', '{0} 個の値を貼り付けました（{1}）。どうしますか？', P.n, peek), acts);
     if (!k) { focusExpr(); return; }
+    if (k === 'hist') { await pasteToHistory(P); return; }
     if (k === 'sum') {
       // 1200 + 850 + (−300): a value with a sign or a space (12 kg) in parentheses
       const sum = flat.map((v, i) => (/^[−+-]|\s/.test(v) && (i > 0 || /\s/.test(v)) ? '(' + v + ')' : v)).join(' + ');
@@ -3416,6 +3425,74 @@
     }
     const p = openNotesTool();
     if (p.importLines) await p.importLines({ lines: lines.slice(0, NOTE_MAX), csv: '', rows: null, title: '', name: '', direct: 'new', pasted: true });
+  }
+  // (1.16.2, H, the owner's wish of 11-24 19:09) Rows pasted into the field made lines of the history: from each row one
+  // expression, worked out from the top as if it were typed and = pressed (ans goes on from line to line; #12 is the line
+  // 12 of the history now). The expression of a row: the first column of QCalc's "Copy as a table" (expression, tab,
+  // answer), else the first cell with a value or an expression (groups of digits as ungroupPasted); a row of words only
+  // (a heading) is left out. "Calculating 3 / 20" with Stop meanwhile; a row that cannot be worked out is not put in, and
+  // the end says which; Undo takes all the lines put in away, and the variables they defined back as they were. When the
+  // history (300 lines) is too short for them, it says first that older lines go (those with ★ stay).
+  function pastedExpr(c) {
+    let s = String(c || '').trim();
+    if (s[0] === "'") s = s.slice(1).trim(); // (a cell kept as text by "Copy as a table": = + @ first)
+    s = s.replace(/∶/g, ':'); // (the colon of 12:30 written as ∶ by "Copy as a table", so that it is not a time)
+    if (!s || !/[0-9√∛π∞#]/.test(s)) return null;
+    s = ungroupPasted(s);
+    return normalizeExpr(s) ? s : null;
+  }
+  async function pasteToHistory(P) {
+    const items = [];
+    P.rows.forEach((r, i) => { for (const c of r) { const e = pastedExpr(c); if (e) { items.push({ row: i + 1, expr: e }); break; } } });
+    if (!items.length) { toast(tr('There is no expression to work out', '計算する式がありません'), 2200); return; }
+    if (!engineReady) { toast(tr('The calculation engine is starting', '計算エンジンを準備中です'), 1500); return; }
+    const MAXH = 300, stars = history.filter((x) => x && x.star).length, over = history.length + items.length - MAXH;
+    if (over > 0 && !(await confirmSheet(trf('The history keeps {0} lines: {1} older lines will go (lines with ★ stay). Put them in?', '履歴は {0} 行までなので、古い行が {1} 行消えます（★ の行は残ります）。入れますか？', MAXH, Math.min(over, Math.max(0, history.length - stars))), tr('Put them in', '入れる')))) { focusExpr(); return; }
+    const before = history.slice(), defs0 = await userDefs();
+    const added = [], failed = [];
+    let stop = false;
+    for (let k = 0; k < items.length && !stop; k++) {
+      toast(trf('Calculating {0} / {1}', '計算中 {0} / {1}', k + 1, items.length), 120000, [tr('Stop', '中止'), () => { stop = true; }]);
+      const last0 = history[history.length - 1];
+      await commit(items[k].expr);
+      const last = history[history.length - 1];
+      if (last && last !== last0) added.push(last); else failed.push(items[k].row);
+    }
+    // (the field as it was: the error of a row that failed is not left under it)
+    if (exprEl.value.trim()) exprChanged(); else showPreview(null);
+    const left = items.length - added.length - failed.length;
+    let msg = trf('{0} lines put into the history', '{0} 行を履歴に入れました', added.length);
+    if (failed.length) msg += ' ' + trf('{0} rows could not be worked out and were not put in (row {1}{2})', '{0} 行は計算できなかったので入れていません（{1} 行目{2}）', failed.length, failed.slice(0, 6).join(tr(', ', ' 行目、')), failed.length > 6 ? tr(', …', 'など') : '');
+    if (left > 0) msg += ' ' + trf('Stopped: {0} rows not worked out', '中止しました（{0} 行は計算していません）', left);
+    if (!added.length) { toast(msg, 6000); return; }
+    toast(msg, 9000, [tr('⤶ Undo', '⤶ 元に戻す'), () => undoPasteToHistory(before, added, defs0)]);
+  }
+  async function undoPasteToHistory(before, added, defs0) {
+    const set = new Set(added);
+    if (histEdit && set.has(histEdit.h)) endHistEdit(true);
+    // (the lines worked out since stay, as with Undo of "Clear the whole history")
+    const later = history.filter((x) => !set.has(x) && before.indexOf(x) < 0);
+    history = trimHistory(before.concat(later));
+    historyChanged();
+    // the variables and functions the lines defined: as they were before (taken away when there was none)
+    const names = new Set(added.map((x) => defName(x.expr)).filter(Boolean));
+    if (names.size && defs0 && defs0.ok) {
+      for (const nm of names) {
+        const v = defs0.variables.find((d) => d.name === nm), f = defs0.functions.find((d) => d.name === nm);
+        if (v) await defineAgain('variable', nm, nm, v.value, v.temporary, true);
+        else if (f) await defineAgain('function', nm, f.sig || nm, f.expr, f.temporary, true);
+        else {
+          await Bridge.send('delete_def', { kind: 'variable', name: nm });
+          await Bridge.send('delete_def', { kind: 'function', name: nm });
+          tempFuncs.delete(nm);
+        }
+      }
+    }
+    await engineAsHistory(true, new Set());
+    invalidateCatalogs();
+    await refreshDefined();
+    toast(trf('{0} lines taken out of the history', '{0} 行を履歴から取り消しました', added.length), 2200);
+    exprChanged();
   }
   function parseBlock(text) {
     const t = text.replace(/\r\n?/g, '\n').replace(/[\s;]+$/, '');
@@ -4094,6 +4171,8 @@
       if (histSel) { toggleSelected(item); return; }
       if (target.closest('.h-more')) { historyMenu(h); return; }
       if (target.closest('.h-no')) { insertResult(h, true); focusExpr(); return; } // (U1)
+      // ((1.16.2, E2) a tap on the line being edited, beside its box: the caret into the box)
+      if (target.closest('.h-live')) { const c = histEdit && histEdit.cell; if (c) { try { c.focus({ preventScroll: true }); } catch (e) { c.focus(); } } return; }
       if (target.closest('.h-expr')) startHistEdit(h); // (1.15.0: the line edited in place)
       else insertResult(h);
       focusExpr();
@@ -4559,6 +4638,7 @@
     hideFromBand(); // (1.16.2, M1)
     if (!histEdit) histEdit = { h, keep: exprEl.value };
     else histEdit.h = h;
+    liveCellOff(false); // (1.16.2, E2: another line touched: the caret in the field, as before)
     const n = editBand.querySelector('.hedit-n'), b = Number(h.base || 10), now = Number(S.base);
     n.textContent = [b !== now ? trf('This line was in {0}; it is worked out in {1}, as set now', 'この行は {0} でした。今の設定の {1} で計算します', BASE_NAME[b] || String(b), BASE_NAME[now] || String(now)) : '', angleNote(h)].filter(Boolean).join(' ');
     n.hidden = !n.textContent;
@@ -4591,27 +4671,135 @@
       it.classList.remove('live');
       const l = it.querySelector(':scope > .h-live'); if (l) l.remove();
     }
-    if (!H) return;
+    if (!H) { liveCellOff(true); return; }
     const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === H);
     if (!it) return;
     const r0 = it.getBoundingClientRect(), b0 = histEl.getBoundingClientRect(), seen = r0.bottom > b0.top && r0.top < b0.bottom;
+    // (E2) the expression is a box to type in, the same one while the line is edited (histEdit.cell), joined to the field
+    const cell = histEdit.cell || (histEdit.cell = liveCell());
+    cell.setAttribute('aria-label', trf('Expression of #{0} (editing)', '#{0} の式（直しています）', H.n));
     let box = it.querySelector(':scope > .h-live');
-    if (!box) { box = el('div', { class: 'h-live' }); it.insertBefore(box, it.querySelector(':scope > .h-expr')); }
+    if (!box || box._h !== H) {
+      if (box) box.remove();
+      box = el('div', { class: 'h-live' });
+      box._h = H;
+      box.append(el('div', { class: 'h-live-t', 'aria-hidden': 'true' }), cell, el('div', { class: 'h-live-a' }), el('div', { class: 'h-live-old' }));
+      it.insertBefore(box, it.querySelector(':scope > .h-expr'));
+      if (liveCellOn && document.activeElement !== cell) { try { cell.focus({ preventScroll: true }); } catch (e) { cell.focus(); } }
+    }
     it.classList.add('live');
-    box.textContent = '';
+    box.querySelector('.h-live-t').textContent = trf('Editing #{0}', '#{0} 直しています', H.n);
     const v = exprEl.value;
-    box.append(el('div', { class: 'h-live-t', text: trf('Editing #{0}', '#{0} 直しています', H.n) }), el('div', { class: 'h-expr h-live-e', text: v.trim() ? prettyExpr(v) : '\u00a0' }));
+    if (!liveComposing) {
+      if (cell.value !== v) cell.value = v;
+      if (liveCellOn && document.activeElement === cell && (cell.selectionStart !== exprEl.selectionStart || cell.selectionEnd !== exprEl.selectionEnd)) cell.setSelectionRange(exprEl.selectionStart, exprEl.selectionEnd);
+    }
+    cell.style.height = 'auto'; cell.style.height = cell.scrollHeight + 'px';
+    const holder = box.querySelector('.h-live-a');
+    holder.textContent = '';
     if (S.preview && v.trim()) {
       const ans = el('div', { class: 'h-res h-live-r' });
       if (livePending) ans.textContent = '…';
       else if (msgEl.classList.contains('error') && msgEl.textContent) { ans.className = 'h-msg error h-live-r'; ans.textContent = msgEl.textContent; }
       else if (liveRes) showResult(ans, resultText(liveRes));
       else if (previewEl.textContent) { ans.className = 'h-msg note h-live-r'; ans.textContent = previewEl.textContent; }
-      box.append(ans);
+      holder.append(ans);
+      fitMatrices(holder);
     }
-    box.append(el('div', { class: 'h-live-old', text: tr('Before: ', '元：') + prettyExpr(toDisplay(H.expr)) + ' ' + displayResult(H) }));
-    fitMatrices(box);
-    if (seen) revealHistLine(H, 400);
+    box.querySelector('.h-live-old').textContent = tr('Before: ', '元：') + prettyExpr(toDisplay(H.expr)) + ' ' + displayResult(H);
+    if (liveCellOn) revealCaret();
+    else if (seen) revealHistLine(H, 400);
+  }
+  // (1.16.2, E2, the owner's decision of 11-24 19:14: "both, as in Excel") The line being edited can be typed in, in its
+  // place as in a cell, or in the field below as in the formula bar: what is typed in one shows at once in the other. The
+  // field stays the one text (exprEl): the box of the line passes what is typed in it to the field (and the field's input
+  // runs as when typed there), and is given the field's text and caret back after every change. The keys, ◀ ▶, ⌫, Undo,
+  // the suggestions and the hints, the taps on answers (their value or #n at the caret, as clicking a cell while a formula
+  // is typed) all work on the field, whose caret is the box's; ⌨ opens the phone keyboard on the box. Pasted into the box,
+  // a text goes in as it is (no sheet of values). = puts the line in its place, ✕ and back stop, as from the field.
+  function liveCell() {
+    const c = el('textarea', { class: 'h-cell h-live-e', rows: 1, inputmode: exprEl.inputMode === 'text' ? 'text' : 'none', enterkeyhint: 'go', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' });
+    // (the line's own taps and long touch, which keep the focus in the field, are not for the box)
+    for (const ev of ['pointerdown', 'pointerup', 'contextmenu', 'click']) c.addEventListener(ev, (e) => e.stopPropagation());
+    c.addEventListener('focus', () => {
+      liveCellOn = true;
+      document.body.classList.add('cell-on');
+      exprEl.setSelectionRange(c.selectionStart, c.selectionEnd);
+      autosize(); updateToolbar(); updateSuggest(false);
+    });
+    c.addEventListener('compositionstart', () => { liveComposing = true; });
+    c.addEventListener('compositionend', () => { liveComposing = false; fromCell(null); });
+    c.addEventListener('input', (e) => fromCell(e));
+    c.addEventListener('beforeinput', (e) => { if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') { e.preventDefault(); commit(); } });
+    c.addEventListener('keydown', (e) => {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); endHistEdit(false); }
+      else if ((e.ctrlKey || e.metaKey) && /^[zy]$/i.test(e.key)) { if (stepField(e.key.toLowerCase() === 'z' && !e.shiftKey)) e.preventDefault(); }
+    });
+    c.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const t = String((e.clipboardData && e.clipboardData.getData('text')) || '').replace(/\s*[\r\n]+\s*/g, ' ').replace(/\t+/g, ' ').trim();
+      if (!t) return;
+      exprEl.setSelectionRange(c.selectionStart, c.selectionEnd);
+      insert(t);
+    });
+    return c;
+  }
+  // what was typed in the box of the line, into the field (its own input then runs: Japanese full-width signs, ans …)
+  function fromCell(e) {
+    const c = histEdit && histEdit.cell;
+    if (!c) return;
+    exprEl.value = c.value;
+    exprEl.setSelectionRange(c.selectionStart, c.selectionEnd);
+    exprEl.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: !!(e && e.isComposing), inputType: (e && e.inputType) || 'insertText' }));
+  }
+  // the caret moved in the box (a tap, a drag, the arrows of a keyboard): the field's caret with it
+  document.addEventListener('selectionchange', () => {
+    const c = histEdit && histEdit.cell;
+    if (!c || document.activeElement !== c || liveComposing) return;
+    if (exprEl.selectionStart !== c.selectionStart || exprEl.selectionEnd !== c.selectionEnd) { exprEl.setSelectionRange(c.selectionStart, c.selectionEnd); updateSuggest(false); updateNextBox(); }
+  });
+  // after a key that only moves the caret (◀ ▶) or changes the field: the box's caret as the field's
+  function liveCaret() {
+    const c = histEdit && histEdit.cell;
+    if (!liveCellOn || !c || !c.isConnected || liveComposing) return;
+    if (c.value !== exprEl.value) c.value = exprEl.value;
+    if (document.activeElement !== c) { try { c.focus({ preventScroll: true }); } catch (e) { c.focus(); } }
+    c.setSelectionRange(exprEl.selectionStart, exprEl.selectionEnd);
+    revealCaret();
+  }
+  function liveCellOff(refocus) {
+    if (!liveCellOn) return;
+    liveCellOn = false; liveComposing = false;
+    document.body.classList.remove('cell-on');
+    autosize();
+    if (refocus && (!document.activeElement || document.activeElement === document.body)) focusExpr();
+  }
+  // where the caret is in the box of the line stays in sight above the keys when the line grows (the line as tall as it
+  // is: from a copy of the box's text up to the caret)
+  function revealCaret() {
+    const run = () => {
+      const c = histEdit && histEdit.cell;
+      if (!liveCellOn || !c || !c.isConnected || !histEl.clientHeight) return;
+      const cs = getComputedStyle(c), m = document.createElement('div');
+      for (const k of ['width', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderLeftWidth', 'borderRightWidth', 'boxSizing', 'textAlign']) m.style[k] = cs[k];
+      Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', top: '0', left: '-9999px' });
+      m.textContent = c.value.slice(0, c.selectionEnd || 0);
+      const mk = document.createElement('span'); mk.textContent = '​'; m.append(mk);
+      document.body.append(m);
+      const y0 = mk.offsetTop, lh = mk.offsetHeight || parseFloat(cs.fontSize) * 1.3;
+      m.remove();
+      const r = c.getBoundingClientRect(), b = histEl.getBoundingClientRect(), y = r.top + y0, pad = 8;
+      let d = 0;
+      if (y < b.top + pad) d = y - b.top - pad;
+      else if (y + lh > b.bottom - pad) d = y + lh - b.bottom + pad;
+      if (Math.abs(d) >= 1) histEl.scrollTop += d;
+      histPinned = histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight < 24;
+    };
+    run();
+    requestAnimationFrame(run);
+    setTimeout(run, 250);
   }
   const queueLive = () => { if (liveQ) return; liveQ = true; Promise.resolve().then(() => { liveQ = false; if (histEdit) syncLiveRow(); }); };
   // (the errors the preview writes itself: a wrong decimal sign, □ to fill, a #12 that is not there)

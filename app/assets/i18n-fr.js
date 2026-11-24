@@ -1,6 +1,19 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    "Expression of #{0} (editing)": "Expression de #{0} (en modification)",
+    ", …": ", …",
+    "Make them lines of the history (worked out one by one)": "En faire des lignes de l’historique (calculées une à une)",
+    "There is no expression to work out": "Aucune expression à calculer",
+    "The history keeps {0} lines: {1} older lines will go (lines with ★ stay). Put them in?": "L’historique garde {0} lignes : {1} lignes anciennes partiront (celles avec ★ restent). Les ajouter ?",
+    "Put them in": "Ajouter",
+    "Calculating {0} / {1}": "Calcul {0} / {1}",
+    "Stop": "Arrêter",
+    "{0} lines put into the history": "{0} lignes ajoutées à l’historique",
+    "{0} rows could not be worked out and were not put in (row {1}{2})": "{0} lignes n’ont pas pu être calculées et n’ont pas été ajoutées (ligne {1}{2})",
+    "Stopped: {0} rows not worked out": "Arrêté : {0} lignes non calculées",
+    "⤶ Undo": "⤶ Annuler",
+    "{0} lines taken out of the history": "{0} lignes retirées de l’historique",
     "Editing #{0}": "Modification de #{0}",
     "Before: ": "Avant : ",
     "Making a new line from the answer of #{0}": "Nouvelle ligne à partir du résultat de #{0}",

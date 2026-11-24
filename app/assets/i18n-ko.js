@@ -1,6 +1,19 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "Expression of #{0} (editing)": "#{0}의 식(고치는 중)",
+    ", …": " 등",
+    "Make them lines of the history (worked out one by one)": "기록의 줄로 넣기(한 줄씩 계산)",
+    "There is no expression to work out": "계산할 식이 없습니다",
+    "The history keeps {0} lines: {1} older lines will go (lines with ★ stay). Put them in?": "기록은 {0}줄까지라서 오래된 줄 {1}개가 사라집니다(★ 줄은 남습니다). 넣을까요?",
+    "Put them in": "넣기",
+    "Calculating {0} / {1}": "계산 중 {0} / {1}",
+    "Stop": "중지",
+    "{0} lines put into the history": "{0}줄을 기록에 넣었습니다",
+    "{0} rows could not be worked out and were not put in (row {1}{2})": "{0}줄은 계산할 수 없어서 넣지 않았습니다({1}번째 줄{2})",
+    "Stopped: {0} rows not worked out": "중지했습니다({0}줄은 계산하지 않았습니다)",
+    "⤶ Undo": "⤶ 되돌리기",
+    "{0} lines taken out of the history": "{0}줄을 기록에서 취소했습니다",
     "Editing #{0}": "#{0} 고치는 중",
     "Before: ": "원래: ",
     "Making a new line from the answer of #{0}": "#{0}의 결과로 새 줄을 만드는 중",

@@ -115,6 +115,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 :example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
 :tip: ÷ × + and the like in an empty input field continue from the last answer, "ans".
 :tip: A column or a table copied in a spreadsheet (Excel, Google Sheets) — two or more values on lines or with tabs — pasted into the input field asks what to do: add them up with +, put them into the calculation notes as lines, use them as data of the statistics, or make a matrix (two or more columns). Cells of words only (headings) are left out. One line pastes as it is.
+:tip: [[Make them lines of the history (worked out one by one)]] takes one expression from each row and works them out from the top as if each were typed and [[!=]] pressed, adding them to the history (from QCalc's [[Copy as a table]], the column of the expressions). Rows that cannot be worked out are left out and named; [[⤶ Undo]] takes all the lines put in away.
 :mistake: Parentheses that do not pair up give an error. The message says what to fix.
 
 ## results | Reading the answer: exact, approximate, fractions
@@ -173,7 +174,7 @@ QCalc is a calculator where you type an expression as you would write it on pape
 ## edit-line | Editing a line of the history
 :what: Tap the expression of a line (the small one above its answer), or [[Edit expression]] in its ⋯, to edit that line. The expression goes into the input field, with the band "[[Editing a line of the history]]" above it. The history scrolls so that the line and its answer stay in sight.
 :step: Change the expression and press [[!=]]. The line gets the new expression and answer in the same place. ★ and the short note stay, and the menu ⋯ shows the time of the change beside the time of the line.
-:step: While you type, the line shows the expression and its new answer in its place, with the line as it was in small grey letters below it (“Before: …”). The history itself changes only when you press [[!=]].
+:step: While you type, the line shows the expression and its new answer in its place, with the line as it was in small grey letters below it (“Before: …”). A line can be edited in the line itself or in the field below: tap the expression in the line to put the caret there, and the keys, ◀ ▶, ⌫, ⌨, pasting and taps on other answers work there; tap the field to go on typing there. What is typed in one shows at once in the other. The history itself changes only when you press [[!=]].
 :step: "[[Edited]]" and [[Undo]] show for a few seconds. [[Undo]] brings back the expression and answer as they were.
 :step: When the lines below use the answer of this line (ans or #12) or a variable it defines, the app asks whether to work them out again ("Also the 2 lines below") or [[Only this line]]. The lines worked out again flash for a moment, and [[Undo]] takes them back too. With [[Only this line]], the lines below get a note that their answer may be out of date. [[Cancel]] changes nothing: the new expression stays in the field and you go on editing.
 :step: To work it out as a new line below instead, press [[As a new line]] in the band, then [[!=]]. ✕ in the band, AC or the back button stops editing and changes nothing.

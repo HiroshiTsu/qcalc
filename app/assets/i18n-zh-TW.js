@@ -2,6 +2,19 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "Expression of #{0} (editing)": "#{0} 的算式（修改中）",
+    ", …": " 等",
+    "Make them lines of the history (worked out one by one)": "放入歷史紀錄（逐列計算）",
+    "There is no expression to work out": "沒有可計算的算式",
+    "The history keeps {0} lines: {1} older lines will go (lines with ★ stay). Put them in?": "歷史紀錄最多 {0} 列，較舊的 {1} 列會被移除（有 ★ 的列會保留）。要放入嗎？",
+    "Put them in": "放入",
+    "Calculating {0} / {1}": "計算中 {0} / {1}",
+    "Stop": "中止",
+    "{0} lines put into the history": "已將 {0} 列放入歷史紀錄",
+    "{0} rows could not be worked out and were not put in (row {1}{2})": "{0} 列無法計算，所以沒有放入（第 {1} 列{2}）",
+    "Stopped: {0} rows not worked out": "已中止（{0} 列未計算）",
+    "⤶ Undo": "⤶ 復原",
+    "{0} lines taken out of the history": "已從歷史紀錄取消 {0} 列",
     "Editing #{0}": "正在修改 #{0}",
     "Before: ": "原本：",
     "Making a new line from the answer of #{0}": "正以 #{0} 的結果建立新的一列",

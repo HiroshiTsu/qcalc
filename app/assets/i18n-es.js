@@ -13,6 +13,19 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "Expression of #{0} (editing)": "Expresión de #{0} (editando)",
+    ", …": ", …",
+    "Make them lines of the history (worked out one by one)": "Convertirlos en líneas del historial (calculadas una a una)",
+    "There is no expression to work out": "No hay ninguna expresión que calcular",
+    "The history keeps {0} lines: {1} older lines will go (lines with ★ stay). Put them in?": "El historial guarda {0} líneas: se quitarán {1} líneas antiguas (las que tienen ★ se quedan). ¿Añadirlas?",
+    "Put them in": "Añadir",
+    "Calculating {0} / {1}": "Calculando {0} / {1}",
+    "Stop": "Detener",
+    "{0} lines put into the history": "{0} líneas añadidas al historial",
+    "{0} rows could not be worked out and were not put in (row {1}{2})": "{0} filas no se pudieron calcular y no se añadieron (fila {1}{2})",
+    "Stopped: {0} rows not worked out": "Detenido: {0} filas sin calcular",
+    "⤶ Undo": "⤶ Deshacer",
+    "{0} lines taken out of the history": "{0} líneas quitadas del historial",
     "Editing #{0}": "Editando #{0}",
     "Before: ": "Antes: ",
     "Making a new line from the answer of #{0}": "Línea nueva con el resultado de #{0}",

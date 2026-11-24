@@ -115,6 +115,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 :example: `2^10` → `= 1024`, `5!` → `= 120`, `sin(30°)` → `= 1/2`
 :tip: ÷ × + y similares en un campo vacío continúan desde el último resultado, «ans».
 :tip: Una columna o una tabla copiada en una hoja de cálculo (Excel, Hojas de cálculo de Google), dos o más valores en líneas o con tabulaciones, pegada en el campo de entrada pregunta qué hacer: sumarlos con +, ponerlos como líneas en las notas de cálculo, usarlos como datos de la estadística o hacer una matriz (con dos o más columnas). Las celdas solo con palabras (encabezados) se omiten. Una sola línea se pega como antes.
+:tip: [[Make them lines of the history (worked out one by one)]] toma una expresión de cada fila y las calcula desde arriba como si cada una se escribiera y se pulsara [[!=]], añadiéndolas al historial (de [[Copy as a table]] de QCalc, la columna de las expresiones). Las filas que no se pueden calcular se omiten y se indican; [[⤶ Undo]] quita todas las líneas añadidas.
 :mistake: Los paréntesis que no se emparejan dan un error. El mensaje dice qué corregir.
 
 ## results | Leer el resultado: exacto, aproximado, fracciones
@@ -173,7 +174,7 @@ QCalc es una calculadora donde escribes una expresión como lo harías en papel 
 ## edit-line | Editar una línea del historial
 :what: Toca la expresión de una línea (la pequeña sobre su resultado), o [[Edit expression]] en su ⋯, para editarla. La expresión pasa al campo de entrada, con la banda «[[Editing a line of the history]]» encima. El historial se desplaza para que la línea y su resultado sigan a la vista.
 :step: Cambia la expresión y pulsa [[!=]]. La línea recibe la nueva expresión y el nuevo resultado en el mismo lugar. ★ y la nota corta se mantienen, y el menú ⋯ muestra la hora del cambio junto a la hora de la línea.
-:step: Mientras escribes, la línea muestra en su lugar la expresión y su nuevo resultado, y debajo, en letra pequeña y gris, la línea como era («Antes: …»). El historial solo cambia al pulsar [[!=]].
+:step: Mientras escribes, la línea muestra en su lugar la expresión y su nuevo resultado, y debajo, en letra pequeña y gris, la línea como era («Antes: …»). Una línea se puede editar en la propia línea o en el campo de abajo: toca la expresión en la línea para poner allí el cursor; las teclas, ◀ ▶, ⌫, ⌨, pegar y tocar otros resultados funcionan allí. Toca el campo para seguir escribiendo en él. Lo que se escribe en uno aparece al momento en el otro. El historial solo cambia al pulsar [[!=]].
 :step: Durante unos segundos aparecen «[[Edited]]» y [[Undo]]. [[Undo]] devuelve la expresión y el resultado de antes.
 :step: Si las líneas de abajo usan el resultado de esta línea (ans o #12) o una variable que define, la app pregunta si calcularlas de nuevo («También las 2 líneas de abajo») o [[Only this line]]. Las líneas recalculadas se iluminan un momento, y [[Undo]] las devuelve también. Con [[Only this line]], las líneas de abajo reciben una nota de que su resultado puede estar desactualizado. [[Cancel]] no cambia nada: la nueva expresión se queda en el campo y sigues editando.
 :step: Para calcularla como una línea nueva abajo, pulsa [[As a new line]] en la banda y luego [[!=]]. La ✕ de la banda, AC o el botón Atrás dejan de editar sin cambiar nada.

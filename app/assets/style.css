@@ -1798,6 +1798,9 @@ body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 /* (1.16.2, E) the line being edited, shown as it is typed: "Editing #51", the expression, = the new answer, "Before: …" */
 .h-item.live > .h-expr, .h-item.live > .h-res, .h-item.live > .h-msg { display: none; }
 .h-live-t { font-size: calc(12px * var(--fs)); font-weight: 700; color: var(--text); }
+/* (1.16.2, E2) the expression of the line being edited, a box to type in (joined to the field below), as plain as the field */
+.h-cell { display: block; box-sizing: border-box; width: 100%; margin: 2px 0; padding: 4px 8px; border: 1px solid var(--accent); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: calc(17px * var(--fs)); line-height: 1.35; text-align: right; resize: none; overflow: hidden; overflow-wrap: anywhere; white-space: pre-wrap; }
+.h-cell:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .h-live-old { margin-top: 4px; font-size: calc(12px * var(--fs)); color: var(--muted); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* (1.16.0, fix/hist-tap) a line whose answer is in the expression: framed in its color, as a cell a formula refers to */
 /* (1.16.0, fix/hist-edit-scroll) a line worked out again after the line above it was edited: marked for 3 s, fading */
