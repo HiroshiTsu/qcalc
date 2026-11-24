@@ -13,6 +13,7 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "What is see-through:": "Qué es transparente:",
     "Could not calculate: {0} is a point with no value": "No se pudo calcular: {0} es un punto sin valor",
     "Could not calculate: it is a point with no value": "No se pudo calcular: es un punto sin valor",
     "Could not calculate: {0} is not defined": "No se pudo calcular: {0} no está definido",

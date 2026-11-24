@@ -10919,7 +10919,7 @@
     const sv = store.get('qalc.plot3d.see', null);
     Q3.see = { on: !!(sv && sv.on === true), a: sv && sv.a >= 0.1 && sv.a <= 0.9 ? sv.a : 0.35, box: !(sv && sv.box === false), off: sv && sv.off && typeof sv.off === 'object' ? sv.off : {} };
     const saveSee = () => store.set('qalc.plot3d.see', Q3.see);
-    const seeBtn = tapButton({ class: 'btn see-btn', 'aria-pressed': 'false', text: tr('See-through', '透明') }, () => { if (!gl3dReady()) return; Q3.see.on = !Q3.see.on; saveSee(); syncSeeRow(); draw3d(); });
+    const seeBtn = tapButton({ class: 'btn see-btn', 'aria-pressed': 'false', text: tr('See-through', '透明') }, () => { if (!gl3dReady()) return; Q3.see.on = !Q3.see.on; if (Q3.see.on) seeSomething(); saveSee(); syncSeeRow(); draw3d(); });
     const seeRange = el('input', { type: 'range', min: '10', max: '90', step: '5', 'aria-label': tr('How opaque (%)', '濃さ（%）') });
     const seeVal = el('span', { class: 'rev-angle-v' });
     // (the slider can be moved while the see-through is off, by a finger, the keyboard or a screen reader: it turns the
@@ -10928,6 +10928,7 @@
       if (!(gl3dWanted() && gl3dReady())) return;
       const was = Q3.see.on;
       Q3.see.a = Number(seeRange.value) / 100; Q3.see.on = true;
+      if (!was) seeSomething();
       saveSee(); syncSeeRow();
       if (was) requestDraw3d(); else draw3d();
     });
@@ -10935,7 +10936,7 @@
     // see-through on too; a finger that scrolls the page from the slider ends with pointercancel, not pointerup)
     const seeFromRange = () => {
       if (!(gl3dWanted() && gl3dReady()) || Q3.see.on) return;
-      Q3.see.on = true; saveSee(); syncSeeRow(); draw3d();
+      Q3.see.on = true; seeSomething(); saveSee(); syncSeeRow(); draw3d();
     };
     seeRange.addEventListener('pointerup', seeFromRange);
     seeRange.addEventListener('keydown', (e) => { if (/^(Arrow|Page|Home$|End$)/.test(e.key)) seeFromRange(); });
@@ -11140,17 +11141,41 @@
     ch.textContent = '';
     ch.hidden = !on || G.list.length < 2;
     if (ch.hidden) return;
+    // (1.16.2, the owner's note of 11-24 18:15, (ウ)) the chips are the choice of what is see-through: said before them, and a
+    // chosen one has ✓ (a phone kept both of a torus's halves taken out, and "See-through" seemed not to work)
+    ch.append(el('span', { class: 'see-chips-lbl', text: tr('What is see-through:', '透明にするもの：'), 'aria-hidden': 'true' }));
+    const selOf = (it) => (it.k === 9 ? G.groups[9].see > 0 : G.groups[it.k].see > 0);
     for (const it of G.list) {
-      const k = it.k, sel = (Md && Md.tank && k === 8) ? G.groups[8].see > 0 : (k === 9 ? G.groups[9].see > 0 : G.groups[k].see > 0);
+      const sel = selOf(it);
       const b = tapButton({ class: 'chip see-chip' + (sel ? ' on' : ''), 'aria-pressed': String(sel), 'data-key': it.key }, () => {
         Q3.see.off = Q3.see.off || {};
         Q3.see.off[it.key] = sel;
+        // ((イ) the last chosen one taken out: the see-through goes off, and next time it is on everything is see-through
+        // again, so that it is never on with nothing see-through)
+        if (sel && !G.list.some((x) => x !== it && selOf(x))) {
+          Q3.see.on = false;
+          for (const x of G.list) delete Q3.see.off[x.key];
+        }
         Q3.saveSee(); syncSeeRow(); draw3d();
       });
+      if (sel) b.append(el('span', { class: 'see-ck', text: '✓', 'aria-hidden': 'true' }));
       if (it.color) b.append(el('span', { class: 'see-sw', style: 'background:' + it.color, 'aria-hidden': 'true' }));
       b.append(el('span', { text: it.label }));
       ch.append(b);
     }
+  }
+  // (1.16.2, (ア)) the see-through turned on, or found on, with nothing of what is drawn see-through (every chip taken out
+  // earlier, kept for each formula): their keys out of the list of what is taken out, so that all of it is see-through (a tank:
+  // as by default, the container see-through and the liquid not). Says whether it changed anything.
+  function seeSomething() {
+    const S = Q3.see;
+    if (!S || !S.on || !S.off) return false;
+    const L = gl3dGroups(Q3.data, Q3.model, true).list;
+    if (!L.length) return false;
+    const any = L.some((it) => (S.off[it.key] === undefined ? it.key !== 'liquid' : !S.off[it.key]));
+    if (any) return false;
+    for (const it of L) delete S.off[it.key];
+    return true;
   }
   // a size written on a model ({ sym, val, unit } → "r = 15 cm"; D7: the digits of the 3D picture)
   const labText = (o) => (!o ? '' : typeof o === 'string' ? o : o.sym + ' = ' + digPic(o.val, 'dim') + (o.unit ? ' ' + o.unit : ''));
@@ -12507,7 +12532,7 @@
   // is see-through; groups, GL3D_NG of { mat, see, cast } for gl3dPaint. With the see-through on, a thing is see-through
   // unless it was taken out of it (Q3.see.off[key]); the liquid of a tank is not see-through unless chosen (the container
   // is, so the liquid is seen inside it).
-  function gl3dGroups(D, MD) {
+  function gl3dGroups(D, MD, fixed) {
     const S = Q3.see || {}, on = !!S.on && gl3dWanted() && GL3D.state === 1, a = S.a || 0.35, off = S.off || {};
     const groups = [], list = [];
     for (let k = 0; k < GL3D_NG; k++) groups.push({ mat: null, see: 0, cast: true });
@@ -12533,6 +12558,12 @@
         const sm = chosen('model', true) ? a : 0;
         groups[8] = { mat: MD.mat || null, see: sm, cast: !sm };
       }
+    }
+    // ((ア) a see-through on with nothing see-through, as an earlier version could leave it: all of it see-through)
+    if (on && !fixed && list.length && !groups.some((g) => g.see > 0) && list.some((it) => off[it.key] !== undefined)) {
+      for (const it of list) delete off[it.key];
+      store.set('qalc.plot3d.see', Q3.see);
+      return gl3dGroups(D, MD, true);
     }
     return { list, groups, on };
   }

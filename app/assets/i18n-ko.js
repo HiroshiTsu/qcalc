@@ -1,6 +1,7 @@
 // Korean texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["ko"] = () => ({
   texts: {
+    "What is see-through:": "투명하게 할 것:",
     "Could not calculate: {0} is a point with no value": "계산할 수 없습니다({0}은(는) 값이 없는 점입니다)",
     "Could not calculate: it is a point with no value": "계산할 수 없습니다(값이 없는 점입니다)",
     "Could not calculate: {0} is not defined": "계산할 수 없습니다({0}은(는) 정해지지 않습니다)",

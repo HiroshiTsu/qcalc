@@ -1,6 +1,7 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    "What is see-through:": "Ce qui est transparent :",
     "Could not calculate: {0} is a point with no value": "Calcul impossible : {0} est un point sans valeur",
     "Could not calculate: it is a point with no value": "Calcul impossible : point sans valeur",
     "Could not calculate: {0} is not defined": "Calcul impossible : {0} n’est pas défini",

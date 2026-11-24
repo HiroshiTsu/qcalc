@@ -2,6 +2,7 @@
 // They are used on devices set to Chinese in Traditional characters, or of Taiwan, Hong Kong or Macau.
 (window.QCALC_I18N = window.QCALC_I18N || {})["zh-TW"] = () => ({
   texts: {
+    "What is see-through:": "要透明的部分：",
     "Could not calculate: {0} is a point with no value": "無法計算（{0} 是沒有值的點）",
     "Could not calculate: it is a point with no value": "無法計算（沒有值的點）",
     "Could not calculate: {0} is not defined": "無法計算（{0} 無法確定）",

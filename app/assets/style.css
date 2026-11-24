@@ -1568,6 +1568,9 @@ body.hselect #history { padding-bottom: calc(var(--selbar-h, 150px) + 12px); }
 .see-row .see-chip > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14em; }
 .see-row .see-chip.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 .see-row .see-sw { width: 12px; height: 12px; border-radius: 3px; flex: none; box-shadow: 0 0 0 1px rgba(0,0,0,.18) inset; }
+/* (1.16.2) the label of the chips of what is see-through, and the mark of a chosen chip */
+.see-row .see-chips-lbl { align-self: center; color: var(--muted); font-size: .92em; }
+.see-row .see-ck { flex: none; font-weight: 700; }
 
 /* the everyday tools (1.12.0, C1) */
 .tool-choice .seg.mini { flex: 1 1 0; flex-wrap: wrap; }
