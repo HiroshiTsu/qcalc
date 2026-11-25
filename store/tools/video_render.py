@@ -18,6 +18,7 @@ Needs ffmpeg with libx264 and libass. Python standard library only.
 """
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -56,6 +57,8 @@ def ass(lang, F, cues, path, centre=False):
     room = F['W'] - ml - mr - 24
 
     def fit(l):
+        if lang == 'fr':  # (the space before : ; ! ? » and after «: a line does not begin with ":" or end with "«")
+            l = re.sub(r' ([:;!?»])', '\u00a0\\1', l).replace('« ', '«\u00a0')
         # (a full-width character about 0.77 of the size: the size of the style is the height of the line)
         if '\n' in l or lang not in ('ja', 'zh-TW') or sum(0.77 if ord(c) >= 0x2E80 else 0.42 for c in l) * size <= room:
             return l
@@ -64,10 +67,31 @@ def ass(lang, F, cues, path, centre=False):
         k = min(at, key=lambda i: abs(i - len(l) / 2))
         return l[:k].rstrip() + '\n' + l[k:].lstrip()
 
+    # ((1.16.3) a line of words that would take three lines (on a short the third went over the phone: "Avec « Voir en entier » sur
+    # une longue ligne, …" in French) in smaller letters, so that it takes two: a letter about 0.4 of the size, lines broken at
+    # spaces; not under 75 % of the size)
+    def lines_at(l, fs):
+        per, n, cur = room * 0.92 / (0.4 * fs), 1, 0
+        for w in l.split():
+            add = len(w) + (1 if cur else 0)
+            if cur + add > per:
+                n, cur = n + 1, len(w)
+            else:
+                cur += add
+        return n
+
+    def smaller(l):
+        if lang in ('ja', 'zh-TW') or '\n' in l or lines_at(l, size) <= 2:
+            return ''
+        fs = size
+        while fs > size * 0.75 and lines_at(l, fs) > 2:
+            fs -= 1
+        return '{\\fs%d}' % fs
+
     def t(x):
         cs = int(round(x * 100))
         return '%d:%02d:%02d.%02d' % (cs // 360000, cs // 6000 % 60, cs // 100 % 60, cs % 100)
-    ev = ''.join('Dialogue: 0,%s,%s,S,,0,0,0,,%s\n' % (t(a), t(b), fit(l).replace('\n', '\\N')) for a, b, l in cues)
+    ev = ''.join('Dialogue: 0,%s,%s,S,,0,0,0,,%s\n' % (t(a), t(b), smaller(l) + fit(l).replace('\n', '\\N')) for a, b, l in cues)
     open(path, 'w', encoding='utf-8').write(head + ev)
 
 
