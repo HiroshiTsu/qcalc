@@ -11,7 +11,9 @@ cues as the SRT files that store/tools/video_plan.py writes). One file per segme
 frame rate and encoder, joined without encoding again. The videos are not committed (they are large): they
 are sent to the owner. A narration can be added later without encoding the picture again:
     ffmpeg -i promo.mp4 -i voice.m4a -map 0:v -map 1:a -c:v copy -c:a aac -shortest promo-voice.mp4
-Usage: python3 store/tools/video_render.py <work folder> [langs] [videos: promo,youtube,short-1-solid,…]
+With --voice-cues the subtitles are those of <work>/cues/<lang>/<video>.json, at the times of the voice
+(store/tools/video_voice.py --engine tts|chatterbox, 11-22; on this branch since 1.16.3), instead of the plan's.
+Usage: python3 store/tools/video_render.py <work folder> [langs] [videos: promo,youtube,short-1-solid,…] [--voice-cues]
 Needs ffmpeg with libx264 and libass. Python standard library only.
 """
 import json
@@ -24,9 +26,11 @@ sys.path.insert(0, TOOLS)
 import video_plan  # noqa: E402  (the cues)
 
 PLAN = video_plan.PLAN
-WORK = sys.argv[1] if len(sys.argv) > 1 else '/tmp/qcalc-video'
-LANGS = sys.argv[2].split(',') if len(sys.argv) > 2 else list(PLAN['langs'])
-ONLY = sys.argv[3].split(',') if len(sys.argv) > 3 else None
+ARGV = [a for a in sys.argv[1:] if not a.startswith('--')]
+VOICE_CUES = '--voice-cues' in sys.argv[1:]
+WORK = ARGV[0] if len(ARGV) > 0 else '/tmp/qcalc-video'
+LANGS = ARGV[1].split(',') if len(ARGV) > 1 else list(PLAN['langs'])
+ONLY = ARGV[2].split(',') if len(ARGV) > 2 else None
 WIDE = {'W': 1920, 'H': 1080, 'phone': (300, 60, 432, 960)}
 TALL = {'W': 1080, 'H': 1920, 'phone': (225, 470, 630, 1400)}
 ENC = ['-c:v', 'libx264', '-crf', '18', '-preset', 'veryfast', '-pix_fmt', 'yuv420p', '-r', '30', '-an']
@@ -47,16 +51,40 @@ def ass(lang, F, cues, path, centre=False):
             'Style: S,%s,%d,&H00FFFFFF,&H00FFFFFF,&H64000000,&H64000000,1,0,0,0,100,100,0,0,3,12,0,%d,%d,%d,%d,1\n\n'
             '[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n') % (F['W'], F['H'], font, size, align, ml, mr, mv)
 
+    # ((1.16.3) a line in Japanese or Chinese wider than its room is broken in two at the "、", "，" or "。" nearest its middle: these
+    # languages have no spaces, where the subtitles break by themselves, and such a line ran past the edges of a short)
+    room = F['W'] - ml - mr - 24
+
+    def fit(l):
+        # (a full-width character about 0.77 of the size: the size of the style is the height of the line)
+        if '\n' in l or lang not in ('ja', 'zh-TW') or sum(0.77 if ord(c) >= 0x2E80 else 0.42 for c in l) * size <= room:
+            return l
+        at = ([i + 1 for i, c in enumerate(l[:-1]) if c in '、，。！？,・：:'] or [i + 1 for i, c in enumerate(l[:-1]) if c in '　 ']
+              or list(range(1, len(l))))
+        k = min(at, key=lambda i: abs(i - len(l) / 2))
+        return l[:k].rstrip() + '\n' + l[k:].lstrip()
+
     def t(x):
         cs = int(round(x * 100))
         return '%d:%02d:%02d.%02d' % (cs // 360000, cs // 6000 % 60, cs // 100 % 60, cs % 100)
-    ev = ''.join('Dialogue: 0,%s,%s,S,,0,0,0,,%s\n' % (t(a), t(b), l.replace('\n', '\\N')) for a, b, l in cues)
+    ev = ''.join('Dialogue: 0,%s,%s,S,,0,0,0,,%s\n' % (t(a), t(b), fit(l).replace('\n', '\\N')) for a, b, l in cues)
     open(path, 'w', encoding='utf-8').write(head + ev)
 
 
 def dur(path):
     out = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', path], capture_output=True, text=True).stdout
     return float(out.strip() or 0)
+
+
+def video_cues(lang, name, segs):
+    """The subtitle cues of a video: the plan's, or with --voice-cues those written by video_voice.py at the times of the voice."""
+    if not VOICE_CUES:
+        return video_plan.cues(lang, segs)
+    path = os.path.join(WORK, 'cues', lang, name + '.json')
+    if not os.path.exists(path):
+        raise SystemExit('--voice-cues: no %s (run store/tools/video_voice.py %s %s %s --engine tts --cues-only first)' % (path, WORK, lang, name))
+    with open(path, encoding='utf-8') as f:
+        return [(float(a), float(b), l) for a, b, l in json.load(f)]
 
 
 def run(cmd):
@@ -71,7 +99,7 @@ def render(lang, name, F, segs):
     seg_dir = os.path.join(WORK, 'seg', lang, name)
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(seg_dir, exist_ok=True)
-    all_cues = video_plan.cues(lang, segs)
+    all_cues = video_cues(lang, name, segs)
     t0, files = 0.0, []
     x, y, w, h = F['phone']
     for i, s in enumerate(segs, 1):

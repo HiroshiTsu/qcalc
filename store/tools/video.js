@@ -373,14 +373,16 @@ const SCENES = {
     run: async (page) => { await sleep(300); await openTool(page, 'price'); await sleep(600); await tap(page, page.locator('.panel.open .help-btn').last()); await sleep(2500); await sleep(2800); }
   },
   // (1.16.3, short-6-view) ⤢ of a long line → "View whole": two fingers make it larger → Edit expression: 120 months → 180,
-  // the answer under it at once → Done: the line worked out again in its place
+  // the answer under it at once → Done: the line worked out again in its place ((the review of 11-25 14:27, as the store picture)
+  // 2 decimal places as for money and ×1.5, so that the answer is on one line and no number is cut in two)
   wholeview: {
+    settings: { max_decimals: 2 },
     prep: async (page, lang) => { for (const x of ['1280 × 3', LOAN(lang)]) { await Q.type(page, x); await Q.eq(page); } },
     run: async (page) => {
       await sleep(500);
       await tap(page, page.locator('#history .h-item.wv-on .h-wv').last()); await sleep(1400);
       const b = await page.locator('.panel.open .wv-box').boundingBox();
-      await pinch(page, b.x + b.width * 0.4, b.y + Math.min(b.height / 2, 160), 90, 150, 650); await sleep(700); // (×1.67: the formula still fits the width)
+      await pinch(page, b.x + b.width * 0.4, b.y + Math.min(b.height / 2, 160), 90, 135, 650); await sleep(700); // (×1.5: the formula still fits the width)
       await tap(page, page.locator('.panel.open .wv-edit')); await sleep(800);
       // (the months chosen, then typed again as a person does)
       await page.evaluate(() => { const t = document.querySelector('.panel.open .wv-ta'), i = t.value.lastIndexOf('120'); t.focus(); t.setSelectionRange(i, i + 3); });
@@ -416,7 +418,7 @@ const SCENES = {
 
 async function record(browser, lang, name) {
   const sc = SCENES[name];
-  const { ctx, page } = await Q.start(browser, BASE, SET[lang], { viewport: { width: VW, height: VH }, dpr: DPR, dark: ['rev', 'rev3d', 'axis', 'notes', 'notestable', 'notespaste'].indexOf(name) >= 0 });
+  const { ctx, page } = await Q.start(browser, BASE, SET[lang], { viewport: { width: VW, height: VH }, dpr: DPR, dark: ['rev', 'rev3d', 'axis', 'notes', 'notestable', 'notespaste'].indexOf(name) >= 0, settings: sc.settings });
   await sc.prep(page, lang);
   await sleep(500);
   const cdp = await ctx.newCDPSession(page);
