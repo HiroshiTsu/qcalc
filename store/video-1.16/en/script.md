@@ -20,7 +20,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 - 00:20–00:24 Paste a spreadsheet into the notes for column formulas and totals.
 
 **0:25–0:30**
-- 00:25–00:29 Traders get the position size from a stop-loss.
+- 00:25–00:29 Type units, equations or integrals, and get the answer.
 
 **0:30–0:34**
 - 00:30–00:33 Math, spreadsheets and 3D, all in QCalc.

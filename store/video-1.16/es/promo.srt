@@ -20,7 +20,7 @@ Pega una tabla en las notas y obtén totales por columna.
 
 6
 00:00:25,150 --> 00:00:29,730
-Para invertir: el tamaño de posición desde tu stop.
+Unidades, ecuaciones, integrales: escríbelas y listo.
 
 7
 00:00:30,150 --> 00:00:33,730

@@ -288,6 +288,18 @@ const SCENES = {
       await sleep(1200);
     }
   },
+  // ((the owner's wish of 11-25 19:07) the promo: "just type it" instead of the margin call (ja) and the position size (the others):
+  // the three expressions of "type", typed faster and with shorter waits, so that all three answers are seen in a segment of 5 or 6 s)
+  typep: {
+    prep: async () => {},
+    run: async (page, lang) => {
+      await sleep(200);
+      for (const x of [lang === 'en' || lang === 'ja' ? '60 mph to km/h' : '100 km/h to mph', 'solve(x^2 − 5x + 6 = 0)', 'integrate(x^2 sin(x), 0, pi)']) {
+        await Q.type(page, x, 30); await sleep(150); await tap(page, eqKey(page)); await sleep(850);
+      }
+      await sleep(600);
+    }
+  },
   exact: {
     prep: async () => {},
     run: async (page) => { await sleep(400); for (const x of ['sqrt(8)', '1/3 + 1/4', 'solve(x^2 = 2)']) await typeAndEq(page, x); await sleep(1200); }

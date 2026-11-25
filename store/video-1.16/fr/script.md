@@ -20,7 +20,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 - 00:20–00:24 Collez un tableau dans les notes : formules par colonne et totaux.
 
 **0:25–0:30**
-- 00:25–00:29 Pour la bourse : la taille de position depuis votre stop.
+- 00:25–00:29 Unités, équations, intégrales : tapez, c’est calculé.
 
 **0:30–0:34**
 - 00:30–00:33 Calcul, tableur et 3D, tout dans QCalc.

@@ -20,7 +20,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 - 00:20–00:24 把試算表貼進計算筆記，合計一次完成。
 
 **0:25–0:30**
-- 00:25–00:29 由停損價算出該買的股數。
+- 00:25–00:29 單位換算、方程式、積分，輸入就有答案。
 
 **0:30–0:34**
 - 00:30–00:33 計算、試算表、3D，都在 QCalc。

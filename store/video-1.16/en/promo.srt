@@ -20,7 +20,7 @@ Paste a spreadsheet into the notes for column formulas and totals.
 
 6
 00:00:25,150 --> 00:00:29,730
-Traders get the position size from a stop-loss.
+Type units, equations or integrals, and get the answer.
 
 7
 00:00:30,150 --> 00:00:33,730

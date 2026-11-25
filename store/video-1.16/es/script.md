@@ -20,7 +20,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 - 00:20–00:24 Pega una tabla en las notas y obtén totales por columna.
 
 **0:25–0:30**
-- 00:25–00:29 Para invertir: el tamaño de posición desde tu stop.
+- 00:25–00:29 Unidades, ecuaciones, integrales: escríbelas y listo.
 
 **0:30–0:34**
 - 00:30–00:33 Cálculo, hojas de cálculo y 3D, todo en QCalc.

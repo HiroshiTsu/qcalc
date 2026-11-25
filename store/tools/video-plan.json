@@ -46,7 +46,8 @@
     "end": "Closing card: the icon, QCalc and the line of the language (not the app)",
     "wholeview": "The calculator: 1280 × 3 and a long expression (the monthly payment of a loan: 2,500,000 at 1.5 % for 120 months) on two lines; ⤢ under its number tapped → View whole: two fingers make it larger → Edit expression: 120 → 180, its answer under it at once → Done: the line worked out again in its place",
     "wrapzoom": "The calculator with three lines, the last one long (a month's spending added up): two fingers spread on the history (History text 150 %) → Settings → Wrap: After 80 characters → back: the long line on one line, moved sideways with a finger",
-    "wholeviewp": "As wholeview, in about 6 s for the 4 s of the promo (the same steps with shorter waits, so that Done and the new answer are seen: the owner's question of 11-25 18:56)"
+    "wholeviewp": "As wholeview, in about 6 s for the 4 s of the promo (the same steps with shorter waits, so that Done and the new answer are seen: the owner's question of 11-25 18:56)",
+    "typep": "The calculator: 60 mph to km/h (ja, en; the others 100 km/h to mph), solve(x^2 − 5x + 6 = 0) and integrate(x^2 sin(x), 0, pi) typed one character at a time, = after each (the scene \"type\", faster: the owner's wish of 11-25 19:07, in the promo in place of the margin call and the position size)"
   },
   "langs": {
     "ja": {
@@ -88,15 +89,14 @@
           ]
         },
         {
-          "scene": "margin",
+          "scene": "typep",
           "dur": 6,
           "title": [
-            "信用取引の追証の株価が",
-            "すぐ分かる"
+            "打つだけで",
+            "単位・方程式・積分"
           ],
-          "tag": "信用取引の計算：QCalc Pro",
           "lines": [
-            "信用取引の維持率と追証の株価も、すぐ分かります。"
+            "単位の換算も、方程式も、積分も、打つだけで答えが出ます。"
           ]
         },
         {
@@ -365,15 +365,14 @@
           ]
         },
         {
-          "scene": "possize",
+          "scene": "typep",
           "dur": 5,
           "title": [
-            "Position size from",
-            "your stop-loss"
+            "Just type it:",
+            "units, equations, integrals"
           ],
-          "tag": "Margin and position sizing: QCalc Pro",
           "lines": [
-            "Traders get the position size from a stop-loss."
+            "Type units, equations or integrals, and get the answer."
           ]
         },
         {
@@ -617,15 +616,14 @@
           ]
         },
         {
-          "scene": "possize",
+          "scene": "typep",
           "dur": 5,
           "title": [
-            "Positionsgröße",
-            "aus dem Stop-Loss"
+            "Einfach eintippen:",
+            "Einheiten, Gleichungen, Integrale"
           ],
-          "tag": "Margin und Positionsgröße: QCalc Pro",
           "lines": [
-            "Für Trader: die Positionsgröße aus dem Stop-Loss."
+            "Einheiten, Gleichungen, Integrale: eintippen, Ergebnis sofort."
           ]
         },
         {
@@ -869,15 +867,14 @@
           ]
         },
         {
-          "scene": "possize",
+          "scene": "typep",
           "dur": 5,
           "title": [
-            "Tamaño de posición",
-            "desde tu stop"
+            "Escribe y listo:",
+            "unidades, ecuaciones, integrales"
           ],
-          "tag": "Margen y tamaño de posición: QCalc Pro",
           "lines": [
-            "Para invertir: el tamaño de posición desde tu stop."
+            "Unidades, ecuaciones, integrales: escríbelas y listo."
           ]
         },
         {
@@ -1121,15 +1118,14 @@
           ]
         },
         {
-          "scene": "possize",
+          "scene": "typep",
           "dur": 5,
           "title": [
-            "La taille de position",
-            "depuis votre stop"
+            "Tapez, c’est calculé :",
+            "unités, équations, intégrales"
           ],
-          "tag": "Marge et taille de position : QCalc Pro",
           "lines": [
-            "Pour la bourse : la taille de position depuis votre stop."
+            "Unités, équations, intégrales : tapez, c’est calculé."
           ]
         },
         {
@@ -1372,15 +1368,14 @@
           ]
         },
         {
-          "scene": "possize",
+          "scene": "typep",
           "dur": 5,
           "title": [
-            "손절가로",
-            "주식 수를 바로"
+            "입력만 하면",
+            "단위·방정식·적분"
           ],
-          "tag": "신용거래와 포지션 계산: QCalc Pro",
           "lines": [
-            "손절가로 살 주식 수도 바로 계산합니다."
+            "단위, 방정식, 적분도 입력하면 바로 답."
           ]
         },
         {
@@ -1623,15 +1618,14 @@
           ]
         },
         {
-          "scene": "possize",
+          "scene": "typep",
           "dur": 5,
           "title": [
-            "由停損價",
-            "算出股數"
+            "輸入就能算",
+            "單位、方程式、積分"
           ],
-          "tag": "信用交易與部位計算：QCalc Pro",
           "lines": [
-            "由停損價算出該買的股數。"
+            "單位換算、方程式、積分，輸入就有答案。"
           ]
         },
         {

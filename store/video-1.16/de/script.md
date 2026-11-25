@@ -20,7 +20,7 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 - 00:20–00:24 Eine Tabelle in die Notizen einfügen: Spaltenformeln und Summen.
 
 **0:25–0:30**
-- 00:25–00:29 Für Trader: die Positionsgröße aus dem Stop-Loss.
+- 00:25–00:29 Einheiten, Gleichungen, Integrale: eintippen, Ergebnis sofort.
 
 **0:30–0:34**
 - 00:30–00:33 Rechnen, Tabellen und 3D, alles in QCalc.

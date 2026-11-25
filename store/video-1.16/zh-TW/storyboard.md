@@ -11,7 +11,7 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 | 0:10–0:14 | As wholeview, in about 6 s for the 4 s of the promo (the same steps with shorter waits, so that Done and the new answer are seen: the owner's question of 11-25 18:56) | 長算式也能 / 檢視全部再修改 | 長算式也能「檢視全部」放大修改。 |
 | 0:14–0:20 | 2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D: the 3D view opens at once, the solid grows from 0° to 360° with its volume V large above the graph, then turned with a finger (QCalc Pro) | 把圖形旋轉成 / 立體與體積 (3D 顯示：QCalc Pro) | 把圖形的區域旋轉，就成了 3D 立體。 |
 | 0:20–0:25 | Tools → Calculation notes → Table (QCalc Pro): a table of a spreadsheet pasted into the first cell: it fills the cells, the first row becomes the names of the columns, the totals and averages appear | 計算筆記 / 變成表格 (表格模式：QCalc Pro) | 把試算表貼進計算筆記，合計一次完成。 |
-| 0:25–0:30 | Tools → Position size from a stop → the first example → the results (the shares, the loss at the stop, risk : reward; QCalc Pro) | 由停損價 / 算出股數 (信用交易與部位計算：QCalc Pro) | 由停損價算出該買的股數。 |
+| 0:25–0:30 | The calculator: 60 mph to km/h (ja, en; the others 100 km/h to mph), solve(x^2 − 5x + 6 = 0) and integrate(x^2 sin(x), 0, pi) typed one character at a time, = after each (the scene "type", faster: the owner's wish of 11-25 19:07, in the promo in place of the margin call and the position size) | 輸入就能算 / 單位、方程式、積分 | 單位換算、方程式、積分，輸入就有答案。 |
 | 0:30–0:34 | Closing card: the icon, QCalc and the line of the language (not the app) | QCalc / 計算、試算表、3D 一次擁有 | 計算、試算表、3D，都在 QCalc。 |
 
 ## Short 1 (9:16, 20 s)

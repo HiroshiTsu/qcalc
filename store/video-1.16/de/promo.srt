@@ -20,7 +20,7 @@ Eine Tabelle in die Notizen einfügen: Spaltenformeln und Summen.
 
 6
 00:00:25,150 --> 00:00:29,730
-Für Trader: die Positionsgröße aus dem Stop-Loss.
+Einheiten, Gleichungen, Integrale: eintippen, Ergebnis sofort.
 
 7
 00:00:30,150 --> 00:00:33,730

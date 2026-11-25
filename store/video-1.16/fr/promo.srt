@@ -20,7 +20,7 @@ Collez un tableau dans les notes : formules par colonne et totaux.
 
 6
 00:00:25,150 --> 00:00:29,730
-Pour la bourse : la taille de position depuis votre stop.
+Unités, équations, intégrales : tapez, c’est calculé.
 
 7
 00:00:30,150 --> 00:00:33,730

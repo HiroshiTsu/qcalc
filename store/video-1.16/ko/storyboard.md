@@ -11,7 +11,7 @@ Every screen is a recording of the real app (app/assets in Chromium with the rea
 | 0:10–0:14 | As wholeview, in about 6 s for the 4 s of the promo (the same steps with shorter waits, so that Done and the new answer are seen: the owner's question of 11-25 18:56) | 긴 식도 / 전체를 보며 고치기 | 긴 식도 ‘전체 보기’로 크게 보며 고칩니다. |
 | 0:14–0:20 | 2D graph with y = x and y = x^2: tap Draw, then ⟳ 3D: the 3D view opens at once, the solid grows from 0° to 360° with its volume V large above the graph, then turned with a finger (QCalc Pro) | 그래프를 돌려 / 입체와 부피로 (3D 보기: QCalc Pro) | 그래프의 면을 돌리면 입체와 부피가 됩니다. |
 | 0:20–0:25 | Tools → Calculation notes → Table (QCalc Pro): a table of a spreadsheet pasted into the first cell: it fills the cells, the first row becomes the names of the columns, the totals and averages appear | 계산 메모를 표로 / 만들어 합계 (표 모드: QCalc Pro) | 스프레드시트의 표를 계산 메모에 붙여 넣으면 합계까지. |
-| 0:25–0:30 | Tools → Position size from a stop → the first example → the results (the shares, the loss at the stop, risk : reward; QCalc Pro) | 손절가로 / 주식 수를 바로 (신용거래와 포지션 계산: QCalc Pro) | 손절가로 살 주식 수도 바로 계산합니다. |
+| 0:25–0:30 | The calculator: 60 mph to km/h (ja, en; the others 100 km/h to mph), solve(x^2 − 5x + 6 = 0) and integrate(x^2 sin(x), 0, pi) typed one character at a time, = after each (the scene "type", faster: the owner's wish of 11-25 19:07, in the promo in place of the margin call and the position size) | 입력만 하면 / 단위·방정식·적분 | 단위, 방정식, 적분도 입력하면 바로 답. |
 | 0:30–0:34 | Closing card: the icon, QCalc and the line of the language (not the app) | QCalc / 계산기, 표 계산, 3D를 하나로 | 계산도, 표 계산도, 3D도 QCalc으로. |
 
 ## Short 1 (9:16, 20 s)
