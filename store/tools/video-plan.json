@@ -45,7 +45,8 @@
     "pastesum": "The calculator: a column of a spreadsheet (1,200, 850, (300)) pasted into the field → the sheet → Add them up → 1200 + 850 + (−300) = 1750",
     "end": "Closing card: the icon, QCalc and the line of the language (not the app)",
     "wholeview": "The calculator: 1280 × 3 and a long expression (the monthly payment of a loan: 2,500,000 at 1.5 % for 120 months) on two lines; ⤢ under its number tapped → View whole: two fingers make it larger → Edit expression: 120 → 180, its answer under it at once → Done: the line worked out again in its place",
-    "wrapzoom": "The calculator with three lines, the last one long (a month's spending added up): two fingers spread on the history (History text 150 %) → Settings → Wrap: After 80 characters → back: the long line on one line, moved sideways with a finger"
+    "wrapzoom": "The calculator with three lines, the last one long (a month's spending added up): two fingers spread on the history (History text 150 %) → Settings → Wrap: After 80 characters → back: the long line on one line, moved sideways with a finger",
+    "wholeviewp": "As wholeview, in about 6 s for the 4 s of the promo (the same steps with shorter waits, so that Done and the new answer are seen: the owner's question of 11-25 18:56)"
   },
   "langs": {
     "ja": {
@@ -76,7 +77,7 @@
           ]
         },
         {
-          "scene": "wholeview",
+          "scene": "wholeviewp",
           "dur": 4,
           "title": [
             "長い式も",
@@ -329,7 +330,7 @@
           ]
         },
         {
-          "scene": "wholeview",
+          "scene": "wholeviewp",
           "dur": 4,
           "title": [
             "Long expressions:",
@@ -581,7 +582,7 @@
           ]
         },
         {
-          "scene": "wholeview",
+          "scene": "wholeviewp",
           "dur": 4,
           "title": [
             "Lange Ausdrücke",
@@ -833,7 +834,7 @@
           ]
         },
         {
-          "scene": "wholeview",
+          "scene": "wholeviewp",
           "dur": 4,
           "title": [
             "Expresiones largas:",
@@ -1085,7 +1086,7 @@
           ]
         },
         {
-          "scene": "wholeview",
+          "scene": "wholeviewp",
           "dur": 4,
           "title": [
             "Les longues expressions,",
@@ -1336,7 +1337,7 @@
           ]
         },
         {
-          "scene": "wholeview",
+          "scene": "wholeviewp",
           "dur": 4,
           "title": [
             "긴 식도",
@@ -1587,7 +1588,7 @@
           ]
         },
         {
-          "scene": "wholeview",
+          "scene": "wholeviewp",
           "dur": 4,
           "title": [
             "長算式也能",

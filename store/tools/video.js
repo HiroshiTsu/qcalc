@@ -205,6 +205,24 @@ const SPEND = '85000 + 12800 + 6400 + 23500 + 9800 + 4200 + 15000 + 7300';
 // the item of the menu with ⚙ (Settings), in every language
 const settingsItem = (page) => page.locator('#drawer > button').filter({ has: page.locator('.ico', { hasText: '⚙' }) }).first();
 
+// (1.16.3) the steps of the scenes wholeview and wholeviewp (w: the waits in ms): ⤢ of the long line → "View whole" → two fingers ×1.5
+// → Edit expression: 120 months → 180, the answer under it at once → Done
+async function wholeRun(page, w) {
+  await sleep(w.start);
+  await tap(page, page.locator('#history .h-item.wv-on .h-wv').last()); await sleep(w.open);
+  const b = await page.locator('.panel.open .wv-box').boundingBox();
+  await pinch(page, b.x + b.width * 0.4, b.y + Math.min(b.height / 2, 160), 90, 135, w.pinch); await sleep(w.afterPinch); // (×1.5: the formula still fits the width)
+  await tap(page, page.locator('.panel.open .wv-edit')); await sleep(w.edit);
+  // (the months chosen, then typed again as a person does)
+  await page.evaluate(() => { const t = document.querySelector('.panel.open .wv-ta'), i = t.value.lastIndexOf('120'); t.focus(); t.setSelectionRange(i, i + 3); });
+  await sleep(w.choose);
+  for (const [k, ch] of [[0, '1'], [1, '8'], [2, '0']]) {
+    await page.evaluate(([k, ch]) => { const t = document.querySelector('.panel.open .wv-ta'); const s = t.selectionStart, e = t.selectionEnd; t.setRangeText(ch, s, k === 0 ? e : s, 'end'); t.dispatchEvent(new InputEvent('input', { bubbles: true, data: ch, inputType: 'insertText' })); }, [k, ch]);
+    await sleep(w.key);
+  }
+  await sleep(w.read);
+  await tap(page, page.locator('.panel.open .wv-ok')); await sleep(w.end);
+}
 // each scene: prepare (not recorded), then run (recorded)
 const SCENES = {
   // (1.16) 1280 × 3 and 980 × 2: the lines get #1 and #2
@@ -378,22 +396,14 @@ const SCENES = {
   wholeview: {
     settings: { max_decimals: 2 },
     prep: async (page, lang) => { for (const x of ['1280 × 3', LOAN(lang)]) { await Q.type(page, x); await Q.eq(page); } },
-    run: async (page) => {
-      await sleep(500);
-      await tap(page, page.locator('#history .h-item.wv-on .h-wv').last()); await sleep(1400);
-      const b = await page.locator('.panel.open .wv-box').boundingBox();
-      await pinch(page, b.x + b.width * 0.4, b.y + Math.min(b.height / 2, 160), 90, 135, 650); await sleep(700); // (×1.5: the formula still fits the width)
-      await tap(page, page.locator('.panel.open .wv-edit')); await sleep(800);
-      // (the months chosen, then typed again as a person does)
-      await page.evaluate(() => { const t = document.querySelector('.panel.open .wv-ta'), i = t.value.lastIndexOf('120'); t.focus(); t.setSelectionRange(i, i + 3); });
-      await sleep(500);
-      for (const [k, ch] of [[0, '1'], [1, '8'], [2, '0']]) {
-        await page.evaluate(([k, ch]) => { const t = document.querySelector('.panel.open .wv-ta'); const s = t.selectionStart, e = t.selectionEnd; t.setRangeText(ch, s, k === 0 ? e : s, 'end'); t.dispatchEvent(new InputEvent('input', { bubbles: true, data: ch, inputType: 'insertText' })); }, [k, ch]);
-        await sleep(150);
-      }
-      await sleep(1300);
-      await tap(page, page.locator('.panel.open .wv-ok')); await sleep(1900);
-    }
+    run: async (page) => wholeRun(page, { start: 500, open: 1400, pinch: 650, afterPinch: 700, edit: 800, choose: 500, key: 150, read: 1300, end: 1900 })
+  },
+  // ((the owner's question of 11-25 18:56) the same in about 6 s for the 4 s of the promo, so that Done and the new answer are seen
+  // there too (wholeview takes 10 s, and the promo plays a scene at most 1.7 times as fast): the same steps, shorter waits)
+  wholeviewp: {
+    settings: { max_decimals: 2 },
+    prep: async (page, lang) => { for (const x of ['1280 × 3', LOAN(lang)]) { await Q.type(page, x); await Q.eq(page); } },
+    run: async (page) => wholeRun(page, { start: 150, open: 650, pinch: 400, afterPinch: 250, edit: 450, choose: 250, key: 90, read: 500, end: 1400 })
   },
   // (1.16.3, short-6-view) two fingers spread on the history: its text larger → Settings → Wrap: after 80 characters → the long
   // line on one line, moved sideways with a finger
