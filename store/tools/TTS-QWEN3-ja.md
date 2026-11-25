@@ -53,6 +53,22 @@ python store\tools\tts_engines.py all $HOME\qcalc-voice --use qwen3:female
 
 （Windows は、2 の「端末を開くたびに」を済ませてから実行してください。）
 
+## 宣伝動画の 1 段落の差し替え（11 月 25 日 19 時）
+
+- 宣伝動画の「信用取引の追証の株価」（ja）と「損切りから株数」（ほかの 6 言語）の段落を、「打つだけで単位・方程式・積分」に替えました（本人の希望 19:07）。新しいのは 1 言語 1 段落、7 言語で 7 段落です。ほかの 15 段落は 17:15 の音声をそのまま使います。
+- 手順は上の「1.16.3 の動画のナレーション」と同じです。今の zip を残すフォルダの名前だけ `zips-1.16.3` にします。各言語の最初に `1 of 16 paragraphs to make` と出れば、そのとおりです。
+
+### Ubuntu
+
+```sh
+source ~/tts-qwen3/bin/activate
+cd ~/qcalc-tts
+mkdir -p ~/qcalc-voice/zips-1.16.3 && cp -n ~/qcalc-voice/voice-tts-*.zip ~/qcalc-voice/zips-1.16.3/
+git fetch --depth 1 origin feature/tts-engines
+git checkout -B feature/tts-engines FETCH_HEAD
+python store/tools/tts_engines.py all ~/qcalc-voice --use qwen3:female
+```
+
 ## 1. 最初の準備（1 回だけ）
 
 ### Ubuntu
