@@ -35,3 +35,4 @@ promo.srt (ja)
 - short-3-notes-table.mp4（short-3-notes-table.srt）：計算メモを表にして合計 | QCalc #Shorts
 - short-4-3d.mp4（short-4-3d.srt）：グラフの面を回して立体と体積に | QCalc #Shorts
 - short-5-paste.mp4（short-5-paste.srt）：表計算ソフトから貼ってすぐ合計 | QCalc #Shorts
+- short-6-view.mp4（short-6-view.srt）：長い式も全体を見て直せる | QCalc #Shorts

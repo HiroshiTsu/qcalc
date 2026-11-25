@@ -7,18 +7,22 @@ QCalc ist ein Rechner, dessen Verlauf wie eine Tabelle funktioniert.
 Ergebnisse per Nummer wiederverwenden, Auswahl summieren, als Tabelle kopieren.
 
 3
-00:00:10,150 --> 00:00:15,730
-Eine Fläche im Graphen wird zum Körper, drehbar in 3D.
+00:00:10,150 --> 00:00:13,730
+Lange Ausdrücke ganz ansehen, zoomen und bearbeiten.
 
 4
-00:00:16,150 --> 00:00:20,730
-Eine Tabelle in die Notizen einfügen: Spaltenformeln und Summen.
+00:00:14,150 --> 00:00:19,730
+Eine Fläche im Graphen wird zum Körper, drehbar in 3D.
 
 5
-00:00:21,150 --> 00:00:25,730
-Für Trader: die Positionsgröße aus dem Stop-Loss.
+00:00:20,150 --> 00:00:24,730
+Eine Tabelle in die Notizen einfügen: Spaltenformeln und Summen.
 
 6
-00:00:26,150 --> 00:00:29,730
+00:00:25,150 --> 00:00:29,730
+Für Trader: die Positionsgröße aus dem Stop-Loss.
+
+7
+00:00:30,150 --> 00:00:33,730
 Rechnen, Tabellen und 3D, alles in QCalc.
 

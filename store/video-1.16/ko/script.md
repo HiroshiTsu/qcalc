@@ -2,7 +2,7 @@
 
 The narration is the same as the subtitles. The voice is added later (text to speech, which needs the owner's permission, or the owner's recording).
 
-## Google Play promo video (16:9, about 30 s) — promo.srt
+## Google Play promo video (16:9, about 34 s) — promo.srt
 
 **0:00–0:05**
 - 00:00–00:04 QCalc은 계산 기록이 그대로 표 계산이 되는 계산기입니다.
@@ -10,17 +10,20 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:05–0:10**
 - 00:05–00:09 번호로 앞의 결과를 쓰고, 골라서 합계, 표로 복사.
 
-**0:10–0:16**
-- 00:10–00:15 그래프의 면을 돌리면 입체와 부피가 됩니다.
+**0:10–0:14**
+- 00:10–00:13 긴 식도 ‘전체 보기’로 크게 보며 고칩니다.
 
-**0:16–0:21**
-- 00:16–00:20 스프레드시트의 표를 계산 메모에 붙여 넣으면 합계까지.
+**0:14–0:20**
+- 00:14–00:19 그래프의 면을 돌리면 입체와 부피가 됩니다.
 
-**0:21–0:26**
-- 00:21–00:25 손절가로 살 주식 수도 바로 계산합니다.
+**0:20–0:25**
+- 00:20–00:24 스프레드시트의 표를 계산 메모에 붙여 넣으면 합계까지.
 
-**0:26–0:30**
-- 00:26–00:29 계산도, 표 계산도, 3D도 QCalc으로.
+**0:25–0:30**
+- 00:25–00:29 손절가로 살 주식 수도 바로 계산합니다.
+
+**0:30–0:34**
+- 00:30–00:33 계산도, 표 계산도, 3D도 QCalc으로.
 
 ## Short 1 (9:16, 20 s) — short-1-history.srt
 
@@ -59,3 +62,13 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 
 **0:10–0:20**
 - 00:10–00:19 표는 계산 메모의 표에 붙여 넣으면 칸마다 들어가 합계까지.
+
+## Short 6 (9:16, 20 s) — short-6-view.srt
+
+**0:00–0:11**
+- 00:00–00:05 긴 식의 줄에서 ‘전체 보기’ 버튼을 누르면 식과 결과가 화면 가득.
+- 00:05–00:10 두 손가락으로 크게 하고, 그 자리에서 식을 고칠 수 있습니다.
+
+**0:11–0:20**
+- 00:11–00:14 계산 기록도 두 손가락으로 크게.
+- 00:14–00:19 줄 바꿈은 오른쪽 끝이나 글자 수로 고를 수 있습니다.

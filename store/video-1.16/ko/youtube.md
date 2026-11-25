@@ -35,3 +35,4 @@ promo.srt (ko)
 - short-3-notes-table.mp4 (short-3-notes-table.srt): 계산 메모를 표로 만들어 합계 | QCalc #Shorts
 - short-4-3d.mp4 (short-4-3d.srt): 그래프를 돌려 입체와 부피로 | QCalc #Shorts
 - short-5-paste.mp4 (short-5-paste.srt): 스프레드시트에서 붙여 넣고 바로 합계 | QCalc #Shorts
+- short-6-view.mp4 (short-6-view.srt): 긴 식도 전체를 보며 고치기 | QCalc #Shorts

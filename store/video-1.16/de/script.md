@@ -2,7 +2,7 @@
 
 The narration is the same as the subtitles. The voice is added later (text to speech, which needs the owner's permission, or the owner's recording).
 
-## Google Play promo video (16:9, about 30 s) — promo.srt
+## Google Play promo video (16:9, about 34 s) — promo.srt
 
 **0:00–0:05**
 - 00:00–00:04 QCalc ist ein Rechner, dessen Verlauf wie eine Tabelle funktioniert.
@@ -10,17 +10,20 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:05–0:10**
 - 00:05–00:09 Ergebnisse per Nummer wiederverwenden, Auswahl summieren, als Tabelle kopieren.
 
-**0:10–0:16**
-- 00:10–00:15 Eine Fläche im Graphen wird zum Körper, drehbar in 3D.
+**0:10–0:14**
+- 00:10–00:13 Lange Ausdrücke ganz ansehen, zoomen und bearbeiten.
 
-**0:16–0:21**
-- 00:16–00:20 Eine Tabelle in die Notizen einfügen: Spaltenformeln und Summen.
+**0:14–0:20**
+- 00:14–00:19 Eine Fläche im Graphen wird zum Körper, drehbar in 3D.
 
-**0:21–0:26**
-- 00:21–00:25 Für Trader: die Positionsgröße aus dem Stop-Loss.
+**0:20–0:25**
+- 00:20–00:24 Eine Tabelle in die Notizen einfügen: Spaltenformeln und Summen.
 
-**0:26–0:30**
-- 00:26–00:29 Rechnen, Tabellen und 3D, alles in QCalc.
+**0:25–0:30**
+- 00:25–00:29 Für Trader: die Positionsgröße aus dem Stop-Loss.
+
+**0:30–0:34**
+- 00:30–00:33 Rechnen, Tabellen und 3D, alles in QCalc.
 
 ## Short 1 (9:16, 20 s) — short-1-history.srt
 
@@ -59,3 +62,13 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 
 **0:10–0:20**
 - 00:10–00:19 Eine Tabelle in eine Tabellennotiz einfügen: Zellen und Summen sind sofort da.
+
+## Short 6 (9:16, 20 s) — short-6-view.srt
+
+**0:00–0:11**
+- 00:00–00:06 Mit „Ganz ansehen“ an einer langen Zeile füllen Ausdruck und Ergebnis den Bildschirm.
+- 00:06–00:10 Mit zwei Fingern vergrößern und den Ausdruck direkt bearbeiten.
+
+**0:11–0:20**
+- 00:11–00:15 Auch den Verlauf mit zwei Fingern vergrößern.
+- 00:15–00:19 Umbruch am rechten Rand oder nach einer Zeichenzahl.

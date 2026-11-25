@@ -2,7 +2,7 @@
 
 The narration is the same as the subtitles. The voice is added later (text to speech, which needs the owner's permission, or the owner's recording).
 
-## Google Play promo video (16:9, about 30 s) — promo.srt
+## Google Play promo video (16:9, about 34 s) — promo.srt
 
 **0:00–0:05**
 - 00:00–00:04 QCalc 是歷史紀錄直接變成試算表的計算機。
@@ -10,17 +10,20 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:05–0:10**
 - 00:05–00:09 用編號沿用結果，選取加總，以表格複製。
 
-**0:10–0:16**
-- 00:10–00:15 把圖形的區域旋轉，就成了 3D 立體。
+**0:10–0:14**
+- 00:10–00:13 長算式也能「檢視全部」放大修改。
 
-**0:16–0:21**
-- 00:16–00:20 把試算表貼進計算筆記，合計一次完成。
+**0:14–0:20**
+- 00:14–00:19 把圖形的區域旋轉，就成了 3D 立體。
 
-**0:21–0:26**
-- 00:21–00:25 由停損價算出該買的股數。
+**0:20–0:25**
+- 00:20–00:24 把試算表貼進計算筆記，合計一次完成。
 
-**0:26–0:30**
-- 00:26–00:29 計算、試算表、3D，都在 QCalc。
+**0:25–0:30**
+- 00:25–00:29 由停損價算出該買的股數。
+
+**0:30–0:34**
+- 00:30–00:33 計算、試算表、3D，都在 QCalc。
 
 ## Short 1 (9:16, 20 s) — short-1-history.srt
 
@@ -59,3 +62,13 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 
 **0:10–0:20**
 - 00:10–00:19 表格貼到計算筆記的表格，會分進各格並算出合計。
+
+## Short 6 (9:16, 20 s) — short-6-view.srt
+
+**0:00–0:11**
+- 00:00–00:06 在長算式的行上按「檢視全部」按鈕，算式和結果就佔滿畫面。
+- 00:06–00:10 用兩指放大，直接在原處修改算式。
+
+**0:11–0:20**
+- 00:11–00:14 歷史紀錄也能用兩指放大。
+- 00:15–00:19 換行可選在右緣，或依字數換行。

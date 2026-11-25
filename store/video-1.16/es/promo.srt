@@ -7,18 +7,22 @@ QCalc es una calculadora cuyo historial funciona como una hoja de cálculo.
 Reutiliza resultados por su número, suma una selección y cópiala como tabla.
 
 3
-00:00:10,150 --> 00:00:15,730
-Gira una región de una gráfica y obtén un sólido en 3D.
+00:00:10,150 --> 00:00:13,730
+Ve completa una expresión larga, amplía y edita.
 
 4
-00:00:16,150 --> 00:00:20,730
-Pega una tabla en las notas y obtén totales por columna.
+00:00:14,150 --> 00:00:19,730
+Gira una región de una gráfica y obtén un sólido en 3D.
 
 5
-00:00:21,150 --> 00:00:25,730
-Para invertir: el tamaño de posición desde tu stop.
+00:00:20,150 --> 00:00:24,730
+Pega una tabla en las notas y obtén totales por columna.
 
 6
-00:00:26,150 --> 00:00:29,730
+00:00:25,150 --> 00:00:29,730
+Para invertir: el tamaño de posición desde tu stop.
+
+7
+00:00:30,150 --> 00:00:33,730
 Cálculo, hojas de cálculo y 3D, todo en QCalc.
 

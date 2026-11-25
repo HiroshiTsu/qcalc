@@ -35,3 +35,4 @@ promo.srt (en)
 - short-3-notes-table.mp4 (short-3-notes-table.srt): Notes that turn into a table | QCalc #Shorts
 - short-4-3d.mp4 (short-4-3d.srt): Turn a graph into a 3D solid | QCalc #Shorts
 - short-5-paste.mp4 (short-5-paste.srt): Paste from a spreadsheet, get the total | QCalc #Shorts
+- short-6-view.mp4 (short-6-view.srt): See long expressions whole, and edit them | QCalc #Shorts

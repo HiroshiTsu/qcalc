@@ -1,0 +1,16 @@
+1
+00:00:00,150 --> 00:00:06,272
+Tap View whole on a long line: the expression and answer fill the screen.
+
+2
+00:00:06,392 --> 00:00:10,730
+Zoom in with two fingers and edit it right there.
+
+3
+00:00:11,150 --> 00:00:14,235
+Zoom the history with two fingers, too.
+
+4
+00:00:14,355 --> 00:00:19,730
+Wrap lines at the right edge or after a number of characters.
+

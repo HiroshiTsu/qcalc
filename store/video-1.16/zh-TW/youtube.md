@@ -35,3 +35,4 @@ promo.srt (zh-TW)
 - short-3-notes-table.mp4 (short-3-notes-table.srt): 計算筆記變成表格 | QCalc #Shorts
 - short-4-3d.mp4 (short-4-3d.srt): 把圖形旋轉成立體與體積 | QCalc #Shorts
 - short-5-paste.mp4 (short-5-paste.srt): 從試算表貼上，馬上合計 | QCalc #Shorts
+- short-6-view.mp4 (short-6-view.srt): 長算式也能檢視全部再修改 | QCalc #Shorts

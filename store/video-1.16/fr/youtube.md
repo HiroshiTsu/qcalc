@@ -35,3 +35,4 @@ promo.srt (fr)
 - short-3-notes-table.mp4 (short-3-notes-table.srt): Des notes qui deviennent un tableau | QCalc #Shorts
 - short-4-3d.mp4 (short-4-3d.srt): Un graphique devient un solide en 3D | QCalc #Shorts
 - short-5-paste.mp4 (short-5-paste.srt): Collez depuis un tableur, le total suit | QCalc #Shorts
+- short-6-view.mp4 (short-6-view.srt): Les longues expressions, en entier et modifiables | QCalc #Shorts

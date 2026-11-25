@@ -1,0 +1,16 @@
+1
+00:00:00,150 --> 00:00:06,450
+Con “Ver completo” en una línea larga, la expresión y su resultado llenan la pantalla.
+
+2
+00:00:06,570 --> 00:00:10,730
+Amplía con dos dedos y edita la expresión ahí mismo.
+
+3
+00:00:11,150 --> 00:00:14,510
+El historial también se amplía con dos dedos.
+
+4
+00:00:14,630 --> 00:00:19,730
+Elige el ajuste: en el borde derecho o por número de caracteres.
+

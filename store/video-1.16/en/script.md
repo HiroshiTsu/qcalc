@@ -2,7 +2,7 @@
 
 The narration is the same as the subtitles. The voice is added later (text to speech, which needs the owner's permission, or the owner's recording).
 
-## Google Play promo video (16:9, about 30 s) — promo.srt
+## Google Play promo video (16:9, about 34 s) — promo.srt
 
 **0:00–0:05**
 - 00:00–00:04 QCalc is a calculator whose history works like a spreadsheet.
@@ -10,17 +10,20 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:05–0:10**
 - 00:05–00:09 Reuse answers by number, add up a selection, copy a table.
 
-**0:10–0:16**
-- 00:10–00:15 Turn a region of a graph into a solid, and spin it in 3D.
+**0:10–0:14**
+- 00:10–00:13 View a long expression whole, zoom in and edit.
 
-**0:16–0:21**
-- 00:16–00:20 Paste a spreadsheet into the notes for column formulas and totals.
+**0:14–0:20**
+- 00:14–00:19 Turn a region of a graph into a solid, and spin it in 3D.
 
-**0:21–0:26**
-- 00:21–00:25 Traders get the position size from a stop-loss.
+**0:20–0:25**
+- 00:20–00:24 Paste a spreadsheet into the notes for column formulas and totals.
 
-**0:26–0:30**
-- 00:26–00:29 Math, spreadsheets and 3D, all in QCalc.
+**0:25–0:30**
+- 00:25–00:29 Traders get the position size from a stop-loss.
+
+**0:30–0:34**
+- 00:30–00:33 Math, spreadsheets and 3D, all in QCalc.
 
 ## Short 1 (9:16, 20 s) — short-1-history.srt
 
@@ -59,3 +62,13 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 
 **0:10–0:20**
 - 00:10–00:19 Paste a table into a table memo: it fills the cells and totals them.
+
+## Short 6 (9:16, 20 s) — short-6-view.srt
+
+**0:00–0:11**
+- 00:00–00:06 Tap View whole on a long line: the expression and answer fill the screen.
+- 00:06–00:10 Zoom in with two fingers and edit it right there.
+
+**0:11–0:20**
+- 00:11–00:14 Zoom the history with two fingers, too.
+- 00:14–00:19 Wrap lines at the right edge or after a number of characters.

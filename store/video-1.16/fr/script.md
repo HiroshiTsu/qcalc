@@ -2,7 +2,7 @@
 
 The narration is the same as the subtitles. The voice is added later (text to speech, which needs the owner's permission, or the owner's recording).
 
-## Google Play promo video (16:9, about 30 s) — promo.srt
+## Google Play promo video (16:9, about 34 s) — promo.srt
 
 **0:00–0:05**
 - 00:00–00:04 QCalc est une calculatrice dont l’historique fonctionne comme un tableur.
@@ -10,17 +10,20 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 **0:05–0:10**
 - 00:05–00:09 Réutilisez un résultat par son numéro, additionnez une sélection, copiez en tableau.
 
-**0:10–0:16**
-- 00:10–00:15 Faites tourner une région d’un graphique : un solide en 3D.
+**0:10–0:14**
+- 00:10–00:13 Voyez une longue expression en entier, zoomez, modifiez.
 
-**0:16–0:21**
-- 00:16–00:20 Collez un tableau dans les notes : formules par colonne et totaux.
+**0:14–0:20**
+- 00:14–00:19 Faites tourner une région d’un graphique : un solide en 3D.
 
-**0:21–0:26**
-- 00:21–00:25 Pour la bourse : la taille de position depuis votre stop.
+**0:20–0:25**
+- 00:20–00:24 Collez un tableau dans les notes : formules par colonne et totaux.
 
-**0:26–0:30**
-- 00:26–00:29 Calcul, tableur et 3D, tout dans QCalc.
+**0:25–0:30**
+- 00:25–00:29 Pour la bourse : la taille de position depuis votre stop.
+
+**0:30–0:34**
+- 00:30–00:33 Calcul, tableur et 3D, tout dans QCalc.
 
 ## Short 1 (9:16, 20 s) — short-1-history.srt
 
@@ -59,3 +62,13 @@ The narration is the same as the subtitles. The voice is added later (text to sp
 
 **0:10–0:20**
 - 00:10–00:19 Collez un tableau dans une note en mode tableau : les cellules se remplissent, avec les totaux.
+
+## Short 6 (9:16, 20 s) — short-6-view.srt
+
+**0:00–0:11**
+- 00:00–00:06 Avec « Voir en entier » sur une longue ligne, l’expression et son résultat remplissent l’écran.
+- 00:06–00:10 Zoomez à deux doigts et modifiez l’expression sur place.
+
+**0:11–0:20**
+- 00:11–00:13 L’historique aussi s’agrandit à deux doigts.
+- 00:13–00:19 Retour à la ligne au bord droit ou après un nombre de caractères.

@@ -23,8 +23,14 @@ const SCENE_LIST = process.argv[5] ? process.argv[5].split(',') : null;
 const SET = { ja: 'ja', en: 'en', de: 'de', es: 'es', fr: 'fr', ko: 'ko', 'zh-TW': 'zh-TW' };
 const VW = 393, VH = 873, DPR = 2;
 
-// a circle where a person taps, then the tap
+// a circle where a person taps, then the tap (ring: the circle alone, for a control whose choice is then made by the script,
+// such as a list that opens outside the page)
 async function tap(page, target) {
+  if (!(await ring(page, target))) return false;
+  if (typeof target === 'string') await page.locator(target).first().click(); else await target.click();
+  return true;
+}
+async function ring(page, target) {
   const box = typeof target === 'string' ? await page.locator(target).first().boundingBox() : await target.boundingBox();
   if (!box) return false;
   const x = box.x + box.width / 2, y = box.y + box.height / 2;
@@ -37,7 +43,6 @@ async function tap(page, target) {
     setTimeout(() => d.remove(), 900);
   }, [x, y]);
   await sleep(260);
-  if (typeof target === 'string') await page.locator(target).first().click(); else await target.click();
   return true;
 }
 const eqKey = (page) => page.locator('#grid .key').filter({ hasText: /^=$/ }).first();
@@ -148,6 +153,57 @@ const PASTE_TABLE = {
   fr: 'Article\tMontant\npommes\t1 200\npain\t850\nlait\t300', ko: '품목\t금액\n사과\t1,200\n빵\t850\n우유\t300',
   'zh-TW': '品項\t金額\n蘋果\t1,200\n麵包\t850\n牛奶\t300'
 };
+
+// (1.16.3) fingers on the screen as circles that follow them (null: lifted)
+async function fingers(page, pts) {
+  await page.evaluate((pts) => {
+    let d = document.getElementById('v-fingers');
+    if (!pts) { if (d) { d.id = ''; for (const c of d.children) c.style.opacity = '0'; setTimeout(() => d.remove(), 450); } return; }
+    if (!d) { d = document.createElement('div'); d.id = 'v-fingers'; d.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none'; document.body.appendChild(d); }
+    while (d.children.length < pts.length) { const c = document.createElement('div'); c.style.cssText = 'position:absolute;width:44px;height:44px;border-radius:50%;background:rgba(58,96,238,.35);border:3px solid rgba(58,96,238,.9);transition:opacity .4s'; d.appendChild(c); }
+    pts.forEach((p, i) => { const c = d.children[i]; c.style.left = (p.x - 22) + 'px'; c.style.top = (p.y - 22) + 'px'; });
+  }, pts);
+}
+// two fingers spread (d0 → d1 px apart) about a point, as real touches (the DevTools protocol), shown as two circles
+async function pinch(page, cx, cy, d0, d1, ms) {
+  const cdp = await page.context().newCDPSession(page);
+  const pts = (d) => [{ x: cx - d / 2, y: cy, id: 1 }, { x: cx + d / 2, y: cy, id: 2 }];
+  const steps = Math.max(8, Math.round((ms || 700) / 45));
+  const touch = (type, touchPoints) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints });
+  await fingers(page, pts(d0)); await sleep(250);
+  await touch('touchStart', [pts(d0)[0]]); await sleep(40);
+  await touch('touchStart', pts(d0)); await sleep(40);
+  for (let i = 1; i <= steps; i++) { const p = pts(d0 + (d1 - d0) * (1 - Math.pow(1 - i / steps, 2))); await touch('touchMove', p); await fingers(page, p); await sleep(30); }
+  await sleep(450);
+  await touch('touchEnd', [pts(d1)[1]]); await sleep(40);
+  await touch('touchEnd', []);
+  await fingers(page, null);
+  await cdp.detach();
+}
+// one finger moving a line sideways (its own scrolling, as the finger does it), shown as a circle
+async function swipeX(page, target, ms) {
+  const h = await target.elementHandle();
+  if (!h) return;
+  await page.evaluate(async ([e, ms]) => {
+    const r = e.getBoundingClientRect(), max = e.scrollWidth - e.clientWidth, y = r.top + Math.min(r.height / 2, 24);
+    const c = document.createElement('div');
+    c.style.cssText = 'position:fixed;width:44px;height:44px;border-radius:50%;background:rgba(58,96,238,.35);border:3px solid rgba(58,96,238,.9);z-index:99999;pointer-events:none;transition:opacity .4s';
+    document.body.appendChild(c);
+    const x0 = r.right - 40, x1 = Math.max(r.left + 40, x0 - Math.min(max, r.width - 80));
+    const put = (x) => { c.style.left = (x - 22) + 'px'; c.style.top = (y - 22) + 'px'; };
+    put(x0);
+    await new Promise((res) => setTimeout(res, 250));
+    const t0 = performance.now();
+    await new Promise((res) => { const f = (t) => { const k = Math.min(1, (t - t0) / ms), q = 1 - Math.pow(1 - k, 2); put(x0 + (x1 - x0) * q); e.scrollLeft = max * q; if (k < 1) requestAnimationFrame(f); else res(); }; requestAnimationFrame(f); });
+    c.style.opacity = '0'; setTimeout(() => c.remove(), 450);
+  }, [h, ms || 1000]);
+  await sleep(300);
+}
+// (1.16.3) the long lines of short-6-view: a loan's monthly payment (2,500,000 at 1.5 % for 120 months), a month's spending
+const LOAN = (lang) => (Q.COMMA[lang] ? '2500000 × 0,015 / 12 / (1 − (1 + 0,015 / 12)^−120)' : '2500000 × 0.015 / 12 / (1 − (1 + 0.015 / 12)^−120)');
+const SPEND = '85000 + 12800 + 6400 + 23500 + 9800 + 4200 + 15000 + 7300';
+// the item of the menu with ⚙ (Settings), in every language
+const settingsItem = (page) => page.locator('#drawer > button').filter({ has: page.locator('.ico', { hasText: '⚙' }) }).first();
 
 // each scene: prepare (not recorded), then run (recorded)
 const SCENES = {
@@ -315,6 +371,46 @@ const SCENES = {
   manual: {
     prep: async () => {},
     run: async (page) => { await sleep(300); await openTool(page, 'price'); await sleep(600); await tap(page, page.locator('.panel.open .help-btn').last()); await sleep(2500); await sleep(2800); }
+  },
+  // (1.16.3, short-6-view) ⤢ of a long line → "View whole": two fingers make it larger → Edit expression: 120 months → 180,
+  // the answer under it at once → Done: the line worked out again in its place
+  wholeview: {
+    prep: async (page, lang) => { for (const x of ['1280 × 3', LOAN(lang)]) { await Q.type(page, x); await Q.eq(page); } },
+    run: async (page) => {
+      await sleep(500);
+      await tap(page, page.locator('#history .h-item.wv-on .h-wv').last()); await sleep(1400);
+      const b = await page.locator('.panel.open .wv-box').boundingBox();
+      await pinch(page, b.x + b.width * 0.4, b.y + Math.min(b.height / 2, 160), 90, 150, 650); await sleep(700); // (×1.67: the formula still fits the width)
+      await tap(page, page.locator('.panel.open .wv-edit')); await sleep(800);
+      // (the months chosen, then typed again as a person does)
+      await page.evaluate(() => { const t = document.querySelector('.panel.open .wv-ta'), i = t.value.lastIndexOf('120'); t.focus(); t.setSelectionRange(i, i + 3); });
+      await sleep(500);
+      for (const [k, ch] of [[0, '1'], [1, '8'], [2, '0']]) {
+        await page.evaluate(([k, ch]) => { const t = document.querySelector('.panel.open .wv-ta'); const s = t.selectionStart, e = t.selectionEnd; t.setRangeText(ch, s, k === 0 ? e : s, 'end'); t.dispatchEvent(new InputEvent('input', { bubbles: true, data: ch, inputType: 'insertText' })); }, [k, ch]);
+        await sleep(150);
+      }
+      await sleep(1300);
+      await tap(page, page.locator('.panel.open .wv-ok')); await sleep(1900);
+    }
+  },
+  // (1.16.3, short-6-view) two fingers spread on the history: its text larger → Settings → Wrap: after 80 characters → the long
+  // line on one line, moved sideways with a finger
+  wrapzoom: {
+    prep: async (page) => { for (const x of ['1280 × 3', '980 × 2', SPEND]) { await Q.type(page, x); await Q.eq(page); } },
+    run: async (page) => {
+      await sleep(400);
+      const h = await page.locator('#history').boundingBox();
+      await pinch(page, h.x + h.width / 2, h.y + h.height * 0.55, 100, 150, 650); await sleep(450);
+      await tap(page, '#btn-menu'); await sleep(450);
+      await tap(page, settingsItem(page)); await sleep(900);
+      await smoothScroll(page, '.setting-wrap', 150, 700); await sleep(300);
+      const sel = page.locator('.panel.open .setting-wrap select');
+      await ring(page, sel); await sleep(250);
+      await sel.evaluate((s) => { s.value = 'chars'; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sleep(1100);
+      await tap(page, page.locator('.panel.open .panel-bar .icon-btn').first()); await sleep(700);
+      const wide = page.locator('#history .h-item > .h-expr').filter({ hasText: /85/ }).last();
+      await swipeX(page, wide, 1100); await sleep(800);
+    }
   }
 };
 

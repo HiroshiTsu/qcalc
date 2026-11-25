@@ -1,5 +1,5 @@
 {
-  "_note": "The videos of 1.16 (the plan approved by the owner on 11-24 18:05): for each language, the Google Play promo (16:9, 30 s, also uploaded to YouTube) and five shorts (9:16, 15-20 s). The long YouTube video of 1.15 is not made again. Each segment: the scene of the app recorded for it (store/tools/video.js; \"end\" is the closing card), its length in seconds, the headline on the screen, the label of a QCalc Pro feature, and the narration, which is also the subtitle (one cue per line). store/tools/video_plan.py writes store/video-1.16/<lang>/ (script.md, storyboard.md, the SRT files and youtube.md) from this file. No rank, price or promotion words on the screen or in the subtitles.",
+  "_note": "The videos of 1.16 (the plan approved by the owner on 11-24 18:05): for each language, the Google Play promo (16:9, 34 s since 1.16.3, also uploaded to YouTube) and six shorts (9:16, 15-20 s; short-6-view and the promo's segment \"wholeview\" added for 1.16.3 on 11-25, the owner's choice of 11:40). The long YouTube video of 1.15 is not made again. Each segment: the scene of the app recorded for it (store/tools/video.js; \"end\" is the closing card), its length in seconds, the headline on the screen, the label of a QCalc Pro feature, and the narration, which is also the subtitle (one cue per line). store/tools/video_plan.py writes store/video-1.16/<lang>/ (script.md, storyboard.md, the SRT files and youtube.md) from this file. No rank, price or promotion words on the screen or in the subtitles.",
   "version": "1.16",
   "out": "video-1.16",
   "pace": {
@@ -43,7 +43,9 @@
     "notestable": "Tools → Calculation notes → Table (QCalc Pro) → the example (items, quantities, prices, the column Amount = Qty × Price): a quantity changed, the amounts and the totals follow; More → Save as CSV",
     "notespaste": "Tools → Calculation notes → Table (QCalc Pro): a table of a spreadsheet pasted into the first cell: it fills the cells, the first row becomes the names of the columns, the totals and averages appear",
     "pastesum": "The calculator: a column of a spreadsheet (1,200, 850, (300)) pasted into the field → the sheet → Add them up → 1200 + 850 + (−300) = 1750",
-    "end": "Closing card: the icon, QCalc and the line of the language (not the app)"
+    "end": "Closing card: the icon, QCalc and the line of the language (not the app)",
+    "wholeview": "The calculator: 1280 × 3 and a long expression (the monthly payment of a loan: 2,500,000 at 1.5 % for 120 months) on two lines; ⤢ under its number tapped → View whole: two fingers make it larger → Edit expression: 120 → 180, its answer under it at once → Done: the line worked out again in its place",
+    "wrapzoom": "The calculator with three lines, the last one long (a month's spending added up): two fingers spread on the history (History text 150 %) → Settings → Wrap: After 80 characters → back: the long line on one line, moved sideways with a finger"
   },
   "langs": {
     "ja": {
@@ -71,6 +73,17 @@
           ],
           "lines": [
             "番号で前の答えを使い、選んで合計。表でコピーできます。"
+          ]
+        },
+        {
+          "scene": "wholeview",
+          "dur": 4,
+          "title": [
+            "長い式も",
+            "全体を見て直せる"
+          ],
+          "lines": [
+            "長い式も『全体を見る』で大きくして直せます。"
           ]
         },
         {
@@ -232,6 +245,35 @@
               ]
             }
           ]
+        },
+        {
+          "name": "short-6-view",
+          "segments": [
+            {
+              "scene": "wholeview",
+              "dur": 11,
+              "title": [
+                "長い式も",
+                "全体を見て直せる"
+              ],
+              "lines": [
+                "長い式の行の『全体を見る』ボタンで、式と答えを画面いっぱいに。",
+                "2 本指で大きくして、その場で式を直せます。"
+              ]
+            },
+            {
+              "scene": "wrapzoom",
+              "dur": 9,
+              "title": [
+                "履歴も",
+                "大きく、読みやすく"
+              ],
+              "lines": [
+                "履歴も 2 本指で大きく。",
+                "折り返しは、右端か文字数で選べます。"
+              ]
+            }
+          ]
         }
       ],
       "youtube_meta": {
@@ -284,6 +326,17 @@
           ],
           "lines": [
             "Reuse answers by number, add up a selection, copy a table."
+          ]
+        },
+        {
+          "scene": "wholeview",
+          "dur": 4,
+          "title": [
+            "Long expressions:",
+            "view whole, zoom, edit"
+          ],
+          "lines": [
+            "View a long expression whole, zoom in and edit."
           ]
         },
         {
@@ -445,6 +498,35 @@
               ]
             }
           ]
+        },
+        {
+          "name": "short-6-view",
+          "segments": [
+            {
+              "scene": "wholeview",
+              "dur": 11,
+              "title": [
+                "See long expressions",
+                "whole, and edit them"
+              ],
+              "lines": [
+                "Tap View whole on a long line: the expression and answer fill the screen.",
+                "Zoom in with two fingers and edit it right there."
+              ]
+            },
+            {
+              "scene": "wrapzoom",
+              "dur": 9,
+              "title": [
+                "Zoom the history,",
+                "easier to read"
+              ],
+              "lines": [
+                "Zoom the history with two fingers, too.",
+                "Wrap lines at the right edge or after a number of characters."
+              ]
+            }
+          ]
         }
       ],
       "youtube_meta": {
@@ -496,6 +578,17 @@
           ],
           "lines": [
             "Ergebnisse per Nummer wiederverwenden, Auswahl summieren, als Tabelle kopieren."
+          ]
+        },
+        {
+          "scene": "wholeview",
+          "dur": 4,
+          "title": [
+            "Lange Ausdrücke",
+            "ganz ansehen und bearbeiten"
+          ],
+          "lines": [
+            "Lange Ausdrücke ganz ansehen, zoomen und bearbeiten."
           ]
         },
         {
@@ -657,6 +750,35 @@
               ]
             }
           ]
+        },
+        {
+          "name": "short-6-view",
+          "segments": [
+            {
+              "scene": "wholeview",
+              "dur": 11,
+              "title": [
+                "Lange Ausdrücke",
+                "ganz ansehen und bearbeiten"
+              ],
+              "lines": [
+                "Mit „Ganz ansehen“ an einer langen Zeile füllen Ausdruck und Ergebnis den Bildschirm.",
+                "Mit zwei Fingern vergrößern und den Ausdruck direkt bearbeiten."
+              ]
+            },
+            {
+              "scene": "wrapzoom",
+              "dur": 9,
+              "title": [
+                "Auch den Verlauf",
+                "größer und lesbarer"
+              ],
+              "lines": [
+                "Auch den Verlauf mit zwei Fingern vergrößern.",
+                "Umbruch am rechten Rand oder nach einer Zeichenzahl."
+              ]
+            }
+          ]
         }
       ],
       "youtube_meta": {
@@ -708,6 +830,17 @@
           ],
           "lines": [
             "Reutiliza resultados por su número, suma una selección y cópiala como tabla."
+          ]
+        },
+        {
+          "scene": "wholeview",
+          "dur": 4,
+          "title": [
+            "Expresiones largas:",
+            "verlas completas y editarlas"
+          ],
+          "lines": [
+            "Ve completa una expresión larga, amplía y edita."
           ]
         },
         {
@@ -869,6 +1002,35 @@
               ]
             }
           ]
+        },
+        {
+          "name": "short-6-view",
+          "segments": [
+            {
+              "scene": "wholeview",
+              "dur": 11,
+              "title": [
+                "Expresiones largas:",
+                "verlas completas y editarlas"
+              ],
+              "lines": [
+                "Con “Ver completo” en una línea larga, la expresión y su resultado llenan la pantalla.",
+                "Amplía con dos dedos y edita la expresión ahí mismo."
+              ]
+            },
+            {
+              "scene": "wrapzoom",
+              "dur": 9,
+              "title": [
+                "El historial también,",
+                "más grande y legible"
+              ],
+              "lines": [
+                "El historial también se amplía con dos dedos.",
+                "Elige el ajuste: en el borde derecho o por número de caracteres."
+              ]
+            }
+          ]
         }
       ],
       "youtube_meta": {
@@ -920,6 +1082,17 @@
           ],
           "lines": [
             "Réutilisez un résultat par son numéro, additionnez une sélection, copiez en tableau."
+          ]
+        },
+        {
+          "scene": "wholeview",
+          "dur": 4,
+          "title": [
+            "Les longues expressions,",
+            "en entier et modifiables"
+          ],
+          "lines": [
+            "Voyez une longue expression en entier, zoomez, modifiez."
           ]
         },
         {
@@ -1081,6 +1254,35 @@
               ]
             }
           ]
+        },
+        {
+          "name": "short-6-view",
+          "segments": [
+            {
+              "scene": "wholeview",
+              "dur": 11,
+              "title": [
+                "Les longues expressions,",
+                "en entier et modifiables"
+              ],
+              "lines": [
+                "Avec « Voir en entier » sur une longue ligne, l’expression et son résultat remplissent l’écran.",
+                "Zoomez à deux doigts et modifiez l’expression sur place."
+              ]
+            },
+            {
+              "scene": "wrapzoom",
+              "dur": 9,
+              "title": [
+                "L’historique aussi,",
+                "plus grand et lisible"
+              ],
+              "lines": [
+                "L’historique aussi s’agrandit à deux doigts.",
+                "Retour à la ligne au bord droit ou après un nombre de caractères."
+              ]
+            }
+          ]
         }
       ],
       "youtube_meta": {
@@ -1131,6 +1333,17 @@
           ],
           "lines": [
             "번호로 앞의 결과를 쓰고, 골라서 합계, 표로 복사."
+          ]
+        },
+        {
+          "scene": "wholeview",
+          "dur": 4,
+          "title": [
+            "긴 식도",
+            "전체를 보며 고치기"
+          ],
+          "lines": [
+            "긴 식도 ‘전체 보기’로 크게 보며 고칩니다."
           ]
         },
         {
@@ -1292,6 +1505,35 @@
               ]
             }
           ]
+        },
+        {
+          "name": "short-6-view",
+          "segments": [
+            {
+              "scene": "wholeview",
+              "dur": 11,
+              "title": [
+                "긴 식도",
+                "전체를 보며 고치기"
+              ],
+              "lines": [
+                "긴 식의 줄에서 ‘전체 보기’ 버튼을 누르면 식과 결과가 화면 가득.",
+                "두 손가락으로 크게 하고, 그 자리에서 식을 고칠 수 있습니다."
+              ]
+            },
+            {
+              "scene": "wrapzoom",
+              "dur": 9,
+              "title": [
+                "계산 기록도",
+                "크게, 읽기 쉽게"
+              ],
+              "lines": [
+                "계산 기록도 두 손가락으로 크게.",
+                "줄 바꿈은 오른쪽 끝이나 글자 수로 고를 수 있습니다."
+              ]
+            }
+          ]
         }
       ],
       "youtube_meta": {
@@ -1342,6 +1584,17 @@
           ],
           "lines": [
             "用編號沿用結果，選取加總，以表格複製。"
+          ]
+        },
+        {
+          "scene": "wholeview",
+          "dur": 4,
+          "title": [
+            "長算式也能",
+            "檢視全部再修改"
+          ],
+          "lines": [
+            "長算式也能「檢視全部」放大修改。"
           ]
         },
         {
@@ -1500,6 +1753,35 @@
               "tag": "表格模式：QCalc Pro",
               "lines": [
                 "表格貼到計算筆記的表格，會分進各格並算出合計。"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "short-6-view",
+          "segments": [
+            {
+              "scene": "wholeview",
+              "dur": 11,
+              "title": [
+                "長算式也能",
+                "檢視全部再修改"
+              ],
+              "lines": [
+                "在長算式的行上按「檢視全部」按鈕，算式和結果就佔滿畫面。",
+                "用兩指放大，直接在原處修改算式。"
+              ]
+            },
+            {
+              "scene": "wrapzoom",
+              "dur": 9,
+              "title": [
+                "歷史紀錄也能",
+                "放大、更好讀"
+              ],
+              "lines": [
+                "歷史紀錄也能用兩指放大。",
+                "換行可選在右緣，或依字數換行。"
               ]
             }
           ]
