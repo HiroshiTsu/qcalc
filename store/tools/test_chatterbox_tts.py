@@ -4,7 +4,6 @@ Usage: python3 store/tools/test_chatterbox_tts.py"""
 import json
 import math
 import os
-import shutil
 import sys
 import tempfile
 import unittest
@@ -91,7 +90,7 @@ class Runs(unittest.TestCase):
         self.log = []
 
     def tearDown(self):
-        shutil.rmtree(self.dir)
+        pass  # ((11-25) the folder of the test is left in the temporary directory: nothing is deleted, the owner's rule)
 
     def opt(self, **kw):
         o = {'sample': None, 'redo': None, 'device': 'cpu', 'voice': None, 'seed': '1234'}

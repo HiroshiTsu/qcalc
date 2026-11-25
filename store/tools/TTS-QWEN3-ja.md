@@ -22,6 +22,37 @@ QCalc の動画のナレーションを、Qwen3-TTS だけで作る手順です�
 - 手順は「6. 決めた声で全部を作る」と同じです。道具を新しくして（`git fetch` と `git checkout` の 2 行）、同じ 2 行を実行します。文が変わったので、1.15 の音声は使い回されず、91 段落を作ります。
 - できた zip は「7. zip を添付する」のとおり、言語ごとに Claude のチャットに添付してください。
 
+## 1.16.3 の動画のナレーション（11 月 25 日）
+
+- 1.16.3 の「全体を見る」と「折り返し」のために、宣伝動画に 4 秒の段落を 1 つ足し（34 秒に）、ショート 6（`short-6-view`、20 秒、2 段落）を足しました。1 言語 16 段落になり、新しいのは 1 言語 3 段落、7 言語で 21 段落です。文の一覧は、ブランチ `docs/store-1.16` の `store/video-1.16/<言語>/script.md` にあります。
+- 声は 1.16 と同じ女性（`qwen3:female`、直し方 A）、作業用のフォルダも同じ（`~/qcalc-voice`、Windows は `$HOME\qcalc-voice`）です。
+- 道具を新しくして下の 1 行を実行すると、文の変わらない 13 段落は前の音声をそのまま使い、新しい 3 段落だけを作ります。宣伝動画の後ろの 4 段落は番号がずれるので、前の音声を新しい名前に写します（`used again (the same words)` と出ます）。各言語の最初に `3 of 16 paragraphs to make (4 used again: the same words)` と出れば、そのとおりです。
+- できる zip は前と同じ名前（`voice-tts-ja.zip` など 7 つ）で、前の zip と入れ替わります。前の zip は Claude のほうで取ってありますが、手元にも残したいときは、下の `mkdir` と `cp` の行で先に別のフォルダ（`zips-1.16`）に写してください（すでにあるものは上書きしません）。
+- `check` や `long` が出たときは、6 の終わりのとおりです。
+
+### Ubuntu
+
+```sh
+source ~/tts-qwen3/bin/activate
+cd ~/qcalc-tts
+mkdir -p ~/qcalc-voice/zips-1.16 && cp -n ~/qcalc-voice/voice-tts-*.zip ~/qcalc-voice/zips-1.16/
+git fetch --depth 1 origin feature/tts-engines
+git checkout -B feature/tts-engines FETCH_HEAD
+python store/tools/tts_engines.py all ~/qcalc-voice --use qwen3:female
+```
+
+### Windows
+
+```powershell
+New-Item -ItemType Directory -Force $HOME\qcalc-voice\zips-1.16 | Out-Null
+Get-ChildItem $HOME\qcalc-voice\voice-tts-*.zip | Where-Object { -not (Test-Path "$HOME\qcalc-voice\zips-1.16\$($_.Name)") } | Copy-Item -Destination $HOME\qcalc-voice\zips-1.16
+git fetch --depth 1 origin feature/tts-engines
+git checkout -B feature/tts-engines FETCH_HEAD
+python store\tools\tts_engines.py all $HOME\qcalc-voice --use qwen3:female
+```
+
+（Windows は、2 の「端末を開くたびに」を済ませてから実行してください。）
+
 ## 1. 最初の準備（1 回だけ）
 
 ### Ubuntu

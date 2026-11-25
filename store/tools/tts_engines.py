@@ -676,12 +676,16 @@ def make_all(work, use, engines, voices, opt, readings, log=print, clock=time.ti
                and e.get('clone') == (eng.info().get('clone') if eng.file_tag() else None)}
         d = os.path.join(base, lang)
         os.makedirs(d, exist_ok=True)
+        # ((11-25) the seed of the same words, also when their segment moved: a paragraph made again with --redo keeps its seed)
+        by_said = {e.get('said'): e for e in old.values() if e.get('seed')}
         rows, items = [], C.paragraphs_of(lang)
         t_start, made, missing = clock(), 0, None
         plan = []
         for n, (video, k, start, room, text) in enumerate(items, 1):
             said = spoken(engine, lang, text, readings)
             prev = old.get((video, k))
+            if not (prev and prev.get('said') == said):
+                prev = by_said.get(said, prev)
             seed = prev['seed'] if prev and prev.get('said') == said and prev.get('seed') else seed0
             if n in redo.get(lang, ()):
                 seed += REDO_STEP
@@ -689,11 +693,31 @@ def make_all(work, use, engines, voices, opt, readings, log=print, clock=time.ti
             parts = [engine, voice, said, seed, ref['id'] if ref else 'default'] + ([tag] if tag else [])
             key = hashlib.sha1(json.dumps(parts, ensure_ascii=False).encode('utf-8')).hexdigest()[:8]
             plan.append((n, video, k, start, room, text, said, seed, '%s-%s%s-%s-%02d-%s.wav' % (engine, voice, '-' + tag if tag else '', video, k, key), prev))
-        missing = sum(1 for p in plan if not os.path.exists(os.path.join(d, p[8])))
-        log('%s: %s %s, %d of %d paragraphs to make' % (lang, engine, voice, missing, len(plan)))
+        # ((11-25) a paragraph whose words are the same as one already made (a segment added before it moves its number): that audio
+        # is used again, copied under its new name, instead of being made again; only new and changed paragraphs are made)
+        made_by_key = {}
+        for f in sorted(os.listdir(d)):
+            if f.endswith('.wav') and '-' in f:
+                made_by_key.setdefault(f.rsplit('-', 1)[1][:-4], f)
+
+        def same_words(video, k, name):
+            same = made_by_key.get(name.rsplit('-', 1)[1][:-4])
+            prefix = name[:len(name) - len('%s-%02d-' % (video, k)) - 13]
+            return same if same and same.startswith(prefix) else None
+        gone = [p for p in plan if not os.path.exists(os.path.join(d, p[8]))]
+        again = sum(1 for p in gone if same_words(p[1], p[2], p[8]))
+        missing = len(gone) - again
+        log('%s: %s %s, %d of %d paragraphs to make%s' % (lang, engine, voice, missing, len(plan),
+                                                          ' (%d used again: the same words)' % again if again else ''))
         for n, video, k, start, room, text, said, seed, name, prev in plan:
             path = os.path.join(d, name)
             secs, vram = (prev or {}).get('time_s'), (prev or {}).get('vram_mb')
+            same = same_words(video, k, name)
+            if not os.path.exists(path) and same:
+                with open(os.path.join(d, same), 'rb') as src, open(path + '.part', 'wb') as dst:
+                    dst.write(src.read())
+                os.replace(path + '.part', path)
+                log('%s %2d/%d (%s): the audio of %s used again (the same words)' % (lang, n, len(plan), video, same))
             if not os.path.exists(path):
                 pcm, sr, secs, vram = synth(eng, said, lang, ref, seed)
                 C.write_wav(path, C.trim(pcm, sr), sr)

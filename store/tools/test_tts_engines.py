@@ -4,7 +4,6 @@ Usage: python3 store/tools/test_tts_engines.py"""
 import json
 import math
 import os
-import shutil
 import sys
 import tempfile
 import types
@@ -196,7 +195,61 @@ class Runs(unittest.TestCase):
         self.log = []
 
     def tearDown(self):
-        shutil.rmtree(self.dir)
+        pass  # ((11-25) the folder of the test is left in the temporary directory: nothing is deleted, the owner's rule)
+
+    def test_all_uses_again_the_audio_of_the_same_words(self):
+        # (11-25) a segment added before others moves their numbers: their audio is used again (the same words), only the new
+        # paragraph is made
+        langs = ['ja']
+        use = T.parse_use('qwen3:female', langs)
+        q = FakeEngine('qwen3', tag='xvec')
+        T.make_all(self.dir, use, {'qwen3': q}, VOICES, {}, {}, log=self.log.append)
+        n = len(C.paragraphs_of('ja'))
+        self.assertEqual(len(q.calls), n)
+        old = C.paragraphs_of
+        items = old('ja')
+        v0 = items[0][0]
+        added = [(v0, 0, 0.15, 3.7, '新しい段落です。')] + [(v, k + 1 if v == v0 else k, s, r, t) for v, k, s, r, t in items]
+        try:
+            C.paragraphs_of = lambda lang, plan=None: added
+            q2 = FakeEngine('qwen3', tag='xvec')
+            zips = T.make_all(self.dir, use, {'qwen3': q2}, VOICES, {}, {}, log=self.log.append)
+        finally:
+            C.paragraphs_of = old
+        self.assertEqual([c[1] for c in q2.calls], [T.spoken('qwen3', 'ja', '新しい段落です。', {})])
+        self.assertTrue(any('used again (the same words)' in l for l in self.log))
+        moved = sum(1 for v, k, s, r, t in items if v == v0)
+        self.assertIn('ja: qwen3 female, 1 of %d paragraphs to make (%d used again: the same words)' % (n + 1, moved), self.log)
+        man = read_json(os.path.join(self.dir, 'voice-tts', 'manifest.json'))
+        self.assertEqual(len(man['langs']['ja']), n + 1)
+        with zipfile.ZipFile(zips[0]) as z:
+            self.assertEqual(len([x for x in z.namelist() if x.startswith('voice-tts/ja/')]), n + 1)
+
+    def test_a_paragraph_made_again_keeps_its_seed_when_it_moves(self):
+        # (11-25) paragraph 2 made again with --redo (another seed), then a segment added before it: it keeps that seed and its
+        # audio (not the first one, which is still in the folder)
+        use = T.parse_use('qwen3:female', ['ja'])
+        T.make_all(self.dir, use, {'qwen3': FakeEngine('qwen3', tag='xvec')}, VOICES, {}, {}, log=self.log.append)
+        q1 = FakeEngine('qwen3', tag='xvec')
+        T.make_all(self.dir, use, {'qwen3': q1}, VOICES, {'redo': 'ja:2'}, {}, log=self.log.append)
+        self.assertEqual(len(q1.calls), 1)
+        r2 = read_json(os.path.join(self.dir, 'voice-tts', 'manifest.json'))['langs']['ja'][1]
+        self.assertNotEqual(r2['seed'], C.DEFAULT_SEED)
+        old = C.paragraphs_of
+        items = old('ja')
+        v0 = items[0][0]
+        self.assertEqual(items[1][0], v0)
+        added = [(v0, 0, 0.15, 3.7, '新しい段落です。')] + [(v, k + 1 if v == v0 else k, s, r, t) for v, k, s, r, t in items]
+        try:
+            C.paragraphs_of = lambda lang, plan=None: added
+            q2 = FakeEngine('qwen3', tag='xvec')
+            T.make_all(self.dir, use, {'qwen3': q2}, VOICES, {}, {}, log=self.log.append)
+        finally:
+            C.paragraphs_of = old
+        self.assertEqual(len(q2.calls), 1)
+        r3 = read_json(os.path.join(self.dir, 'voice-tts', 'manifest.json'))['langs']['ja'][2]
+        self.assertEqual((r3['said'], r3['seed']), (r2['said'], r2['seed']))
+        self.assertEqual(r3['file'].rsplit('-', 1)[1], r2['file'].rsplit('-', 1)[1])
 
     def test_design_once_then_again_when_changed(self):
         e = FakeEngine()
@@ -227,8 +280,8 @@ class Runs(unittest.TestCase):
         self.assertEqual(len(i.calls), n)                        # Irodori: only Japanese
         man = read_json(os.path.join(self.dir, 'tts', 'sample', 'manifest.json'))
         names = sorted(r['file'] for r in man['rows'])
-        self.assertIn('ja/ja-irodori-female-p07-short-1-history-00.wav', names)
-        self.assertIn('en/en-qwen3-male-p07-short-1-history-00.wav', names)
+        self.assertIn('ja/ja-irodori-female-p08-short-1-history-00.wav', names)
+        self.assertIn('en/en-qwen3-male-p08-short-1-history-00.wav', names)
         for r in man['rows']:
             self.assertEqual((r['time_s'] is not None, r['vram_mb']), (True, 800))
             with wave.open(os.path.join(self.dir, 'tts', 'sample', r['file'])) as w:
@@ -237,11 +290,11 @@ class Runs(unittest.TestCase):
             md = f.read()
         self.assertIn('数字・単位・記号', md)
         self.assertIn('漢字の読み', md)
-        self.assertIn('ja/ja-irodori-female-p07-short-1-history-00.wav', md)
+        self.assertIn('ja/ja-irodori-female-p08-short-1-history-00.wav', md)
         self.assertIn('800 MB', md)
         with open(os.path.join(self.dir, 'tts', 'sample', 'listen.html'), encoding='utf-8') as f:
             h = f.read()
-        self.assertIn('<audio controls preload="none" src="ja/ja-qwen3-female-p07-short-1-history-00.wav">', h)
+        self.assertIn('<audio controls preload="none" src="ja/ja-qwen3-female-p08-short-1-history-00.wav">', h)
         # the logs give the time and the GPU memory of each paragraph
         self.assertTrue(any('GPU memory at most 800 MB' in l and 'p07' in l for l in self.log))
         # a second run makes nothing; a changed reading makes that paragraph again
@@ -326,8 +379,8 @@ class Runs(unittest.TestCase):
         T.make_sample(self.dir, ['ja'], a, ['female'], VOICES, {}, {}, log=self.log.append)
         self.assertEqual(len(a.calls), len(T.tricky('ja')))         # not taken for the old samples
         names = sorted(os.listdir(os.path.join(self.dir, 'tts', 'sample', 'ja')))
-        self.assertIn('ja-qwen3-female-p07-short-1-history-00.wav', names)
-        self.assertIn('ja-qwen3-female-xvec-p07-short-1-history-00.wav', names)
+        self.assertIn('ja-qwen3-female-p08-short-1-history-00.wav', names)
+        self.assertIn('ja-qwen3-female-xvec-p08-short-1-history-00.wav', names)
 
     def test_clone_check_when_the_two_ways_differ(self):
         q = FakeQwen(honest=True)
