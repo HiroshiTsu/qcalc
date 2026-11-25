@@ -87,7 +87,9 @@ const SCENES = {
   money: { dark: false, run: async (page, set) => { await Q.convertMoney(page, set); await page.evaluate((v) => { const b = Array.from(document.querySelectorAll('.panel.open .panel-body')).pop(); const i = b.querySelector('.conv-row input'); if (i) { i.value = v; i.dispatchEvent(new Event('input', { bubbles: true })); } }, { ja: '1000', ko: '10000' }[set] || '100'); await sleep(1800); } },
   stats: { dark: false, run: Q.statsTool },
   'stats-curve': { dark: false, run: Q.statsCurve },
-  languages: { dark: true, run: Q.langDark }
+  languages: { dark: true, run: Q.langDark },
+  // (1.16.3) "View whole" of a long line (the monthly payment of a loan), opened with ⤢ and made larger with two fingers
+  'view-whole': { dark: false, run: Q.wholeView }
 };
 // the rectangle of an element in the top panel (to cut it out of a picture), from its top to the bottom of another
 const clipOf = (page, from, to) => page.evaluate(([from, to]) => {
@@ -168,10 +170,11 @@ async function compose(browser, set, k, out) {
   console.log(path.relative(STORE, out));
 }
 const cap = (set, key) => (CAP[set] || CAP[Q.SETS[set].lang])[key];
-// the phone pictures of 1.16: Japan, and the other sets
+// the phone pictures of 1.16: Japan, and the other sets (1.16.3, the owner's choice of 11-25 11:40: the 5th is "View whole" instead of
+// the tank in 3D; the tablets keep the tank)
 const ORDER = {
-  ja: ['hist', 'margin', '2d-to-3d', 'notes-table', 'tank-3d', 'money', 'stats-pair', 'languages'],
-  other: ['hist', '2d-to-3d', 'notes-table', 'possize', 'tank-3d', 'money', 'stats-pair', 'languages']
+  ja: ['hist', 'margin', '2d-to-3d', 'notes-table', 'view-whole', 'money', 'stats-pair', 'languages'],
+  other: ['hist', '2d-to-3d', 'notes-table', 'possize', 'view-whole', 'money', 'stats-pair', 'languages']
 };
 const PHONE = { viewport: { width: 393, height: 873 }, dpr: 1600 / 873 };
 

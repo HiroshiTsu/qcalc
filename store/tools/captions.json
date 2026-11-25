@@ -1,5 +1,5 @@
 {
- "_note": "Headlines on the store pictures of 1.16 (store/tools/shots.js, store/screenshots-1.16/). p1-p8: the phone pictures in the order of the listing of that language (ja: history, margin, 3D graph, notes table, tank, units, statistics, languages; the others: history, 3D graph, notes table, position size, tank, units, statistics, languages); pN_tag: the small label on a picture of a QCalc Pro feature; land: the 16:9 picture (the 3D graph); t1-t5: the tablets (history, notes table, 3D graph, stocks, tank: the headlines of those phone pictures); fg: the feature graphic. en-GB, es-419 and fr-CA have the texts of en, es and fr (es-419: its own p5 and p6), and the money of their region on the screens. No rank, price or promotion words (store/tools/listing_check.py checks them).",
+ "_note": "Headlines on the store pictures of 1.16 (store/tools/shots.js, store/screenshots-1.16/). p1-p8: the phone pictures in the order of the listing of that language (ja: history, margin, 3D graph, notes table, tank, units, statistics, languages; the others: history, 3D graph, notes table, position size, tank, units, statistics, languages); pN_tag: the small label on a picture of a QCalc Pro feature; land: the 16:9 picture (the 3D graph); t1-t5: the tablets (history, notes table, 3D graph, stocks, tank: the headlines of those phone pictures); fg: the feature graphic. en-GB, es-419 and fr-CA have the texts of en, es and fr (es-419: its own p5 and p6), and the money of their region on the screens. No rank, price or promotion words (store/tools/listing_check.py checks them). (1.16.3, the owner's choice of 11-25 11:40: p5 is \"View whole\" of a long line instead of the tank in 3D, without a Pro label; t5 is still the tank.)",
  "ja": {
   "p1": [
    "履歴がそのまま表計算に",
@@ -21,10 +21,9 @@
   ],
   "p4_tag": "表のモード：QCalc Pro",
   "p5": [
-   "容器の液量も、立体の重さも",
-   "寸法を入れるだけ。3D で液面を確かめる"
+   "長い式も、全体を見て直せる",
+   "式と答えを画面いっぱいに。2 本指で大きく"
   ],
-  "p5_tag": "3D の表示：QCalc Pro",
   "p6": [
    "単位も通貨も、打つそばから換算",
    "為替レートはアプリを開くと更新"
@@ -93,10 +92,9 @@
   ],
   "p4_tag": "Margin and position sizing: QCalc Pro",
   "p5": [
-   "Liquid in a tank, weight of a solid",
-   "Enter the sizes, check the level in 3D"
+   "See long expressions whole",
+   "Full screen, zoom with two fingers, edit in place"
   ],
-  "p5_tag": "3D view: QCalc Pro",
   "p6": [
    "Units and currencies, converted as you type",
    "Exchange rates update when you open the app"
@@ -165,10 +163,9 @@
   ],
   "p4_tag": "Margin and position sizing: QCalc Pro",
   "p5": [
-   "Liquid in a tank, weight of a solid",
-   "Enter the sizes, check the level in 3D"
+   "See long expressions whole",
+   "Full screen, zoom with two fingers, edit in place"
   ],
-  "p5_tag": "3D view: QCalc Pro",
   "p6": [
    "Units and currencies, converted as you type",
    "Exchange rates update when you open the app"
@@ -237,10 +234,9 @@
   ],
   "p4_tag": "Margin und Positionsgröße: QCalc Pro",
   "p5": [
-   "Füllstand im Tank, Gewicht eines Körpers",
-   "Maße eingeben, Füllstand in 3D prüfen"
+   "Lange Ausdrücke ganz ansehen",
+   "Vollbild, mit zwei Fingern zoomen, direkt bearbeiten"
   ],
-  "p5_tag": "3D-Ansicht: QCalc Pro",
   "p6": [
    "Einheiten und Währungen, sofort umgerechnet",
    "Wechselkurse aktualisieren sich beim Öffnen"
@@ -309,10 +305,9 @@
   ],
   "p4_tag": "Margen y tamaño de posición: QCalc Pro",
   "p5": [
-   "Líquido en un depósito, peso de un sólido",
-   "Introduce las medidas y mira el nivel en 3D"
+   "Ver completas las expresiones largas",
+   "A pantalla completa, amplía con dos dedos y edita"
   ],
-  "p5_tag": "Vista 3D: QCalc Pro",
   "p6": [
    "Unidades y monedas, convertidas al escribir",
    "Los tipos de cambio se actualizan al abrir la app"
@@ -381,10 +376,9 @@
   ],
   "p4_tag": "Margen y tamaño de posición: QCalc Pro",
   "p5": [
-   "Líquido en un depósito, peso de un sólido",
-   "Ingresa las medidas y mira el nivel en 3D"
+   "Ver completas las expresiones largas",
+   "A pantalla completa, amplía con dos dedos y edita"
   ],
-  "p5_tag": "Vista 3D: QCalc Pro",
   "p6": [
    "Unidades y monedas, convertidas al escribir",
    "Las tasas de cambio se actualizan al abrir la app"
@@ -453,10 +447,9 @@
   ],
   "p4_tag": "Marge et taille de position : QCalc Pro",
   "p5": [
-   "Le liquide d’une cuve, le poids d’un solide",
-   "Entrez les cotes, vérifiez le niveau en 3D"
+   "Voir en entier les longues expressions",
+   "En plein écran, zoom à deux doigts, modification sur place"
   ],
-  "p5_tag": "Vue 3D : QCalc Pro",
   "p6": [
    "Unités et devises, converties pendant la saisie",
    "Les taux de change se mettent à jour à l’ouverture"
@@ -525,10 +518,9 @@
   ],
   "p4_tag": "Marge et taille de position : QCalc Pro",
   "p5": [
-   "Le liquide d’une cuve, le poids d’un solide",
-   "Entrez les cotes, vérifiez le niveau en 3D"
+   "Voir en entier les longues expressions",
+   "En plein écran, zoom à deux doigts, modification sur place"
   ],
-  "p5_tag": "Vue 3D : QCalc Pro",
   "p6": [
    "Unités et devises, converties pendant la saisie",
    "Les taux de change se mettent à jour à l’ouverture"
@@ -597,10 +589,9 @@
   ],
   "p4_tag": "신용거래와 포지션 계산: QCalc Pro",
   "p5": [
-   "탱크의 액량도, 입체의 무게도",
-   "치수만 넣으면 됩니다. 3D로 액면 확인"
+   "긴 식도 전체를 보며 고치기",
+   "식과 결과를 화면 가득, 두 손가락으로 크게"
   ],
-  "p5_tag": "3D 보기: QCalc Pro",
   "p6": [
    "단위도 통화도 입력하는 대로 환산",
    "환율은 앱을 열 때 갱신"
@@ -669,10 +660,9 @@
   ],
   "p4_tag": "信用交易與部位計算：QCalc Pro",
   "p5": [
-   "容器的液量、立體的重量",
-   "只要輸入尺寸，用 3D 確認液面"
+   "長算式也能檢視全部再修改",
+   "算式和結果佔滿畫面，兩指放大"
   ],
-  "p5_tag": "3D 顯示：QCalc Pro",
   "p6": [
    "單位與貨幣，邊輸入邊換算",
    "開啟 App 時更新匯率"

@@ -265,6 +265,26 @@ async function convertMoney(page, set) {
   await page.evaluate(() => { const b = Array.from(document.querySelectorAll('.panel.open .panel-body')).pop(); const c = Array.from(b.querySelectorAll('button, .chip, option')).find((x) => /通貨|Currenc|Währung|Moneda|Divisa|Devise|Monnaie|통화|貨幣/.test(x.textContent)); if (c && c.tagName !== 'OPTION') c.click(); });
   await sleep(1500);
 }
+// (1.16.3, the owner's choice of 11-25 11:40: the 5th phone picture) "View whole" of a long line: the monthly payment of a loan
+// (2,500,000 at 1.5 % for 120 months; the comma decimal where the region has it), opened with ⤢ under its number, made larger
+// with two fingers (real touches, ×1.67: the formula still as wide as the screen)
+const loanExpr = (set) => (COMMA[set] ? '2500000 × 0,015 / 12 / (1 − (1 + 0,015 / 12)^−120)' : '2500000 × 0.015 / 12 / (1 − (1 + 0.015 / 12)^−120)');
+async function wholeView(page, set) {
+  for (const x of ['1280 × 3', loanExpr(set)]) { await type(page, x); await eq(page); }
+  await page.locator('#history .h-item.wv-on .h-wv').last().click(); await sleep(1400);
+  const b = await page.locator('.panel.open .wv-box').boundingBox();
+  const cdp = await page.context().newCDPSession(page);
+  const cx = b.x + b.width * 0.4, cy = b.y + Math.min(b.height / 2, 160);
+  const pts = (d) => [{ x: cx - d / 2, y: cy, id: 1 }, { x: cx + d / 2, y: cy, id: 2 }];
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [pts(90)[0]] }); await sleep(40);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pts(90) }); await sleep(40);
+  for (let i = 1; i <= 10; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pts(90 + 60 * i / 10) }); await sleep(30); }
+  await sleep(300);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [pts(150)[1]] }); await sleep(40);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await cdp.detach();
+  await sleep(900);
+}
 const SCENES16 = { convertMoney, histSheet, margin: (p) => stockTool(p, 'margin'), possize: (p) => stockTool(p, 'possize'), notesTable, stats: statsTool, statsCurve, langDark };
 
-module.exports = { convertMoney, tapLine, histSheet, stockTool, notesTable, statsTool, statsCurve, langDark, SCENES16, sleep, setSlow, SETS, COMMA, mainExamples, localNotes, start, ready, home, menu, tool, type, eq, body, scrollTo, solid2d, solid3d, graphRect, profile, tank3d, tankSetup, modelDone, manualAbout, setPrecisionAndReload };
+module.exports = { loanExpr, wholeView, convertMoney, tapLine, histSheet, stockTool, notesTable, statsTool, statsCurve, langDark, SCENES16, sleep, setSlow, SETS, COMMA, mainExamples, localNotes, start, ready, home, menu, tool, type, eq, body, scrollTo, solid2d, solid3d, graphRect, profile, tank3d, tankSetup, modelDone, manualAbout, setPrecisionAndReload };
