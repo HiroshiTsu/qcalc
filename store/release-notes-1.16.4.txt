@@ -1,0 +1,92 @@
+<en-US>
+• View whole: ⤢ on longer lines, zoom and edit there; wrap at the edge or after N characters
+• Pinch to resize text; hide the keys
+• History as a spreadsheet: tap an answer or its #12; add up; copy
+• Stocks: P&L with tax, average cost, margin call, position size, yield/PER/PBR (margin: Pro)
+• Notes: line numbers, #3, tables with formulas and CSV (Pro)
+• Statistics: distributions, histogram, box plot, curves (non-linear: Pro)
+• Fixes: long decimals wrap at the edge; currency names, matrices, 3D
+</en-US>
+<en-GB>
+• View whole: ⤢ on longer lines, zoom and edit there; wrap at the edge or after N characters
+• Pinch to resize text; hide the keys
+• History as a spreadsheet: tap an answer or its #12; add up; copy
+• Stocks: P&L with tax, average cost, margin call, position size, yield/PER/PBR (margin: Pro)
+• Notes: line numbers, #3, tables with formulas and CSV (Pro)
+• Statistics: distributions, histogram, box plot, curves (non-linear: Pro)
+• Fixes: long decimals wrap at the edge; currency names, matrices, 3D
+</en-GB>
+<ja-JP>
+・全体を見る：長い行の ⤢ で画面いっぱいに表示、2 本指で拡大、その中で式を直せる。折り返し（右端／文字数）を選べる
+・2 本指で文字の大きさを変える、キーを隠して履歴を広く
+・履歴を表計算のように：答えのタップで値、番号のタップで #12、選んで合計、表でコピー
+・株・投資の道具：損益と税（NISA も）、平均取得単価、信用取引の維持率と追証の株価、損切りから株数、利回り・PER・PBR（信用取引の計算は QCalc Pro）
+・計算メモ：行の番号と #3。式の列・合計・CSV のある表（QCalc Pro）
+・自分の変数と関数の一覧、関数の引数のヒント
+・統計：確率分布、ヒストグラムと箱ひげ図、回帰曲線（直線以外は QCalc Pro）
+・直したこと：とても長い小数も右端で折り返す、直した行の数式表示が入力欄の上に残らない、通貨名と行列の見た目、小数の式の答えは小数のまま、√ や π の答えを厳密な形で挿入、お金の端数、履歴の行を直すとき、3D の透明とグラフの形
+</ja-JP>
+<de-DE>
+• Ganz ansehen: ⤢ an längeren Zeilen, zoomen und dort bearbeiten; Umbruch am Rand oder nach N Zeichen
+• Schrift per Pinch; Tasten ausblenden
+• Verlauf als Tabelle: #12 antippen, addieren, kopieren
+• Aktien: Gewinn mit Steuer, Einstandskurs, Nachschuss, Positionsgröße, KGV (Margin: Pro)
+• Notizen: Zeilennummern, #3, Tabellen mit Formeln (Pro)
+• Statistik: Verteilungen, Histogramm, Boxplot, Kurven (nicht linear: Pro)
+• Korrekturen: lange Dezimalzahlen am Rand umbrochen; Währungen, Matrizen, 3D
+</de-DE>
+<es-ES>
+• Ver completo: ⤢ en líneas largas, zoom y editar allí; ajuste en el borde o tras N caracteres
+• Texto con dos dedos; ocultar las teclas
+• Historial como tabla: toca su #12, suma, copia
+• Acciones: ganancia con impuestos, precio medio, margen, posición, PER (margen: Pro)
+• Notas: números de línea, #3, tablas con fórmulas y CSV (Pro)
+• Estadística: distribuciones, histograma, caja, curvas (no lineales: Pro)
+• Correcciones: decimales muy largos se ajustan al borde; monedas, matrices, 3D
+</es-ES>
+<es-419>
+• Ver completo: ⤢ en líneas largas, zoom y editar allí; ajuste en el borde o tras N caracteres
+• Texto con dos dedos; ocultar las teclas
+• Historial como tabla: toca su #12, suma, copia
+• Acciones: ganancia con impuestos, precio medio, margen, posición, PER (margen: Pro)
+• Notas: números de línea, #3, tablas con fórmulas y CSV (Pro)
+• Estadística: distribuciones, histograma, caja, curvas (no lineales: Pro)
+• Correcciones: decimales muy largos se ajustan al borde; monedas, matrices, 3D
+</es-419>
+<fr-FR>
+• Voir en entier : ⤢ sur les longues lignes, zoom, modifier ; coupure au bord ou après N caractères
+• Texte à deux doigts ; masquer les touches
+• Historique en tableur : touchez son #12 ; somme ; copier
+• Bourse : gain avec impôt, prix de revient, appel de marge, PER (marge : Pro)
+• Notes : lignes numérotées, #3, tableaux à formules (Pro)
+• Statistiques : lois, histogramme, boîte, courbes (non linéaires : Pro)
+• Corrections : très longs décimaux coupés au bord ; devises, matrices, 3D
+</fr-FR>
+<fr-CA>
+• Voir en entier : ⤢ sur les longues lignes, zoom, modifier ; coupure au bord ou après N caractères
+• Texte à deux doigts ; masquer les touches
+• Historique en tableur : touchez son #12 ; somme ; copier
+• Bourse : gain avec impôt, prix de revient, appel de marge, PER (marge : Pro)
+• Notes : lignes numérotées, #3, tableaux à formules (Pro)
+• Statistiques : lois, histogramme, boîte, courbes (non linéaires : Pro)
+• Corrections : très longs décimaux coupés au bord ; devises, matrices, 3D
+</fr-CA>
+<ko-KR>
+• 전체 보기: 긴 줄의 ⤢로 화면 가득, 두 손가락으로 확대, 그 안에서 식 고치기. 줄 바꿈(오른쪽 끝/글자 수) 선택
+• 두 손가락으로 글자 크기, 키를 숨겨 기록을 넓게
+• 표 계산처럼 쓰는 기록: 결과 탭으로 값, 번호 탭으로 #12, 골라서 합계, 표로 복사
+• 주식·투자 도구: 세금 포함 손익, 평균 매입 단가, 신용거래 유지율과 추가 증거금 주가, 손절가로 주식 수, 수익률·PER·PBR(신용거래 계산은 QCalc Pro)
+• 계산 메모: 줄 번호와 #3, 식의 열·합계·CSV가 있는 표(QCalc Pro)
+• 통계: 확률분포, 히스토그램, 상자그림, 회귀곡선(직선 외에는 QCalc Pro)
+• 고친 것: 아주 긴 소수도 오른쪽 끝에서 줄 바꿈, 고친 줄의 수식 표시가 남지 않음, 통화 이름·행렬 표시, 소수 결과, 정확한 형태로 넣기, 돈의 끝자리, 줄 고치기, 3D 투명과 그래프 모양
+</ko-KR>
+<zh-TW>
+• 檢視全部：長的那一列點 ⤢ 佔滿畫面、兩指放大、在其中修改算式；可選擇換行（右緣／字數）
+• 雙指調整文字大小，隱藏按鍵讓歷史紀錄更寬
+• 像試算表的歷史紀錄：點結果放入值、點編號放入 #12、選取後加總、以表格複製
+• 股票與投資工具：含稅損益、平均成本、信用交易維持率與追繳價、由停損算股數、殖利率／本益比／股價淨值比（信用交易計算為 QCalc Pro）
+• 計算筆記：行號與 #3；有算式欄、合計與 CSV 的表格（QCalc Pro）
+• 我的變數與函數一覽、函數引數提示
+• 統計：機率分佈、直方圖、盒鬚圖、迴歸曲線（直線以外為 QCalc Pro）
+• 修正：很長的小數也在右緣換行、修改的行的數學式不再留在輸入欄上方、貨幣名稱與矩陣的顯示、小數算式的結果維持小數、√、π 的結果以精確形式插入、金額尾數、修改歷史紀錄的行、3D 透明與重新開啟後的圖形形狀
+</zh-TW>
