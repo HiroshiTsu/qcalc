@@ -4526,8 +4526,17 @@
       for (const it of histEl.querySelectorAll('.h-item')) {
         const no = it.querySelector(':scope > .h-no'), res = it.querySelector(':scope > .h-res');
         if (!no || !res || !res.offsetParent) continue;
-        const first = (res.querySelector('.r-line') || res).getClientRects()[0];
+        const line1 = res.querySelector('.r-line') || res;
+        let first = line1.getClientRects()[0];
         if (!first) continue;
+        // ((1.16.4) a line of an answer higher than its box, which scrolls (thousands of digits that wrap): beside its first line,
+        // from its first character. The middle of the whole line went 10,000 px down for 30,000 digits, and the line of the history
+        // grew as high, empty, its answer out of sight. A line that fits its box (a matrix too) is placed as before)
+        if (line1 !== res && first.height > res.clientHeight + 1) {
+          const tw = document.createTreeWalker(line1, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.nodeValue.trim() && !n.parentNode.closest('.katex-mathml, .sr-only') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP) });
+          const tn = tw.nextNode();
+          if (tn) { const rg = document.createRange(); rg.setStart(tn, 0); rg.setEnd(tn, 1); const c = rg.getClientRects()[0]; if (c && c.height) first = c; }
+        }
         const q = it.getBoundingClientRect(), top = q.top, more = it.querySelector(':scope > .h-more'), wv = it.querySelector(':scope > .h-wv');
         // (under the ⋯, so that a tap on the number is the number's)
         const y = Math.max(first.top - top + (first.height - no.offsetHeight) / 2, more ? more.getBoundingClientRect().bottom - top + 1 : 0);
