@@ -1,6 +1,17 @@
 // French texts of the page (1.10.0), in the form described in i18n-es.js.
 (window.QCALC_I18N = window.QCALC_I18N || {})["fr"] = () => ({
   texts: {
+    "Fill in the boxes □": "Remplissez les cases □",
+    "#{0}: view whole": "#{0} : voir en entier",
+    "Expression (editing)": "Expression (en cours de modification)",
+    "This line is no longer in the history": "Cette ligne n’est plus dans l’historique",
+    "Wrap": "Retour à la ligne",
+    "\"After a number of characters\": as many digits wide; it can be longer than the screen, and what goes past the right edge scrolls sideways. A matrix is not wrapped: it gets smaller or scrolls sideways": "« Après un nombre de caractères » : aussi large que ce nombre de chiffres ; la ligne peut dépasser l’écran, et ce qui passe le bord droit défile de côté. Une matrice n’est pas coupée : elle rapetisse ou défile de côté",
+    "At the right edge": "Au bord droit",
+    "Never (scroll sideways)": "Jamais (défiler de côté)",
+    "Characters in a line": "Caractères par ligne",
+    "({0} to {1})": "(de {0} à {1})",
+    "After {0} characters": "Après {0} caractères",
     "View whole": "Voir en entier",
     "The expression and its answer": "L’expression et son résultat",
     "Other forms": "Autres formes",

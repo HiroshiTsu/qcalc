@@ -340,7 +340,8 @@
     angle: 'rad', approx: 'auto', fraction: 'auto', precision: 15, max_decimals: -1, time_limit: 20, math_view: true,
     base: 10, notation: 'auto', units: 'optimal', mixed_units: true, complex: 'rect',
     grouping: true, structuring: 'simplify', preview: true, haptics: true, auto_ans: true, auto_rates: true,
-    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false, next_steps: true, arg_hints: true
+    text_size: 'normal', lang: 'en', theme: 'blue', appearance: 'system', numfmt: 'auto', memkeys: false, next_steps: true, arg_hints: true,
+    wrap: 'edge', wrap_chars: 80 // (1.16.3, F1)
   };
   // size of the text in the history, the input field and the preview (setting "Text size")
   // (1.16.2, Z2) two sizes: the history (text_size_h, --hfs) and the input field with the result (text_size, --fs, also the
@@ -365,10 +366,25 @@
   function textFactor(size, custom) { return size === 'custom' ? clampText(Number(custom) || 1) : (own(TEXT_SCALE, size) || 1); }
   function textScale() { return Math.min(1.8, textFactor(S.text_size, S.text_custom) * Math.min(1.5, SYS_FONT)); }
   function histScale() { return Math.min(1.8, textFactor(S.text_size_h, S.text_custom_h) * Math.min(1.5, SYS_FONT)); }
+  // (1.16.3, F1, the owner's wishes of 11-25 05:36 and 05:54) Wrapping (setting "Wrap"): at the right edge (the default; the
+  // math notation too, at its outermost + − × ÷ = and commas, not inside a fraction, a root or brackets), after a number of
+  // characters (as many digits wide: at least the width of the screen, a longer line scrolls sideways, and keeps its number
+  // of characters when the text is made larger), or never (everything scrolls sideways, as S2 and S3). In the history (the
+  // expressions and the answers), the input field, the result under it, the box of a line being edited and "View whole". A
+  // matrix is not broken: it gets smaller, then scrolls sideways, as before. html[data-wrap] and --wrapch for style.css
+  const WRAP_MIN = 20, WRAP_MAX = 500, WRAP_DEF = 80;
+  const wrapMode = () => (S.wrap === 'chars' || S.wrap === 'none' ? S.wrap : 'edge');
+  const wrapChars = () => { const n = Math.round(Number(S.wrap_chars)); return Number.isFinite(n) && n > 0 ? Math.max(WRAP_MIN, Math.min(WRAP_MAX, n)) : WRAP_DEF; };
+  function applyWrap() {
+    const root = document.documentElement;
+    root.dataset.wrap = wrapMode();
+    root.style.setProperty('--wrapch', String(wrapChars()));
+  }
   function applyTextSize() {
     document.documentElement.dataset.textSize = own(TEXT_SCALE, S.text_size) ? S.text_size : 'normal';
     document.documentElement.style.setProperty('--fs', String(textScale()));
     document.documentElement.style.setProperty('--hfs', String(histScale()));
+    applyWrap(); // (1.16.3, F1)
     if (typeof placeNumbers === 'function') placeNumbers();
     document.documentElement.style.setProperty('--pfs', String(Math.min(1.15, SYS_FONT)));
     autosize();
@@ -846,6 +862,7 @@
 
   // ---------------------------------------------------------- elements
   const exprEl = $('#expr');
+  wrapScroll(exprEl); // (1.16.3, F1: in a box that scrolls sideways)
   // (1.12.0, 要判断 27 (b) as the author decided: on a screen lower than 600 px the field is drawn lower, and
   // a tap on the padding of its section, above or below it, goes to the field, so that 48 dp stay to touch)
   $('.entry').addEventListener('pointerdown', (e) => { if (e.target === e.currentTarget || (e.target.classList && e.target.classList.contains('parsed-row'))) { e.preventDefault(); exprEl.focus(); } });
@@ -1088,7 +1105,9 @@
     const tabs = $('#pages');
     tabs.textContent = '';
     for (const [id, label, name] of PAGE_TABS) {
-      const b = el('button', { class: 'ptab', id: 'tab-' + id, role: 'tab', 'aria-label': name, text: label });
+      // (1.16.3, UX01) the name in a span of its own, which cuts a long one with "…": the tab itself keeps no overflow, so that
+      // its touch area (::before, 48 dp high) is not cut
+      const b = el('button', { class: 'ptab', id: 'tab-' + id, role: 'tab', 'aria-label': name }, el('span', { class: 'ptab-t', text: label }));
       bindPress(b, () => { vibrate(); setPage(id); });
       tabs.append(b);
     }
@@ -1343,7 +1362,7 @@
         break;
       }
     }
-    if (f === exprEl) liveCaret(); // (1.16.2, E2)
+    if (f === exprEl) { liveCaret(); revealX(exprEl); } // (1.16.2, E2; (1.16.3, C1) the caret in sight sideways after ◀ ▶)
   }
   let kbdMinH = 0, kbdW = 0;
   function toggleKeyboard(force) {
@@ -1438,6 +1457,7 @@
     const min = base * 0.7, one = () => box.scrollHeight <= Math.ceil(fs * lh + pad + 1);
     box.style.fontSize = fs + 'px';
     if (!box.value || box === exprEl && !box.value.trim()) return fs;
+    if (wrapMode() !== 'edge') return fs; // ((1.16.3, F1) after N characters: N characters at the size chosen; never: one line)
     // (measured without the least height of the box: a box of 48 px holds one line of 26 px)
     const mh = box.style.minHeight;
     box.style.minHeight = '0px';
@@ -1450,6 +1470,7 @@
     const wb = document.getElementById('wholebtn'); // (1.16.2, W: ⤢ while the field holds something, also after =)
     if (wb) wb.hidden = !exprEl.value.trim();
     fitText(exprEl, 26 * textScale(), 1.25, 4);
+    wrapWidth(exprEl); // (1.16.3, F1: as wide as N characters)
     exprEl.style.height = 'auto';
     // ((1.16.2, S1, the review of 11-24 22:22) the highest it can be is also what style.css allows (3.9em: smaller with R2's
     // smaller text) and what the screen leaves: when the expression does not fit, the field scrolls with a finger, with a thin
@@ -1458,6 +1479,47 @@
     const max = Math.min(css, Math.round((liveCellOn ? 44 : 110) * textScale())); // (1.16.2, E2: one line while typing in the line)
     exprEl.style.height = Math.min(h, max) + 'px';
     exprEl.style.overflowY = h > max + 1 || exprEl.scrollHeight > exprEl.clientHeight + 1 ? 'auto' : 'hidden';
+    revealX(exprEl); // (1.16.3, F1)
+  }
+  // ((1.16.3, F1) the field and the box of a line being edited are each in a box that scrolls sideways (.wscroll): with "after
+  // N characters" the field is as wide as its text up to N characters (at least the width of the screen), and the caret is
+  // kept in sight sideways; with "never" the field scrolls in itself)
+  function wrapScroll(ta) {
+    if (ta.parentNode && ta.parentNode.classList && ta.parentNode.classList.contains('wscroll')) return ta.parentNode;
+    const w = el('div', { class: 'wscroll' });
+    if (ta.parentNode) ta.parentNode.insertBefore(w, ta);
+    w.append(ta);
+    return w;
+  }
+  function wrapWidth(ta) {
+    const sc = ta.parentNode;
+    if (wrapMode() !== 'chars' || !sc || !sc.classList || !sc.classList.contains('wscroll')) { if (ta.style.width) ta.style.width = ''; return; }
+    const cs = getComputedStyle(ta), m = document.createElement('span');
+    Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre', left: '-9999px', top: '0', fontFamily: cs.fontFamily, fontSize: cs.fontSize, fontWeight: cs.fontWeight, letterSpacing: cs.letterSpacing, fontVariantNumeric: cs.fontVariantNumeric });
+    m.textContent = ta.value || ' ';
+    document.body.append(m);
+    const natural = m.getBoundingClientRect().width;
+    m.textContent = '0'.repeat(20);
+    const ch = m.getBoundingClientRect().width / 20;
+    m.remove();
+    const pad = ['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth'].reduce((a, k) => a + (parseFloat(cs[k]) || 0), 0) + 2;
+    const w = Math.max(sc.clientWidth, Math.min(natural + pad, wrapChars() * ch + pad));
+    ta.style.width = Math.ceil(w) + 'px';
+  }
+  function revealX(ta) {
+    if (!ta || !ta.isConnected) return;
+    const mode = wrapMode();
+    if (mode === 'edge') return;
+    const sc = mode === 'chars' ? ta.parentNode : ta;
+    if (!sc || !sc.clientWidth) return;
+    if (sc.scrollWidth > sc.clientWidth + 1) {
+      const x = cellSpot(ta, ta.selectionEnd || 0).x, pad = 36, view = sc.clientWidth; // ((C1) clear of the soft edges, 24 px)
+      let left = sc.scrollLeft;
+      if (x < left + pad) left = Math.max(0, x - pad);
+      else if (x > left + view - pad) left = x - view + pad;
+      if (Math.abs(left - sc.scrollLeft) >= 1) sc.scrollLeft = left;
+    }
+    edgeFade(sc);
   }
   function focusExpr() {
     // with inputmode="none" this only shows the caret, not the system keyboard
@@ -1626,6 +1688,31 @@
     if (notes.length) r.messages = notes.map((text) => Object.assign({ type: 'warning', text: String(text) }, text.unknownFn ? { unknownFn: text.unknownFn } : {})).concat(r.messages || []);
     r.srcExpr = expr;
     return r;
+  }
+  // ((1.16.3, W3) the same calculation as the preview under the field, for an expression typed elsewhere ("View whole"): what
+  // it shows, { result } (the text of the answer) or { note, error }; h: the line it is the expression of (its #, its angle)
+  async function previewFor(raw, h) {
+    raw = String(raw || '').trim();
+    if (!raw) return {};
+    if (!engineReady) return { note: tr('The calculation engine is starting', '計算エンジンを準備中です') };
+    const expr = withoutOpenTo(normalizeExpr(raw));
+    if (!expr) return {};
+    const fp = formatProblem(raw);
+    if (fp) return { note: fp, error: true };
+    if (expr.indexOf('□') >= 0) return { note: tr('Fill in the boxes □', '□ の欄を埋めてください'), error: true };
+    const edH = h && history.indexOf(h) >= 0 ? h : null;
+    const rx = expandHistRefs(expr, edH ? edH.n : histNo + 1);
+    if (rx.error) return { note: rx.error, error: true };
+    const r = addNotes(await fixIntegral(plainerForms(await withNotes(await Bridge.send('calc', { expr: rx.expr, opts: optsFor(rx.expr, edH ? lineOpts(edH) : undefined), timeout: 1500, max_chars: MAX_RESULT, tail_chars: TAIL_RESULT }), rx.expr)), rx.expr), rx.notes);
+    if (!r || !r.ok) return { note: localMessage(r && r.error) || '', error: true };
+    const err = (r.messages || []).find((m) => m.type === 'error');
+    if (r.deferred) return { note: tr('Press = to run it (definitions are not previewed)', '＝ を押すと実行します（定義など）') };
+    if (r.timeout) return { note: '…' };
+    const undone = undoneMessage(r.result, r.messages, r.srcExpr);
+    if (undone) return { note: undone, error: true };
+    if (err) return { note: localMessage(err.text), error: true };
+    const warns = (r.messages || []).filter((m) => m.type === 'warning').slice(0, 2).map((m) => localMessage(m.text));
+    return { result: resultText(r), note: warns.join(' ') };
   }
   async function runPreview() {
     if (!engineReady) return;
@@ -1925,7 +2012,8 @@
         k = Math.max(0.8, k * (l.clientWidth - 1) / l.scrollWidth - 0.005);
         l.style.fontSize = (base * k).toFixed(3) + 'em';
       }
-      if (!l.classList.contains('math') && l.scrollWidth > l.clientWidth + 1) l.classList.remove('nw');
+      // ((1.16.3, F1) a line in math notation breaks too, at its outermost operators; with "never" nothing breaks: it scrolls)
+      if (wrapMode() !== 'none' && l.scrollWidth > l.clientWidth + 1) l.classList.remove('nw');
     }
   }
   // A result that reads well in math notation: numbers, x, π, √, fractions and powers, functions
@@ -4320,7 +4408,7 @@
     const res = el('div', { class: 'h-res' });
     showResult(res, displayResult(h));
     // ((1.16.2, R3) the expression with the groups of digits of the answers, 17,400,353,377,512 / 3: only as shown)
-    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr', text: groupText(prettyExpr(toDisplay(h.expr)), true) }), res);
+    const item = el('div', { class: 'h-item' + (h.star ? ' starred' : '') + (histEdit && histEdit.h === h ? ' editing' : '') }, el('div', { class: 'h-expr' }, el('span', { class: 'wr', text: groupText(prettyExpr(toDisplay(h.expr)), true) })), res);
     item._h = h;
     if (h.fs && h.fs !== 1) item.style.setProperty('--lfs', String(h.fs)); // (1.16.2, Z4: the size of this line)
     placeNumbers(); // (1.16.2, R4)
@@ -4339,11 +4427,16 @@
     // ⋯ opens the same menu as touching and holding the line (1.12.0: nothing only by a long touch);
     // the dots are drawn by style.css, so that the text of the line stays the expression and the result
     item.append(el('button', { class: 'h-more', type: 'button', 'aria-label': tr('Menu of this result', 'この結果のメニュー') }));
+    // ((1.16.3, W2, the owner's choice of 11-25 06:02) ⤢ "View whole" in the left column, only where there is room for it (a
+    // line high enough) or where something goes past the edge (math, a matrix): placeNumbers shows it; a short line keeps
+    // its height, and "View whole" in its ⋯ as before)
+    item.append(el('button', { class: 'h-wv', type: 'button', text: '⤢', tabindex: '-1', 'aria-label': trf('#{0}: view whole', '#{0}：全体を見る', h.n) }));
     // (1.16.0, feature/hist-excel: while choosing lines, touching and holding one chooses all the lines from the one chosen
     // last to it, as a range of cells)
     bindLongPress(item, () => { if (!histSel) historyMenu(h); else selectRange(item); }, (target) => {
       if (histSel) { toggleSelected(item); return; }
       if (target.closest('.h-more')) { historyMenu(h); return; }
+      if (target.closest('.h-wv')) { openWhole(h); return; } // (1.16.3, W2)
       if (target.closest('.h-no')) { insertResult(h, true); focusExpr(); return; } // (U1)
       // ((1.16.2, E2) a tap on the line being edited, beside its box: the caret into the box)
       if (target.closest('.h-live')) { const c = histEdit && histEdit.cell; if (c) { try { c.focus({ preventScroll: true }); } catch (e) { c.focus(); } } return; }
@@ -4375,6 +4468,7 @@
       }
     }
     fadesIn(root); // (1.16.2, S2, S3)
+    if (root === histEl || (root.closest && root.closest('#history'))) placeNumbers(); // ((1.16.3, W2) ⤢ where something goes past the edge)
   }
   // (1.16.2, S2 and S3, the review of 11-24 22:22) what is wider than the screen (a matrix, an answer or an expression in math
   // notation) scrolls sideways with a finger, and a soft edge shows on the side where more is hidden (cut-l, cut-r)
@@ -4384,13 +4478,18 @@
     b.classList.toggle('cut-l', more && b.scrollLeft > 2);
     b.classList.toggle('cut-r', more && b.scrollLeft < b.scrollWidth - b.clientWidth - 2);
   }
-  const FADE_SEL = '#mathview, .mx, .h-res.math, .preview.math, .wv-box';
+  const FADE_SEL0 = '#mathview, .mx, .h-res.math, .preview.math, .wv-box';
+  // ((1.16.3, F1) with "after N characters" and "never": also the expressions, the answers, the result under the field and the
+  // boxes to type in)
+  const FADE_SEL1 = FADE_SEL0 + ', .h-expr, .h-res, .preview, .r-line.math, .wscroll, #expr, .h-cell';
+  const fadeSel = () => (wrapMode() === 'edge' ? FADE_SEL0 : FADE_SEL1);
   function fadesIn(root) {
     if (!root) return;
-    if (root.matches && root.matches(FADE_SEL)) edgeFade(root);
-    for (const b of root.querySelectorAll(FADE_SEL)) edgeFade(b);
+    const sel = fadeSel();
+    if (root.matches && root.matches(sel)) edgeFade(root);
+    for (const b of root.querySelectorAll(sel)) edgeFade(b);
   }
-  document.addEventListener('scroll', (e) => { const b = e.target; if (b && b.matches && b.matches(FADE_SEL)) edgeFade(b); }, true);
+  document.addEventListener('scroll', (e) => { const b = e.target; if (b && b.matches && b.matches(fadeSel())) edgeFade(b); }, true);
   window.addEventListener('resize', () => { fadesIn(histEl); fadesIn($('.entry')); });
   function bindLongPress(node, onLong, onTap) {
     let timer = null, sx = 0, sy = 0, long = false;
@@ -4423,17 +4522,33 @@
     numQ = true;
     requestAnimationFrame(() => {
       numQ = false;
-      const spots = [];
+      const spots = [], over = wrapMode() === 'edge' ? '.mx, .r-line.math' : '.mx, .r-line.math, .h-expr, .h-res';
       for (const it of histEl.querySelectorAll('.h-item')) {
         const no = it.querySelector(':scope > .h-no'), res = it.querySelector(':scope > .h-res');
         if (!no || !res || !res.offsetParent) continue;
         const first = (res.querySelector('.r-line') || res).getClientRects()[0];
         if (!first) continue;
-        const top = it.getBoundingClientRect().top, more = it.querySelector(':scope > .h-more');
+        const q = it.getBoundingClientRect(), top = q.top, more = it.querySelector(':scope > .h-more'), wv = it.querySelector(':scope > .h-wv');
         // (under the ⋯, so that a tap on the number is the number's)
-        spots.push([no, Math.max(first.top - top + (first.height - no.offsetHeight) / 2, more ? more.getBoundingClientRect().bottom - top + 1 : 0)]);
+        const y = Math.max(first.top - top + (first.height - no.offsetHeight) / 2, more ? more.getBoundingClientRect().bottom - top + 1 : 0);
+        // ((1.16.3, W2, the owner's choice of 11-25 06:02 and wish of 06:04) ⤢ under the number in every line that is more than
+        // the shortest: its expression or its answer on two lines or more (wrapped, or two answers), or something going past the
+        // edge (math, a matrix). Where the left column has no room for it, that line only gets a little higher (min-height);
+        // the shortest lines (one line of expression, one of answer) have none and keep their height)
+        const nh = no.offsetHeight, ex = it.querySelector(':scope > .h-expr');
+        const tall = (b) => { const r = b && b.getBoundingClientRect(); return !!r && r.height > parseFloat(getComputedStyle(b).fontSize) * 1.75; };
+        const want = !!wv && (tall(ex) || tall(res) || Array.from(it.querySelectorAll(over)).some((b) => b.scrollWidth > b.clientWidth + 2));
+        spots.push([no, y, wv, want, nh]);
       }
-      for (const [no, y] of spots) no.style.top = Math.max(0, Math.round(y)) + 'px';
+      for (const [no, y, wv, want, nh] of spots) {
+        const it = no.parentNode;
+        it.classList.toggle('wv-on', want);
+        no.style.top = Math.max(0, Math.round(y)) + 'px';
+        if (!want) { if (it.style.minHeight) it.style.minHeight = ''; continue; }
+        const t = Math.round(y + nh + 4), hgt = 36;
+        wv.style.top = t + 'px'; wv.style.height = hgt + 'px';
+        it.style.minHeight = (t + hgt + 2) + 'px'; // (no effect on a line that is already as high)
+      }
     });
   }
   window.addEventListener('resize', () => placeNumbers());
@@ -4713,12 +4828,18 @@
   // other forms when there are (exact, decimal, fraction, mixed, scientific: as Details). At first it fits the width of the
   // screen (not under a readable size: then it scrolls both ways, as it does when larger); two fingers make it larger or
   // smaller, one finger scrolls. Copy the expression, Copy the answer, Edit this line (a line), ✕; Back closes it.
-  let wholeSeq = 0;
+  let wholeSeq = 0, wvCancel = null;
   function openWhole(h) {
-    const expr = h ? h.expr : toInternal(exprEl.value);
+    if (wvCancel) wvCancel(); // (1.16.3, W3: an editing left open)
+    // ((1.16.3, E1, the review of 11-25 07:40) the line being edited in its place: what is being typed for it (the field) and its
+    // answer as it is now, not the line as it was; "Done" puts the expression back into that editing, which goes on (it
+    // changed the line itself, while the editing went on with the field: the line edited in two places))
+    const editing = !!h && !!histEdit && histEdit.h === h && history.indexOf(h) >= 0;
+    const hh0 = editing ? null : h; // (the line as it is kept, when it is not being edited)
+    const expr = hh0 ? hh0.expr : toInternal(exprEl.value);
     if (!String(expr || '').trim()) return;
     const seq = ++wholeSeq, live = () => seq === wholeSeq;
-    const r0 = h ? null : liveRes;
+    const r0 = hh0 ? null : liveRes;
     const p = panel('whole', tr('View whole', '全体を見る'), () => {});
     p.body.textContent = '';
     p.body.classList.add('wv-body');
@@ -4729,20 +4850,115 @@
     let mathOk = false;
     try { if (window.QMath) mathOk = QMath.render(m, normalizeExpr(disp), { richOnly: true }); } catch (e) { mathOk = false; }
     if (mathOk) { commaMath(m); zoom.append(m); }
-    zoom.append(el('div', { class: 'wv-expr', text: groupText(prettyExpr(disp), true) }));
+    const exDiv = el('div', { class: 'wv-expr', text: groupText(prettyExpr(disp), true) });
+    zoom.append(exDiv);
     const res = el('div', { class: 'wv-res' });
-    const answer = h ? displayResult(h) : (r0 ? resultText(r0) : '');
+    const answer = hh0 ? displayResult(hh0) : (r0 ? resultText(r0) : '');
     if (answer) { showResult(res, answer); zoom.append(res); }
     const forms = el('div', { class: 'wv-forms' });
     zoom.append(forms);
     for (const g of zoom.querySelectorAll('.mx')) g.style.fontSize = ''; // (their own size: the whole is made larger or smaller)
-    const copyAns = h ? copyResultText(h) : String(previewEl.textContent || '').replace(/^\s*[=≈]\s*/, '').trim();
-    const btns = el('div', { class: 'wv-btns' },
+    const copyAns = hh0 ? copyResultText(hh0) : String(previewEl.textContent || '').replace(/^\s*[=≈]\s*/, '').trim();
+    // ((1.16.3, W3, the owner's wish of 11-25 05:38) "Edit expression": the expression edited here, in large letters (the size
+    // of this screen, two fingers too, and the wrapping chosen), its answer under it at once (the preview's calculation);
+    // "Done" puts it in the line (as = after editing a line: worked out again, with the time it was edited) or back into the
+    // field; "Cancel" and back leave it as it was)
+    let ed = null;
+    const viewBtns = [
+      tapButton({ class: 'btn wv-edit', type: 'button', text: tr('Edit expression', '式を直す') }, () => startEdit()),
       tapButton({ class: 'btn', type: 'button', text: tr('Copy expression', '式をコピー') }, () => copyText(expr)),
-      answer ? tapButton({ class: 'btn', type: 'button', text: tr('Copy result', '結果をコピー') }, () => copyText(copyAns)) : '',
-      h ? tapButton({ class: 'btn', type: 'button', text: tr('Edit this line', 'この行を直す') }, () => { closePanel(); if (history.indexOf(h) >= 0) startHistEdit(h); }) : '',
-      tapButton({ class: 'btn wv-x', type: 'button', text: '✕', 'aria-label': tr('Close', '閉じる') }, () => closePanel()));
+      answer ? tapButton({ class: 'btn', type: 'button', text: tr('Copy result', '結果をコピー') }, () => copyText(copyAns)) : null,
+      hh0 ? tapButton({ class: 'btn', type: 'button', text: tr('Edit this line', 'この行を直す') }, () => { closePanel(); if (history.indexOf(h) >= 0) startHistEdit(h); }) : null,
+      tapButton({ class: 'btn wv-x', type: 'button', text: '✕', 'aria-label': tr('Close', '閉じる') }, () => closePanel())].filter(Boolean);
+    const editBtns = [
+      tapButton({ class: 'btn primary wv-ok', type: 'button', text: tr('Done', '決定') }, () => finishEdit(true)),
+      tapButton({ class: 'btn wv-cancel', type: 'button', text: tr('Cancel', 'やめる') }, () => finishEdit(false))];
+    for (const b of editBtns) b.hidden = true;
+    const btns = el('div', { class: 'wv-btns' }, ...viewBtns, ...editBtns);
     p.body.append(box, btns);
+    // (back, and ← of the bar: the editing stops first)
+    p.beforeClose = () => { if (!ed) return false; finishEdit(false); return true; };
+    const keep = () => requestAnimationFrame(() => {
+      if (!ed || !ed.ta.isConnected) return;
+      const ta = ed.ta, sp = cellSpot(ta, ta.selectionEnd || 0), r = ta.getBoundingClientRect(), b = box.getBoundingClientRect(), vv = window.visualViewport;
+      const bottom = Math.min(b.bottom, vv ? vv.offsetTop + vv.height : innerHeight) - 10, top = b.top + 10;
+      const y = r.top + sp.y - ta.scrollTop, x = r.left + sp.x - ta.scrollLeft;
+      if (y + sp.h > bottom) box.scrollTop += y + sp.h - bottom; else if (y < top) box.scrollTop -= top - y;
+      if (x > b.right - 14) box.scrollLeft += x - b.right + 14; else if (x < b.left + 14) box.scrollLeft -= b.left + 14 - x;
+    });
+    const grow = () => { if (!ed) return; const ta = ed.ta; ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + (ta.offsetHeight - ta.clientHeight)) + 'px'; };
+    const runLive = async () => {
+      if (!ed) return;
+      const my = ++ed.seq, txt = ed.ta.value;
+      const out = await previewFor(txt, h);
+      if (!ed || my !== ed.seq || !live()) return;
+      ed.live.textContent = '';
+      if (out.result) { showResult(ed.live, out.result); fitMatrices(ed.live); }
+      ed.lmsg.textContent = out.note || '';
+      ed.lmsg.classList.toggle('error', !!out.error);
+      keep();
+    };
+    const queueLive = () => { if (!ed) return; clearTimeout(ed.timer); ed.timer = setTimeout(runLive, 250); };
+    const onView = () => keep();
+    function startEdit() {
+      if (ed) return;
+      const ta = el('textarea', { class: 'wv-ta', rows: '1', inputmode: 'text', enterkeyhint: 'done', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', 'aria-label': tr('Expression (editing)', '式（直しています）') });
+      ta.value = toDisplay(expr);
+      ed = { ta, live: el('div', { class: 'wv-res wv-live', 'aria-live': 'polite' }), lmsg: el('div', { class: 'wv-lmsg' }), seq: 0, timer: null, start: ta.value };
+      for (const x of [m, exDiv, res, forms]) x.hidden = true;
+      zoom.prepend(ta, ed.live, ed.lmsg);
+      for (const b of viewBtns) b.hidden = true;
+      for (const b of editBtns) b.hidden = false;
+      wvCancel = () => finishEdit(false);
+      ta.addEventListener('input', () => { grow(); queueLive(); keep(); });
+      for (const ev of ['focus', 'click', 'keyup']) ta.addEventListener(ev, onView);
+      ta.addEventListener('keydown', (e) => {
+        if (e.isComposing || e.keyCode === 229) return;
+        if (e.key === 'Enter') { e.preventDefault(); finishEdit(true); } else if (e.key === 'Escape') { e.preventDefault(); finishEdit(false); }
+      });
+      document.addEventListener('selectionchange', onView);
+      window.addEventListener('resize', onView);
+      if (window.visualViewport) window.visualViewport.addEventListener('resize', onView);
+      grow();
+      try { ta.focus({ preventScroll: true }); } catch (e) { ta.focus(); }
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+      runLive(); keep();
+    }
+    function finishEdit(ok) {
+      if (!ed) return;
+      const e0 = ed, txt = e0.ta.value.trim();
+      ed = null; wvCancel = null;
+      clearTimeout(e0.timer);
+      document.removeEventListener('selectionchange', onView);
+      window.removeEventListener('resize', onView);
+      if (window.visualViewport) window.visualViewport.removeEventListener('resize', onView);
+      const back = () => {
+        e0.ta.remove(); e0.live.remove(); e0.lmsg.remove();
+        for (const x of [m, exDiv, res, forms]) x.hidden = false;
+        if (!mathOk) m.hidden = true;
+        for (const b of viewBtns) b.hidden = false;
+        for (const b of editBtns) b.hidden = true;
+        try { box.focus({ preventScroll: true }); } catch (e) { }
+      };
+      if (!ok || !txt || txt === e0.start.trim()) { back(); return; }
+      closePanel();
+      if (hh0) {
+        if (history.indexOf(h) < 0) { toast(tr('This line is no longer in the history', 'この行はもう履歴にありません'), 2200); return; }
+        // (as typed in the line and =: worked out again in its place, the lines below asked about, the time it was edited)
+        startHistEdit(h);
+        exprEl.value = txt;
+        exprEl.setSelectionRange(txt.length, txt.length);
+        exprChanged();
+        commit();
+      } else {
+        const prev = exprEl.value;
+        exprEl.value = txt;
+        exprEl.setSelectionRange(txt.length, txt.length);
+        if (prev.trim() && prev !== txt) offerUndo(prev);
+        exprChanged();
+        focusExpr();
+      }
+    }
     // the size: the width of the screen at first (from 80 % to 2.2 times of 22 px), then two fingers (from 50 % to 4 times)
     let z = 1;
     const BASE = 22;
@@ -4759,7 +4975,8 @@
       zoom.style.width = 'max-content';
       const w = zoom.scrollWidth, room = box.clientWidth - 24;
       zoom.style.width = '';
-      setZ(w > 0 ? Math.max(0.8, Math.min(2.2, room / w)) : 1);
+      // ((1.16.3, F1) when it wraps, a long one keeps the size of this screen and takes more lines, instead of getting smaller)
+      setZ(w > 0 ? Math.max(wrapMode() === 'none' ? 0.8 : 1, Math.min(2.2, room / w)) : 1);
     };
     requestAnimationFrame(fit);
     let pz = null;
@@ -4777,7 +4994,7 @@
     box.addEventListener('touchcancel', endPz);
     box.addEventListener('scroll', () => edgeFade(box));
     // the other forms of the answer (as Details: what could not be had or says nothing new is left out)
-    const hh = h || (r0 ? { expr, result: r0.result, approx: r0.approx } : null);
+    const hh = hh0 || (r0 ? { expr, result: r0.result, approx: r0.approx } : null);
     const tt = hh ? insertText(hh) : '';
     if (!tt || functionOfX(hh)) return;
     const rows = detailRows(hh, tt, null).filter((row) => ['exact', 'dec', 'frac', 'mixed', 'sci'].indexOf(row.id) >= 0);
@@ -5045,7 +5262,7 @@
       if (box) box.remove();
       box = el('div', { class: 'h-live' });
       box._h = H;
-      box.append(el('div', { class: 'h-live-t', 'aria-hidden': 'true' }), cell, el('div', { class: 'h-live-a' }), el('div', { class: 'h-live-old' }));
+      box.append(el('div', { class: 'h-live-t', 'aria-hidden': 'true' }), wrapScroll(cell), el('div', { class: 'h-live-a' }), el('div', { class: 'h-live-old' })); // ((1.16.3, F1) wrapScroll)
       it.insertBefore(box, it.querySelector(':scope > .h-expr'));
       if (liveCellOn && document.activeElement !== cell) { try { cell.focus({ preventScroll: true }); } catch (e) { cell.focus(); } }
     }
@@ -5060,6 +5277,7 @@
       if (liveCellOn && document.activeElement === cell && (cell.selectionStart !== exprEl.selectionStart || cell.selectionEnd !== exprEl.selectionEnd)) cell.setSelectionRange(exprEl.selectionStart, exprEl.selectionEnd);
     }
     fitText(cell, 17 * histScale() * (H.fs || 1), 1.35, 8); // (1.16.2, R2 and Z4)
+    wrapWidth(cell); // (1.16.3, F1)
     // ((1.16.2, S4) at most 40 % of the history high (and 3 lines): then it scrolls in itself, its caret in sight)
     cell.style.height = 'auto';
     const cmax = Math.max(parseFloat(getComputedStyle(cell).fontSize) * 1.35 * 3 + 10, Math.round(histEl.clientHeight * 0.4));
@@ -5141,6 +5359,10 @@
     exprEl.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: !!(e && e.isComposing), inputType: (e && e.inputType) || 'insertText' }));
   }
   // the caret moved in the box (a tap, a drag, the arrows of a keyboard): the field's caret with it
+  // ((1.16.3, F1) the caret kept in sight sideways when it moves: ◀ ▶, a tap, a drag)
+  const caretX = () => { const a = document.activeElement; if (a === exprEl || (histEdit && a === histEdit.cell)) revealX(a); };
+  document.addEventListener('selectionchange', caretX);
+  exprEl.addEventListener('selectionchange', caretX);
   document.addEventListener('selectionchange', () => {
     const c = histEdit && histEdit.cell;
     if (!c || document.activeElement !== c || liveComposing) return;
@@ -5154,6 +5376,7 @@
     if (document.activeElement !== c) { try { c.focus({ preventScroll: true }); } catch (e) { c.focus(); } }
     c.setSelectionRange(exprEl.selectionStart, exprEl.selectionEnd);
     revealCaret();
+    revealX(c); // (1.16.3, F1)
   }
   function liveCellOff(refocus) {
     if (!liveCellOn) return;
@@ -5168,9 +5391,12 @@
   function cellSpot(c, pos) {
     const cs = getComputedStyle(c), m = document.createElement('div');
     for (const k of ['width', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderLeftWidth', 'borderRightWidth', 'borderTopStyle', 'borderLeftStyle', 'borderRightStyle', 'boxSizing', 'textAlign']) m.style[k] = cs[k];
-    Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', top: '0', left: '-9999px' });
-    const mk = document.createElement('span'); mk.textContent = '\u200b';
-    m.append(document.createTextNode(c.value.slice(0, pos)), mk, document.createTextNode(c.value.slice(pos)));
+    Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: cs.whiteSpace === 'pre' ? 'pre' : 'pre-wrap', overflowWrap: cs.overflowWrap || 'anywhere', wordBreak: cs.wordBreak || 'normal', fontVariantNumeric: cs.fontVariantNumeric, top: '0', left: '-9999px' }); // ((1.16.3, F1, C1) it breaks as the box does: "never" one line)
+    // ((1.16.3, C1) the mark is the character after the position, so that a position where a line breaks is at the start of
+    // the next line, where the box draws it (Home on a second line was taken for the end of the first))
+    const n = /[\uD800-\uDBFF]/.test(c.value[pos] || '') ? 2 : 1, after = c.value.slice(pos, pos + n);
+    const mk = document.createElement('span'); mk.textContent = after || '\u200b';
+    m.append(document.createTextNode(c.value.slice(0, pos)), mk, document.createTextNode(c.value.slice(pos + after.length)));
     document.body.append(m);
     const s = { x: mk.offsetLeft, y: mk.offsetTop, h: mk.offsetHeight || parseFloat(cs.fontSize) * 1.3 };
     m.remove();
@@ -5587,11 +5813,24 @@
       document.body.append(p.node);
       p.body.scrollTop = y;
     }
-    requestAnimationFrame(() => p.node.classList.add('open'));
+    requestAnimationFrame(() => { p.node.classList.add('open'); fitTitle(p); });
     panelStack.push(p);
     return p;
   }
+  // ((1.16.3, T1, the review of 11-25 07:40) a long title of a panel on two lines in a bar as high as it needs, smaller letters
+  // (down to 13 px) when two lines are not enough, and only then "…": "Einheiten und Währungen umrechnen" at 320 px with large
+  // text was cut at the top of a bar 52 px high)
+  function fitTitle(p) {
+    const t = p && p.bar && p.bar.querySelector('.ptitle');
+    if (!t || !t.isConnected || !t.clientWidth) return;
+    t.style.fontSize = '';
+    let fs = parseFloat(getComputedStyle(t).fontSize) || 17;
+    while (t.scrollHeight > t.clientHeight + 1 && fs > 13) { fs -= 1; t.style.fontSize = fs + 'px'; }
+  }
+  window.addEventListener('resize', () => { for (const p of panelStack) fitTitle(p); });
   function closePanel() {
+    const top = panelStack[panelStack.length - 1];
+    if (top && top.beforeClose && top.beforeClose()) return true; // ((1.16.3, W3) "View whole" being edited: the editing stops first)
     const p = panelStack.pop();
     if (!p) return false;
     const a = document.activeElement;
@@ -21937,6 +22176,9 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
       // (1.16.2, Z2) the history and the input field apart, each also with two fingers ("Custom (120%)" then)
       ['text_size_h', tr('Text size: history', '文字の大きさ：履歴'), 'textsize', tr('Also with two fingers on the history', '履歴の上で 2 本指でも変えられます')],
       ['text_size', tr('Text size: input field and result', '文字の大きさ：入力欄・結果'), 'textsize', tr('Also with two fingers on the input field', '入力欄の上で 2 本指でも変えられます')],
+      // (1.16.3, F1) the wrapping of the history, the input field and "View whole"
+      ['wrap', tr('Wrap', '折り返し'), 'wrap', tr('"After a number of characters": as many digits wide; it can be longer than the screen, and what goes past the right edge scrolls sideways. A matrix is not wrapped: it gets smaller or scrolls sideways',
+        '「文字数で折り返す」は、数字の幅でその文字数のところで折り返します。右端より長くできます。はみ出た分は横にスクロールします。行列は折り返さず、小さくするか横にスクロールします')],
       ['theme', tr('Color theme', '配色テーマ'), THEMES, tr('The color of the keys and the highlights, in the light and the dark theme', 'キーや強調表示の色（ライト・ダークの両方）')]
     ]],
     // (1.12.0, D7: "Digits of the tools" was here; feature/screen-digits: a row of "Digits shown by each tool")
@@ -21998,6 +22240,24 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
               if (p.precisionBack) p.precisionBack();
               if (locked) proPrompt(tr('A precision above 1000 digits is a QCalc Pro feature', '1000 桁を超える有効桁数は QCalc Pro の機能です'), 'precision');
             });
+          } else if (type === 'wrap') {
+            // (1.16.3, F1) at the right edge, after N characters (20 to 500, 80 at first), or never
+            const sel = el('select', { 'aria-label': label });
+            const optChars = el('option', { value: 'chars' });
+            sel.append(el('option', { value: 'edge', text: tr('At the right edge', '右端で折り返す') }), optChars, el('option', { value: 'none', text: tr('Never (scroll sideways)', '折り返さない（横にスクロール）') }));
+            const num = el('input', { type: 'number', class: 'wrap-n', min: String(WRAP_MIN), max: String(WRAP_MAX), step: '1', inputmode: 'numeric', 'aria-label': tr('Characters in a line', '1 行の文字数') });
+            const nrow = el('label', { class: 'wrap-row' }, el('span', { text: tr('Characters in a line', '1 行の文字数') }), num, el('span', { class: 'wrap-u', text: trf('({0} to {1})', '（{0}〜{1}）', WRAP_MIN, WRAP_MAX) }));
+            const show = () => { sel.value = wrapMode(); num.value = String(wrapChars()); optChars.textContent = trf('After {0} characters', '{0} 文字で折り返す', wrapChars()); nrow.hidden = sel.value !== 'chars'; };
+            sel.addEventListener('change', () => { S.wrap = sel.value; settingsChanged(); show(); });
+            num.addEventListener('change', () => {
+              const v = parseInt(num.value, 10);
+              S.wrap_chars = Number.isNaN(v) ? WRAP_DEF : Math.max(WRAP_MIN, Math.min(WRAP_MAX, v));
+              settingsChanged(); show();
+            });
+            show();
+            (p.textShows = p.textShows || []).push(show);
+            input = sel;
+            input._box = el('div', { class: 'wrap-box' }, sel, nrow);
           } else if (type === 'textsize') {
             // (1.16.2, Z3) the size as a slider in %, with marks for the four sizes, and "Back to normal"
             const w = key === 'text_size_h' ? 'h' : 'e', ck = w === 'h' ? 'text_custom_h' : 'text_custom';
@@ -22046,7 +22306,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
             p.precisionBack = () => { back.hidden = Number(S.precision) === DEFAULTS.precision; if (p.digitsList) p.digitsList(); };
             p.precisionBack();
           }
-          part.append(el(input._box ? 'div' : 'label', { class: 'setting' + (input._box ? ' setting-ts' : '') },
+          part.append(el(input._box ? 'div' : 'label', { class: 'setting' + (input._box ? (type === 'wrap' ? ' setting-wrap' : ' setting-ts') : '') },
             el('div', { class: 'lbl' }, name, sub ? el('div', { class: 's', text: sub }) : null), back ? el('div', { class: 'precision-box' }, input, back) : input._box || input));
           (p.inputs = p.inputs || {})[key] = input;
         }
@@ -22086,6 +22346,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
           S = Object.assign({}, DEFAULTS, { lang: LANG_AUTO ? 'auto' : LANG }); touched.clear(); store.del('qalc.touched'); lastSaved = Object.assign({}, S); settingsChanged(); // the language stays (1.15.0: and nothing counts as changed)
           digitsClearAll(); // (feature/screen-digits: the digits of each tool too, and the shared digits of D7)
           for (const k of Object.keys(p.inputs)) { const i = p.inputs[k]; if (i.type === 'checkbox') i.checked = !!S[k]; else i.value = String(S[k]); }
+          for (const f of p.textShows || []) f(); // ((1.16.3) the sliders of the text sizes and the wrapping as they are now)
           if (p.precisionBack) p.precisionBack();
           if (p.digitsList) p.digitsList();
         } }));
@@ -22111,10 +22372,11 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     applyTheme();
     exprChanged();
     if (CF.id) formChanged();
-    if (mathShown !== S.math_view || groupShown !== S.grouping) { mathShown = S.math_view; groupShown = S.grouping; renderHistory(false); }
+    if (mathShown !== S.math_view || groupShown !== S.grouping || wrapShown !== wrapMode() + wrapChars()) { mathShown = S.math_view; groupShown = S.grouping; wrapShown = wrapMode() + wrapChars(); renderHistory(false); }
     refreshSteps(); // (1.15.0: "Suggest the next steps")
   }
   let mathShown = S.math_view, groupShown = S.grouping; // (1.15.0: the groups of digits are made when shown, groupText)
+  let wrapShown = wrapMode() + wrapChars(); // (1.16.3, F1: the history drawn again when the wrapping changes)
   function updateChips() {
     $('#chip-angle').textContent = ANGLE_LABEL[S.angle] || 'RAD';
     $('#chip-approx').textContent = APPROX_LABEL[S.approx] || APPROX_LABEL.auto;
@@ -22725,6 +22987,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
   window.qalcBack = function () {
     if (!varPopEl.hidden) { closeVarPop(); return true; }
     if ($('#sheet').classList.contains('open')) { closeSheet(null); return true; }
+    if (wvCancel) { wvCancel(); return true; } // ((1.16.3, W3) the expression being edited in "View whole": only the editing stops)
     if (endHistEdit(false)) return true; // (1.15.0: a line being edited: nothing changes)
     if (closeHistSelect() || closeHistSearch()) return true;
     if ($('#drawer').classList.contains('open')) { closeDrawer(); return true; }

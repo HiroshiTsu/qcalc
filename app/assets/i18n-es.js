@@ -13,6 +13,17 @@
 //   currencies: the currencies first in the list of units, when not USD, EUR, JPY … as in English.
 (window.QCALC_I18N = window.QCALC_I18N || {})["es"] = () => ({
   texts: {
+    "Fill in the boxes □": "Rellene las casillas □",
+    "#{0}: view whole": "#{0}: ver completo",
+    "Expression (editing)": "Expresión (editando)",
+    "This line is no longer in the history": "Esta línea ya no está en el historial",
+    "Wrap": "Ajuste de línea",
+    "\"After a number of characters\": as many digits wide; it can be longer than the screen, and what goes past the right edge scrolls sideways. A matrix is not wrapped: it gets smaller or scrolls sideways": "«Tras un número de caracteres»: tan ancho como esa cantidad de cifras; puede ser más largo que la pantalla, y lo que pasa del borde derecho se desplaza de lado. Una matriz no se corta: se hace más pequeña o se desplaza de lado",
+    "At the right edge": "En el borde derecho",
+    "Never (scroll sideways)": "Nunca (desplazar de lado)",
+    "Characters in a line": "Caracteres por línea",
+    "({0} to {1})": "(de {0} a {1})",
+    "After {0} characters": "Tras {0} caracteres",
     "View whole": "Ver completo",
     "The expression and its answer": "La expresión y su resultado",
     "Other forms": "Otras formas",
