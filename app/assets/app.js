@@ -5562,6 +5562,8 @@
     putEntry(h, Object.assign(s, { edited: Date.now() }));
     histEdit = null; editBand.hidden = true;
     exprEl.value = ''; showPreview(null); autosize(); updateSuggest(false); saveDraft(); pruneTapMarks();
+    updateMathView(); // ((1.16.4, the owner's choice of 11-25 12:20) the math notation above the field goes with the expression, as after
+    // = on a new line: it stayed, showing the expression of the line just edited, over the empty field (since 1.15.0)
     saveHistory();
     redrawEntries(new Set([h]));
     // (1.16.0, fix/hist-edit-scroll: as a cell after Enter, the line and its answer stay in sight while the band goes, the

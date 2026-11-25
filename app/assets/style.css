@@ -2101,3 +2101,9 @@ html:not([data-wrap="edge"]) .wv-val { flex: 0 1 auto; text-align: left; }
    it needs (it was cut at the top of the bar 52 px high), "…" after two lines */
 .panel-bar { height: auto; min-height: 52px; }
 .panel-bar .ptitle { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; line-height: 1.2; padding: 4px 0; }
+/* (1.16.4, the owner's phone, 11-25 12:11) a number longer than 20,000 characters (a precision of 20,000 digits or more) has no place
+   to break: for it groupText makes no groups and numberNodes no <wbr> (to stay quick), and a result line breaks only at those. With
+   "at the right edge" or "after N characters" such a line now breaks anywhere at the edge, as the others do (it went off the screen:
+   View whole, its other forms, the history, the result under the field); a shorter number still breaks between its groups first.
+   Math notation keeps its own places (its outermost operators); with "never" nothing breaks */
+html:not([data-wrap="none"]) .r-line:not(.math) { overflow-wrap: anywhere; }
