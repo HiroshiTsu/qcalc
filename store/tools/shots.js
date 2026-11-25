@@ -88,8 +88,11 @@ const SCENES = {
   stats: { dark: false, run: Q.statsTool },
   'stats-curve': { dark: false, run: Q.statsCurve },
   languages: { dark: true, run: Q.langDark },
-  // (1.16.3) "View whole" of a long line (the monthly payment of a loan), opened with ⤢ and made larger with two fingers
-  'view-whole': { dark: false, run: Q.wholeView }
+  // (1.16.3) "View whole" of a long line (the monthly payment of a loan), opened with ⤢ and made larger with two fingers (×1.5); the
+  // decimal places set to 2 as for money ((the review of 11-25 14:27) the answer on one line and the other form not cut in two in
+  // every set: with 15 digits the scientific form took two lines even at ×1 in German; with 2 places all fit up to ×1.5, and the
+  // formula still fits the width)
+  'view-whole': { dark: false, settings: { max_decimals: 2 }, run: (page, set) => Q.wholeView(page, set, 1.5) }
 };
 // the rectangle of an element in the top panel (to cut it out of a picture), from its top to the bottom of another
 const clipOf = (page, from, to) => page.evaluate(([from, to]) => {
