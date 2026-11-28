@@ -1535,6 +1535,11 @@ static string cmd_catalog(const JVal &req, JOut &out) {
 			items += it.done();
 		}
 	} else if(kind == "units") {
+		// (1.16.5) The texts of the units are checked at 20 digits (as the graphs are drawn), not at the precision of the
+		// last calculation: at 200000 digits the list took 82 s on a computer and more on a phone, the engine answering
+		// nothing else meanwhile, and the app stopped the engine after 30 s, so that the list never came
+		int save_prec = CALCULATOR->getPrecision();
+		if(save_prec > 20) CALCULATOR->setPrecision(20);
 		for(size_t i = 0; i < CALCULATOR->units.size(); i++) {
 			Unit *u = CALCULATOR->units[i];
 			if(!u->isActive() || u->isHidden()) continue;
@@ -1552,6 +1557,7 @@ static string cmd_catalog(const JVal &req, JOut &out) {
 			  .boolean("composite", composite).boolean("insert", can_insert);
 			items += it.done();
 		}
+		if(CALCULATOR->getPrecision() != save_prec) CALCULATOR->setPrecision(save_prec);
 	} else {
 		return "unknown catalog kind";
 	}
