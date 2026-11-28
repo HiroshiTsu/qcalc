@@ -812,17 +812,18 @@
   // inserted into an expression up to MAX_INPUT characters.
   const MAX_RESULT = 450000, TAIL_RESULT = 20000, HISTORY_BUDGET = 1000000, SHORT_RESULT = 2000, MAX_INPUT = 20000;
   function fitHistory() {
-    let used = 0, changed = false;
+    let used = 0;
+    const changed = new Set();
     for (let i = history.length - 1; i >= 0; i--) {
       const h = history[i];
       if (!h || typeof h !== 'object') continue;
       if (used >= HISTORY_BUDGET) {
-        if (typeof h.result === 'string' && h.result.length > SHORT_RESULT + 1) { h.result = h.result.slice(0, SHORT_RESULT) + '…'; h.cut = true; delete h.tail; changed = true; }
-        if (typeof h.input === 'string' && h.input.length > SHORT_RESULT) { delete h.input; h.big = true; changed = true; }
+        if (typeof h.result === 'string' && h.result.length > SHORT_RESULT + 1) { h.result = h.result.slice(0, SHORT_RESULT) + '…'; h.cut = true; delete h.tail; changed.add(h); }
+        if (typeof h.input === 'string' && h.input.length > SHORT_RESULT) { delete h.input; h.big = true; changed.add(h); }
       }
       used += String(h.result || '').length + String(h.tail || '').length + String(h.input || '').length + String(h.expr || '').length;
     }
-    return changed; // an older long result was shortened (what is shown of it is out of date)
+    return changed; // the older long results shortened (what is shown of them is out of date)
   }
   let history = store.get('qalc.history', []);
   if (!Array.isArray(history)) history = [];
@@ -883,7 +884,42 @@
   // lines just worked out again, marked for a moment: line → time it ends, flashLines)
   let histReveal = null;
   const histFlash = new Map();
-  histEl.addEventListener('scroll', () => { histPinned = histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight < 24; }, { passive: true });
+  // ((1.16.5, the owner's report of 11-28 18:07: the newest line half hidden after =, the last line hidden when the result
+  // under the field made it taller) The end stays in sight when the lines change their height after the history was taken
+  // there: the boxes of long answers follow the height of the history (fitResultBox, after the ResizeObserver of the history
+  // had already gone to the end), ⤢ makes a line a little higher (placeNumbers, a frame later), the next steps, math, a matrix
+  // made smaller, the size of the text: each child of the history is watched (keepHistEnd). And only the person's own
+  // scrolling (a finger, the mouse, the wheel, the keys, and the fling after them) stops the following of the end: a scroll
+  // by the page (the browser keeping a line in place while those above change size, the app) no longer does; the app's own
+  // scrolls to a line say so themselves (pinHistHere)
+  let histTouching = false, histUserTill = 0;
+  const histToEnd = () => histEl.scrollHeight - histEl.scrollTop - histEl.clientHeight;
+  const histUser = () => histTouching || performance.now() < histUserTill;
+  function pinHistHere() { histPinned = histToEnd() < 24; }
+  histEl.addEventListener('scroll', () => {
+    const user = histUser();
+    if (histToEnd() < 24) histPinned = true;
+    else if (user) histPinned = false;
+    if (user && !histTouching) histUserTill = Math.max(histUserTill, performance.now() + 400); // (a fling goes on after the finger)
+  }, { passive: true });
+  histEl.addEventListener('touchstart', () => { histTouching = true; }, { passive: true });
+  const histTouchEnd = (e) => { if (!e.touches || !e.touches.length) { histTouching = false; histUserTill = performance.now() + 400; } };
+  histEl.addEventListener('touchend', histTouchEnd, { passive: true });
+  histEl.addEventListener('touchcancel', histTouchEnd, { passive: true });
+  histEl.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') { histTouching = true; window.addEventListener('pointerup', () => { histTouching = false; histUserTill = performance.now() + 400; }, { once: true }); } }, { passive: true });
+  histEl.addEventListener('wheel', () => { histUserTill = performance.now() + 400; }, { passive: true });
+  histEl.addEventListener('keydown', () => { histUserTill = performance.now() + 600; }, { passive: true });
+  function keepHistEnd() {
+    if (histTouching || !histEl.clientHeight) return;
+    if (histReveal && performance.now() < histReveal.until) { histReveal.run(); return; }
+    if (histPinned && histToEnd() > 0.5) histEl.scrollTop = histEl.scrollHeight;
+  }
+  if (window.ResizeObserver && window.MutationObserver) {
+    const ro = new ResizeObserver(() => keepHistEnd());
+    const watch = (n) => { if (n.nodeType === 1) ro.observe(n); };
+    new MutationObserver((ms) => { for (const m of ms) m.addedNodes.forEach(watch); }).observe(histEl, { childList: true });
+    histEl.childNodes.forEach(watch);
+  }
   // (1.16.2, Z and Z2, the owner's wishes of 11-24 21:32 and 21:34) Two fingers spread or pinched on the history make the text
   // of the history larger or smaller; on the input field and the result, the text of those (the keys keep their size; the
   // box of a line being edited goes with the history). While the fingers move, "History text 120%" shows; the size is kept
@@ -932,8 +968,11 @@
   }
   bindPinch(histEl, 'h');
   bindPinch($('.entry'), 'e');
+  // ((1.16.5) the lines are made to fit again only when the history is wider or narrower (the phone turned, a window): when it
+  // is only higher or lower (the field, the keys, the phone's keyboard), nothing of their width changes; ⤢ is placed again)
+  let histFitW = -1;
   if (window.ResizeObserver) new ResizeObserver(() => {
-    fitMatrices(histEl);
+    if (histEl.clientWidth !== histFitW) { histFitW = histEl.clientWidth; fitMatrices(histEl); } else placeNumbers();
     // (1.16.0, fix/hist-edit-scroll: a line being kept in sight is kept there, not the end of the history)
     if (histReveal && performance.now() < histReveal.until) histReveal.run();
     else { histReveal = null; if (histPinned) histEl.scrollTop = histEl.scrollHeight; }
@@ -2005,6 +2044,11 @@
     const lines = root.classList && root.classList.contains('r-line') ? [root] : root.querySelectorAll('.r-line');
     for (const l of lines) {
       const base = l.classList.contains('r-ap') ? 0.86 : 1;
+      // ((1.16.5, the owner's conditions: 200000 digits) a line of thousands of characters (an answer of 200,000 digits) never fits
+      // on one line, on any screen: it gets the smallest letters and breaks (with "never", scrolls) at once, as the loop below
+      // would end, without being laid out on one line first. That took about 0.1 s for each such line on a computer, and the
+      // history did it for all of them at every change of its height: each key typed with the result under the field, each =)
+      if (l.textContent.length > 3000) { l.style.fontSize = (base * 0.8).toFixed(3) + 'em'; l.classList.toggle('nw', wrapMode() === 'none'); continue; }
       l.style.fontSize = base === 1 ? '' : base + 'em';
       l.classList.add('nw');
       let k = 1;
@@ -2494,8 +2538,11 @@
     // the lines on the screen are no longer the history (the first result, an older long result
     // shortened). The oldest lines may not be drawn yet (olderLeft, renderHistory).
     if (over) { if (gone >= 0 && gone < olderLeft) olderLeft--; else { const first = histEl.querySelector(':scope > .h-item'); if (first) first.remove(); } }
-    if (shortened || histFiltered() || !histEl.querySelector(':scope > .h-item') || histEl.querySelectorAll(':scope > .h-item').length !== history.filter((x) => !x.star).length - 1 - olderLeft) renderHistory(true);
+    if (histFiltered() || !histEl.querySelector(':scope > .h-item') || histEl.querySelectorAll(':scope > .h-item').length !== history.filter((x) => !x.star).length - 1 - olderLeft) renderHistory(true);
     else {
+      // ((1.16.5, the owner's conditions: 200000 digits) the older long answers just shortened are drawn again, not the whole
+      // history: with answers of 200,000 digits, every = shortened one and drew all the lines again, the older ones after)
+      if (shortened.size) redrawEntries(shortened);
       const item = historyItem(entry);
       histEl.append(item);
       refreshSteps();
@@ -4450,7 +4497,24 @@
   // history, so that the history can still be scrolled past it (.h-res in style.css).
   function fitResultBox() {
     const hh = histEl.clientHeight;
-    if (hh > 0) document.documentElement.style.setProperty('--res-max', Math.max(96, Math.round(hh * 0.7)) + 'px');
+    if (!(hh > 0)) return;
+    const v = Math.max(96, Math.round(hh * 0.7)) + 'px';
+    if (document.documentElement.style.getPropertyValue('--res-max') === v) return;
+    // ((1.16.5) while older lines are read, the line in the middle of the history stays where it is when the boxes of long
+    // answers follow the history's height (the result under the field, the phone's keyboard): the browser does not keep it, a
+    // change of max-height stops its scroll anchoring, and the lines moved by 9 px for each long answer above. At the end of
+    // the history, keepHistEnd keeps the end; a line kept in sight (histReveal) is kept by its own run)
+    let keep = null;
+    if (!histPinned && !(histReveal && performance.now() < histReveal.until)) {
+      const top = histEl.getBoundingClientRect().top, mid = top + histEl.clientHeight / 2;
+      const it = Array.from(histEl.querySelectorAll(':scope > .h-item')).find((x) => x.getBoundingClientRect().bottom > mid);
+      if (it) keep = [it, it.getBoundingClientRect().top - top];
+    }
+    document.documentElement.style.setProperty('--res-max', v);
+    if (keep && keep[0].isConnected) {
+      const d = keep[0].getBoundingClientRect().top - histEl.getBoundingClientRect().top - keep[1];
+      if (Math.abs(d) >= 1) histEl.scrollTop += d;
+    }
   }
   if (window.ResizeObserver) new ResizeObserver(fitResultBox).observe(histEl);
   else window.addEventListener('resize', fitResultBox);
@@ -4599,7 +4663,7 @@
     set(Math.round((list[0].fs || 1) * 100));
     // (the first line in sight above the sheet)
     const it = Array.from(histEl.querySelectorAll('.h-item')).find((x) => x._h === list[0]);
-    if (it) it.scrollIntoView({ block: 'start' });
+    if (it) { it.scrollIntoView({ block: 'start' }); pinHistHere(); } // ((1.16.5) the app's own scroll: the end no longer followed if it left it)
     sheetResolve = () => { saveHistory(); };
     $('#scrim').classList.add('show', 'over-panels');
     sh.classList.add('open');
@@ -18930,6 +18994,7 @@ precision mediump float; in vec2 vT; uniform sampler2D uTex; out vec4 o; void ma
     histEl.append(card);
     // its title and × in sight, also when the history is short (memory keys, a small screen)
     histEl.scrollTop = Math.max(0, card.offsetTop - histEl.offsetTop - 4);
+    pinHistHere(); // ((1.16.5) the app's own scroll: its title in sight, also when the card is higher than the history)
   }
   // ------------------------------------------------- display digits per screen (feature/screen-digits)
   // Each tool keeps its own number of digits (qalc.digits.<screen>): "Recommended" (automatic: a digit or
